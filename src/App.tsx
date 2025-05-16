@@ -3,13 +3,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import Home from "./pages/Index";
 import PaidCourses from "./pages/PaidCourses";
 import FreeCourses from "./pages/FreeCourses";
 import AssessmentCenter from "./pages/AssessmentCenter";
 import NotFound from "./pages/NotFound";
+import EnglishHome from "./pages/en/Index";
+import EnglishPaidCourses from "./pages/en/PaidCourses";
+import EnglishFreeCourses from "./pages/en/FreeCourses";
+import EnglishAssessmentCenter from "./pages/en/AssessmentCenter";
 
 const queryClient = new QueryClient();
 
@@ -21,10 +25,19 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Routes>
+            {/* Persian (Default) Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/paid-courses" element={<PaidCourses />} />
             <Route path="/free-courses" element={<FreeCourses />} />
             <Route path="/assessment-center" element={<AssessmentCenter />} />
+            
+            {/* English Routes */}
+            <Route path="/en" element={<EnglishHome />} />
+            <Route path="/en/paid-courses" element={<EnglishPaidCourses />} />
+            <Route path="/en/free-courses" element={<EnglishFreeCourses />} />
+            <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
+            
+            {/* Redirects and Not Found */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
@@ -8,10 +8,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import RegistrationForm from "@/components/RegistrationForm";
 import { motion } from "framer-motion";
 
-const FreeCourses = () => {
-  const { translations } = useLanguage();
+const EnglishFreeCourses = () => {
+  const { translations, setLanguage } = useLanguage();
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
+  useEffect(() => {
+    setLanguage("en");
+  }, [setLanguage]);
+  
   const courses = [
     {
       title: translations.boundlessTaste,
@@ -142,4 +146,4 @@ const FreeCourses = () => {
   );
 };
 
-export default FreeCourses;
+export default EnglishFreeCourses;

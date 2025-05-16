@@ -29,9 +29,9 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
-  const [language, setLanguage] = useState<Language>("en");
-  const [direction, setDirection] = useState<Direction>("ltr");
-  const [translations, setTranslations] = useState(en);
+  const [language, setLanguage] = useState<Language>("fa");
+  const [direction, setDirection] = useState<Direction>("rtl");
+  const [translations, setTranslations] = useState(fa);
 
   useEffect(() => {
     // Check if language is stored in local storage
@@ -39,11 +39,8 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     if (savedLanguage === "en" || savedLanguage === "fa") {
       setLanguage(savedLanguage);
     } else {
-      // Check browser language
-      const browserLanguage = navigator.language;
-      if (browserLanguage.startsWith("fa")) {
-        setLanguage("fa");
-      }
+      // Default to Persian
+      setLanguage("fa");
     }
   }, []);
 

@@ -26,35 +26,40 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const { translations, language } = useLanguage();
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md group animate-scale-in">
+    <Card className="overflow-hidden border border-primary/10 shadow-lg transition-all hover:shadow-xl hover:border-primary/20 group animate-scale-in h-full flex flex-col">
       <div className="overflow-hidden aspect-video relative">
         <img
           src={image || "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80"}
           alt={title}
-          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
         <Badge
           variant={isPaid ? "default" : "secondary"}
-          className="absolute top-3 right-3"
+          className="absolute top-3 right-3 z-10"
         >
           {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
         </Badge>
       </div>
       
-      <CardHeader>
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription className="line-clamp-2">
-          {description}
-        </CardDescription>
+      <CardHeader className="relative z-10 mt-[-20px] pt-0">
+        <div className="bg-background/80 backdrop-blur-sm p-4 rounded-t-lg border-t border-x border-primary/10">
+          <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
+            {title}
+          </CardTitle>
+          <CardDescription className="line-clamp-2 mt-2">
+            {description}
+          </CardDescription>
+        </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-grow">
         <div>
-          <h4 className="font-semibold text-sm mb-1">{translations.instructor}</h4>
-          <div className="flex items-center gap-2">
-            <User size={16} />
-            <span>{translations.rezaRafiei}</span>
-          </div>
+          <h4 className="font-semibold text-sm mb-1 flex items-center">
+            <User size={16} className="mr-2 text-primary" />
+            <span>{translations.instructor}</span>
+          </h4>
+          <p className="text-sm text-muted-foreground">{translations.rezaRafiei}</p>
         </div>
         
         <div>
@@ -69,7 +74,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
       </CardContent>
       
       <CardFooter>
-        <Button className="w-full">
+        <Button 
+          className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary transition-all duration-300 shadow-lg hover:shadow-primary/20"
+          size="lg"
+        >
           {isPaid ? translations.buyNow : translations.startLearning}
         </Button>
       </CardFooter>

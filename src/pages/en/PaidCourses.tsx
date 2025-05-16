@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
@@ -11,10 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Calendar, Award, BarChart3 } from "lucide-react";
 
-const PaidCourses = () => {
-  const { translations } = useLanguage();
+const EnglishPaidCourses = () => {
+  const { translations, setLanguage } = useLanguage();
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  
+  useEffect(() => {
+    setLanguage("en");
+  }, [setLanguage]);
 
   const courses = [
     {
@@ -267,4 +271,4 @@ const PaidCourses = () => {
   );
 };
 
-export default PaidCourses;
+export default EnglishPaidCourses;
