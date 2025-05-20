@@ -89,7 +89,8 @@ const Hero = ({
         </div>
       </div>
       
-      <style jsx>{`
+      <style>
+        {`
         @keyframes pulse-slow {
           0%, 100% { 
             opacity: 0.3;
@@ -161,7 +162,8 @@ const Hero = ({
           top: 30%;
           left: 25%;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };

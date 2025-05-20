@@ -210,7 +210,8 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
         isPaid={false}
       />
       
-      <style jsx>{`
+      <style>
+        {`
         @keyframes pulse-slow {
           0%, 100% { 
             opacity: 0.3;
@@ -282,7 +283,8 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
           top: 30%;
           left: 25%;
         }
-      `}</style>
+        `}
+      </style>
     </MainLayout>
   );
 };

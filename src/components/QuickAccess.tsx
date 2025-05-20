@@ -52,7 +52,7 @@ const QuickAccess = () => {
     }
   };
 
-  const item = {
+  const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     show: { 
       y: 0, 
@@ -73,15 +73,15 @@ const QuickAccess = () => {
           initial="hidden"
           animate="show"
         >
-          {quickLinks.map((item, index) => (
-            <motion.div key={index} variants={item}>
-              <Link to={item.link} className="block group h-full">
+          {quickLinks.map((quickLink, index) => (
+            <motion.div key={index} variants={itemVariants}>
+              <Link to={quickLink.link} className="block group h-full">
                 <Card className="h-full border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 overflow-hidden">
-                  <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${item.color}`}>
+                  <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${quickLink.color}`}>
                     <div className="mb-3 p-2 rounded-full bg-white/80 backdrop-blur">
-                      {item.icon}
+                      {quickLink.icon}
                     </div>
-                    <p className="font-medium text-sm md:text-base">{item.title}</p>
+                    <p className="font-medium text-sm md:text-base">{quickLink.title}</p>
                   </CardContent>
                 </Card>
               </Link>
