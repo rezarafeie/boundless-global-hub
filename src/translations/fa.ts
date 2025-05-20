@@ -240,7 +240,40 @@ const faTranslations = {
   aiFeature3: "توسعه فردی",
   aiFeature3Desc: "کشف راه‌هایی برای بهبود مهارت‌ها و ذهنیت خود",
   aiAssistantFeature4Title: "دسترسی ۲۴/۷",
-  aiAssistantFeature4: "هر زمان که نیاز دارید، روز یا شب، به راهنمایی دسترسی داشته باشید"
+  aiAssistantFeature4: "هر زمان که نیاز دارید، روز یا شب، به راهنمایی دسترسی داشته باشید",
+  
+  // Additional BoundlessLanding translations
+  boundlessLandingSubtitle: "استاد هنر کسب و کار بین‌المللی شوید",
+  boundlessLandingHeroDesc: "یاد بگیرید چگونه یک کسب و کار پایدار با درآمد ارزی ایجاد کنید، صرف نظر از موقعیت یا تجربه فعلی شما.",
+  boundlessLandingOriginalPrice: "۲۰،۰۰۰،۰۰۰ تومان",
+  boundlessLandingSpecialOffer: "پیشنهاد ویژه: ۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingInclusive: "شامل تمام مالیات و هزینه‌ها",
+  boundlessLandingStartCourse: "همین حالا سفر خود را آغاز کنید",
+  boundlessLandingJoinLater: "قبل از تصمیم‌گیری بیشتر بدانید",
+  boundlessLandingCountdown: "پیشنهاد ویژه تمام می‌شود در:",
+  boundlessLandingAboutTitle: "برنامه بدون مرز چیست؟",
+  boundlessLandingWhoFor: "این دوره مناسب چه کسانی است؟",
+  boundlessLandingSolutions: "چه مشکلاتی را حل می‌کند؟",
+  boundlessLandingResultsTitle: "نتایج مورد انتظار شما",
+  boundlessLandingBonusesTitle: "هدایای ویژه",
+  boundlessLandingFAQTitle: "سوالات متداول",
+  boundlessLandingBonus1: "دوره تولید محتوا با هوش مصنوعی",
+  boundlessLandingBonus2: "ارزیابی شخصیت حرفه‌ای",
+  boundlessLandingBonus3: "راهنمای کسب اولین درآمد دلاری",
+  boundlessLandingTestimonialsTitle: "دانشجویان ما چه می‌گویند",
+  boundlessLandingFitTitle: "آیا این دوره مناسب من است؟",
+  boundlessLandingFitStudent: "دانشجویان",
+  boundlessLandingFitFreelancer: "فریلنسرها",
+  boundlessLandingFitRemote: "کارکنان از راه دور",
+  boundlessLandingFitEntrepreneur: "کارآفرینان",
+  boundlessLandingFitMigrate: "متقاضیان مهاجرت",
+  boundlessLandingStickyOffer: "پیشنهاد محدود: ۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingSkill1: "ذهنیت جهانی",
+  boundlessLandingSkill2: "دراپ‌شیپینگ",
+  boundlessLandingSkill3: "ارائه خدمات",
+  boundlessLandingSkill4: "محصولات دیجیتال",
+  boundlessLandingSkill5: "سیستم‌های مقیاس‌پذیر"
 };
 
 export default faTranslations;
+

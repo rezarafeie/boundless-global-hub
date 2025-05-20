@@ -240,7 +240,40 @@ const enTranslations = {
   aiFeature3: "Personal Development",
   aiFeature3Desc: "Discover ways to improve your skills and mindset",
   aiAssistantFeature4Title: "24/7 Availability",
-  aiAssistantFeature4: "Access guidance whenever you need, day or night"
+  aiAssistantFeature4: "Access guidance whenever you need, day or night",
+  
+  // Additional BoundlessLanding translations
+  boundlessLandingSubtitle: "Master the Art of International Business",
+  boundlessLandingHeroDesc: "Learn how to create a sustainable business with foreign currency income, regardless of your current location or experience level.",
+  boundlessLandingOriginalPrice: "$699",
+  boundlessLandingSpecialOffer: "Special Offer: $299",
+  boundlessLandingInclusive: "All taxes and fees included",
+  boundlessLandingStartCourse: "Start Your Journey Now",
+  boundlessLandingJoinLater: "Learn more before deciding",
+  boundlessLandingCountdown: "Special offer ends in:",
+  boundlessLandingAboutTitle: "What Is The Boundless Program?",
+  boundlessLandingWhoFor: "Who Is This For?",
+  boundlessLandingSolutions: "What Problems Does It Solve?",
+  boundlessLandingResultsTitle: "Your Expected Results",
+  boundlessLandingBonusesTitle: "Special Bonuses",
+  boundlessLandingFAQTitle: "Frequently Asked Questions",
+  boundlessLandingBonus1: "AI Content Creation Course",
+  boundlessLandingBonus2: "Professional Personality Assessment",
+  boundlessLandingBonus3: "First Dollar Income Guide",
+  boundlessLandingTestimonialsTitle: "What Our Students Say",
+  boundlessLandingFitTitle: "Is This Right For Me?",
+  boundlessLandingFitStudent: "Students",
+  boundlessLandingFitFreelancer: "Freelancers",
+  boundlessLandingFitRemote: "Remote Workers",
+  boundlessLandingFitEntrepreneur: "Entrepreneurs",
+  boundlessLandingFitMigrate: "Migration Seekers",
+  boundlessLandingStickyOffer: "Limited Time Offer: $299",
+  boundlessLandingSkill1: "Global Mindset",
+  boundlessLandingSkill2: "Dropshipping",
+  boundlessLandingSkill3: "Service Offering",
+  boundlessLandingSkill4: "Digital Products",
+  boundlessLandingSkill5: "Scaling Systems"
 };
 
 export default enTranslations;
+
