@@ -53,6 +53,7 @@ export const en = {
   continue: "Continue",
   fillAllFields: "Please fill in all fields",
   success: "Success",
+  specialOffersTitle: "Special Offers",
   
   // Navigation
   home: "Home",

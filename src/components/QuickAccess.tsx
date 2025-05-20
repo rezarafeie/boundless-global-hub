@@ -34,7 +34,7 @@ const QuickAccess = () => {
       color: "bg-amber-50 text-amber-700"
     },
     {
-      title: translations.specialOffersTitle || "Special Offers",
+      title: "Special Offers",
       icon: <Gift size={32} />,
       link: "/special-offers",
       color: "bg-red-50 text-red-700"

@@ -53,6 +53,7 @@ export const fa = {
   continue: "ادامه",
   fillAllFields: "لطفا همه فیلدها را پر کنید",
   success: "موفقیت",
+  specialOffersTitle: "پیشنهادهای ویژه",
   
   // Navigation
   home: "خانه",

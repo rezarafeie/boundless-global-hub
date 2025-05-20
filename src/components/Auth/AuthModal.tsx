@@ -65,7 +65,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     if (!firstName || !lastName || !password) {
       toast({
         title: translations.error,
-        description: translations.enterAllFields || "Please fill all fields",
+        description: translations.fillAllFields || "Please fill all fields",
         variant: "destructive",
       });
       return;
