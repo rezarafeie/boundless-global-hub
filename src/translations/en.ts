@@ -181,11 +181,13 @@ const enTranslations = {
   // Auth related messages
   error: "Error",
   enterEmail: "Please enter your email",
+  enterPhone: "Please enter your phone number",
   enterEmailOrPhone: "Enter your email or mobile number",
   emailOrPhonePlaceholder: "example@mail.com | 09123456789",
   continue: "Continue",
   success: "Success",
   registrationSuccess: "Registration successful",
+  accountCreated: "Your account has been created successfully",
   enterPassword: "Please enter your password",
   loginSuccess: "Login successful",
   accessCourse: "Course Access",
@@ -199,7 +201,23 @@ const enTranslations = {
   lastNamePlaceholder: "Enter your last name",
   emailOrPhone: "Email or Phone",
   email: "Email",
+  phone: "Phone",
   back: "Back",
+  register: "Register",
+  login: "Login",
+  useVerificationCode: "Use verification code",
+  usePassword: "Use password",
+  sendVerificationCode: "Send verification code",
+  creating: "Creating...",
+  
+  // Verification related
+  verify: "Verify",
+  codeSent: "Code Sent",
+  codeEmailSent: "Verification code sent to",
+  codePhoneSent: "Verification code sent to",
+  codeExpires: "Code expires in",
+  invalidCode: "Invalid verification code",
+  verificationSuccess: "Verification successful",
   
   // AI Assistant page
   aiAssistantName: "Rafiei AI Assistant",

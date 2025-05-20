@@ -181,11 +181,13 @@ const faTranslations = {
   // Auth related messages
   error: "خطا",
   enterEmail: "لطفا ایمیل خود را وارد کنید",
+  enterPhone: "لطفا شماره موبایل خود را وارد کنید",
   enterEmailOrPhone: "ایمیل یا شماره موبایل خود را وارد کنید",
   emailOrPhonePlaceholder: "example@mail.com | 09123456789",
   continue: "ادامه",
   success: "موفقیت",
   registrationSuccess: "ثبت‌نام با موفقیت انجام شد",
+  accountCreated: "حساب کاربری شما با موفقیت ایجاد شد",
   enterPassword: "لطفا رمز عبور خود را وارد کنید",
   loginSuccess: "ورود با موفقیت انجام شد",
   accessCourse: "دسترسی به دوره",
@@ -199,7 +201,23 @@ const faTranslations = {
   lastNamePlaceholder: "نام خانوادگی خود را وارد کنید",
   emailOrPhone: "ایمیل یا موبایل",
   email: "ایمیل",
+  phone: "شماره موبایل",
   back: "بازگشت",
+  register: "ثبت‌نام",
+  login: "ورود",
+  useVerificationCode: "استفاده از کد تایید",
+  usePassword: "استفاده از رمز عبور",
+  sendVerificationCode: "ارسال کد تایید",
+  creating: "در حال ایجاد...",
+  
+  // Verification related
+  verify: "تایید",
+  codeSent: "کد ارسال شد",
+  codeEmailSent: "کد تایید ارسال شد به",
+  codePhoneSent: "کد تایید ارسال شد به",
+  codeExpires: "کد منقضی می‌شود در",
+  invalidCode: "کد تایید نامعتبر است",
+  verificationSuccess: "تایید با موفقیت انجام شد",
   
   // AI Assistant page
   aiAssistantName: "دستیار هوشمند رفیعی",

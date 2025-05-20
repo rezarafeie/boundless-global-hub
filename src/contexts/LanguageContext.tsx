@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import en from "@/translations/en";
-import fa from "@/translations/fa";
+import enTranslations from "@/translations/en";
+import faTranslations from "@/translations/fa";
 
 type Language = "en" | "fa";
 type Direction = "ltr" | "rtl";
@@ -9,7 +9,7 @@ type Direction = "ltr" | "rtl";
 interface LanguageContextType {
   language: Language;
   direction: Direction;
-  translations: typeof en | typeof fa;
+  translations: typeof enTranslations | typeof faTranslations;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
 }
@@ -31,7 +31,7 @@ interface LanguageProviderProps {
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
   const [language, setLanguage] = useState<Language>("fa");
   const [direction, setDirection] = useState<Direction>("rtl");
-  const [translations, setTranslations] = useState(fa);
+  const [translations, setTranslations] = useState(faTranslations);
 
   useEffect(() => {
     // Check if language is stored in local storage
@@ -48,7 +48,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
   useEffect(() => {
     // Update direction and translations when language changes
     setDirection(language === "fa" ? "rtl" : "ltr");
-    setTranslations(language === "fa" ? fa : en);
+    setTranslations(language === "fa" ? faTranslations : enTranslations);
     document.documentElement.lang = language;
     document.documentElement.dir = language === "fa" ? "rtl" : "ltr";
     localStorage.setItem("language", language);
