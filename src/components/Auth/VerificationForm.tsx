@@ -84,7 +84,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
       console.error("Error resending code:", error);
       toast({
         title: translations.error || "Error",
-        description: translations.resendError || "Error resending code",
+        description: translations.error || "Error resending code",
         variant: "destructive",
       });
     } finally {
