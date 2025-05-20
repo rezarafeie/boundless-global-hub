@@ -1,3 +1,4 @@
+
 export const en = {
   home: "Home",
   courses: "Courses",
@@ -77,6 +78,8 @@ export const en = {
   welcomeBack: "Welcome back!",
   registrationSuccess: "Registration Success!",
   enterEmailOrPhone: "Enter your email or phone number",
+  emailOrPhone: "Email or Phone",
+  sendVerificationCode: "Send Verification Code",
 
   // Auth related translations
   login: "Login",
@@ -99,7 +102,6 @@ export const en = {
   creating: "Creating...",
   sending: "Sending...",
   loginRequired: "Login required",
-  loginSuccess: "Login successful",
   logoutSuccess: "Logged out successfully",
   accountCreated: "Account created successfully",
   profileUpdated: "Profile updated successfully",
@@ -125,4 +127,17 @@ export const en = {
   support: "Support",
   usePassword: "Use Password",
   useVerificationCode: "Use Verification Code",
+  search: "Search",
+  blog: "Blog",
+  contactUs: "Contact Us",
+  aboutUs: "About Us",
+  termsOfService: "Terms of Service",
+  privacyPolicy: "Privacy Policy",
+  faq: "FAQ",
+  loading: "Loading...",
+  successMessage: "Operation completed successfully.",
+  errorMessage: "An error occurred. Please try again.",
+  noDataAvailable: "No data available.",
+  firstNamePlaceholder: "First Name",
+  lastNamePlaceholder: "Last Name",
 };

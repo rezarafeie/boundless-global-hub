@@ -1,10 +1,15 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import Cookies from 'js-cookie';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
+
+// Add the missing js-cookie package
+<lov-add-dependency>js-cookie@latest</lov-add-dependency>
+
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   session: Session | null;
@@ -66,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, phone: string) => {
     setLoading(true);
     try {
-      const contact = email || phone;
       const { error } = await supabase.auth.signInWithOtp({
         email: email || undefined,
         phone: phone || undefined,
@@ -95,12 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyOTP = async (email: string | null, phone: string | null, token: string): Promise<boolean> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email || undefined,
-        phone: phone || undefined,
-        token,
-        type: 'sms',
-      });
+      // Fix the verification parameters based on whether it's email or phone
+      const params = email 
+        ? { email, token, type: 'email' as const } 
+        : { phone, token, type: 'sms' as const };
+      
+      const { data, error } = await supabase.auth.verifyOtp(params);
 
       if (error) throw error;
 
@@ -129,10 +133,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, phone: string, firstName: string, lastName: string) => {
     setLoading(true);
     try {
+      // Generate a random password for the user (required by Supabase)
+      const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).toUpperCase().slice(-2);
+      
       // First register with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: email || undefined,
         phone: phone || undefined,
+        password: randomPassword,
         options: {
           data: {
             first_name: firstName,
