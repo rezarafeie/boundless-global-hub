@@ -60,17 +60,17 @@ const Hero = ({
       {backgroundType === "glow" && (
         <>
           <div className="absolute inset-0 overflow-hidden">
-            <div className="glow-circle glow-circle-1"></div>
-            <div className="glow-circle glow-circle-2"></div>
-            <div className="glow-circle glow-circle-3"></div>
+            <div className="glow-circle glow-circle-1 animate-pulse-slow"></div>
+            <div className="glow-circle glow-circle-2 animate-float"></div>
+            <div className="glow-circle glow-circle-3 animate-pulse-slow animation-delay-1000"></div>
           </div>
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-[80px] z-0"></div>
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[40px] z-0"></div>
         </>
       )}
       
       <div className="container relative z-10">
         <div className="flex flex-col items-center text-center">
-          {/* Text Content - Now Center Aligned */}
+          {/* Text Content - Center Aligned */}
           <div className="space-y-6 max-w-3xl mx-auto">
             <h1 className="font-bold tracking-tighter text-4xl md:text-5xl lg:text-6xl animate-slide-down text-balance">
               {title}
@@ -88,6 +88,80 @@ const Hero = ({
           </div>
         </div>
       </div>
+      
+      <style jsx>{`
+        @keyframes pulse-slow {
+          0%, 100% { 
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.7;
+            transform: scale(1.1);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.4;
+          }
+          25% {
+            transform: translateY(-20px) translateX(10px);
+            opacity: 0.7;
+          }
+          50% {
+            transform: translateY(0) translateX(20px);
+            opacity: 0.5;
+          }
+          75% {
+            transform: translateY(20px) translateX(10px);
+            opacity: 0.7;
+          }
+        }
+        
+        .animate-pulse-slow {
+          animation: pulse-slow 8s infinite ease-in-out;
+        }
+        
+        .animate-float {
+          animation: float 15s infinite ease-in-out;
+        }
+        
+        .animation-delay-1000 {
+          animation-delay: 1s;
+        }
+        
+        .glow-circle {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(40px);
+        }
+        
+        .glow-circle-1 {
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(147,112,219,0.4) 0%, rgba(147,112,219,0) 70%);
+          top: -100px;
+          right: 10%;
+        }
+        
+        .glow-circle-2 {
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(65,105,225,0.3) 0%, rgba(65,105,225,0) 70%);
+          bottom: -150px;
+          left: 10%;
+        }
+        
+        .glow-circle-3 {
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(123,104,238,0.35) 0%, rgba(123,104,238,0) 70%);
+          top: 30%;
+          left: 25%;
+        }
+      `}</style>
     </div>
   );
 };

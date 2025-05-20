@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, BookOpen, GraduationCap, FileCheck, MessageCircle } from "lucide-react";
 import AuthModal from "@/components/Auth/AuthModal";
+import CountdownTimer from "@/components/CountdownTimer";
+import { motion } from "framer-motion";
 
 interface FreeCourseProps {
   title: string;
@@ -24,6 +26,10 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
   iconType = "book"
 }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Set countdown target for 7 days from now
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + 7);
 
   const getIcon = () => {
     switch (iconType) {
@@ -41,27 +47,64 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="bg-white pt-24 pb-20">
-        <div className="container max-w-4xl mx-auto">
+      <section className="bg-white pt-24 pb-20 relative">
+        {/* Animated Glow Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="glow-circle glow-circle-1 animate-pulse-slow"></div>
+          <div className="glow-circle glow-circle-2 animate-float"></div>
+          <div className="glow-circle glow-circle-3 animate-pulse-slow animation-delay-1000"></div>
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[40px] z-0"></div>
+        </div>
+        
+        <div className="container max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            <motion.h1 
+              className="text-4xl md:text-5xl font-bold mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
               {title}
-            </h1>
+            </motion.h1>
             {englishTitle && (
-              <p className="text-lg text-gray-600 mb-4">{englishTitle}</p>
+              <motion.p 
+                className="text-lg text-gray-600 mb-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                {englishTitle}
+              </motion.p>
             )}
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <motion.p 
+              className="text-lg text-gray-600 max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
               {description}
-            </p>
+            </motion.p>
           </div>
           
-          <div className="flex justify-center mb-12">
+          <motion.div 
+            className="flex justify-center mb-12"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <div className="w-24 h-24 rounded-full bg-black/5 flex items-center justify-center">
               {getIcon()}
             </div>
-          </div>
+          </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <CountdownTimer targetDate={targetDate} />
+          
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
             <Card className="border-black/5 shadow-sm bg-black/5">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
@@ -83,17 +126,22 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
           
-          <div className="text-center">
+          <motion.div 
+            className="text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
             <Button 
               size="lg" 
-              className="bg-black hover:bg-black/90 text-white rounded-full px-8"
+              className="bg-black hover:bg-black/90 text-white rounded-full px-8 text-lg"
               onClick={() => setShowAuthModal(true)}
             >
               شروع رایگان
             </Button>
-          </div>
+          </motion.div>
         </div>
       </section>
       
@@ -161,6 +209,80 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
         courseTitle={title}
         isPaid={false}
       />
+      
+      <style jsx>{`
+        @keyframes pulse-slow {
+          0%, 100% { 
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.7;
+            transform: scale(1.1);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.4;
+          }
+          25% {
+            transform: translateY(-20px) translateX(10px);
+            opacity: 0.7;
+          }
+          50% {
+            transform: translateY(0) translateX(20px);
+            opacity: 0.5;
+          }
+          75% {
+            transform: translateY(20px) translateX(10px);
+            opacity: 0.7;
+          }
+        }
+        
+        .animate-pulse-slow {
+          animation: pulse-slow 8s infinite ease-in-out;
+        }
+        
+        .animate-float {
+          animation: float 15s infinite ease-in-out;
+        }
+        
+        .animation-delay-1000 {
+          animation-delay: 1s;
+        }
+        
+        .glow-circle {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(40px);
+        }
+        
+        .glow-circle-1 {
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(147,112,219,0.4) 0%, rgba(147,112,219,0) 70%);
+          top: -100px;
+          right: 10%;
+        }
+        
+        .glow-circle-2 {
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(65,105,225,0.3) 0%, rgba(65,105,225,0) 70%);
+          bottom: -150px;
+          left: 10%;
+        }
+        
+        .glow-circle-3 {
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(123,104,238,0.35) 0%, rgba(123,104,238,0) 70%);
+          top: 30%;
+          left: 25%;
+        }
+      `}</style>
     </MainLayout>
   );
 };
