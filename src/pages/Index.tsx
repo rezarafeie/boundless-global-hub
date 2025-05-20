@@ -1,3 +1,4 @@
+
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -8,6 +9,7 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap } from "lucide-react";
+import QuickAccess from "@/components/QuickAccess";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -18,14 +20,16 @@ const Index = () => {
       description: translations.boundlessProgramDesc,
       benefits: translations.boundlessBenefits,
       outcome: translations.boundlessOutcome,
-      isPaid: true
+      isPaid: true,
+      slug: "boundless"
     },
     {
       title: translations.instagramEssentials,
       description: translations.instagramEssentialsDesc,
       benefits: translations.instagramBenefits,
       outcome: translations.instagramOutcome,
-      isPaid: true
+      isPaid: true,
+      slug: "instagram"
     },
   ];
 
@@ -35,14 +39,16 @@ const Index = () => {
       description: translations.boundlessTasteDesc,
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
-      isPaid: false
+      isPaid: false,
+      slug: "boundless-taste"
     },
     {
       title: translations.passiveIncomeAI,
       description: translations.passiveIncomeAIDesc,
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
-      isPaid: false
+      isPaid: false,
+      slug: "passive-income"
     },
   ];
 
@@ -53,8 +59,11 @@ const Index = () => {
         subtitle={translations.tagline}
         ctaText={translations.callToAction}
         ctaLink="/courses/boundless"
-        backgroundType="dots"
+        backgroundType="glow"
       />
+      
+      {/* Quick Access Section - NEW */}
+      <QuickAccess />
       
       {/* AI Assistant CTA */}
       <section className="py-16 bg-white">
@@ -180,6 +189,7 @@ const Index = () => {
                 benefits={course.benefits}
                 outcome={course.outcome}
                 isPaid={course.isPaid}
+                slug={course.slug}
               />
             ))}
           </div>
@@ -215,6 +225,7 @@ const Index = () => {
                 benefits={course.benefits}
                 outcome={course.outcome}
                 isPaid={course.isPaid}
+                slug={course.slug}
               />
             ))}
           </div>

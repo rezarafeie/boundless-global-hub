@@ -20,6 +20,7 @@ const EnglishAssessmentCenter = () => {
         subtitle={translations.assessmentCenterDesc}
         ctaText={translations.startTest}
         ctaLink="#tests"
+        backgroundType="glow"
       />
       
       <section id="tests" className="py-16">

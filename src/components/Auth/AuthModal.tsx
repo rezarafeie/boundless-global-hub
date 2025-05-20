@@ -55,13 +55,8 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     // Simulate checking if user exists (in a real app, this would be an API call)
     const userExists = Math.random() > 0.5; // Randomly determine if user exists for demo
     
-    if (userExists) {
-      // User exists, show verification screen
-      setAuthStep("verification");
-    } else {
-      // New user, show registration form
-      setAuthStep("registration");
-    }
+    // Always show verification first
+    setAuthStep("verification");
   };
 
   const handleRegistrationSubmit = (e: React.FormEvent) => {
@@ -70,7 +65,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     if (!firstName || !lastName || !password) {
       toast({
         title: translations.error,
-        description: "Please fill all fields",
+        description: translations.enterAllFields || "Please fill all fields",
         variant: "destructive",
       });
       return;
@@ -78,7 +73,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     
     // Simulate successful registration (in a real app, this would be an API call)
     toast({
-      title: "Success",
+      title: translations.success || "Success",
       description: translations.registrationSuccess,
     });
     
@@ -86,9 +81,14 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     handleLoginSuccess();
   };
 
-  const handleVerificationSuccess = () => {
-    // Successful verification, redirect based on course type
-    handleLoginSuccess();
+  const handleVerificationSuccess = (userExists: boolean) => {
+    if (userExists) {
+      // User exists, redirect to course
+      handleLoginSuccess();
+    } else {
+      // New user, show registration form
+      setAuthStep("registration");
+    }
   };
   
   const handleShowPasswordLogin = () => {
@@ -101,7 +101,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     if (!password) {
       toast({
         title: translations.error,
-        description: "Please enter your password",
+        description: translations.enterPassword || "Please enter your password",
         variant: "destructive",
       });
       return;
@@ -109,7 +109,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     
     // Simulate successful login (in a real app, this would be an API call)
     toast({
-      title: "Success",
+      title: translations.success || "Success",
       description: translations.loginSuccess,
     });
     
@@ -158,16 +158,16 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
         {authStep === "initial" && (
           <form onSubmit={handleInitialSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="contact">{translations.enterEmail}</Label>
+              <Label htmlFor="contact">{translations.enterEmailOrPhone || "ایمیل یا شماره موبایل خود را وارد کنید"}</Label>
               <Input 
                 id="contact"
                 type="text" 
                 value={contactValue}
                 onChange={(e) => setContactValue(e.target.value)}
-                placeholder={translations.email}
+                placeholder={translations.emailOrPhonePlaceholder || "example@mail.com | 09123456789"}
               />
             </div>
-            <Button type="submit" className="w-full mt-4">{translations.login}</Button>
+            <Button type="submit" className="w-full mt-4">{translations.continue || "ادامه"}</Button>
           </form>
         )}
         
@@ -189,7 +189,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
                 type="text" 
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder={translations.firstName}
+                placeholder={translations.firstNamePlaceholder || translations.firstName}
               />
             </div>
             
@@ -200,12 +200,12 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
                 type="text" 
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder={translations.lastName}
+                placeholder={translations.lastNamePlaceholder || translations.lastName}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="contact">{translations.email}</Label>
+              <Label htmlFor="contact">{translations.emailOrPhone || translations.email}</Label>
               <Input 
                 id="contact"
                 type="text" 
@@ -222,7 +222,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={translations.password}
+                placeholder={translations.passwordPlaceholder || translations.password}
               />
             </div>
             
@@ -250,7 +250,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={translations.password}
+                placeholder={translations.passwordPlaceholder || translations.password}
               />
             </div>
             

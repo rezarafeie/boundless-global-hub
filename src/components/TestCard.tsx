@@ -1,9 +1,8 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Brain, BookOpen, Briefcase, Heart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BookOpen, FileText, BarChart3, GraduationCap } from "lucide-react";
 
 interface TestCardProps {
   title: string;
@@ -11,52 +10,33 @@ interface TestCardProps {
   category: string;
 }
 
-const TestCard: React.FC<TestCardProps> = ({
-  title,
-  description,
-  category,
-}) => {
-  const { translations } = useLanguage();
-
-  // Map categories to appropriate icons
-  const getIconForCategory = () => {
-    switch (category.toLowerCase()) {
-      case "personality":
-        return <FileText className="w-12 h-12 text-primary" />;
-      case "intelligence":
-        return <BarChart3 className="w-12 h-12 text-primary" />;
-      case "career":
-        return <GraduationCap className="w-12 h-12 text-primary" />;
-      default:
-        return <BookOpen className="w-12 h-12 text-primary" />;
+const TestCard: React.FC<TestCardProps> = ({ title, description, category }) => {
+  // Get icon based on test category
+  const getTestIcon = () => {
+    if (category.includes("شخصیت") || category.includes("Personality")) {
+      return <Brain size={28} className="text-primary" />;
+    } else if (category.includes("هوش") || category.includes("Intelligence")) {
+      return <BookOpen size={28} className="text-primary" />;
+    } else if (category.includes("شغل") || category.includes("Career")) {
+      return <Briefcase size={28} className="text-primary" />;
+    } else {
+      return <Heart size={28} className="text-primary" />;
     }
   };
 
+  const { direction } = useLanguage();
+
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md group animate-scale-in">
-      <div className="overflow-hidden aspect-video relative flex items-center justify-center bg-black/5 p-6">
-        {getIconForCategory()}
-      </div>
-      
-      <CardHeader>
-        <div className="text-sm text-primary mb-1">{category}</div>
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription className="line-clamp-2">
-          {description}
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {translations.startTest}
-        </p>
+    <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-white rounded-xl`}>
+      <CardContent className="p-6">
+        <div className="flex flex-row items-start gap-3 mb-3">
+          <div className="w-10 h-10 flex-shrink-0 rounded-full bg-black/5 flex items-center justify-center">
+            {getTestIcon()}
+          </div>
+          <h3 className="text-lg font-bold">{title}</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </CardContent>
-      
-      <CardFooter>
-        <Button className="w-full">
-          {translations.startTest}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

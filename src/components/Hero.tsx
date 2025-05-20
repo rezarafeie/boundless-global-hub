@@ -9,7 +9,7 @@ interface HeroProps {
   ctaText: string;
   ctaLink: string;
   image?: string;
-  backgroundType?: "gradient" | "wave" | "dots" | "image";
+  backgroundType?: "gradient" | "wave" | "dots" | "image" | "glow";
 }
 
 const Hero = ({ 
@@ -18,7 +18,7 @@ const Hero = ({
   ctaText, 
   ctaLink, 
   image,
-  backgroundType = "gradient" 
+  backgroundType = "glow" 
 }: HeroProps) => {
   const { direction } = useLanguage();
 
@@ -57,14 +57,25 @@ const Hero = ({
         </div>
       )}
       
+      {backgroundType === "glow" && (
+        <>
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="glow-circle glow-circle-1"></div>
+            <div className="glow-circle glow-circle-2"></div>
+            <div className="glow-circle glow-circle-3"></div>
+          </div>
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[80px] z-0"></div>
+        </>
+      )}
+      
       <div className="container relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          {/* Text Content */}
-          <div className={`space-y-6 text-center md:text-${direction === "rtl" ? "right" : "left"}`}>
+        <div className="flex flex-col items-center text-center">
+          {/* Text Content - Now Center Aligned */}
+          <div className="space-y-6 max-w-3xl mx-auto">
             <h1 className="font-bold tracking-tighter text-4xl md:text-5xl lg:text-6xl animate-slide-down text-balance">
               {title}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground animate-slide-down animation-delay-200 max-w-md">
+            <p className="text-lg md:text-xl text-muted-foreground animate-slide-down animation-delay-200 max-w-2xl mx-auto">
               {subtitle}
             </p>
             <div className="animate-slide-down animation-delay-400">
@@ -75,25 +86,6 @@ const Hero = ({
               </Button>
             </div>
           </div>
-          
-          {/* Visual Element */}
-          <div className="hidden md:block">
-            {image ? (
-              <div className="relative aspect-square md:aspect-video w-full rounded-xl overflow-hidden animate-scale-in">
-                <img
-                  src={image}
-                  alt="Hero"
-                  className="object-cover w-full h-full rounded-xl shadow-lg"
-                />
-              </div>
-            ) : (
-              <div className="relative w-full aspect-square md:aspect-video">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-black/5 animate-float"></div>
-                <div className="absolute top-1/4 left-1/3 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-black/5 animate-float animation-delay-200"></div>
-                <div className="absolute bottom-1/4 right-1/3 transform translate-x-1/2 translate-y-1/2 w-48 h-48 rounded-full bg-black/5 animate-float animation-delay-400"></div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>
@@ -101,4 +93,3 @@ const Hero = ({
 };
 
 export default Hero;
-
