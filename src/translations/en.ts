@@ -10,6 +10,7 @@ const enTranslations = {
   startLearning: "Start Learning",
   startTest: "Start Test",
   startCourse: "Start Course",
+  startFreeCourse: "Start Free Course",
   home: "Home",
   courses: "Courses",
   paidCourses: "Premium Courses",
@@ -170,7 +171,6 @@ const enTranslations = {
   // Footer
   footerCopyright: "© All rights reserved for Rafiei Academy.",
   footerDesc: "Rafiei Academy, the reference for boundless business education and foreign currency income",
-  courses: "Courses",
   aboutUs: "About Us",
   contactUs: "Contact Us",
   faq: "FAQ",

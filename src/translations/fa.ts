@@ -10,6 +10,7 @@ const faTranslations = {
   startLearning: "شروع یادگیری",
   startTest: "شروع آزمون",
   startCourse: "شروع دوره",
+  startFreeCourse: "شروع دوره رایگان",
   home: "خانه",
   courses: "دوره‌ها",
   paidCourses: "دوره‌های ویژه",
@@ -170,7 +171,6 @@ const faTranslations = {
   // Footer
   footerCopyright: "© تمامی حقوق برای آکادمی رفیعی محفوظ است.",
   footerDesc: "آکادمی رفیعی، مرجع آموزش کسب‌وکارهای بدون مرز و کسب درآمد ارزی",
-  courses: "دوره‌ها",
   aboutUs: "درباره ما",
   contactUs: "تماس با ما",
   faq: "سوالات متداول",

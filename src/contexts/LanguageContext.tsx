@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { en } from "@/translations/en";
-import { fa } from "@/translations/fa";
+import en from "@/translations/en";
+import fa from "@/translations/fa";
 
 type Language = "en" | "fa";
 type Direction = "ltr" | "rtl";
@@ -75,4 +75,3 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     </LanguageContext.Provider>
   );
 };
-

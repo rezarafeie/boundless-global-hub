@@ -1,11 +1,13 @@
 
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface CourseStatusBadgeProps {
   status: "active" | "upcoming" | "past" | "free" | "paid";
+  className?: string;
 }
 
-const CourseStatusBadge: React.FC<CourseStatusBadgeProps> = ({ status }) => {
+const CourseStatusBadge: React.FC<CourseStatusBadgeProps> = ({ status, className }) => {
   const getStatusStyles = () => {
     switch (status) {
       case "active":
@@ -41,7 +43,7 @@ const CourseStatusBadge: React.FC<CourseStatusBadgeProps> = ({ status }) => {
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles()}`}>
+    <span className={cn(`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles()}`, className)}>
       {getStatusText()}
     </span>
   );
