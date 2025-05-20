@@ -4,7 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X, Clock, Award, Users, FileCheck } from "lucide-react";
+import { Check, X, Clock, Award, Users, FileCheck, BookOpen, DollarSign, GraduationCap, Star, Code, Globe } from "lucide-react";
 import AuthModal from "@/components/Auth/AuthModal";
 
 // Countdown target date (2 months from now as an example)
@@ -47,19 +47,16 @@ const BoundlessLanding = () => {
     {
       name: "سارا احمدی",
       role: "طراح گرافیک",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
       content: "این دوره به من کمک کرد تا کسب و کار طراحی خودم را بین‌المللی کنم. الان برای مشتریان خارجی کار می‌کنم و درآمد دلاری دارم."
     },
     {
       name: "علی محمدی",
       role: "برنامه‌نویس",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
       content: "با مفاهیم دراپ‌سرویسینگ آشنا شدم و توانستم یک کسب و کار خدماتی راه‌اندازی کنم. آموزش‌ها واقعاً کاربردی و قابل اجرا هستند."
     },
     {
       name: "مریم کریمی",
       role: "دانشجو",
-      image: "https://images.unsplash.com/photo-1619895862022-09114b41f16f?auto=format&fit=crop&w=150&q=80",
       content: "حتی به عنوان یک دانشجو، توانستم با روش‌های این دوره یک محصول دیجیتال درست کنم و درآمد غیرفعال داشته باشم. کاملاً شیوه فکر کردنم عوض شد."
     }
   ];
@@ -82,6 +79,25 @@ const BoundlessLanding = () => {
       question: translations.boundlessLandingFAQ4Q,
       answer: translations.boundlessLandingFAQ4A
     }
+  ];
+
+  // Instructor data
+  const instructor = {
+    name: "دکتر مهدی رفیعی",
+    role: "متخصص کارآفرینی و کسب‌وکارهای جهانی",
+    bio: "بیش از 10 سال تجربه در ایجاد کسب‌وکارهای اینترنتی موفق و کمک به صدها کارآفرین برای کسب درآمد ارزی"
+  };
+
+  // Course modules
+  const courseModules = [
+    "تفکر بدون مرز و ذهنیت کارآفرینی جهانی",
+    "آشنایی با بازارهای بین‌المللی و فرصت‌های کسب درآمد",
+    "اصول دراپ‌شیپینگ و راه‌اندازی فروشگاه آنلاین",
+    "دراپ‌سرویسینگ و ارائه خدمات به بازار جهانی",
+    "تولید محصولات دیجیتال با هزینه صفر",
+    "بازاریابی محصولات و خدمات در بازارهای خارجی",
+    "روش‌های دریافت پول از مشتریان بین‌المللی",
+    "اتوماسیون و مقیاس‌پذیری کسب و کار"
   ];
 
   return (
@@ -149,17 +165,13 @@ const BoundlessLanding = () => {
             </div>
             
             <div className="relative">
-              <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xl border border-black/10">
+              <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xl border border-black/10 bg-black/5 flex items-center justify-center">
+                <GraduationCap size={80} className="text-black/50" />
                 <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-black/80 flex items-center justify-center">
                     <div className="w-0 h-0 border-y-8 border-y-transparent border-l-12 border-l-white ml-1"></div>
                   </div>
                 </div>
-                <img 
-                  src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80"
-                  alt="Course Preview"
-                  className="w-full h-full object-cover"
-                />
               </div>
               
               {/* Floating Element */}
@@ -260,6 +272,38 @@ const BoundlessLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Course Modules */}
+      <section className="bg-black/5 py-20">
+        <div className="container">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            سرفصل‌های دوره
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {courseModules.map((module, index) => (
+              <div key={index} className="flex items-start gap-4 bg-white p-6 rounded-xl shadow-sm">
+                <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="font-medium">{module}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-10 text-center">
+            <Button 
+              size="lg" 
+              className="bg-black hover:bg-black/90 text-white rounded-full"
+              onClick={() => setShowAuthModal(true)}
+            >
+              {translations.boundlessLandingStartCourse}
+            </Button>
+          </div>
+        </div>
+      </section>
       
       {/* What You'll Learn */}
       <section className="bg-black text-white py-20">
@@ -331,6 +375,24 @@ const BoundlessLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Instructor Section */}
+      <section className="bg-white py-20">
+        <div className="container">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            مدرس دوره
+          </h2>
+          
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="w-24 h-24 rounded-full bg-black/5 mx-auto mb-6 flex items-center justify-center">
+              <Users size={40} className="text-black/60" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">{instructor.name}</h3>
+            <p className="text-sm text-gray-600 mb-4">{instructor.role}</p>
+            <p className="text-gray-700">{instructor.bio}</p>
+          </div>
+        </div>
+      </section>
       
       {/* Course Bonuses */}
       <section className="bg-white py-20">
@@ -345,13 +407,16 @@ const BoundlessLanding = () => {
                 <span className="bg-black text-white text-xs px-2 py-1 rounded-full self-start mb-4">
                   بونوس ۱
                 </span>
-                <h3 className="text-xl font-medium mb-2">
+                <div className="w-12 h-12 rounded-full bg-white mx-auto mb-4 flex items-center justify-center">
+                  <Star size={24} className="text-black/70" />
+                </div>
+                <h3 className="text-xl font-medium mb-2 text-center">
                   {translations.boundlessLandingBonus1}
                 </h3>
-                <p className="text-sm text-gray-600 flex-grow">
+                <p className="text-sm text-gray-600 flex-grow text-center">
                   با این دوره یاد می‌گیرید چگونه با کمک هوش مصنوعی محصولات دیجیتال تولید کنید و به صورت غیرفعال کسب درآمد کنید.
                 </p>
-                <div className="mt-4">
+                <div className="mt-4 text-center">
                   <span className="text-sm text-gray-500 line-through">ارزش: ۲۰ دلار</span>
                   <span className="text-sm bg-black text-white px-2 py-1 rounded-full ml-2">رایگان</span>
                 </div>
@@ -363,13 +428,16 @@ const BoundlessLanding = () => {
                 <span className="bg-black text-white text-xs px-2 py-1 rounded-full self-start mb-4">
                   بونوس ۲
                 </span>
-                <h3 className="text-xl font-medium mb-2">
+                <div className="w-12 h-12 rounded-full bg-white mx-auto mb-4 flex items-center justify-center">
+                  <FileCheck size={24} className="text-black/70" />
+                </div>
+                <h3 className="text-xl font-medium mb-2 text-center">
                   {translations.boundlessLandingBonus2}
                 </h3>
-                <p className="text-sm text-gray-600 flex-grow">
+                <p className="text-sm text-gray-600 flex-grow text-center">
                   با یکی از ارزیابی‌های حرفه‌ای ما، نقاط قوت و ضعف شخصیتی خود را بشناسید و مسیر شغلی مناسب خود را پیدا کنید.
                 </p>
-                <div className="mt-4">
+                <div className="mt-4 text-center">
                   <span className="text-sm text-gray-500 line-through">ارزش: ۱۵ دلار</span>
                   <span className="text-sm bg-black text-white px-2 py-1 rounded-full ml-2">رایگان</span>
                 </div>
@@ -381,13 +449,16 @@ const BoundlessLanding = () => {
                 <span className="bg-black text-white text-xs px-2 py-1 rounded-full self-start mb-4">
                   بونوس ۳
                 </span>
-                <h3 className="text-xl font-medium mb-2">
+                <div className="w-12 h-12 rounded-full bg-white mx-auto mb-4 flex items-center justify-center">
+                  <BookOpen size={24} className="text-black/70" />
+                </div>
+                <h3 className="text-xl font-medium mb-2 text-center">
                   {translations.boundlessLandingBonus3}
                 </h3>
-                <p className="text-sm text-gray-600 flex-grow">
+                <p className="text-sm text-gray-600 flex-grow text-center">
                   یک راهنمای گام به گام برای کسب اولین درآمد دلاری آنلاین، از صفر تا صد با جزئیات اجرایی دقیق.
                 </p>
-                <div className="mt-4">
+                <div className="mt-4 text-center">
                   <span className="text-sm text-gray-500 line-through">ارزش: ۱۰ دلار</span>
                   <span className="text-sm bg-black text-white px-2 py-1 rounded-full ml-2">رایگان</span>
                 </div>
@@ -409,12 +480,8 @@ const BoundlessLanding = () => {
               <Card key={index} className="border-black/5 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full overflow-hidden">
-                      <img 
-                        src={testimonial.image} 
-                        alt={testimonial.name} 
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-black/5 flex items-center justify-center">
+                      <User size={24} className="text-black/60" />
                     </div>
                     <div>
                       <h3 className="font-medium">{testimonial.name}</h3>
@@ -528,4 +595,3 @@ const BoundlessLanding = () => {
 };
 
 export default BoundlessLanding;
-

@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import AuthModal from "./Auth/AuthModal";
+import { BookOpen, Code, DollarSign, Graduation, GraduationCap, Search, Star } from "lucide-react";
 
 interface CourseCardProps {
   title: string;
@@ -12,7 +13,7 @@ interface CourseCardProps {
   benefits: string;
   outcome: string;
   isPaid?: boolean;
-  image?: string;
+  englishTitle?: string;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -21,23 +22,39 @@ const CourseCard: React.FC<CourseCardProps> = ({
   benefits,
   outcome,
   isPaid = false,
-  image,
+  englishTitle = "",
 }) => {
   const { translations } = useLanguage();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Get an appropriate icon based on the course title
+  const getCourseIcon = () => {
+    if (title.includes("متاورس") || title.includes("Metaverse")) {
+      return <Code size={36} className="text-primary" />;
+    } else if (title.includes("اینستاگرام") || title.includes("Instagram")) {
+      return <Search size={36} className="text-primary" />;
+    } else if (title.includes("ثروت") || title.includes("Wealth")) {
+      return <DollarSign size={36} className="text-primary" />;
+    } else if (title.includes("بدون مرز") || title.includes("Boundless")) {
+      return <GraduationCap size={36} className="text-primary" />;
+    } else if (title.includes("غیرفعال") || title.includes("Passive")) {
+      return <Star size={36} className="text-primary" />;
+    } else {
+      return <BookOpen size={36} className="text-primary" />;
+    }
+  };
+
   return (
     <>
       <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-md group h-full flex flex-col bg-white">
-        <div className="overflow-hidden aspect-video relative">
-          <img
-            src={image || "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80"}
-            alt={title}
-            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-          />
+        <div className="overflow-hidden aspect-video relative bg-black/5 flex items-center justify-center">
+          {getCourseIcon()}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent flex items-end">
             <div className="p-6">
               <h3 className="text-xl font-bold text-white">{title}</h3>
+              {englishTitle && (
+                <p className="text-sm text-white/80">{englishTitle}</p>
+              )}
             </div>
           </div>
           <Badge
@@ -68,7 +85,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
             onClick={() => setShowAuthModal(true)}
           >
-            {translations.startCourse}
+            {isPaid ? translations.startCourse : translations.startFreeCourse}
           </Button>
         </CardFooter>
       </Card>
@@ -84,4 +101,3 @@ const CourseCard: React.FC<CourseCardProps> = ({
 };
 
 export default CourseCard;
-

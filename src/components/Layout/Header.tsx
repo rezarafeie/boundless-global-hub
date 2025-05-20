@@ -53,12 +53,12 @@ const Header = () => {
             <Globe size={20} />
           </Button>
           
-          {/* Login/Register Button */}
+          {/* Login/Register Button - Desktop Only */}
           <Button
             variant="default"
             size="sm"
             onClick={() => setAuthModalOpen(true)}
-            className="rounded-full bg-black text-white hover:bg-black/90"
+            className="rounded-full bg-black text-white hover:bg-black/90 hidden md:flex"
           >
             {translations.loginRegister}
           </Button>
@@ -107,6 +107,19 @@ const Header = () => {
             >
               {translations.assessmentCenter}
             </Link>
+            
+            {/* Login/Register Button - Mobile Menu */}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                setAuthModalOpen(true);
+                setIsMenuOpen(false);
+              }}
+              className="w-full rounded-full bg-black text-white hover:bg-black/90 mt-2"
+            >
+              {translations.loginRegister}
+            </Button>
           </nav>
         </div>
       )}
@@ -123,4 +136,3 @@ const Header = () => {
 };
 
 export default Header;
-
