@@ -26,21 +26,21 @@ const AIAssistantCTA = () => {
             <div className="h-8 w-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
               <MessageCircle size={16} className="text-white" />
             </div>
-            <p className="text-sm">{translations.aiAssistantFeature1}</p>
+            <p className="text-sm">{translations.aiAssistantFeature1Desc}</p>
           </div>
           
           <div className="flex items-start gap-3">
             <div className="h-8 w-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
               <MessageCircle size={16} className="text-white" />
             </div>
-            <p className="text-sm">{translations.aiAssistantFeature2}</p>
+            <p className="text-sm">{translations.aiAssistantFeature2Desc}</p>
           </div>
           
           <div className="flex items-start gap-3">
             <div className="h-8 w-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
               <MessageCircle size={16} className="text-white" />
             </div>
-            <p className="text-sm">{translations.aiAssistantFeature3}</p>
+            <p className="text-sm">{translations.aiAssistantFeature3Desc}</p>
           </div>
         </div>
       </CardContent>

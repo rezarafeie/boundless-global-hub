@@ -51,17 +51,17 @@ const AIAssistantView = ({ language: propLanguage }: AIAssistantViewProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                 <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
                   <h3 className="font-semibold mb-3 text-xl">{translations.aiAssistantFeature1Title}</h3>
-                  <p className="text-gray-200">{translations.aiAssistantFeature1}</p>
+                  <p className="text-gray-200">{translations.aiAssistantFeature1Desc}</p>
                 </div>
                 
                 <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
                   <h3 className="font-semibold mb-3 text-xl">{translations.aiAssistantFeature2Title}</h3>
-                  <p className="text-gray-200">{translations.aiAssistantFeature2}</p>
+                  <p className="text-gray-200">{translations.aiAssistantFeature2Desc}</p>
                 </div>
                 
                 <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
                   <h3 className="font-semibold mb-3 text-xl">{translations.aiAssistantFeature3Title}</h3>
-                  <p className="text-gray-200">{translations.aiAssistantFeature3}</p>
+                  <p className="text-gray-200">{translations.aiAssistantFeature3Desc}</p>
                 </div>
                 
                 <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">

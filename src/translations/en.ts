@@ -145,13 +145,13 @@ const enTranslations = {
   aiAssistantAction: "Use AI Assistant",
   
   aiAssistantFeature1Title: "Smart Responses",
-  aiFeature1Desc: "Answering your questions using advanced artificial intelligence",
+  aiAssistantFeature1Desc: "Answering your questions using advanced artificial intelligence",
   
   aiAssistantFeature2Title: "Exclusive Resources",
-  aiFeature2Desc: "Access to Rafiei Academy exclusive resources and information",
+  aiAssistantFeature2Desc: "Access to Rafiei Academy exclusive resources and information",
   
   aiAssistantFeature3Title: "Personalized Guidance",
-  aiFeature3Desc: "Providing solutions tailored to your needs and goals",
+  aiAssistantFeature3Desc: "Providing solutions tailored to your needs and goals",
   
   // Landing pages
   boundlessLandingTitle: "Boundless Program",
@@ -176,7 +176,40 @@ const enTranslations = {
   faq: "FAQ",
   terms: "Terms & Conditions",
   privacy: "Privacy Policy",
-  blog: "Blog"
+  blog: "Blog",
+  
+  // Auth related messages
+  error: "Error",
+  enterEmail: "Please enter your email",
+  enterEmailOrPhone: "Enter your email or mobile number",
+  emailOrPhonePlaceholder: "example@mail.com | 09123456789",
+  continue: "Continue",
+  success: "Success",
+  registrationSuccess: "Registration successful",
+  enterPassword: "Please enter your password",
+  loginSuccess: "Login successful",
+  accessCourse: "Course Access",
+  fillAllFields: "Please fill all fields",
+  welcomeBack: "Welcome back!",
+  password: "Password",
+  passwordPlaceholder: "Enter your password",
+  firstName: "First Name",
+  firstNamePlaceholder: "Enter your first name",
+  lastName: "Last Name",
+  lastNamePlaceholder: "Enter your last name",
+  emailOrPhone: "Email or Phone",
+  email: "Email",
+  back: "Back",
+  
+  // AI Assistant page
+  aiAssistantName: "Rafiei AI Assistant",
+  aiAssistantLongDescription: "Get personalized guidance for your business and career goals with our advanced AI assistant, trained on Rafiei Academy's exclusive knowledge base.",
+  startAssistant: "Chat with Assistant",
+  aiFeature1: "Business Strategy",
+  aiFeature2: "Career Growth",
+  aiFeature3: "Personal Development",
+  aiAssistantFeature4Title: "24/7 Availability",
+  aiAssistantFeature4: "Access guidance whenever you need, day or night"
 };
 
 export default enTranslations;

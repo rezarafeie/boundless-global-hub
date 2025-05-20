@@ -145,13 +145,13 @@ const faTranslations = {
   aiAssistantAction: "استفاده از دستیار هوشمند",
   
   aiAssistantFeature1Title: "پاسخگویی هوشمند",
-  aiFeature1Desc: "پاسخ به سوالات شما با استفاده از هوش مصنوعی پیشرفته",
+  aiAssistantFeature1Desc: "پاسخ به سوالات شما با استفاده از هوش مصنوعی پیشرفته",
   
   aiAssistantFeature2Title: "منابع اختصاصی",
-  aiFeature2Desc: "دسترسی به منابع و اطلاعات اختصاصی آکادمی رفیعی",
+  aiAssistantFeature2Desc: "دسترسی به منابع و اطلاعات اختصاصی آکادمی رفیعی",
   
   aiAssistantFeature3Title: "راهنمایی شخصی‌سازی شده",
-  aiFeature3Desc: "ارائه راهکارهای متناسب با نیازها و اهداف شما",
+  aiAssistantFeature3Desc: "ارائه راهکارهای متناسب با نیازها و اهداف شما",
   
   // Landing pages
   boundlessLandingTitle: "برنامه بدون مرز",
@@ -176,7 +176,40 @@ const faTranslations = {
   faq: "سوالات متداول",
   terms: "قوانین و مقررات",
   privacy: "حریم خصوصی",
-  blog: "مجله"
+  blog: "مجله",
+  
+  // Auth related messages
+  error: "خطا",
+  enterEmail: "لطفا ایمیل خود را وارد کنید",
+  enterEmailOrPhone: "ایمیل یا شماره موبایل خود را وارد کنید",
+  emailOrPhonePlaceholder: "example@mail.com | 09123456789",
+  continue: "ادامه",
+  success: "موفقیت",
+  registrationSuccess: "ثبت‌نام با موفقیت انجام شد",
+  enterPassword: "لطفا رمز عبور خود را وارد کنید",
+  loginSuccess: "ورود با موفقیت انجام شد",
+  accessCourse: "دسترسی به دوره",
+  fillAllFields: "لطفاً تمام فیلدها را تکمیل کنید",
+  welcomeBack: "خوش آمدید!",
+  password: "رمز عبور",
+  passwordPlaceholder: "رمز عبور خود را وارد کنید",
+  firstName: "نام",
+  firstNamePlaceholder: "نام خود را وارد کنید",
+  lastName: "نام خانوادگی",
+  lastNamePlaceholder: "نام خانوادگی خود را وارد کنید",
+  emailOrPhone: "ایمیل یا موبایل",
+  email: "ایمیل",
+  back: "بازگشت",
+  
+  // AI Assistant page
+  aiAssistantName: "دستیار هوشمند رفیعی",
+  aiAssistantLongDescription: "با دستیار هوشمند پیشرفته ما که بر اساس پایگاه دانش اختصاصی آکادمی رفیعی آموزش دیده است، راهنمایی شخصی‌سازی شده برای اهداف کسب‌وکار و حرفه‌ای خود دریافت کنید.",
+  startAssistant: "گفتگو با دستیار",
+  aiFeature1: "استراتژی کسب‌وکار",
+  aiFeature2: "پیشرفت حرفه‌ای",
+  aiFeature3: "توسعه فردی",
+  aiAssistantFeature4Title: "دسترسی ۲۴/۷",
+  aiAssistantFeature4: "هر زمان که نیاز دارید، روز یا شب، به راهنمایی دسترسی داشته باشید"
 };
 
 export default faTranslations;
