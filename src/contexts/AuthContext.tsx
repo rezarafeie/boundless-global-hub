@@ -1,14 +1,9 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
-
-// Add the missing js-cookie package
-<lov-add-dependency>js-cookie@latest</lov-add-dependency>
-
 import Cookies from 'js-cookie';
 
 interface AuthContextType {

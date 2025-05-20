@@ -1,4 +1,3 @@
-
 // Add to existing translations
 export const fa = {
   // General translations
@@ -152,4 +151,34 @@ export const fa = {
   beginner: "مبتدی",
   intermediate: "متوسط",
   advanced: "پیشرفته",
+  
+  // Additional keys for components that were missing
+  activeStatus: "فعال",
+  upcomingStatus: "به زودی",
+  completedStatus: "تکمیل شده",
+  startCourse: "شروع دوره",
+  startFreeCourse: "شروع دوره رایگان",
+  websiteName: "آکادمی رفیعی",
+  footerDesc: "توانمندسازی ذهن‌ها از طریق آموزش حرفه‌ای و تجربه‌های یادگیری تحول‌آفرین.",
+  myAccount: "حساب کاربری من",
+  metaverseEmpire: "امپراتوری متاورس",
+  wealthCourse: "ثروت‌سازی",
+  footerCopyright: "© 2023 آکادمی رفیعی. تمام حقوق محفوظ است.",
+  terms: "قوانین استفاده",
+  privacy: "حریم خصوصی",
+  freeCoursesSubtitle: "مهارت‌های ارزشمند را بدون هزینه یاد بگیرید",
+  coursesTitle: "دوره‌های رایگان موجود",
+  coursesSubtitle: "سفر یادگیری خود را امروز آغاز کنید",
+  changeProject: "پروژه تغییر",
+  changeProjectDesc: "یاد بگیرید چگونه تغییرات را به طور موثر مدیریت کنید",
+  changeProjectBenefits: "اصول مدیریت تغییر را به خوبی فرا بگیرید",
+  changeProjectOutcome: "تغییرات را با موفقیت در سازمان خود پیاده‌سازی کنید",
+  americanBusiness: "تجارت آمریکایی",
+  americanBusinessDesc: "با شیوه‌های تجاری آمریکایی آشنا شوید",
+  americanBusinessBenefits: "درباره فرهنگ تجاری و آداب معاشرت آمریکایی بیاموزید",
+  americanBusinessOutcome: "با اعتماد به نفس در محیط‌های تجاری آمریکایی فعالیت کنید",
+  startLearning: "شروع یادگیری",
+  aiAssistantFeature1Desc: "سوال بپرسید و در هر زمان کمک فوری دریافت کنید",
+  aiAssistantFeature2Desc: "توصیه‌های شخصی‌سازی شده بر اساس سبک یادگیری شما دریافت کنید",
+  aiAssistantFeature3Desc: "دانش خود را با سوالات تمرینی تولید شده توسط هوش مصنوعی بیازمایید"
 };

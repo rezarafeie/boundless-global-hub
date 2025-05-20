@@ -152,6 +152,9 @@ export const en = {
   aiAssistantFeature3Title: "Practice Exercises",
   aiFeature3Desc: "Test your knowledge with AI-generated practice questions",
   aiAssistantAction: "Try AI Assistant Now",
+  aiAssistantFeature1Desc: "Ask questions and get instant help anytime",
+  aiAssistantFeature2Desc: "Receive tailored recommendations based on your learning style",
+  aiAssistantFeature3Desc: "Test your knowledge with AI-generated practice questions",
   
   // Assessment Center
   personalityTests: "Personality Tests",
@@ -190,4 +193,37 @@ export const en = {
   beginner: "Beginner",
   intermediate: "Intermediate",
   advanced: "Advanced",
+  
+  // Status labels
+  activeStatus: "Active",
+  upcomingStatus: "Upcoming",
+  completedStatus: "Completed",
+  
+  // Course card actions
+  startCourse: "Start Course",
+  startFreeCourse: "Start Free Course",
+  
+  // Footer related
+  websiteName: "Rafiei Academy",
+  footerDesc: "Empowering minds through professional education and transformative learning experiences.",
+  myAccount: "My Account",
+  metaverseEmpire: "Metaverse Empire",
+  wealthCourse: "Wealth Building",
+  footerCopyright: "© 2023 Rafiei Academy. All rights reserved.",
+  terms: "Terms of Service",
+  privacy: "Privacy Policy",
+  
+  // Free courses page
+  freeCoursesSubtitle: "Learn valuable skills without any cost",
+  coursesTitle: "Available Free Courses",
+  coursesSubtitle: "Start your learning journey today",
+  changeProject: "Change Project",
+  changeProjectDesc: "Learn how to manage change effectively",
+  changeProjectBenefits: "Master the principles of change management",
+  changeProjectOutcome: "Successfully implement changes in your organization",
+  americanBusiness: "American Business",
+  americanBusinessDesc: "Understand American business practices",
+  americanBusinessBenefits: "Learn about American business culture and etiquette",
+  americanBusinessOutcome: "Navigate American business environments with confidence",
+  startLearning: "Start Learning"
 };
