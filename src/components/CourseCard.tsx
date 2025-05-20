@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BookOpen, Code, DollarSign, GraduationCap, Search, Star } from "lucide-react";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface CourseCardProps {
@@ -15,6 +15,10 @@ interface CourseCardProps {
   isPaid?: boolean;
   englishTitle?: string;
   slug?: string;
+  instructor?: string;
+  instructorLink?: string;
+  level?: string;
+  cta?: string;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -24,7 +28,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
   outcome,
   isPaid = false,
   englishTitle = "",
-  slug = ""
+  slug = "",
+  instructor = "",
+  instructorLink = "",
+  level = "",
+  cta = ""
 }) => {
   const { translations } = useLanguage();
 
@@ -87,13 +95,31 @@ const CourseCard: React.FC<CourseCardProps> = ({
               {outcome}
             </div>
           </div>
+          
+          {instructor && (
+            <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
+              <User size={14} className="mr-1" />
+              {instructorLink ? (
+                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
+                  {instructor}
+                </Link>
+              ) : (
+                <span>{instructor}</span>
+              )}
+              {level && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {level}
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
         
         <CardFooter className="p-4 pt-0">
           <Button 
             className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
           >
-            {isPaid ? translations.startCourse : translations.startFreeCourse}
+            {cta || (isPaid ? translations.startCourse : translations.startFreeCourse)}
           </Button>
         </CardFooter>
       </Card>
