@@ -11,6 +11,7 @@ export const fa = {
   startLearning: "شروع یادگیری",
   startTest: "شروع آزمون",
   startCourse: "شروع دوره",
+  startFreeCourse: "شروع دوره رایگان",
 
   // Authentication
   login: "ورود",
@@ -42,6 +43,16 @@ export const fa = {
   accessCourse: "دسترسی به دوره",
   creating: "در حال ایجاد حساب...",
   invalidCode: "لطفا کد تایید ۶ رقمی معتبر وارد کنید",
+  enterEmailOrPhone: "ایمیل یا شماره موبایل خود را وارد کنید",
+  emailOrPhone: "ایمیل یا موبایل",
+  emailOrPhonePlaceholder: "example@email.com یا ۰۹۱۲۳۴۵۶۷۸۹",
+  enterPassword: "لطفا رمز عبور خود را وارد کنید",
+  passwordPlaceholder: "رمز عبور خود را وارد کنید",
+  firstNamePlaceholder: "نام خود را وارد کنید",
+  lastNamePlaceholder: "نام خانوادگی خود را وارد کنید",
+  continue: "ادامه",
+  fillAllFields: "لطفا همه فیلدها را پر کنید",
+  success: "موفقیت",
   
   // Navigation
   home: "خانه",
@@ -200,4 +211,3 @@ export const fa = {
   boundlessLandingStickyOffer: "تنها با ۷ دلار مسیر جهانی‌ات رو شروع کن",
   boundlessLandingWhatLearn: "آنچه یاد خواهید گرفت",
 };
-

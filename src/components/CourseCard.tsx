@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import AuthModal from "./Auth/AuthModal";
-import { BookOpen, Code, DollarSign, Graduation, GraduationCap, Search, Star } from "lucide-react";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star } from "lucide-react";
 
 interface CourseCardProps {
   title: string;

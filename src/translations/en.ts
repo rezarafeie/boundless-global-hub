@@ -11,6 +11,7 @@ export const en = {
   startLearning: "Start Learning",
   startTest: "Start Test",
   startCourse: "Start Course",
+  startFreeCourse: "Start Free Course",
 
   // Authentication
   login: "Login",
@@ -42,6 +43,16 @@ export const en = {
   accessCourse: "Access Course",
   creating: "Creating Account...",
   invalidCode: "Please enter a valid 6-digit verification code",
+  enterEmailOrPhone: "Enter your email address or phone number",
+  emailOrPhone: "Email or Phone",
+  emailOrPhonePlaceholder: "example@email.com or +1234567890",
+  enterPassword: "Please enter your password",
+  passwordPlaceholder: "Enter your password",
+  firstNamePlaceholder: "Enter your first name",
+  lastNamePlaceholder: "Enter your last name",
+  continue: "Continue",
+  fillAllFields: "Please fill in all fields",
+  success: "Success",
   
   // Navigation
   home: "Home",
@@ -200,4 +211,3 @@ export const en = {
   boundlessLandingStickyOffer: "Start your global journey for just $7",
   boundlessLandingWhatLearn: "What You'll Learn",
 };
-
