@@ -5,11 +5,12 @@ import { fa } from "@/translations/fa";
 
 type Language = "en" | "fa";
 type Direction = "ltr" | "rtl";
+type TranslationType = typeof en | typeof fa;
 
 interface LanguageContextType {
   language: Language;
   direction: Direction;
-  translations: typeof en | typeof fa;
+  translations: TranslationType;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
 }
@@ -31,7 +32,7 @@ interface LanguageProviderProps {
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
   const [language, setLanguage] = useState<Language>("fa");
   const [direction, setDirection] = useState<Direction>("rtl");
-  const [translations, setTranslations] = useState(fa);
+  const [translations, setTranslations] = useState<TranslationType>(fa);
 
   useEffect(() => {
     // Check if language is stored in local storage

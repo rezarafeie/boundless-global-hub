@@ -26,6 +26,7 @@ import PaidCourseStart from "./pages/Course/PaidCourseStart";
 import Blog from "./pages/Blog";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import UserProfile from "./pages/Dashboard/UserProfile";
+import AIAssistant from "./pages/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -46,9 +47,7 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
               <Route path="/blog" element={<Blog />} />
-              
-              {/* AI Assistant Redirect */}
-              <Route path="/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
+              <Route path="/ai-assistant" element={<AIAssistant />} />
               
               {/* User Dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
@@ -75,7 +74,7 @@ const App = () => (
               <Route path="/en/courses" element={<EnglishCourseArchive />} />
               <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
               <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
-              <Route path="/en/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
+              <Route path="/en/ai-assistant" element={<AIAssistant language="en" />} />
               <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
               <Route path="/en/courses/instagram" element={<InstagramLanding />} />
               <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
