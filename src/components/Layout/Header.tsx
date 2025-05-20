@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Globe } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/components/ui/use-toast";
-import AuthModal from "../Auth/AuthModal";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-black/5 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -19,9 +17,16 @@ const Header = () => {
         <div className="flex items-center gap-2">
           <Link 
             to="/" 
-            className="text-xl font-bold tracking-tight"
+            className="flex items-center gap-2"
           >
-            {translations.websiteName}
+            <img 
+              src="/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" 
+              alt="Rafiei Academy" 
+              className="h-8 w-auto"
+            />
+            <span className="text-xl font-bold tracking-tight">
+              {translations.websiteName}
+            </span>
           </Link>
         </div>
         
@@ -60,7 +65,7 @@ const Header = () => {
           <Button
             variant="default"
             size="sm"
-            onClick={() => setAuthModalOpen(true)}
+            onClick={() => window.location.href = "/dashboard"}
             className="rounded-full bg-black text-white hover:bg-black/90 hidden md:flex"
           >
             {translations.loginRegister}
@@ -123,7 +128,7 @@ const Header = () => {
               variant="default"
               size="sm"
               onClick={() => {
-                setAuthModalOpen(true);
+                window.location.href = "/dashboard";
                 setIsMenuOpen(false);
               }}
               className="w-full rounded-full bg-black text-white hover:bg-black/90 mt-2"
@@ -133,14 +138,6 @@ const Header = () => {
           </nav>
         </div>
       )}
-
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        courseTitle=""
-        isPaid={false}
-      />
     </header>
   );
 };

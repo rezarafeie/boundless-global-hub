@@ -14,7 +14,6 @@ import EnglishCourseArchive from "./pages/en/CourseArchive";
 import EnglishAssessmentCenter from "./pages/en/AssessmentCenter";
 import PaidCourseView from "./pages/Course/PaidCourseView";
 import FreeCourseView from "./pages/Course/FreeCourseView";
-import AIAssistantView from "./pages/AIAssistant";
 import BoundlessLanding from "./pages/Courses/BoundlessLanding";
 import InstagramLanding from "./pages/Courses/InstagramLanding";
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
@@ -24,6 +23,7 @@ import Support from "./pages/Support";
 import FreeCourseStart from "./pages/Course/FreeCourseStart";
 import PaidCourseStart from "./pages/Course/PaidCourseStart";
 import Blog from "./pages/Blog";
+import Dashboard from "./pages/Dashboard/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -40,10 +40,16 @@ const App = () => (
             <Route path="/courses" element={<CourseArchive />} />
             <Route path="/assessment-center" element={<AssessmentCenter />} />
             <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
-            <Route path="/ai-assistant" element={<AIAssistantView />} />
             <Route path="/support" element={<Support />} />
             <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
             <Route path="/blog" element={<Blog />} />
+            
+            {/* AI Assistant Redirect */}
+            <Route path="/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
+            
+            {/* User Dashboard */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/panel" element={<Navigate to="/dashboard" replace />} />
             
             {/* Course Start Pages */}
             <Route path="/start/free-course" element={<FreeCourseStart />} />
@@ -194,12 +200,13 @@ const App = () => (
             <Route path="/en/courses" element={<EnglishCourseArchive />} />
             <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
             <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
-            <Route path="/en/ai-assistant" element={<AIAssistantView language="en" />} />
+            <Route path="/en/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
             <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
             <Route path="/en/courses/instagram" element={<InstagramLanding />} />
             <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
             <Route path="/en/support" element={<Support />} />
             <Route path="/en/blog" element={<Blog />} />
+            <Route path="/en/dashboard" element={<Dashboard />} />
             
             {/* Legacy redirects */}
             <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />
