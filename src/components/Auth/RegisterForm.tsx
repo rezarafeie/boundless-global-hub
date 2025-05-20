@@ -45,6 +45,7 @@ const RegisterForm = ({ onRegisterSuccess }: RegisterFormProps) => {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
+            className="rounded-md"
           />
         </div>
         
@@ -55,6 +56,7 @@ const RegisterForm = ({ onRegisterSuccess }: RegisterFormProps) => {
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             required
+            className="rounded-md"
           />
         </div>
       </div>
@@ -67,6 +69,7 @@ const RegisterForm = ({ onRegisterSuccess }: RegisterFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          className="rounded-md"
         />
       </div>
       
@@ -78,6 +81,7 @@ const RegisterForm = ({ onRegisterSuccess }: RegisterFormProps) => {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           required
+          className="rounded-md"
         />
       </div>
       
@@ -89,12 +93,13 @@ const RegisterForm = ({ onRegisterSuccess }: RegisterFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          className="rounded-md"
         />
       </div>
       
       <Button 
         type="submit" 
-        className="w-full bg-black hover:bg-gray-800 text-white"
+        className="w-full bg-black hover:bg-black/90 text-white rounded-full"
         disabled={isLoading}
       >
         {isLoading ? translations.creating : translations.register}

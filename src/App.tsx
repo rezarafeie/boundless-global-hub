@@ -17,6 +17,7 @@ import EnglishAssessmentCenter from "./pages/en/AssessmentCenter";
 import PaidCourseView from "./pages/Course/PaidCourseView";
 import FreeCourseView from "./pages/Course/FreeCourseView";
 import AIAssistantView from "./pages/AIAssistant";
+import BoundlessLanding from "./pages/Courses/BoundlessLanding";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/course/paid/:courseTitle" element={<PaidCourseView />} />
             <Route path="/course/free/:courseTitle" element={<FreeCourseView />} />
             <Route path="/ai-assistant" element={<AIAssistantView />} />
+            <Route path="/courses/boundless" element={<BoundlessLanding />} />
             
             {/* English Routes */}
             <Route path="/en" element={<EnglishHome />} />
@@ -45,6 +47,7 @@ const App = () => (
             <Route path="/en/course/paid/:courseTitle" element={<PaidCourseView language="en" />} />
             <Route path="/en/course/free/:courseTitle" element={<FreeCourseView language="en" />} />
             <Route path="/en/ai-assistant" element={<AIAssistantView language="en" />} />
+            <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
             
             {/* Redirects and Not Found */}
             <Route path="*" element={<NotFound />} />
@@ -56,3 +59,4 @@ const App = () => (
 );
 
 export default App;
+

@@ -39,7 +39,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     if (savedLanguage === "en" || savedLanguage === "fa") {
       setLanguage(savedLanguage);
     } else {
-      // Always default to Persian (Farsi)
+      // Default to Persian (Farsi)
       setLanguage("fa");
       localStorage.setItem("language", "fa");
     }
@@ -75,3 +75,4 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     </LanguageContext.Provider>
   );
 };
+

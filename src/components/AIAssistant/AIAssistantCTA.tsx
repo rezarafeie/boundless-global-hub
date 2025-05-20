@@ -10,7 +10,7 @@ const AIAssistantCTA = () => {
   
   return (
     <Card className="overflow-hidden border border-black/10 hover:border-black/20 transition-all shadow-lg hover:shadow-xl animate-scale-in">
-      <CardHeader className="bg-gradient-to-r from-gray-900 to-black text-white">
+      <CardHeader className="bg-black text-white">
         <div className="flex items-center gap-2 mb-2">
           <MessageCircle size={24} className="text-white" />
           <CardTitle>{translations.aiAssistantTitle}</CardTitle>
@@ -47,7 +47,7 @@ const AIAssistantCTA = () => {
       
       <CardFooter className="pt-0">
         <Button 
-          className="w-full bg-black hover:bg-gray-800 text-white transition-all"
+          className="w-full bg-black hover:bg-gray-800 text-white rounded-full"
           onClick={() => window.open("/ai-assistant", "_blank")}
         >
           {translations.aiAssistantAction}

@@ -31,8 +31,10 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     // Redirect based on course type
     if (isPaid) {
       window.location.href = "/course/paid/" + encodeURIComponent(courseTitle);
-    } else {
+    } else if (courseTitle) {
       window.location.href = "/course/free/" + encodeURIComponent(courseTitle);
+    } else {
+      onClose();
     }
   };
 
@@ -47,11 +49,13 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {translations.accessCourse}
+            {courseTitle ? translations.accessCourse : translations.loginRegister}
           </DialogTitle>
-          <DialogDescription>
-            {courseTitle} - {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-          </DialogDescription>
+          {courseTitle && (
+            <DialogDescription>
+              {courseTitle} - {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {showVerification ? (
@@ -92,3 +96,4 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
 };
 
 export default AuthModal;
+

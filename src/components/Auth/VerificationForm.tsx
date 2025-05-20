@@ -108,14 +108,14 @@ const VerificationForm = ({ method, contact, onVerified, onBack }: VerificationF
         <Button 
           type="button" 
           variant="outline" 
-          className="flex-1"
+          className="flex-1 rounded-full"
           onClick={onBack}
         >
           {translations.back}
         </Button>
         <Button 
           type="submit" 
-          className="flex-1 bg-black hover:bg-gray-800 text-white"
+          className="flex-1 bg-black hover:bg-black/90 text-white rounded-full"
           disabled={code.length !== 6}
         >
           {translations.verify}

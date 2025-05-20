@@ -21,7 +21,7 @@ const AIAssistantButton = ({
     <Button 
       variant={variant} 
       size={size} 
-      className={`group relative overflow-hidden ${className}`}
+      className={`group relative overflow-hidden rounded-full ${className}`}
       onClick={() => window.open("/ai-assistant", "_blank")}
     >
       <span className="flex items-center gap-2">

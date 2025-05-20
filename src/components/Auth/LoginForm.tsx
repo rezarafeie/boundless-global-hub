@@ -70,6 +70,7 @@ const LoginForm = ({ onLoginSuccess, onRequestVerification }: LoginFormProps) =>
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
               required={loginMethod === "email"}
+              className="rounded-md"
             />
           </div>
         </TabsContent>
@@ -84,6 +85,7 @@ const LoginForm = ({ onLoginSuccess, onRequestVerification }: LoginFormProps) =>
               onChange={(e) => setPhone(e.target.value)}
               placeholder="09123456789"
               required={loginMethod === "phone"}
+              className="rounded-md"
             />
           </div>
         </TabsContent>
@@ -98,6 +100,7 @@ const LoginForm = ({ onLoginSuccess, onRequestVerification }: LoginFormProps) =>
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required={usePassword}
+            className="rounded-md"
           />
         </div>
       )}
@@ -113,7 +116,7 @@ const LoginForm = ({ onLoginSuccess, onRequestVerification }: LoginFormProps) =>
         </Button>
       </div>
       
-      <Button type="submit" className="w-full bg-black hover:bg-gray-800 text-white">
+      <Button type="submit" className="w-full bg-black hover:bg-black/90 text-white rounded-full">
         {usePassword ? translations.login : translations.sendVerificationCode}
       </Button>
     </form>
