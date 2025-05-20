@@ -19,6 +19,8 @@ interface CourseCardProps {
   instructorLink?: string;
   level?: string;
   cta?: string;
+  status?: "active" | "upcoming" | "completed";
+  category?: "business" | "self-development" | "free";
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -32,7 +34,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
   instructor = "",
   instructorLink = "",
   level = "",
-  cta = ""
+  cta = "",
+  status,
+  category
 }) => {
   const { translations } = useLanguage();
 
@@ -59,22 +63,45 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Generate course URL
   const courseUrl = `/courses/${courseSlug}`;
 
+  // Get status badge color
+  const getStatusBadgeColor = () => {
+    switch(status) {
+      case "active":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "upcoming":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "completed":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      default:
+        return "";
+    }
+  };
+
   // The entire card is clickable
   return (
     <Link to={courseUrl} className="block h-full group">
       <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        <div className="p-4 flex items-center">
-          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
-            {getCourseIcon()}
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
+              {getCourseIcon()}
+            </div>
+            <div className="ml-3">
+              <Badge
+                variant={isPaid ? "default" : "outline"}
+                className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+              >
+                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
+              </Badge>
+            </div>
           </div>
-          <div className="ml-3">
-            <Badge
-              variant={isPaid ? "default" : "outline"}
-              className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
-            >
-              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
+          {status && (
+            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+              {status === "active" && translations.activeStatus}
+              {status === "upcoming" && translations.upcomingStatus}
+              {status === "completed" && translations.completedStatus}
             </Badge>
-          </div>
+          )}
         </div>
         
         <CardContent className="p-4 pt-0 flex-grow">

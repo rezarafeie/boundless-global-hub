@@ -24,7 +24,7 @@ const enTranslations = {
   paidCoursesSubtitle: "Advanced courses for professional development of your skills",
   freeCoursesTitle: "Free Courses",
   freeCoursesSubtitle: "Free courses to get familiar with basic concepts",
-  specialOffersTitle: "Special Offers", // Added special offers title
+  specialOffersTitle: "Special Offers",
   assessmentCenterTitle: "Assessment Center",
   assessmentCenterDesc: "Assess your skills and abilities using standard tests and determine your path to progress.",
   personalityTests: "Personality Tests",
@@ -83,6 +83,42 @@ const enTranslations = {
   intermediate: "Intermediate",
   advanced: "Advanced",
   
+  // Status badges
+  activeStatus: "Active",
+  upcomingStatus: "Coming Soon",
+  completedStatus: "Completed",
+  
+  // Course categories
+  businessCourses: "Business Courses",
+  selfDevelopmentCourses: "Self-Development Courses",
+  
+  // Training center
+  trainingCenter: "Training Center",
+  trainingCenterDesc: "Specialized courses for personal and professional development",
+  currentlyRunning: "Currently Running",
+  currentlyRunningDesc: "Join our active courses that are currently in session",
+  upcomingCourses: "Upcoming Courses",
+  upcomingCoursesDesc: "Register for upcoming courses starting soon",
+  pastCourses: "Past Courses",
+  pastCoursesDesc: "Access archives of previously held courses",
+  
+  // Magazine section
+  magazine: "Magazine",
+  magazineDesc: "Latest articles and insights from Rafiei Academy",
+  readMore: "Read More",
+  
+  // Course activation page
+  welcomeToCourse: "Welcome to the Course",
+  accessTrainingFiles: "Access Training Files",
+  activateSupport: "Activate Support",
+  joinTelegram: "Join Telegram Channel",
+  launchAIAssistant: "Launch AI Assistant",
+  activated: "Activated",
+  playerActivationCode: "Player Activation Code",
+  howToActivate: "How to Activate",
+  downloadPlayer: "Download Player",
+  webPlayerAccess: "Access Web Player",
+  
   // File types and course materials
   videoLessons: "Video Sessions",
   worksheets: "Worksheets",
@@ -112,6 +148,46 @@ const enTranslations = {
   myProfile: "My Profile",
   mySettings: "Settings",
   logout: "Logout",
+  
+  // BoundlessLanding translations
+  boundlessLandingTitle: "Boundless Program",
+  boundlessLandingSubtitle: "Master the Art of International Business",
+  boundlessLandingDesc: "Comprehensive course on earning foreign currency and launching an international business",
+  boundlessLandingHeroDesc: "Learn how to create a sustainable business with foreign currency income, regardless of your current location or experience level.",
+  boundlessLandingCTA: "Enroll in Course",
+  boundlessLandingPrice: "$499",
+  boundlessLandingOriginalPrice: "$699",
+  boundlessLandingDiscPrice: "$299",
+  boundlessLandingSpecialOffer: "Special Offer: $299",
+  boundlessLandingInclusive: "All taxes and fees included",
+  boundlessLandingFeatures: "Course Features",
+  boundlessLandingTargetAudience: "Who is this for?",
+  boundlessLandingWhatLearn: "What will you learn?",
+  boundlessLandingStartCourse: "Start Your Journey Now",
+  boundlessLandingJoinLater: "Learn more before deciding",
+  boundlessLandingCountdown: "Special offer ends in:",
+  boundlessLandingAboutTitle: "What Is The Boundless Program?",
+  boundlessLandingWhoFor: "Who Is This For?",
+  boundlessLandingSolutions: "What Problems Does It Solve?",
+  boundlessLandingResultsTitle: "Your Expected Results",
+  boundlessLandingBonusesTitle: "Special Bonuses",
+  boundlessLandingFAQTitle: "Frequently Asked Questions",
+  boundlessLandingBonus1: "AI Content Creation Course",
+  boundlessLandingBonus2: "Professional Personality Assessment",
+  boundlessLandingBonus3: "First Dollar Income Guide",
+  boundlessLandingTestimonialsTitle: "What Our Students Say",
+  boundlessLandingFitTitle: "Is This Right For Me?",
+  boundlessLandingFitStudent: "Students",
+  boundlessLandingFitFreelancer: "Freelancers",
+  boundlessLandingFitRemote: "Remote Workers",
+  boundlessLandingFitEntrepreneur: "Entrepreneurs",
+  boundlessLandingFitMigrate: "Migration Seekers",
+  boundlessLandingStickyOffer: "Limited Time Offer: $299",
+  boundlessLandingSkill1: "Global Mindset",
+  boundlessLandingSkill2: "Dropshipping",
+  boundlessLandingSkill3: "Service Offering",
+  boundlessLandingSkill4: "Digital Products",
+  boundlessLandingSkill5: "Scaling Systems",
   
   // Verification
   verificationTitle: "Verify Email or Mobile Number",
@@ -152,16 +228,6 @@ const enTranslations = {
   
   aiAssistantFeature3Title: "Personalized Guidance",
   aiAssistantFeature3Desc: "Providing solutions tailored to your needs and goals",
-  
-  // Landing pages
-  boundlessLandingTitle: "Boundless Program",
-  boundlessLandingDesc: "Comprehensive course on earning foreign currency and launching an international business",
-  boundlessLandingCTA: "Enroll in Course",
-  boundlessLandingPrice: "$499",
-  boundlessLandingDiscPrice: "$299",
-  boundlessLandingFeatures: "Course Features",
-  boundlessLandingTargetAudience: "Who is this for?",
-  boundlessLandingWhatLearn: "What will you learn?",
   
   // BoundlessLanding FAQ
   boundlessLandingFAQ1Q: "How long does it take to complete the course?",
@@ -241,39 +307,6 @@ const enTranslations = {
   aiFeature3Desc: "Discover ways to improve your skills and mindset",
   aiAssistantFeature4Title: "24/7 Availability",
   aiAssistantFeature4: "Access guidance whenever you need, day or night",
-  
-  // Additional BoundlessLanding translations
-  boundlessLandingSubtitle: "Master the Art of International Business",
-  boundlessLandingHeroDesc: "Learn how to create a sustainable business with foreign currency income, regardless of your current location or experience level.",
-  boundlessLandingOriginalPrice: "$699",
-  boundlessLandingSpecialOffer: "Special Offer: $299",
-  boundlessLandingInclusive: "All taxes and fees included",
-  boundlessLandingStartCourse: "Start Your Journey Now",
-  boundlessLandingJoinLater: "Learn more before deciding",
-  boundlessLandingCountdown: "Special offer ends in:",
-  boundlessLandingAboutTitle: "What Is The Boundless Program?",
-  boundlessLandingWhoFor: "Who Is This For?",
-  boundlessLandingSolutions: "What Problems Does It Solve?",
-  boundlessLandingResultsTitle: "Your Expected Results",
-  boundlessLandingBonusesTitle: "Special Bonuses",
-  boundlessLandingFAQTitle: "Frequently Asked Questions",
-  boundlessLandingBonus1: "AI Content Creation Course",
-  boundlessLandingBonus2: "Professional Personality Assessment",
-  boundlessLandingBonus3: "First Dollar Income Guide",
-  boundlessLandingTestimonialsTitle: "What Our Students Say",
-  boundlessLandingFitTitle: "Is This Right For Me?",
-  boundlessLandingFitStudent: "Students",
-  boundlessLandingFitFreelancer: "Freelancers",
-  boundlessLandingFitRemote: "Remote Workers",
-  boundlessLandingFitEntrepreneur: "Entrepreneurs",
-  boundlessLandingFitMigrate: "Migration Seekers",
-  boundlessLandingStickyOffer: "Limited Time Offer: $299",
-  boundlessLandingSkill1: "Global Mindset",
-  boundlessLandingSkill2: "Dropshipping",
-  boundlessLandingSkill3: "Service Offering",
-  boundlessLandingSkill4: "Digital Products",
-  boundlessLandingSkill5: "Scaling Systems"
 };
 
 export default enTranslations;
-

@@ -24,7 +24,7 @@ const faTranslations = {
   paidCoursesSubtitle: "دوره‌های پیشرفته برای توسعه حرفه‌ای مهارت‌های شما",
   freeCoursesTitle: "دوره‌های رایگان",
   freeCoursesSubtitle: "دوره‌های رایگان برای آشنایی با مفاهیم پایه",
-  specialOffersTitle: "پیشنهادات ویژه", // Added special offers title
+  specialOffersTitle: "پیشنهادات ویژه",
   assessmentCenterTitle: "مرکز سنجش",
   assessmentCenterDesc: "با استفاده از آزمون‌های استاندارد، مهارت‌ها و توانایی‌های خود را بسنجید و مسیر پیشرفت خود را مشخص کنید.",
   personalityTests: "آزمون‌های شخصیت‌شناسی",
@@ -83,6 +83,42 @@ const faTranslations = {
   intermediate: "متوسط",
   advanced: "پیشرفته",
   
+  // Status badges
+  activeStatus: "در حال برگزاری",
+  upcomingStatus: "به زودی",
+  completedStatus: "تکمیل شده",
+  
+  // Course categories
+  businessCourses: "دوره‌های کسب و کار",
+  selfDevelopmentCourses: "دوره‌های توسعه فردی",
+  
+  // Training center
+  trainingCenter: "مرکز آموزش",
+  trainingCenterDesc: "دوره‌های تخصصی برای توسعه فردی و حرفه‌ای",
+  currentlyRunning: "در حال برگزاری",
+  currentlyRunningDesc: "به دوره‌های فعال ما که در حال حاضر در حال برگزاری هستند بپیوندید",
+  upcomingCourses: "دوره‌های آینده",
+  upcomingCoursesDesc: "برای دوره‌های آینده که به زودی شروع می‌شوند ثبت‌نام کنید",
+  pastCourses: "دوره‌های گذشته",
+  pastCoursesDesc: "به آرشیو دوره‌های قبلی دسترسی پیدا کنید",
+  
+  // Magazine section
+  magazine: "مجله",
+  magazineDesc: "آخرین مقالات و بینش‌ها از آکادمی رفیعی",
+  readMore: "مطالعه بیشتر",
+  
+  // Course activation page
+  welcomeToCourse: "به دوره خوش آمدید",
+  accessTrainingFiles: "دسترسی به فایل‌های آموزشی",
+  activateSupport: "فعال‌سازی پشتیبانی",
+  joinTelegram: "پیوستن به کانال تلگرام",
+  launchAIAssistant: "راه‌اندازی دستیار هوشمند",
+  activated: "فعال شد",
+  playerActivationCode: "کد فعال‌سازی پخش‌کننده",
+  howToActivate: "نحوه فعال‌سازی",
+  downloadPlayer: "دانلود پخش‌کننده",
+  webPlayerAccess: "دسترسی به پخش‌کننده وب",
+  
   // File types and course materials
   videoLessons: "جلسات ویدیویی",
   worksheets: "برگه‌های تمرین",
@@ -112,6 +148,46 @@ const faTranslations = {
   myProfile: "پروفایل من",
   mySettings: "تنظیمات",
   logout: "خروج",
+  
+  // BoundlessLanding translations
+  boundlessLandingTitle: "برنامه بدون مرز",
+  boundlessLandingSubtitle: "استاد هنر کسب و کار بین‌المللی شوید",
+  boundlessLandingDesc: "دوره جامع کسب درآمد ارزی و راه‌اندازی کسب‌وکار بین‌المللی",
+  boundlessLandingHeroDesc: "یاد بگیرید چگونه یک کسب و کار پایدار با درآمد ارزی ایجاد کنید، صرف نظر از موقعیت یا تجربه فعلی شما.",
+  boundlessLandingCTA: "شرکت در دوره",
+  boundlessLandingPrice: "۱۵،۰۰۰،۰۰۰ تومان",
+  boundlessLandingOriginalPrice: "۲۰،۰۰۰،۰۰۰ تومان",
+  boundlessLandingDiscPrice: "۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingSpecialOffer: "پیشنهاد ویژه: ۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingInclusive: "شامل تمام مالیات و هزینه‌ها",
+  boundlessLandingFeatures: "ویژگی‌های دوره",
+  boundlessLandingTargetAudience: "مناسب برای چه کسانی؟",
+  boundlessLandingWhatLearn: "چه چیزهایی یاد می‌گیرید؟",
+  boundlessLandingStartCourse: "همین حالا سفر خود را آغاز کنید",
+  boundlessLandingJoinLater: "قبل از تصمیم‌گیری بیشتر بدانید",
+  boundlessLandingCountdown: "پیشنهاد ویژه تمام می‌شود در:",
+  boundlessLandingAboutTitle: "برنامه بدون مرز چیست؟",
+  boundlessLandingWhoFor: "این دوره مناسب چه کسانی است؟",
+  boundlessLandingSolutions: "چه مشکلاتی را حل می‌کند؟",
+  boundlessLandingResultsTitle: "نتایج مورد انتظار شما",
+  boundlessLandingBonusesTitle: "هدایای ویژه",
+  boundlessLandingFAQTitle: "سوالات متداول",
+  boundlessLandingBonus1: "دوره تولید محتوا با هوش مصنوعی",
+  boundlessLandingBonus2: "ارزیابی شخصیت حرفه‌ای",
+  boundlessLandingBonus3: "راهنمای کسب اولین درآمد دلاری",
+  boundlessLandingTestimonialsTitle: "دانشجویان ما چه می‌گویند",
+  boundlessLandingFitTitle: "آیا این دوره مناسب من است؟",
+  boundlessLandingFitStudent: "دانشجویان",
+  boundlessLandingFitFreelancer: "فریلنسرها",
+  boundlessLandingFitRemote: "کارکنان از راه دور",
+  boundlessLandingFitEntrepreneur: "کارآفرینان",
+  boundlessLandingFitMigrate: "متقاضیان مهاجرت",
+  boundlessLandingStickyOffer: "پیشنهاد محدود: ۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingSkill1: "ذهنیت جهانی",
+  boundlessLandingSkill2: "دراپ‌شیپینگ",
+  boundlessLandingSkill3: "ارائه خدمات",
+  boundlessLandingSkill4: "محصولات دیجیتال",
+  boundlessLandingSkill5: "سیستم‌های مقیاس‌پذیر",
   
   // Verification
   verificationTitle: "تایید ایمیل یا شماره موبایل",
@@ -152,16 +228,6 @@ const faTranslations = {
   
   aiAssistantFeature3Title: "راهنمایی شخصی‌سازی شده",
   aiAssistantFeature3Desc: "ارائه راهکارهای متناسب با نیازها و اهداف شما",
-  
-  // Landing pages
-  boundlessLandingTitle: "برنامه بدون مرز",
-  boundlessLandingDesc: "دوره جامع کسب درآمد ارزی و راه‌اندازی کسب‌وکار بین‌المللی",
-  boundlessLandingCTA: "شرکت در دوره",
-  boundlessLandingPrice: "۱۵،۰۰۰،۰۰۰ تومان",
-  boundlessLandingDiscPrice: "۹،۰۰۰،۰۰۰ تومان",
-  boundlessLandingFeatures: "ویژگی‌های دوره",
-  boundlessLandingTargetAudience: "مناسب برای چه کسانی؟",
-  boundlessLandingWhatLearn: "چه چیزهایی یاد می‌گیرید؟",
   
   // BoundlessLanding FAQ
   boundlessLandingFAQ1Q: "مدت زمان تکمیل دوره چقدر است؟",
@@ -241,39 +307,6 @@ const faTranslations = {
   aiFeature3Desc: "کشف راه‌هایی برای بهبود مهارت‌ها و ذهنیت خود",
   aiAssistantFeature4Title: "دسترسی ۲۴/۷",
   aiAssistantFeature4: "هر زمان که نیاز دارید، روز یا شب، به راهنمایی دسترسی داشته باشید",
-  
-  // Additional BoundlessLanding translations
-  boundlessLandingSubtitle: "استاد هنر کسب و کار بین‌المللی شوید",
-  boundlessLandingHeroDesc: "یاد بگیرید چگونه یک کسب و کار پایدار با درآمد ارزی ایجاد کنید، صرف نظر از موقعیت یا تجربه فعلی شما.",
-  boundlessLandingOriginalPrice: "۲۰،۰۰۰،۰۰۰ تومان",
-  boundlessLandingSpecialOffer: "پیشنهاد ویژه: ۹،۰۰۰،۰۰۰ تومان",
-  boundlessLandingInclusive: "شامل تمام مالیات و هزینه‌ها",
-  boundlessLandingStartCourse: "همین حالا سفر خود را آغاز کنید",
-  boundlessLandingJoinLater: "قبل از تصمیم‌گیری بیشتر بدانید",
-  boundlessLandingCountdown: "پیشنهاد ویژه تمام می‌شود در:",
-  boundlessLandingAboutTitle: "برنامه بدون مرز چیست؟",
-  boundlessLandingWhoFor: "این دوره مناسب چه کسانی است؟",
-  boundlessLandingSolutions: "چه مشکلاتی را حل می‌کند؟",
-  boundlessLandingResultsTitle: "نتایج مورد انتظار شما",
-  boundlessLandingBonusesTitle: "هدایای ویژه",
-  boundlessLandingFAQTitle: "سوالات متداول",
-  boundlessLandingBonus1: "دوره تولید محتوا با هوش مصنوعی",
-  boundlessLandingBonus2: "ارزیابی شخصیت حرفه‌ای",
-  boundlessLandingBonus3: "راهنمای کسب اولین درآمد دلاری",
-  boundlessLandingTestimonialsTitle: "دانشجویان ما چه می‌گویند",
-  boundlessLandingFitTitle: "آیا این دوره مناسب من است؟",
-  boundlessLandingFitStudent: "دانشجویان",
-  boundlessLandingFitFreelancer: "فریلنسرها",
-  boundlessLandingFitRemote: "کارکنان از راه دور",
-  boundlessLandingFitEntrepreneur: "کارآفرینان",
-  boundlessLandingFitMigrate: "متقاضیان مهاجرت",
-  boundlessLandingStickyOffer: "پیشنهاد محدود: ۹،۰۰۰،۰۰۰ تومان",
-  boundlessLandingSkill1: "ذهنیت جهانی",
-  boundlessLandingSkill2: "دراپ‌شیپینگ",
-  boundlessLandingSkill3: "ارائه خدمات",
-  boundlessLandingSkill4: "محصولات دیجیتال",
-  boundlessLandingSkill5: "سیستم‌های مقیاس‌پذیر"
 };
 
 export default faTranslations;
-
