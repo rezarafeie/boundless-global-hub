@@ -30,14 +30,17 @@ const Header = () => {
           <Link to="/" className="text-sm font-medium transition-colors hover:text-black">
             {translations.home}
           </Link>
-          <Link to="/paid-courses" className="text-sm font-medium transition-colors hover:text-black">
-            {translations.paidCourses}
-          </Link>
-          <Link to="/free-courses" className="text-sm font-medium transition-colors hover:text-black">
-            {translations.freeCourses}
+          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-black">
+            مرکز آموزش
           </Link>
           <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-black">
             {translations.assessmentCenter}
+          </Link>
+          <Link to="/blog" className="text-sm font-medium transition-colors hover:text-black">
+            مجله
+          </Link>
+          <Link to="/support" className="text-sm font-medium transition-colors hover:text-black">
+            پشتیبانی
           </Link>
         </nav>
         
@@ -87,18 +90,11 @@ const Header = () => {
               {translations.home}
             </Link>
             <Link 
-              to="/paid-courses" 
+              to="/courses" 
               className="text-sm font-medium transition-colors hover:text-black"
               onClick={() => setIsMenuOpen(false)}
             >
-              {translations.paidCourses}
-            </Link>
-            <Link 
-              to="/free-courses" 
-              className="text-sm font-medium transition-colors hover:text-black"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {translations.freeCourses}
+              مرکز آموزش
             </Link>
             <Link 
               to="/assessment-center" 
@@ -106,6 +102,20 @@ const Header = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               {translations.assessmentCenter}
+            </Link>
+            <Link 
+              to="/blog" 
+              className="text-sm font-medium transition-colors hover:text-black"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              مجله
+            </Link>
+            <Link 
+              to="/support" 
+              className="text-sm font-medium transition-colors hover:text-black"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              پشتیبانی
             </Link>
             
             {/* Login/Register Button - Mobile Menu */}

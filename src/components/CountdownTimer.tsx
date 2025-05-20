@@ -1,21 +1,20 @@
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface CountdownTimerProps {
   targetDate: Date;
-  label?: string;
-  onComplete?: () => void;
 }
 
-const CountdownTimer: React.FC<CountdownTimerProps> = ({
-  targetDate,
-  label = "فرصت باقی‌مانده برای استفاده از تخفیف ویژه",
-  onComplete
-}) => {
+const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) => {
   const calculateTimeLeft = () => {
     const difference = +targetDate - +new Date();
-    let timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    let timeLeft = {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    };
 
     if (difference > 0) {
       timeLeft = {
@@ -24,101 +23,79 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
         minutes: Math.floor((difference / 1000 / 60) % 60),
         seconds: Math.floor((difference / 1000) % 60),
       };
-    } else if (onComplete) {
-      onComplete();
     }
 
     return timeLeft;
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-  const [isPulsing, setIsPulsing] = useState(false);
+  const [animateSecond, setAnimateSecond] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer = setTimeout(() => {
       setTimeLeft(calculateTimeLeft());
+      setAnimateSecond(prev => !prev);
     }, 1000);
 
-    // Pulse effect every 5 seconds
-    const pulseTimer = setInterval(() => {
-      setIsPulsing(true);
-      setTimeout(() => setIsPulsing(false), 1000);
-    }, 5000);
+    return () => clearTimeout(timer);
+  });
 
-    return () => {
-      clearInterval(timer);
-      clearInterval(pulseTimer);
-    };
-  }, [targetDate, onComplete]);
+  const formatNumber = (num: number) => {
+    return num < 10 ? `0${num}` : num.toString();
+  };
 
-  const timeUnits = [
-    { label: 'روز', value: timeLeft.days },
-    { label: 'ساعت', value: timeLeft.hours },
-    { label: 'دقیقه', value: timeLeft.minutes },
-    { label: 'ثانیه', value: timeLeft.seconds },
+  const timeBlocks = [
+    { label: "روز", value: timeLeft.days },
+    { label: "ساعت", value: timeLeft.hours },
+    { label: "دقیقه", value: timeLeft.minutes },
+    { label: "ثانیه", value: timeLeft.seconds },
   ];
 
-  const containerVariants = {
-    pulse: {
-      boxShadow: ["0 0 0 rgba(235, 168, 81, 0)", "0 0 15px rgba(235, 168, 81, 0.5)", "0 0 0 rgba(235, 168, 81, 0)"],
-      transition: { 
-        duration: 2,
-        times: [0, 0.5, 1],
-        repeat: Infinity,
-        repeatDelay: 3
-      }
-    }
-  };
-
-  const digitVariants = {
-    pulse: (custom: number) => ({
-      scale: [1, 1.1, 1],
-      transition: {
-        duration: 0.5,
-        delay: custom * 0.1
-      }
-    })
-  };
-
   return (
-    <motion.div 
-      className="countdown-container my-6 p-6 bg-gradient-to-r from-amber-50 to-amber-100 rounded-xl border border-amber-200 shadow-md"
-      variants={containerVariants}
-      animate="pulse"
-    >
-      <div className="text-center mb-4 font-bold text-amber-800 text-lg">{label}</div>
-      <div className="flex justify-center gap-4 md:gap-6">
-        {timeUnits.map((unit, index) => (
-          <div key={index} className="flex flex-col items-center">
-            <motion.div 
-              className={`text-2xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-b from-amber-400 to-amber-600 bg-clip-text text-transparent w-16 md:w-20 h-16 md:h-20 flex items-center justify-center rounded-lg border-2 border-amber-300 shadow-inner bg-white ${isPulsing ? 'animate-pulse' : ''}`}
-              variants={digitVariants}
-              animate={isPulsing ? "pulse" : ""}
-              custom={index}
+    <div className="w-full">
+      <div className="rounded-2xl p-6 md:p-8 bg-gradient-to-br from-black to-black/80 text-white">
+        <p className="text-xl md:text-2xl font-bold mb-4 text-center text-yellow-300">
+          فرصت باقی‌مانده برای استفاده از تخفیف ویژه
+        </p>
+        
+        <div className="grid grid-cols-4 gap-2 md:gap-4">
+          {timeBlocks.map((block, index) => (
+            <div
+              key={index}
+              className="flex flex-col items-center"
             >
-              {String(unit.value).padStart(2, '0')}
-            </motion.div>
-            <div className="text-xs md:text-sm text-amber-700 mt-1 font-semibold">{unit.label}</div>
+              <div className="relative w-full aspect-square">
+                <div className="absolute inset-0 bg-white/10 rounded-lg backdrop-blur-sm"></div>
+                <div 
+                  className={`absolute inset-0 bg-white/5 rounded-lg flex items-center justify-center
+                    ${index === 3 ? (animateSecond ? 'ring-2 ring-yellow-400 animate-pulse' : '') : ''}`}
+                >
+                  <motion.span 
+                    className="text-2xl md:text-5xl font-bold"
+                    key={`${block.label}-${block.value}`}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {formatNumber(block.value)}
+                  </motion.span>
+                </div>
+              </div>
+              <span className="mt-2 text-xs md:text-sm text-white/80">{block.label}</span>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 text-center">
+          <div className="inline-block relative">
+            <span className="px-4 py-2 bg-yellow-500 text-black font-bold rounded-md inline-block">
+              تخفیف ۳۰٪ 
+            </span>
+            <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping"></span>
           </div>
-        ))}
+        </div>
       </div>
-      <div className="mt-4 text-center">
-        <motion.div 
-          className="inline-block px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 text-white text-xs md:text-sm font-medium"
-          animate={{ 
-            opacity: [0.7, 1, 0.7],
-            scale: [1, 1.05, 1]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            repeatType: "reverse"
-          }}
-        >
-          پیشنهاد ویژه محدود
-        </motion.div>
-      </div>
-    </motion.div>
+    </div>
   );
 };
 

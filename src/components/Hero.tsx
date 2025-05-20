@@ -60,11 +60,12 @@ const Hero = ({
       {backgroundType === "glow" && (
         <>
           <div className="absolute inset-0 overflow-hidden">
-            <div className="glow-circle glow-circle-1 animate-pulse-slow"></div>
-            <div className="glow-circle glow-circle-2 animate-float"></div>
-            <div className="glow-circle glow-circle-3 animate-pulse-slow animation-delay-1000"></div>
+            <div className="glow-circle glow-circle-1 animate-pulse"></div>
+            <div className="glow-circle glow-circle-2 animate-float-fast"></div>
+            <div className="glow-circle glow-circle-3 animate-pulse animation-delay-1000"></div>
+            <div className="glow-circle glow-circle-4 animate-float-slow animation-delay-2000"></div>
           </div>
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-[40px] z-0"></div>
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[20px] z-0"></div>
         </>
       )}
       
@@ -91,76 +92,107 @@ const Hero = ({
       
       <style>
         {`
-        @keyframes pulse-slow {
+        @keyframes pulse {
           0%, 100% { 
-            opacity: 0.3;
+            opacity: 0.4;
             transform: scale(1);
           }
           50% { 
-            opacity: 0.7;
-            transform: scale(1.1);
+            opacity: 0.8;
+            transform: scale(1.15);
           }
         }
         
-        @keyframes float {
+        @keyframes float-fast {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.5;
+          }
+          25% {
+            transform: translateY(-30px) translateX(15px);
+            opacity: 0.8;
+          }
+          50% {
+            transform: translateY(-5px) translateX(30px);
+            opacity: 0.6;
+          }
+          75% {
+            transform: translateY(25px) translateX(15px);
+            opacity: 0.8;
+          }
+        }
+        
+        @keyframes float-slow {
           0%, 100% {
             transform: translateY(0) translateX(0);
             opacity: 0.4;
           }
-          25% {
-            transform: translateY(-20px) translateX(10px);
+          33% {
+            transform: translateY(-15px) translateX(25px);
             opacity: 0.7;
           }
-          50% {
-            transform: translateY(0) translateX(20px);
+          66% {
+            transform: translateY(20px) translateX(-10px);
             opacity: 0.5;
           }
-          75% {
-            transform: translateY(20px) translateX(10px);
-            opacity: 0.7;
-          }
         }
         
-        .animate-pulse-slow {
-          animation: pulse-slow 8s infinite ease-in-out;
+        .animate-pulse {
+          animation: pulse 6s infinite ease-in-out;
         }
         
-        .animate-float {
-          animation: float 15s infinite ease-in-out;
+        .animate-float-fast {
+          animation: float-fast 12s infinite ease-in-out;
+        }
+        
+        .animate-float-slow {
+          animation: float-slow 18s infinite ease-in-out;
         }
         
         .animation-delay-1000 {
           animation-delay: 1s;
         }
         
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
         .glow-circle {
           position: absolute;
           border-radius: 50%;
-          filter: blur(40px);
+          filter: blur(30px);
         }
         
         .glow-circle-1 {
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(147,112,219,0.4) 0%, rgba(147,112,219,0) 70%);
-          top: -100px;
+          width: 450px;
+          height: 450px;
+          background: radial-gradient(circle, rgba(147,112,219,0.45) 0%, rgba(147,112,219,0) 70%);
+          top: -150px;
           right: 10%;
         }
         
         .glow-circle-2 {
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(65,105,225,0.3) 0%, rgba(65,105,225,0) 70%);
-          bottom: -150px;
+          width: 550px;
+          height: 550px;
+          background: radial-gradient(circle, rgba(65,105,225,0.4) 0%, rgba(65,105,225,0) 70%);
+          bottom: -180px;
           left: 10%;
         }
         
         .glow-circle-3 {
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(123,104,238,0.35) 0%, rgba(123,104,238,0) 70%);
+          width: 350px;
+          height: 350px;
+          background: radial-gradient(circle, rgba(123,104,238,0.4) 0%, rgba(123,104,238,0) 70%);
           top: 30%;
           left: 25%;
+        }
+        
+        .glow-circle-4 {
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(72,209,204,0.35) 0%, rgba(72,209,204,0) 70%);
+          top: 40%;
+          right: 20%;
         }
         `}
       </style>

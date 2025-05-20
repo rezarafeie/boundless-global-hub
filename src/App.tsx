@@ -19,6 +19,11 @@ import BoundlessLanding from "./pages/Courses/BoundlessLanding";
 import InstagramLanding from "./pages/Courses/InstagramLanding";
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
 import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
+import InstructorProfilePage from "./pages/InstructorProfile";
+import Support from "./pages/Support";
+import FreeCourseStart from "./pages/Course/FreeCourseStart";
+import PaidCourseStart from "./pages/Course/PaidCourseStart";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 
@@ -36,11 +41,21 @@ const App = () => (
             <Route path="/assessment-center" element={<AssessmentCenter />} />
             <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
             <Route path="/ai-assistant" element={<AIAssistantView />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
+            <Route path="/blog" element={<Blog />} />
+            
+            {/* Course Start Pages */}
+            <Route path="/start/free-course" element={<FreeCourseStart />} />
+            <Route path="/start/paid-course" element={<PaidCourseStart />} />
             
             {/* Course Landing Pages */}
             <Route path="/courses/boundless" element={<BoundlessLanding />} />
             <Route path="/courses/instagram" element={<InstagramLanding />} />
             <Route path="/courses/metaverse" element={<MetaverseLanding />} />
+            
+            {/* Boundless redirect */}
+            <Route path="/boundless" element={<Navigate to="/courses/boundless" replace />} />
             
             {/* Free Courses Landing Pages */}
             <Route 
@@ -147,6 +162,32 @@ const App = () => (
                 />
               } 
             />
+            <Route 
+              path="/courses/business-intelligence" 
+              element={
+                <FreeCourseLanding 
+                  title="دوره هوش تجاری" 
+                  englishTitle="Business Intelligence"
+                  description="آشنایی با اصول هوش تجاری و تحلیل داده‌ها برای تصمیم‌گیری‌های کسب‌وکار"
+                  benefitOne="یادگیری تحلیل داده‌های کسب‌وکار و ساخت داشبوردهای مدیریتی"
+                  benefitTwo="توانایی استفاده از هوش تجاری برای بهبود عملکرد کسب‌وکار"
+                  iconType="book"
+                />
+              } 
+            />
+            <Route 
+              path="/courses/marketplace-business" 
+              element={
+                <FreeCourseLanding 
+                  title="کسب‌وکار در مارکت‌پلیس‌ها" 
+                  englishTitle="Marketplace Business"
+                  description="آموزش جامع کسب درآمد از طریق فروش محصولات دیجیتال در مارکت‌پلیس‌های بین‌المللی"
+                  benefitOne="یادگیری اصول طراحی و فروش محصولات دیجیتال در پلتفرم‌های جهانی"
+                  benefitTwo="راه‌اندازی کسب‌وکار دیجیتالی در مارکت‌پلیس‌های معتبر"
+                  iconType="graduation"
+                />
+              } 
+            />
             
             {/* English Routes */}
             <Route path="/en" element={<EnglishHome />} />
@@ -157,6 +198,8 @@ const App = () => (
             <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
             <Route path="/en/courses/instagram" element={<InstagramLanding />} />
             <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
+            <Route path="/en/support" element={<Support />} />
+            <Route path="/en/blog" element={<Blog />} />
             
             {/* Legacy redirects */}
             <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />
