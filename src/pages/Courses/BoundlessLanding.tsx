@@ -481,7 +481,7 @@ const BoundlessLanding = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-black/5 flex items-center justify-center">
-                      <User size={24} className="text-black/60" />
+                      <Users size={24} className="text-black/60" />
                     </div>
                     <div>
                       <h3 className="font-medium">{testimonial.name}</h3>

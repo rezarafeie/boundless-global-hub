@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -22,32 +21,28 @@ const EnglishFreeCourses = () => {
       description: translations.boundlessTasteDesc,
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
-      isPaid: false,
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80"
+      isPaid: false
     },
     {
       title: translations.passiveIncomeAI,
       description: translations.passiveIncomeAIDesc,
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
-      isPaid: false,
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80"
+      isPaid: false
     },
     {
       title: translations.changeProject,
       description: translations.changeProjectDesc,
       benefits: translations.changeProjectBenefits,
       outcome: translations.changeProjectOutcome,
-      isPaid: false,
-      image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=800&q=80"
+      isPaid: false
     },
     {
       title: translations.americanBusiness,
       description: translations.americanBusinessDesc,
       benefits: translations.americanBusinessBenefits,
       outcome: translations.americanBusinessOutcome,
-      isPaid: false,
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80"
+      isPaid: false
     },
   ];
 
@@ -120,7 +115,6 @@ const EnglishFreeCourses = () => {
                       benefits={course.benefits}
                       outcome={course.outcome}
                       isPaid={course.isPaid}
-                      image={course.image}
                     />
                   </div>
                 </div>

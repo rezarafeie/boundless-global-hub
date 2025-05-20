@@ -1,4 +1,3 @@
-
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Award, BookOpen, Globe } from "lucide-react";
+import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap } from "lucide-react";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -19,16 +18,14 @@ const Index = () => {
       description: translations.boundlessProgramDesc,
       benefits: translations.boundlessBenefits,
       outcome: translations.boundlessOutcome,
-      isPaid: true,
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
+      isPaid: true
     },
     {
       title: translations.instagramEssentials,
       description: translations.instagramEssentialsDesc,
       benefits: translations.instagramBenefits,
       outcome: translations.instagramOutcome,
-      isPaid: true,
-      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
+      isPaid: true
     },
   ];
 
@@ -38,16 +35,14 @@ const Index = () => {
       description: translations.boundlessTasteDesc,
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
-      isPaid: false,
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80",
+      isPaid: false
     },
     {
       title: translations.passiveIncomeAI,
       description: translations.passiveIncomeAIDesc,
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
-      isPaid: false,
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
+      isPaid: false
     },
   ];
 
@@ -116,12 +111,8 @@ const Index = () => {
             
             <div className="relative">
               <div className="absolute -z-10 top-1/3 right-1/3 w-64 h-64 rounded-full bg-black/5"></div>
-              <div className="relative z-10 rounded-2xl overflow-hidden border border-black/10 shadow-lg">
-                <img 
-                  src="https://images.unsplash.com/photo-1543269664-56d93c1b41a6?auto=format&fit=crop&w=800&q=80"
-                  alt="AI Assistant"
-                  className="w-full h-auto"
-                />
+              <div className="relative z-10 rounded-2xl overflow-hidden border border-black/10 shadow-lg flex items-center justify-center aspect-video bg-black/5">
+                <MessageCircle size={64} className="text-black/30" />
               </div>
             </div>
           </div>
@@ -165,12 +156,8 @@ const Index = () => {
               </Button>
             </div>
             
-            <div className="rounded-2xl overflow-hidden shadow-xl">
-              <img 
-                src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80"
-                alt="Boundless Program"
-                className="w-full h-auto"
-              />
+            <div className="rounded-2xl overflow-hidden shadow-xl flex items-center justify-center aspect-video bg-black/40">
+              <GraduationCap size={64} className="text-white/70" />
             </div>
           </div>
         </div>
@@ -193,7 +180,6 @@ const Index = () => {
                 benefits={course.benefits}
                 outcome={course.outcome}
                 isPaid={course.isPaid}
-                image={course.image}
               />
             ))}
           </div>
@@ -229,7 +215,6 @@ const Index = () => {
                 benefits={course.benefits}
                 outcome={course.outcome}
                 isPaid={course.isPaid}
-                image={course.image}
               />
             ))}
           </div>
@@ -326,23 +311,3 @@ const Index = () => {
 };
 
 export default Index;
-
-// Missing import for Check icon
-function Check(props: { size: number; className: string }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={props.size} 
-      height={props.size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={props.className}
-    >
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-  );
-}
