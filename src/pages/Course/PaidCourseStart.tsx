@@ -1,265 +1,240 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, MessageCircle, Zap, Check, Download, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/Auth/AuthModal";
+import { MessageCircle, FileText, CheckCircle, MessageSquare, Download, Video } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 const PaidCourseStart = () => {
   const { translations } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const courseTitle = searchParams.get('title') || "";
+  const { user, activateAssistant } = useAuth();
+  const navigate = useNavigate();
   
-  // State to track which actions have been completed
-  const [actionsCompleted, setActionsCompleted] = useState({
-    support: false,
-    telegram: false,
-    aiAssistant: false
-  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [channelJoined, setChannelJoined] = useState(false);
+  const [supportActivated, setSupportActivated] = useState(false);
+  const [assistantActivated, setAssistantActivated] = useState(false);
   
-  const handleActionComplete = (action: 'support' | 'telegram' | 'aiAssistant') => {
-    setActionsCompleted(prev => ({
-      ...prev,
-      [action]: true
-    }));
+  // Mock activation code
+  const activationCode = "RAFIEI-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  useEffect(() => {
+    // Redirect if not logged in and no course title
+    if (!user && !courseTitle) {
+      navigate('/courses');
+    }
+  }, [user, courseTitle, navigate]);
+
+  const handleJoinChannel = () => {
+    // Simulate joining Telegram channel
+    window.open('https://t.me/rafieiAcademy', '_blank');
+    setChannelJoined(true);
   };
-  
-  // Mock activation code for Rafiei Player
-  const activationCode = "RFEI-2025-7891-AXTZ";
+
+  const handleActivateSupport = () => {
+    // Simulate activating support
+    setSupportActivated(true);
+  };
+
+  const handleActivateAssistant = async () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    
+    await activateAssistant();
+    setAssistantActivated(true);
+  };
+
+  const ActionBlock = ({ 
+    icon, 
+    title, 
+    description, 
+    buttonText, 
+    onClick, 
+    isCompleted 
+  }: { 
+    icon: React.ReactNode, 
+    title: string, 
+    description: string, 
+    buttonText: string, 
+    onClick: () => void, 
+    isCompleted: boolean 
+  }) => (
+    <div className={`border rounded-lg p-6 transition-all ${isCompleted ? 'bg-gray-50 opacity-80' : 'bg-white'}`}>
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-black/5 flex-shrink-0">
+          {icon}
+        </div>
+        <div className="flex-grow">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-lg">{title}</h3>
+            {isCompleted && (
+              <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                <CheckCircle size={12} className="mr-1" />
+                {translations.completed || "Completed"}
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">{description}</p>
+          <Button 
+            variant={isCompleted ? "outline" : "default"}
+            onClick={onClick}
+            className={isCompleted ? "opacity-50" : ""}
+          >
+            {isCompleted ? (
+              <span className="flex items-center gap-2">
+                <CheckCircle size={16} />
+                {translations.done || "Done"}
+              </span>
+            ) : buttonText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <MainLayout>
-      <div className="container py-12">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-center">
-            {translations.welcomeToCourse}
-          </h1>
-          
-          {/* Player Activation */}
-          <div className="mb-12">
-            <Card className="border-black/15 shadow-sm">
-              <CardHeader className="bg-black text-white">
-                <CardTitle>{translations.rafeiPlayer}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-2">{translations.playerActivationCode}</h3>
-                  <div className="bg-black/5 border border-black/10 rounded-lg p-4 flex items-center justify-between">
-                    <span className="text-xl font-mono">{activationCode}</span>
-                    <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(activationCode)}>
-                      کپی کد
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="border border-black/10 rounded-lg p-4">
-                    <h4 className="font-medium mb-2 flex items-center">
-                      <Globe size={16} className="mr-2" />
-                      {translations.howToActivate}
-                    </h4>
-                    <p className="text-sm text-gray-700">
-                      کد فعال‌سازی را در نرم‌افزار پخش‌کننده وارد کنید تا به محتوای دوره دسترسی پیدا کنید.
-                    </p>
-                  </div>
-                  
-                  <div className="border border-black/10 rounded-lg p-4">
-                    <h4 className="font-medium mb-2 flex items-center">
-                      <Download size={16} className="mr-2" />
-                      {translations.downloadPlayer}
-                    </h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full">
-                        دانلود نسخه ویندوز
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full">
-                        دانلود نسخه مک
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-black/10 rounded-lg p-4">
-                    <h4 className="font-medium mb-2 flex items-center">
-                      <BookOpen size={16} className="mr-2" />
-                      {translations.webPlayerAccess}
-                    </h4>
-                    <Button size="sm" className="w-full bg-black hover:bg-black/90">
-                      ورود به پخش‌کننده تحت وب
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-800 border-green-200">
-                    فعال
-                  </Badge>
-                  <span>دسترسی شما به دوره تا تاریخ ۱۴۰۵/۰۶/۳۱ معتبر است.</span>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="container py-10">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold mb-4">{courseTitle}</h1>
+            <Badge variant="default" className="bg-black text-white hover:bg-black/90">{translations.paidCoursesTitle}</Badge>
+            <p className="mt-4 text-muted-foreground">{translations.paidCourseWelcome}</p>
           </div>
           
-          {/* Course Files */}
-          <div className="mb-12">
-            <Card>
-              <CardHeader className="bg-black/5">
-                <CardTitle>{translations.accessTrainingFiles}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 border border-black/10 rounded-lg p-4">
-                    <BookOpen size={24} className="text-black/70" />
-                    <div>
-                      <h3 className="font-medium">{translations.worksheets}</h3>
-                      <p className="text-sm text-muted-foreground">برگه‌های تمرینی</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 border border-black/10 rounded-lg p-4">
-                    <BookOpen size={24} className="text-black/70" />
-                    <div>
-                      <h3 className="font-medium">{translations.resources}</h3>
-                      <p className="text-sm text-muted-foreground">منابع اضافی</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-center">
-                  <Button className="w-full md:w-auto bg-black text-white hover:bg-black/90">
-                    دانلود فایل‌ها
+          <div className="space-y-8">
+            {/* Course files section */}
+            <div className="border rounded-lg p-6 bg-gray-50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <FileText size={20} />
+                {translations.courseFiles || "Course Files"}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                {translations.courseFilesDescription || "Access all course materials and resources here."}
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-white rounded border">
+                  <span className="font-medium">{translations.courseSlides || "Course Slides"}</span>
+                  <Button size="sm" variant="outline" className="h-8">
+                    {translations.download || "Download"}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Activation Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {/* Support Access */}
-            <motion.div 
-              className={`bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm ${actionsCompleted.support ? "opacity-75" : ""}`}
-              whileHover={{ y: actionsCompleted.support ? 0 : -5 }}
-            >
-              <div className="flex flex-col h-full">
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 mx-auto mb-4">
-                  <MessageCircle size={24} />
+                <div className="flex items-center justify-between p-3 bg-white rounded border">
+                  <span className="font-medium">{translations.worksheets || "Worksheets"}</span>
+                  <Button size="sm" variant="outline" className="h-8">
+                    {translations.download || "Download"}
+                  </Button>
                 </div>
-                <h3 className="text-lg font-bold text-center mb-2">{translations.activateSupport}</h3>
-                <p className="text-sm text-center text-gray-700 mb-6 flex-grow">
-                  دسترسی به پشتیبانی مستقیم دوره برای پرسش سوالات و رفع اشکال
-                </p>
-                <Button 
-                  onClick={() => handleActionComplete('support')}
-                  className={`w-full relative ${actionsCompleted.support ? "bg-green-600 hover:bg-green-600" : "bg-blue-600 hover:bg-blue-700"}`}
-                  disabled={actionsCompleted.support}
-                >
-                  {actionsCompleted.support ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      {translations.activated}
-                    </>
-                  ) : (
-                    translations.activateSupport
-                  )}
-                </Button>
               </div>
-            </motion.div>
+            </div>
             
-            {/* Telegram Channel */}
-            <motion.div 
-              className={`bg-indigo-50 border border-indigo-100 rounded-xl p-6 shadow-sm ${actionsCompleted.telegram ? "opacity-75" : ""}`}
-              whileHover={{ y: actionsCompleted.telegram ? 0 : -5 }}
-            >
-              <div className="flex flex-col h-full">
-                <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 mx-auto mb-4">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="24" 
-                    height="24" 
-                    viewBox="0 0 24 24"
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="lucide lucide-send"
-                  >
-                    <line x1="22" x2="11" y1="2" y2="13"/>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-center mb-2">{translations.joinTelegram}</h3>
-                <p className="text-sm text-center text-gray-700 mb-6 flex-grow">
-                  عضویت در کانال تلگرام اختصاصی دوره برای دریافت اطلاعیه‌ها و محتوای تکمیلی
-                </p>
-                <Button 
-                  onClick={() => handleActionComplete('telegram')}
-                  className={`w-full ${actionsCompleted.telegram ? "bg-green-600 hover:bg-green-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
-                  disabled={actionsCompleted.telegram}
-                >
-                  {actionsCompleted.telegram ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      {translations.activated}
-                    </>
-                  ) : (
-                    translations.joinTelegram
-                  )}
+            {/* Player Activation */}
+            <div className="border rounded-lg p-6 bg-gray-50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Video size={20} />
+                {translations.rafeiPlayer || "Rafiei Player"}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                {translations.playerActivationDescription || "Access your course videos through the Rafiei Player."}
+              </p>
+              
+              <Card className="mb-4">
+                <CardContent className="pt-4">
+                  <h3 className="font-medium mb-2">{translations.activationCode || "Activation Code"}</h3>
+                  <div className="flex gap-2">
+                    <Input value={activationCode} readOnly className="font-mono text-center" />
+                    <Button variant="outline" size="icon" onClick={() => navigator.clipboard.writeText(activationCode)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c0-1.1.9-2 2-2h2"/><path d="M4 12c0-1.1.9-2 2-2h2"/><path d="M4 8c0-1.1.9-2 2-2h2"/></svg>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button variant="outline" className="gap-2" asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer">
+                    <Download size={16} />
+                    {translations.downloadDesktopPlayer || "Download for Desktop"}
+                  </a>
                 </Button>
-              </div>
-            </motion.div>
-            
-            {/* AI Assistant */}
-            <motion.div 
-              className={`bg-purple-50 border border-purple-100 rounded-xl p-6 shadow-sm ${actionsCompleted.aiAssistant ? "opacity-75" : ""}`}
-              whileHover={{ y: actionsCompleted.aiAssistant ? 0 : -5 }}
-            >
-              <div className="flex flex-col h-full">
-                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 mx-auto mb-4">
-                  <Zap size={24} />
-                </div>
-                <h3 className="text-lg font-bold text-center mb-2">{translations.launchAIAssistant}</h3>
-                <p className="text-sm text-center text-gray-700 mb-6 flex-grow">
-                  راه‌اندازی دستیار هوشمند آکادمی رفیعی برای پاسخ به سوالات و راهنمایی شخصی‌سازی شده
-                </p>
-                <Button 
-                  onClick={() => handleActionComplete('aiAssistant')}
-                  asChild
-                  className={`w-full ${actionsCompleted.aiAssistant ? "bg-green-600 hover:bg-green-600" : "bg-purple-600 hover:bg-purple-700"}`}
-                >
-                  <a 
-                    href="https://ai.rafiei.co/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => handleActionComplete('aiAssistant')}
-                  >
-                    {actionsCompleted.aiAssistant ? (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        {translations.activated}
-                      </>
-                    ) : (
-                      translations.launchAIAssistant
-                    )}
+                <Button variant="outline" className="gap-2" asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer">
+                    <Download size={16} />
+                    {translations.downloadMobilePlayer || "Download for Mobile"}
                   </a>
                 </Button>
               </div>
-            </motion.div>
-          </div>
-          
-          {/* Community Access */}
-          <Card className="mb-12">
-            <CardHeader className="bg-black/5">
-              <CardTitle>{translations.communityAccess}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <p className="text-gray-700 mb-6">{translations.communityAccessDescription}</p>
-              <Button className="bg-black hover:bg-black/90">
-                ورود به انجمن دوره
+              
+              <div className="mt-4">
+                <Button className="w-full" asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer">
+                    {translations.openWebPlayer || "Open Web Player"}
+                  </a>
+                </Button>
+              </div>
+            </div>
+            
+            <h2 className="text-xl font-bold">{translations.activateAccess || "Activate Your Access"}</h2>
+            <p className="text-muted-foreground -mt-4 mb-6">{translations.activateAccessDescription || "Complete these steps to get full access to your course"}</p>
+            
+            {/* Action blocks */}
+            <div className="space-y-4">
+              <ActionBlock 
+                icon={<MessageCircle size={24} />}
+                title={translations.joinChannel || "Join Private Telegram Channel"}
+                description={translations.joinChannelDescription || "Get updates and connect with other students"}
+                buttonText={translations.joinNow || "Join Now"}
+                onClick={handleJoinChannel}
+                isCompleted={channelJoined}
+              />
+              
+              <ActionBlock 
+                icon={<MessageSquare size={24} />}
+                title={translations.activateSupport || "Activate Course Support"}
+                description={translations.activateSupportDescription || "Get access to instructor support and Q&A"}
+                buttonText={translations.activate || "Activate"}
+                onClick={handleActivateSupport}
+                isCompleted={supportActivated}
+              />
+              
+              <ActionBlock 
+                icon={<MessageCircle size={24} />}
+                title={translations.smartAssistant || "Launch Smart Assistant"}
+                description={translations.smartAssistantDescription || "Get AI-powered help with your course questions"}
+                buttonText={translations.launch || "Launch"}
+                onClick={handleActivateAssistant}
+                isCompleted={assistantActivated}
+              />
+            </div>
+            
+            <div className="border-t pt-6 mt-8">
+              <Button asChild className="w-full md:w-auto">
+                <a 
+                  href={`/course/paid/${encodeURIComponent(courseTitle)}`}
+                  className="flex items-center gap-2"
+                >
+                  {translations.startLearning || "Start Learning"}
+                </a>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </MainLayout>
   );
 };

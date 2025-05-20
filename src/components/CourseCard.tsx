@@ -1,11 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import AuthModal from "./Auth/AuthModal";
 
 interface CourseCardProps {
   title: string;
@@ -21,6 +23,7 @@ interface CourseCardProps {
   cta?: string;
   status?: "active" | "upcoming" | "completed";
   category?: "business" | "self-development" | "free";
+  courseId?: string;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -36,9 +39,14 @@ const CourseCard: React.FC<CourseCardProps> = ({
   level = "",
   cta = "",
   status,
-  category
+  category,
+  courseId
 }) => {
   const { translations } = useLanguage();
+  const { user, activateCourse } = useAuth();
+  const navigate = useNavigate();
+  
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
@@ -62,6 +70,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
   
   // Generate course URL
   const courseUrl = `/courses/${courseSlug}`;
+  
+  // Generate course ID if not provided
+  const id = courseId || courseSlug;
 
   // Get status badge color
   const getStatusBadgeColor = () => {
@@ -77,80 +88,109 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // The entire card is clickable
+  const handleStartCourse = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // If user is logged in, activate course
+    if (user) {
+      await activateCourse(id, title, isPaid);
+    } else {
+      // Show auth modal
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  // Handle successful authentication
+  const handleAuthSuccess = () => {
+    setIsAuthModalOpen(false);
+  };
+
   return (
-    <Link to={courseUrl} className="block h-full group">
-      <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
-              {getCourseIcon()}
-            </div>
-            <div className="ml-3">
-              <Badge
-                variant={isPaid ? "default" : "outline"}
-                className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
-              >
-                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-              </Badge>
-            </div>
-          </div>
-          {status && (
-            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
-              {status === "active" && translations.activeStatus}
-              {status === "upcoming" && translations.upcomingStatus}
-              {status === "completed" && translations.completedStatus}
-            </Badge>
-          )}
-        </div>
-        
-        <CardContent className="p-4 pt-0 flex-grow">
-          <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
-          {englishTitle && (
-            <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
-          )}
-          
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
-          
-          <div className="space-y-2 mb-4">
-            <div className="text-sm">
-              <span className="font-medium">✓ </span>
-              {benefits}
-            </div>
-            <div className="text-sm">
-              <span className="font-medium">→ </span>
-              {outcome}
-            </div>
-          </div>
-          
-          {instructor && (
-            <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
-              <User size={14} className="mr-1" />
-              {instructorLink ? (
-                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
-                  {instructor}
-                </Link>
-              ) : (
-                <span>{instructor}</span>
-              )}
-              {level && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {level}
+    <>
+      <Link to={courseUrl} className="block h-full group">
+        <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
+                {getCourseIcon()}
+              </div>
+              <div className="ml-3">
+                <Badge
+                  variant={isPaid ? "default" : "outline"}
+                  className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+                >
+                  {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
                 </Badge>
-              )}
+              </div>
             </div>
-          )}
-        </CardContent>
-        
-        <CardFooter className="p-4 pt-0">
-          <Button 
-            className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
-          >
-            {cta || (isPaid ? translations.startCourse : translations.startFreeCourse)}
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+            {status && (
+              <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+                {status === "active" && translations.activeStatus}
+                {status === "upcoming" && translations.upcomingStatus}
+                {status === "completed" && translations.completedStatus}
+              </Badge>
+            )}
+          </div>
+          
+          <CardContent className="p-4 pt-0 flex-grow">
+            <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
+            {englishTitle && (
+              <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
+            )}
+            
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
+            
+            <div className="space-y-2 mb-4">
+              <div className="text-sm">
+                <span className="font-medium">✓ </span>
+                {benefits}
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">→ </span>
+                {outcome}
+              </div>
+            </div>
+            
+            {instructor && (
+              <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
+                <User size={14} className="mr-1" />
+                {instructorLink ? (
+                  <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
+                    {instructor}
+                  </Link>
+                ) : (
+                  <span>{instructor}</span>
+                )}
+                {level && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {level}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </CardContent>
+          
+          <CardFooter className="p-4 pt-0">
+            <Button 
+              className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
+              onClick={handleStartCourse}
+            >
+              {cta || (isPaid ? translations.startCourse : translations.startFreeCourse)}
+            </Button>
+          </CardFooter>
+        </Card>
+      </Link>
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        courseTitle={title}
+        isPaid={isPaid}
+        courseId={id}
+        onSuccess={handleAuthSuccess}
+      />
+    </>
   );
 };
 
