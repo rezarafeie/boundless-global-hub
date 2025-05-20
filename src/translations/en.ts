@@ -238,5 +238,34 @@ export const en = {
   americanBusinessDesc: "Understand American business practices",
   americanBusinessBenefits: "Learn about American business culture and etiquette",
   americanBusinessOutcome: "Navigate American business environments with confidence",
-  startLearning: "Start Learning"
+  startLearning: "Start Learning",
+
+  // FreeCourseStart component translations
+  completed: "Completed",
+  done: "Done",
+  freeCourseWelcome: "Welcome to your free course! Complete the steps below to get started.",
+  courseFiles: "Course Files",
+  courseFilesDescription: "Access all course materials and resources here.",
+  courseSlides: "Course Slides",
+  worksheets: "Worksheets",
+  activateAccess: "Activate Your Access",
+  activateAccessDescription: "Complete these steps to get full access to your course",
+  joinChannel: "Join Private Telegram Channel",
+  joinChannelDescription: "Get updates and connect with other students",
+  joinNow: "Join Now",
+  activateSupport: "Activate Course Support",
+  activateSupportDescription: "Get access to instructor support and Q&A",
+  activate: "Activate",
+  smartAssistant: "Launch Smart Assistant",
+  smartAssistantDescription: "Get AI-powered help with your course questions",
+  launch: "Launch",
+
+  // FreeCourseView component translations
+  freeCourseAccess: "Free Course Access",
+  freeCourseAccessInstructions: "Watch the course introduction and sample content below.",
+  videoPlayerPlaceholder: "Video will be loaded here",
+  youtubeEmbed: "YouTube video will be embedded here",
+  upgradeToPremium: "Upgrade to Premium",
+  upgradeToPremiumDescription: "Get full access to all course materials and instructor support",
+  viewPaidCourses: "View Premium Courses"
 };

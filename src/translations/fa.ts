@@ -243,5 +243,34 @@ export const fa = {
   noLessons: "هیچ درسی در این ماژول وجود ندارد.",
   noQuizzes: "هیچ آزمونی در این ماژول وجود ندارد.",
   noAnnouncements: "هنوز اعلانی وجود ندارد.",
-  searchCourses: "جستجوی دوره‌ها"
+  searchCourses: "جستجوی دوره‌ها",
+
+  // FreeCourseStart component translations
+  completed: "تکمیل شده",
+  done: "انجام شد",
+  freeCourseWelcome: "به دوره رایگان خوش آمدید! مراحل زیر را برای شروع تکمیل کنید.",
+  courseFiles: "فایل‌های دوره",
+  courseFilesDescription: "به تمام مواد آموزشی و منابع دوره دسترسی پیدا کنید.",
+  courseSlides: "اسلایدهای دوره",
+  worksheets: "کاربرگ‌ها",
+  activateAccess: "فعال‌سازی دسترسی",
+  activateAccessDescription: "این مراحل را برای دریافت دسترسی کامل به دوره خود تکمیل کنید",
+  joinChannel: "عضویت در کانال خصوصی تلگرام",
+  joinChannelDescription: "دریافت به‌روزرسانی‌ها و ارتباط با سایر دانشجویان",
+  joinNow: "همین حالا عضو شوید",
+  activateSupport: "فعال‌سازی پشتیبانی دوره",
+  activateSupportDescription: "دسترسی به پشتیبانی مدرس و پرسش و پاسخ",
+  activate: "فعال‌سازی",
+  smartAssistant: "راه‌اندازی دستیار هوشمند",
+  smartAssistantDescription: "دریافت کمک هوشمند برای سؤالات دوره",
+  launch: "راه‌اندازی",
+
+  // FreeCourseView component translations
+  freeCourseAccess: "دسترسی دوره رایگان",
+  freeCourseAccessInstructions: "معرفی دوره و نمونه محتوا را در زیر تماشا کنید.",
+  videoPlayerPlaceholder: "ویدیو در اینجا بارگذاری می‌شود",
+  youtubeEmbed: "ویدیوی یوتیوب در اینجا جاسازی می‌شود",
+  upgradeToPremium: "ارتقا به نسخه حرفه‌ای",
+  upgradeToPremiumDescription: "دسترسی کامل به تمام مطالب دوره و پشتیبانی مدرس را دریافت کنید",
+  viewPaidCourses: "مشاهده دوره‌های حرفه‌ای"
 };
