@@ -70,14 +70,14 @@ const Footer = () => {
       
       <div className="container mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center">
         <p className="text-sm text-muted-foreground mb-4 md:mb-0">
-          {translations.copyright}
+          {translations.footerCopyright}
         </p>
         <div className="flex space-x-4 rtl:space-x-reverse">
           <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            {translations.privacyPolicy}
+            {translations.privacy}
           </Link>
           <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            {translations.termsOfService}
+            {translations.terms}
           </Link>
         </div>
       </div>

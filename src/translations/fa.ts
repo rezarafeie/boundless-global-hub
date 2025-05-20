@@ -163,6 +163,16 @@ const faTranslations = {
   boundlessLandingTargetAudience: "مناسب برای چه کسانی؟",
   boundlessLandingWhatLearn: "چه چیزهایی یاد می‌گیرید؟",
   
+  // BoundlessLanding FAQ
+  boundlessLandingFAQ1Q: "مدت زمان تکمیل دوره چقدر است؟",
+  boundlessLandingFAQ1A: "دوره با تلاش مداوم در ۸ هفته قابل تکمیل است، اما شما دسترسی مادام‌العمر دارید تا با سرعت خود پیش بروید.",
+  boundlessLandingFAQ2Q: "آیا به تجربه قبلی کسب و کار نیاز دارم؟",
+  boundlessLandingFAQ2A: "خیر، دوره برای مبتدیان و کارآفرینان باتجربه طراحی شده است. ما با مفاهیم پایه شروع می‌کنیم.",
+  boundlessLandingFAQ3Q: "آیا به دانش فنی نیاز است؟",
+  boundlessLandingFAQ3A: "هیچ تخصص فنی لازم نیست. ما راهنمایی گام به گام برای تمام جنبه‌های فنی ارائه می‌دهیم.",
+  boundlessLandingFAQ4Q: "اگر راضی نباشم، می‌توانم بازپرداخت بگیرم؟",
+  boundlessLandingFAQ4A: "بله، ما ضمانت بازگشت وجه ۱۴ روزه ارائه می‌دهیم اگر از دوره کاملاً راضی نباشید.",
+  
   // 404 page
   notFoundTitle: "صفحه مورد نظر یافت نشد",
   notFoundDesc: "متأسفیم! صفحه‌ای که به دنبال آن هستید وجود ندارد.",
@@ -224,8 +234,11 @@ const faTranslations = {
   aiAssistantLongDescription: "با دستیار هوشمند پیشرفته ما که بر اساس پایگاه دانش اختصاصی آکادمی رفیعی آموزش دیده است، راهنمایی شخصی‌سازی شده برای اهداف کسب‌وکار و حرفه‌ای خود دریافت کنید.",
   startAssistant: "گفتگو با دستیار",
   aiFeature1: "استراتژی کسب‌وکار",
+  aiFeature1Desc: "دریافت بینش‌ها و استراتژی‌ها برای رشد کسب‌وکار شما",
   aiFeature2: "پیشرفت حرفه‌ای",
+  aiFeature2Desc: "یادگیری نحوه پیشرفت در مسیر شغلی خود",
   aiFeature3: "توسعه فردی",
+  aiFeature3Desc: "کشف راه‌هایی برای بهبود مهارت‌ها و ذهنیت خود",
   aiAssistantFeature4Title: "دسترسی ۲۴/۷",
   aiAssistantFeature4: "هر زمان که نیاز دارید، روز یا شب، به راهنمایی دسترسی داشته باشید"
 };

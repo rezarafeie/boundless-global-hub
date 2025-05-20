@@ -163,6 +163,16 @@ const enTranslations = {
   boundlessLandingTargetAudience: "Who is this for?",
   boundlessLandingWhatLearn: "What will you learn?",
   
+  // BoundlessLanding FAQ
+  boundlessLandingFAQ1Q: "How long does it take to complete the course?",
+  boundlessLandingFAQ1A: "The course can be completed in 8 weeks with consistent effort, but you have lifetime access to work at your own pace.",
+  boundlessLandingFAQ2Q: "Do I need prior business experience?",
+  boundlessLandingFAQ2A: "No, the course is designed for beginners and experienced entrepreneurs alike. We start with the fundamentals.",
+  boundlessLandingFAQ3Q: "Is technical knowledge required?",
+  boundlessLandingFAQ3A: "No technical expertise is required. We provide step-by-step guidance on all technical aspects.",
+  boundlessLandingFAQ4Q: "Can I get a refund if I'm not satisfied?",
+  boundlessLandingFAQ4A: "Yes, we offer a 14-day money-back guarantee if you're not completely satisfied with the course.",
+  
   // 404 page
   notFoundTitle: "Page Not Found",
   notFoundDesc: "Sorry! The page you're looking for doesn't exist.",
@@ -224,8 +234,11 @@ const enTranslations = {
   aiAssistantLongDescription: "Get personalized guidance for your business and career goals with our advanced AI assistant, trained on Rafiei Academy's exclusive knowledge base.",
   startAssistant: "Chat with Assistant",
   aiFeature1: "Business Strategy",
+  aiFeature1Desc: "Get insights and strategies for your business growth",
   aiFeature2: "Career Growth",
+  aiFeature2Desc: "Learn how to advance in your career path",
   aiFeature3: "Personal Development",
+  aiFeature3Desc: "Discover ways to improve your skills and mindset",
   aiAssistantFeature4Title: "24/7 Availability",
   aiAssistantFeature4: "Access guidance whenever you need, day or night"
 };
