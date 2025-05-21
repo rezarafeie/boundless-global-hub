@@ -267,5 +267,37 @@ export const en = {
   youtubeEmbed: "YouTube video will be embedded here",
   upgradeToPremium: "Upgrade to Premium",
   upgradeToPremiumDescription: "Get full access to all course materials and instructor support",
-  viewPaidCourses: "View Premium Courses"
+  viewPaidCourses: "View Premium Courses",
+
+  // PaidCourseStart component translations
+  paidCourseWelcome: "Welcome to your premium course! Complete the steps below to get started.",
+  rafeiPlayer: "Rafiei Player",
+  playerActivationDescription: "Access your course videos through the Rafiei Player.",
+  activationCode: "Activation Code",
+  downloadDesktopPlayer: "Download for Desktop",
+  downloadMobilePlayer: "Download for Mobile",
+  openWebPlayer: "Open Web Player",
+
+  // PaidCourseView component translations
+  paidCourseAccessInstructions: "Access all your premium course content below.",
+  courseMaterials: "Course Materials",
+  courseMaterialsDescription: "Access all premium course materials and resources here.",
+  communityAccess: "Community Access",
+  communityAccessDescription: "Connect with other students and get support from instructors.",
+
+  // CourseArchive component translations
+  wealthCourseDesc: "Build lasting wealth with proven financial strategies",
+  wealthBenefits: "Learn how to create multiple income streams",
+  wealthOutcome: "Achieve financial independence and security",
+  metaverseEmpireDesc: "Master metaverse technologies and opportunities",
+  metaverseBenefits: "Discover emerging business models in the metaverse",
+  metaverseOutcome: "Position yourself as a leader in virtual economies",
+  businessCourses: "Business Courses",
+  selfDevelopmentCourses: "Self Development",
+  currentlyRunning: "Currently Running Courses",
+  currentlyRunningDesc: "Join these courses that are currently in progress.",
+  upcomingCourses: "Upcoming Courses",
+  upcomingCoursesDesc: "Be the first to register for these exciting upcoming courses.",
+  pastCourses: "Past Courses",
+  pastCoursesDesc: "Access our archive of previously conducted courses."
 };

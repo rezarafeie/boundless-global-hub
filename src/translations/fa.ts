@@ -272,5 +272,37 @@ export const fa = {
   youtubeEmbed: "ویدیوی یوتیوب در اینجا جاسازی می‌شود",
   upgradeToPremium: "ارتقا به نسخه حرفه‌ای",
   upgradeToPremiumDescription: "دسترسی کامل به تمام مطالب دوره و پشتیبانی مدرس را دریافت کنید",
-  viewPaidCourses: "مشاهده دوره‌های حرفه‌ای"
+  viewPaidCourses: "مشاهده دوره‌های حرفه‌ای",
+  
+  // PaidCourseStart component translations
+  paidCourseWelcome: "به دوره حرفه‌ای خوش آمدید! مراحل زیر را برای شروع تکمیل کنید.",
+  rafeiPlayer: "پخش‌کننده رفیعی",
+  playerActivationDescription: "دسترسی به ویدیوهای دوره از طریق پخش‌کننده رفیعی.",
+  activationCode: "کد فعال‌سازی",
+  downloadDesktopPlayer: "دانلود برای دسکتاپ",
+  downloadMobilePlayer: "دانلود برای موبایل",
+  openWebPlayer: "باز کردن پخش‌کننده وب",
+
+  // PaidCourseView component translations
+  paidCourseAccessInstructions: "به تمام محتوای دوره حرفه‌ای خود در زیر دسترسی پیدا کنید.",
+  courseMaterials: "مواد آموزشی دوره",
+  courseMaterialsDescription: "دسترسی به تمام مواد آموزشی و منابع دوره حرفه‌ای.",
+  communityAccess: "دسترسی به انجمن",
+  communityAccessDescription: "با سایر دانشجویان ارتباط برقرار کنید و از مدرسان پشتیبانی دریافت کنید.",
+  
+  // CourseArchive component translations
+  wealthCourseDesc: "ثروت پایدار با استراتژی‌های مالی اثبات شده بسازید",
+  wealthBenefits: "یاد بگیرید چگونه جریان‌های درآمدی متعدد ایجاد کنید",
+  wealthOutcome: "به استقلال و امنیت مالی دست یابید",
+  metaverseEmpireDesc: "تسلط بر فناوری‌ها و فرصت‌های متاورس",
+  metaverseBenefits: "کشف مدل‌های کسب و کار نوظهور در متاورس",
+  metaverseOutcome: "خود را به عنوان رهبر در اقتصادهای مجازی قرار دهید",
+  businessCourses: "دوره‌های کسب و کار",
+  selfDevelopmentCourses: "توسعه فردی",
+  currentlyRunning: "دوره‌های در حال اجرا",
+  currentlyRunningDesc: "به این دوره‌ها که در حال پیشرفت هستند بپیوندید.",
+  upcomingCourses: "دوره‌های آینده",
+  upcomingCoursesDesc: "اولین نفری باشید که برای این دوره‌های هیجان‌انگیز آینده ثبت نام می‌کند.",
+  pastCourses: "دوره‌های گذشته",
+  pastCoursesDesc: "به آرشیو دوره‌های برگزار شده قبلی دسترسی پیدا کنید."
 };
