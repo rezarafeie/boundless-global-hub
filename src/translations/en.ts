@@ -299,5 +299,30 @@ export const en = {
   upcomingCourses: "Upcoming Courses",
   upcomingCoursesDesc: "Be the first to register for these exciting upcoming courses.",
   pastCourses: "Past Courses",
-  pastCoursesDesc: "Access our archive of previously conducted courses."
+  pastCoursesDesc: "Access our archive of previously conducted courses.",
+  
+  // BoundlessLanding translations
+  boundlessLandingTitle: "Boundless: Unlock Your Full Potential",
+  boundlessLandingSubtitle: "Transform Your Mindset for Success",
+  boundlessLandingHeroDesc: "A comprehensive program designed to break your limitations and achieve extraordinary results in business and life.",
+  boundlessLandingOriginalPrice: "Original Price",
+  boundlessLandingSpecialOffer: "Special Offer",
+  boundlessLandingInclusive: "All inclusive",
+  boundlessLandingStartCourse: "Enroll Now",
+  boundlessLandingJoinLater: "Save for Later",
+  boundlessLandingCountdown: "Limited Time Offer Ends In",
+  boundlessLandingAboutTitle: "About This Program",
+  boundlessLandingWhoFor: "Who Is This Program For?",
+  boundlessLandingSolutions: "What You'll Learn",
+  boundlessLandingResultsTitle: "Results You Can Expect",
+  
+  // BoundlessLanding FAQ translations
+  boundlessLandingFAQ1Q: "How long do I have access to the course?",
+  boundlessLandingFAQ1A: "You'll have lifetime access to all course materials and updates.",
+  boundlessLandingFAQ2Q: "Is there a refund policy?",
+  boundlessLandingFAQ2A: "Yes, we offer a 30-day money-back guarantee if you're not satisfied.",
+  boundlessLandingFAQ3Q: "How is this different from other programs?",
+  boundlessLandingFAQ3A: "Boundless combines practical tools with mindset transformation for lasting results.",
+  boundlessLandingFAQ4Q: "Do I need prior experience?",
+  boundlessLandingFAQ4A: "No prior experience needed. The program is designed for all levels."
 };
