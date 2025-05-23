@@ -74,7 +74,7 @@ const AIAssistantView = ({ language: propLanguage }: AIAssistantViewProps) => {
                 <Button 
                   className="bg-white text-black hover:bg-gray-200 transition-colors px-8 py-6 text-lg font-medium"
                 >
-                  {translations.aiAssistantAction}
+                  {translations.startAssistant}
                   <ArrowRight size={18} />
                 </Button>
               </div>

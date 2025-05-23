@@ -8,24 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap, BookOpenCheck } from "lucide-react";
+import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap } from "lucide-react";
 import QuickAccess from "@/components/QuickAccess";
 
 const Index = () => {
   const { translations } = useLanguage();
 
-  const featuredCourses = [
+  const paidCourses = [
     {
       title: translations.boundlessProgram,
       description: translations.boundlessProgramDesc,
       benefits: translations.boundlessBenefits,
       outcome: translations.boundlessOutcome,
       isPaid: true,
-      slug: "boundless",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.intermediate,
-      status: "active"
+      slug: "boundless"
     },
     {
       title: translations.instagramEssentials,
@@ -33,11 +29,18 @@ const Index = () => {
       benefits: translations.instagramBenefits,
       outcome: translations.instagramOutcome,
       isPaid: true,
-      slug: "instagram",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      status: "active"
+      slug: "instagram"
+    },
+  ];
+
+  const freeCourses = [
+    {
+      title: translations.boundlessTaste,
+      description: translations.boundlessTasteDesc,
+      benefits: translations.boundlessTasteBenefits,
+      outcome: translations.boundlessTasteOutcome,
+      isPaid: false,
+      slug: "boundless-taste"
     },
     {
       title: translations.passiveIncomeAI,
@@ -45,39 +48,8 @@ const Index = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
-      slug: "passive-income",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      status: "active"
+      slug: "passive-income"
     },
-  ];
-  
-  const blogArticles = [
-    {
-      title: "چگونه کسب و کار اینترنتی خود را راه‌اندازی کنیم",
-      description: "در این مقاله، ما به بررسی گام به گام مراحل راه‌اندازی یک کسب و کار آنلاین موفق می‌پردازیم.",
-      icon: BookOpen,
-      slug: "start-online-business"
-    },
-    {
-      title: "ابزارهای هوش مصنوعی برای کارآفرینان",
-      description: "معرفی بهترین ابزارهای هوش مصنوعی که به کارآفرینان کمک می‌کند تا کسب و کار خود را بهینه کنند.",
-      icon: MessageCircle,
-      slug: "ai-tools-for-entrepreneurs"
-    },
-    {
-      title: "استراتژی های بازاریابی محتوا در سال ۲۰۲۵",
-      description: "آشنایی با جدیدترین روندها و استراتژی‌های بازاریابی محتوا که در سال ۲۰۲۵ مؤثر خواهند بود.",
-      icon: BookOpenCheck,
-      slug: "content-marketing-2025"
-    },
-    {
-      title: "چگونه به عنوان فریلنسر درآمد دلاری کسب کنیم",
-      description: "راهنمای جامع برای فریلنسرها جهت ورود به بازارهای جهانی و کسب درآمد ارزی پایدار.",
-      icon: Globe,
-      slug: "freelancer-dollar-income"
-    }
   ];
 
   return (
@@ -90,7 +62,7 @@ const Index = () => {
         backgroundType="glow"
       />
       
-      {/* Quick Access Section */}
+      {/* Quick Access Section - NEW */}
       <QuickAccess />
       
       {/* AI Assistant CTA */}
@@ -139,9 +111,9 @@ const Index = () => {
                   className="bg-black hover:bg-black/90 text-white rounded-full"
                   size="lg"
                 >
-                  <a href="https://ai.rafiei.co/" target="_blank" rel="noopener noreferrer">
+                  <Link to="/ai-assistant">
                     {translations.aiAssistantAction}
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -200,16 +172,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Training Center */}
+      {/* Featured Paid Courses */}
       <section className="py-16 bg-white">
         <div className="container">
           <SectionTitle
-            title={translations.trainingCenter}
-            subtitle={translations.trainingCenterDesc}
+            title={translations.paidCoursesTitle}
+            subtitle={translations.paidCoursesSubtitle}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredCourses.map((course, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {paidCourses.map((course, index) => (
               <CourseCard
                 key={index}
                 title={course.title}
@@ -218,10 +190,6 @@ const Index = () => {
                 outcome={course.outcome}
                 isPaid={course.isPaid}
                 slug={course.slug}
-                instructor={course.instructor}
-                instructorLink={course.instructorLink}
-                level={course.level}
-                status={course.status as any}
               />
             ))}
           </div>
@@ -232,7 +200,7 @@ const Index = () => {
               size="lg" 
               className="bg-black hover:bg-black/90 text-white rounded-full"
             >
-              <Link to="/courses">
+              <Link to="/paid-courses">
                 {translations.learnMore}
               </Link>
             </Button>
@@ -240,33 +208,25 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Magazine Section */}
+      {/* Featured Free Courses */}
       <section className="py-16 bg-black/5">
         <div className="container">
           <SectionTitle
-            title={translations.magazine}
-            subtitle={translations.magazineDesc}
+            title={translations.freeCoursesTitle}
+            subtitle={translations.freeCoursesSubtitle}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {blogArticles.map((article, index) => (
-              <Card key={index} className="border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-md h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 rounded-full bg-black/10 flex items-center justify-center">
-                      <article.icon size={20} className="text-black" />
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-bold mb-2 line-clamp-2">{article.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-3">{article.description}</p>
-                  <Link to={`/blog/${article.slug}`} className="text-sm font-medium text-black hover:underline flex items-center">
-                    {translations.readMore}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 rtl:rotate-180">
-                      <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                  </Link>
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {freeCourses.map((course, index) => (
+              <CourseCard
+                key={index}
+                title={course.title}
+                description={course.description}
+                benefits={course.benefits}
+                outcome={course.outcome}
+                isPaid={course.isPaid}
+                slug={course.slug}
+              />
             ))}
           </div>
           
@@ -277,7 +237,7 @@ const Index = () => {
               variant="outline" 
               className="border-black text-black hover:bg-black/5 rounded-full"
             >
-              <Link to="/blog">
+              <Link to="/free-courses">
                 {translations.learnMore}
               </Link>
             </Button>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,18 +17,15 @@ import VerificationForm from "./VerificationForm";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  courseTitle?: string;
-  isPaid?: boolean;
-  courseId?: string;
-  onSuccess?: () => void;
+  courseTitle: string;
+  isPaid: boolean;
 }
 
 type AuthStep = "initial" | "verification" | "registration" | "password";
 
-const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onSuccess }: AuthModalProps) => {
+const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => {
   const { translations } = useLanguage();
   const { toast } = useToast();
-  const { signIn, signUp, activateCourse } = useAuth();
   
   const [authStep, setAuthStep] = useState<AuthStep>("initial");
   const [contactValue, setContactValue] = useState<string>("");
@@ -38,24 +34,15 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
   // Registration form data
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
-  
-  // Reset state when modal is opened
-  useEffect(() => {
-    if (isOpen) {
-      setAuthStep("initial");
-      setContactValue("");
-      setFirstName("");
-      setLastName("");
-    }
-  }, [isOpen]);
+  const [password, setPassword] = useState<string>("");
 
-  const handleInitialSubmit = async (e: React.FormEvent) => {
+  const handleInitialSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!contactValue) {
       toast({
         title: translations.error,
-        description: translations.enterEmail || "Please enter email or phone",
+        description: translations.enterEmail,
         variant: "destructive",
       });
       return;
@@ -65,20 +52,17 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
     const isEmail = contactValue.includes('@');
     setVerificationMethod(isEmail ? "email" : "phone");
     
-    // Send verification code
-    try {
-      await signIn(isEmail ? contactValue : "", !isEmail ? contactValue : "");
-      // Always show verification first
-      setAuthStep("verification");
-    } catch (error) {
-      console.error("Error sending verification:", error);
-    }
+    // Simulate checking if user exists (in a real app, this would be an API call)
+    const userExists = Math.random() > 0.5; // Randomly determine if user exists for demo
+    
+    // Always show verification first
+    setAuthStep("verification");
   };
 
-  const handleRegistrationSubmit = async (e: React.FormEvent) => {
+  const handleRegistrationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!firstName || !lastName) {
+    if (!firstName || !lastName || !password) {
       toast({
         title: translations.error,
         description: translations.fillAllFields || "Please fill all fields",
@@ -87,59 +71,86 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
       return;
     }
     
-    try {
-      // Register new user
-      const isEmail = contactValue.includes('@');
-      await signUp(
-        isEmail ? contactValue : "", 
-        !isEmail ? contactValue : "", 
-        firstName, 
-        lastName
-      );
-      
-      // If there's a course to activate, do it
-      if (courseId && courseTitle) {
-        await activateCourse(courseId, courseTitle, !!isPaid);
-      }
-      
-      // Close modal and callback
-      onClose();
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error("Registration error:", error);
-    }
+    // Simulate successful registration (in a real app, this would be an API call)
+    toast({
+      title: translations.success || "Success",
+      description: translations.registrationSuccess,
+    });
+    
+    // Redirect based on course type
+    handleLoginSuccess();
   };
 
-  const handleVerificationSuccess = async (success: boolean) => {
-    if (success) {
-      // User exists and is now logged in
-      if (courseId && courseTitle) {
-        await activateCourse(courseId, courseTitle, !!isPaid);
-      }
-      
-      // Close modal and callback
-      onClose();
-      if (onSuccess) onSuccess();
+  const handleVerificationSuccess = (userExists: boolean) => {
+    if (userExists) {
+      // User exists, redirect to course
+      handleLoginSuccess();
     } else {
       // New user, show registration form
       setAuthStep("registration");
     }
+  };
+  
+  const handleShowPasswordLogin = () => {
+    setAuthStep("password");
+  };
+  
+  const handlePasswordLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!password) {
+      toast({
+        title: translations.error,
+        description: translations.enterPassword || "Please enter your password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Simulate successful login (in a real app, this would be an API call)
+    toast({
+      title: translations.success || "Success",
+      description: translations.loginSuccess,
+    });
+    
+    // Redirect based on course type
+    handleLoginSuccess();
+  };
+
+  const handleLoginSuccess = () => {
+    // Redirect based on course type
+    if (isPaid) {
+      window.location.href = "/course/paid/" + encodeURIComponent(courseTitle);
+    } else if (courseTitle) {
+      window.location.href = "/course/free/" + encodeURIComponent(courseTitle);
+    } else {
+      onClose();
+    }
+  };
+
+  const resetForm = () => {
+    setAuthStep("initial");
+    setContactValue("");
+    setFirstName("");
+    setLastName("");
+    setPassword("");
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         onClose();
+        resetForm();
       }
     }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {courseTitle ? translations.accessCourse || "Access Course" : translations.loginRegister || "Login / Register"}
+            {courseTitle ? translations.accessCourse : translations.loginRegister}
           </DialogTitle>
           {courseTitle && (
             <DialogDescription>
-              {courseTitle} - {isPaid ? translations.paidCoursesTitle || "Paid Course" : translations.freeCoursesTitle || "Free Course"}
+              {courseTitle} - {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
             </DialogDescription>
           )}
         </DialogHeader>
@@ -147,7 +158,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
         {authStep === "initial" && (
           <form onSubmit={handleInitialSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="contact">{translations.enterEmailOrPhone || "Enter your email or phone number"}</Label>
+              <Label htmlFor="contact">{translations.enterEmailOrPhone || "ایمیل یا شماره موبایل خود را وارد کنید"}</Label>
               <Input 
                 id="contact"
                 type="text" 
@@ -156,7 +167,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
                 placeholder={translations.emailOrPhonePlaceholder || "example@mail.com | 09123456789"}
               />
             </div>
-            <Button type="submit" className="w-full mt-4">{translations.continue || "Continue"}</Button>
+            <Button type="submit" className="w-full mt-4">{translations.continue || "ادامه"}</Button>
           </form>
         )}
         
@@ -172,29 +183,29 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
         {authStep === "registration" && (
           <form onSubmit={handleRegistrationSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">{translations.firstName || "First Name"}</Label>
+              <Label htmlFor="firstName">{translations.firstName}</Label>
               <Input 
                 id="firstName"
                 type="text" 
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder={translations.firstNamePlaceholder || "First Name"}
+                placeholder={translations.firstNamePlaceholder || translations.firstName}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="lastName">{translations.lastName || "Last Name"}</Label>
+              <Label htmlFor="lastName">{translations.lastName}</Label>
               <Input 
                 id="lastName"
                 type="text" 
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder={translations.lastNamePlaceholder || "Last Name"}
+                placeholder={translations.lastNamePlaceholder || translations.lastName}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="contact">{translations.emailOrPhone || "Email or Phone"}</Label>
+              <Label htmlFor="contact">{translations.emailOrPhone || translations.email}</Label>
               <Input 
                 id="contact"
                 type="text" 
@@ -204,11 +215,50 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid = false, courseId, onS
               />
             </div>
             
-            <Button type="submit" className="w-full mt-4">{translations.register || "Register"}</Button>
+            <div className="space-y-2">
+              <Label htmlFor="password">{translations.password}</Label>
+              <Input 
+                id="password"
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={translations.passwordPlaceholder || translations.password}
+              />
+            </div>
+            
+            <Button type="submit" className="w-full mt-4">{translations.register}</Button>
             
             <div className="text-center">
               <Button variant="link" onClick={() => setAuthStep("initial")}>
-                {translations.back || "Back"}
+                {translations.back}
+              </Button>
+            </div>
+          </form>
+        )}
+        
+        {authStep === "password" && (
+          <form onSubmit={handlePasswordLogin} className="space-y-4">
+            <div className="text-center mb-4">
+              <div className="font-medium">{translations.welcomeBack}</div>
+              <div className="text-sm text-muted-foreground">{contactValue}</div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">{translations.password}</Label>
+              <Input 
+                id="password"
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={translations.passwordPlaceholder || translations.password}
+              />
+            </div>
+            
+            <Button type="submit" className="w-full mt-4">{translations.login}</Button>
+            
+            <div className="text-center">
+              <Button variant="link" onClick={() => setAuthStep("initial")}>
+                {translations.back}
               </Button>
             </div>
           </form>
