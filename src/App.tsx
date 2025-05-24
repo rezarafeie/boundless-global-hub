@@ -35,8 +35,8 @@ import CourseDetail from "@/pages/Course/CourseDetail";
 function App() {
   return (
     <LanguageProvider>
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <Routes>
             {/* Persian Routes */}
             <Route path="/" element={<Index />} />
@@ -90,8 +90,8 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </LanguageProvider>
   );
 }
