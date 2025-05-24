@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -17,7 +16,7 @@ const CourseDetail = () => {
   const { user, activateCourse } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Mock course data - in a real app, this would come from an API
+  // Complete course data including all missing courses
   const getCourseBySlug = (slug: string) => {
     const courses = {
       "boundless": {
@@ -77,6 +76,148 @@ const CourseDetail = () => {
           "Build a strong brand presence",
           "Convert followers to customers"
         ]
+      },
+      "wealth": {
+        title: translations.wealthCourse,
+        description: translations.wealthCourseDesc,
+        benefits: translations.wealthBenefits,
+        outcome: translations.wealthOutcome,
+        isPaid: true,
+        price: "$399",
+        originalPrice: "$599",
+        duration: "8 weeks",
+        modules: 10,
+        students: 320,
+        rating: 4.7,
+        image: "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=1200&q=80",
+        features: [
+          "Investment strategies",
+          "Wealth building frameworks",
+          "Financial planning tools",
+          "Risk management",
+          "Portfolio optimization",
+          "Tax optimization",
+          "Expert mentorship"
+        ],
+        learningOutcomes: [
+          "Develop wealth building mindset",
+          "Create multiple income streams",
+          "Master investment principles",
+          "Build long-term financial security"
+        ]
+      },
+      "metaverse": {
+        title: translations.metaverseEmpire,
+        description: translations.metaverseEmpireDesc,
+        benefits: translations.metaverseBenefits,
+        outcome: translations.metaverseOutcome,
+        isPaid: true,
+        price: "$499",
+        originalPrice: "$799",
+        duration: "10 weeks",
+        modules: 15,
+        students: 180,
+        rating: 4.8,
+        image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80",
+        features: [
+          "NFT creation and trading",
+          "Virtual world development",
+          "Cryptocurrency basics",
+          "Blockchain technology",
+          "Virtual real estate",
+          "Gaming ecosystems",
+          "Future trends analysis"
+        ],
+        learningOutcomes: [
+          "Understand metaverse fundamentals",
+          "Create and trade NFTs",
+          "Build virtual businesses",
+          "Navigate crypto markets"
+        ]
+      },
+      "change-project": {
+        title: "پروژه تغییر",
+        description: translations.changeProjectDesc,
+        benefits: translations.changeProjectBenefits,
+        outcome: translations.changeProjectOutcome,
+        isPaid: false,
+        price: "Free",
+        originalPrice: null,
+        duration: "30 days",
+        modules: 30,
+        students: 1200,
+        rating: 4.6,
+        image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200&q=80",
+        features: [
+          "30-day transformation program",
+          "Daily habit tracking",
+          "Personal development tools",
+          "Community support",
+          "Progress monitoring",
+          "Motivational content"
+        ],
+        learningOutcomes: [
+          "Build positive habits",
+          "Develop self-discipline",
+          "Transform your mindset",
+          "Achieve personal goals"
+        ]
+      },
+      "american-business": {
+        title: translations.americanBusiness,
+        description: translations.americanBusinessDesc,
+        benefits: translations.americanBusinessBenefits,
+        outcome: translations.americanBusinessOutcome,
+        isPaid: false,
+        price: "Free",
+        originalPrice: null,
+        duration: "6 weeks",
+        modules: 8,
+        students: 800,
+        rating: 4.5,
+        image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=1200&q=80",
+        features: [
+          "US market analysis",
+          "Business registration process",
+          "Legal requirements",
+          "Tax implications",
+          "Marketing strategies",
+          "Case studies"
+        ],
+        learningOutcomes: [
+          "Understand US business landscape",
+          "Navigate legal requirements",
+          "Develop market entry strategy",
+          "Build US business connections"
+        ]
+      },
+      "passive-income": {
+        title: translations.passiveIncomeAI,
+        description: translations.passiveIncomeAIDesc,
+        benefits: translations.passiveIncomeAIBenefits,
+        outcome: translations.passiveIncomeAIOutcome,
+        isPaid: false,
+        price: "Free",
+        originalPrice: null,
+        duration: "4 weeks",
+        modules: 6,
+        students: 950,
+        rating: 4.4,
+        image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=1200&q=80",
+        features: [
+          "AI automation tools",
+          "Passive income strategies",
+          "Online business models",
+          "Digital marketing",
+          "Scaling techniques",
+          "Real-world examples"
+        ],
+        learningOutcomes: [
+          "Leverage AI for income generation",
+          "Build automated systems",
+          "Create scalable businesses",
+          "Develop multiple revenue streams"
+        ]
       }
     };
     
@@ -97,10 +238,10 @@ const CourseDetail = () => {
     return (
       <MainLayout>
         <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">Course Not Found</h1>
-          <p className="text-muted-foreground mb-8">The course you're looking for doesn't exist.</p>
+          <h1 className="text-2xl font-bold mb-4">دوره یافت نشد</h1>
+          <p className="text-muted-foreground mb-8">دوره‌ای که دنبال آن هستید وجود ندارد.</p>
           <Button asChild>
-            <Link to="/courses">Back to Courses</Link>
+            <Link to="/courses">بازگشت به دوره‌ها</Link>
           </Button>
         </div>
       </MainLayout>
@@ -152,11 +293,18 @@ const CourseDetail = () => {
                 </div>
               </div>
 
-              {course.isPaid && (
+              {course.isPaid && course.originalPrice && (
                 <div className="flex items-center gap-4">
                   <span className="text-3xl font-bold text-primary">{course.price}</span>
                   <span className="text-lg text-muted-foreground line-through">{course.originalPrice}</span>
                   <Badge variant="secondary" className="bg-green-100 text-green-800">Save 40%</Badge>
+                </div>
+              )}
+
+              {!course.isPaid && (
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl font-bold text-green-600">{course.price}</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">رایگان</Badge>
                 </div>
               )}
 

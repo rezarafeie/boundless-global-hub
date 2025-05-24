@@ -11,6 +11,8 @@ import TrainingCenter from "./pages/TrainingCenter";
 import CourseDetail from "./pages/CourseDetail";
 import AssessmentCenter from "./pages/AssessmentCenter";
 import Blog from "./pages/Blog";
+import ContactUs from "./pages/ContactUs";
+import About from "./pages/About";
 import FreeCourses from "./pages/FreeCourses";
 import PaidCourses from "./pages/PaidCourses";
 import EnglishIndex from "./pages/en/Index";
@@ -35,6 +37,8 @@ const App = () => (
               <Route path="/course/:slug" element={<CourseDetail />} />
               <Route path="/assessment-center" element={<AssessmentCenter />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/contact" element={<ContactUs />} />
+              <Route path="/about" element={<About />} />
               <Route path="/free-courses" element={<FreeCourses />} />
               <Route path="/paid-courses" element={<PaidCourses />} />
               <Route path="/dashboard" element={<Dashboard />} />
