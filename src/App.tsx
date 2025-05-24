@@ -62,9 +62,33 @@ const App = () => (
               <Route path="/course/boundless" element={<BoundlessLanding />} />
               <Route path="/course/instagram" element={<InstagramLanding />} />
               <Route path="/course/metaverse" element={<MetaverseLanding />} />
-              <Route path="/course/boundless-taste" element={<FreeCourseLanding />} />
-              <Route path="/course/passive-income-ai" element={<FreeCourseLanding />} />
               <Route path="/course/wealth" element={<BoundlessLanding />} />
+              <Route 
+                path="/course/boundless-taste" 
+                element={
+                  <FreeCourseLanding 
+                    title="طعم بدون مرز"
+                    englishTitle="Boundless Taste"
+                    description="آشنایی اولیه با مفاهیم کلیدی کسب‌وکار بدون مرز"
+                    benefitOne="یادگیری اصول پایه کسب‌وکار آنلاین"
+                    benefitTwo="شناخت ابزارهای ضروری برای شروع"
+                    iconType="graduation"
+                  />
+                } 
+              />
+              <Route 
+                path="/course/passive-income-ai" 
+                element={
+                  <FreeCourseLanding 
+                    title="درآمد غیرفعال با هوش مصنوعی"
+                    englishTitle="Passive Income with AI"
+                    description="راه‌های عملی کسب درآمد با استفاده از ابزارهای هوش مصنوعی"
+                    benefitOne="آشنایی با ابزارهای AI پردرآمد"
+                    benefitTwo="استراتژی‌های کسب درآمد غیرفعال"
+                    iconType="message"
+                  />
+                } 
+              />
               
               {/* Course start routes */}
               <Route path="/start/paid-course" element={<PaidCourseStart />} />
