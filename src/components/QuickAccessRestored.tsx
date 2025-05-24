@@ -22,6 +22,7 @@ const QuickAccessRestored = () => {
       gradient: 'from-emerald-500 to-teal-600',
       bgColor: 'bg-emerald-50',
       textColor: 'text-emerald-600',
+      hoverBg: 'hover:bg-emerald-100',
     },
     {
       title: 'مرکز سنجش',
@@ -31,6 +32,7 @@ const QuickAccessRestored = () => {
       gradient: 'from-purple-500 to-indigo-600',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
+      hoverBg: 'hover:bg-purple-100',
     },
     {
       title: 'مجله',
@@ -40,6 +42,7 @@ const QuickAccessRestored = () => {
       gradient: 'from-blue-500 to-cyan-600',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
+      hoverBg: 'hover:bg-blue-100',
     },
     {
       title: 'پشتیبانی',
@@ -49,6 +52,7 @@ const QuickAccessRestored = () => {
       gradient: 'from-orange-500 to-red-600',
       bgColor: 'bg-orange-50',
       textColor: 'text-orange-600',
+      hoverBg: 'hover:bg-orange-100',
     },
     {
       title: 'دستیار هوشمند',
@@ -58,6 +62,7 @@ const QuickAccessRestored = () => {
       gradient: 'from-pink-500 to-rose-600',
       bgColor: 'bg-pink-50',
       textColor: 'text-pink-600',
+      hoverBg: 'hover:bg-pink-100',
     },
     {
       title: 'برنامه بدون مرز',
@@ -67,6 +72,7 @@ const QuickAccessRestored = () => {
       gradient: 'from-amber-500 to-yellow-600',
       bgColor: 'bg-amber-50',
       textColor: 'text-amber-600',
+      hoverBg: 'hover:bg-amber-100',
     },
   ];
 
@@ -84,18 +90,18 @@ const QuickAccessRestored = () => {
           {quickAccessItems.map((item, index) => (
             <Card 
               key={index} 
-              className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-white/90 backdrop-blur-sm overflow-hidden relative"
+              className="group hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border-0 bg-white/90 backdrop-blur-sm overflow-hidden relative transform hover:scale-105"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+              <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-15 transition-opacity duration-500`} />
               <CardContent className="p-6 text-center relative z-10">
                 {item.internal ? (
                   <Link to={item.link} className="block">
-                    <div className={`w-14 h-14 ${item.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-xl`}>
-                      <span className={`${item.textColor} group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-14 h-14 ${item.bgColor} ${item.hoverBg} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-125 transition-all duration-500 shadow-lg group-hover:shadow-2xl`}>
+                      <span className={`${item.textColor} group-hover:scale-110 transition-transform duration-500`}>
                         {item.icon}
                       </span>
                     </div>
-                    <h3 className={`font-semibold text-sm ${item.textColor} group-hover:text-gray-900 transition-colors duration-300`}>
+                    <h3 className={`font-semibold text-sm ${item.textColor} group-hover:text-gray-900 transition-colors duration-500`}>
                       {item.title}
                     </h3>
                   </Link>
@@ -106,12 +112,12 @@ const QuickAccessRestored = () => {
                     rel="noopener noreferrer"
                     className="block"
                   >
-                    <div className={`w-14 h-14 ${item.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg group-hover:shadow-xl`}>
-                      <span className={`${item.textColor} group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-14 h-14 ${item.bgColor} ${item.hoverBg} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-125 transition-all duration-500 shadow-lg group-hover:shadow-2xl`}>
+                      <span className={`${item.textColor} group-hover:scale-110 transition-transform duration-500`}>
                         {item.icon}
                       </span>
                     </div>
-                    <h3 className={`font-semibold text-sm ${item.textColor} group-hover:text-gray-900 transition-colors duration-300 flex items-center justify-center gap-1`}>
+                    <h3 className={`font-semibold text-sm ${item.textColor} group-hover:text-gray-900 transition-colors duration-500 flex items-center justify-center gap-1`}>
                       {item.title}
                       <ExternalLink size={10} />
                     </h3>

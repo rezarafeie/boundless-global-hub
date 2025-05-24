@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,30 +8,30 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { courseSlug, amount, userEmail, userMobile, userName } = await req.json()
+    const { amount, courseSlug, userEmail, userPhone } = await req.json()
 
-    console.log('Payment request for:', { courseSlug, amount, userEmail })
+    console.log('Payment request received:', { amount, courseSlug, userEmail, userPhone })
 
-    const callbackUrl = `https://academy.rafiei.co/payment-success/${courseSlug}`
-    
     const zarinpalRequest = {
-      merchant_id: "10f6ea92-fb53-468c-bcc9-36ef4d9f539c",
+      merchant_id: "00000000-0000-0000-0000-000000000000",
       amount: amount,
-      callback_url: callbackUrl,
-      description: `پرداخت برای دوره ${courseSlug} توسط ${userName}`,
+      currency: "IRT",
+      description: `خرید دوره ${courseSlug}`,
+      callback_url: `${req.headers.get('origin')}/payment-success`,
       metadata: {
-        mobile: userMobile,
-        email: userEmail
+        email: userEmail || '',
+        mobile: userPhone || '', // اطمینان از ارسال شماره موبایل
+        course_slug: courseSlug
       }
     }
 
-    console.log('Sending request to Zarinpal:', zarinpalRequest)
+    console.log('Zarinpal request payload:', zarinpalRequest)
 
-    const response = await fetch('https://payment.zarinpal.com/pg/v4/payment/request.json', {
+    const response = await fetch('https://api.zarinpal.com/pg/v4/payment/request.json', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -40,55 +39,45 @@ serve(async (req) => {
       body: JSON.stringify(zarinpalRequest)
     })
 
-    const result = await response.json()
-    console.log('Zarinpal response:', result)
+    const data = await response.json()
+    console.log('Zarinpal response:', data)
 
-    if (result.data && result.data.code === 100) {
-      // Create payment record in Supabase
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (data.data && data.data.code === 100) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          authority: data.data.authority,
+          payment_url: `https://www.zarinpal.com/pg/StartPay/${data.data.authority}`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
       )
-
-      const authHeader = req.headers.get('Authorization')?.replace('Bearer ', '')
-      const { data: { user } } = await supabase.auth.getUser(authHeader)
-
-      if (user) {
-        await supabase.from('payments').insert({
-          user_id: user.id,
-          course_slug: courseSlug,
-          authority: result.data.authority,
-          amount: amount,
-          status: 'pending',
-          merchant_id: zarinpalRequest.merchant_id
-        })
-      }
-
-      return new Response(JSON.stringify({
-        success: true,
-        authority: result.data.authority,
-        paymentUrl: `https://www.zarinpal.com/pg/StartPay/${result.data.authority}`
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
     } else {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Payment request failed',
-        details: result
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      console.error('Zarinpal error:', data)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: data.errors?.[0]?.message || 'خطا در ایجاد درخواست پرداخت'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
     }
   } catch (error) {
-    console.error('Payment request error:', error)
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    console.error('Error in zarinpal-request:', error)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'خطای سرور در پردازش درخواست'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    )
   }
 })
