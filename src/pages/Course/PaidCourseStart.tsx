@@ -1,226 +1,240 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Download, MessageSquare, Award, CheckCircle, Lock, Play } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/Auth/AuthModal";
+import { MessageCircle, FileText, CheckCircle, MessageSquare, Download, Video } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 const PaidCourseStart = () => {
   const { translations } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const courseTitle = searchParams.get('title') || "";
+  const { user, activateAssistant } = useAuth();
+  const navigate = useNavigate();
+  
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [channelJoined, setChannelJoined] = useState(false);
+  const [supportActivated, setSupportActivated] = useState(false);
+  const [assistantActivated, setAssistantActivated] = useState(false);
+  
+  // Mock activation code
+  const activationCode = "RAFIEI-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  useEffect(() => {
+    // Redirect if not logged in and no course title
+    if (!user && !courseTitle) {
+      navigate('/courses');
+    }
+  }, [user, courseTitle, navigate]);
+
+  const handleJoinChannel = () => {
+    // Simulate joining Telegram channel
+    window.open('https://t.me/rafieiAcademy', '_blank');
+    setChannelJoined(true);
+  };
+
+  const handleActivateSupport = () => {
+    // Simulate activating support
+    setSupportActivated(true);
+  };
+
+  const handleActivateAssistant = async () => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    
+    await activateAssistant();
+    setAssistantActivated(true);
+  };
+
+  const ActionBlock = ({ 
+    icon, 
+    title, 
+    description, 
+    buttonText, 
+    onClick, 
+    isCompleted 
+  }: { 
+    icon: React.ReactNode, 
+    title: string, 
+    description: string, 
+    buttonText: string, 
+    onClick: () => void, 
+    isCompleted: boolean 
+  }) => (
+    <div className={`border rounded-lg p-6 transition-all ${isCompleted ? 'bg-gray-50 opacity-80' : 'bg-white'}`}>
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-black/5 flex-shrink-0">
+          {icon}
+        </div>
+        <div className="flex-grow">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-lg">{title}</h3>
+            {isCompleted && (
+              <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                <CheckCircle size={12} className="mr-1" />
+                {translations.completed || "Completed"}
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">{description}</p>
+          <Button 
+            variant={isCompleted ? "outline" : "default"}
+            onClick={onClick}
+            className={isCompleted ? "opacity-50" : ""}
+          >
+            {isCompleted ? (
+              <span className="flex items-center gap-2">
+                <CheckCircle size={16} />
+                {translations.done || "Done"}
+              </span>
+            ) : buttonText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <MainLayout>
-      <div className="relative py-20 bg-black text-white overflow-hidden">
-        {/* Animated glow background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="glow-circle glow-circle-1 animate-pulse-slow"></div>
-          <div className="glow-circle glow-circle-2 animate-float"></div>
-        </div>
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-[20px] z-0"></div>
-        
-        <div className="container relative z-10">
-          <div className="text-center max-w-2xl mx-auto">
-            <CheckCircle size={64} className="mx-auto mb-6 text-green-400" />
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">دوره فعال شد</h1>
-            <p className="text-lg text-white/70">
-              به دوره اختصاصی آکادمی رفیعی خوش آمدید. همه امکانات دوره برای شما فعال شده است.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="container py-16">
+      <div className="container py-10">
         <div className="max-w-3xl mx-auto">
-          <div className="grid grid-cols-1 gap-8">
-            {/* Access Instructions */}
-            <Card className="border-black/5 shadow-sm overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Play className="w-5 h-5" />
-                  دسترسی به محتوای دوره
-                </h2>
-                
-                <div className="space-y-6">
-                  <div className="bg-black/5 p-4 rounded-lg">
-                    <h3 className="font-medium mb-2">پلیر اختصاصی رفیعی</h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      با استفاده از پلیر اختصاصی می‌توانید به تمام ویدیوهای دوره دسترسی داشته باشید.
-                    </p>
-                    <Button className="w-full">
-                      فعال‌سازی پلیر
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold mb-4">{courseTitle}</h1>
+            <Badge variant="default" className="bg-black text-white hover:bg-black/90">{translations.paidCoursesTitle}</Badge>
+            <p className="mt-4 text-muted-foreground">{translations.paidCourseWelcome}</p>
+          </div>
+          
+          <div className="space-y-8">
+            {/* Course files section */}
+            <div className="border rounded-lg p-6 bg-gray-50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <FileText size={20} />
+                {translations.courseFiles || "Course Files"}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                {translations.courseFilesDescription || "Access all course materials and resources here."}
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-white rounded border">
+                  <span className="font-medium">{translations.courseSlides || "Course Slides"}</span>
+                  <Button size="sm" variant="outline" className="h-8">
+                    {translations.download || "Download"}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-white rounded border">
+                  <span className="font-medium">{translations.worksheets || "Worksheets"}</span>
+                  <Button size="sm" variant="outline" className="h-8">
+                    {translations.download || "Download"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Player Activation */}
+            <div className="border rounded-lg p-6 bg-gray-50">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Video size={20} />
+                {translations.rafeiPlayer || "Rafiei Player"}
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                {translations.playerActivationDescription || "Access your course videos through the Rafiei Player."}
+              </p>
+              
+              <Card className="mb-4">
+                <CardContent className="pt-4">
+                  <h3 className="font-medium mb-2">{translations.activationCode || "Activation Code"}</h3>
+                  <div className="flex gap-2">
+                    <Input value={activationCode} readOnly className="font-mono text-center" />
+                    <Button variant="outline" size="icon" onClick={() => navigator.clipboard.writeText(activationCode)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c0-1.1.9-2 2-2h2"/><path d="M4 12c0-1.1.9-2 2-2h2"/><path d="M4 8c0-1.1.9-2 2-2h2"/></svg>
                     </Button>
                   </div>
-                  
-                  <div className="aspect-video bg-gray-200 max-w-2xl mx-auto rounded-lg flex items-center justify-center border border-black/10">
-                    <div className="text-center">
-                      <p className="text-lg font-medium mb-2">{translations.videoPlayerPlaceholder}</p>
-                      <p className="text-sm text-gray-500">{translations.rafeiPlayer}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button variant="outline" className="gap-2" asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer">
+                    <Download size={16} />
+                    {translations.downloadDesktopPlayer || "Download for Desktop"}
+                  </a>
+                </Button>
+                <Button variant="outline" className="gap-2" asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer">
+                    <Download size={16} />
+                    {translations.downloadMobilePlayer || "Download for Mobile"}
+                  </a>
+                </Button>
+              </div>
+              
+              <div className="mt-4">
+                <Button className="w-full" asChild>
+                  <a href="#" target="_blank" rel="noopener noreferrer">
+                    {translations.openWebPlayer || "Open Web Player"}
+                  </a>
+                </Button>
+              </div>
+            </div>
             
-            {/* Course Materials */}
-            <Card className="border-black/5 shadow-sm overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Download className="w-5 h-5" />
-                  منابع تکمیلی دوره
-                </h2>
-                
-                <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    فایل PDF جزوه دوره
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    فایل تمرین‌های عملی
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    نرم‌افزارهای مورد نیاز
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    منابع تکمیلی و مطالعاتی
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <h2 className="text-xl font-bold">{translations.activateAccess || "Activate Your Access"}</h2>
+            <p className="text-muted-foreground -mt-4 mb-6">{translations.activateAccessDescription || "Complete these steps to get full access to your course"}</p>
             
-            {/* Assessments */}
-            <Card className="border-black/5 shadow-sm overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  آزمون‌ها و ارزیابی‌ها
-                </h2>
-                
-                <div className="space-y-4">
-                  <Link to="/assessment-center" className="block">
-                    <Button variant="outline" className="w-full">
-                      دسترسی به آزمون‌های دوره
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Action blocks */}
+            <div className="space-y-4">
+              <ActionBlock 
+                icon={<MessageCircle size={24} />}
+                title={translations.joinChannel || "Join Private Telegram Channel"}
+                description={translations.joinChannelDescription || "Get updates and connect with other students"}
+                buttonText={translations.joinNow || "Join Now"}
+                onClick={handleJoinChannel}
+                isCompleted={channelJoined}
+              />
+              
+              <ActionBlock 
+                icon={<MessageSquare size={24} />}
+                title={translations.activateSupport || "Activate Course Support"}
+                description={translations.activateSupportDescription || "Get access to instructor support and Q&A"}
+                buttonText={translations.activate || "Activate"}
+                onClick={handleActivateSupport}
+                isCompleted={supportActivated}
+              />
+              
+              <ActionBlock 
+                icon={<MessageCircle size={24} />}
+                title={translations.smartAssistant || "Launch Smart Assistant"}
+                description={translations.smartAssistantDescription || "Get AI-powered help with your course questions"}
+                buttonText={translations.launch || "Launch"}
+                onClick={handleActivateAssistant}
+                isCompleted={assistantActivated}
+              />
+            </div>
             
-            {/* Support and AI */}
-            <Card className="border-black/5 shadow-sm overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  پشتیبانی و دستیار هوشمند
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Link to="/support" className="block">
-                    <Button variant="outline" className="w-full">
-                      دسترسی به پشتیبانی ویژه
-                    </Button>
-                  </Link>
-                  
-                  <Link to="/ai-assistant" className="block">
-                    <Button className="w-full">
-                      دستیار هوشمند
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Instructor Profile */}
-            <Card className="border-black/5 shadow-sm overflow-hidden">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Lock className="w-5 h-5" />
-                  محتوای ویژه دوره
-                </h2>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <Link to="/instructor/reza-rafiei" className="block">
-                    <Button variant="outline" className="w-full">
-                      مشاهده پروفایل استاد دوره
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="border-t pt-6 mt-8">
+              <Button asChild className="w-full md:w-auto">
+                <a 
+                  href={`/course/paid/${encodeURIComponent(courseTitle)}`}
+                  className="flex items-center gap-2"
+                >
+                  {translations.startLearning || "Start Learning"}
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-
-      <style>
-        {`
-        @keyframes pulse-slow {
-          0%, 100% { 
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% { 
-            opacity: 0.7;
-            transform: scale(1.1);
-          }
-        }
-        
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.4;
-          }
-          25% {
-            transform: translateY(-20px) translateX(10px);
-            opacity: 0.7;
-          }
-          50% {
-            transform: translateY(0) translateX(20px);
-            opacity: 0.5;
-          }
-          75% {
-            transform: translateY(20px) translateX(10px);
-            opacity: 0.7;
-          }
-        }
-        
-        .animate-pulse-slow {
-          animation: pulse-slow 8s infinite ease-in-out;
-        }
-        
-        .animate-float {
-          animation: float 15s infinite ease-in-out;
-        }
-        
-        .glow-circle {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(30px);
-        }
-        
-        .glow-circle-1 {
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(72,187,120,0.25) 0%, rgba(72,187,120,0) 70%);
-          top: -100px;
-          right: 10%;
-        }
-        
-        .glow-circle-2 {
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(56,178,172,0.2) 0%, rgba(56,178,172,0) 70%);
-          bottom: -150px;
-          left: 10%;
-        }
-        `}
-      </style>
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </MainLayout>
   );
 };

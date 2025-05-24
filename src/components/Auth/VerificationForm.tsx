@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface VerificationFormProps {
   method: "email" | "phone";
   contact: string;
-  onVerified: (userExists: boolean) => void;
+  onVerified: (success: boolean) => void;
   onBack: () => void;
 }
 
@@ -21,6 +22,8 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
 }) => {
   const { translations } = useLanguage();
   const { toast } = useToast();
+  const { verifyOTP, signIn } = useAuth();
+  
   const [code, setCode] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(120);
   const [isResending, setIsResending] = useState<boolean>(false);
@@ -33,45 +36,60 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (code.length !== 6 || !/^\d+$/.test(code)) {
       toast({
-        title: translations.error,
-        description: translations.invalidCode,
+        title: translations.error || "Error",
+        description: translations.invalidCode || "Invalid verification code",
         variant: "destructive",
       });
       return;
     }
     
-    // In a real app, this would validate the code with an API
-    // For demo, we'll randomly determine if user exists
-    const userExists = Math.random() > 0.5;
-    
-    toast({
-      title: translations.success || "Success",
-      description: translations.verificationSuccess,
-    });
-    
-    // Call the onVerified callback with the userExists result
-    onVerified(userExists);
+    try {
+      // Verify the OTP token
+      const success = await verifyOTP(
+        method === "email" ? contact : null,
+        method === "phone" ? contact : null,
+        code
+      );
+      
+      // Call the onVerified callback with the result
+      onVerified(success);
+    } catch (error) {
+      console.error("Verification error:", error);
+    }
   };
 
-  const handleResendCode = () => {
+  const handleResendCode = async () => {
     setIsResending(true);
     setTimeLeft(120);
     
-    // Simulate resending the code
-    setTimeout(() => {
-      setIsResending(false);
+    try {
+      // Resend verification code
+      await signIn(
+        method === "email" ? contact : "",
+        method === "phone" ? contact : ""
+      );
+      
       toast({
-        title: translations.codeSent,
+        title: translations.codeSent || "Code sent",
         description: method === "email" 
-          ? `${translations.codeEmailSent} ${contact}`
-          : `${translations.codePhoneSent} ${contact}`,
+          ? `${translations.codeEmailSent || "Code sent to"} ${contact}` 
+          : `${translations.codePhoneSent || "Code sent to"} ${contact}`,
       });
-    }, 1500);
+    } catch (error) {
+      console.error("Error resending code:", error);
+      toast({
+        title: translations.error || "Error",
+        description: translations.error || "Error resending code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -85,17 +103,17 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
       <div className="text-center">
         <p className="font-medium">
           {method === "email" 
-            ? `${translations.codeEmailSent} ${contact}`
-            : `${translations.codePhoneSent} ${contact}`}
+            ? `${translations.codeEmailSent || "Code sent to"} ${contact}`
+            : `${translations.codePhoneSent || "Code sent to"} ${contact}`}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
-          {translations.codeExpires} {formatTime(timeLeft)}
+          {translations.codeExpires || "Code expires in"} {formatTime(timeLeft)}
         </p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="verificationCode">{translations.verify}</Label>
+          <Label htmlFor="verificationCode">{translations.verify || "Verification Code"}</Label>
           <Input
             id="verificationCode"
             type="text"
@@ -107,7 +125,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
           />
         </div>
         
-        <Button type="submit" className="w-full">{translations.verify}</Button>
+        <Button type="submit" className="w-full">{translations.verify || "Verify"}</Button>
         
         <div className="flex justify-between items-center">
           <Button 
@@ -115,7 +133,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
             onClick={onBack}
             className="text-sm px-0"
           >
-            {translations.back}
+            {translations.back || "Back"}
           </Button>
           
           <Button
@@ -124,7 +142,7 @@ const VerificationForm: React.FC<VerificationFormProps> = ({
             disabled={timeLeft > 0 && timeLeft < 120 || isResending}
             className="text-sm px-0"
           >
-            {isResending ? translations.creating : translations.resendCode}
+            {isResending ? translations.creating || "Sending..." : translations.resendCode || "Resend Code"}
           </Button>
         </div>
       </form>

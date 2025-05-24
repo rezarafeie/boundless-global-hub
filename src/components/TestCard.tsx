@@ -7,17 +7,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface TestCardProps {
   title: string;
   description: string;
-  category: string;
+  category?: string;  // Make category optional
 }
 
-const TestCard: React.FC<TestCardProps> = ({ title, description, category }) => {
-  // Get icon based on test category
+const TestCard: React.FC<TestCardProps> = ({ title, description, category = "" }) => {
+  // Get icon based on test category - using default empty string if category is undefined
   const getTestIcon = () => {
-    if (category.includes("شخصیت") || category.includes("Personality")) {
+    if (category && category.includes("شخصیت") || category && category.includes("Personality")) {
       return <Brain size={28} className="text-primary" />;
-    } else if (category.includes("هوش") || category.includes("Intelligence")) {
+    } else if (category && category.includes("هوش") || category && category.includes("Intelligence")) {
       return <BookOpen size={28} className="text-primary" />;
-    } else if (category.includes("شغل") || category.includes("Career")) {
+    } else if (category && category.includes("شغل") || category && category.includes("Career")) {
       return <Briefcase size={28} className="text-primary" />;
     } else {
       return <Heart size={28} className="text-primary" />;
