@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, BookOpen, Brain, MessageCircle, Settings, Calendar, Award } from "lucide-react";
+import { User, BookOpen, Brain, MessageCircle, Settings, Calendar, Award, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface UserProfile {
@@ -153,19 +152,22 @@ const Dashboard = () => {
 
   if (!user) {
     return (
-      <MainLayout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">برای دسترسی به داشبورد وارد شوید</h1>
-          <Button onClick={() => window.location.href = '/'}>
-            بازگشت به صفحه اصلی
-          </Button>
-        </div>
-      </MainLayout>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="p-8 text-center">
+            <User size={48} className="mx-auto mb-4 text-gray-400" />
+            <h1 className="text-2xl font-bold mb-4">برای دسترسی به داشبورد وارد شوید</h1>
+            <Button onClick={() => window.location.href = '/'} className="rounded-full">
+              بازگشت به صفحه اصلی
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="container py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -174,103 +176,113 @@ const Dashboard = () => {
         >
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold">داشبورد کاربری</h1>
-              <p className="text-muted-foreground">مدیریت حساب کاربری و دوره‌های شما</p>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                داشبورد کاربری
+              </h1>
+              <p className="text-gray-600 mt-2">مدیریت حساب کاربری و دوره‌های شما</p>
             </div>
-            <Button variant="outline" onClick={signOut}>
+            <Button variant="outline" onClick={signOut} className="rounded-full">
+              <LogOut size={16} className="mr-2" />
               خروج
             </Button>
           </div>
         </motion.div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-4 bg-white/50 backdrop-blur-sm">
+            <TabsTrigger value="profile" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <User size={16} />
               پروفایل
             </TabsTrigger>
-            <TabsTrigger value="courses" className="flex items-center gap-2">
+            <TabsTrigger value="courses" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <BookOpen size={16} />
               دوره‌ها
             </TabsTrigger>
-            <TabsTrigger value="tests" className="flex items-center gap-2">
+            <TabsTrigger value="tests" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Brain size={16} />
               تست‌ها
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
+            <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Settings size={16} />
               تنظیمات
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
-            <Card>
-              <CardHeader>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10">
                 <CardTitle className="flex items-center gap-2">
-                  <User size={20} />
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User size={20} className="text-blue-600" />
+                  </div>
                   اطلاعات شخصی
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6">
                 {isEditing ? (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">نام کامل</Label>
-                      <Input
-                        id="fullName"
-                        value={editForm.full_name}
-                        onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                      />
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName" className="text-sm font-medium">نام کامل</Label>
+                        <Input
+                          id="fullName"
+                          value={editForm.full_name}
+                          onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                          className="rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-sm font-medium">ایمیل</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={editForm.email}
+                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                          className="rounded-lg"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">ایمیل</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={editForm.email}
-                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">شماره موبایل</Label>
+                      <Label htmlFor="phone" className="text-sm font-medium">شماره موبایل</Label>
                       <Input
                         id="phone"
                         value={editForm.phone}
                         onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        className="rounded-lg"
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <Button onClick={handleUpdateProfile} disabled={loading}>
-                        ذخیره
+                    <div className="flex gap-3">
+                      <Button onClick={handleUpdateProfile} disabled={loading} className="rounded-full">
+                        ذخیره تغییرات
                       </Button>
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                      <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-full">
                         انصراف
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">نام کامل</p>
-                        <p className="font-medium">{profile?.full_name || 'نامشخص'}</p>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-500 mb-1">نام کامل</p>
+                        <p className="font-semibold text-gray-900">{profile?.full_name || 'نامشخص'}</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">ایمیل</p>
-                        <p className="font-medium">{profile?.email || user.email}</p>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-500 mb-1">ایمیل</p>
+                        <p className="font-semibold text-gray-900">{profile?.email || user.email}</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">شماره موبایل</p>
-                        <p className="font-medium">{profile?.phone || 'ثبت نشده'}</p>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-500 mb-1">شماره موبایل</p>
+                        <p className="font-semibold text-gray-900">{profile?.phone || 'ثبت نشده'}</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">تاریخ عضویت</p>
-                        <p className="font-medium">
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-500 mb-1">تاریخ عضویت</p>
+                        <p className="font-semibold text-gray-900">
                           {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('fa-IR') : 'نامشخص'}
                         </p>
                       </div>
                     </div>
-                    <Button onClick={() => setIsEditing(true)}>
+                    <Button onClick={() => setIsEditing(true)} className="rounded-full">
                       ویرایش پروفایل
                     </Button>
                   </div>
@@ -280,90 +292,96 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="courses">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen size={20} />
-                    دوره‌های من ({courses.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {courses.length === 0 ? (
-                    <div className="text-center py-8">
-                      <BookOpen size={48} className="mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">شما هنوز در هیچ دوره‌ای ثبت نام نکرده‌اید</p>
-                      <Button className="mt-4" onClick={() => window.location.href = '/courses'}>
-                        مشاهده دوره‌ها
-                      </Button>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                <CardTitle className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <BookOpen size={20} className="text-emerald-600" />
+                  </div>
+                  دوره‌های من ({courses.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {courses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen size={32} className="text-gray-400" />
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {courses.map((course) => (
-                        <Card key={course.id} className="border-l-4 border-l-primary">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-semibold">{getCourseTitle(course.course_slug)}</h3>
-                              <Badge variant={course.status === 'completed' ? 'default' : 'secondary'}>
-                                {course.status === 'completed' ? 'تکمیل شده' : 'در حال مطالعه'}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                              <Calendar size={14} />
-                              <span>فعال‌سازی: {new Date(course.activated_at).toLocaleDateString('fa-IR')}</span>
-                            </div>
-                            <Button size="sm" className="w-full">
-                              ادامه مطالعه
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                    <p className="text-gray-500 mb-4">شما هنوز در هیچ دوره‌ای ثبت نام نکرده‌اید</p>
+                    <Button onClick={() => window.location.href = '/courses/free'} className="rounded-full">
+                      مشاهده دوره‌ها
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {courses.map((course) => (
+                      <Card key={course.id} className="border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50/50 to-white">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-semibold text-gray-900">{getCourseTitle(course.course_slug)}</h3>
+                            <Badge variant={course.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
+                              {course.status === 'completed' ? 'تکمیل شده' : 'در حال مطالعه'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                            <Calendar size={14} />
+                            <span>فعال‌سازی: {new Date(course.activated_at).toLocaleDateString('fa-IR')}</span>
+                          </div>
+                          <Button size="sm" className="w-full rounded-full">
+                            ادامه مطالعه
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="tests">
-            <Card>
-              <CardHeader>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
                 <CardTitle className="flex items-center gap-2">
-                  <Brain size={20} />
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <Brain size={20} className="text-purple-600" />
+                  </div>
                   تست‌های من ({tests.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 {tests.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Brain size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">شما هنوز هیچ تستی انجام نداده‌اید</p>
-                    <Button className="mt-4" onClick={() => window.location.href = '/assessment-center'}>
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Brain size={32} className="text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 mb-4">شما هنوز هیچ تستی انجام نداده‌اید</p>
+                    <Button onClick={() => window.location.href = '/assessment'} className="rounded-full">
                       مرکز ارزیابی
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {tests.map((test) => (
-                      <Card key={test.id} className="border-l-4 border-l-secondary">
+                      <Card key={test.id} className="border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50/50 to-white">
                         <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold">{getTestTitle(test.test_slug)}</h3>
-                            <Badge variant={test.status === 'completed' ? 'default' : 'secondary'}>
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-semibold text-gray-900">{getTestTitle(test.test_slug)}</h3>
+                            <Badge variant={test.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
                               {test.status === 'completed' ? 'تکمیل شده' : 'در حال انجام'}
                             </Badge>
                           </div>
                           {test.score && (
                             <div className="flex items-center gap-2 mb-2">
                               <Award size={14} className="text-yellow-500" />
-                              <span className="text-sm">امتیاز: {test.score}</span>
+                              <span className="text-sm font-medium">امتیاز: {test.score}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
                             <Calendar size={14} />
                             <span>انجام: {new Date(test.activated_at).toLocaleDateString('fa-IR')}</span>
                           </div>
-                          <Button size="sm" variant="outline" className="w-full">
+                          <Button size="sm" variant="outline" className="w-full rounded-full">
                             مشاهده نتایج
                           </Button>
                         </CardContent>
@@ -376,41 +394,43 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-orange-500/10 to-red-500/10">
                 <CardTitle className="flex items-center gap-2">
-                  <Settings size={20} />
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Settings size={20} className="text-orange-600" />
+                  </div>
                   تنظیمات
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gradient-to-r from-blue-50/50 to-white hover:shadow-md transition-shadow">
                   <div>
-                    <h3 className="font-medium">دستیار هوشمند</h3>
-                    <p className="text-sm text-muted-foreground">دسترسی به دستیار هوشمند رفیعی</p>
+                    <h3 className="font-semibold text-gray-900">دستیار هوشمند</h3>
+                    <p className="text-sm text-gray-600">دسترسی به دستیار هوشمند رفیعی</p>
                   </div>
-                  <Button size="sm" onClick={() => window.open('https://ai.rafiei.co', '_blank')}>
+                  <Button size="sm" onClick={() => window.open('https://ai.rafiei.co', '_blank')} className="rounded-full">
                     <MessageCircle size={16} className="mr-2" />
                     فعال‌سازی
                   </Button>
                 </div>
                 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gradient-to-r from-emerald-50/50 to-white hover:shadow-md transition-shadow">
                   <div>
-                    <h3 className="font-medium">پشتیبانی دوره</h3>
-                    <p className="text-sm text-muted-foreground">دسترسی به پشتیبانی تخصصی</p>
+                    <h3 className="font-semibold text-gray-900">پشتیبانی دوره</h3>
+                    <p className="text-sm text-gray-600">دسترسی به پشتیبانی تخصصی</p>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="rounded-full">
                     فعال
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gradient-to-r from-purple-50/50 to-white hover:shadow-md transition-shadow">
                   <div>
-                    <h3 className="font-medium">کانال تلگرام</h3>
-                    <p className="text-sm text-muted-foreground">عضویت در کانال اختصاصی</p>
+                    <h3 className="font-semibold text-gray-900">کانال تلگرام</h3>
+                    <p className="text-sm text-gray-600">عضویت در کانال اختصاصی</p>
                   </div>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="rounded-full">
                     عضویت
                   </Button>
                 </div>
@@ -419,7 +439,7 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

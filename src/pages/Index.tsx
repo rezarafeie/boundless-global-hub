@@ -1,6 +1,5 @@
 
 import React from "react";
-import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,12 +65,12 @@ const Index = () => {
   ];
 
   return (
-    <MainLayout>
+    <>
       <Hero
         title={translations.slogan}
         subtitle={translations.tagline}
         ctaText={translations.callToAction}
-        ctaLink="/paid-courses"
+        ctaLink="/courses/paid"
       />
 
       {/* Quick Access Section */}
@@ -81,7 +80,9 @@ const Index = () => {
       <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="container">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">{translations.coursesTitle}</h2>
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              {translations.coursesTitle}
+            </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               {translations.coursesSubtitle}
             </p>
@@ -89,10 +90,11 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {allCourses.map((course, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
+              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-white/90 backdrop-blur-sm overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <CardContent className="p-6 relative z-10">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-3 bg-gray-50 rounded-xl group-hover:bg-gray-100 transition-colors">
+                    <div className="p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl group-hover:from-white group-hover:to-gray-50 transition-all duration-300 shadow-sm">
                       {course.icon}
                     </div>
                     <div className="flex gap-2">
@@ -120,7 +122,7 @@ const Index = () => {
                     />
                   ) : (
                     <Button asChild className="w-full rounded-full" variant="outline">
-                      <Link to={`/course/${course.slug}`}>
+                      <Link to={`/course/free/${course.slug}`}>
                         شروع رایگان
                       </Link>
                     </Button>
@@ -131,8 +133,8 @@ const Index = () => {
           </div>
           
           <div className="mt-16 text-center">
-            <Button asChild size="lg" className="rounded-full">
-              <Link to="/paid-courses">
+            <Button asChild size="lg" className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+              <Link to="/courses/paid">
                 مشاهده همه دوره‌ها
               </Link>
             </Button>
@@ -141,18 +143,18 @@ const Index = () => {
       </section>
       
       {/* Assessment Center Promo */}
-      <section className="py-20 bg-black text-white">
+      <section className="py-20 bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
         <div className="container">
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="w-full lg:w-1/2">
-              <h2 className="text-4xl font-bold tracking-tight mb-6">
+              <h2 className="text-4xl font-bold tracking-tight mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                 {translations.assessmentCenterTitle}
               </h2>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                 {translations.assessmentCenterDesc}
               </p>
-              <Button asChild size="lg" variant="secondary" className="rounded-full">
-                <Link to="/assessment-center">
+              <Button asChild size="lg" variant="secondary" className="rounded-full bg-white text-black hover:bg-gray-100">
+                <Link to="/assessment">
                   شروع ارزیابی
                 </Link>
               </Button>
@@ -160,8 +162,8 @@ const Index = () => {
             
             <div className="w-full lg:w-1/2">
               <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-colors">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                     <Brain size={24} className="text-white" />
                   </div>
                   <h3 className="font-medium text-lg mb-2">
@@ -172,8 +174,8 @@ const Index = () => {
                   </p>
                 </div>
                 
-                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-colors">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                     <GraduationCap size={24} className="text-white" />
                   </div>
                   <h3 className="font-medium text-lg mb-2">
@@ -184,8 +186,8 @@ const Index = () => {
                   </p>
                 </div>
                 
-                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-colors">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                     <Target size={24} className="text-white" />
                   </div>
                   <h3 className="font-medium text-lg mb-2">
@@ -196,8 +198,8 @@ const Index = () => {
                   </p>
                 </div>
                 
-                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-colors">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl text-center hover:bg-white/15 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                     <Award size={24} className="text-white" />
                   </div>
                   <h3 className="font-medium text-lg mb-2">
@@ -212,7 +214,7 @@ const Index = () => {
           </div>
         </div>
       </section>
-    </MainLayout>
+    </>
   );
 };
 
