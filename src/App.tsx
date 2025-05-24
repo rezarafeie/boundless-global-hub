@@ -26,7 +26,6 @@ import BoundlessLanding from '@/pages/Courses/BoundlessLanding';
 import InstagramLanding from '@/pages/Courses/InstagramLanding';
 import MetaverseLanding from '@/pages/Courses/MetaverseLanding';
 import WealthLanding from '@/pages/Courses/WealthLanding';
-import FreeCourseLanding from '@/pages/Courses/FreeCourseLanding';
 import FreeCourseStart from '@/pages/Course/FreeCourseStart';
 import FreeCourseView from '@/pages/Course/FreeCourseView';
 import PaidCourseStart from '@/pages/Course/PaidCourseStart';
@@ -41,6 +40,9 @@ import EnFreeCourses from '@/pages/en/FreeCourses';
 import EnPaidCourses from '@/pages/en/PaidCourses';
 import EnCourseArchive from '@/pages/en/CourseArchive';
 import EnAssessmentCenter from '@/pages/en/AssessmentCenter';
+
+// Free course wrapper component
+import FreeCourseWrapper from '@/components/FreeCourseWrapper';
 
 const queryClient = new QueryClient();
 
@@ -69,7 +71,7 @@ function App() {
                 <Route path="/course/instagram" element={<InstagramLanding />} />
                 <Route path="/course/metaverse" element={<MetaverseLanding />} />
                 <Route path="/course/wealth" element={<WealthLanding />} />
-                <Route path="/course/free/:slug" element={<FreeCourseLanding />} />
+                <Route path="/course/free/:slug" element={<FreeCourseWrapper />} />
 
                 {/* Course access pages */}
                 <Route path="/course/free/start/:courseTitle" element={<FreeCourseStart />} />
