@@ -19,10 +19,10 @@ interface AuthenticationModalProps {
   redirectTo?: string;
 }
 
-type AuthStep = "contact" | "verification" | "registration" | "login";
+type AuthStep = "contact" | "verification" | "magic-link-sent";
 
 const AuthenticationModal = ({ isOpen, onClose, redirectTo }: AuthenticationModalProps) => {
-  const { signIn, signUp, sendSMSVerification, verifySMSCode } = useAuth();
+  const { sendSMSVerification, verifySMSCode, signInWithMagicLink } = useAuth();
   const { toast } = useToast();
   
   const [step, setStep] = useState<AuthStep>("contact");
@@ -30,11 +30,6 @@ const AuthenticationModal = ({ isOpen, onClose, redirectTo }: AuthenticationModa
   const [verificationCode, setVerificationCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPhone, setIsPhone] = useState(false);
-  
-  // Registration fields
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [password, setPassword] = useState("");
 
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPhone = (phone: string) => /^09\d{9}$/.test(phone);
@@ -81,9 +76,21 @@ const AuthenticationModal = ({ isOpen, onClose, redirectTo }: AuthenticationModa
         });
       }
     } else {
-      // For email, check if user exists (simulation)
-      const userExists = Math.random() > 0.5; // In real app, check with API
-      setStep(userExists ? "login" : "registration");
+      // Send magic link for email
+      const result = await signInWithMagicLink(contact);
+      if (result.error) {
+        toast({
+          title: "خطا",
+          description: "خطا در ارسال لینک ورود",
+          variant: "destructive",
+        });
+      } else {
+        setStep("magic-link-sent");
+        toast({
+          title: "لینک ارسال شد",
+          description: "لینک ورود به ایمیل شما ارسال شد",
+        });
+      }
     }
 
     setIsLoading(false);
@@ -124,81 +131,10 @@ const AuthenticationModal = ({ isOpen, onClose, redirectTo }: AuthenticationModa
     setIsLoading(false);
   };
 
-  const handleRegistration = async () => {
-    if (!firstName || !lastName || !password) {
-      toast({
-        title: "خطا",
-        description: "لطفاً تمام فیلدها را پر کنید",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    const result = await signUp(contact, password, {
-      full_name: `${firstName} ${lastName}`,
-      first_name: firstName,
-      last_name: lastName,
-    });
-
-    if (result.error) {
-      toast({
-        title: "خطا",
-        description: "خطا در ثبت نام",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "موفق",
-        description: "ثبت نام موفقیت‌آمیز",
-      });
-      onClose();
-      if (redirectTo) {
-        setTimeout(() => {
-          window.location.href = redirectTo;
-        }, 500);
-      }
-    }
-    setIsLoading(false);
-  };
-
-  const handleLogin = async () => {
-    if (!password) {
-      toast({
-        title: "خطا",
-        description: "لطفاً رمز عبور خود را وارد کنید",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    const result = await signIn(contact, password);
-
-    if (result.error) {
-      toast({
-        title: "خطا",
-        description: "ایمیل یا رمز عبور نادرست",
-        variant: "destructive",
-      });
-    } else {
-      onClose();
-      if (redirectTo) {
-        setTimeout(() => {
-          window.location.href = redirectTo;
-        }, 500);
-      }
-    }
-    setIsLoading(false);
-  };
-
   const resetForm = () => {
     setStep("contact");
     setContact("");
     setVerificationCode("");
-    setFirstName("");
-    setLastName("");
-    setPassword("");
     setIsLoading(false);
   };
 
@@ -280,90 +216,15 @@ const AuthenticationModal = ({ isOpen, onClose, redirectTo }: AuthenticationModa
           </div>
         )}
 
-        {step === "registration" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">نام</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">نام خانوادگی</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
+        {step === "magic-link-sent" && (
+          <div className="space-y-4 text-center">
+            <div className="p-4 bg-green-50 rounded-lg">
+              <Mail className="w-12 h-12 text-green-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-green-800 mb-2">لینک ورود ارسال شد</h3>
+              <p className="text-sm text-green-700">
+                لینک ورود به ایمیل {contact} ارسال شد. روی لینک کلیک کنید تا وارد شوید.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">ایمیل</Label>
-              <Input
-                id="email"
-                type="email"
-                value={contact}
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="حداقل 6 کاراکتر"
-              />
-            </div>
-            <Button 
-              onClick={handleRegistration} 
-              disabled={isLoading} 
-              className="w-full"
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              ثبت نام
-            </Button>
-            <Button variant="link" onClick={() => setStep("contact")} className="w-full">
-              بازگشت
-            </Button>
-          </div>
-        )}
-
-        {step === "login" && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">ایمیل</Label>
-              <Input
-                id="email"
-                type="email"
-                value={contact}
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="رمز عبور خود را وارد کنید"
-              />
-            </div>
-            <Button 
-              onClick={handleLogin} 
-              disabled={isLoading} 
-              className="w-full"
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              ورود
-            </Button>
             <Button variant="link" onClick={() => setStep("contact")} className="w-full">
               بازگشت
             </Button>

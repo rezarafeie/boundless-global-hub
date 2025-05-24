@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error?: AuthError }>;
   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>;
+  signInWithMagicLink: (email: string) => Promise<{ error?: AuthError }>;
   signOut: () => Promise<void>;
   sendSMSVerification: (phone: string) => Promise<{ success: boolean; error?: string }>;
   verifySMSCode: (phone: string, code: string) => Promise<{ success: boolean; error?: string }>;
@@ -69,6 +71,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const signInWithMagicLink = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin
+      }
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     toast({
@@ -92,21 +104,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (dbError) throw dbError;
 
-      // Send SMS via Faraaz API
-      const response = await fetch('https://api.farazsms.com/v2/sms/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer lQBvFydrE35Wk1zkiKBiIiQpI5VwMKs3ovikaj40hS0='
-        },
-        body: JSON.stringify({
-          recipient: phone,
-          message: `کد تایید آکادمی رفیعی: ${code}`,
-          sender: 'RafieiAcademy'
-        }),
+      // Send SMS via edge function
+      const { data, error } = await supabase.functions.invoke('send-sms', {
+        body: { phone, code }
       });
 
-      if (!response.ok) throw new Error('Failed to send SMS');
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send SMS');
+      }
 
       return { success: true };
     } catch (error) {
@@ -197,6 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     signUp,
     signIn,
+    signInWithMagicLink,
     signOut,
     sendSMSVerification,
     verifySMSCode,

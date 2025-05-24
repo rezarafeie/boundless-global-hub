@@ -198,6 +198,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_verified: boolean | null
           phone: string | null
           updated_at: string | null
           user_id: string
@@ -207,6 +208,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_verified?: boolean | null
           phone?: string | null
           updated_at?: string | null
           user_id: string
@@ -216,6 +218,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_verified?: boolean | null
           phone?: string | null
           updated_at?: string | null
           user_id?: string

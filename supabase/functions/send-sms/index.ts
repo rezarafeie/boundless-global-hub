@@ -8,59 +8,49 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { phone, code } = await req.json()
 
-    // Faraaz SMS API configuration
-    const apiUrl = 'https://api2.ippanel.com/api/v1/sms/pattern/normal/send'
-    const apiKey = Deno.env.get('FARAAZ_API_KEY')
+    console.log('Sending SMS to:', phone, 'with code:', code)
 
-    if (!apiKey) {
-      throw new Error('FARAAZ_API_KEY is not configured')
-    }
-
-    const requestBody = {
-      code: "vzhg0d009gpv1w6", // Your pattern code
-      sender: "+983000505",
-      recipient: phone,
-      variable: {
-        code: code
-      }
-    }
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch('https://api.farazsms.com/v2/sms/send', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer lQBvFydrE35Wk1zkiKBiIiQpI5VwMKs3ovikaj40hS0='
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        recipient: phone,
+        message: `کد تایید آکادمی رفیعی: ${code}`,
+        sender: 'RafieiAcademy'
+      }),
     })
 
+    console.log('Faraaz API response status:', response.status)
+    const result = await response.text()
+    console.log('Faraaz API response:', result)
+
     if (!response.ok) {
-      throw new Error(`SMS API error: ${response.status}`)
+      throw new Error(`Failed to send SMS: ${result}`)
     }
 
-    const result = await response.json()
-
-    return new Response(
-      JSON.stringify({ success: true, data: result }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    )
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'SMS sent successfully'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   } catch (error) {
     console.error('SMS sending error:', error)
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
-    )
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
 })
