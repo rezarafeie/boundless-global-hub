@@ -1,4 +1,3 @@
-
 const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "The Future of Income Generation is in Your Hands",
@@ -272,7 +271,46 @@ const enTranslations = {
   aiFeature3: "Personal Development",
   aiFeature3Desc: "Discover ways to improve your skills and mindset",
   aiAssistantFeature4Title: "24/7 Availability",
-  aiAssistantFeature4: "Access guidance whenever you need, day or night"
+  aiAssistantFeature4: "Access guidance whenever you need, day or night",
+  
+  // Course Activation
+  courseActivationTitle: "Course Feature Activation",
+  telegramChannelTitle: "Join Private Channel",
+  telegramChannelDesc: "Join our exclusive Telegram channel to stay updated with the latest news and resources",
+  joinTelegramChannel: "Join Channel",
+  
+  supportActivationTitle: "Activate Course Support",
+  supportActivationDesc: "Access to dedicated support team for answering your questions",
+  activateSupport: "Activate Support",
+  
+  aiAssistantActivationTitle: "Launch AI Assistant",
+  aiAssistantActivationDesc: "Use Rafiei Academy's exclusive AI assistant for personalized guidance",
+  launchAiAssistant: "Launch Assistant",
+  
+  // Player Activation
+  playerActivationTitle: "Activate Rafiei Exclusive Player",
+  activationCodeTitle: "Your Activation Code",
+  activationStepsTitle: "Activation Steps:",
+  playerFeaturesTitle: "Exclusive Player Features:",
+  copyCode: "Copy",
+  codeCopied: "Copied",
+  codeSuccessCopied: "Activation code copied to clipboard",
+  
+  // Download options
+  downloadWindows: "Windows",
+  downloadMobile: "Mobile",
+  downloadWebPlayer: "Web Player",
+  
+  // Player features
+  feature4kQuality: "4K Quality Playback",
+  featureOfflineDownload: "Download for Offline Viewing",
+  featurePlaybackSpeed: "Adjustable Playback Speed",
+  featureSubtitles: "Persian and English Subtitles",
+  
+  // Activation states
+  activated: "Activated",
+  activating: "Activating...",
+  clickToActivate: "Click to Activate",
 };
 
 export default enTranslations;

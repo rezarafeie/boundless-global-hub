@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Download, MessageSquare, Award, CheckCircle, Lock, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PlayerActivation from "@/components/PlayerActivation";
 
 const PaidCourseStart = () => {
   const { translations } = useLanguage();
@@ -34,6 +35,9 @@ const PaidCourseStart = () => {
       <div className="container py-16">
         <div className="max-w-3xl mx-auto">
           <div className="grid grid-cols-1 gap-8">
+            {/* Player Activation Section */}
+            <PlayerActivation />
+            
             {/* Access Instructions */}
             <Card className="border-black/5 shadow-sm overflow-hidden">
               <CardContent className="p-6">
@@ -49,7 +53,7 @@ const PaidCourseStart = () => {
                       با استفاده از پلیر اختصاصی می‌توانید به تمام ویدیوهای دوره دسترسی داشته باشید.
                     </p>
                     <Button className="w-full">
-                      فعال‌سازی پلیر
+                      مشاهده ویدیوهای دوره
                     </Button>
                   </div>
                   

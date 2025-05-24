@@ -271,7 +271,46 @@ const faTranslations = {
   aiFeature3: "توسعه فردی",
   aiFeature3Desc: "راه هایی را برای بهبود مهارت ها و طرز فکر خود کشف کنید",
   aiAssistantFeature4Title: "دسترسی 24/7",
-  aiAssistantFeature4: "هر زمان که نیاز داشتید، شب یا روز، به راهنمایی دسترسی داشته باشید"
+  aiAssistantFeature4: "هر زمان که نیاز داشتید، شب یا روز، به راهنمایی دسترسی داشته باشید",
+  
+  // Course Activation
+  courseActivationTitle: "فعال‌سازی امکانات دوره",
+  telegramChannelTitle: "عضویت در کانال اختصاصی",
+  telegramChannelDesc: "به کانال تلگرام اختصاصی دوره بپیوندید و از آخرین اخبار و منابع مطلع شوید",
+  joinTelegramChannel: "پیوستن به کانال",
+  
+  supportActivationTitle: "فعال‌سازی پشتیبانی دوره",
+  supportActivationDesc: "دسترسی به تیم پشتیبانی اختصاصی برای پاسخگویی به سوالات شما",
+  activateSupport: "فعال‌سازی پشتیبانی",
+  
+  aiAssistantActivationTitle: "راه‌اندازی دستیار هوشمند",
+  aiAssistantActivationDesc: "استفاده از دستیار هوش مصنوعی اختصاصی آکادمی رفیعی برای راهنمایی شخصی",
+  launchAiAssistant: "راه‌اندازی دستیار",
+  
+  // Player Activation
+  playerActivationTitle: "فعال‌سازی پلیر اختصاصی رفیعی",
+  activationCodeTitle: "کد فعال‌سازی شما",
+  activationStepsTitle: "مراحل فعال‌سازی:",
+  playerFeaturesTitle: "ویژگی‌های پلیر اختصاصی:",
+  copyCode: "کپی",
+  codeCopied: "کپی شد",
+  codeSuccessCopied: "کد فعال‌سازی در کلیپ‌بورد کپی شد",
+  
+  // Download options
+  downloadWindows: "ویندوز",
+  downloadMobile: "موبایل", 
+  downloadWebPlayer: "وب پلیر",
+  
+  // Player features
+  feature4kQuality: "پخش با کیفیت 4K",
+  featureOfflineDownload: "دانلود برای مشاهده آفلاین",
+  featurePlaybackSpeed: "سرعت پخش قابل تنظیم",
+  featureSubtitles: "زیرنویس فارسی و انگلیسی",
+  
+  // Activation states
+  activated: "فعال شد",
+  activating: "در حال فعال‌سازی...",
+  clickToActivate: "برای فعال‌سازی کلیک کنید",
 };
 
 export default faTranslations;
