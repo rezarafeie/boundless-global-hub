@@ -63,7 +63,7 @@ function App() {
             <Route path="/free-course-landing" element={<FreeCourseLanding />} />
             
             {/* English Routes */}
-            <Route path="/en" element={<EnglishIndex language="en" />} />
+            <Route path="/en" element={<EnglishIndex />} />
             <Route path="/en/courses" element={<EnglishCourseArchive />} />
             <Route path="/en/courses/:courseSlug" element={<CourseDetail />} />
             <Route path="/en/courses/:courseSlug/free-view" element={<FreeCourseView language="en" />} />
