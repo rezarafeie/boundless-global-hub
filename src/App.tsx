@@ -66,8 +66,8 @@ function App() {
             <Route path="/en" element={<EnglishIndex />} />
             <Route path="/en/courses" element={<EnglishCourseArchive />} />
             <Route path="/en/courses/:courseSlug" element={<CourseDetail />} />
-            <Route path="/en/courses/:courseSlug/free-view" element={<FreeCourseView language="en" />} />
-            <Route path="/en/courses/:courseSlug/paid-view" element={<PaidCourseView language="en" />} />
+            <Route path="/en/courses/:courseSlug/free-view" element={<FreeCourseView />} />
+            <Route path="/en/courses/:courseSlug/paid-view" element={<PaidCourseView />} />
             <Route path="/en/free-courses" element={<EnglishFreeCourses />} />
             <Route path="/en/paid-courses" element={<EnglishPaidCourses />} />
             <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
