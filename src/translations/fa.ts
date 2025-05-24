@@ -304,5 +304,30 @@ export const fa = {
   upcomingCourses: "دوره‌های آینده",
   upcomingCoursesDesc: "اولین نفری باشید که برای این دوره‌های هیجان‌انگیز آینده ثبت نام می‌کند.",
   pastCourses: "دوره‌های گذشته",
-  pastCoursesDesc: "به آرشیو دوره‌های برگزار شده قبلی دسترسی پیدا کنید."
+  pastCoursesDesc: "به آرشیو دوره‌های برگزار شده قبلی دسترسی پیدا کنید.",
+  
+  // BoundlessLanding translations
+  boundlessLandingTitle: "بی‌کرانگی: پتانسیل کامل خود را آزاد کنید",
+  boundlessLandingSubtitle: "ذهنیت خود را برای موفقیت متحول کنید",
+  boundlessLandingHeroDesc: "برنامه‌ای جامع که برای شکستن محدودیت‌های شما و دستیابی به نتایج فوق‌العاده در کسب‌وکار و زندگی طراحی شده است.",
+  boundlessLandingOriginalPrice: "قیمت اصلی",
+  boundlessLandingSpecialOffer: "پیشنهاد ویژه",
+  boundlessLandingInclusive: "همه چیز شامل",
+  boundlessLandingStartCourse: "همین حالا ثبت نام کنید",
+  boundlessLandingJoinLater: "برای بعد ذخیره کنید",
+  boundlessLandingCountdown: "پیشنهاد محدود در",
+  boundlessLandingAboutTitle: "درباره این برنامه",
+  boundlessLandingWhoFor: "این برنامه برای چه کسانی است؟",
+  boundlessLandingSolutions: "آنچه خواهید آموخت",
+  boundlessLandingResultsTitle: "نتایجی که می‌توانید انتظار داشته باشید",
+  
+  // BoundlessLanding FAQ translations
+  boundlessLandingFAQ1Q: "چه مدت به دوره دسترسی دارم؟",
+  boundlessLandingFAQ1A: "دسترسی مادام‌العمر به تمام مطالب دوره و به‌روزرسانی‌ها خواهید داشت.",
+  boundlessLandingFAQ2Q: "آیا سیاست بازگشت وجه دارید؟",
+  boundlessLandingFAQ2A: "بله، اگر راضی نباشید، ۳۰ روز ضمانت بازگشت وجه ارائه می‌دهیم.",
+  boundlessLandingFAQ3Q: "این برنامه چه تفاوتی با سایر برنامه‌ها دارد؟",
+  boundlessLandingFAQ3A: "بی‌کرانگی ابزارهای عملی را با تحول ذهنیت برای نتایج پایدار ترکیب می‌کند.",
+  boundlessLandingFAQ4Q: "آیا نیاز به تجربه قبلی دارم؟",
+  boundlessLandingFAQ4A: "نه، نیازی به تجربه قبلی نیست. برنامه برای همه سطوح طراحی شده است."
 };
