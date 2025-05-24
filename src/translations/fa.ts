@@ -71,7 +71,7 @@ export const fa = {
   error: "خطا",
   success: "موفقیت",
   
-  // Dashboard related
+  // Dashboard related - Adding missing keys
   dashboard: "داشبورد",
   profile: "پروفایل",
   myProfile: "پروفایل من",
@@ -80,6 +80,30 @@ export const fa = {
   saveChanges: "ذخیره تغییرات",
   saving: "در حال ذخیره...",
   updateProfileError: "خطا در به‌روزرسانی پروفایل",
+  today: "امروز",
+  yesterday: "دیروز",
+  daysAgo: "روز پیش",
+  weekAgo: "۱ هفته پیش",
+  weeksAgo: "هفته پیش",
+  manageCourses: "مدیریت دوره‌ها",
+  joinDate: "تاریخ عضویت",
+  editProfile: "ویرایش پروفایل",
+  accountSettings: "تنظیمات حساب",
+  signOut: "خروج از حساب",
+  quickAccess: "دسترسی سریع",
+  myCourses: "دوره‌های من",
+  assessments: "ارزیابی‌ها",
+  noCourses: "هیچ دوره‌ای یافت نشد",
+  browseCourses: "مرور دوره‌ها",
+  ongoing: "در حال انجام",
+  lastAccessed: "آخرین دسترسی",
+  progress: "پیشرفت",
+  continueCourse: "ادامه دوره",
+  noAssessments: "هیچ ارزیابی یافت نشد",
+  browseAssessments: "مرور ارزیابی‌ها",
+  pendingCompletion: "در انتظار تکمیل",
+  startedOn: "شروع شده در",
+  viewResults: "مشاهده نتایج",
   
   // Navigation and site sections
   rafiei: "رفیعی",
@@ -304,5 +328,30 @@ export const fa = {
   upcomingCourses: "دوره‌های آینده",
   upcomingCoursesDesc: "اولین نفری باشید که برای این دوره‌های هیجان‌انگیز آینده ثبت نام می‌کند.",
   pastCourses: "دوره‌های گذشته",
-  pastCoursesDesc: "به آرشیو دوره‌های برگزار شده قبلی دسترسی پیدا کنید."
+  pastCoursesDesc: "به آرشیو دوره‌های برگزار شده قبلی دسترسی پیدا کنید.",
+
+  // BoundlessLanding translations
+  boundlessLandingTitle: "بی‌کرانگی: پتانسیل کامل خود را آزاد کنید",
+  boundlessLandingSubtitle: "ذهنیت خود را برای موفقیت متحول کنید",
+  boundlessLandingHeroDesc: "برنامه‌ای جامع که برای شکستن محدودیت‌هایتان و دستیابی به نتایج فوق‌العاده در کسب‌وکار و زندگی طراحی شده است.",
+  boundlessLandingOriginalPrice: "قیمت اصلی",
+  boundlessLandingSpecialOffer: "پیشنهاد ویژه",
+  boundlessLandingInclusive: "همه چیز شامل",
+  boundlessLandingStartCourse: "همین حالا ثبت نام کنید",
+  boundlessLandingJoinLater: "برای بعد ذخیره کنید",
+  boundlessLandingCountdown: "پیشنهاد محدود در:",
+  boundlessLandingAboutTitle: "درباره این برنامه",
+  boundlessLandingWhoFor: "این برنامه برای چه کسانی است؟",
+  boundlessLandingSolutions: "آنچه خواهید آموخت",
+  boundlessLandingResultsTitle: "نتایجی که می‌توانید انتظار داشته باشید",
+  
+  // BoundlessLanding FAQ translations
+  boundlessLandingFAQ1Q: "چه مدت به دوره دسترسی خواهم داشت؟",
+  boundlessLandingFAQ1A: "دسترسی مادام‌العمر به تمام مطالب دوره و به‌روزرسانی‌ها خواهید داشت.",
+  boundlessLandingFAQ2Q: "آیا سیاست بازگشت وجه وجود دارد؟",
+  boundlessLandingFAQ2A: "بله، ما ضمانت ۳۰ روزه بازگشت وجه ارائه می‌دهیم اگر راضی نبودید.",
+  boundlessLandingFAQ3Q: "این برنامه با سایر برنامه‌ها چه تفاوتی دارد؟",
+  boundlessLandingFAQ3A: "بی‌کرانگی ابزارهای عملی را با تحول ذهنیت برای نتایج پایدار ترکیب می‌کند.",
+  boundlessLandingFAQ4Q: "آیا نیاز به تجربه قبلی دارم؟",
+  boundlessLandingFAQ4A: "نیازی به تجربه قبلی نیست. برنامه برای همه سطوح طراحی شده است."
 };

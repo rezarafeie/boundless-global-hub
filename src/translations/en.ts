@@ -1,4 +1,3 @@
-
 export const en = {
   home: "Home",
   courses: "Courses",
@@ -111,7 +110,7 @@ export const en = {
   error: "Error",
   success: "Success",
   
-  // Dashboard related
+  // Dashboard related - Adding missing keys
   dashboard: "Dashboard",
   profile: "Profile",
   myProfile: "My Profile",
@@ -120,6 +119,30 @@ export const en = {
   saveChanges: "Save Changes",
   saving: "Saving...",
   updateProfileError: "Error updating profile",
+  today: "Today",
+  yesterday: "Yesterday",
+  daysAgo: "days ago",
+  weekAgo: "1 week ago",
+  weeksAgo: "weeks ago",
+  manageCourses: "Manage Courses",
+  joinDate: "Join Date",
+  editProfile: "Edit Profile",
+  accountSettings: "Account Settings",
+  signOut: "Sign Out",
+  quickAccess: "Quick Access",
+  myCourses: "My Courses",
+  assessments: "Assessments",
+  noCourses: "No courses found",
+  browseCourses: "Browse Courses",
+  ongoing: "Ongoing",
+  lastAccessed: "Last Accessed",
+  progress: "Progress",
+  continueCourse: "Continue Course",
+  noAssessments: "No assessments found",
+  browseAssessments: "Browse Assessments",
+  pendingCompletion: "Pending Completion",
+  startedOn: "Started On",
+  viewResults: "View Results",
   
   // Navigation and site sections
   rafiei: "Rafiei",
