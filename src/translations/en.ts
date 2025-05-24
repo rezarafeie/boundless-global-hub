@@ -1,3 +1,4 @@
+
 export const en = {
   // General translations
   search: "Search",
@@ -343,5 +344,32 @@ export const en = {
   boundlessLandingFAQ3Q: "How is this different from other programs?",
   boundlessLandingFAQ3A: "Boundless combines practical tools with mindset transformation for lasting results.",
   boundlessLandingFAQ4Q: "Do I need prior experience?",
-  boundlessLandingFAQ4A: "No prior experience needed. The program is designed for all levels."
+  boundlessLandingFAQ4A: "No prior experience needed. The program is designed for all levels.",
+
+  // Dashboard specific translations
+  today: "Today",
+  yesterday: "Yesterday", 
+  daysAgo: "days ago",
+  weekAgo: "week ago",
+  weeksAgo: "weeks ago",
+  manageCourses: "Manage your courses, tests and account information",
+  joinDate: "Join date",
+  editProfile: "Edit Profile", 
+  accountSettings: "Account Settings",
+  signOut: "Sign Out",
+  quickAccess: "Quick Access",
+  myCourses: "My Courses",
+  assessments: "Assessments",
+  noCourses: "You haven't enrolled in any courses yet.",
+  browseCourses: "Browse Courses",
+  ongoing: "In Progress",
+  lastAccessed: "Last accessed",
+  progress: "Progress", 
+  continueCourse: "Continue Course",
+  noAssessments: "You haven't taken any assessments yet.",
+  browseAssessments: "Browse Assessments",
+  pendingCompletion: "Pending Completion",
+  startedOn: "Started on",
+  viewResults: "View Results",
+  continueAssessment: "Continue Assessment"
 };

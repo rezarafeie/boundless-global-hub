@@ -1,3 +1,4 @@
+
 export const fa = {
   // General translations
   search: "جستجو",
@@ -343,5 +344,32 @@ export const fa = {
   boundlessLandingFAQ3Q: "این برنامه چه تفاوتی با سایر برنامه‌ها دارد؟",
   boundlessLandingFAQ3A: "بی‌کرانگی ابزارهای عملی را با تحول ذهنیت برای نتایج پایدار ترکیب می‌کند.",
   boundlessLandingFAQ4Q: "آیا نیاز به تجربه قبلی دارم؟",
-  boundlessLandingFAQ4A: "نه، نیازی به تجربه قبلی نیست. برنامه برای همه سطوح طراحی شده است."
+  boundlessLandingFAQ4A: "نه، نیازی به تجربه قبلی نیست. برنامه برای همه سطوح طراحی شده است.",
+
+  // Dashboard specific translations
+  today: "امروز",
+  yesterday: "دیروز",
+  daysAgo: "روز پیش",
+  weekAgo: "هفته پیش", 
+  weeksAgo: "هفته پیش",
+  manageCourses: "مدیریت دوره‌ها، تست‌ها و اطلاعات حساب کاربری",
+  joinDate: "تاریخ عضویت",
+  editProfile: "ویرایش پروفایل",
+  accountSettings: "تنظیمات حساب کاربری", 
+  signOut: "خروج",
+  quickAccess: "دسترسی سریع",
+  myCourses: "دوره‌های من",
+  assessments: "ارزیابی‌ها",
+  noCourses: "هنوز در هیچ دوره‌ای ثبت نام نکرده‌اید.",
+  browseCourses: "مرور دوره‌ها",
+  ongoing: "در حال انجام",
+  lastAccessed: "آخرین دسترسی",
+  progress: "پیشرفت",
+  continueCourse: "ادامه دوره", 
+  noAssessments: "هنوز هیچ ارزیابی انجام نداده‌اید.",
+  browseAssessments: "مرور ارزیابی‌ها",
+  pendingCompletion: "در انتظار تکمیل",
+  startedOn: "شروع شده در",
+  viewResults: "مشاهده نتایج",
+  continueAssessment: "ادامه ارزیابی"
 };
