@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthModal from "./Auth/AuthModal";
 
@@ -42,7 +42,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   category,
   courseId
 }) => {
-  const { translations } = useLanguage();
+  const { translations, language } = useLanguage();
   const { user, activateCourse } = useAuth();
   const navigate = useNavigate();
   
@@ -68,8 +68,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Generate a slug if not provided
   const courseSlug = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
   
-  // Generate course URL
-  const courseUrl = `/courses/${courseSlug}`;
+  // Generate course URL - Fixed routing to use proper course detail pages
+  const courseUrl = isPaid ? `/course/paid/${courseSlug}` : `/courses/${courseSlug}`;
   
   // Generate course ID if not provided
   const id = courseId || courseSlug;
@@ -109,13 +109,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <>
       <Link to={courseUrl} className="block h-full group">
-        <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-          <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center">
+        <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl ${language === 'fa' ? 'text-right' : 'text-left'}`}>
+          <div className={`p-4 flex items-center justify-between ${language === 'fa' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className={`flex items-center ${language === 'fa' ? 'flex-row-reverse' : 'flex-row'}`}>
               <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
                 {getCourseIcon()}
               </div>
-              <div className="ml-3">
+              <div className={language === 'fa' ? 'mr-3' : 'ml-3'}>
                 <Badge
                   variant={isPaid ? "default" : "outline"}
                   className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
@@ -126,9 +126,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
             </div>
             {status && (
               <Badge className={`text-xs ${getStatusBadgeColor()}`}>
-                {status === "active" && translations.activeStatus}
-                {status === "upcoming" && translations.upcomingStatus}
-                {status === "completed" && translations.completedStatus}
+                {status === "active" && (language === 'fa' ? 'در حال اجرا' : translations.activeStatus)}
+                {status === "upcoming" && (language === 'fa' ? 'آینده' : translations.upcomingStatus)}
+                {status === "completed" && (language === 'fa' ? 'تمام شده' : translations.completedStatus)}
               </Badge>
             )}
           </div>
@@ -142,19 +142,19 @@ const CourseCard: React.FC<CourseCardProps> = ({
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
             
             <div className="space-y-2 mb-4">
-              <div className="text-sm">
-                <span className="font-medium">✓ </span>
-                {benefits}
+              <div className={`text-sm flex items-start gap-2 ${language === 'fa' ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
+                <CheckCircle size={16} className="text-green-600 flex-shrink-0 mt-0.5" />
+                <span>{benefits}</span>
               </div>
-              <div className="text-sm">
-                <span className="font-medium">→ </span>
-                {outcome}
+              <div className={`text-sm flex items-start gap-2 ${language === 'fa' ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
+                <Star size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>{outcome}</span>
               </div>
             </div>
             
             {instructor && (
-              <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
-                <User size={14} className="mr-1" />
+              <div className={`flex items-center mt-3 pb-2 text-sm text-gray-600 ${language === 'fa' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <User size={14} className={language === 'fa' ? 'ml-1' : 'mr-1'} />
                 {instructorLink ? (
                   <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
                     {instructor}
@@ -163,7 +163,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
                   <span>{instructor}</span>
                 )}
                 {level && (
-                  <Badge variant="outline" className="ml-2 text-xs">
+                  <Badge variant="outline" className={`text-xs ${language === 'fa' ? 'mr-2' : 'ml-2'}`}>
                     {level}
                   </Badge>
                 )}
