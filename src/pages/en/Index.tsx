@@ -4,7 +4,6 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
-import QuickAccess from "@/components/QuickAccess";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -60,18 +59,15 @@ const EnglishIndex = () => {
         ctaLink="/en/paid-courses"
       />
 
-      {/* Quick Access Section */}
-      <QuickAccess />
-
       {/* Featured Paid Courses */}
-      <section className="py-20 bg-background">
-        <div className="container max-w-6xl">
+      <section className="py-16 bg-background">
+        <div className="container">
           <SectionTitle
             title={translations.paidCoursesTitle}
             subtitle={translations.paidCoursesSubtitle}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
             {paidCourses.map((course, index) => (
               <CourseCard
                 key={index}
@@ -84,8 +80,8 @@ const EnglishIndex = () => {
             ))}
           </div>
           
-          <div className="mt-16 text-center">
-            <Button asChild size="lg" className="px-8 py-3 text-lg">
+          <div className="mt-12 text-center">
+            <Button asChild size="lg">
               <Link to="/en/paid-courses">
                 {translations.learnMore}
               </Link>
@@ -95,14 +91,14 @@ const EnglishIndex = () => {
       </section>
 
       {/* Featured Free Courses */}
-      <section className="py-20 bg-secondary/20">
-        <div className="container max-w-6xl">
+      <section className="py-16 bg-secondary/30">
+        <div className="container">
           <SectionTitle
             title={translations.freeCoursesTitle}
             subtitle={translations.freeCoursesSubtitle}
           />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
             {freeCourses.map((course, index) => (
               <CourseCard
                 key={index}
@@ -115,8 +111,8 @@ const EnglishIndex = () => {
             ))}
           </div>
           
-          <div className="mt-16 text-center">
-            <Button asChild size="lg" variant="outline" className="px-8 py-3 text-lg">
+          <div className="mt-12 text-center">
+            <Button asChild size="lg" variant="outline">
               <Link to="/en/free-courses">
                 {translations.learnMore}
               </Link>
@@ -126,42 +122,42 @@ const EnglishIndex = () => {
       </section>
       
       {/* Assessment Center Promo */}
-      <section className="py-20 bg-primary/5">
-        <div className="container max-w-6xl">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="w-full lg:w-1/2 space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold tracking-tight">
+      <section className="py-16 bg-primary/5">
+        <div className="container">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-full md:w-1/2">
+              <h2 className="text-3xl font-bold tracking-tight mb-4">
                 {translations.assessmentCenterTitle}
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground mb-6">
                 {translations.assessmentCenterDesc}
               </p>
-              <Button asChild size="lg" className="px-8 py-3 text-lg">
+              <Button asChild size="lg">
                 <Link to="/en/assessment-center">
                   {translations.learnMore}
                 </Link>
               </Button>
             </div>
             
-            <div className="w-full lg:w-1/2">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-primary/10 p-8 rounded-xl text-center hover:bg-primary/15 transition-colors">
-                  <h3 className="font-semibold text-lg mb-2">
+            <div className="w-full md:w-1/2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-primary/10 p-6 rounded-lg text-center">
+                  <h3 className="font-medium text-lg mb-2">
                     {translations.personalityTests}
                   </h3>
                 </div>
-                <div className="bg-primary/10 p-8 rounded-xl text-center hover:bg-primary/15 transition-colors">
-                  <h3 className="font-semibold text-lg mb-2">
+                <div className="bg-primary/10 p-6 rounded-lg text-center">
+                  <h3 className="font-medium text-lg mb-2">
                     {translations.intelligenceTests}
                   </h3>
                 </div>
-                <div className="bg-primary/10 p-8 rounded-xl text-center hover:bg-primary/15 transition-colors">
-                  <h3 className="font-semibold text-lg mb-2">
+                <div className="bg-primary/10 p-6 rounded-lg text-center">
+                  <h3 className="font-medium text-lg mb-2">
                     {translations.careerTests}
                   </h3>
                 </div>
-                <div className="bg-primary/10 p-8 rounded-xl text-center hover:bg-primary/15 transition-colors">
-                  <h3 className="font-semibold text-lg mb-2">
+                <div className="bg-primary/10 p-6 rounded-lg text-center">
+                  <h3 className="font-medium text-lg mb-2">
                     {translations.emotionTests}
                   </h3>
                 </div>
