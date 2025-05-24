@@ -7,4 +7,5 @@ export const assessmentTranslations = {
   intelligenceTests: "Intelligence Tests",
   careerTests: "Career Tests",
   emotionTests: "Emotional Intelligence Tests",
+  startTest: "Start Test",
 };

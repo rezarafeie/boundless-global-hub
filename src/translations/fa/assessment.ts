@@ -7,4 +7,5 @@ export const assessmentTranslations = {
   intelligenceTests: "تست‌های هوش",
   careerTests: "تست‌های شغلی",
   emotionTests: "تست‌های هوش هیجانی",
+  startTest: "شروع تست",
 };

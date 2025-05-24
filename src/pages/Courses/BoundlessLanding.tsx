@@ -4,7 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X, Clock, Award, Users, FileCheck, BookOpen, DollarSign, GraduationCap, Star, Code, Globe } from "lucide-react";
+import { Check, Clock, Award, Users, FileCheck, BookOpen, GraduationCap, Star } from "lucide-react";
 import AuthModal from "@/components/Auth/AuthModal";
 
 // Countdown target date (2 months from now as an example)
@@ -80,13 +80,6 @@ const BoundlessLanding = () => {
       answer: translations.boundlessLandingFAQ4A
     }
   ];
-
-  // Instructor data
-  const instructor = {
-    name: "دکتر مهدی رفیعی",
-    role: "متخصص کارآفرینی و کسب‌وکارهای جهانی",
-    bio: "بیش از 10 سال تجربه در ایجاد کسب‌وکارهای اینترنتی موفق و کمک به صدها کارآفرین برای کسب درآمد ارزی"
-  };
 
   // Course modules
   const courseModules = [
@@ -387,9 +380,9 @@ const BoundlessLanding = () => {
             <div className="w-24 h-24 rounded-full bg-black/5 mx-auto mb-6 flex items-center justify-center">
               <Users size={40} className="text-black/60" />
             </div>
-            <h3 className="text-xl font-bold mb-2">{instructor.name}</h3>
-            <p className="text-sm text-gray-600 mb-4">{instructor.role}</p>
-            <p className="text-gray-700">{instructor.bio}</p>
+            <h3 className="text-xl font-bold mb-2">دکتر مهدی رفیعی</h3>
+            <p className="text-sm text-gray-600 mb-4">متخصص کارآفرینی و کسب‌وکارهای جهانی</p>
+            <p className="text-gray-700">بیش از 10 سال تجربه در ایجاد کسب‌وکارهای اینترنتی موفق و کمک به صدها کارآفرین برای کسب درآمد ارزی</p>
           </div>
         </div>
       </section>
