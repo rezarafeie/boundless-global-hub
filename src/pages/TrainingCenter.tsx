@@ -12,9 +12,11 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+type FilterType = "all" | "business" | "self-development" | "free";
+
 const TrainingCenter = () => {
   const { translations, setLanguage, language } = useLanguage();
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [isCurrentlyRunningOpen, setIsCurrentlyRunningOpen] = useState(true);
   const [isUpcomingOpen, setIsUpcomingOpen] = useState(true);
   const [isPastOpen, setIsPastOpen] = useState(false);
@@ -32,7 +34,7 @@ const TrainingCenter = () => {
       outcome: translations.boundlessOutcome,
       isPaid: true,
       slug: "boundless",
-      category: "business",
+      category: "business" as const,
       status: "active" as const
     },
     {
@@ -42,7 +44,7 @@ const TrainingCenter = () => {
       outcome: translations.instagramOutcome,
       isPaid: true,
       slug: "instagram",
-      category: "business",
+      category: "business" as const,
       status: "active" as const
     },
     // Upcoming
@@ -53,7 +55,7 @@ const TrainingCenter = () => {
       outcome: translations.wealthOutcome,
       isPaid: true,
       slug: "wealth",
-      category: "business",
+      category: "business" as const,
       status: "upcoming" as const
     },
     {
@@ -63,7 +65,7 @@ const TrainingCenter = () => {
       outcome: translations.metaverseOutcome,
       isPaid: true,
       slug: "metaverse",
-      category: "business",
+      category: "business" as const,
       status: "upcoming" as const
     },
     // Past
@@ -74,7 +76,7 @@ const TrainingCenter = () => {
       outcome: translations.changeProjectOutcome,
       isPaid: false,
       slug: "change-project",
-      category: "self-development",
+      category: "self-development" as const,
       status: "completed" as const
     },
     {
@@ -84,12 +86,12 @@ const TrainingCenter = () => {
       outcome: translations.americanBusinessOutcome,
       isPaid: false,
       slug: "american-business",
-      category: "business",
+      category: "business" as const,
       status: "completed" as const
     }
   ];
 
-  const getFilteredCourses = (status: string, category?: string) => {
+  const getFilteredCourses = (status: string, category?: FilterType) => {
     let filtered = courses.filter(course => course.status === status);
     
     if (category && category !== "all") {
