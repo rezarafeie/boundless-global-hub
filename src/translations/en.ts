@@ -1,3 +1,4 @@
+
 const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "The Future of Income Generation is in Your Hands",
@@ -15,7 +16,20 @@ const enTranslations = {
   paidCourses: "Premium Courses",
   freeCourses: "Free Courses",
   assessmentCenter: "Assessment Center",
+  blog: "Blog",
+  support: "Support",
+  contact: "Contact Us",
+  about: "About Us",
+  
+  // AI Assistant
   aiAssistant: "AI Assistant",
+  aiAssistantTitle: "AI Assistant",
+  aiAssistantDescription: "Get personalized guidance for your business and career goals with our advanced AI assistant",
+  aiAssistantAction: "Use AI Assistant",
+  aiAssistantFeature1Desc: "Get smart answers to your business questions using advanced AI",
+  aiAssistantFeature2Desc: "Access exclusive Rafiei Academy resources and knowledge",
+  aiAssistantFeature3Desc: "Receive personalized solutions tailored to your goals",
+  
   loginRegister: "Login / Register",
   coursesTitle: "Training Courses",
   coursesSubtitle: "A collection of specialized courses to develop your skills",
@@ -23,7 +37,7 @@ const enTranslations = {
   paidCoursesSubtitle: "Advanced courses for professional development of your skills",
   freeCoursesTitle: "Free Courses",
   freeCoursesSubtitle: "Free courses to get familiar with basic concepts",
-  specialOffersTitle: "Special Offers", // Added special offers title
+  specialOffersTitle: "Special Offers",
   assessmentCenterTitle: "Assessment Center",
   assessmentCenterDesc: "Assess your skills and abilities using standard tests and determine your path to progress.",
   personalityTests: "Personality Tests",
@@ -138,19 +152,10 @@ const enTranslations = {
   upgradeToPremiumDescription: "To access complete and advanced content, upgrade to the main version of the course.",
   viewPaidCourses: "View Premium Courses",
   
-  // AI Assistant
-  aiAssistantTitle: "AI Assistant",
-  aiAssistantDescription: "Get answers to your questions in business, marketing, and personal success using Rafiei Academy's smart assistant.",
-  aiAssistantAction: "Use AI Assistant",
-  
+  // AI Assistant Features
   aiAssistantFeature1Title: "Smart Responses",
-  aiAssistantFeature1Desc: "Answering your questions using advanced artificial intelligence",
-  
   aiAssistantFeature2Title: "Exclusive Resources",
-  aiAssistantFeature2Desc: "Access to Rafiei Academy exclusive resources and information",
-  
   aiAssistantFeature3Title: "Personalized Guidance",
-  aiAssistantFeature3Desc: "Providing solutions tailored to your needs and goals",
   
   // Landing pages
   boundlessLandingTitle: "Boundless Program",
@@ -212,12 +217,9 @@ const enTranslations = {
   // Footer
   footerCopyright: "© All rights reserved for Rafiei Academy.",
   footerDesc: "Rafiei Academy, the reference for boundless business education and foreign currency income",
-  aboutUs: "About Us",
-  contactUs: "Contact Us",
   faq: "FAQ",
   terms: "Terms & Conditions",
   privacy: "Privacy Policy",
-  blog: "Blog",
   
   // Auth related messages
   error: "Error",
@@ -250,6 +252,8 @@ const enTranslations = {
   usePassword: "Use password",
   sendVerificationCode: "Send verification code",
   creating: "Creating...",
+  enterName: "Enter your name",
+  enterLastName: "Enter your last name",
   
   // Verification related
   verify: "Verify",
@@ -273,6 +277,49 @@ const enTranslations = {
   aiAssistantFeature4Title: "24/7 Availability",
   aiAssistantFeature4: "Access guidance whenever you need, day or night",
   
+  // Dashboard
+  dashboard: "Dashboard",
+  profile: "Profile",
+  settings: "Settings",
+  editProfile: "Edit Profile",
+  save: "Save",
+  cancel: "Cancel",
+  
+  // Course activation
+  activateCourse: "Activate Course",
+  courseActivated: "Course Activated",
+  continueLearning: "Continue Learning",
+  
+  // Assistant
+  smartAssistant: "Smart Assistant",
+  activateAssistant: "Activate Assistant",
+  assistantActivated: "Assistant Activated",
+  
+  // Support
+  courseSupport: "Course Support",
+  activateSupport: "Activate Support",
+  supportActivated: "Support Activated",
+  
+  // Telegram
+  telegramChannel: "Telegram Channel",
+  joinChannel: "Join Channel",
+  channelJoined: "Joined Channel",
+  
+  // Messages
+  welcome: "Welcome",
+  profileUpdated: "Profile Updated",
+  loading: "Loading...",
+  processing: "Processing...",
+  
+  // Forms
+  invalidEmail: "Invalid email",
+  invalidPhone: "Invalid phone number",
+  
+  // Placeholders
+  emailPlaceholder: "example@mail.com",
+  phonePlaceholder: "09123456789",
+  verificationCodePlaceholder: "123456",
+  
   // Course Activation
   courseActivationTitle: "Course Feature Activation",
   telegramChannelTitle: "Join Private Channel",
@@ -281,7 +328,6 @@ const enTranslations = {
   
   supportActivationTitle: "Activate Course Support",
   supportActivationDesc: "Access to dedicated support team for answering your questions",
-  activateSupport: "Activate Support",
   
   aiAssistantActivationTitle: "Launch AI Assistant",
   aiAssistantActivationDesc: "Use Rafiei Academy's exclusive AI assistant for personalized guidance",
@@ -311,6 +357,13 @@ const enTranslations = {
   activated: "Activated",
   activating: "Activating...",
   clickToActivate: "Click to Activate",
+  
+  // Player activation
+  playerActivation: "Player Activation",
+  activationCode: "Activation Code",
+  downloadPlayer: "Download Player",
+  webPlayer: "Web Player",
+  activationInstructions: "Activation Instructions",
 };
 
 export default enTranslations;
