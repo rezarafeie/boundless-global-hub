@@ -1,4 +1,3 @@
-
 export const en = {
   // General translations
   search: "Search",
@@ -316,6 +315,25 @@ export const en = {
   boundlessLandingWhoFor: "Who Is This Program For?",
   boundlessLandingSolutions: "What You'll Learn",
   boundlessLandingResultsTitle: "Results You Can Expect",
+  boundlessLandingWhatLearn: "What You'll Learn",
+  boundlessLandingSkill1: "Boundless Mindset",
+  boundlessLandingSkill2: "Dropshipping Mastery",
+  boundlessLandingSkill3: "Service Scaling",
+  boundlessLandingSkill4: "Digital Products",
+  boundlessLandingSkill5: "Scalable Systems",
+  boundlessLandingBonusesTitle: "Course Bonuses",
+  boundlessLandingBonus1: "AI Passive Income Course",
+  boundlessLandingBonus2: "Professional Assessment",
+  boundlessLandingBonus3: "Success Roadmap Guide",
+  boundlessLandingTestimonialsTitle: "Student Success Stories",
+  boundlessLandingFAQTitle: "Frequently Asked Questions",
+  boundlessLandingFitTitle: "Is This Right For You?",
+  boundlessLandingFitStudent: "Students & Graduates",
+  boundlessLandingFitFreelancer: "Freelancers",
+  boundlessLandingFitRemote: "Remote Workers",
+  boundlessLandingFitEntrepreneur: "Entrepreneurs",
+  boundlessLandingFitMigrate: "Immigration Planning",
+  boundlessLandingStickyOffer: "Special Offer: $7",
   
   // BoundlessLanding FAQ translations
   boundlessLandingFAQ1Q: "How long do I have access to the course?",
