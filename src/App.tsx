@@ -26,6 +26,7 @@ import InstagramLanding from "./pages/Courses/InstagramLanding";
 import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
 import InstructorProfile from "./pages/InstructorProfile";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // English routes
 import EnglishIndex from "./pages/en/Index";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/paid-courses" element={<PaidCourses />} />
               <Route path="/free-courses" element={<FreeCourses />} />
+              <Route path="/courses" element={<CourseArchive />} />
               <Route path="/assessment-center" element={<AssessmentCenter />} />
               <Route path="/assessment/:slug" element={<TestLanding />} />
               <Route path="/blog" element={<Blog />} />
@@ -57,6 +59,9 @@ const App = () => (
               <Route path="/course-archive" element={<CourseArchive />} />
               <Route path="/ai-assistant" element={<AIAssistant />} />
               <Route path="/instructor" element={<InstructorProfile />} />
+              
+              {/* Payment routes */}
+              <Route path="/payment-success/:courseSlug" element={<PaymentSuccess />} />
               
               {/* Course routes */}
               <Route path="/course/boundless" element={<BoundlessLanding />} />
@@ -86,6 +91,19 @@ const App = () => (
                     benefitOne="آشنایی با ابزارهای AI پردرآمد"
                     benefitTwo="استراتژی‌های کسب درآمد غیرفعال"
                     iconType="message"
+                  />
+                } 
+              />
+              <Route 
+                path="/course/servat" 
+                element={
+                  <FreeCourseLanding 
+                    title="دوره ثروت"
+                    englishTitle="Wealth Course"
+                    description="راهنمای جامع برای ایجاد و مدیریت ثروت شخصی"
+                    benefitOne="آموزش مدیریت مالی شخصی"
+                    benefitTwo="استراتژی‌های سرمایه‌گذاری"
+                    iconType="graduation"
                   />
                 } 
               />

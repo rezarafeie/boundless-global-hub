@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { GraduationCap, Brain, TrendingUp, Globe, Bot, Target, Star, Award } from "lucide-react";
+import QuickAccessRestored from "@/components/QuickAccessRestored";
+import PaymentButton from "@/components/PaymentButton";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -72,6 +74,9 @@ const Index = () => {
         ctaLink="/paid-courses"
       />
 
+      {/* Quick Access Section */}
+      <QuickAccessRestored />
+
       {/* Unified Courses Section */}
       <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="container">
@@ -108,11 +113,18 @@ const Index = () => {
                     {course.description}
                   </p>
                   
-                  <Button asChild className="w-full rounded-full" variant={course.isPaid ? "default" : "outline"}>
-                    <Link to={`/course/${course.slug}`}>
-                      {course.isPaid ? "مشاهده دوره" : "شروع رایگان"}
-                    </Link>
-                  </Button>
+                  {course.isPaid ? (
+                    <PaymentButton 
+                      courseSlug={course.slug}
+                      className="w-full rounded-full"
+                    />
+                  ) : (
+                    <Button asChild className="w-full rounded-full" variant="outline">
+                      <Link to={`/course/${course.slug}`}>
+                        شروع رایگان
+                      </Link>
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
