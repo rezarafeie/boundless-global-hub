@@ -22,7 +22,7 @@ const AIAssistantButton = ({
       variant={variant} 
       size={size} 
       className={`group relative overflow-hidden rounded-full ${className}`}
-      onClick={() => window.open("https://ai.rafiei.co/", "_blank")}
+      onClick={() => window.open("/ai-assistant", "_blank")}
     >
       <span className="flex items-center gap-2">
         <MessageCircle size={size === "sm" ? 16 : 20} className="animate-pulse" />
