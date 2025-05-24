@@ -42,7 +42,14 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/courses" element={<CourseArchive />} />
             <Route path="/courses/:courseSlug" element={<CourseDetail />} />
-            <Route path="/courses/:courseSlug/free-view" element={<FreeCourseView />} />
+            <Route path="/courses/:courseSlug/free-view" element={
+              <FreeCourseView 
+                title="Sample Free Course"
+                description="This is a sample free course description"
+                benefitOne="Learn basic concepts"
+                benefitTwo="Gain practical skills"
+              />
+            } />
             <Route path="/courses/:courseSlug/paid-view" element={<PaidCourseView />} />
             <Route path="/courses/:courseSlug/free-start" element={<FreeCourseStart />} />
             <Route path="/courses/:courseSlug/paid-start" element={<PaidCourseStart />} />
@@ -66,7 +73,14 @@ function App() {
             <Route path="/en" element={<EnglishIndex />} />
             <Route path="/en/courses" element={<EnglishCourseArchive />} />
             <Route path="/en/courses/:courseSlug" element={<CourseDetail />} />
-            <Route path="/en/courses/:courseSlug/free-view" element={<FreeCourseView />} />
+            <Route path="/en/courses/:courseSlug/free-view" element={
+              <FreeCourseView 
+                title="Sample Free Course"
+                description="This is a sample free course description"
+                benefitOne="Learn basic concepts"
+                benefitTwo="Gain practical skills"
+              />
+            } />
             <Route path="/en/courses/:courseSlug/paid-view" element={<PaidCourseView />} />
             <Route path="/en/free-courses" element={<EnglishFreeCourses />} />
             <Route path="/en/paid-courses" element={<EnglishPaidCourses />} />

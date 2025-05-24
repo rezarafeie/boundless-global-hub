@@ -1,4 +1,3 @@
-
 // Add to existing translations
 export const fa = {
   // General translations
@@ -21,6 +20,7 @@ export const fa = {
   allCourses: "همه دوره ها",
   freeCoursesTitle: "دوره های رایگان",
   paidCoursesTitle: "دوره های پولی",
+  paidCoursesSubtitle: "مهارت‌های خود را با دوره‌های حرفه‌ای ما به سطح بعدی ببرید",
   courseDetails: "جزئیات دوره",
   
   // Course View translations
@@ -99,6 +99,7 @@ export const fa = {
   lastAccessed: "آخرین دسترسی",
   progress: "پیشرفت",
   continueCourse: "ادامه دوره",
+  continueAssessment: "ادامه ارزیابی",
   noAssessments: "هیچ ارزیابی یافت نشد",
   browseAssessments: "مرور ارزیابی‌ها",
   pendingCompletion: "در انتظار تکمیل",
