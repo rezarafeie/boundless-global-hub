@@ -1,103 +1,105 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { BookOpen, Code, DollarSign, GraduationCap, Search, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { useCourseActivation } from "@/hooks/useCourseActivation";
+import AuthenticationModal from "@/components/Auth/AuthenticationModal";
 
 interface CourseCardProps {
   title: string;
   description: string;
-  benefits: string;
+  benefits: string | string[];
   outcome: string;
-  isPaid?: boolean;
-  englishTitle?: string;
+  isPaid: boolean;
   slug?: string;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({
-  title,
-  description,
-  benefits,
-  outcome,
-  isPaid = false,
-  englishTitle = "",
-  slug = ""
-}) => {
-  const { translations } = useLanguage();
+const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: CourseCardProps) => {
+  const { user } = useAuth();
+  const { activateCourse, loading } = useCourseActivation();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  // Get an appropriate icon based on the course title
-  const getCourseIcon = () => {
-    if (title.includes("متاورس") || title.includes("Metaverse")) {
-      return <Code size={20} className="text-primary" />;
-    } else if (title.includes("اینستاگرام") || title.includes("Instagram")) {
-      return <Search size={20} className="text-primary" />;
-    } else if (title.includes("ثروت") || title.includes("Wealth")) {
-      return <DollarSign size={20} className="text-primary" />;
-    } else if (title.includes("بدون مرز") || title.includes("Boundless")) {
-      return <GraduationCap size={20} className="text-primary" />;
-    } else if (title.includes("غیرفعال") || title.includes("Passive")) {
-      return <Star size={20} className="text-primary" />;
-    } else {
-      return <BookOpen size={20} className="text-primary" />;
+  const benefitsList = Array.isArray(benefits) ? benefits : benefits.split('\n').filter(b => b.trim());
+
+  const handleStartLearning = async () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    if (slug) {
+      const result = await activateCourse(slug, isPaid ? 'paid' : 'free');
+      // Activation result is handled in the hook
     }
   };
 
-  // Generate a slug if not provided
-  const courseSlug = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
-  
-  // Generate course URL
-  const courseUrl = `/courses/${courseSlug}`;
+  const getRedirectPath = () => {
+    if (!slug) return '/';
+    return isPaid ? `/start/paid-course?course=${slug}` : `/start/free-course?course=${slug}`;
+  };
 
-  // The entire card is clickable
   return (
-    <Link to={courseUrl} className="block h-full group">
-      <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        <div className="p-4 flex items-center">
-          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
-            {getCourseIcon()}
-          </div>
-          <div className="ml-3">
-            <Badge
-              variant={isPaid ? "default" : "outline"}
-              className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -5 }}
+        transition={{ duration: 0.3 }}
+        className="h-full"
+      >
+        <Card className="h-full bg-gradient-to-br from-background to-secondary/30 border border-primary/10 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30">
+          <CardHeader className="pb-4">
+            <div className="flex justify-between items-start mb-2">
+              <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
+                {title}
+              </CardTitle>
+              <Badge variant={isPaid ? "default" : "secondary"}>
+                {isPaid ? "پولی" : "رایگان"}
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-4 pt-0">
+            <p className="text-muted-foreground leading-relaxed">{description}</p>
+            
+            <div className="space-y-3">
+              <h3 className="font-semibold text-primary">مزایای این دوره:</h3>
+              <ul className="space-y-2">
+                {benefitsList.map((benefit, index) => (
+                  <li key={index} className="flex items-start text-sm">
+                    <span className="text-primary mr-2 flex-shrink-0">•</span>
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <h4 className="font-semibold text-primary mb-2">نتیجه دوره:</h4>
+              <p className="text-sm">{outcome}</p>
+            </div>
+            
+            <Button 
+              onClick={handleStartLearning}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary transition-all duration-300 shadow-lg hover:shadow-primary/20"
+              size="lg"
             >
-              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-            </Badge>
-          </div>
-        </div>
-        
-        <CardContent className="p-4 pt-0 flex-grow">
-          <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
-          {englishTitle && (
-            <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
-          )}
-          
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
-          
-          <div className="space-y-2 mb-4">
-            <div className="text-sm">
-              <span className="font-medium">✓ </span>
-              {benefits}
-            </div>
-            <div className="text-sm">
-              <span className="font-medium">→ </span>
-              {outcome}
-            </div>
-          </div>
-        </CardContent>
-        
-        <CardFooter className="p-4 pt-0">
-          <Button 
-            className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
-          >
-            {isPaid ? translations.startCourse : translations.startFreeCourse}
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+              {loading ? "در حال پردازش..." : (isPaid ? "ثبت نام در دوره" : "شروع یادگیری رایگان")}
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <AuthenticationModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        redirectTo={getRedirectPath()}
+      />
+    </>
   );
 };
 

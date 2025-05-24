@@ -2,14 +2,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, User } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useToast } from "@/components/ui/use-toast";
-import AuthModal from "../Auth/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
+import AuthenticationModal from "../Auth/AuthenticationModal";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
-  const { toast } = useToast();
+  const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
@@ -56,15 +56,37 @@ const Header = () => {
             <Globe size={20} />
           </Button>
           
-          {/* Login/Register Button - Desktop Only */}
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setAuthModalOpen(true)}
-            className="rounded-full bg-black text-white hover:bg-black/90 hidden md:flex"
-          >
-            {translations.loginRegister}
-          </Button>
+          {/* User Authentication - Desktop Only */}
+          {user ? (
+            <div className="hidden md:flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/dashboard'}
+                className="rounded-full"
+              >
+                <User size={16} className="mr-2" />
+                {user.email}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="rounded-full"
+              >
+                خروج
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setAuthModalOpen(true)}
+              className="rounded-full bg-black text-white hover:bg-black/90 hidden md:flex"
+            >
+              {translations.loginRegister}
+            </Button>
+          )}
           
           {/* Mobile Menu Button */}
           <Button
@@ -118,28 +140,54 @@ const Header = () => {
               پشتیبانی
             </Link>
             
-            {/* Login/Register Button - Mobile Menu */}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => {
-                setAuthModalOpen(true);
-                setIsMenuOpen(false);
-              }}
-              className="w-full rounded-full bg-black text-white hover:bg-black/90 mt-2"
-            >
-              {translations.loginRegister}
-            </Button>
+            {/* User Authentication - Mobile Menu */}
+            {user ? (
+              <div className="space-y-2 pt-2 border-t">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    window.location.href = '/dashboard';
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  <User size={16} className="mr-2" />
+                  داشبورد
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    signOut();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  خروج
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  setAuthModalOpen(true);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full rounded-full bg-black text-white hover:bg-black/90 mt-2"
+              >
+                {translations.loginRegister}
+              </Button>
+            )}
           </nav>
         </div>
       )}
 
       {/* Auth Modal */}
-      <AuthModal 
+      <AuthenticationModal 
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        courseTitle=""
-        isPaid={false}
       />
     </header>
   );

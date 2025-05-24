@@ -1,0 +1,426 @@
+
+import React, { useState, useEffect } from "react";
+import MainLayout from "@/components/Layout/MainLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User, BookOpen, Brain, MessageCircle, Settings, Calendar, Award } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  created_at: string;
+}
+
+interface UserCourse {
+  id: string;
+  course_slug: string;
+  course_type: string;
+  status: string;
+  activated_at: string;
+  progress: any;
+}
+
+interface UserTest {
+  id: string;
+  test_slug: string;
+  status: string;
+  score: number;
+  activated_at: string;
+}
+
+const Dashboard = () => {
+  const { user, signOut, updateProfile } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [courses, setCourses] = useState<UserCourse[]>([]);
+  const [tests, setTests] = useState<UserTest[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch user profile
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+        setEditForm({
+          full_name: profileData.full_name || "",
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+        });
+      }
+
+      // Fetch user courses
+      const { data: coursesData } = await supabase
+        .from('user_courses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('activated_at', { ascending: false });
+
+      setCourses(coursesData || []);
+
+      // Fetch user tests
+      const { data: testsData } = await supabase
+        .from('user_tests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('activated_at', { ascending: false });
+
+      setTests(testsData || []);
+
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری اطلاعات کاربر",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    setLoading(true);
+    const result = await updateProfile(editForm);
+    
+    if (result.error) {
+      toast({
+        title: "خطا",
+        description: "خطا در بروزرسانی پروفایل",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "موفق",
+        description: "پروفایل با موفقیت بروزرسانی شد",
+      });
+      setIsEditing(false);
+      fetchUserData();
+    }
+    setLoading(false);
+  };
+
+  const getCourseTitle = (slug: string) => {
+    const titles: Record<string, string> = {
+      'boundless': 'دوره بدون مرز',
+      'instagram': 'دوره اسباب اینستاگرام',
+      'metaverse': 'دوره امپراطور متاورس',
+      'boundless-taste': 'دوره مزه بدون مرز',
+      'passive-income': 'دوره درآمد غیرفعال',
+      'change-project': 'دوره پروژه تغییر',
+    };
+    return titles[slug] || slug;
+  };
+
+  const getTestTitle = (slug: string) => {
+    const titles: Record<string, string> = {
+      'personality': 'تست شخصیت‌شناسی',
+      'intelligence': 'تست هوش',
+      'career': 'تست شغلی',
+      'emotional': 'تست هوش هیجانی',
+    };
+    return titles[slug] || slug;
+  };
+
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="container py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">برای دسترسی به داشبورد وارد شوید</h1>
+          <Button onClick={() => window.location.href = '/'}>
+            بازگشت به صفحه اصلی
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  return (
+    <MainLayout>
+      <div className="container py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">داشبورد کاربری</h1>
+              <p className="text-muted-foreground">مدیریت حساب کاربری و دوره‌های شما</p>
+            </div>
+            <Button variant="outline" onClick={signOut}>
+              خروج
+            </Button>
+          </div>
+        </motion.div>
+
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User size={16} />
+              پروفایل
+            </TabsTrigger>
+            <TabsTrigger value="courses" className="flex items-center gap-2">
+              <BookOpen size={16} />
+              دوره‌ها
+            </TabsTrigger>
+            <TabsTrigger value="tests" className="flex items-center gap-2">
+              <Brain size={16} />
+              تست‌ها
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings size={16} />
+              تنظیمات
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User size={20} />
+                  اطلاعات شخصی
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">نام کامل</Label>
+                      <Input
+                        id="fullName"
+                        value={editForm.full_name}
+                        onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">ایمیل</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">شماره موبایل</Label>
+                      <Input
+                        id="phone"
+                        value={editForm.phone}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleUpdateProfile} disabled={loading}>
+                        ذخیره
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                        انصراف
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">نام کامل</p>
+                        <p className="font-medium">{profile?.full_name || 'نامشخص'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">ایمیل</p>
+                        <p className="font-medium">{profile?.email || user.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">شماره موبایل</p>
+                        <p className="font-medium">{profile?.phone || 'ثبت نشده'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">تاریخ عضویت</p>
+                        <p className="font-medium">
+                          {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('fa-IR') : 'نامشخص'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button onClick={() => setIsEditing(true)}>
+                      ویرایش پروفایل
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="courses">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen size={20} />
+                    دوره‌های من ({courses.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {courses.length === 0 ? (
+                    <div className="text-center py-8">
+                      <BookOpen size={48} className="mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">شما هنوز در هیچ دوره‌ای ثبت نام نکرده‌اید</p>
+                      <Button className="mt-4" onClick={() => window.location.href = '/courses'}>
+                        مشاهده دوره‌ها
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {courses.map((course) => (
+                        <Card key={course.id} className="border-l-4 border-l-primary">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="font-semibold">{getCourseTitle(course.course_slug)}</h3>
+                              <Badge variant={course.status === 'completed' ? 'default' : 'secondary'}>
+                                {course.status === 'completed' ? 'تکمیل شده' : 'در حال مطالعه'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                              <Calendar size={14} />
+                              <span>فعال‌سازی: {new Date(course.activated_at).toLocaleDateString('fa-IR')}</span>
+                            </div>
+                            <Button size="sm" className="w-full">
+                              ادامه مطالعه
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tests">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain size={20} />
+                  تست‌های من ({tests.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {tests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Brain size={48} className="mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">شما هنوز هیچ تستی انجام نداده‌اید</p>
+                    <Button className="mt-4" onClick={() => window.location.href = '/assessment-center'}>
+                      مرکز ارزیابی
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {tests.map((test) => (
+                      <Card key={test.id} className="border-l-4 border-l-secondary">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-semibold">{getTestTitle(test.test_slug)}</h3>
+                            <Badge variant={test.status === 'completed' ? 'default' : 'secondary'}>
+                              {test.status === 'completed' ? 'تکمیل شده' : 'در حال انجام'}
+                            </Badge>
+                          </div>
+                          {test.score && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <Award size={14} className="text-yellow-500" />
+                              <span className="text-sm">امتیاز: {test.score}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                            <Calendar size={14} />
+                            <span>انجام: {new Date(test.activated_at).toLocaleDateString('fa-IR')}</span>
+                          </div>
+                          <Button size="sm" variant="outline" className="w-full">
+                            مشاهده نتایج
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings size={20} />
+                  تنظیمات
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">دستیار هوشمند</h3>
+                    <p className="text-sm text-muted-foreground">دسترسی به دستیار هوشمند رفیعی</p>
+                  </div>
+                  <Button size="sm" onClick={() => window.open('https://ai.rafiei.co', '_blank')}>
+                    <MessageCircle size={16} className="mr-2" />
+                    فعال‌سازی
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">پشتیبانی دوره</h3>
+                    <p className="text-sm text-muted-foreground">دسترسی به پشتیبانی تخصصی</p>
+                  </div>
+                  <Button size="sm" variant="outline">
+                    فعال
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">کانال تلگرام</h3>
+                    <p className="text-sm text-muted-foreground">عضویت در کانال اختصاصی</p>
+                  </div>
+                  <Button size="sm" variant="outline">
+                    عضویت
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
+  );
+};
+
+export default Dashboard;

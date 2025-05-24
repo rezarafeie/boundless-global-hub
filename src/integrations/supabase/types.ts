@@ -118,16 +118,22 @@ export type Database = {
         Row: {
           activated_at: string | null
           is_enabled: boolean | null
+          last_used: string | null
+          usage_count: number | null
           user_id: string
         }
         Insert: {
           activated_at?: string | null
           is_enabled?: boolean | null
+          last_used?: string | null
+          usage_count?: number | null
           user_id: string
         }
         Update: {
           activated_at?: string | null
           is_enabled?: boolean | null
+          last_used?: string | null
+          usage_count?: number | null
           user_id?: string
         }
         Relationships: []
@@ -135,23 +141,32 @@ export type Database = {
       user_courses: {
         Row: {
           activated_at: string | null
+          completed_at: string | null
           course_slug: string
           course_type: string | null
           id: string
+          progress: Json | null
+          status: string | null
           user_id: string | null
         }
         Insert: {
           activated_at?: string | null
+          completed_at?: string | null
           course_slug: string
           course_type?: string | null
           id?: string
+          progress?: Json | null
+          status?: string | null
           user_id?: string | null
         }
         Update: {
           activated_at?: string | null
+          completed_at?: string | null
           course_slug?: string
           course_type?: string | null
           id?: string
+          progress?: Json | null
+          status?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -177,27 +192,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_tests: {
         Row: {
           activated_at: string | null
+          completed_at: string | null
           id: string
           result: Json | null
+          score: number | null
           status: string | null
           test_slug: string
           user_id: string | null
         }
         Insert: {
           activated_at?: string | null
+          completed_at?: string | null
           id?: string
           result?: Json | null
+          score?: number | null
           status?: string | null
           test_slug: string
           user_id?: string | null
         }
         Update: {
           activated_at?: string | null
+          completed_at?: string | null
           id?: string
           result?: Json | null
+          score?: number | null
           status?: string | null
           test_slug?: string
           user_id?: string | null
@@ -261,6 +312,36 @@ export type Database = {
           stripe_url?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      verification_codes: {
+        Row: {
+          attempts: number | null
+          code: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          phone: string
+          used: boolean | null
+        }
+        Insert: {
+          attempts?: number | null
+          code: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          phone: string
+          used?: boolean | null
+        }
+        Update: {
+          attempts?: number | null
+          code?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          phone?: string
+          used?: boolean | null
         }
         Relationships: []
       }

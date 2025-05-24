@@ -1,10 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { AuthProvider } from "./hooks/useAuth";
 import Home from "./pages/Index";
 import CourseArchive from "./pages/CourseArchive";
 import AssessmentCenter from "./pages/AssessmentCenter";
@@ -24,6 +24,7 @@ import Support from "./pages/Support";
 import FreeCourseStart from "./pages/Course/FreeCourseStart";
 import PaidCourseStart from "./pages/Course/PaidCourseStart";
 import Blog from "./pages/Blog";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -31,46 +32,48 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            {/* Persian (Default) Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/courses" element={<CourseArchive />} />
-            <Route path="/assessment-center" element={<AssessmentCenter />} />
-            <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
-            <Route path="/ai-assistant" element={<AIAssistantView />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
-            <Route path="/blog" element={<Blog />} />
-            
-            {/* Course Start Pages */}
-            <Route path="/start/free-course" element={<FreeCourseStart />} />
-            <Route path="/start/paid-course" element={<PaidCourseStart />} />
-            
-            {/* Course Landing Pages */}
-            <Route path="/courses/boundless" element={<BoundlessLanding />} />
-            <Route path="/courses/instagram" element={<InstagramLanding />} />
-            <Route path="/courses/metaverse" element={<MetaverseLanding />} />
-            
-            {/* Boundless redirect */}
-            <Route path="/boundless" element={<Navigate to="/courses/boundless" replace />} />
-            
-            {/* Free Courses Landing Pages */}
-            <Route 
-              path="/courses/boundless-taste" 
-              element={
-                <FreeCourseLanding 
-                  title="دوره رایگان مزه بدون مرز" 
-                  englishTitle="Boundless Taste"
-                  description="یک پیش‌نمایش رایگان از دوره اصلی بدون مرز برای آشنایی با مفاهیم کسب درآمد بین‌المللی"
-                  benefitOne="آشنایی با مفهوم کسب و کار بدون مرز و امکان‌سنجی آن"
-                  benefitTwo="شناخت زیرساخت‌های لازم برای ورود به بازار جهانی"
-                  iconType="graduation"
-                />
-              } 
-            />
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              {/* Persian (Default) Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/courses" element={<CourseArchive />} />
+              <Route path="/assessment-center" element={<AssessmentCenter />} />
+              <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
+              <Route path="/ai-assistant" element={<AIAssistantView />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* Course Start Pages */}
+              <Route path="/start/free-course" element={<FreeCourseStart />} />
+              <Route path="/start/paid-course" element={<PaidCourseStart />} />
+              
+              {/* Course Landing Pages */}
+              <Route path="/courses/boundless" element={<BoundlessLanding />} />
+              <Route path="/courses/instagram" element={<InstagramLanding />} />
+              <Route path="/courses/metaverse" element={<MetaverseLanding />} />
+              
+              {/* Boundless redirect */}
+              <Route path="/boundless" element={<Navigate to="/courses/boundless" replace />} />
+              
+              {/* Free Courses Landing Pages */}
+              <Route 
+                path="/courses/boundless-taste" 
+                element={
+                  <FreeCourseLanding 
+                    title="دوره رایگان مزه بدون مرز" 
+                    englishTitle="Boundless Taste"
+                    description="یک پیش‌نمایش رایگان از دوره اصلی بدون مرز برای آشنایی با مفاهیم کسب درآمد بین‌المللی"
+                    benefitOne="آشنایی با مفهوم کسب و کار بدون مرز و امکان‌سنجی آن"
+                    benefitTwo="شناخت زیرساخت‌های لازم برای ورود به بازار جهانی"
+                    iconType="graduation"
+                  />
+                } 
+              />
             <Route 
               path="/courses/passive-income" 
               element={
@@ -188,29 +191,31 @@ const App = () => (
                 />
               } 
             />
-            
-            {/* English Routes */}
-            <Route path="/en" element={<EnglishHome />} />
-            <Route path="/en/courses" element={<EnglishCourseArchive />} />
-            <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
-            <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
-            <Route path="/en/ai-assistant" element={<AIAssistantView language="en" />} />
-            <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
-            <Route path="/en/courses/instagram" element={<InstagramLanding />} />
-            <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
-            <Route path="/en/support" element={<Support />} />
-            <Route path="/en/blog" element={<Blog />} />
-            
-            {/* Legacy redirects */}
-            <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />
-            <Route path="/free-courses" element={<Navigate to="/courses" replace />} />
-            <Route path="/en/paid-courses" element={<Navigate to="/en/courses" replace />} />
-            <Route path="/en/free-courses" element={<Navigate to="/en/courses" replace />} />
-            
-            {/* Redirects and Not Found */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
+              
+              {/* English Routes */}
+              <Route path="/en" element={<EnglishHome />} />
+              <Route path="/en/courses" element={<EnglishCourseArchive />} />
+              <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
+              <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
+              <Route path="/en/ai-assistant" element={<AIAssistantView language="en" />} />
+              <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
+              <Route path="/en/courses/instagram" element={<InstagramLanding />} />
+              <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
+              <Route path="/en/support" element={<Support />} />
+              <Route path="/en/blog" element={<Blog />} />
+              <Route path="/en/dashboard" element={<Dashboard />} />
+              
+              {/* Legacy redirects */}
+              <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />
+              <Route path="/free-courses" element={<Navigate to="/courses" replace />} />
+              <Route path="/en/paid-courses" element={<Navigate to="/en/courses" replace />} />
+              <Route path="/en/free-courses" element={<Navigate to="/en/courses" replace />} />
+              
+              {/* Redirects and Not Found */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>
   </QueryClientProvider>
