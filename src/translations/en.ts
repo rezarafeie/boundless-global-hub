@@ -1,4 +1,3 @@
-
 export const en = {
   // General translations
   search: "Search",
@@ -18,6 +17,7 @@ export const en = {
   loginRegister: "Login / Register",
   freeCoursesTitle: "Free Courses",
   paidCoursesTitle: "Paid Courses",
+  paidCoursesSubtitle: "Take your skills to the next level with our paid courses.",
   freeCoursesDescription: "Start learning today with our free courses.",
   paidCoursesDescription: "Take your skills to the next level with our paid courses.",
   allCourses: "All Courses",

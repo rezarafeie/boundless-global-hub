@@ -1,4 +1,3 @@
-
 export const fa = {
   // General translations
   search: "جستجو",
@@ -18,6 +17,7 @@ export const fa = {
   loginRegister: "ورود / ثبت نام",
   freeCoursesTitle: "دوره‌های رایگان",
   paidCoursesTitle: "دوره‌های پولی",
+  paidCoursesSubtitle: "مهارت‌های خود را با دوره‌های پولی ما به سطح بعدی ببرید.",
   freeCoursesDescription: "امروز با دوره‌های رایگان ما شروع به یادگیری کنید.",
   paidCoursesDescription: "مهارت‌های خود را با دوره‌های پولی ما به سطح بعدی ببرید.",
   allCourses: "همه دوره‌ها",
