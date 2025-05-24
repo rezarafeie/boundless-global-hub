@@ -24,11 +24,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/courses" element={<TrainingCenter />} />
@@ -46,9 +46,9 @@ const App = () => (
               <Route path="/en/paid-courses" element={<EnglishPaidCourses />} />
               <Route path="/en/course/:slug" element={<CourseDetail />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
     </LanguageProvider>
   </QueryClientProvider>
 );
