@@ -1,15 +1,16 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getRandomQuote } from "@/utils/motivationalQuotes";
 
 interface HeroProps {
-  title: string;
-  subtitle: string;
+  title?: string;
+  subtitle?: string;
   ctaText: string;
   ctaLink: string;
   image?: string;
   backgroundType?: "gradient" | "wave" | "dots" | "image" | "glow";
+  showRandomQuote?: boolean;
 }
 
 const Hero = ({ 
@@ -18,9 +19,21 @@ const Hero = ({
   ctaText, 
   ctaLink, 
   image,
-  backgroundType = "glow" 
+  backgroundType = "glow",
+  showRandomQuote = false
 }: HeroProps) => {
-  const { direction } = useLanguage();
+  const { direction, language } = useLanguage();
+  const [randomQuote, setRandomQuote] = useState<string>("");
+
+  useEffect(() => {
+    if (showRandomQuote) {
+      const quote = getRandomQuote(language as 'fa' | 'en');
+      setRandomQuote(quote);
+    }
+  }, [showRandomQuote, language]);
+
+  const displayTitle = showRandomQuote ? randomQuote : title;
+  const displaySubtitle = showRandomQuote ? subtitle : subtitle;
 
   return (
     <div className="relative w-full overflow-hidden bg-white py-20 md:py-28">
@@ -74,11 +87,13 @@ const Hero = ({
           {/* Text Content - Center Aligned */}
           <div className="space-y-6 max-w-3xl mx-auto">
             <h1 className="font-bold tracking-tighter text-4xl md:text-5xl lg:text-6xl animate-slide-down text-balance">
-              {title}
+              {displayTitle}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground animate-slide-down animation-delay-200 max-w-2xl mx-auto">
-              {subtitle}
-            </p>
+            {displaySubtitle && (
+              <p className="text-lg md:text-xl text-muted-foreground animate-slide-down animation-delay-200 max-w-2xl mx-auto">
+                {displaySubtitle}
+              </p>
+            )}
             <div className="animate-slide-down animation-delay-400">
               <Button asChild className="rounded-full bg-black hover:bg-black/90 text-white">
                 <a href={ctaLink}>

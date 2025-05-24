@@ -69,7 +69,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const courseSlug = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
   
   // Generate course URL
-  const courseUrl = `/courses/${courseSlug}`;
+  const courseUrl = `/course/${courseSlug}`;
   
   // Generate course ID if not provided
   const id = courseId || courseSlug;
@@ -95,6 +95,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
     // If user is logged in, activate course
     if (user) {
       await activateCourse(id, title, isPaid);
+      // Navigate to course detail page
+      navigate(courseUrl);
     } else {
       // Show auth modal
       setIsAuthModalOpen(true);
@@ -104,11 +106,17 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Handle successful authentication
   const handleAuthSuccess = () => {
     setIsAuthModalOpen(false);
+    // Navigate to course detail page after successful auth
+    navigate(courseUrl);
+  };
+
+  const handleCardClick = () => {
+    navigate(courseUrl);
   };
 
   return (
     <>
-      <Link to={courseUrl} className="block h-full group">
+      <div onClick={handleCardClick} className="block h-full group cursor-pointer">
         <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center">
@@ -180,7 +188,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             </Button>
           </CardFooter>
         </Card>
-      </Link>
+      </div>
       
       <AuthModal 
         isOpen={isAuthModalOpen} 
