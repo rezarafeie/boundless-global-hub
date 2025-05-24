@@ -93,14 +93,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (dbError) throw dbError;
 
       // Send SMS via Faraaz API
-      const response = await fetch('/api/send-sms', {
+      const response = await fetch('https://api.farazsms.com/v2/sms/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer lQBvFydrE35Wk1zkiKBiIiQpI5VwMKs3ovikaj40hS0='
         },
         body: JSON.stringify({
-          phone,
-          code
+          recipient: phone,
+          message: `کد تایید آکادمی رفیعی: ${code}`,
+          sender: 'RafieiAcademy'
         }),
       });
 
