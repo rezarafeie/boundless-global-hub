@@ -22,13 +22,13 @@ const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: Cou
   const getRouteUrl = () => {
     if (!slug) return '/courses';
     
-    // If it's a free course and doesn't already include "free/", add it
-    if (!isPaid && !slug.startsWith('free/')) {
-      return `/course/free/${slug}`;
+    if (!isPaid) {
+      // For free courses, go to landing page for registration
+      return `/free-course/${slug.replace('free/', '')}`;
     }
     
-    // If it already has the correct format, use as is
-    return `/course/${slug}`;
+    // For paid courses, go to checkout
+    return `/checkout/${slug}`;
   };
 
   return (
@@ -79,7 +79,7 @@ const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: Cou
             
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <span className="text-sm text-muted-foreground">
-                کلیک برای مشاهده جزئیات
+                {isPaid ? "کلیک برای خرید" : "کلیک برای ثبت نام رایگان"}
               </span>
               <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform duration-300" />
             </div>

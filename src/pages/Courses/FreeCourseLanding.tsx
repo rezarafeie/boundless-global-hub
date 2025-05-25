@@ -1,11 +1,14 @@
 
 import React, { useState } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
-import CourseRegistrationForm from '@/components/CourseRegistrationForm';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
 import { Check, Clock, Play, BookOpen, Users, Award, Gift, Star } from 'lucide-react';
+import { submitToGravityForm } from '@/services/wordpressApi';
 
 interface CourseData {
   title: string;
@@ -27,6 +30,14 @@ const FreeCourseLanding: React.FC<CourseData> = ({
   courseSlug
 }) => {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const getIcon = () => {
     switch (iconType) {
@@ -40,6 +51,55 @@ const FreeCourseLanding: React.FC<CourseData> = ({
         return <Users className="w-16 h-16" />;
       default:
         return <BookOpen className="w-16 h-16" />;
+    }
+  };
+
+  const needsEmail = courseSlug === 'boundless-taste';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.firstName || !formData.lastName || !formData.phone) {
+      toast({
+        title: "خطا",
+        description: "لطفا تمام فیلدهای الزامی را تکمیل کنید",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (needsEmail && !formData.email) {
+      toast({
+        title: "خطا",
+        description: "لطفا ایمیل خود را وارد کنید",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await submitToGravityForm(courseSlug, formData);
+      
+      toast({
+        title: "ثبت‌نام موفق",
+        description: "ثبت‌نام شما در دوره با موفقیت انجام شد. به زودی با شما تماس خواهیم گرفت.",
+      });
+
+      // Reset form
+      setFormData({ firstName: '', lastName: '', email: '', phone: '' });
+      setShowRegistrationForm(false);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در ثبت‌نام. لطفا دوباره تلاش کنید",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -57,10 +117,76 @@ const FreeCourseLanding: React.FC<CourseData> = ({
                 بازگشت به صفحه دوره
               </Button>
             </div>
-            <CourseRegistrationForm 
-              courseSlug={courseSlug} 
-              courseTitle={title}
-            />
+            
+            <Card className="w-full max-w-md mx-auto">
+              <CardHeader>
+                <CardTitle className="text-center text-2xl">ثبت‌نام رایگان</CardTitle>
+                <p className="text-center text-gray-600">{title}</p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">نام *</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                        placeholder="نام"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">نام خانوادگی *</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                        placeholder="نام خانوادگی"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">شماره موبایل *</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="09123456789"
+                      required
+                    />
+                  </div>
+
+                  {needsEmail && (
+                    <div>
+                      <Label htmlFor="email">ایمیل *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="example@email.com"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    className="w-full py-3 text-lg"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "در حال پردازش..." : "شروع دوره رایگان"}
+                  </Button>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    با ثبت‌نام، شرایط استفاده و حریم خصوصی را می‌پذیرید
+                  </p>
+                </form>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </MainLayout>
@@ -199,6 +325,25 @@ const FreeCourseLanding: React.FC<CourseData> = ({
                   </p>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Instructor */}
+      <section className="bg-white py-20">
+        <div className="container">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-8">درباره مدرس</h2>
+            <div className="bg-gray-50 p-8 rounded-2xl">
+              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <Users className="w-12 h-12 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-4">رضا رفیعی</h3>
+              <p className="text-gray-600 text-lg leading-relaxed">
+                مربی کسب‌وکار و توسعه شخصی با بیش از ۱۰ سال تجربه در حوزه آموزش و کوچینگ. 
+                بنیان‌گذار آکادمی رفیعی و مؤلف چندین کتاب در زمینه موفقیت و کارآفرینی.
+              </p>
             </div>
           </div>
         </div>
