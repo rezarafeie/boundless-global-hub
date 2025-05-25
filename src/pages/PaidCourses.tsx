@@ -5,7 +5,7 @@ import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import { useLanguage } from "@/contexts/LanguageContext";
-import RegistrationForm from "@/components/RegistrationForm";
+import CourseRegistrationForm from "@/components/CourseRegistrationForm";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { User, Calendar, Award, BarChart3 } from "lucide-react";
 
 const PaidCourses = () => {
   const { translations } = useLanguage();
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<{title: string, slug: string} | null>(null);
   const [activeTab, setActiveTab] = useState("all");
 
   const courses = [
@@ -23,6 +23,7 @@ const PaidCourses = () => {
       benefits: translations.boundlessBenefits,
       outcome: translations.boundlessOutcome,
       isPaid: true,
+      slug: "boundless",
       image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
       category: "business",
       duration: "6 months",
@@ -44,6 +45,7 @@ const PaidCourses = () => {
       benefits: translations.instagramBenefits,
       outcome: translations.instagramOutcome,
       isPaid: true,
+      slug: "instagram",
       image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
       category: "social",
       duration: "4 weeks",
@@ -60,32 +62,12 @@ const PaidCourses = () => {
       ]
     },
     {
-      title: translations.wealthCourse,
-      description: translations.wealthCourseDesc,
-      benefits: translations.wealthBenefits,
-      outcome: translations.wealthOutcome,
-      isPaid: true,
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
-      category: "finance",
-      duration: "8 weeks",
-      modules: 8,
-      students: 620,
-      features: [
-        "Financial planning",
-        "Investment strategies",
-        "Wealth mindset training",
-        "Asset management",
-        "Risk management",
-        "Tax optimization",
-        "Retirement planning"
-      ]
-    },
-    {
       title: translations.metaverseEmpire,
       description: translations.metaverseEmpireDesc,
       benefits: translations.metaverseBenefits,
       outcome: translations.metaverseOutcome,
       isPaid: true,
+      slug: "metaverse",
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
       category: "tech",
       duration: "10 weeks",
@@ -107,8 +89,8 @@ const PaidCourses = () => {
     ? courses 
     : courses.filter(course => course.category === activeTab);
 
-  const handleCourseClick = (title: string) => {
-    setSelectedCourse(title);
+  const handleCourseClick = (title: string, slug: string) => {
+    setSelectedCourse({ title, slug });
     
     // Scroll to registration form
     setTimeout(() => {
@@ -162,11 +144,10 @@ const PaidCourses = () => {
           />
           
           <Tabs defaultValue="all" className="w-full mb-8">
-            <TabsList className="w-full max-w-md mx-auto grid grid-cols-5">
+            <TabsList className="w-full max-w-md mx-auto grid grid-cols-4">
               <TabsTrigger value="all" onClick={() => setActiveTab("all")}>All</TabsTrigger>
               <TabsTrigger value="business" onClick={() => setActiveTab("business")}>Business</TabsTrigger>
               <TabsTrigger value="social" onClick={() => setActiveTab("social")}>Social</TabsTrigger>
-              <TabsTrigger value="finance" onClick={() => setActiveTab("finance")}>Finance</TabsTrigger>
               <TabsTrigger value="tech" onClick={() => setActiveTab("tech")}>Tech</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -176,13 +157,13 @@ const PaidCourses = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            key={activeTab} // Re-animate when tab changes
+            key={activeTab}
           >
             {filteredCourses.map((course, index) => (
               <motion.div key={index} variants={childVariants} className="h-full">
                 <div 
                   className="h-full group cursor-pointer" 
-                  onClick={() => handleCourseClick(course.title)}
+                  onClick={() => handleCourseClick(course.title, course.slug)}
                 >
                   <div className="h-full bg-background border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
                     <div className="aspect-video relative">
@@ -240,7 +221,7 @@ const PaidCourses = () => {
                       </div>
                       
                       <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg text-center">
-                        <p className="font-medium">Click to register for this premium course</p>
+                        <p className="font-medium">برای ثبت نام در این دوره کلیک کنید</p>
                       </div>
                     </div>
                   </div>
@@ -254,12 +235,21 @@ const PaidCourses = () => {
       <section id="registration-form" className="py-16 bg-gradient-to-b from-accent/5 to-background">
         <div className="container">
           <SectionTitle
-            title={selectedCourse || translations.paidCoursesTitle}
-            subtitle={translations.paidCoursesSubtitle}
+            title={selectedCourse?.title || translations.paidCoursesTitle}
+            subtitle="تکمیل فرم خرید و پرداخت"
           />
           
           <div className="mt-8">
-            <RegistrationForm courseTitle={selectedCourse || ""} isPaid={true} />
+            {selectedCourse ? (
+              <CourseRegistrationForm 
+                courseSlug={selectedCourse.slug}
+                courseTitle={selectedCourse.title}
+              />
+            ) : (
+              <div className="text-center text-gray-600">
+                لطفا ابتدا یک دوره انتخاب کنید
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -4,12 +4,9 @@ import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, BookOpen, GraduationCap, FileCheck, MessageCircle } from "lucide-react";
-import AuthModal from "@/components/Auth/AuthModal";
 import CountdownTimer from "@/components/CountdownTimer";
+import CourseRegistrationForm from "@/components/CourseRegistrationForm";
 import { motion } from "framer-motion";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
 import InstructorProfile from "@/components/InstructorProfile";
 
 interface FreeCourseProps {
@@ -18,6 +15,7 @@ interface FreeCourseProps {
   description: string;
   benefitOne: string;
   benefitTwo: string;
+  courseSlug: string;
   iconType?: "book" | "graduation" | "file" | "message";
 }
 
@@ -27,13 +25,9 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
   description,
   benefitOne,
   benefitTwo,
+  courseSlug,
   iconType = "book"
 }) => {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
   // Set countdown target for 7 days from now
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + 7);
@@ -49,20 +43,6 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
       default:
         return <BookOpen size={64} className="text-black/50" />;
     }
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "ثبت‌نام موفق",
-        description: "دسترسی به دوره برای شما فعال شد.",
-      });
-      navigate("/start/free-course");
-    }, 1500);
   };
 
   return (
@@ -131,43 +111,24 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
             </div>
             
             <motion.div
-              className="bg-white rounded-xl shadow-lg p-8 border border-black/10"
+              className="space-y-6"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.8 }}
             >
-              <h2 className="text-xl font-bold mb-4 text-center">برای شروع دوره، ایمیل یا شماره موبایل خود را وارد کنید</h2>
+              {/* Countdown Timer */}
+              <div className="text-center">
+                <h3 className="text-xl font-bold mb-4">برای شروع این دوره رایگان، همین حالا ثبت‌نام کن!</h3>
+                <CountdownTimer targetDate={targetDate} />
+              </div>
               
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Input 
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ایمیل یا شماره موبایل"
-                    required
-                    className="text-lg py-6"
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="w-full bg-black hover:bg-black/90 text-white rounded-full px-8 text-lg py-6 h-auto"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "در حال ثبت‌نام..." : "شروع رایگان"}
-                </Button>
-              </form>
-              
-              <p className="text-xs text-center text-gray-500 mt-4">
-                با ثبت‌نام، با شرایط و قوانین استفاده از خدمات موافقت می‌کنم.
-              </p>
+              {/* Registration Form */}
+              <CourseRegistrationForm 
+                courseSlug={courseSlug}
+                courseTitle={title}
+                className="bg-white/90 backdrop-blur-sm shadow-lg border border-black/10"
+              />
             </motion.div>
-          </div>
-          
-          <div className="mt-16">
-            <CountdownTimer targetDate={targetDate} />
           </div>
         </div>
       </section>

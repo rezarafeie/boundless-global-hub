@@ -22,6 +22,7 @@ import AIAssistant from '@/pages/AIAssistant';
 import NotFound from '@/pages/NotFound';
 import PaymentSuccess from '@/pages/PaymentSuccess';
 import Checkout from '@/pages/Checkout';
+import CourseAccessSuccess from '@/pages/CourseAccessSuccess';
 
 // Course pages
 import CourseLanding from '@/pages/CourseLanding';
@@ -95,6 +96,7 @@ function App() {
                 {/* Payment and Checkout */}
                 <Route path="/checkout/:courseSlug" element={<Checkout />} />
                 <Route path="/payment-success/:courseSlug" element={<PaymentSuccess />} />
+                <Route path="/course-access-success" element={<CourseAccessSuccess />} />
 
                 {/* English pages */}
                 <Route path="/en" element={<EnIndex />} />
