@@ -23,6 +23,7 @@ import NotFound from '@/pages/NotFound';
 import PaymentSuccess from '@/pages/PaymentSuccess';
 
 // Course pages
+import CourseLanding from '@/pages/CourseLanding';
 import BoundlessLanding from '@/pages/Courses/BoundlessLanding';
 import InstagramLanding from '@/pages/Courses/InstagramLanding';
 import MetaverseLanding from '@/pages/Courses/MetaverseLanding';
@@ -68,7 +69,10 @@ function App() {
                 <Route path="/instructor" element={<InstructorProfile />} />
                 <Route path="/ai-assistant" element={<AIAssistant />} />
 
-                {/* Course landing pages */}
+                {/* Course landing pages - Generic component for all courses */}
+                <Route path="/course/:slug" element={<CourseLanding />} />
+                
+                {/* Legacy course landing pages for specific courses */}
                 <Route path="/course/boundless" element={<BoundlessLanding />} />
                 <Route path="/course/instagram" element={<InstagramLanding />} />
                 <Route path="/course/metaverse" element={<MetaverseLanding />} />

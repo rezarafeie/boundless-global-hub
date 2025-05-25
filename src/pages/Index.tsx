@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { GraduationCap, Brain, TrendingUp, Globe, Bot, Target, Star, Award } from "lucide-react";
 import QuickAccessRestored from "@/components/QuickAccessRestored";
 import PaymentButton from "@/components/PaymentButton";
+import DebugCard from "@/components/DebugCard";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -115,18 +116,11 @@ const Index = () => {
                     {course.description}
                   </p>
                   
-                  {course.isPaid ? (
-                    <PaymentButton 
-                      courseSlug={course.slug}
-                      className="w-full rounded-full"
-                    />
-                  ) : (
-                    <Button asChild className="w-full rounded-full" variant="outline">
-                      <Link to={`/course/free/${course.slug}`}>
-                        شروع رایگان
-                      </Link>
-                    </Button>
-                  )}
+                  <Button asChild className="w-full rounded-full" variant="outline">
+                    <Link to={`/course/${course.slug}`}>
+                      مشاهده جزئیات
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -134,7 +128,7 @@ const Index = () => {
           
           <div className="mt-16 text-center">
             <Button asChild size="lg" className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
-              <Link to="/courses/paid">
+              <Link to="/courses">
                 مشاهده همه دوره‌ها
               </Link>
             </Button>
@@ -214,6 +208,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Debug Card */}
+      <DebugCard />
     </>
   );
 };
