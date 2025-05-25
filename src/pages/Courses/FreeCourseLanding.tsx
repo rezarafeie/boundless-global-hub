@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import InstructorProfile from "@/components/InstructorProfile";
+import IframeModal from "@/components/IframeModal";
 
 interface FreeCourseProps {
   title: string;
@@ -19,6 +20,7 @@ interface FreeCourseProps {
   benefitOne: string;
   benefitTwo: string;
   iconType?: "book" | "graduation" | "file" | "message";
+  iframeUrl?: string;
 }
 
 const FreeCourseLanding: React.FC<FreeCourseProps> = ({
@@ -27,16 +29,17 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
   description,
   benefitOne,
   benefitTwo,
-  iconType = "book"
+  iconType = "book",
+  iframeUrl = "https://rafeie.com/start"
 }) => {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Set countdown target for 7 days from now
+  // Set countdown target for 7 days from now and convert to string
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + 7);
+  const endDateString = targetDate.toISOString();
 
   const getIcon = () => {
     switch (iconType) {
@@ -51,18 +54,8 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "ثبت‌نام موفق",
-        description: "دسترسی به دوره برای شما فعال شد.",
-      });
-      navigate("/start/free-course");
-    }, 1500);
+  const handleStartCourse = () => {
+    setIsModalOpen(true);
   };
 
   return (
@@ -136,29 +129,15 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.8 }}
             >
-              <h2 className="text-xl font-bold mb-4 text-center">برای شروع دوره، ایمیل یا شماره موبایل خود را وارد کنید</h2>
+              <h2 className="text-xl font-bold mb-4 text-center">برای شروع دوره، روی دکمه زیر کلیک کنید</h2>
               
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Input 
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ایمیل یا شماره موبایل"
-                    required
-                    className="text-lg py-6"
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="w-full bg-black hover:bg-black/90 text-white rounded-full px-8 text-lg py-6 h-auto"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "در حال ثبت‌نام..." : "شروع رایگان"}
-                </Button>
-              </form>
+              <Button 
+                onClick={handleStartCourse}
+                size="lg" 
+                className="w-full bg-black hover:bg-black/90 text-white rounded-full px-8 text-lg py-6 h-auto"
+              >
+                شروع رایگان دوره
+              </Button>
               
               <p className="text-xs text-center text-gray-500 mt-4">
                 با ثبت‌نام، با شرایط و قوانین استفاده از خدمات موافقت می‌کنم.
@@ -167,7 +146,7 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
           </div>
           
           <div className="mt-16">
-            <CountdownTimer targetDate={targetDate} />
+            <CountdownTimer endDate={endDateString} />
           </div>
         </div>
       </section>
@@ -220,6 +199,14 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Iframe Modal */}
+      <IframeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={`ثبت‌نام در دوره ${title}`}
+        url={iframeUrl}
+      />
 
       <style>
         {`
