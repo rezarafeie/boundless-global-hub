@@ -58,13 +58,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Generate course URL based on type
+  // Generate course URL based on type and slug
   const getCourseUrl = () => {
     if (isPaid) {
-      // For paid courses, go to course landing page
       return `/courses/${slug}`;
     } else {
-      // For free courses, go to course landing page
       return `/course/${slug}`;
     }
   };

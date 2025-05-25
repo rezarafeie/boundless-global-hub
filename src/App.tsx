@@ -28,6 +28,10 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Checkout from "./pages/Checkout";
 import ChangeCoursePage from "./pages/Course/ChangeCoursePage";
+import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
+import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
+import AmericanBusinessPage from "./pages/Course/AmericanBusinessPage";
+import MetaverseFreePage from "./pages/Course/MetaverseFreePage";
 
 const queryClient = new QueryClient();
 
@@ -52,9 +56,13 @@ const App = () => (
             
             {/* Free Course Pages */}
             <Route path="/course/change" element={<ChangeCoursePage />} />
-            <Route path="/course/boundless-taste" element={<FreeCourseView />} />
-            <Route path="/course/passive-income" element={<FreeCourseView />} />
-            <Route path="/course/american-business" element={<FreeCourseView />} />
+            <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
+            <Route path="/course/passive-income" element={<PassiveIncomePage />} />
+            <Route path="/course/american-business" element={<AmericanBusinessPage />} />
+            <Route path="/course/metaverse-free" element={<MetaverseFreePage />} />
+            
+            {/* Legacy free course routes - redirect to new format */}
+            <Route path="/course/change-project" element={<Navigate to="/course/change" replace />} />
             
             {/* Checkout */}
             <Route path="/checkout/:courseSlug" element={<Checkout />} />

@@ -1,88 +1,75 @@
 
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { Award, Users, Target, Heart } from "lucide-react";
+import { Users, Target, Award, Globe } from "lucide-react";
 
 const About = () => {
-  const { translations } = useLanguage();
-
   return (
     <MainLayout>
       <div className="container py-16">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">درباره آکادمی رفیعی</h1>
-            <p className="text-lg text-gray-600">
-              مرجع آموزش کسب و کار و توسعه شخصی در ایران
+            <h1 className="text-4xl font-bold mb-4">درباره ما</h1>
+            <p className="text-xl text-gray-600">
+              راهی به سوی موفقیت و تحقق رویاهای کسب و کار
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  <Target className="h-8 w-8 text-primary mr-3" />
-                  <h3 className="text-xl font-semibold">ماموریت ما</h3>
-                </div>
+                <Target className="w-12 h-12 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-3">ماموریت ما</h3>
                 <p className="text-gray-600">
-                  آموزش مهارت‌های عملی کسب و کار و توسعه شخصی به زبان ساده و کاربردی
-                  برای تمام علاقه‌مندان ایرانی
+                  ما با هدف توانمندسازی افراد برای دستیابی به موفقیت در کسب و کار و زندگی، دوره‌های آموزشی جامع و کاربردی ارائه می‌دهیم.
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  <Heart className="h-8 w-8 text-primary mr-3" />
-                  <h3 className="text-xl font-semibold">ارزش‌های ما</h3>
-                </div>
+                <Globe className="w-12 h-12 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-3">چشم‌انداز ما</h3>
                 <p className="text-gray-600">
-                  کیفیت آموزش، پشتیبانی مستمر، محتوای به‌روز و ایجاد جامعه‌ای از
-                  یادگیرندگان موفق
+                  تبدیل شدن به پیشرو در ارائه آموزش‌های کسب و کار و توسعه شخصی با رویکرد عملی و نتیجه‌محور.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <Users className="w-12 h-12 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-3">تیم ما</h3>
+                <p className="text-gray-600">
+                  تیمی از متخصصان مجرب در حوزه‌های مختلف کسب و کار، بازاریابی دیجیتال و توسعه شخصی.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <Award className="w-12 h-12 text-primary mb-4" />
+                <h3 className="text-xl font-bold mb-3">افتخارات ما</h3>
+                <p className="text-gray-600">
+                  موفقیت هزاران دانشجو و ایجاد تحول مثبت در زندگی و کسب و کار آنها بزرگترین افتخار ماست.
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <div className="text-center">
-              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-primary" />
-              </div>
-              <h4 className="text-xl font-semibold mb-2">+۱۰,۰۰۰</h4>
-              <p className="text-gray-600">دانشجوی فعال</p>
-            </div>
-
-            <div className="text-center">
-              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="h-8 w-8 text-primary" />
-              </div>
-              <h4 className="text-xl font-semibold mb-2">+۵۰</h4>
-              <p className="text-gray-600">دوره آموزشی</p>
-            </div>
-
-            <div className="text-center">
-              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="h-8 w-8 text-primary" />
-              </div>
-              <h4 className="text-xl font-semibold mb-2">۵ سال</h4>
-              <p className="text-gray-600">تجربه آموزش</p>
-            </div>
+          <div className="text-center bg-gray-50 p-8 rounded-lg">
+            <h2 className="text-2xl font-bold mb-4">آماده شروع هستید؟</h2>
+            <p className="text-gray-600 mb-6">
+              همین امروز به جمع دانشجویان موفق ما بپیوندید و مسیر خود را به سوی موفقیت آغاز کنید.
+            </p>
+            <a 
+              href="/courses" 
+              className="inline-block bg-black text-white px-8 py-3 rounded-full hover:bg-gray-800 transition-colors"
+            >
+              مشاهده دوره‌ها
+            </a>
           </div>
-
-          <Card className="bg-gray-50">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-4 text-center">رضا رفیعی</h3>
-              <p className="text-gray-700 leading-relaxed text-center">
-                مدرس و مشاور کسب و کار با بیش از ۵ سال تجربه در آموزش و راهنمایی
-                هزاران نفر برای رسیدن به اهدافشان. تخصص در زمینه‌های بازاریابی دیجیتال،
-                توسعه شخصی و ایجاد کسب و کارهای آنلاین.
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </MainLayout>

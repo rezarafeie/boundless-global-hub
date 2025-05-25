@@ -41,8 +41,9 @@ export const getFormIdForCourse = (courseSlug: string): number => {
   const formMapping: Record<string, number> = {
     "boundless-taste": 1,
     "passive-income": 35,
-    "change-project": 27,
-    "american-business": 33
+    "change": 27,
+    "american-business": 33,
+    "metaverse-free": 1 // Using form 1 as fallback
   };
   
   return formMapping[courseSlug] || 1;
