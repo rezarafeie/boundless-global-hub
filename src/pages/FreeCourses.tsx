@@ -1,4 +1,3 @@
-
 import React from "react";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
@@ -16,7 +15,7 @@ const FreeCourses = () => {
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
       isPaid: false,
-      slug: "boundless-taste"
+      slug: "free/boundless-taste"
     },
     {
       title: translations.passiveIncomeAI,
@@ -24,7 +23,7 @@ const FreeCourses = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
-      slug: "passive-income-ai"
+      slug: "free/passive-income-ai"
     },
     {
       title: translations.changeProject,
@@ -32,7 +31,7 @@ const FreeCourses = () => {
       benefits: translations.changeProjectBenefits,
       outcome: translations.changeProjectOutcome,
       isPaid: false,
-      slug: "change-project"
+      slug: "free/change-project"
     },
     {
       title: translations.americanBusiness,
@@ -40,7 +39,7 @@ const FreeCourses = () => {
       benefits: translations.americanBusinessBenefits,
       outcome: translations.americanBusinessOutcome,
       isPaid: false,
-      slug: "american-business"
+      slug: "free/american-business"
     },
   ];
 

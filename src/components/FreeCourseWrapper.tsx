@@ -5,9 +5,14 @@ import FreeCourseLanding from '@/pages/Courses/FreeCourseLanding';
 
 const FreeCourseWrapper: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  
+  console.log('FreeCourseWrapper - Current slug:', slug);
+  console.log('FreeCourseWrapper - URL params:', useParams());
 
   // تعریف اطلاعات دوره‌ها بر اساس slug
   const getCourseData = (slug: string) => {
+    console.log('Getting course data for slug:', slug);
+    
     switch (slug) {
       case 'boundless-taste':
         return {
@@ -54,6 +59,7 @@ const FreeCourseWrapper: React.FC = () => {
         };
       
       default:
+        console.log('Unknown slug, using default course data');
         return {
           title: 'دوره رایگان',
           description: 'دوره آموزشی رایگان',
@@ -66,6 +72,7 @@ const FreeCourseWrapper: React.FC = () => {
   };
 
   const courseData = getCourseData(slug || '');
+  console.log('Course data:', courseData);
 
   return <FreeCourseLanding {...courseData} />;
 };

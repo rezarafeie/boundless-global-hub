@@ -25,7 +25,6 @@ import Checkout from '@/pages/Checkout';
 import CourseAccessSuccess from '@/pages/CourseAccessSuccess';
 
 // Course pages
-import CourseLanding from '@/pages/CourseLanding';
 import BoundlessLanding from '@/pages/Courses/BoundlessLanding';
 import InstagramLanding from '@/pages/Courses/InstagramLanding';
 import MetaverseLanding from '@/pages/Courses/MetaverseLanding';
@@ -71,14 +70,17 @@ function App() {
                 <Route path="/instructor" element={<InstructorProfile />} />
                 <Route path="/ai-assistant" element={<AIAssistant />} />
 
-                {/* Course landing pages - Generic component for all courses */}
-                <Route path="/course/:slug" element={<CourseLanding />} />
-                
-                {/* Legacy course landing pages for specific courses */}
+                {/* Specific course landing pages - MUST come BEFORE generic routes */}
                 <Route path="/course/boundless" element={<BoundlessLanding />} />
                 <Route path="/course/instagram" element={<InstagramLanding />} />
                 <Route path="/course/metaverse" element={<MetaverseLanding />} />
                 <Route path="/course/wealth" element={<WealthLanding />} />
+                
+                {/* Free course landing pages */}
+                <Route path="/course/free/boundless-taste" element={<FreeCourseWrapper />} />
+                <Route path="/course/free/passive-income-ai" element={<FreeCourseWrapper />} />
+                <Route path="/course/free/change-project" element={<FreeCourseWrapper />} />
+                <Route path="/course/free/american-business" element={<FreeCourseWrapper />} />
                 <Route path="/course/free/:slug" element={<FreeCourseWrapper />} />
 
                 {/* Course access pages */}
