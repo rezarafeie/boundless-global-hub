@@ -87,11 +87,13 @@ function App() {
                 <Route path="/start/free-course/:slug" element={<FreeCourseStart />} />
                 <Route path="/start/paid-course/:slug" element={<PaidCourseStart />} />
 
-                {/* Test pages */}
+                {/* Test pages - Fixed routing */}
                 <Route path="/test/:slug" element={<TestLanding />} />
+                <Route path="/assessment/:slug" element={<TestLanding />} />
 
                 {/* Payment */}
                 <Route path="/payment-success/:courseSlug" element={<PaymentSuccess />} />
+                <Route path="/checkout/:courseSlug" element={<PaymentSuccess />} />
 
                 {/* English pages */}
                 <Route path="/en" element={<EnIndex />} />

@@ -35,28 +35,33 @@ serve(async (req) => {
 
     console.log('Formatted phone:', formattedPhone)
 
-    // SMS API request (using a mock service for now - replace with actual SMS provider)
-    const smsPayload = {
-      receptor: formattedPhone,
-      message: `کد تایید شما: ${code}`,
-      token: code,
-      template: 'verify'
-    }
-
-    console.log('SMS payload:', smsPayload)
-
-    // For development, we'll simulate a successful SMS send
-    // In production, replace this with your actual SMS provider API call
-    const mockSmsResponse = {
-      return: {
-        status: 200,
-        message: 'success'
+    // Faraaz API request
+    const faraazPayload = {
+      code: "vzhg0d009gpv1w6",
+      sender: "+983000505",
+      recipient: formattedPhone,
+      variable: {
+        code: code
       }
     }
 
-    console.log('SMS API response:', mockSmsResponse)
+    console.log('Faraaz SMS payload:', faraazPayload)
 
-    if (mockSmsResponse.return.status === 200) {
+    // Call Faraaz API
+    const faraazResponse = await fetch('https://api2.ippanel.com/api/v1/sms/pattern/normal/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(faraazPayload)
+    })
+
+    const faraazResult = await faraazResponse.json()
+    console.log('Faraaz API response status:', faraazResponse.status)
+    console.log('Faraaz API response:', faraazResult)
+
+    if (faraazResponse.ok) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -68,6 +73,7 @@ serve(async (req) => {
         }
       )
     } else {
+      console.error('Faraaz API error:', faraazResult)
       return new Response(
         JSON.stringify({
           success: false,

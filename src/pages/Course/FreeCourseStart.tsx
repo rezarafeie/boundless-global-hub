@@ -7,20 +7,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Play, Book, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import SMSVerificationForm from '@/components/Auth/SMSVerificationForm';
 
 const FreeCourseStart = () => {
-  const { courseTitle } = useParams();
+  const { courseTitle, slug } = useParams();
   const { user, loading: authLoading } = useAuth();
   const { activateCourse, loading } = useCourseActivation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [isActivated, setIsActivated] = useState(false);
+  const [showSMSVerification, setShowSMSVerification] = useState(false);
 
   // Get course slug from URL params or search params
-  const courseSlug = courseTitle || searchParams.get('course') || '';
+  const courseSlug = slug || courseTitle || searchParams.get('course') || '';
+  const phoneParam = searchParams.get('phone');
 
   useEffect(() => {
+    // If phone parameter exists and user is not logged in, show SMS verification
+    if (phoneParam && !user && !authLoading) {
+      setShowSMSVerification(true);
+      return;
+    }
+
     if (!authLoading && !user) {
       navigate('/');
       return;
@@ -29,7 +38,7 @@ const FreeCourseStart = () => {
     if (user && courseSlug && !isActivated) {
       handleActivation();
     }
-  }, [user, authLoading, courseSlug, isActivated]);
+  }, [user, authLoading, courseSlug, isActivated, phoneParam]);
 
   const handleActivation = async () => {
     if (!courseSlug) {
@@ -59,6 +68,33 @@ const FreeCourseStart = () => {
   const handleStartCourse = () => {
     navigate(`/course/free/view/${courseSlug}`);
   };
+
+  const handleSMSVerified = () => {
+    setShowSMSVerification(false);
+    // After SMS verification, user should be logged in automatically
+    // The useEffect will handle course activation
+  };
+
+  if (showSMSVerification && phoneParam) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="max-w-md w-full mx-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">تایید شماره موبایل</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SMSVerificationForm
+                phone={phoneParam}
+                onVerified={handleSMSVerified}
+                onBack={() => navigate(-1)}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || loading) {
     return (

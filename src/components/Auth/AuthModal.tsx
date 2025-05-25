@@ -13,19 +13,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import VerificationForm from "./VerificationForm";
+import SMSVerificationForm from "./SMSVerificationForm";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   courseTitle: string;
   isPaid: boolean;
+  courseSlug?: string;
 }
 
-type AuthStep = "initial" | "verification" | "registration" | "password";
+type AuthStep = "initial" | "verification" | "sms-verification" | "registration" | "password";
 
-const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => {
+const AuthModal = ({ isOpen, onClose, courseTitle, isPaid, courseSlug }: AuthModalProps) => {
   const { translations } = useLanguage();
   const { toast } = useToast();
+  const { sendSMSVerification } = useAuth();
   
   const [authStep, setAuthStep] = useState<AuthStep>("initial");
   const [contactValue, setContactValue] = useState<string>("");
@@ -36,7 +40,7 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
   const [lastName, setLastName] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-  const handleInitialSubmit = (e: React.FormEvent) => {
+  const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!contactValue) {
@@ -50,13 +54,31 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
     
     // Check if it's an email or phone number
     const isEmail = contactValue.includes('@');
-    setVerificationMethod(isEmail ? "email" : "phone");
+    const isPhone = /^[0-9+\s-()]+$/.test(contactValue);
     
-    // Simulate checking if user exists (in a real app, this would be an API call)
-    const userExists = Math.random() > 0.5; // Randomly determine if user exists for demo
-    
-    // Always show verification first
-    setAuthStep("verification");
+    if (isPhone) {
+      setVerificationMethod("phone");
+      // Send SMS verification
+      const result = await sendSMSVerification(contactValue);
+      if (result.success) {
+        setAuthStep("sms-verification");
+      } else {
+        toast({
+          title: translations.error,
+          description: result.error || "خطا در ارسال کد تایید",
+          variant: "destructive",
+        });
+      }
+    } else if (isEmail) {
+      setVerificationMethod("email");
+      setAuthStep("verification");
+    } else {
+      toast({
+        title: translations.error,
+        description: "لطفا ایمیل یا شماره موبایل معتبر وارد کنید",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRegistrationSubmit = (e: React.FormEvent) => {
@@ -90,6 +112,10 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
       setAuthStep("registration");
     }
   };
+
+  const handleSMSVerificationSuccess = () => {
+    handleLoginSuccess();
+  };
   
   const handleShowPasswordLogin = () => {
     setAuthStep("password");
@@ -118,11 +144,15 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
   };
 
   const handleLoginSuccess = () => {
-    // Redirect based on course type
+    // Fixed redirect logic
     if (isPaid) {
-      window.location.href = "/course/paid/" + encodeURIComponent(courseTitle);
-    } else if (courseTitle) {
-      window.location.href = "/course/free/" + encodeURIComponent(courseTitle);
+      // For paid courses, redirect to checkout
+      const slug = courseSlug || courseTitle;
+      window.location.href = `/checkout/${encodeURIComponent(slug)}`;
+    } else if (courseTitle || courseSlug) {
+      // For free courses, redirect to course start
+      const slug = courseSlug || courseTitle;
+      window.location.href = `/start/free-course/${encodeURIComponent(slug)}`;
     } else {
       onClose();
     }
@@ -176,6 +206,14 @@ const AuthModal = ({ isOpen, onClose, courseTitle, isPaid }: AuthModalProps) => 
             method={verificationMethod}
             contact={contactValue}
             onVerified={handleVerificationSuccess}
+            onBack={() => setAuthStep("initial")}
+          />
+        )}
+
+        {authStep === "sms-verification" && (
+          <SMSVerificationForm
+            phone={contactValue}
+            onVerified={handleSMSVerificationSuccess}
             onBack={() => setAuthStep("initial")}
           />
         )}

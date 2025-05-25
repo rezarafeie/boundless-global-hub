@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,10 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CheckCircle, Star, Clock, Users, Trophy, Gift } from "lucide-react";
 import PaymentButton from "@/components/PaymentButton";
+import CountdownTimer from "@/components/CountdownTimer";
+import UnifiedAuthForm from "@/components/UnifiedAuthForm";
+import AuthModal from "@/components/Auth/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const CourseLanding = () => {
   const { slug } = useParams();
   const { translations } = useLanguage();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Course data mapping with consistent interface
   const courseData = {
@@ -146,8 +152,43 @@ const CourseLanding = () => {
 
   const benefitsList = Array.isArray(course.benefits) ? course.benefits : course.benefits.split('\n').filter(b => b.trim());
 
+  // Calculate countdown target date (30 days from now)
+  const countdownTarget = new Date();
+  countdownTarget.setDate(countdownTarget.getDate() + 30);
+
+  const handleFreeCourseAccess = () => {
+    if (user) {
+      // User is logged in, activate course
+      window.location.href = `/start/free-course/${slug}`;
+    } else {
+      // User not logged in, show auth modal
+      setShowAuthModal(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      {/* Free Course Countdown & Access Section */}
+      {!course.isPaid && (
+        <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12">
+          <div className="container">
+            <div className="max-w-6xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-8 items-center">
+                <div>
+                  <CountdownTimer targetDate={countdownTarget} />
+                </div>
+                <div>
+                  <UnifiedAuthForm 
+                    courseSlug={slug || ""} 
+                    onSuccess={() => window.location.href = `/start/free-course/${slug}`}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
@@ -198,10 +239,12 @@ const CourseLanding = () => {
                     className="px-8 py-4 text-lg rounded-full"
                   />
                 ) : (
-                  <Button asChild size="lg" className="px-8 py-4 text-lg rounded-full">
-                    <Link to={`/start/free-course/${slug}`}>
-                      شروع رایگان
-                    </Link>
+                  <Button 
+                    size="lg" 
+                    className="px-8 py-4 text-lg rounded-full"
+                    onClick={handleFreeCourseAccess}
+                  >
+                    شروع رایگان
                   </Button>
                 )}
                 <Button variant="outline" size="lg" className="px-8 py-4 text-lg rounded-full">
@@ -301,6 +344,14 @@ const CourseLanding = () => {
           </div>
         </div>
       </section>
+
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        courseTitle={course.title}
+        courseSlug={slug}
+        isPaid={course.isPaid}
+      />
     </div>
   );
 };

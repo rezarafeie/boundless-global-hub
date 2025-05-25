@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const useCourseActivation = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const activateCourse = async (courseSlug: string, courseType: 'free' | 'paid') => {
@@ -30,12 +32,12 @@ export const useCourseActivation = () => {
         .single();
 
       if (existingCourse) {
-        // Course already activated, redirect to course page
-        const redirectPath = courseType === 'paid' 
-          ? `/start/paid-course?course=${courseSlug}`
-          : `/start/free-course?course=${courseSlug}`;
-        
-        window.location.href = redirectPath;
+        // Course already activated, redirect appropriately
+        if (courseType === 'paid') {
+          navigate(`/course/paid/view/${courseSlug}`);
+        } else {
+          navigate(`/course/free/view/${courseSlug}`);
+        }
         return { success: true, alreadyActivated: true };
       }
 
@@ -56,14 +58,12 @@ export const useCourseActivation = () => {
         description: "دوره با موفقیت فعال شد",
       });
 
-      // Redirect to course page
-      const redirectPath = courseType === 'paid' 
-        ? `/start/paid-course?course=${courseSlug}`
-        : `/start/free-course?course=${courseSlug}`;
-      
-      setTimeout(() => {
-        window.location.href = redirectPath;
-      }, 1000);
+      // Redirect based on course type
+      if (courseType === 'paid') {
+        navigate(`/course/paid/view/${courseSlug}`);
+      } else {
+        navigate(`/course/free/view/${courseSlug}`);
+      }
 
       return { success: true };
     } catch (error) {
