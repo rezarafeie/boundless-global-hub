@@ -24,6 +24,10 @@ import FreeCourseStart from "./pages/Course/FreeCourseStart";
 import PaidCourseStart from "./pages/Course/PaidCourseStart";
 import Blog from "./pages/Blog";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Checkout from "./pages/Checkout";
+import ChangeCoursePage from "./pages/Course/ChangeCoursePage";
 
 const queryClient = new QueryClient();
 
@@ -37,12 +41,23 @@ const App = () => (
           <Routes>
             {/* Persian (Default) Routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/courses" element={<CourseArchive />} />
             <Route path="/assessment-center" element={<AssessmentCenter />} />
             <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
             <Route path="/support" element={<Support />} />
             <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
             <Route path="/blog" element={<Blog />} />
+            
+            {/* Free Course Pages */}
+            <Route path="/course/change" element={<ChangeCoursePage />} />
+            <Route path="/course/boundless-taste" element={<FreeCourseView />} />
+            <Route path="/course/passive-income" element={<FreeCourseView />} />
+            <Route path="/course/american-business" element={<FreeCourseView />} />
+            
+            {/* Checkout */}
+            <Route path="/checkout/:courseSlug" element={<Checkout />} />
             
             {/* AI Assistant Redirect */}
             <Route path="/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
@@ -54,6 +69,7 @@ const App = () => (
             {/* Course Start Pages */}
             <Route path="/start/free-course" element={<FreeCourseStart />} />
             <Route path="/start/paid-course" element={<PaidCourseStart />} />
+            <Route path="/start/paid-course/:slug" element={<PaidCourseStart />} />
             
             {/* Course Landing Pages */}
             <Route path="/courses/boundless" element={<BoundlessLanding />} />
@@ -68,6 +84,8 @@ const App = () => (
             
             {/* English Routes */}
             <Route path="/en" element={<EnglishHome />} />
+            <Route path="/en/about" element={<About />} />
+            <Route path="/en/contact" element={<Contact />} />
             <Route path="/en/courses" element={<EnglishCourseArchive />} />
             <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
             <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
@@ -79,6 +97,7 @@ const App = () => (
             <Route path="/en/blog" element={<Blog />} />
             <Route path="/en/dashboard" element={<Dashboard />} />
             <Route path="/en/courses/:slug" element={<FreeCourseView language="en" />} />
+            <Route path="/en/checkout/:courseSlug" element={<Checkout />} />
             
             {/* Legacy redirects */}
             <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />

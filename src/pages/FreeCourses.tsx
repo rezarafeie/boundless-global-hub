@@ -33,7 +33,7 @@ const FreeCourses = () => {
       benefits: translations.changeProjectBenefits,
       outcome: translations.changeProjectOutcome,
       isPaid: false,
-      slug: "change-project"
+      slug: "change"
     },
     {
       title: translations.americanBusiness,

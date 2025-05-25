@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
   title: string;
@@ -39,6 +39,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   category
 }) => {
   const { translations } = useLanguage();
+  const navigate = useNavigate();
 
   // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
@@ -57,11 +58,30 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Generate a slug if not provided
-  const courseSlug = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
-  
-  // Generate course URL
-  const courseUrl = `/courses/${courseSlug}`;
+  // Generate course URL based on type
+  const getCourseUrl = () => {
+    if (isPaid) {
+      // For paid courses, go to course landing page
+      return `/courses/${slug}`;
+    } else {
+      // For free courses, go to course landing page
+      return `/course/${slug}`;
+    }
+  };
+
+  // Handle CTA button click
+  const handleCtaClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isPaid) {
+      // For paid courses, go to checkout
+      navigate(`/checkout/${slug}`);
+    } else {
+      // For free courses, go to course page
+      navigate(`/course/${slug}`);
+    }
+  };
 
   // Get status badge color
   const getStatusBadgeColor = () => {
@@ -77,9 +97,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // The entire card is clickable
   return (
-    <Link to={courseUrl} className="block h-full group">
+    <Link to={getCourseUrl()} className="block h-full group">
       <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -144,9 +163,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
         
         <CardFooter className="p-4 pt-0">
           <Button 
+            onClick={handleCtaClick}
             className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
           >
-            {cta || (isPaid ? translations.startCourse : translations.startFreeCourse)}
+            {cta || (isPaid ? "خرید دوره" : translations.startFreeCourse)}
           </Button>
         </CardFooter>
       </Card>
