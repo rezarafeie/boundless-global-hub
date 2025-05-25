@@ -1,6 +1,6 @@
 
 // WordPress API integration for Gravity Forms and WooCommerce
-const WORDPRESS_BASE_URL = 'https://academy.rafeie.com/wp-json';
+const WORDPRESS_BASE_URL = 'https://rafeie.com/wp-json';
 
 // Gravity Forms credentials
 const GF_CONSUMER_KEY = 'ck_93bea03c4a633784bb366824b135849a4634fc49';
@@ -10,19 +10,19 @@ const GF_CONSUMER_SECRET = 'cs_6f272c22224119a44b8acaa82b52bb5946becf86';
 const WC_CONSUMER_KEY = 'ck_399e9f8bb4142006fa4c4308097990aef53cde8f';
 const WC_CONSUMER_SECRET = 'cs_bee3e3f8827c00d0f46bc53898f4c91da0126f67';
 
-// Course to Form ID mapping
+// Course to Form ID mapping for free courses
 const COURSE_FORM_MAPPING: Record<string, number> = {
-  'boundless-taste': 1,
-  'passive-income-ai': 35,
-  'change-project': 27,
-  'american-business': 33
+  'boundless-taste': 1,      // مزه بدون مرز
+  'passive-income-ai': 35,   // درآمد غیرفعال
+  'change-project': 27,      // تغییر
+  'american-business': 33    // بیزینس آمریکایی
 };
 
-// Course to Product ID mapping
+// Course to Product ID mapping for paid courses
 const COURSE_PRODUCT_MAPPING: Record<string, number> = {
-  'boundless': 5311,
-  'instagram': 5089,
-  'metaverse': 145
+  'boundless': 5311,         // بدون مرز
+  'instagram': 5089,         // اسباب اینستاگرام
+  'metaverse': 145           // امپراطوری متاورس
 };
 
 interface FormSubmissionData {

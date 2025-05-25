@@ -16,7 +16,8 @@ const FreeCourseWrapper: React.FC = () => {
           description: 'نمونه رایگان از دوره اصلی بی‌مرز برای آشنایی با مفاهیم کسب‌وکار بین‌المللی',
           benefitOne: 'آشنایی با مفاهیم پایه کسب‌وکار بین‌المللی',
           benefitTwo: 'تصمیم‌گیری آگاهانه برای شروع کسب‌وکار بین‌المللی',
-          iconType: 'book' as const
+          iconType: 'book' as const,
+          courseSlug: 'boundless-taste'
         };
       
       case 'passive-income-ai':
@@ -26,7 +27,8 @@ const FreeCourseWrapper: React.FC = () => {
           description: 'آموزش روش‌های کسب درآمد غیرفعال با استفاده از هوش مصنوعی',
           benefitOne: 'یادگیری تولید محتوا با کمک هوش مصنوعی',
           benefitTwo: 'راه‌اندازی جریان درآمد دیجیتال غیرفعال',
-          iconType: 'graduation' as const
+          iconType: 'graduation' as const,
+          courseSlug: 'passive-income-ai'
         };
       
       case 'change-project':
@@ -36,7 +38,8 @@ const FreeCourseWrapper: React.FC = () => {
           description: 'اصول ایجاد تغییرات بنیادین در زندگی و کسب‌وکار',
           benefitOne: 'شناسایی موانع تغییر و راه‌های غلبه بر آن‌ها',
           benefitTwo: 'ایجاد تغییرات پایدار در مسیر موفقیت',
-          iconType: 'file' as const
+          iconType: 'file' as const,
+          courseSlug: 'change-project'
         };
       
       case 'american-business':
@@ -46,7 +49,8 @@ const FreeCourseWrapper: React.FC = () => {
           description: 'آموزش اصول راه‌اندازی و مدیریت کسب‌وکار در آمریکا',
           benefitOne: 'یادگیری قوانین و مقررات کسب‌وکار آمریکایی',
           benefitTwo: 'آماده‌سازی برای ورود به بازار آمریکا و توسعه کسب‌وکار',
-          iconType: 'message' as const
+          iconType: 'message' as const,
+          courseSlug: 'american-business'
         };
       
       default:
@@ -55,7 +59,8 @@ const FreeCourseWrapper: React.FC = () => {
           description: 'دوره آموزشی رایگان',
           benefitOne: 'یادگیری مفاهیم پایه',
           benefitTwo: 'دسترسی به محتوای آموزشی',
-          iconType: 'book' as const
+          iconType: 'book' as const,
+          courseSlug: slug || 'unknown'
         };
     }
   };
