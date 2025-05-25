@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -200,7 +199,7 @@ const FreeCourseLanding: React.FC<FreeCourseProps> = ({
         </div>
       </section>
 
-      {/* Iframe Modal */}
+      {/* Fullscreen Iframe Modal */}
       <IframeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

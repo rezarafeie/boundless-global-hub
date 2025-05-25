@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -69,7 +68,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Get iframe URL for paid courses
+  // Get iframe URL for paid courses with updated URLs
   const getPaidCourseIframeUrl = () => {
     const urlMapping: Record<string, string> = {
       "boundless": "https://rafeie.com/?add-to-cart=5311",
@@ -87,7 +86,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
     e.stopPropagation();
     
     if (isPaid) {
-      // For paid courses, open iframe modal with WooCommerce cart
+      // For paid courses, open fullscreen iframe with WooCommerce cart
       setIsModalOpen(true);
     } else {
       // For free courses, go to course page
@@ -185,14 +184,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </Card>
       </Link>
 
-      {/* Iframe Modal for Paid Courses */}
+      {/* Fullscreen Iframe Modal for Paid Courses */}
       {isPaid && (
         <IframeModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           title={`خرید دوره ${title}`}
           url={getPaidCourseIframeUrl()}
-          height="700px"
         />
       )}
     </>
