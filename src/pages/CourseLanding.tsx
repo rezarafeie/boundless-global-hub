@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ const CourseLanding = () => {
   const { slug } = useParams();
   const { translations } = useLanguage();
 
-  // Course data mapping
+  // Course data mapping with consistent interface
   const courseData = {
     "boundless": {
       title: translations.boundlessProgram,
@@ -96,6 +95,7 @@ const CourseLanding = () => {
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
       isPaid: false,
+      price: null,
       duration: "2 هفته",
       modules: 4,
       students: 1200,
@@ -114,6 +114,7 @@ const CourseLanding = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
+      price: null,
       duration: "3 هفته",
       modules: 5,
       students: 890,
@@ -157,7 +158,7 @@ const CourseLanding = () => {
                 <Badge variant={course.isPaid ? "default" : "secondary"} className="text-lg px-4 py-2">
                   {course.isPaid ? "دوره ویژه" : "دوره رایگان"}
                 </Badge>
-                {course.isPaid && (
+                {course.isPaid && course.price && (
                   <Badge variant="outline" className="text-lg px-4 py-2">
                     {course.price} تومان
                   </Badge>

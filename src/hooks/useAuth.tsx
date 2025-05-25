@@ -41,6 +41,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
 
         if (event === 'SIGNED_IN') {
+          // Ensure user profile exists
+          if (session?.user) {
+            setTimeout(() => {
+              ensureUserProfile(session.user);
+            }, 0);
+          }
+          
           toast({
             title: "خوش آمدید",
             description: "شما با موفقیت وارد شدید",
@@ -51,6 +58,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, [toast]);
+
+  const ensureUserProfile = async (user: User) => {
+    try {
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        // Create profile if doesn't exist
+        await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email,
+            phone: user.user_metadata?.phone || ''
+          });
+      }
+    } catch (error) {
+      console.error('Error ensuring user profile:', error);
+    }
+  };
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     const { error } = await supabase.auth.signUp({
@@ -192,8 +223,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { error } = await supabase
       .from('user_profiles')
-      .update(data)
-      .eq('user_id', user.id);
+      .upsert({
+        user_id: user.id,
+        ...data,
+        updated_at: new Date().toISOString()
+      });
 
     return { error };
   };
