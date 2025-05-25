@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
+import AuthenticationModal from './AuthenticationModal';
 import { Button } from '@/components/ui/button';
 
 interface AuthModalProps {
@@ -20,8 +19,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
   courseSlug,
   isPaid = false 
 }) => {
-  const [isLogin, setIsLogin] = useState(true);
-
   const handleSuccess = () => {
     onClose();
     
@@ -36,38 +33,11 @@ const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center">
-            {isLogin ? 'ورود به حساب کاربری' : 'ایجاد حساب کاربری'}
-          </DialogTitle>
-          {courseTitle && (
-            <p className="text-center text-sm text-gray-600">
-              برای دسترسی به دوره "{courseTitle}"
-            </p>
-          )}
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          {isLogin ? (
-            <LoginForm onSuccess={handleSuccess} />
-          ) : (
-            <RegisterForm onSuccess={handleSuccess} />
-          )}
-          
-          <div className="text-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm"
-            >
-              {isLogin ? 'حساب کاربری ندارید؟ ثبت‌نام کنید' : 'حساب کاربری دارید؟ وارد شوید'}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <AuthenticationModal 
+      isOpen={isOpen}
+      onClose={onClose}
+      redirectTo={courseSlug ? (isPaid ? `/checkout/${courseSlug}` : `/start/free-course/${courseSlug}`) : undefined}
+    />
   );
 };
 
