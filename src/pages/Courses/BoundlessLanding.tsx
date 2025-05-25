@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import MainLayout from "@/components/Layout/MainLayout";
+import CourseRegistrationForm from "@/components/CourseRegistrationForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Clock, Award, Users, FileCheck, BookOpen, GraduationCap, Star } from "lucide-react";
-import AuthModal from "@/components/Auth/AuthModal";
 
 // Countdown target date (2 months from now as an example)
 const COUNTDOWN_TARGET = new Date();
@@ -13,7 +12,7 @@ COUNTDOWN_TARGET.setMonth(COUNTDOWN_TARGET.getMonth() + 2);
 
 const BoundlessLanding = () => {
   const { translations } = useLanguage();
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
@@ -93,6 +92,30 @@ const BoundlessLanding = () => {
     "اتوماسیون و مقیاس‌پذیری کسب و کار"
   ];
 
+  if (showRegistrationForm) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-12">
+          <div className="container max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowRegistrationForm(false)}
+                className="mb-4"
+              >
+                بازگشت به صفحه دوره
+              </Button>
+            </div>
+            <CourseRegistrationForm 
+              courseSlug="boundless" 
+              courseTitle="برنامه بی‌حد رفیعی"
+            />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       {/* Hero Section */}
@@ -133,7 +156,7 @@ const BoundlessLanding = () => {
                 <Button 
                   size="lg" 
                   className="w-full sm:w-auto bg-black hover:bg-black/90 text-white rounded-full"
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => setShowRegistrationForm(true)}
                 >
                   {translations.boundlessLandingStartCourse}
                 </Button>
@@ -290,7 +313,7 @@ const BoundlessLanding = () => {
             <Button 
               size="lg" 
               className="bg-black hover:bg-black/90 text-white rounded-full"
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => setShowRegistrationForm(true)}
             >
               {translations.boundlessLandingStartCourse}
             </Button>
@@ -569,20 +592,13 @@ const BoundlessLanding = () => {
             <Button 
               size="lg" 
               className="bg-black hover:bg-black/90 text-white rounded-full w-full sm:w-auto"
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => setShowRegistrationForm(true)}
             >
               {translations.boundlessLandingStartCourse}
             </Button>
           </div>
         </div>
       </div>
-
-      <AuthModal 
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        courseTitle={translations.boundlessLandingTitle}
-        isPaid={true}
-      />
     </MainLayout>
   );
 };

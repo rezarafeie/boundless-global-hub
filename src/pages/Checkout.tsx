@@ -1,27 +1,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useZarinpalPayment } from '@/hooks/useZarinpalPayment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { CheckCircle, CreditCard, User, Mail, Phone, ArrowRight } from 'lucide-react';
+import { createWooCommerceOrder } from '@/services/wordpressApi';
 
 const Checkout = () => {
   const { courseSlug } = useParams();
-  const { user, loading: authLoading } = useAuth();
-  const { initiatePayment, loading: paymentLoading, getCoursePrice } = useZarinpalPayment();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [userInfo, setUserInfo] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Course data for display
   const courseData = {
@@ -37,12 +36,6 @@ const Checkout = () => {
       instructor: 'رضا رفیعی',
       benefits: ['قالب‌های آماده کنتنت', 'استراتژی تبلیغات', 'تحلیل رقبا', 'ابزارهای اندازه‌گیری']
     },
-    'wealth': {
-      title: 'دوره ثروت‌سازی',
-      price: 3200000,
-      instructor: 'رضا رفیعی',
-      benefits: ['کارگاه‌های عملی', 'مشاوره سرمایه‌گذاری', 'ابزار مدیریت مالی', 'گزارش‌های هفتگی']
-    },
     'metaverse': {
       title: 'امپراطوری متاورس',
       price: 2800000,
@@ -52,21 +45,6 @@ const Checkout = () => {
   };
 
   const course = courseData[courseSlug as keyof typeof courseData];
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/');
-      return;
-    }
-
-    if (user) {
-      setUserInfo({
-        fullName: user.user_metadata?.full_name || user.email || '',
-        email: user.email || '',
-        phone: user.user_metadata?.phone || ''
-      });
-    }
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (!course && courseSlug) {
@@ -89,7 +67,7 @@ const Checkout = () => {
       return;
     }
 
-    if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
+    if (!userInfo.firstName || !userInfo.lastName || !userInfo.email || !userInfo.phone) {
       toast({
         title: "خطا",
         description: "لطفا تمام اطلاعات را تکمیل کنید",
@@ -98,16 +76,20 @@ const Checkout = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      const result = await initiatePayment(courseSlug);
+      const order = await createWooCommerceOrder(courseSlug, userInfo);
       
-      if (!result.success) {
-        toast({
-          title: "خطا در پرداخت",
-          description: "پرداخت ناموفق بود. لطفاً دوباره تلاش کنید.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "سفارش ایجاد شد",
+        description: "در حال هدایت به صفحه پرداخت...",
+      });
+
+      // Redirect to payment page
+      const paymentUrl = order.payment_url || `/payment-success/${courseSlug}`;
+      window.location.href = paymentUrl;
+      
     } catch (error) {
       console.error('Payment error:', error);
       toast({
@@ -115,6 +97,8 @@ const Checkout = () => {
         description: "پرداخت ناموفق بود. لطفاً دوباره تلاش کنید.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -122,18 +106,7 @@ const Checkout = () => {
     return (price / 1000000).toFixed(1);
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">در حال بارگذاری...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user || !course) {
+  if (!course) {
     return null;
   }
 
@@ -202,15 +175,29 @@ const Checkout = () => {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="fullName" className="flex items-center gap-2">
+                  <Label htmlFor="firstName" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    نام و نام خانوادگی
+                    نام
                   </Label>
                   <Input
-                    id="fullName"
-                    value={userInfo.fullName}
-                    onChange={(e) => setUserInfo(prev => ({ ...prev, fullName: e.target.value }))}
-                    placeholder="نام کامل خود را وارد کنید"
+                    id="firstName"
+                    value={userInfo.firstName}
+                    onChange={(e) => setUserInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                    placeholder="نام خود را وارد کنید"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="lastName" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    نام خانوادگی
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={userInfo.lastName}
+                    onChange={(e) => setUserInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                    placeholder="نام خانوادگی خود را وارد کنید"
                     className="mt-1"
                   />
                 </div>
@@ -258,11 +245,11 @@ const Checkout = () => {
 
                 <Button 
                   onClick={handlePayment}
-                  disabled={paymentLoading || !userInfo.fullName || !userInfo.email || !userInfo.phone}
+                  disabled={isSubmitting || !userInfo.firstName || !userInfo.lastName || !userInfo.email || !userInfo.phone}
                   className="w-full py-3 text-lg"
                   size="lg"
                 >
-                  {paymentLoading ? (
+                  {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       در حال پردازش...
