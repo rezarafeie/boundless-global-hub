@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { CheckCircle, CreditCard, User, Mail, Phone, ArrowRight } from 'lucide-react';
+import { CheckCircle, CreditCard, User, Mail, Phone, ArrowRight, Shield, Clock, Star, Award } from 'lucide-react';
 import { createWooCommerceOrder } from '@/services/wordpressApi';
+import { motion } from 'framer-motion';
 
 const Checkout = () => {
   const { courseSlug } = useParams();
@@ -28,19 +29,28 @@ const Checkout = () => {
       title: 'برنامه بی‌حد رفیعی',
       price: 2500000,
       instructor: 'رضا رفیعی',
-      benefits: ['دسترسی مادام‌العمر', 'جلسات کوچینگ زنده', 'گروه اختصاصی تلگرام', 'پشتیبانی 24/7']
+      originalPrice: 3500000,
+      discount: 29,
+      benefits: ['دسترسی مادام‌العمر', 'جلسات کوچینگ زنده', 'گروه اختصاصی تلگرام', 'پشتیبانی 24/7'],
+      features: ['10+ ساعت ویدیو', '50+ فایل تمرینی', 'گواهی پایان دوره', 'پروژه عملی']
     },
     'instagram': {
       title: 'اینستاگرام اسنشیالز',
       price: 1800000,
       instructor: 'رضا رفیعی',
-      benefits: ['قالب‌های آماده کنتنت', 'استراتژی تبلیغات', 'تحلیل رقبا', 'ابزارهای اندازه‌گیری']
+      originalPrice: 2500000,
+      discount: 28,
+      benefits: ['قالب‌های آماده کنتنت', 'استراتژی تبلیغات', 'تحلیل رقبا', 'ابزارهای اندازه‌گیری'],
+      features: ['8+ ساعت ویدیو', '30+ تمپلیت', 'کتابچه راهنما', 'پشتیبانی یک ماهه']
     },
     'metaverse': {
       title: 'امپراطوری متاورس',
       price: 2800000,
       instructor: 'رضا رفیعی',
-      benefits: ['راهنمای NFT', 'استراتژی‌های Web3', 'پروژه‌های عملی', 'شبکه‌سازی متاورس']
+      originalPrice: 3800000,
+      discount: 26,
+      benefits: ['راهنمای NFT', 'استراتژی‌های Web3', 'پروژه‌های عملی', 'شبکه‌سازی متاورس'],
+      features: ['12+ ساعت ویدیو', 'پروژه NFT', 'ابزارهای Web3', 'کمیونیتی اختصاصی']
     }
   };
 
@@ -86,7 +96,6 @@ const Checkout = () => {
         description: "در حال هدایت به صفحه پرداخت...",
       });
 
-      // Redirect to payment page
       const paymentUrl = order.payment_url || `/payment-success/${courseSlug}`;
       window.location.href = paymentUrl;
       
@@ -111,99 +120,166 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-12">
-      <div className="container max-w-4xl mx-auto">
-        <div className="mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+      
+      <div className="container max-w-7xl mx-auto py-12 px-4">
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 text-center"
+        >
           <Button 
             variant="ghost" 
             onClick={() => navigate(-1)}
-            className="mb-4"
+            className="mb-6 hover:bg-white/50"
           >
             <ArrowRight className="w-4 h-4 mr-2" />
             بازگشت
           </Button>
-          <h1 className="text-3xl font-bold">تکمیل خرید</h1>
-          <p className="text-gray-600 mt-2">تنها یک قدم تا دسترسی به دوره مانده</p>
-        </div>
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent mb-4">
+            تکمیل خرید
+          </h1>
+          <p className="text-xl text-slate-600">تنها یک قدم تا شروع سفر یادگیری</p>
+        </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Course Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                خلاصه دوره
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-xl font-bold">{course.title}</h3>
-                <p className="text-gray-600">مدرس: {course.instructor}</p>
-              </div>
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Course Summary - Enhanced */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="backdrop-blur-sm bg-white/80 border-0 shadow-2xl shadow-slate-200/50">
+              <CardHeader className="pb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                    <Award className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold text-slate-900">{course.title}</CardTitle>
+                    <p className="text-slate-600 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      مدرس: {course.instructor}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Price Section */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-500 line-through">
+                      قیمت اصلی: {formatPrice(course.originalPrice)} میلیون تومان
+                    </span>
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      {course.discount}% تخفیف
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-semibold text-slate-900">قیمت نهایی:</span>
+                    <span className="text-3xl font-bold text-green-600">
+                      {formatPrice(course.price)} میلیون تومان
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
               
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-3">مزایای دوره:</h4>
-                <ul className="space-y-2">
-                  {course.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <CardContent className="space-y-6">
+                {/* Course Features */}
+                <div>
+                  <h4 className="font-semibold mb-4 flex items-center gap-2 text-slate-900">
+                    <Star className="w-5 h-5 text-yellow-500" />
+                    ویژگی‌های دوره
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {course.features.map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm bg-slate-50 p-3 rounded-lg">
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Benefits */}
+                <div>
+                  <h4 className="font-semibold mb-4 flex items-center gap-2 text-slate-900">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    مزایای دوره
+                  </h4>
+                  <ul className="space-y-3">
+                    {course.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-3 text-sm">
+                        <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <span className="text-slate-700">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Security Badge */}
+                <div className="bg-slate-50 p-4 rounded-xl">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Shield className="w-4 h-4 text-green-500" />
+                    <span>پرداخت امن با زرین‌پال</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Payment Form - Enhanced */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="backdrop-blur-sm bg-white/80 border-0 shadow-2xl shadow-slate-200/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-2xl text-slate-900">
+                  <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-white" />
+                  </div>
+                  اطلاعات پرداخت
+                </CardTitle>
+                <p className="text-slate-600">اطلاعات خود را با دقت وارد کنید</p>
+              </CardHeader>
               
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">قیمت نهایی:</span>
-                  <span className="text-2xl font-bold text-green-600">
-                    {formatPrice(course.price)} میلیون تومان
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="flex items-center gap-2 text-slate-700">
+                      <User className="w-4 h-4" />
+                      نام
+                    </Label>
+                    <Input
+                      id="firstName"
+                      value={userInfo.firstName}
+                      onChange={(e) => setUserInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="نام خود را وارد کنید"
+                      className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white/80"
+                    />
+                  </div>
 
-          {/* Payment Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                اطلاعات پرداخت
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="firstName" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    نام
-                  </Label>
-                  <Input
-                    id="firstName"
-                    value={userInfo.firstName}
-                    onChange={(e) => setUserInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                    placeholder="نام خود را وارد کنید"
-                    className="mt-1"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="flex items-center gap-2 text-slate-700">
+                      <User className="w-4 h-4" />
+                      نام خانوادگی
+                    </Label>
+                    <Input
+                      id="lastName"
+                      value={userInfo.lastName}
+                      onChange={(e) => setUserInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="نام خانوادگی خود را وارد کنید"
+                      className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white/80"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="lastName" className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    نام خانوادگی
-                  </Label>
-                  <Input
-                    id="lastName"
-                    value={userInfo.lastName}
-                    onChange={(e) => setUserInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                    placeholder="نام خانوادگی خود را وارد کنید"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="flex items-center gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center gap-2 text-slate-700">
                     <Mail className="w-4 h-4" />
                     ایمیل
                   </Label>
@@ -213,12 +289,12 @@ const Checkout = () => {
                     value={userInfo.email}
                     onChange={(e) => setUserInfo(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="example@email.com"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white/80"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="phone" className="flex items-center gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="flex items-center gap-2 text-slate-700">
                     <Phone className="w-4 h-4" />
                     شماره موبایل
                   </Label>
@@ -227,31 +303,34 @@ const Checkout = () => {
                     value={userInfo.phone}
                     onChange={(e) => setUserInfo(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="09123456789"
-                    className="mt-1"
+                    className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white/80"
                   />
                 </div>
-              </div>
 
-              <div className="border-t pt-6">
-                <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                  <h4 className="font-semibold mb-2">روش پرداخت:</h4>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">Z</span>
+                {/* Payment Method */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100">
+                  <h4 className="font-semibold mb-3 text-slate-900">روش پرداخت</h4>
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-green-200">
+                    <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">Z</span>
                     </div>
-                    <span>زرین‌پال (کارت‌های بانکی ایران)</span>
+                    <div>
+                      <p className="font-medium text-slate-900">زرین‌پال</p>
+                      <p className="text-sm text-slate-600">تمام کارت‌های بانکی ایران</p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Payment Button */}
                 <Button 
                   onClick={handlePayment}
                   disabled={isSubmitting || !userInfo.firstName || !userInfo.lastName || !userInfo.email || !userInfo.phone}
-                  className="w-full py-3 text-lg"
+                  className="w-full py-4 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-lg shadow-indigo-200 transition-all duration-300"
                   size="lg"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       در حال پردازش...
                     </>
                   ) : (
@@ -262,12 +341,24 @@ const Checkout = () => {
                   )}
                 </Button>
 
-                <p className="text-xs text-gray-500 text-center mt-3">
+                {/* Trust Indicators */}
+                <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-200">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Shield className="w-4 h-4 text-green-500" />
+                    پرداخت امن
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    دسترسی فوری
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 text-center">
                   با کلیک بر روی دکمه پرداخت، شرایط استفاده و حریم خصوصی را می‌پذیرید
                 </p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
     </div>

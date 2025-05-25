@@ -18,6 +18,19 @@ interface CourseCardProps {
 const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: CourseCardProps) => {
   const benefitsList = Array.isArray(benefits) ? benefits : benefits.split('\n').filter(b => b.trim());
 
+  // Generate correct route based on course type and slug
+  const getRouteUrl = () => {
+    if (!slug) return '/courses';
+    
+    // If it's a free course and doesn't already include "free/", add it
+    if (!isPaid && !slug.startsWith('free/')) {
+      return `/course/free/${slug}`;
+    }
+    
+    // If it already has the correct format, use as is
+    return `/course/${slug}`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,7 +39,7 @@ const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: Cou
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <Link to={`/course/${slug}`} className="block h-full">
+      <Link to={getRouteUrl()} className="block h-full">
         <Card className="h-full bg-gradient-to-br from-background to-secondary/30 border border-primary/10 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group cursor-pointer">
           <CardHeader className="pb-4">
             <div className="flex justify-between items-start mb-2">
