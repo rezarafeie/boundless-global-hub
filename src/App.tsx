@@ -9,6 +9,7 @@ import MainLayout from '@/components/Layout/MainLayout';
 
 // Pages
 import Index from '@/pages/Index';
+import AllCourses from '@/pages/AllCourses';
 import FreeCourses from '@/pages/FreeCourses';
 import PaidCourses from '@/pages/PaidCourses';
 import CourseArchive from '@/pages/CourseArchive';
@@ -56,6 +57,7 @@ function App() {
               <Routes>
                 {/* Main pages */}
                 <Route path="/" element={<Index />} />
+                <Route path="/courses" element={<AllCourses />} />
                 <Route path="/courses/free" element={<FreeCourses />} />
                 <Route path="/courses/paid" element={<PaidCourses />} />
                 <Route path="/courses/archive" element={<CourseArchive />} />
@@ -78,6 +80,8 @@ function App() {
                 <Route path="/course/free/view/:courseTitle" element={<FreeCourseView />} />
                 <Route path="/course/paid/start/:courseTitle" element={<PaidCourseStart />} />
                 <Route path="/course/paid/view/:courseTitle" element={<PaidCourseView />} />
+                <Route path="/start/free-course/:slug" element={<FreeCourseStart />} />
+                <Route path="/start/paid-course/:slug" element={<PaidCourseStart />} />
 
                 {/* Test pages */}
                 <Route path="/test/:slug" element={<TestLanding />} />

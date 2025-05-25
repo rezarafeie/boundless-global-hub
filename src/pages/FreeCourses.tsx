@@ -1,6 +1,5 @@
 
 import React from "react";
-import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
@@ -25,7 +24,7 @@ const FreeCourses = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
-      slug: "passive-income"
+      slug: "passive-income-ai"
     },
     {
       title: translations.changeProject,
@@ -68,7 +67,7 @@ const FreeCourses = () => {
   };
 
   return (
-    <MainLayout>
+    <>
       <Hero
         title={translations.freeCoursesTitle}
         subtitle={translations.freeCoursesSubtitle}
@@ -107,7 +106,7 @@ const FreeCourses = () => {
           </motion.div>
         </div>
       </section>
-    </MainLayout>
+    </>
   );
 };
 

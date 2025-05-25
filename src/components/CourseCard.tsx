@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourseActivation } from "@/hooks/useCourseActivation";
 import AuthenticationModal from "@/components/Auth/AuthenticationModal";
+import { Link } from "react-router-dom";
 
 interface CourseCardProps {
   title: string;
@@ -82,13 +83,15 @@ const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: Cou
               <p className="text-sm">{outcome}</p>
             </div>
             
+            {/* Course Landing Page Link */}
             <Button 
-              onClick={handleStartLearning}
-              disabled={loading}
+              asChild
               className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary transition-all duration-300 shadow-lg hover:shadow-primary/20"
               size="lg"
             >
-              {loading ? "در حال پردازش..." : (isPaid ? "ثبت نام در دوره" : "شروع یادگیری رایگان")}
+              <Link to={`/course/${slug}`}>
+                مشاهده جزئیات دوره
+              </Link>
             </Button>
           </CardContent>
         </Card>

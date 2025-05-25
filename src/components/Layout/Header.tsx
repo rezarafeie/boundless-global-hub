@@ -30,7 +30,7 @@ const Header = () => {
           <Link to="/" className="text-sm font-medium transition-colors hover:text-black">
             {translations.home}
           </Link>
-          <Link to="/courses/free" className="text-sm font-medium transition-colors hover:text-black">
+          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-black">
             مرکز آموزش
           </Link>
           <Link to="/assessment" className="text-sm font-medium transition-colors hover:text-black">
@@ -112,7 +112,7 @@ const Header = () => {
               {translations.home}
             </Link>
             <Link 
-              to="/courses/free" 
+              to="/courses" 
               className="text-sm font-medium transition-colors hover:text-black"
               onClick={() => setIsMenuOpen(false)}
             >
