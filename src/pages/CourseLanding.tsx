@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ const CourseLanding = () => {
       duration: "6 ماه",
       modules: 12,
       students: 450,
-      instructor: "امیر رفیعی",
+      instructor: "رضا رفیعی",
       image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
       bonuses: [
         "دسترسی مادام‌العمر",
@@ -48,7 +49,7 @@ const CourseLanding = () => {
       duration: "4 هفته",
       modules: 6,
       students: 850,
-      instructor: "امیر رفیعی",
+      instructor: "رضا رفیعی",
       image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
       bonuses: [
         "قالب‌های آماده کنتنت",
@@ -67,7 +68,7 @@ const CourseLanding = () => {
       duration: "8 هفته",
       modules: 8,
       students: 620,
-      instructor: "امیر رفیعی",
+      instructor: "رضا رفیعی",
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
       bonuses: [
         "کارگاه‌های عملی",
@@ -86,7 +87,7 @@ const CourseLanding = () => {
       duration: "10 هفته",
       modules: 10,
       students: 380,
-      instructor: "امیر رفیعی",
+      instructor: "رضا رفیعی",
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
       bonuses: [
         "راهنمای NFT",
@@ -105,7 +106,7 @@ const CourseLanding = () => {
       duration: "2 هفته",
       modules: 4,
       students: 1200,
-      instructor: "امیر رفیعی",
+      instructor: "رضا رفیعی",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
       bonuses: [
         "محتوای رایگان",
@@ -124,13 +125,51 @@ const CourseLanding = () => {
       duration: "3 هفته",
       modules: 5,
       students: 890,
-      instructor: "امیر رفیعی",
+      instructor: "رضا رفیعی",
       image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80",
       bonuses: [
         "ابزارهای AI",
         "قالب‌های آماده",
         "راهکارهای عملی",
         "پشتیبانی آنلاین"
+      ]
+    },
+    "change": {
+      title: "دوره تغییر",
+      description: "دوره جامع تغییر زندگی و کسب و کار با رضا رفیعی",
+      benefits: ["تغییر نگرش", "استراتژی‌های موثر", "برنامه‌ریزی عملی", "پیگیری مستمر"],
+      outcome: "پس از این دوره قادر خواهید بود تغییرات مثبت و پایدار در زندگی خود ایجاد کنید",
+      isPaid: false,
+      price: null,
+      duration: "4 هفته",
+      modules: 6,
+      students: 750,
+      instructor: "رضا رفیعی",
+      image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80",
+      bonuses: [
+        "کتاب الکترونیکی تغییر",
+        "چک‌لیست عملی",
+        "جلسات پیگیری",
+        "انجمن اختصاصی"
+      ]
+    },
+    "american-business": {
+      title: "بیزینس آمریکایی",
+      description: "راهکارهای عملی برای ورود به بازار آمریکا و توسعه کسب و کار بین‌المللی",
+      benefits: ["شناخت بازار آمریکا", "استراتژی‌های ورود", "قوانین و مقررات", "شبکه‌سازی مؤثر"],
+      outcome: "پس از این دوره قادر خواهید بود کسب و کار خود را به بازار آمریکا وارد کنید",
+      isPaid: false,
+      price: null,
+      duration: "5 هفته",
+      modules: 8,
+      students: 425,
+      instructor: "رضا رفیعی",
+      image: "https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?auto=format&fit=crop&w=800&q=80",
+      bonuses: [
+        "راهنمای قوانین آمریکا",
+        "قالب‌های قراردادی",
+        "لیست شرکای آمریکایی",
+        "مشاوره تخصصی"
       ]
     }
   };
@@ -166,29 +205,18 @@ const CourseLanding = () => {
     }
   };
 
+  const handlePaidCourseAccess = () => {
+    if (user) {
+      // User is logged in, go to checkout
+      window.location.href = `/checkout/${slug}`;
+    } else {
+      // User not logged in, show auth modal
+      setShowAuthModal(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Free Course Countdown & Access Section */}
-      {!course.isPaid && (
-        <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12">
-          <div className="container">
-            <div className="max-w-6xl mx-auto">
-              <div className="grid lg:grid-cols-2 gap-8 items-center">
-                <div>
-                  <CountdownTimer targetDate={countdownTarget} />
-                </div>
-                <div>
-                  <UnifiedAuthForm 
-                    courseSlug={slug || ""} 
-                    onSuccess={() => window.location.href = `/start/free-course/${slug}`}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
@@ -234,10 +262,13 @@ const CourseLanding = () => {
               
               <div className="flex gap-4">
                 {course.isPaid ? (
-                  <PaymentButton 
-                    courseSlug={slug || ""}
+                  <Button 
+                    size="lg" 
                     className="px-8 py-4 text-lg rounded-full"
-                  />
+                    onClick={handlePaidCourseAccess}
+                  >
+                    شروع دوره
+                  </Button>
                 ) : (
                   <Button 
                     size="lg" 
@@ -270,6 +301,38 @@ const CourseLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Free Course Registration Section */}
+      {!course.isPaid && (
+        <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <div className="container">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl lg:text-4xl font-bold mb-4">
+                  برای شروع این دوره رایگان، همین حالا ثبت‌نام کن!
+                </h2>
+                <p className="text-xl text-blue-100">
+                  فقط چند دقیقه تا شروع دوره فاصله داری
+                </p>
+              </div>
+              
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                  <CountdownTimer targetDate={countdownTarget} />
+                </div>
+                <div>
+                  <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
+                    <UnifiedAuthForm 
+                      courseSlug={slug || ""} 
+                      onSuccess={() => window.location.href = `/start/free-course/${slug}`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Benefits Section */}
       <section className="py-20 bg-white">
@@ -316,7 +379,7 @@ const CourseLanding = () => {
                 <div className="flex items-center justify-center gap-4 mb-6">
                   <img 
                     src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80"
-                    alt="امیر رفیعی"
+                    alt="رضا رفیعی"
                     className="w-16 h-16 rounded-full object-cover"
                   />
                   <div className="text-right">
@@ -327,15 +390,20 @@ const CourseLanding = () => {
                 
                 <div className="flex justify-center gap-4">
                   {course.isPaid ? (
-                    <PaymentButton 
-                      courseSlug={slug || ""}
+                    <Button 
+                      size="lg" 
                       className="px-8 py-4 text-lg rounded-full"
-                    />
+                      onClick={handlePaidCourseAccess}
+                    >
+                      شروع دوره
+                    </Button>
                   ) : (
-                    <Button asChild size="lg" className="px-8 py-4 text-lg rounded-full">
-                      <Link to={`/start/free-course/${slug}`}>
-                        شروع رایگان
-                      </Link>
+                    <Button 
+                      size="lg" 
+                      className="px-8 py-4 text-lg rounded-full"
+                      onClick={handleFreeCourseAccess}
+                    >
+                      شروع رایگان
                     </Button>
                   )}
                 </div>

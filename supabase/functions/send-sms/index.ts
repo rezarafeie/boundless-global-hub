@@ -35,7 +35,7 @@ serve(async (req) => {
 
     console.log('Formatted phone:', formattedPhone)
 
-    // Faraaz API request
+    // Faraaz API request with correct endpoint and API key
     const faraazPayload = {
       code: "vzhg0d009gpv1w6",
       sender: "+983000505",
@@ -47,12 +47,13 @@ serve(async (req) => {
 
     console.log('Faraaz SMS payload:', faraazPayload)
 
-    // Call Faraaz API
+    // Call Faraaz API with proper headers including API key
     const faraazResponse = await fetch('https://api2.ippanel.com/api/v1/sms/pattern/normal/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Authorization': 'AccessKey lQBvFydrE35Wk1zkiKBiIiQpI5VwMKs3ovikaj40hS0='
       },
       body: JSON.stringify(faraazPayload)
     })
@@ -94,8 +95,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    )
-  }
+      status: 500,
+    }
+  )
 })
