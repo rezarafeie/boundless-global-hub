@@ -1,438 +1,360 @@
 
-import React, { useState, useEffect } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Clock, Award, Code, Users, FileCheck, BookOpen, Star, DollarSign, User } from "lucide-react";
-import AuthModal from "@/components/Auth/AuthModal";
-
-// Countdown target date (2 months from now)
-const COUNTDOWN_TARGET = new Date();
-COUNTDOWN_TARGET.setMonth(COUNTDOWN_TARGET.getMonth() + 2);
+import { Check, Zap, Globe, Cpu, Star, Clock, Target } from "lucide-react";
+import CountdownTimer from "@/components/CountdownTimer";
+import { motion } from "framer-motion";
+import InstructorProfile from "@/components/InstructorProfile";
+import IframeModal from "@/components/IframeModal";
 
 const MetaverseLanding = () => {
-  const { translations } = useLanguage();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [countdown, setCountdown] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Set countdown target for 7 days from now and convert to string
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + 7);
+  const endDateString = targetDate.toISOString();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const distance = COUNTDOWN_TARGET.getTime() - now.getTime();
-      
-      if (distance < 0) {
-        clearInterval(interval);
-        return;
-      }
-      
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      
-      setCountdown({ days, hours, minutes, seconds });
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Course outcomes
-  const courseOutcomes = [
-    "درک کامل از مفهوم متاورس و فناوری‌های زیربنایی آن",
-    "آشنایی با انواع ارزهای دیجیتال و NFT و نحوه سرمایه‌گذاری در آنها",
-    "مهارت در ایجاد و فروش دارایی‌های دیجیتال در متاورس",
-    "توانایی راه‌اندازی کسب و کار متاورسی با کمترین سرمایه اولیه",
-    "آشنایی با استراتژی‌های کسب درآمد از بازی‌های Play-to-Earn",
-    "شناخت فرصت‌های شغلی نوظهور در اقتصاد متاورس"
-  ];
-
-  // Course modules
-  const courseModules = [
-    "مبانی متاورس: تاریخچه، مفاهیم و فناوری‌ها",
-    "اصول بلاکچین و کاربرد آن در متاورس",
-    "آشنایی با ارزهای دیجیتال و نحوه سرمایه‌گذاری ایمن",
-    "NFTها: مفهوم، تولید، خرید و فروش",
-    "اقتصاد متاورس و فرصت‌های کسب درآمد",
-    "بازی‌های Play-to-Earn و استراتژی‌های موفقیت",
-    "خرید و مدیریت زمین‌های دیجیتال در متاورس",
-    "راه‌اندازی کسب و کار در متاورس و بازاریابی در این فضا",
-    "آینده‌پژوهی متاورس و فرصت‌های شغلی آینده",
-    "امنیت و محافظت از دارایی‌های دیجیتال"
-  ];
-
-  // Testimonials
-  const testimonials = [
-    {
-      name: "آرش نوری",
-      role: "طراح دیجیتال",
-      content: "قبل از این دوره، مفهوم متاورس برایم گنگ بود. حالا نه تنها درک خوبی از آن دارم، بلکه توانستم اولین NFT خودم را هم بسازم و بفروشم!"
-    },
-    {
-      name: "سینا محمدی",
-      role: "سرمایه‌گذار ارزهای دیجیتال",
-      content: "استراتژی‌های سرمایه‌گذاری در این دوره کمک کرد تا با دید بازتری در پروژه‌های متاورسی سرمایه‌گذاری کنم و بازدهی پورتفولیوی خود را افزایش دهم."
-    },
-    {
-      name: "مینا صادقی",
-      role: "بازی‌ساز مستقل",
-      content: "بخش بازی‌های Play-to-Earn این دوره فوق‌العاده مفید بود. توانستم با استفاده از این آموزش‌ها، ایده بازی خودم را با مفهوم متاورس ترکیب کنم."
-    }
-  ];
-
-  // FAQ data
-  const faqItems = [
-    {
-      question: "آیا نیاز به دانش فنی قبلی برای شرکت در این دوره دارم؟",
-      answer: "خیر، این دوره برای افراد با هر سطح دانش فنی طراحی شده است. ما از مفاهیم پایه شروع می‌کنیم و گام به گام شما را با پیچیدگی‌های متاورس آشنا می‌کنیم."
-    },
-    {
-      question: "آیا برای سرمایه‌گذاری در متاورس به مبلغ زیادی پول نیاز است؟",
-      answer: "لزوماً نه. در این دوره استراتژی‌های سرمایه‌گذاری با بودجه‌های مختلف را آموزش می‌دهیم و روش‌هایی برای شروع با سرمایه کم را نیز معرفی می‌کنیم."
-    },
-    {
-      question: "آیا می‌توانم با آموزش‌های این دوره درآمد دلاری کسب کنم؟",
-      answer: "بله، یکی از اهداف اصلی این دوره آموزش روش‌های کسب درآمد ارزی از متاورس است. البته میزان موفقیت شما به تلاش، استمرار و میزان اجرای آموخته‌ها بستگی دارد."
-    },
-    {
-      question: "پس از خرید دوره، چه مدت به محتوا دسترسی خواهم داشت؟",
-      answer: "شما دسترسی مادام‌العمر به محتوای دوره خواهید داشت و از تمام به‌روزرسانی‌های آینده نیز بهره‌مند می‌شوید."
-    }
-  ];
-
-  // Instructor data
-  const instructor = {
-    name: "دکتر محمد فرهادی",
-    role: "متخصص بلاکچین و اقتصاد دیجیتال",
-    bio: "با بیش از ۷ سال تجربه در زمینه فناوری‌های بلاکچین و ۴ سال تمرکز بر متاورس و اقتصاد دیجیتال. مشاور چندین استارت‌آپ موفق در حوزه Web3 و متاورس."
+  const handlePurchaseCourse = () => {
+    setIsModalOpen(true);
   };
 
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="relative bg-white pt-24 pb-12 overflow-hidden">
-        <div className="container">
+      <section className="bg-gradient-to-br from-blue-50 to-purple-50 pt-24 pb-20 relative">
+        {/* Animated Glow Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="glow-circle glow-circle-1 animate-pulse"></div>
+          <div className="glow-circle glow-circle-2 animate-float-fast"></div>
+          <div className="glow-circle glow-circle-3 animate-pulse animation-delay-1000"></div>
+          <div className="glow-circle glow-circle-4 animate-float-slow animation-delay-2000"></div>
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-[10px] z-0"></div>
+        </div>
+        
+        <div className="container max-w-6xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <span className="inline-block text-sm font-medium bg-black/5 px-3 py-1 rounded-full">
-                {translations.metaverseEmpire}
-              </span>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold">
+            <div className="text-right">
+              <motion.h1 
+                className="text-4xl md:text-6xl font-bold mb-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
                 امپراطوری متاورس
-              </h1>
-              <p className="text-lg text-gray-600">
-                دوره جامع آشنایی با متاورس، ارزهای دیجیتال و NFT - راهنمای قدم به قدم برای کسب درآمد دلاری در دنیای دیجیتال آینده
-              </p>
+              </motion.h1>
+              <motion.p 
+                className="text-xl text-gray-600 mb-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Empire of Metaverse
+              </motion.p>
+              <motion.p 
+                className="text-lg text-gray-600 mb-8 leading-relaxed"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
+                وارد دنیای متاورس شوید و فرصت‌های بی‌نظیر کسب‌وکار در فضای دیجیتال 
+                جدید را کشف کنید. آینده اقتصاد دیجیتال در دستان شماست.
+              </motion.p>
               
-              {/* Price Block */}
-              <div className="bg-black/5 p-4 sm:p-6 rounded-2xl space-y-2 max-w-sm">
-                <div className="flex justify-between items-center">
-                  <span className="line-through text-gray-500">
-                    ۲,۵۰۰,۰۰۰ تومان
-                  </span>
-                  <span className="bg-black text-white px-3 py-1 rounded-full text-sm">
-                    -۴۰٪
-                  </span>
+              <motion.div 
+                className="grid grid-cols-1 gap-4 mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check size={16} className="text-white" />
+                  </div>
+                  <p className="font-medium">سرمایه‌گذاری هوشمند در پروژه‌های متاورس</p>
                 </div>
-                <div className="text-3xl font-bold">
-                  ۱,۵۰۰,۰۰۰ تومان
-                </div>
-                <div className="text-sm text-gray-600">
-                  شامل پشتیبانی ۶ ماهه و به‌روزرسانی‌های رایگان
-                </div>
-              </div>
-              
-              {/* CTA and Countdown */}
-              <div className="space-y-4">
-                <Button 
-                  size="lg" 
-                  className="w-full sm:w-auto bg-black hover:bg-black/90 text-white rounded-full"
-                  onClick={() => setShowAuthModal(true)}
-                >
-                  شروع دوره
-                </Button>
                 
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={16} />
-                  <span>پیشنهاد ویژه تا:</span>
-                  <div className="flex gap-1 text-black font-mono">
-                    <span className="bg-black/5 px-2 py-1 rounded">{countdown.days}d</span>:
-                    <span className="bg-black/5 px-2 py-1 rounded">{countdown.hours}h</span>:
-                    <span className="bg-black/5 px-2 py-1 rounded">{countdown.minutes}m</span>:
-                    <span className="bg-black/5 px-2 py-1 rounded">{countdown.seconds}s</span>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check size={16} className="text-white" />
                   </div>
+                  <p className="font-medium">ایجاد کسب‌وکار در فضای مجازی و Web3</p>
                 </div>
-              </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check size={16} className="text-white" />
+                  </div>
+                  <p className="font-medium">درک عمیق از تکنولوژی‌های blockchain و NFT</p>
+                </div>
+              </motion.div>
             </div>
             
-            <div className="relative">
-              <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-xl border border-black/10 bg-black/5 flex items-center justify-center">
-                <Code size={80} className="text-black/50" />
-                <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-black/80 flex items-center justify-center">
-                    <div className="w-0 h-0 border-y-8 border-y-transparent border-l-12 border-l-white ml-1"></div>
-                  </div>
+            <motion.div
+              className="bg-white rounded-xl shadow-lg p-8 border border-blue-100"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mb-4">
+                  <Globe size={32} className="text-white" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">شروع کنید الان</h2>
+                <p className="text-gray-600">دسترسی فوری به آینده کسب‌وکار</p>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-sm text-gray-600">قیمت ویژه:</span>
+                  <span className="font-bold text-lg">۳,۹۹۰,۰۰۰ تومان</span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-green-600">
+                  <Clock size={16} />
+                  <span className="text-sm">دسترسی مادام‌العمر</span>
                 </div>
               </div>
               
-              {/* Floating Element */}
-              <div className="absolute -bottom-5 -right-5 bg-white p-4 rounded-xl shadow-lg border border-black/10 max-w-xs animate-float">
-                <p className="text-sm font-medium">
-                  فرصتی استثنایی برای ورود به دنیای پر رونق متاورس!
-                </p>
-              </div>
-            </div>
+              <Button 
+                onClick={handlePurchaseCourse}
+                size="lg" 
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full px-8 text-lg py-6 h-auto"
+              >
+                خرید دوره
+              </Button>
+              
+              <p className="text-xs text-center text-gray-500 mt-4">
+                ۳۰ روز ضمانت بازگشت وجه
+              </p>
+            </motion.div>
+          </div>
+          
+          <div className="mt-16">
+            <CountdownTimer endDate={endDateString} />
           </div>
         </div>
       </section>
       
-      {/* Course Outcomes */}
-      <section id="outcomes" className="bg-white py-20">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl font-bold mb-6">
-              چه چیزی در این دوره خواهید آموخت؟
-            </h2>
-            <p className="text-lg text-gray-600">
-              دوره امپراطوری متاورس شما را با مفاهیم و ابزارهای لازم برای ورود موفق به دنیای متاورس آشنا می‌کند و به شما کمک می‌کند تا فرصت‌های کسب درآمد در این فضای نوظهور را کشف و بهره‌برداری کنید.
-            </p>
+      {/* Course Content Overview */}
+      <section className="bg-white py-16">
+        <div className="container max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">محتویات دوره</h2>
+            <p className="text-lg text-gray-600">همه چیزی که برای ورود به دنیای متاورس نیاز دارید</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {courseOutcomes.map((outcome, index) => (
-              <div key={index} className="flex items-start gap-4 p-6 bg-black/5 rounded-xl hover:bg-black/10 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center flex-shrink-0">
-                  <Check size={18} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="text-center p-6">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Cpu size={24} className="text-white" />
                 </div>
-                <p className="font-medium">{outcome}</p>
-              </div>
-            ))}
+                <h3 className="font-bold mb-2">فناوری‌های پایه</h3>
+                <p className="text-sm text-gray-600">
+                  آشنایی با Web3، Blockchain، NFT، و Smart Contract
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="text-center p-6">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Zap size={24} className="text-white" />
+                </div>
+                <h3 className="font-bold mb-2">سرمایه‌گذاری</h3>
+                <p className="text-sm text-gray-600">
+                  استراتژی‌های سرمایه‌گذاری در پروژه‌های متاورس
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="text-center p-6">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Globe size={24} className="text-white" />
+                </div>
+                <h3 className="font-bold mb-2">کسب‌وکار مجازی</h3>
+                <p className="text-sm text-gray-600">
+                  ایجاد و مدیریت کسب‌وکار در فضای متاورس
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
-
-      {/* Course Modules */}
-      <section className="bg-black text-white py-20">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            سرفصل‌های دوره
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {courseModules.map((module, index) => (
-              <div key={index} className="flex items-start gap-4 bg-white/10 p-6 rounded-xl hover:bg-white/15 transition-colors">
-                <div className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center flex-shrink-0">
-                  {index + 1}
-                </div>
-                <div>
-                  <h3 className="font-medium">{module}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="mt-10 text-center">
-            <Button 
-              size="lg" 
-              className="bg-white hover:bg-white/90 text-black rounded-full"
-              onClick={() => setShowAuthModal(true)}
-            >
-              شروع دوره
-            </Button>
-          </div>
-        </div>
-      </section>
-
+      
       {/* Instructor Section */}
-      <section className="bg-white py-20">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            مدرس دوره
+      <section className="bg-gray-50 py-16">
+        <div className="container max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold mb-8 text-center">استاد دوره</h2>
+          <InstructorProfile compact={false} />
+        </div>
+      </section>
+      
+      {/* Future Opportunities */}
+      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div className="container max-w-6xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-12">
+            فرصت‌های آینده
           </h2>
           
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-24 h-24 rounded-full bg-black/5 mx-auto mb-6 flex items-center justify-center">
-              <User size={40} className="text-black/60" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center justify-center mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
+                ))}
+              </div>
+              <p className="text-sm mb-4">
+                "سرمایه‌گذاری‌ام در متاورس ۵۰۰% سود داد. بهترین تصمیم زندگی‌م بود."
+              </p>
+              <p className="font-medium">امیر حسینی</p>
             </div>
-            <h3 className="text-xl font-bold mb-2">{instructor.name}</h3>
-            <p className="text-sm text-gray-600 mb-4">{instructor.role}</p>
-            <p className="text-gray-700">{instructor.bio}</p>
             
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <div className="flex items-center gap-2 bg-black/5 px-4 py-2 rounded-full">
-                <Award size={18} className="text-black/70" />
-                <span className="text-sm">بیش از ۴۰۰ دانشجو</span>
+            <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center justify-center mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
+                ))}
               </div>
-              <div className="flex items-center gap-2 bg-black/5 px-4 py-2 rounded-full">
-                <Star size={18} className="text-black/70" />
-                <span className="text-sm">رضایت ۹۵٪ دانشجویان</span>
+              <p className="text-sm mb-4">
+                "کسب‌وکار مجازی‌ام الان بیشتر از کار واقعی‌م درآمد داره!"
+              </p>
+              <p className="font-medium">فاطمه کریمی</p>
+            </div>
+            
+            <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center justify-center mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
+                ))}
               </div>
-              <div className="flex items-center gap-2 bg-black/5 px-4 py-2 rounded-full">
-                <FileCheck size={18} className="text-black/70" />
-                <span className="text-sm">۷ سال تجربه</span>
-              </div>
+              <p className="text-sm mb-4">
+                "از صفر شروع کردم و الان یکی از بزرگ‌ترین سرمایه‌گذارای متاورسم."
+              </p>
+              <p className="font-medium">محسن رضایی</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* For Who Section */}
-      <section className="bg-black/5 py-20">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            این دوره برای چه کسانی مناسب است؟
-          </h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <Card className="border-black/5 shadow-sm">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-black/10 flex items-center justify-center mx-auto mb-4">
-                  <Users size={28} className="text-black/60" />
-                </div>
-                <h3 className="font-medium mb-2">علاقه‌مندان به تکنولوژی‌های نوین</h3>
-                <p className="text-sm text-gray-600">
-                  افرادی که می‌خواهند با مفاهیم جدید دنیای دیجیتال آشنا شوند
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-black/5 shadow-sm">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-black/10 flex items-center justify-center mx-auto mb-4">
-                  <DollarSign size={28} className="text-black/60" />
-                </div>
-                <h3 className="font-medium mb-2">سرمایه‌گذاران علاقه‌مند به ارزهای دیجیتال</h3>
-                <p className="text-sm text-gray-600">
-                  افرادی که به دنبال فرصت‌های سرمایه‌گذاری در بازار ارزهای دیجیتال هستند
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-black/5 shadow-sm">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-black/10 flex items-center justify-center mx-auto mb-4">
-                  <Code size={28} className="text-black/60" />
-                </div>
-                <h3 className="font-medium mb-2">طراحان و توسعه‌دهندگان دیجیتال</h3>
-                <p className="text-sm text-gray-600">
-                  افرادی که می‌خواهند مهارت‌های خود را با فرصت‌های جدید متاورس ترکیب کنند
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-black/5 shadow-sm">
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-black/10 flex items-center justify-center mx-auto mb-4">
-                  <BookOpen size={28} className="text-black/60" />
-                </div>
-                <h3 className="font-medium mb-2">علاقه‌مندان به کسب درآمد آنلاین</h3>
-                <p className="text-sm text-gray-600">
-                  افرادی که به دنبال کشف روش‌های جدید کسب درآمد در فضای دیجیتال هستند
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-      
-      {/* Testimonials */}
-      <section className="bg-white py-20">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            نظرات دانشجویان
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-black/5 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-black/5 flex items-center justify-center">
-                      <User size={24} className="text-black/60" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{testimonial.name}</h3>
-                      <p className="text-sm text-gray-600">{testimonial.role}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700">{testimonial.content}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-      
-      {/* FAQ */}
-      <section className="bg-black/5 py-20">
-        <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            سوالات متداول
-          </h2>
-          
-          <div className="max-w-3xl mx-auto">
-            {faqItems.map((item, index) => (
-              <div key={index} className="mb-6 border-b border-black/10 pb-6 last:border-b-0">
-                <h3 className="text-xl font-medium mb-2">{item.question}</h3>
-                <p className="text-gray-600">{item.answer}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      
-      {/* Final CTA */}
-      <section className="bg-black text-white py-16">
-        <div className="container text-center">
-          <h2 className="text-3xl font-bold mb-6">آماده ورود به دنیای متاورس هستید؟</h2>
-          <p className="text-lg mb-8 max-w-2xl mx-auto">
-            با این دوره جامع، آینده دیجیتال را به فرصتی برای رشد و کسب درآمد خود تبدیل کنید.
-          </p>
-          <Button 
-            size="lg" 
-            className="bg-white hover:bg-white/90 text-black rounded-full"
-            onClick={() => setShowAuthModal(true)}
-          >
-            شروع دوره با تخفیف ویژه
-          </Button>
-        </div>
-      </section>
-      
-      {/* Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 py-3 z-30 shadow-lg">
-        <div className="container">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div>
-                <div className="font-bold">قیمت ویژه: ۱,۵۰۰,۰۰۰ تومان</div>
-                <div className="text-sm text-gray-600">
-                  <Clock size={14} className="inline mr-1" /> 
-                  {countdown.days}د {countdown.hours}س {countdown.minutes}د
-                </div>
-              </div>
-            </div>
-            <Button 
-              size="lg" 
-              className="bg-black hover:bg-black/90 text-white rounded-full w-full sm:w-auto"
-              onClick={() => setShowAuthModal(true)}
-            >
-              همین الان شروع کنید
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <AuthModal 
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        courseTitle={translations.metaverseEmpire}
-        isPaid={true}
+      {/* Purchase Modal */}
+      <IframeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="خرید دوره امپراطوری متاورس"
+        url="https://rafeie.com/?add-to-cart=145"
       />
+
+      <style>
+        {`
+        @keyframes pulse {
+          0%, 100% { 
+            opacity: 0.4;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.8;
+            transform: scale(1.15);
+          }
+        }
+        
+        @keyframes float-fast {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.5;
+          }
+          25% {
+            transform: translateY(-30px) translateX(15px);
+            opacity: 0.8;
+          }
+          50% {
+            transform: translateY(-5px) translateX(30px);
+            opacity: 0.6;
+          }
+          75% {
+            transform: translateY(25px) translateX(15px);
+            opacity: 0.8;
+          }
+        }
+        
+        @keyframes float-slow {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.4;
+          }
+          33% {
+            transform: translateY(-15px) translateX(25px);
+            opacity: 0.7;
+          }
+          66% {
+            transform: translateY(20px) translateX(-10px);
+            opacity: 0.5;
+          }
+        }
+        
+        .animate-pulse {
+          animation: pulse 6s infinite ease-in-out;
+        }
+        
+        .animate-float-fast {
+          animation: float-fast 12s infinite ease-in-out;
+        }
+        
+        .animate-float-slow {
+          animation: float-slow 18s infinite ease-in-out;
+        }
+        
+        .animation-delay-1000 {
+          animation-delay: 1s;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .glow-circle {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(30px);
+        }
+        
+        .glow-circle-1 {
+          width: 450px;
+          height: 450px;
+          background: radial-gradient(circle, rgba(147,112,219,0.45) 0%, rgba(147,112,219,0) 70%);
+          top: -150px;
+          right: 10%;
+        }
+        
+        .glow-circle-2 {
+          width: 550px;
+          height: 550px;
+          background: radial-gradient(circle, rgba(65,105,225,0.4) 0%, rgba(65,105,225,0) 70%);
+          bottom: -180px;
+          left: 10%;
+        }
+        
+        .glow-circle-3 {
+          width: 350px;
+          height: 350px;
+          background: radial-gradient(circle, rgba(123,104,238,0.4) 0%, rgba(123,104,238,0) 70%);
+          top: 30%;
+          left: 25%;
+        }
+        
+        .glow-circle-4 {
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(72,209,204,0.35) 0%, rgba(72,209,204,0) 70%);
+          top: 40%;
+          right: 20%;
+        }
+        `}
+      </style>
     </MainLayout>
   );
 };

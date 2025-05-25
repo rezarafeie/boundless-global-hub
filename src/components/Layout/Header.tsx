@@ -61,14 +61,14 @@ const Header = () => {
             <Globe size={20} />
           </Button>
           
-          {/* Login/Register Button - Desktop Only */}
+          {/* User Account Button - Desktop Only */}
           <Button
             variant="default"
             size="sm"
-            onClick={() => window.location.href = "/dashboard"}
+            asChild
             className="rounded-full bg-black text-white hover:bg-black/90 hidden md:flex"
           >
-            {translations.loginRegister}
+            <Link to="/dashboard">حساب کاربری</Link>
           </Button>
           
           {/* Mobile Menu Button */}
@@ -123,17 +123,15 @@ const Header = () => {
               پشتیبانی
             </Link>
             
-            {/* Login/Register Button - Mobile Menu */}
+            {/* User Account Button - Mobile Menu */}
             <Button
               variant="default"
               size="sm"
-              onClick={() => {
-                window.location.href = "/dashboard";
-                setIsMenuOpen(false);
-              }}
+              asChild
               className="w-full rounded-full bg-black text-white hover:bg-black/90 mt-2"
+              onClick={() => setIsMenuOpen(false)}
             >
-              {translations.loginRegister}
+              <Link to="/dashboard">حساب کاربری</Link>
             </Button>
           </nav>
         </div>
