@@ -1,4 +1,6 @@
+
 import React from "react";
+import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
@@ -15,7 +17,7 @@ const FreeCourses = () => {
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
       isPaid: false,
-      slug: "free/boundless-taste"
+      slug: "boundless-taste"
     },
     {
       title: translations.passiveIncomeAI,
@@ -23,7 +25,7 @@ const FreeCourses = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
-      slug: "free/passive-income-ai"
+      slug: "passive-income-ai"
     },
     {
       title: translations.changeProject,
@@ -31,7 +33,7 @@ const FreeCourses = () => {
       benefits: translations.changeProjectBenefits,
       outcome: translations.changeProjectOutcome,
       isPaid: false,
-      slug: "free/change-project"
+      slug: "change-project"
     },
     {
       title: translations.americanBusiness,
@@ -39,7 +41,7 @@ const FreeCourses = () => {
       benefits: translations.americanBusinessBenefits,
       outcome: translations.americanBusinessOutcome,
       isPaid: false,
-      slug: "free/american-business"
+      slug: "american-business"
     },
   ];
 
@@ -66,7 +68,7 @@ const FreeCourses = () => {
   };
 
   return (
-    <>
+    <MainLayout>
       <Hero
         title={translations.freeCoursesTitle}
         subtitle={translations.freeCoursesSubtitle}
@@ -105,7 +107,7 @@ const FreeCourses = () => {
           </motion.div>
         </div>
       </section>
-    </>
+    </MainLayout>
   );
 };
 

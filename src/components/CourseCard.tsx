@@ -23,12 +23,13 @@ const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: Cou
     if (!slug) return '/courses';
     
     if (!isPaid) {
-      // For free courses, go to landing page for registration
-      return `/free-course/${slug.replace('free/', '')}`;
+      // For free courses, remove 'free/' prefix if it exists and go to free course landing
+      const cleanSlug = slug.replace('free/', '');
+      return `/free-course/${cleanSlug}`;
     }
     
-    // For paid courses, go to checkout
-    return `/checkout/${slug}`;
+    // For paid courses, go to course landing page (not checkout)
+    return `/course/${slug}`;
   };
 
   return (
@@ -79,7 +80,7 @@ const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: Cou
             
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <span className="text-sm text-muted-foreground">
-                {isPaid ? "کلیک برای خرید" : "کلیک برای ثبت نام رایگان"}
+                {isPaid ? "کلیک برای مشاهده دوره" : "کلیک برای ثبت نام رایگان"}
               </span>
               <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform duration-300" />
             </div>

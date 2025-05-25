@@ -9,7 +9,9 @@ import CourseRegistrationForm from "@/components/CourseRegistrationForm";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Calendar, Award, BarChart3 } from "lucide-react";
+import { User, Calendar, Award, BarChart3, ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const PaidCourses = () => {
   const { translations } = useLanguage();
@@ -29,6 +31,7 @@ const PaidCourses = () => {
       duration: "6 months",
       modules: 12,
       students: 450,
+      price: "2.5 میلیون تومان",
       features: [
         "100+ hours of content",
         "180 daily tasks",
@@ -51,6 +54,7 @@ const PaidCourses = () => {
       duration: "4 weeks",
       modules: 6,
       students: 850,
+      price: "1.8 میلیون تومان",
       features: [
         "Content creation strategies",
         "Ad campaign setup",
@@ -73,6 +77,7 @@ const PaidCourses = () => {
       duration: "10 weeks",
       modules: 10,
       students: 380,
+      price: "2.8 میلیون تومان",
       features: [
         "Web3 fundamentals",
         "NFT creation & trading",
@@ -161,10 +166,7 @@ const PaidCourses = () => {
           >
             {filteredCourses.map((course, index) => (
               <motion.div key={index} variants={childVariants} className="h-full">
-                <div 
-                  className="h-full group cursor-pointer" 
-                  onClick={() => handleCourseClick(course.title, course.slug)}
-                >
+                <div className="h-full group">
                   <div className="h-full bg-background border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
                     <div className="aspect-video relative">
                       <img 
@@ -220,8 +222,25 @@ const PaidCourses = () => {
                         <p className="text-sm text-muted-foreground">{course.outcome}</p>
                       </div>
                       
-                      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg text-center">
-                        <p className="font-medium">برای ثبت نام در این دوره کلیک کنید</p>
+                      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-lg font-bold">قیمت:</span>
+                          <span className="text-xl font-bold text-primary">{course.price}</span>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Link to={`/course/${course.slug}`}>
+                            <Button variant="outline" className="w-full">
+                              مشاهده جزئیات دوره
+                            </Button>
+                          </Link>
+                          <Link to={`/checkout/${course.slug}`}>
+                            <Button className="w-full bg-primary hover:bg-primary/90">
+                              <ShoppingCart size={16} className="mr-2" />
+                              خرید دوره
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
