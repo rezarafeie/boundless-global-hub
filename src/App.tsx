@@ -1,119 +1,98 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "@/contexts/LanguageContext";
+
 import { Toaster } from "@/components/ui/toaster";
-
-// Existing imports
-import Index from "./pages/Index";
-import FreeCourses from "./pages/FreeCourses";
-import PaidCourses from "./pages/PaidCourses";
-import Checkout from "./pages/Checkout";
-import CourseAccessSuccess from "./pages/CourseAccessSuccess";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import Support from "./pages/Support";
-import Blog from "./pages/Blog";
-import Dashboard from "./pages/Dashboard";
-import AllCourses from "./pages/AllCourses";
-import AssessmentCenter from "./pages/AssessmentCenter";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import Home from "./pages/Index";
 import CourseArchive from "./pages/CourseArchive";
-import InstructorProfile from "./pages/InstructorProfile";
-import AIAssistant from "./pages/AIAssistant";
+import AssessmentCenter from "./pages/AssessmentCenter";
 import NotFound from "./pages/NotFound";
-
-// English pages
-import EnglishIndex from "./pages/en/Index";
-import EnglishFreeCourses from "./pages/en/FreeCourses";
-import EnglishPaidCourses from "./pages/en/PaidCourses";
-import EnglishAssessmentCenter from "./pages/en/AssessmentCenter";
+import EnglishHome from "./pages/en/Index";
 import EnglishCourseArchive from "./pages/en/CourseArchive";
-
-// Course pages
-import FreeCourseView from "./pages/Course/FreeCourseView";
+import EnglishAssessmentCenter from "./pages/en/AssessmentCenter";
 import PaidCourseView from "./pages/Course/PaidCourseView";
-import FreeCourseStart from "./pages/Course/FreeCourseStart";
-import PaidCourseStart from "./pages/Course/PaidCourseStart";
-
-// Course Landing Pages - Paid
+import FreeCourseView from "./pages/Course/FreeCourseView";
 import BoundlessLanding from "./pages/Courses/BoundlessLanding";
 import InstagramLanding from "./pages/Courses/InstagramLanding";
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
-import WealthLanding from "./pages/Courses/WealthLanding";
-
-// Course Landing Pages - Free
-import MazzeBedooneMarzLanding from "./pages/Courses/MazzeBedooneMarzLanding";
-import PassiveIncomeLanding from "./pages/Courses/PassiveIncomeLanding";
-import ChangeLanding from "./pages/Courses/ChangeLanding";
-import AmericanBusinessLanding from "./pages/Courses/AmericanBusinessLanding";
-
-// Assessment
-import TestLanding from "./pages/Assessment/TestLanding";
+import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
+import InstructorProfilePage from "./pages/InstructorProfile";
+import Support from "./pages/Support";
+import FreeCourseStart from "./pages/Course/FreeCourseStart";
+import PaidCourseStart from "./pages/Course/PaidCourseStart";
+import Blog from "./pages/Blog";
+import Dashboard from "./pages/Dashboard/Dashboard";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
       <LanguageProvider>
-        <Router>
-          <div className="min-h-screen">
-            <Routes>
-              {/* Main Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/free-courses" element={<FreeCourses />} />
-              <Route path="/paid-courses" element={<PaidCourses />} />
-              <Route path="/checkout/:courseSlug" element={<Checkout />} />
-              <Route path="/course-access-success" element={<CourseAccessSuccess />} />
-              <Route path="/payment-success/:courseSlug" element={<PaymentSuccess />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/courses" element={<AllCourses />} />
-              <Route path="/assessment" element={<AssessmentCenter />} />
-              <Route path="/course-archive" element={<CourseArchive />} />
-              <Route path="/instructor" element={<InstructorProfile />} />
-              <Route path="/ai-assistant" element={<AIAssistant />} />
-
-              {/* English Routes */}
-              <Route path="/en" element={<EnglishIndex />} />
-              <Route path="/en/free-courses" element={<EnglishFreeCourses />} />
-              <Route path="/en/paid-courses" element={<EnglishPaidCourses />} />
-              <Route path="/en/assessment" element={<EnglishAssessmentCenter />} />
-              <Route path="/en/course-archive" element={<EnglishCourseArchive />} />
-
-              {/* Free Course Landing Pages */}
-              <Route path="/free-course/boundless-taste" element={<MazzeBedooneMarzLanding />} />
-              <Route path="/free-course/passive-income-ai" element={<PassiveIncomeLanding />} />
-              <Route path="/free-course/change-project" element={<ChangeLanding />} />
-              <Route path="/free-course/american-business" element={<AmericanBusinessLanding />} />
-
-              {/* Paid Course Landing Pages */}
-              <Route path="/course/boundless" element={<BoundlessLanding />} />
-              <Route path="/course/instagram" element={<InstagramLanding />} />
-              <Route path="/course/metaverse" element={<MetaverseLanding />} />
-              <Route path="/course/wealth" element={<WealthLanding />} />
-
-              {/* Course Content Pages */}
-              <Route path="/course/free/:courseTitle" element={<FreeCourseView />} />
-              <Route path="/course/paid/:courseTitle" element={<PaidCourseView />} />
-              <Route path="/start/free/:courseSlug" element={<FreeCourseStart />} />
-              <Route path="/start/paid/:courseSlug" element={<PaidCourseStart />} />
-
-              {/* English Course Content */}
-              <Route path="/en/course/free/:courseTitle" element={<FreeCourseView language="en" />} />
-              <Route path="/en/course/paid/:courseTitle" element={<PaidCourseView language="en" />} />
-
-              {/* Assessment Routes */}
-              <Route path="/test/:testId" element={<TestLanding />} />
-
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </div>
-        </Router>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            {/* Persian (Default) Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/courses" element={<CourseArchive />} />
+            <Route path="/assessment-center" element={<AssessmentCenter />} />
+            <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
+            <Route path="/blog" element={<Blog />} />
+            
+            {/* AI Assistant Redirect */}
+            <Route path="/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
+            
+            {/* User Dashboard */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/panel" element={<Navigate to="/dashboard" replace />} />
+            
+            {/* Course Start Pages */}
+            <Route path="/start/free-course" element={<FreeCourseStart />} />
+            <Route path="/start/paid-course" element={<PaidCourseStart />} />
+            
+            {/* Course Landing Pages */}
+            <Route path="/courses/boundless" element={<BoundlessLanding />} />
+            <Route path="/courses/instagram" element={<InstagramLanding />} />
+            <Route path="/courses/metaverse" element={<MetaverseLanding />} />
+            
+            {/* Boundless redirect */}
+            <Route path="/boundless" element={<Navigate to="/courses/boundless" replace />} />
+            
+            {/* Free Courses Landing Pages */}
+            <Route path="/courses/:slug" element={<FreeCourseView />} />
+            
+            {/* English Routes */}
+            <Route path="/en" element={<EnglishHome />} />
+            <Route path="/en/courses" element={<EnglishCourseArchive />} />
+            <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
+            <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
+            <Route path="/en/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
+            <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
+            <Route path="/en/courses/instagram" element={<InstagramLanding />} />
+            <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
+            <Route path="/en/support" element={<Support />} />
+            <Route path="/en/blog" element={<Blog />} />
+            <Route path="/en/dashboard" element={<Dashboard />} />
+            <Route path="/en/courses/:slug" element={<FreeCourseView language="en" />} />
+            
+            {/* Legacy redirects */}
+            <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />
+            <Route path="/free-courses" element={<Navigate to="/courses" replace />} />
+            <Route path="/en/paid-courses" element={<Navigate to="/en/courses" replace />} />
+            <Route path="/en/free-courses" element={<Navigate to="/en/courses" replace />} />
+            
+            {/* Redirects and Not Found */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
       </LanguageProvider>
-    </QueryClientProvider>
-  );
-}
+    </BrowserRouter>
+  </QueryClientProvider>
+);
 
 export default App;

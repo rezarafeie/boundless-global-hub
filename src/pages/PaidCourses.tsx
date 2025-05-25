@@ -5,17 +5,15 @@ import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import { useLanguage } from "@/contexts/LanguageContext";
-import CourseRegistrationForm from "@/components/CourseRegistrationForm";
+import RegistrationForm from "@/components/RegistrationForm";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Calendar, Award, BarChart3, ShoppingCart } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { User, Calendar, Award, BarChart3 } from "lucide-react";
 
 const PaidCourses = () => {
   const { translations } = useLanguage();
-  const [selectedCourse, setSelectedCourse] = useState<{title: string, slug: string} | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
 
   const courses = [
@@ -25,13 +23,11 @@ const PaidCourses = () => {
       benefits: translations.boundlessBenefits,
       outcome: translations.boundlessOutcome,
       isPaid: true,
-      slug: "boundless",
       image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
       category: "business",
       duration: "6 months",
       modules: 12,
       students: 450,
-      price: "2.5 میلیون تومان",
       features: [
         "100+ hours of content",
         "180 daily tasks",
@@ -48,13 +44,11 @@ const PaidCourses = () => {
       benefits: translations.instagramBenefits,
       outcome: translations.instagramOutcome,
       isPaid: true,
-      slug: "instagram",
       image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
       category: "social",
       duration: "4 weeks",
       modules: 6,
       students: 850,
-      price: "1.8 میلیون تومان",
       features: [
         "Content creation strategies",
         "Ad campaign setup",
@@ -66,18 +60,37 @@ const PaidCourses = () => {
       ]
     },
     {
+      title: translations.wealthCourse,
+      description: translations.wealthCourseDesc,
+      benefits: translations.wealthBenefits,
+      outcome: translations.wealthOutcome,
+      isPaid: true,
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
+      category: "finance",
+      duration: "8 weeks",
+      modules: 8,
+      students: 620,
+      features: [
+        "Financial planning",
+        "Investment strategies",
+        "Wealth mindset training",
+        "Asset management",
+        "Risk management",
+        "Tax optimization",
+        "Retirement planning"
+      ]
+    },
+    {
       title: translations.metaverseEmpire,
       description: translations.metaverseEmpireDesc,
       benefits: translations.metaverseBenefits,
       outcome: translations.metaverseOutcome,
       isPaid: true,
-      slug: "metaverse",
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
       category: "tech",
       duration: "10 weeks",
       modules: 10,
       students: 380,
-      price: "2.8 میلیون تومان",
       features: [
         "Web3 fundamentals",
         "NFT creation & trading",
@@ -94,8 +107,8 @@ const PaidCourses = () => {
     ? courses 
     : courses.filter(course => course.category === activeTab);
 
-  const handleCourseClick = (title: string, slug: string) => {
-    setSelectedCourse({ title, slug });
+  const handleCourseClick = (title: string) => {
+    setSelectedCourse(title);
     
     // Scroll to registration form
     setTimeout(() => {
@@ -149,10 +162,11 @@ const PaidCourses = () => {
           />
           
           <Tabs defaultValue="all" className="w-full mb-8">
-            <TabsList className="w-full max-w-md mx-auto grid grid-cols-4">
+            <TabsList className="w-full max-w-md mx-auto grid grid-cols-5">
               <TabsTrigger value="all" onClick={() => setActiveTab("all")}>All</TabsTrigger>
               <TabsTrigger value="business" onClick={() => setActiveTab("business")}>Business</TabsTrigger>
               <TabsTrigger value="social" onClick={() => setActiveTab("social")}>Social</TabsTrigger>
+              <TabsTrigger value="finance" onClick={() => setActiveTab("finance")}>Finance</TabsTrigger>
               <TabsTrigger value="tech" onClick={() => setActiveTab("tech")}>Tech</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -162,11 +176,14 @@ const PaidCourses = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            key={activeTab}
+            key={activeTab} // Re-animate when tab changes
           >
             {filteredCourses.map((course, index) => (
               <motion.div key={index} variants={childVariants} className="h-full">
-                <div className="h-full group">
+                <div 
+                  className="h-full group cursor-pointer" 
+                  onClick={() => handleCourseClick(course.title)}
+                >
                   <div className="h-full bg-background border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
                     <div className="aspect-video relative">
                       <img 
@@ -222,25 +239,8 @@ const PaidCourses = () => {
                         <p className="text-sm text-muted-foreground">{course.outcome}</p>
                       </div>
                       
-                      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-lg font-bold">قیمت:</span>
-                          <span className="text-xl font-bold text-primary">{course.price}</span>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Link to={`/course/${course.slug}`}>
-                            <Button variant="outline" className="w-full">
-                              مشاهده جزئیات دوره
-                            </Button>
-                          </Link>
-                          <Link to={`/checkout/${course.slug}`}>
-                            <Button className="w-full bg-primary hover:bg-primary/90">
-                              <ShoppingCart size={16} className="mr-2" />
-                              خرید دوره
-                            </Button>
-                          </Link>
-                        </div>
+                      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg text-center">
+                        <p className="font-medium">Click to register for this premium course</p>
                       </div>
                     </div>
                   </div>
@@ -254,21 +254,12 @@ const PaidCourses = () => {
       <section id="registration-form" className="py-16 bg-gradient-to-b from-accent/5 to-background">
         <div className="container">
           <SectionTitle
-            title={selectedCourse?.title || translations.paidCoursesTitle}
-            subtitle="تکمیل فرم خرید و پرداخت"
+            title={selectedCourse || translations.paidCoursesTitle}
+            subtitle={translations.paidCoursesSubtitle}
           />
           
           <div className="mt-8">
-            {selectedCourse ? (
-              <CourseRegistrationForm 
-                courseSlug={selectedCourse.slug}
-                courseTitle={selectedCourse.title}
-              />
-            ) : (
-              <div className="text-center text-gray-600">
-                لطفا ابتدا یک دوره انتخاب کنید
-              </div>
-            )}
+            <RegistrationForm courseTitle={selectedCourse || ""} isPaid={true} />
           </div>
         </div>
       </section>

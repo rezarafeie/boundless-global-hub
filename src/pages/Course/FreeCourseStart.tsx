@@ -1,314 +1,214 @@
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useCourseActivation } from '@/hooks/useCourseActivation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Play, Book, Users, Download, MessageSquare, Bot, HeadphonesIcon } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import SMSVerificationForm from '@/components/Auth/SMSVerificationForm';
+import React, { useState } from "react";
+import MainLayout from "@/components/Layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, MessageCircle, Zap, Check } from "lucide-react";
+import { motion } from "framer-motion";
 
 const FreeCourseStart = () => {
-  const { courseTitle, slug } = useParams();
-  const { user, loading: authLoading } = useAuth();
-  const { activateCourse, activateAssistant, loading } = useCourseActivation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  const [isActivated, setIsActivated] = useState(false);
-  const [showSMSVerification, setShowSMSVerification] = useState(false);
-  const [activatedFeatures, setActivatedFeatures] = useState({
+  const { translations } = useLanguage();
+  
+  // State to track which actions have been completed
+  const [actionsCompleted, setActionsCompleted] = useState({
+    support: false,
     telegram: false,
-    aiAssistant: false,
-    support: false
+    aiAssistant: false
   });
-
-  // Get course slug from URL params or search params
-  const courseSlug = slug || courseTitle || searchParams.get('course') || '';
-  const phoneParam = searchParams.get('phone');
-
-  useEffect(() => {
-    // If phone parameter exists and user is not logged in, show SMS verification
-    if (phoneParam && !user && !authLoading) {
-      setShowSMSVerification(true);
-      return;
-    }
-
-    if (!authLoading && !user) {
-      navigate('/');
-      return;
-    }
-
-    if (user && courseSlug && !isActivated) {
-      handleActivation();
-    }
-  }, [user, authLoading, courseSlug, isActivated, phoneParam]);
-
-  const handleActivation = async () => {
-    if (!courseSlug) {
-      toast({
-        title: "خطا",
-        description: "شناسه دوره یافت نشد",
-        variant: "destructive",
-      });
-      navigate('/courses');
-      return;
-    }
-
-    const result = await activateCourse(courseSlug, 'free');
-    if (result.success) {
-      setIsActivated(true);
-      if (!result.alreadyActivated) {
-        toast({
-          title: "تبریک!",
-          description: "دوره رایگان با موفقیت فعال شد",
-        });
-      }
-    } else if (result.needsAuth) {
-      navigate('/');
-    }
+  
+  const handleActionComplete = (action: 'support' | 'telegram' | 'aiAssistant') => {
+    setActionsCompleted(prev => ({
+      ...prev,
+      [action]: true
+    }));
   };
-
-  const handleStartCourse = () => {
-    navigate(`/course/free/view/${courseSlug}`);
-  };
-
-  const handleSMSVerified = () => {
-    setShowSMSVerification(false);
-    // After SMS verification, user should be logged in automatically
-    // The useEffect will handle course activation
-  };
-
-  const handleFeatureActivation = async (feature: string) => {
-    switch (feature) {
-      case 'telegram':
-        // Simulate telegram join
-        setActivatedFeatures(prev => ({ ...prev, telegram: true }));
-        toast({
-          title: "موفق",
-          description: "به گروه تلگرام اضافه شدید",
-        });
-        // Open telegram link
-        window.open('https://t.me/rafieiacademy', '_blank');
-        break;
-        
-      case 'aiAssistant':
-        const result = await activateAssistant();
-        if (result.success) {
-          setActivatedFeatures(prev => ({ ...prev, aiAssistant: true }));
-        }
-        break;
-        
-      case 'support':
-        setActivatedFeatures(prev => ({ ...prev, support: true }));
-        toast({
-          title: "موفق",
-          description: "پشتیبانی دوره فعال شد",
-        });
-        break;
-    }
-  };
-
-  if (showSMSVerification && phoneParam) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
-        <div className="max-w-md w-full mx-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center">تایید شماره موبایل</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SMSVerificationForm
-                phone={phoneParam}
-                onVerified={handleSMSVerified}
-                onBack={() => navigate(-1)}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">در حال بارگذاری...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12">
-      <div className="container max-w-4xl mx-auto">
-        {/* Welcome Section */}
-        <div className="text-center mb-12">
-          <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-6" />
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            🎉 تبریک! دوره رایگان فعال شد
+    <MainLayout>
+      <div className="container py-12">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-center">
+            {translations.welcomeToCourse}
           </h1>
-          <p className="text-xl text-gray-600">
-            حالا می‌توانید به تمام محتوای دوره دسترسی پیدا کنید
-          </p>
-        </div>
-
-        <div className="grid gap-8 mb-12">
-          {/* Course Access */}
-          <Card className="text-center border-green-200 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-t-lg">
-              <Play className="w-12 h-12 mx-auto mb-4" />
-              <CardTitle className="text-2xl">شروع یادگیری</CardTitle>
+          
+          <div className="mb-12">
+            <Card>
+              <CardHeader className="bg-black/5">
+                <CardTitle>{translations.accessTrainingFiles}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 border border-black/10 rounded-lg p-4">
+                    <BookOpen size={24} className="text-black/70" />
+                    <div>
+                      <h3 className="font-medium">{translations.videoLessons}</h3>
+                      <p className="text-sm text-muted-foreground">جلسات ویدیویی دوره</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 border border-black/10 rounded-lg p-4">
+                    <BookOpen size={24} className="text-black/70" />
+                    <div>
+                      <h3 className="font-medium">{translations.worksheets}</h3>
+                      <p className="text-sm text-muted-foreground">برگه‌های تمرینی</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-center">
+                  <Button className="w-full md:w-auto bg-black text-white hover:bg-black/90">
+                    دسترسی به فایل‌ها
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Activation Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {/* Support Access */}
+            <motion.div 
+              className={`bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm ${actionsCompleted.support ? "opacity-75" : ""}`}
+              whileHover={{ y: actionsCompleted.support ? 0 : -5 }}
+            >
+              <div className="flex flex-col h-full">
+                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 mx-auto mb-4">
+                  <MessageCircle size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-center mb-2">{translations.activateSupport}</h3>
+                <p className="text-sm text-center text-gray-700 mb-6 flex-grow">
+                  دسترسی به پشتیبانی مستقیم دوره برای پرسش سوالات و رفع اشکال
+                </p>
+                <Button 
+                  onClick={() => handleActionComplete('support')}
+                  className={`w-full relative ${actionsCompleted.support ? "bg-green-600 hover:bg-green-600" : "bg-blue-600 hover:bg-blue-700"}`}
+                  disabled={actionsCompleted.support}
+                >
+                  {actionsCompleted.support ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      {translations.activated}
+                    </>
+                  ) : (
+                    translations.activateSupport
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+            
+            {/* Telegram Channel */}
+            <motion.div 
+              className={`bg-indigo-50 border border-indigo-100 rounded-xl p-6 shadow-sm ${actionsCompleted.telegram ? "opacity-75" : ""}`}
+              whileHover={{ y: actionsCompleted.telegram ? 0 : -5 }}
+            >
+              <div className="flex flex-col h-full">
+                <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 mx-auto mb-4">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="24" 
+                    height="24" 
+                    viewBox="0 0 24 24"
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="lucide lucide-send"
+                  >
+                    <line x1="22" x2="11" y1="2" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-center mb-2">{translations.joinTelegram}</h3>
+                <p className="text-sm text-center text-gray-700 mb-6 flex-grow">
+                  عضویت در کانال تلگرام اختصاصی دوره برای دریافت اطلاعیه‌ها و محتوای تکمیلی
+                </p>
+                <Button 
+                  onClick={() => handleActionComplete('telegram')}
+                  className={`w-full ${actionsCompleted.telegram ? "bg-green-600 hover:bg-green-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                  disabled={actionsCompleted.telegram}
+                >
+                  {actionsCompleted.telegram ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      {translations.activated}
+                    </>
+                  ) : (
+                    translations.joinTelegram
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+            
+            {/* AI Assistant */}
+            <motion.div 
+              className={`bg-purple-50 border border-purple-100 rounded-xl p-6 shadow-sm ${actionsCompleted.aiAssistant ? "opacity-75" : ""}`}
+              whileHover={{ y: actionsCompleted.aiAssistant ? 0 : -5 }}
+            >
+              <div className="flex flex-col h-full">
+                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 mx-auto mb-4">
+                  <Zap size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-center mb-2">{translations.launchAIAssistant}</h3>
+                <p className="text-sm text-center text-gray-700 mb-6 flex-grow">
+                  راه‌اندازی دستیار هوشمند آکادمی رفیعی برای پاسخ به سوالات و راهنمایی شخصی‌سازی شده
+                </p>
+                <Button 
+                  onClick={() => handleActionComplete('aiAssistant')}
+                  asChild
+                  className={`w-full ${actionsCompleted.aiAssistant ? "bg-green-600 hover:bg-green-600" : "bg-purple-600 hover:bg-purple-700"}`}
+                >
+                  <a 
+                    href="https://ai.rafiei.co/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => handleActionComplete('aiAssistant')}
+                  >
+                    {actionsCompleted.aiAssistant ? (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        {translations.activated}
+                      </>
+                    ) : (
+                      translations.launchAIAssistant
+                    )}
+                  </a>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+          
+          {/* Course Content */}
+          <Card className="mb-12">
+            <CardHeader className="bg-black/5">
+              <CardTitle>{translations.freeCourseAccess}</CardTitle>
             </CardHeader>
-            <CardContent className="p-8">
-              <p className="text-gray-600 mb-6 text-lg">
-                به ویدیوهای آموزشی و محتوای کامل دوره دسترسی پیدا کنید
-              </p>
-              <Button onClick={handleStartCourse} size="lg" className="px-8 py-4 text-lg">
-                <Play className="w-5 h-5 mr-2" />
-                شروع دوره
-              </Button>
+            <CardContent className="p-6">
+              <p className="text-gray-700 mb-6">{translations.freeCourseAccessInstructions}</p>
+              <div className="aspect-video bg-black/10 rounded-lg flex items-center justify-center">
+                <BookOpen size={48} className="text-black/50" />
+              </div>
             </CardContent>
           </Card>
-
-          {/* Course Materials */}
-          <Card className="border-blue-200 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <Download className="w-6 h-6 text-blue-600" />
-                📂 فایل‌های قابل دانلود
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" className="h-auto p-4 flex-col items-start">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Book className="w-5 h-5 text-red-600" />
-                    <span className="font-semibold">جزوه PDF</span>
-                  </div>
-                  <span className="text-sm text-gray-600">محتوای کامل دوره</span>
-                </Button>
-                
-                <Button variant="outline" className="h-auto p-4 flex-col items-start">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Download className="w-5 h-5 text-green-600" />
-                    <span className="font-semibold">فایل‌های تمرین</span>
-                  </div>
-                  <span className="text-sm text-gray-600">تمرین‌های عملی</span>
+          
+          {/* Upgrade Section */}
+          <Card className="bg-gradient-to-r from-black/5 to-black/10 border-black/20">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">{translations.upgradeToPremium}</h3>
+                  <p className="text-gray-700">
+                    {translations.upgradeToPremiumDescription}
+                  </p>
+                </div>
+                <Button asChild size="lg" className="bg-black hover:bg-black/90">
+                  <a href="/courses/boundless">{translations.viewPaidCourses}</a>
                 </Button>
               </div>
             </CardContent>
           </Card>
-
-          {/* Interactive Features */}
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Telegram */}
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <Users className={`w-12 h-12 mx-auto mb-4 ${activatedFeatures.telegram ? 'text-green-600' : 'text-blue-600'}`} />
-                <h3 className="font-bold text-lg mb-2">گروه تلگرام</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  عضویت در انجمن اختصاصی دانشجویان
-                </p>
-                <Button 
-                  onClick={() => handleFeatureActivation('telegram')}
-                  variant={activatedFeatures.telegram ? "secondary" : "default"}
-                  className="w-full"
-                  disabled={activatedFeatures.telegram}
-                >
-                  {activatedFeatures.telegram ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      عضو شدید
-                    </>
-                  ) : (
-                    'عضویت در گروه'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* AI Assistant */}
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <Bot className={`w-12 h-12 mx-auto mb-4 ${activatedFeatures.aiAssistant ? 'text-green-600' : 'text-purple-600'}`} />
-                <h3 className="font-bold text-lg mb-2">🤖 دستیار هوشمند</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  پاسخ فوری به سوالات شما
-                </p>
-                <Button 
-                  onClick={() => handleFeatureActivation('aiAssistant')}
-                  variant={activatedFeatures.aiAssistant ? "secondary" : "default"}
-                  className="w-full"
-                  disabled={activatedFeatures.aiAssistant}
-                >
-                  {activatedFeatures.aiAssistant ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      فعال شد
-                    </>
-                  ) : (
-                    'راه‌اندازی AI'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Support */}
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <HeadphonesIcon className={`w-12 h-12 mx-auto mb-4 ${activatedFeatures.support ? 'text-green-600' : 'text-orange-600'}`} />
-                <h3 className="font-bold text-lg mb-2">🧑‍💬 پشتیبانی دوره</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  راهنمایی و حل مشکلات
-                </p>
-                <Button 
-                  onClick={() => handleFeatureActivation('support')}
-                  variant={activatedFeatures.support ? "secondary" : "default"}
-                  className="w-full"
-                  disabled={activatedFeatures.support}
-                >
-                  {activatedFeatures.support ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      فعال شد
-                    </>
-                  ) : (
-                    'فعال‌سازی'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
-
-        {/* Bottom CTA */}
-        <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-bold mb-4">آماده شروع هستید؟</h3>
-            <p className="text-blue-100 mb-6 text-lg">
-              همین حالا اولین قدم را برای تغییر زندگی‌تان بردارید
-            </p>
-            <Button 
-              onClick={handleStartCourse}
-              size="lg" 
-              variant="secondary"
-              className="px-8 py-4 text-lg font-bold"
-            >
-              <Play className="w-5 h-5 mr-2" />
-              شروع دوره رایگان
-            </Button>
-          </CardContent>
-        </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

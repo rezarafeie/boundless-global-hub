@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import MainLayout from "@/components/Layout/MainLayout";
-import CourseRegistrationForm from "@/components/CourseRegistrationForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Clock, Award, Users, FileCheck, BookOpen, GraduationCap, Star } from "lucide-react";
+import { Check, X, Clock, Award, Users, FileCheck, BookOpen, DollarSign, GraduationCap, Star, Code, Globe } from "lucide-react";
+import AuthModal from "@/components/Auth/AuthModal";
 
 // Countdown target date (2 months from now as an example)
 const COUNTDOWN_TARGET = new Date();
@@ -12,7 +13,7 @@ COUNTDOWN_TARGET.setMonth(COUNTDOWN_TARGET.getMonth() + 2);
 
 const BoundlessLanding = () => {
   const { translations } = useLanguage();
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
@@ -80,6 +81,13 @@ const BoundlessLanding = () => {
     }
   ];
 
+  // Instructor data
+  const instructor = {
+    name: "دکتر مهدی رفیعی",
+    role: "متخصص کارآفرینی و کسب‌وکارهای جهانی",
+    bio: "بیش از 10 سال تجربه در ایجاد کسب‌وکارهای اینترنتی موفق و کمک به صدها کارآفرین برای کسب درآمد ارزی"
+  };
+
   // Course modules
   const courseModules = [
     "تفکر بدون مرز و ذهنیت کارآفرینی جهانی",
@@ -91,30 +99,6 @@ const BoundlessLanding = () => {
     "روش‌های دریافت پول از مشتریان بین‌المللی",
     "اتوماسیون و مقیاس‌پذیری کسب و کار"
   ];
-
-  if (showRegistrationForm) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-12">
-          <div className="container max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowRegistrationForm(false)}
-                className="mb-4"
-              >
-                بازگشت به صفحه دوره
-              </Button>
-            </div>
-            <CourseRegistrationForm 
-              courseSlug="boundless" 
-              courseTitle="برنامه بی‌حد رفیعی"
-            />
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
 
   return (
     <MainLayout>
@@ -156,7 +140,7 @@ const BoundlessLanding = () => {
                 <Button 
                   size="lg" 
                   className="w-full sm:w-auto bg-black hover:bg-black/90 text-white rounded-full"
-                  onClick={() => setShowRegistrationForm(true)}
+                  onClick={() => setShowAuthModal(true)}
                 >
                   {translations.boundlessLandingStartCourse}
                 </Button>
@@ -313,7 +297,7 @@ const BoundlessLanding = () => {
             <Button 
               size="lg" 
               className="bg-black hover:bg-black/90 text-white rounded-full"
-              onClick={() => setShowRegistrationForm(true)}
+              onClick={() => setShowAuthModal(true)}
             >
               {translations.boundlessLandingStartCourse}
             </Button>
@@ -403,9 +387,9 @@ const BoundlessLanding = () => {
             <div className="w-24 h-24 rounded-full bg-black/5 mx-auto mb-6 flex items-center justify-center">
               <Users size={40} className="text-black/60" />
             </div>
-            <h3 className="text-xl font-bold mb-2">دکتر مهدی رفیعی</h3>
-            <p className="text-sm text-gray-600 mb-4">متخصص کارآفرینی و کسب‌وکارهای جهانی</p>
-            <p className="text-gray-700">بیش از 10 سال تجربه در ایجاد کسب‌وکارهای اینترنتی موفق و کمک به صدها کارآفرین برای کسب درآمد ارزی</p>
+            <h3 className="text-xl font-bold mb-2">{instructor.name}</h3>
+            <p className="text-sm text-gray-600 mb-4">{instructor.role}</p>
+            <p className="text-gray-700">{instructor.bio}</p>
           </div>
         </div>
       </section>
@@ -592,13 +576,20 @@ const BoundlessLanding = () => {
             <Button 
               size="lg" 
               className="bg-black hover:bg-black/90 text-white rounded-full w-full sm:w-auto"
-              onClick={() => setShowRegistrationForm(true)}
+              onClick={() => setShowAuthModal(true)}
             >
               {translations.boundlessLandingStartCourse}
             </Button>
           </div>
         </div>
       </div>
+
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        courseTitle={translations.boundlessLandingTitle}
+        isPaid={true}
+      />
     </MainLayout>
   );
 };

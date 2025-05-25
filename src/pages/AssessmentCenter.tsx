@@ -1,14 +1,14 @@
 
-import React from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import AuthModal from "@/components/Auth/AuthModal";
 import { Brain, Briefcase, HeartPulse, UserCircle, Clock, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 
 interface TestCardProps {
   title: string;
@@ -17,11 +17,12 @@ interface TestCardProps {
   category: string;
   duration?: string;
   questions?: number;
-  slug: string;
 }
 
 const AssessmentCenter = () => {
   const { translations } = useLanguage();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [selectedTest, setSelectedTest] = useState<string>("");
 
   const personalityTests = [
     {
@@ -30,8 +31,7 @@ const AssessmentCenter = () => {
       icon: <UserCircle size={36} className="text-purple-500" />,
       category: translations.personalityTests,
       duration: "۱۵-۲۰ دقیقه",
-      questions: 70,
-      slug: "mbti"
+      questions: 70
     },
     {
       title: "انیاگرام",
@@ -39,8 +39,7 @@ const AssessmentCenter = () => {
       icon: <UserCircle size={36} className="text-indigo-500" />,
       category: translations.personalityTests,
       duration: "۱۰-۱۵ دقیقه",
-      questions: 45,
-      slug: "enneagram"
+      questions: 45
     }
   ];
 
@@ -51,8 +50,7 @@ const AssessmentCenter = () => {
       icon: <Brain size={36} className="text-blue-500" />,
       category: translations.intelligenceTests,
       duration: "۳۰-۴۵ دقیقه",
-      questions: 50,
-      slug: "iq-classic"
+      questions: 50
     },
     {
       title: "هوش چندگانه گاردنر",
@@ -60,8 +58,7 @@ const AssessmentCenter = () => {
       icon: <Brain size={36} className="text-cyan-500" />,
       category: translations.intelligenceTests,
       duration: "۲۰-۲۵ دقیقه",
-      questions: 65,
-      slug: "multiple-intelligence"
+      questions: 65
     }
   ];
 
@@ -72,8 +69,7 @@ const AssessmentCenter = () => {
       icon: <Briefcase size={36} className="text-emerald-500" />,
       category: translations.careerTests,
       duration: "۲۵-۳۰ دقیقه",
-      questions: 60,
-      slug: "career-aptitude"
+      questions: 60
     },
     {
       title: "ارزیابی مهارت‌های کارآفرینی",
@@ -81,8 +77,7 @@ const AssessmentCenter = () => {
       icon: <Briefcase size={36} className="text-green-500" />,
       category: translations.careerTests,
       duration: "۱۵-۲۰ دقیقه",
-      questions: 40,
-      slug: "entrepreneurship"
+      questions: 40
     }
   ];
 
@@ -93,8 +88,7 @@ const AssessmentCenter = () => {
       icon: <HeartPulse size={36} className="text-rose-500" />,
       category: translations.emotionTests,
       duration: "۲۰-۲۵ دقیقه",
-      questions: 55,
-      slug: "emotional-intelligence"
+      questions: 55
     },
     {
       title: "مدیریت استرس",
@@ -102,10 +96,14 @@ const AssessmentCenter = () => {
       icon: <HeartPulse size={36} className="text-pink-500" />,
       category: translations.emotionTests,
       duration: "۱۰-۱۵ دقیقه",
-      questions: 35,
-      slug: "stress-management"
+      questions: 35
     }
   ];
+
+  const handleTestClick = (title: string) => {
+    setSelectedTest(title);
+    setAuthModalOpen(true);
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -129,7 +127,7 @@ const AssessmentCenter = () => {
     }
   };
 
-  const TestCard = ({ title, description, icon, category, duration, questions, slug }: TestCardProps) => (
+  const TestCard = ({ title, description, icon, category, duration, questions }: TestCardProps) => (
     <motion.div variants={itemVariants}>
       <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 bg-white h-full flex flex-col">
         <CardContent className="p-6 flex-grow">
@@ -162,10 +160,11 @@ const AssessmentCenter = () => {
         </CardContent>
         
         <CardFooter className="p-6 pt-0">
-          <Button asChild className="w-full bg-black text-white hover:bg-black/90 rounded-full">
-            <Link to={`/assessment/${slug}`}>
-              {translations.startTest}
-            </Link>
+          <Button 
+            className="w-full bg-black text-white hover:bg-black/90 rounded-full"
+            onClick={() => handleTestClick(title)}
+          >
+            {translations.startTest}
           </Button>
         </CardFooter>
       </Card>
@@ -194,7 +193,15 @@ const AssessmentCenter = () => {
               animate="visible"
             >
               {personalityTests.map((test, index) => (
-                <TestCard key={index} {...test} />
+                <TestCard
+                  key={index}
+                  title={test.title}
+                  description={test.description}
+                  icon={test.icon}
+                  category={test.category}
+                  duration={test.duration}
+                  questions={test.questions}
+                />
               ))}
             </motion.div>
           </div>
@@ -209,7 +216,15 @@ const AssessmentCenter = () => {
               animate="visible"
             >
               {intelligenceTests.map((test, index) => (
-                <TestCard key={index} {...test} />
+                <TestCard
+                  key={index}
+                  title={test.title}
+                  description={test.description}
+                  icon={test.icon}
+                  category={test.category}
+                  duration={test.duration}
+                  questions={test.questions}
+                />
               ))}
             </motion.div>
           </div>
@@ -224,7 +239,15 @@ const AssessmentCenter = () => {
               animate="visible"
             >
               {careerTests.map((test, index) => (
-                <TestCard key={index} {...test} />
+                <TestCard
+                  key={index}
+                  title={test.title}
+                  description={test.description}
+                  icon={test.icon}
+                  category={test.category}
+                  duration={test.duration}
+                  questions={test.questions}
+                />
               ))}
             </motion.div>
           </div>
@@ -239,12 +262,27 @@ const AssessmentCenter = () => {
               animate="visible"
             >
               {emotionTests.map((test, index) => (
-                <TestCard key={index} {...test} />
+                <TestCard
+                  key={index}
+                  title={test.title}
+                  description={test.description}
+                  icon={test.icon}
+                  category={test.category}
+                  duration={test.duration}
+                  questions={test.questions}
+                />
               ))}
             </motion.div>
           </div>
         </div>
       </section>
+      
+      <AuthModal 
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        courseTitle={selectedTest}
+        isPaid={true}
+      />
     </MainLayout>
   );
 };

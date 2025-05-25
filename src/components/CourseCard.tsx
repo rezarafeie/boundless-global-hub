@@ -1,93 +1,156 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 
 interface CourseCardProps {
   title: string;
   description: string;
-  benefits: string | string[];
+  benefits: string;
   outcome: string;
-  isPaid: boolean;
+  isPaid?: boolean;
+  englishTitle?: string;
   slug?: string;
+  instructor?: string;
+  instructorLink?: string;
+  level?: string;
+  cta?: string;
+  status?: "active" | "upcoming" | "completed";
+  category?: "business" | "self-development" | "free";
 }
 
-const CourseCard = ({ title, description, benefits, outcome, isPaid, slug }: CourseCardProps) => {
-  const benefitsList = Array.isArray(benefits) ? benefits : benefits.split('\n').filter(b => b.trim());
+const CourseCard: React.FC<CourseCardProps> = ({
+  title,
+  description,
+  benefits,
+  outcome,
+  isPaid = false,
+  englishTitle = "",
+  slug = "",
+  instructor = "",
+  instructorLink = "",
+  level = "",
+  cta = "",
+  status,
+  category
+}) => {
+  const { translations } = useLanguage();
 
-  // Generate correct route based on course type and slug
-  const getRouteUrl = () => {
-    if (!slug) return '/courses';
-    
-    if (!isPaid) {
-      // For free courses, remove 'free/' prefix if it exists and go to free course landing
-      const cleanSlug = slug.replace('free/', '');
-      return `/free-course/${cleanSlug}`;
+  // Get an appropriate icon based on the course title
+  const getCourseIcon = () => {
+    if (title.includes("متاورس") || title.includes("Metaverse")) {
+      return <Code size={20} className="text-primary" />;
+    } else if (title.includes("اینستاگرام") || title.includes("Instagram")) {
+      return <Search size={20} className="text-primary" />;
+    } else if (title.includes("ثروت") || title.includes("Wealth")) {
+      return <DollarSign size={20} className="text-primary" />;
+    } else if (title.includes("بدون مرز") || title.includes("Boundless")) {
+      return <GraduationCap size={20} className="text-primary" />;
+    } else if (title.includes("غیرفعال") || title.includes("Passive")) {
+      return <Star size={20} className="text-primary" />;
+    } else {
+      return <BookOpen size={20} className="text-primary" />;
     }
-    
-    // For paid courses, go to course landing page (not checkout)
-    return `/course/${slug}`;
   };
 
+  // Generate a slug if not provided
+  const courseSlug = slug || title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+  
+  // Generate course URL
+  const courseUrl = `/courses/${courseSlug}`;
+
+  // Get status badge color
+  const getStatusBadgeColor = () => {
+    switch(status) {
+      case "active":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "upcoming":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "completed":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      default:
+        return "";
+    }
+  };
+
+  // The entire card is clickable
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
-      className="h-full"
-    >
-      <Link to={getRouteUrl()} className="block h-full">
-        <Card className="h-full bg-gradient-to-br from-background to-secondary/30 border border-primary/10 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-primary/30 group cursor-pointer">
-          <CardHeader className="pb-4">
-            <div className="flex justify-between items-start mb-2">
-              <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 group-hover:from-blue-600 group-hover:to-primary transition-all duration-300">
-                {title}
-              </CardTitle>
-              <Badge variant={isPaid ? "default" : "secondary"}>
-                {isPaid ? "ویژه" : "رایگان"}
+    <Link to={courseUrl} className="block h-full group">
+      <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
+              {getCourseIcon()}
+            </div>
+            <div className="ml-3">
+              <Badge
+                variant={isPaid ? "default" : "outline"}
+                className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+              >
+                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
               </Badge>
             </div>
-          </CardHeader>
+          </div>
+          {status && (
+            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+              {status === "active" && translations.activeStatus}
+              {status === "upcoming" && translations.upcomingStatus}
+              {status === "completed" && translations.completedStatus}
+            </Badge>
+          )}
+        </div>
+        
+        <CardContent className="p-4 pt-0 flex-grow">
+          <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
+          {englishTitle && (
+            <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
+          )}
           
-          <CardContent className="space-y-4 pt-0">
-            <p className="text-muted-foreground leading-relaxed line-clamp-3">{description}</p>
-            
-            <div className="space-y-3">
-              <h3 className="font-semibold text-primary">مزایای این دوره:</h3>
-              <ul className="space-y-2">
-                {benefitsList.slice(0, 3).map((benefit, index) => (
-                  <li key={index} className="flex items-start text-sm">
-                    <span className="text-primary mr-2 flex-shrink-0">•</span>
-                    <span>{benefit}</span>
-                  </li>
-                ))}
-                {benefitsList.length > 3 && (
-                  <li className="text-sm text-muted-foreground">
-                    و {benefitsList.length - 3} مورد دیگر...
-                  </li>
-                )}
-              </ul>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
+          
+          <div className="space-y-2 mb-4">
+            <div className="text-sm">
+              <span className="font-medium">✓ </span>
+              {benefits}
             </div>
-            
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <h4 className="font-semibold text-primary mb-2">نتیجه دوره:</h4>
-              <p className="text-sm line-clamp-2">{outcome}</p>
+            <div className="text-sm">
+              <span className="font-medium">→ </span>
+              {outcome}
             </div>
-            
-            <div className="flex items-center justify-between pt-4 border-t border-border">
-              <span className="text-sm text-muted-foreground">
-                {isPaid ? "کلیک برای مشاهده دوره" : "کلیک برای ثبت نام رایگان"}
-              </span>
-              <ArrowRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform duration-300" />
+          </div>
+          
+          {instructor && (
+            <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
+              <User size={14} className="mr-1" />
+              {instructorLink ? (
+                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
+                  {instructor}
+                </Link>
+              ) : (
+                <span>{instructor}</span>
+              )}
+              {level && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {level}
+                </Badge>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </Link>
-    </motion.div>
+          )}
+        </CardContent>
+        
+        <CardFooter className="p-4 pt-0">
+          <Button 
+            className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
+          >
+            {cta || (isPaid ? translations.startCourse : translations.startFreeCourse)}
+          </Button>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 };
 

@@ -21,7 +21,7 @@ const EnglishFreeCourses = () => {
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
       isPaid: false,
-      slug: "free/boundless-taste"
+      slug: "boundless-taste"
     },
     {
       title: translations.passiveIncomeAI,
@@ -29,7 +29,7 @@ const EnglishFreeCourses = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
-      slug: "free/passive-income-ai"
+      slug: "passive-income"
     },
     {
       title: translations.changeProject,
@@ -37,7 +37,7 @@ const EnglishFreeCourses = () => {
       benefits: translations.changeProjectBenefits,
       outcome: translations.changeProjectOutcome,
       isPaid: false,
-      slug: "free/change-project"
+      slug: "change-project"
     },
     {
       title: translations.americanBusiness,
@@ -45,7 +45,7 @@ const EnglishFreeCourses = () => {
       benefits: translations.americanBusinessBenefits,
       outcome: translations.americanBusinessOutcome,
       isPaid: false,
-      slug: "free/american-business"
+      slug: "american-business"
     },
   ];
 

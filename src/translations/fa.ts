@@ -1,18 +1,312 @@
 
-import { commonTranslations } from './fa/common';
-import { navigationTranslations } from './fa/navigation';
-import { authTranslations } from './fa/auth';
-import { coursesTranslations } from './fa/courses';
-import { aiAssistantTranslations } from './fa/ai-assistant';
-import { assessmentTranslations } from './fa/assessment';
-import { formsTranslations } from './fa/forms';
-
-export const faTranslations = {
-  ...commonTranslations,
-  ...navigationTranslations,
-  ...authTranslations,
-  ...coursesTranslations,
-  ...aiAssistantTranslations,
-  ...assessmentTranslations,
-  ...formsTranslations,
+const faTranslations = {
+  websiteName: "آکادمی رفیعی",
+  slogan: "آینده درآمدزایی در دستان شماست",
+  tagline: "با دوره‌های تخصصی آکادمی رفیعی، مسیر موفقیت و کسب درآمد دلاری خود را هموار کنید",
+  callToAction: "شروع یادگیری",
+  learnMore: "اطلاعات بیشتر",
+  buyNow: "خرید دوره",
+  joinNow: "ثبت‌نام",
+  startLearning: "شروع یادگیری",
+  startTest: "شروع آزمون",
+  startCourse: "شروع دوره",
+  startFreeCourse: "شروع دوره رایگان",
+  home: "خانه",
+  courses: "دوره‌ها",
+  paidCourses: "دوره‌های ویژه",
+  freeCourses: "دوره‌های رایگان",
+  assessmentCenter: "مرکز سنجش",
+  aiAssistant: "دستیار هوشمند",
+  loginRegister: "ورود / ثبت‌نام",
+  coursesTitle: "دوره‌های آموزشی",
+  coursesSubtitle: "مجموعه دوره‌های تخصصی برای توسعه مهارت‌های شما",
+  paidCoursesTitle: "دوره‌های ویژه",
+  paidCoursesSubtitle: "دوره‌های پیشرفته برای توسعه حرفه‌ای مهارت‌های شما",
+  freeCoursesTitle: "دوره‌های رایگان",
+  freeCoursesSubtitle: "دوره‌های رایگان برای آشنایی با مفاهیم پایه",
+  specialOffersTitle: "پیشنهادات ویژه",
+  assessmentCenterTitle: "مرکز سنجش",
+  assessmentCenterDesc: "با استفاده از آزمون‌های استاندارد، مهارت‌ها و توانایی‌های خود را بسنجید و مسیر پیشرفت خود را مشخص کنید.",
+  personalityTests: "آزمون‌های شخصیت‌شناسی",
+  intelligenceTests: "آزمون‌های هوش",
+  careerTests: "آزمون‌های شغلی",
+  emotionTests: "آزمون‌های هوش هیجانی",
+  
+  // Course names and descriptions
+  boundlessProgram: "برنامه بدون مرز",
+  boundlessProgramDesc: "دوره جامع کسب درآمد ارزی و راه‌اندازی کسب‌وکار بین‌المللی",
+  boundlessBenefits: "آموزش اصول و استراتژی‌های کسب‌وکار بین‌المللی",
+  boundlessOutcome: "راه‌اندازی کسب‌وکار مستقل با درآمد ارزی",
+  
+  instagramEssentials: "اسباب اینستاگرام",
+  instagramEssentialsDesc: "آموزش جامع بازاریابی و کسب درآمد در اینستاگرام",
+  instagramBenefits: "استراتژی‌های رشد و مونتیزیشن در اینستاگرام",
+  instagramOutcome: "ساخت برند شخصی و کسب درآمد از اینستاگرام",
+  
+  wealthCourse: "دوره ثروت",
+  wealthCourseDesc: "آشنایی با اصول ثروت‌سازی و رسیدن به استقلال مالی",
+  wealthBenefits: "یادگیری اصول سرمایه‌گذاری و مدیریت دارایی",
+  wealthOutcome: "رسیدن به استقلال مالی و ساخت ثروت پایدار",
+  
+  metaverseEmpire: "امپراتوری متاورس",
+  metaverseEmpireDesc: "آشنایی با دنیای متاورس و فرصت‌های سرمایه‌گذاری و کسب درآمد در آن",
+  metaverseBenefits: "آموزش مفاهیم بلاکچین، NFT و کسب درآمد در متاورس",
+  metaverseOutcome: "ورود به دنیای متاورس و بهره‌برداری از فرصت‌های آن",
+  
+  boundlessTaste: "مزه بدون مرز",
+  boundlessTasteDesc: "پیش‌نمایش رایگان از دوره اصلی بدون مرز",
+  boundlessTasteBenefits: "آشنایی با مفاهیم اولیه کسب و کار بین‌المللی",
+  boundlessTasteOutcome: "تصمیم‌گیری آگاهانه برای شروع کسب‌وکار بین‌المللی",
+  
+  passiveIncomeAI: "درآمد غیرفعال با هوش مصنوعی",
+  passiveIncomeAIDesc: "آشنایی با روش‌های کسب درآمد غیرفعال با استفاده از هوش مصنوعی",
+  passiveIncomeAIBenefits: "یادگیری تولید محتوا با کمک هوش مصنوعی",
+  passiveIncomeAIOutcome: "راه‌اندازی جریان درآمد غیرفعال دیجیتال",
+  
+  changeProject: "پروژه تغییر",
+  changeProjectDesc: "اصول ایجاد تغییرات اساسی در زندگی و کسب‌وکار",
+  changeProjectBenefits: "شناخت موانع تغییر و راه‌های غلبه بر آن‌ها",
+  changeProjectOutcome: "ایجاد تغییرات پایدار در مسیر موفقیت",
+  
+  americanBusiness: "بیزینس آمریکایی",
+  americanBusinessDesc: "آشنایی با اصول راه‌اندازی و مدیریت کسب‌وکار در آمریکا",
+  americanBusinessBenefits: "آموزش قوانین و مقررات کسب‌وکار آمریکایی",
+  americanBusinessOutcome: "آمادگی برای ورود به بازار آمریکا و گسترش کسب‌وکار",
+  
+  // Course lessons, prices, instructors
+  lessonCount: "تعداد جلسات",
+  price: "قیمت",
+  discountPrice: "قیمت با تخفیف",
+  instructor: "مدرس",
+  level: "سطح دوره",
+  beginner: "مبتدی",
+  intermediate: "متوسط",
+  advanced: "پیشرفته",
+  
+  // Status badges
+  activeStatus: "در حال برگزاری",
+  upcomingStatus: "به زودی",
+  completedStatus: "تکمیل شده",
+  
+  // Course categories
+  businessCourses: "دوره‌های کسب و کار",
+  selfDevelopmentCourses: "دوره‌های توسعه فردی",
+  
+  // Training center
+  trainingCenter: "مرکز آموزش",
+  trainingCenterDesc: "دوره‌های تخصصی برای توسعه فردی و حرفه‌ای",
+  currentlyRunning: "در حال برگزاری",
+  currentlyRunningDesc: "به دوره‌های فعال ما که در حال حاضر در حال برگزاری هستند بپیوندید",
+  upcomingCourses: "دوره‌های آینده",
+  upcomingCoursesDesc: "برای دوره‌های آینده که به زودی شروع می‌شوند ثبت‌نام کنید",
+  pastCourses: "دوره‌های گذشته",
+  pastCoursesDesc: "به آرشیو دوره‌های قبلی دسترسی پیدا کنید",
+  
+  // Magazine section
+  magazine: "مجله",
+  magazineDesc: "آخرین مقالات و بینش‌ها از آکادمی رفیعی",
+  readMore: "مطالعه بیشتر",
+  
+  // Course activation page
+  welcomeToCourse: "به دوره خوش آمدید",
+  accessTrainingFiles: "دسترسی به فایل‌های آموزشی",
+  activateSupport: "فعال‌سازی پشتیبانی",
+  joinTelegram: "پیوستن به کانال تلگرام",
+  launchAIAssistant: "راه‌اندازی دستیار هوشمند",
+  activated: "فعال شد",
+  playerActivationCode: "کد فعال‌سازی پخش‌کننده",
+  howToActivate: "نحوه فعال‌سازی",
+  downloadPlayer: "دانلود پخش‌کننده",
+  webPlayerAccess: "دسترسی به پخش‌کننده وب",
+  
+  // File types and course materials
+  videoLessons: "جلسات ویدیویی",
+  worksheets: "برگه‌های تمرین",
+  quizzes: "آزمون‌ها",
+  certificate: "گواهی پایان دوره",
+  resources: "منابع اضافی",
+  lifetime: "دسترسی مادام‌العمر",
+  
+  // Auth modal
+  loginTitle: "ورود به حساب کاربری",
+  registerTitle: "ثبت‌نام در آکادمی",
+  emailLabel: "ایمیل یا شماره موبایل",
+  passwordLabel: "رمز عبور",
+  forgotPassword: "رمز عبور را فراموش کرده‌اید؟",
+  loginButton: "ورود",
+  registerButton: "ثبت‌نام",
+  googleLogin: "ورود با گوگل",
+  appleLogin: "ورود با اپل",
+  alreadyHaveAccount: "قبلاً ثبت‌نام کرده‌اید؟",
+  dontHaveAccount: "حساب کاربری ندارید؟",
+  enterAllFields: "لطفاً تمام فیلدها را تکمیل کنید",
+  
+  // Account
+  myAccount: "حساب کاربری من",
+  myCourses: "دوره‌های من",
+  myAssessments: "آزمون‌های من",
+  myProfile: "پروفایل من",
+  mySettings: "تنظیمات",
+  logout: "خروج",
+  
+  // BoundlessLanding translations
+  boundlessLandingTitle: "برنامه بدون مرز",
+  boundlessLandingSubtitle: "استاد هنر کسب و کار بین‌المللی شوید",
+  boundlessLandingDesc: "دوره جامع کسب درآمد ارزی و راه‌اندازی کسب‌وکار بین‌المللی",
+  boundlessLandingHeroDesc: "یاد بگیرید چگونه یک کسب و کار پایدار با درآمد ارزی ایجاد کنید، صرف نظر از موقعیت یا تجربه فعلی شما.",
+  boundlessLandingCTA: "شرکت در دوره",
+  boundlessLandingPrice: "۱۵،۰۰۰،۰۰۰ تومان",
+  boundlessLandingOriginalPrice: "۲۰،۰۰۰،۰۰۰ تومان",
+  boundlessLandingDiscPrice: "۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingSpecialOffer: "پیشنهاد ویژه: ۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingInclusive: "شامل تمام مالیات و هزینه‌ها",
+  boundlessLandingFeatures: "ویژگی‌های دوره",
+  boundlessLandingTargetAudience: "مناسب برای چه کسانی؟",
+  boundlessLandingWhatLearn: "چه چیزهایی یاد می‌گیرید؟",
+  boundlessLandingStartCourse: "همین حالا سفر خود را آغاز کنید",
+  boundlessLandingJoinLater: "قبل از تصمیم‌گیری بیشتر بدانید",
+  boundlessLandingCountdown: "پیشنهاد ویژه تمام می‌شود در:",
+  boundlessLandingAboutTitle: "برنامه بدون مرز چیست؟",
+  boundlessLandingWhoFor: "این دوره مناسب چه کسانی است؟",
+  boundlessLandingSolutions: "چه مشکلاتی را حل می‌کند؟",
+  boundlessLandingResultsTitle: "نتایج مورد انتظار شما",
+  boundlessLandingBonusesTitle: "هدایای ویژه",
+  boundlessLandingFAQTitle: "سوالات متداول",
+  boundlessLandingBonus1: "دوره تولید محتوا با هوش مصنوعی",
+  boundlessLandingBonus2: "ارزیابی شخصیت حرفه‌ای",
+  boundlessLandingBonus3: "راهنمای کسب اولین درآمد دلاری",
+  boundlessLandingTestimonialsTitle: "دانشجویان ما چه می‌گویند",
+  boundlessLandingFitTitle: "آیا این دوره مناسب من است؟",
+  boundlessLandingFitStudent: "دانشجویان",
+  boundlessLandingFitFreelancer: "فریلنسرها",
+  boundlessLandingFitRemote: "کارکنان از راه دور",
+  boundlessLandingFitEntrepreneur: "کارآفرینان",
+  boundlessLandingFitMigrate: "متقاضیان مهاجرت",
+  boundlessLandingStickyOffer: "پیشنهاد محدود: ۹،۰۰۰،۰۰۰ تومان",
+  boundlessLandingSkill1: "ذهنیت جهانی",
+  boundlessLandingSkill2: "دراپ‌شیپینگ",
+  boundlessLandingSkill3: "ارائه خدمات",
+  boundlessLandingSkill4: "محصولات دیجیتال",
+  boundlessLandingSkill5: "سیستم‌های مقیاس‌پذیر",
+  
+  // Verification
+  verificationTitle: "تایید ایمیل یا شماره موبایل",
+  verificationDesc: "کد تایید ارسال شده به ایمیل یا شماره موبایل خود را وارد کنید.",
+  verificationButton: "تایید کد",
+  resendCode: "ارسال مجدد کد",
+  
+  // Course access
+  courseAccessGranted: "دسترسی به دوره",
+  paidCourseAccessInstructions: "دسترسی شما به دوره فعال شده است. می‌توانید از محتوای دوره استفاده کنید.",
+  videoPlayerPlaceholder: "پخش‌کننده ویدیو",
+  rafeiPlayer: "پخش‌کننده اختصاصی آکادمی رفیعی",
+  
+  courseMaterials: "منابع دوره",
+  courseMaterialsDescription: "دانلود فایل‌های آموزشی، جزوات و تمرین‌های دوره",
+  
+  communityAccess: "دسترسی به انجمن",
+  communityAccessDescription: "گفتگو با دیگر دانشجویان و پرسش سوالات خود از مدرسین",
+  
+  freeCourseAccess: "دسترسی به دوره رایگان",
+  freeCourseAccessInstructions: "به دوره رایگان خوش آمدید. برای مشاهده محتوای ویدیویی، روی پخش‌کننده کلیک کنید.",
+  youtubeEmbed: "محتوای ویدیویی یوتیوب",
+  
+  upgradeToPremium: "ارتقا به نسخه حرفه‌ای",
+  upgradeToPremiumDescription: "برای دسترسی به محتوای کامل و پیشرفته، به نسخه اصلی دوره ارتقا دهید.",
+  viewPaidCourses: "مشاهده دوره‌های ویژه",
+  
+  // AI Assistant
+  aiAssistantTitle: "دستیار هوشمند",
+  aiAssistantDescription: "با استفاده از دستیار هوشمند آکادمی رفیعی، پاسخ سوالات خود را در زمینه کسب‌وکار، بازاریابی و موفقیت فردی دریافت کنید.",
+  aiAssistantAction: "استفاده از دستیار هوشمند",
+  
+  aiAssistantFeature1Title: "پاسخگویی هوشمند",
+  aiAssistantFeature1Desc: "پاسخ به سوالات شما با استفاده از هوش مصنوعی پیشرفته",
+  
+  aiAssistantFeature2Title: "منابع اختصاصی",
+  aiAssistantFeature2Desc: "دسترسی به منابع و اطلاعات اختصاصی آکادمی رفیعی",
+  
+  aiAssistantFeature3Title: "راهنمایی شخصی‌سازی شده",
+  aiAssistantFeature3Desc: "ارائه راهکارهای متناسب با نیازها و اهداف شما",
+  
+  // BoundlessLanding FAQ
+  boundlessLandingFAQ1Q: "مدت زمان تکمیل دوره چقدر است؟",
+  boundlessLandingFAQ1A: "دوره با تلاش مداوم در ۸ هفته قابل تکمیل است، اما شما دسترسی مادام‌العمر دارید تا با سرعت خود پیش بروید.",
+  boundlessLandingFAQ2Q: "آیا به تجربه قبلی کسب و کار نیاز دارم؟",
+  boundlessLandingFAQ2A: "خیر، دوره برای مبتدیان و کارآفرینان باتجربه طراحی شده است. ما با مفاهیم پایه شروع می‌کنیم.",
+  boundlessLandingFAQ3Q: "آیا به دانش فنی نیاز است؟",
+  boundlessLandingFAQ3A: "هیچ تخصص فنی لازم نیست. ما راهنمایی گام به گام برای تمام جنبه‌های فنی ارائه می‌دهیم.",
+  boundlessLandingFAQ4Q: "اگر راضی نباشم، می‌توانم بازپرداخت بگیرم؟",
+  boundlessLandingFAQ4A: "بله، ما ضمانت بازگشت وجه ۱۴ روزه ارائه می‌دهیم اگر از دوره کاملاً راضی نباشید.",
+  
+  // 404 page
+  notFoundTitle: "صفحه مورد نظر یافت نشد",
+  notFoundDesc: "متأسفیم! صفحه‌ای که به دنبال آن هستید وجود ندارد.",
+  backToHome: "بازگشت به خانه",
+  
+  // Footer
+  footerCopyright: "© تمامی حقوق برای آکادمی رفیعی محفوظ است.",
+  footerDesc: "آکادمی رفیعی، مرجع آموزش کسب‌وکارهای بدون مرز و کسب درآمد ارزی",
+  aboutUs: "درباره ما",
+  contactUs: "تماس با ما",
+  faq: "سوالات متداول",
+  terms: "قوانین و مقررات",
+  privacy: "حریم خصوصی",
+  blog: "مجله",
+  
+  // Auth related messages
+  error: "خطا",
+  enterEmail: "لطفا ایمیل خود را وارد کنید",
+  enterPhone: "لطفا شماره موبایل خود را وارد کنید",
+  enterEmailOrPhone: "ایمیل یا شماره موبایل خود را وارد کنید",
+  emailOrPhonePlaceholder: "example@mail.com | 09123456789",
+  continue: "ادامه",
+  success: "موفقیت",
+  registrationSuccess: "ثبت‌نام با موفقیت انجام شد",
+  accountCreated: "حساب کاربری شما با موفقیت ایجاد شد",
+  enterPassword: "لطفا رمز عبور خود را وارد کنید",
+  loginSuccess: "ورود با موفقیت انجام شد",
+  accessCourse: "دسترسی به دوره",
+  fillAllFields: "لطفاً تمام فیلدها را تکمیل کنید",
+  welcomeBack: "خوش آمدید!",
+  password: "رمز عبور",
+  passwordPlaceholder: "رمز عبور خود را وارد کنید",
+  firstName: "نام",
+  firstNamePlaceholder: "نام خود را وارد کنید",
+  lastName: "نام خانوادگی",
+  lastNamePlaceholder: "نام خانوادگی خود را وارد کنید",
+  emailOrPhone: "ایمیل یا موبایل",
+  email: "ایمیل",
+  phone: "شماره موبایل",
+  back: "بازگشت",
+  register: "ثبت‌نام",
+  login: "ورود",
+  useVerificationCode: "استفاده از کد تایید",
+  usePassword: "استفاده از رمز عبور",
+  sendVerificationCode: "ارسال کد تایید",
+  creating: "در حال ایجاد...",
+  
+  // Verification related
+  verify: "تایید",
+  codeSent: "کد ارسال شد",
+  codeEmailSent: "کد تایید ارسال شد به",
+  codePhoneSent: "کد تایید ارسال شد به",
+  codeExpires: "کد منقضی می‌شود در",
+  invalidCode: "کد تایید نامعتبر است",
+  verificationSuccess: "تایید با موفقیت انجام شد",
+  
+  // AI Assistant page
+  aiAssistantName: "دستیار هوشمند رفیعی",
+  aiAssistantLongDescription: "با دستیار هوشمند پیشرفته ما که بر اساس پایگاه دانش اختصاصی آکادمی رفیعی آموزش دیده است، راهنمایی شخصی‌سازی شده برای اهداف کسب‌وکار و حرفه‌ای خود دریافت کنید.",
+  startAssistant: "گفتگو با دستیار",
+  aiFeature1: "استراتژی کسب‌وکار",
+  aiFeature1Desc: "دریافت بینش‌ها و استراتژی‌ها برای رشد کسب‌وکار شما",
+  aiFeature2: "پیشرفت حرفه‌ای",
+  aiFeature2Desc: "یادگیری نحوه پیشرفت در مسیر شغلی خود",
+  aiFeature3: "توسعه فردی",
+  aiFeature3Desc: "کشف راه‌هایی برای بهبود مهارت‌ها و ذهنیت خود",
+  aiAssistantFeature4Title: "دسترسی ۲۴/۷",
+  aiAssistantFeature4: "هر زمان که نیاز دارید، روز یا شب، به راهنمایی دسترسی داشته باشید",
 };
+
+export default faTranslations;

@@ -25,7 +25,7 @@ const FreeCourses = () => {
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
-      slug: "passive-income-ai"
+      slug: "passive-income"
     },
     {
       title: translations.changeProject,
