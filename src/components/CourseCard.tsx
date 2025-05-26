@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface CourseCardProps {
   title: string;
@@ -21,7 +21,6 @@ interface CourseCardProps {
   cta?: string;
   status?: "active" | "upcoming" | "completed";
   category?: "business" | "self-development" | "free";
-  image?: string;
   cartUrl?: string;
   link?: string;
 }
@@ -40,12 +39,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   cta = "",
   status,
   category,
-  image,
   cartUrl,
   link
 }) => {
   const { translations } = useLanguage();
-  const navigate = useNavigate();
 
   // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
@@ -74,20 +71,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Handle CTA button click - direct navigation instead of modal
-  const handleCtaClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (isPaid) {
-      // For paid courses, navigate to course landing page
-      navigate(`/courses/${slug}`);
-    } else {
-      // For free courses, navigate to course page
-      navigate(`/course/${slug}`);
-    }
-  };
-
   // Get status badge color
   const getStatusBadgeColor = () => {
     switch(status) {
@@ -105,17 +88,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <Link to={getCourseUrl()} className="block h-full group">
       <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        {/* Course Image */}
-        {image && (
-          <div className="aspect-video relative overflow-hidden">
-            <img 
-              src={image} 
-              alt={title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </div>
-        )}
         
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -180,7 +152,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
         
         <CardFooter className="p-4 pt-0">
           <Button 
-            onClick={handleCtaClick}
             className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
           >
             {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}

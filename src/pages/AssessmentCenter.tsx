@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -8,7 +7,7 @@ import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AssessmentCenter = () => {
-  const { translations } = useLanguage();
+  const { translations, language } = useLanguage();
   const [activeCategory, setActiveCategory] = useState("all");
   
   const categories = [
@@ -170,7 +169,7 @@ const AssessmentCenter = () => {
       durationFa: "۳۰-۴۰ دقیقه",
       questions: 120,
       category: "career",
-      slug: "smart-path"
+      slug: "boundless"
     },
 
     // Emotional Tests
@@ -311,7 +310,7 @@ const AssessmentCenter = () => {
       <Hero
         title={translations.assessmentCenter}
         subtitle="مجموعه جامع تست‌های روانشناختی برای شناخت بهتر خودتان و انتخاب مسیر مناسب"
-        ctaText="شروع ارزیابی"
+        ctaText={translations.startTest}
         ctaLink="#tests"
         backgroundType="glow"
       />
@@ -335,7 +334,7 @@ const AssessmentCenter = () => {
                   onClick={() => setActiveCategory(category.id)}
                   className="text-xs md:text-sm"
                 >
-                  {category.labelFa}
+                  {language === "fa" ? category.labelFa : category.label}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -357,9 +356,9 @@ const AssessmentCenter = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <TestCard 
-                  title={test.titleFa}
-                  description={test.descriptionFa}
-                  duration={test.durationFa}
+                  title={language === "fa" ? test.titleFa : test.title}
+                  description={language === "fa" ? test.descriptionFa : test.description}
+                  duration={language === "fa" ? test.durationFa : test.duration}
                   questions={test.questions}
                   category={categories.find(c => c.id === test.category)?.labelFa || test.category}
                   slug={`assessment/${test.slug}`}

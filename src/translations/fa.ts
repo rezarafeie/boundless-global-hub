@@ -7,7 +7,7 @@ const faTranslations = {
   buyNow: "خرید دوره",
   joinNow: "ثبت‌نام",
   startLearning: "شروع یادگیری",
-  startTest: "شروع آزمون",
+  startTest: "شروع تست",
   startCourse: "شروع دوره",
   startFreeCourse: "شروع دوره رایگان",
   home: "خانه",
