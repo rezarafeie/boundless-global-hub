@@ -66,7 +66,7 @@ const AIAssistantView = ({ language: propLanguage }: AIAssistantViewProps) => {
                 
                 <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
                   <h3 className="font-semibold mb-3 text-xl">{translations.aiAssistantFeature4Title}</h3>
-                  <p className="text-gray-200">{translations.aiAssistantFeature4Desc}</p>
+                  <p className="text-gray-200">{translations.aiAssistantFeature4}</p>
                 </div>
               </div>
               
