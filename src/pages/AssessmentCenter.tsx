@@ -64,7 +64,7 @@ const AssessmentCenter = () => {
       category: "هوش",
       duration: "۴۵ دقیقه",
       questions: 50,
-      slug: "cattell-b"
+      slug: "cattell-iq"
     },
     {
       title: "تست هوش عاطفی EQ-Shatt",
@@ -72,7 +72,7 @@ const AssessmentCenter = () => {
       category: "عاطفی",
       duration: "۲۰ دقیقه",
       questions: 70,
-      slug: "eq-shatt"
+      slug: "eq"
     },
     {
       title: "تست عزت نفس کوپراسمیت",
@@ -80,7 +80,7 @@ const AssessmentCenter = () => {
       category: "شخصیت",
       duration: "۱۰ دقیقه",
       questions: 58,
-      slug: "coopersmith"
+      slug: "csei"
     },
     {
       title: "تست علایق شغلی هالند",
@@ -88,7 +88,7 @@ const AssessmentCenter = () => {
       category: "شغلی",
       duration: "۱۵ دقیقه",
       questions: 84,
-      slug: "holland"
+      slug: "hii"
     },
     {
       title: "تست شخصیت 16PF کتل",
@@ -104,7 +104,7 @@ const AssessmentCenter = () => {
       category: "رفتاری",
       duration: "۵ دقیقه",
       questions: 16,
-      slug: "tuckman"
+      slug: "tps"
     },
     {
       title: "تست کمال‌گرایی هیل",
@@ -112,7 +112,7 @@ const AssessmentCenter = () => {
       category: "شخصیت",
       duration: "۱۰ دقیقه",
       questions: 59,
-      slug: "hill"
+      slug: "hpi"
     },
     {
       title: "تست انگیزش تحصیلی هارتر",
@@ -120,7 +120,7 @@ const AssessmentCenter = () => {
       category: "تحصیلی",
       duration: "۸ دقیقه",
       questions: 30,
-      slug: "harter"
+      slug: "hems"
     },
     {
       title: "تست MBTI کودکان",
@@ -136,7 +136,7 @@ const AssessmentCenter = () => {
       category: "روانی",
       duration: "۵ دقیقه",
       questions: 48,
-      slug: "miller-hope"
+      slug: "mhs"
     },
     {
       title: "تست اعتیاد اینترنتی یانگ",
@@ -144,7 +144,7 @@ const AssessmentCenter = () => {
       category: "رفتاری",
       duration: "۵ دقیقه",
       questions: 20,
-      slug: "internet-addiction"
+      slug: "iat"
     },
     {
       title: "تست وسواس فکری-عملی",
@@ -160,7 +160,7 @@ const AssessmentCenter = () => {
       category: "روانی",
       duration: "۱۰ دقیقه",
       questions: 29,
-      slug: "oxford-happiness"
+      slug: "ohi"
     },
     {
       title: "تست تنهایی اجتماعی",
@@ -168,7 +168,7 @@ const AssessmentCenter = () => {
       category: "اجتماعی",
       duration: "۸ دقیقه",
       questions: 20,
-      slug: "social-loneliness"
+      slug: "slfs"
     },
     {
       title: "تست شخصیت کارآفرینی",
@@ -176,7 +176,7 @@ const AssessmentCenter = () => {
       category: "کسب‌وکار",
       duration: "۱۵ دقیقه",
       questions: 50,
-      slug: "entrepreneurial"
+      slug: "ept"
     },
     {
       title: "تست مسیر هوشمند",
@@ -184,7 +184,7 @@ const AssessmentCenter = () => {
       category: "شغلی",
       duration: "۲۰ دقیقه",
       questions: 60,
-      slug: "smart-path"
+      slug: "boundless"
     },
     {
       title: "تست هوش تصویری کتل فرم A",
@@ -192,7 +192,7 @@ const AssessmentCenter = () => {
       category: "هوش",
       duration: "۴۰ دقیقه",
       questions: 50,
-      slug: "cattell-visual"
+      slug: "cattell-a"
     }
   ];
 
