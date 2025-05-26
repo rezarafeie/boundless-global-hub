@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 interface IframeModalProps {
@@ -21,12 +21,28 @@ const IframeModal: React.FC<IframeModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
       setIframeLoaded(false);
+      setLoadingProgress(0);
       document.body.style.overflow = 'hidden';
+      
+      // Simulate progressive loading
+      const interval = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 150);
+
+      return () => clearInterval(interval);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -52,11 +68,30 @@ const IframeModal: React.FC<IframeModalProps> = ({
     };
   }, [isOpen, onClose, showCloseButton]);
 
+  // Handle automatic checkout redirect for add-to-cart URLs
+  useEffect(() => {
+    if (isOpen && url.includes('add-to-cart')) {
+      const timer = setTimeout(() => {
+        if (iframeRef.current) {
+          try {
+            // Redirect to checkout page after add-to-cart
+            iframeRef.current.src = 'https://auth.rafiei.co/checkout/';
+          } catch (error) {
+            console.log('Iframe redirect handled by server');
+          }
+        }
+      }, 2000); // Wait 2 seconds for add-to-cart to process
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, url]);
+
   const handleIframeLoad = () => {
-    setIsLoading(false);
+    setLoadingProgress(100);
     setTimeout(() => {
+      setIsLoading(false);
       setIframeLoaded(true);
-    }, 100);
+    }, 300);
   };
 
   if (!isOpen) return null;
@@ -77,7 +112,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
         </button>
       )}
 
-      {/* Enhanced Loading Animation */}
+      {/* Enhanced Loading Animation with Progress */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100">
           <div className="text-center">
@@ -99,25 +134,27 @@ const IframeModal: React.FC<IframeModalProps> = ({
               </div>
             </div>
 
-            {/* Animated dots loader */}
-            <div className="flex justify-center items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            {/* Progress indicator */}
+            <div className="mb-4">
+              <div className="w-64 h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
+                <div 
+                  className="h-full bg-black transition-all duration-300 ease-out rounded-full"
+                  style={{ width: `${Math.min(100, Math.max(0, loadingProgress))}%` }}
+                ></div>
+              </div>
+              <p className="text-lg text-gray-700 font-medium">
+                {Math.round(loadingProgress)}% تکمیل شده
+              </p>
             </div>
             
             <p className="text-lg text-gray-700 animate-pulse">در حال بارگذاری...</p>
-            
-            {/* Progress bar */}
-            <div className="w-64 h-1 bg-gray-200 rounded-full mx-auto mt-4 overflow-hidden">
-              <div className="h-full bg-black rounded-full animate-pulse" style={{ width: '60%' }}></div>
-            </div>
           </div>
         </div>
       )}
 
       {/* Iframe */}
       <iframe
+        ref={iframeRef}
         src={updatedUrl}
         title={title}
         className={`w-full h-full border-0 transition-opacity duration-500 ${
