@@ -13,7 +13,14 @@ import {
   MessageCircle, 
   BookOpen, 
   GraduationCap,
-  Zap
+  Zap,
+  Target,
+  Globe,
+  HeadphonesIcon,
+  Download,
+  Video,
+  FileText,
+  UserCheck
 } from "lucide-react";
 import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
@@ -84,6 +91,23 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
     }
   };
 
+  const courseModules = [
+    "مقدمه و هدف‌گذاری",
+    "تحلیل وضعیت فعلی",
+    "برنامه‌ریزی استراتژیک",
+    "عمل و اجرا",
+    "ارزیابی و بهبود"
+  ];
+
+  const detailedFeatures = [
+    { icon: Video, title: "ویدئوهای آموزشی", desc: "محتوای تصویری با کیفیت بالا" },
+    { icon: FileText, title: "منابع تکمیلی", desc: "فایل‌های PDF و کتابچه‌های کاربردی" },
+    { icon: Users, title: "انجمن دانشجویان", desc: "ارتباط با هزاران دانشجوی دیگر" },
+    { icon: HeadphonesIcon, title: "پشتیبانی", desc: "پاسخ سوالات توسط تیم متخصص" },
+    { icon: Award, title: "گواهی معتبر", desc: "دریافت مدرک پایان دوره" },
+    { icon: Download, title: "دانلود محتوا", desc: "امکان دسترسی آفلاین به مطالب" }
+  ];
+
   return (
     <MainLayout>
       {/* Hero Section */}
@@ -147,7 +171,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
         </div>
       </section>
 
-      {/* Course Benefits */}
+      {/* What You'll Learn - Extended */}
       <motion.section 
         className="py-16 bg-white"
         initial="hidden"
@@ -157,11 +181,11 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
       >
         <div className="container max-w-6xl mx-auto">
           <motion.div className="text-center mb-12" variants={itemVariants}>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
               چه چیزی یاد خواهید گرفت؟
             </h2>
-            <p className="text-lg text-gray-600">
-              این دوره رایگان شامل محتوای ارزشمند و کاربردی است
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              این دوره رایگان شامل محتوای ارزشمند و کاربردی است که به شما کمک می‌کند تا مهارت‌های جدید کسب کنید
             </p>
           </motion.div>
           
@@ -210,10 +234,27 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
               </Card>
             </motion.div>
           </div>
+
+          {/* Course Modules */}
+          <motion.div variants={itemVariants} className="mb-12">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">محتوای دوره</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {courseModules.map((module, index) => (
+                <Card key={index} className="text-center border-0 shadow-md hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-3 text-sm font-bold">
+                      {index + 1}
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">{module}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </motion.section>
 
-      {/* Course Details */}
+      {/* Detailed Features */}
       <motion.section 
         className="py-16 bg-gray-50"
         initial="hidden"
@@ -222,55 +263,113 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
         variants={containerVariants}
       >
         <div className="container max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <motion.div variants={itemVariants}>
-              <Card className="text-center h-full border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Clock className="text-purple-600" size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                    دسترسی آزاد
-                  </h3>
-                  <p className="text-gray-600">
-                    به محتوای دوره در هر زمان و از هر مکان دسترسی داشته باشید
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div variants={itemVariants}>
-              <Card className="text-center h-full border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Users className="text-green-600" size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                    انجمن دانشجویان
-                  </h3>
-                  <p className="text-gray-600">
-                    به جامعه بزرگ دانشجویان بپیوندید و تجربیات خود را به اشتراک بگذارید
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div variants={itemVariants}>
-              <Card className="text-center h-full border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Award className="text-blue-600" size={32} />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                    گواهی تکمیل
-                  </h3>
-                  <p className="text-gray-600">
-                    پس از تکمیل دوره، گواهی معتبر دریافت کنید
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+          <motion.div className="text-center mb-12" variants={itemVariants}>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              امکانات و ویژگی‌های دوره
+            </h2>
+            <p className="text-lg text-gray-600">
+              تمام آنچه برای موفقیت در یادگیری نیاز دارید
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {detailedFeatures.map((feature, index) => (
+              <motion.div key={index} variants={itemVariants}>
+                <Card className="text-center h-full border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <feature.icon className="text-blue-600" size={32} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {feature.desc}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
+        </div>
+      </motion.section>
+
+      {/* Who This Course is For */}
+      <motion.section 
+        className="py-16 bg-white"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-4xl mx-auto text-center">
+          <motion.h2 
+            className="text-3xl font-bold text-gray-900 mb-8"
+            variants={itemVariants}
+          >
+            این دوره برای چه کسانی است؟
+          </motion.h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { icon: Target, title: "افراد با انگیزه", desc: "کسانی که می‌خواهند زندگی‌شان را تغییر دهند" },
+              { icon: UserCheck, title: "مبتدیان", desc: "هیچ تجربه قبلی لازم نیست" },
+              { icon: Globe, title: "همه سنین", desc: "مناسب برای تمام گروه‌های سنی" }
+            ].map((item, index) => (
+              <motion.div key={index} variants={itemVariants}>
+                <Card className="border-0 shadow-lg h-full">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <item.icon className="text-gray-600" size={24} />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
+                    <p className="text-sm text-gray-600">{item.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Instructor Credentials */}
+      <motion.section 
+        className="py-16 bg-gray-50"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-4xl mx-auto text-center">
+          <motion.h2 
+            className="text-3xl font-bold text-gray-900 mb-8"
+            variants={itemVariants}
+          >
+            درباره مدرس
+          </motion.h2>
+          
+          <motion.div variants={itemVariants}>
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                    <Users size={32} className="text-gray-600" />
+                  </div>
+                  <div className="text-center md:text-right flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">رضا رفیعی</h3>
+                    <p className="text-gray-600 mb-4">
+                      مدرس و مشاور با بیش از ۱۰ سال تجربه در حوزه توسعه فردی و کسب‌وکار
+                    </p>
+                    <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                      <Badge variant="outline">مدرس معتبر</Badge>
+                      <Badge variant="outline">نویسنده</Badge>
+                      <Badge variant="outline">مشاور کسب‌وکار</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </motion.section>
 
@@ -291,20 +390,36 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
           </motion.h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <motion.div key={i} variants={itemVariants}>
+            {[
+              {
+                name: "علی احمدی",
+                text: "این دوره واقعاً زندگی من را تغییر داد. محتوای فوق‌العاده‌ای داشت.",
+                rating: 5
+              },
+              {
+                name: "مریم کریمی",
+                text: "روش تدریس بسیار عملی و کاربردی بود. همه را توصیه می‌کنم.",
+                rating: 5
+              },
+              {
+                name: "محمد نوری",
+                text: "بهترین سرمایه‌گذاری که روی خودم کردم. ممنون از تیم رفیعی.",
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <motion.div key={index} variants={itemVariants}>
                 <Card className="border-0 shadow-lg h-full">
                   <CardContent className="p-8">
                     <div className="flex justify-center mb-4">
-                      {[...Array(5)].map((_, j) => (
+                      {[...Array(testimonial.rating)].map((_, j) => (
                         <Star key={j} size={20} className="text-yellow-400 fill-current" />
                       ))}
                     </div>
-                    <p className="text-gray-600 mb-6 italic">
-                      "این دوره واقعاً عالی بود و کمک زیادی به رشد حرفه‌ای من کرد."
+                    <p className="text-gray-600 mb-6 italic leading-relaxed">
+                      "{testimonial.text}"
                     </p>
                     <div className="font-semibold text-gray-900">
-                      دانشجوی راضی {i}
+                      {testimonial.name}
                     </div>
                   </CardContent>
                 </Card>
@@ -314,7 +429,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
         </div>
       </motion.section>
 
-      {/* FAQ Section */}
+      {/* Enhanced FAQ Section */}
       <motion.section 
         className="py-16 bg-gray-50"
         initial="hidden"
@@ -336,24 +451,32 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
             {[
               {
                 question: "آیا این دوره واقعاً رایگان است؟",
-                answer: "بله، این دوره کاملاً رایگان است و هیچ هزینه‌ای دریافت نمی‌شود."
+                answer: "بله، این دوره کاملاً رایگان است و هیچ هزینه‌ای دریافت نمی‌شود. فقط کافی است ثبت‌نام کنید."
               },
               {
                 question: "چقدر زمان برای تکمیل نیاز است؟",
-                answer: "بسته به سرعت یادگیری شما، معمولاً بین ۲ تا ۴ ساعت زمان نیاز است."
+                answer: "بسته به سرعت یادگیری شما، معمولاً بین ۲ تا ۴ ساعت زمان نیاز است. می‌توانید در زمان دلخواه خود مطالعه کنید."
               },
               {
                 question: "آیا پشتیبانی دارد؟",
-                answer: "بله، از طریق انجمن دانشجویان و سیستم پشتیبانی می‌توانید سوالات خود را مطرح کنید."
+                answer: "بله، از طریق انجمن دانشجویان و سیستم پشتیبانی می‌توانید سوالات خود را مطرح کنید و پاسخ دریافت کنید."
+              },
+              {
+                question: "آیا گواهی تکمیل دریافت می‌کنم؟",
+                answer: "بله، پس از تکمیل موفقیت‌آمیز دوره، گواهی معتبر تکمیل دریافت خواهید کرد."
+              },
+              {
+                question: "آیا امکان دانلود محتوا وجود دارد؟",
+                answer: "بله، می‌توانید محتوای دوره را برای مطالعه آفلاین دانلود کنید."
               }
             ].map((faq, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">
                       {faq.question}
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 leading-relaxed">
                       {faq.answer}
                     </p>
                   </CardContent>
@@ -385,7 +508,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
           >
             همین الان شروع کنید و مسیر یادگیری خود را آغاز کنید
           </motion.p>
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="space-y-4">
             <Button 
               onClick={handleStartCourse}
               size="lg"
@@ -394,6 +517,9 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
               <Play className="mr-3" size={24} />
               شروع دوره رایگان
             </Button>
+            <p className="text-sm text-gray-400">
+              ثبت‌نام رایگان - بدون نیاز به کارت اعتباری
+            </p>
           </motion.div>
         </div>
       </motion.section>

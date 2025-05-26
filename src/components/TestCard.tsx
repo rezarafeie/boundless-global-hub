@@ -37,6 +37,13 @@ const TestCard: React.FC<TestCardProps> = ({
 
   const { direction } = useLanguage();
 
+  const handleTestClick = () => {
+    if (slug) {
+      // Open test in iframe modal or new window
+      window.open(`https://auth.rafiei.co/test/${slug}`, '_blank');
+    }
+  };
+
   const cardContent = (
     <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-white rounded-xl ${slug ? 'cursor-pointer' : ''}`}>
       <CardContent className="p-6">
@@ -49,7 +56,7 @@ const TestCard: React.FC<TestCardProps> = ({
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
         
         {(duration || questions) && (
-          <div className="flex items-center gap-4 text-xs text-gray-500 mt-auto">
+          <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
             {duration && (
               <div className="flex items-center gap-1">
                 <Clock size={14} />
@@ -64,13 +71,18 @@ const TestCard: React.FC<TestCardProps> = ({
             )}
           </div>
         )}
+        
+        {slug && (
+          <button 
+            onClick={handleTestClick}
+            className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors text-sm font-medium mt-auto"
+          >
+            شروع تست
+          </button>
+        )}
       </CardContent>
     </Card>
   );
-
-  if (slug) {
-    return <Link to={`/${slug}`}>{cardContent}</Link>;
-  }
 
   return cardContent;
 };

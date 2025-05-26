@@ -9,23 +9,14 @@ const Dashboard = () => {
   return (
     <MainLayout>
       <div className="min-h-screen">
-        {/* Page title */}
-        <div className="bg-white border-b border-gray-200 py-4">
-          <div className="container">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {translations.myAccount}
-            </h1>
-          </div>
-        </div>
-
-        {/* Fullscreen iframe without close button */}
+        {/* Fullscreen iframe without any title or headers */}
         <div className="relative bg-white">
           <iframe
-            src="https://rafeie.com/my-account"
+            src="https://auth.rafiei.co/my-account"
             title={translations.myAccount}
             className="w-full border-0"
             style={{
-              height: 'calc(100vh - 120px)', // Adjust for header and title
+              height: 'calc(100vh - 80px)', // Adjust for header only
               minHeight: '600px'
             }}
             allow="fullscreen"

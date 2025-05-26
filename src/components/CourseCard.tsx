@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, Users, Award, CheckCircle, Globe, HeadphonesIcon, Certificate } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
@@ -113,17 +113,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <Link to={getCourseUrl()} className="block h-full group">
       <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        {/* Course Image */}
-        {image && (
-          <div className="aspect-video relative overflow-hidden">
-            <img 
-              src={image} 
-              alt={title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </div>
-        )}
         
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -154,9 +143,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
             <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
           )}
           
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{description}</p>
           
-          <div className="space-y-2 mb-4">
+          <div className="space-y-3 mb-4">
             <div className="text-sm">
               <span className="font-medium">✓ </span>
               {benefits}
@@ -166,6 +155,36 @@ const CourseCard: React.FC<CourseCardProps> = ({
               {outcome}
             </div>
           </div>
+
+          {/* Course Features */}
+          <div className="grid grid-cols-3 gap-2 mb-4 text-xs text-gray-600">
+            <div className="flex items-center gap-1">
+              <Clock size={12} />
+              <span>دسترسی آزاد</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users size={12} />
+              <span>انجمن</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Certificate size={12} />
+              <span>گواهی</span>
+            </div>
+          </div>
+
+          {/* Additional Features for Paid Courses */}
+          {isPaid && (
+            <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-gray-600">
+              <div className="flex items-center gap-1">
+                <HeadphonesIcon size={12} />
+                <span>پشتیبانی</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Globe size={12} />
+                <span>آنلاین</span>
+              </div>
+            </div>
+          )}
           
           {instructor && (
             <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
