@@ -29,7 +29,7 @@ const CourseArchive = () => {
       outcome: translations.boundlessOutcome,
       isPaid: true,
       status: "active" as const,
-      category: "business",
+      category: "business" as const,
       image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://rafeie.com/?add-to-cart=5311"
     },
@@ -40,7 +40,7 @@ const CourseArchive = () => {
       outcome: translations.instagramOutcome,
       isPaid: true,
       status: "active" as const,
-      category: "business",
+      category: "business" as const,
       image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://rafeie.com/?add-to-cart=5089"
     },
@@ -51,7 +51,7 @@ const CourseArchive = () => {
       outcome: translations.wealthOutcome,
       isPaid: true,
       status: "active" as const,
-      category: "personal",
+      category: "self-development" as const,
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://rafeie.com/?add-to-cart=148"
     },
@@ -62,7 +62,7 @@ const CourseArchive = () => {
       outcome: translations.metaverseOutcome,
       isPaid: true,
       status: "active" as const,
-      category: "business",
+      category: "business" as const,
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://rafeie.com/?add-to-cart=145"
     },
@@ -73,7 +73,7 @@ const CourseArchive = () => {
       outcome: translations.boundlessTasteOutcome,
       isPaid: false,
       status: "active" as const,
-      category: "free",
+      category: "free" as const,
       link: "/course/boundless-taste"
     },
     {
@@ -83,7 +83,7 @@ const CourseArchive = () => {
       outcome: translations.passiveIncomeAIOutcome,
       isPaid: false,
       status: "active" as const,
-      category: "free",
+      category: "free" as const,
       link: "/course/passive-income"
     },
     {
@@ -93,7 +93,7 @@ const CourseArchive = () => {
       outcome: translations.changeProjectOutcome,
       isPaid: false,
       status: "active" as const,
-      category: "free",
+      category: "free" as const,
       link: "/course/change"
     },
     {
@@ -103,7 +103,7 @@ const CourseArchive = () => {
       outcome: translations.americanBusinessOutcome,
       isPaid: false,
       status: "active" as const,
-      category: "free",
+      category: "free" as const,
       link: "/course/american-business"
     }
   ];
@@ -114,6 +114,7 @@ const CourseArchive = () => {
         if (activeFilter === "free") return !course.isPaid;
         if (activeFilter === "upcoming") return course.status === "upcoming";
         if (activeFilter === "completed") return course.status === "completed";
+        if (activeFilter === "personal") return course.category === "self-development";
         return course.category === activeFilter;
       });
 
