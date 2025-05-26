@@ -31,16 +31,16 @@ const IframeModal: React.FC<IframeModalProps> = ({
       setLoadingProgress(0);
       document.body.style.overflow = 'hidden';
       
-      // Simulate progressive loading - slower progress
+      // Slower progressive loading
       const interval = setInterval(() => {
         setLoadingProgress(prev => {
-          if (prev >= 90) {
+          if (prev >= 85) {
             clearInterval(interval);
-            return 90;
+            return 85;
           }
-          return prev + Math.random() * 6; // Reduced for slower progress
+          return prev + Math.random() * 3; // Much slower progress
         });
-      }, 200); // Slightly slower updates
+      }, 400); // Slower updates
 
       return () => clearInterval(interval);
     } else {
@@ -74,14 +74,14 @@ const IframeModal: React.FC<IframeModalProps> = ({
       const timer = setTimeout(() => {
         if (iframeRef.current) {
           try {
-            // Redirect to checkout page after add-to-cart processes
+            // Direct iframe redirect to checkout page
             iframeRef.current.src = 'https://auth.rafiei.co/checkout/';
-            console.log('Redirecting to checkout after add-to-cart');
+            console.log('Redirecting iframe to checkout after add-to-cart');
           } catch (error) {
             console.log('Iframe redirect handled by server');
           }
         }
-      }, 3000); // Increased to 3 seconds to ensure add-to-cart processes
+      }, 2000); // Faster redirect - 2 seconds
 
       return () => clearTimeout(timer);
     }
@@ -92,7 +92,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
     setTimeout(() => {
       setIsLoading(false);
       setIframeLoaded(true);
-    }, 400);
+    }, 600); // Slightly slower transition
   };
 
   if (!isOpen) return null;
@@ -115,21 +115,21 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
       {/* Enhanced Loading Animation with Progress */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100">
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
           <div className="text-center">
             {/* Rafiei Academy Branded Loader */}
             <div className="mb-8">
               <div className="relative">
                 {/* Animated logo placeholder */}
-                <div className="w-16 h-16 mx-auto mb-4 bg-black rounded-xl flex items-center justify-center animate-pulse">
-                  <span className="text-white font-bold text-xl">R</span>
+                <div className="w-16 h-16 mx-auto mb-4 bg-black dark:bg-white rounded-xl flex items-center justify-center animate-pulse">
+                  <span className="text-white dark:text-black font-bold text-xl">R</span>
                 </div>
                 
                 {/* Pulsing brand text */}
-                <h3 className="text-2xl font-bold text-gray-800 animate-pulse mb-2">
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white animate-pulse mb-2">
                   آکادمی رفیعی
                 </h3>
-                <p className="text-gray-600 animate-pulse">
+                <p className="text-gray-600 dark:text-gray-300 animate-pulse">
                   Rafiei Academy
                 </p>
               </div>
@@ -137,18 +137,18 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
             {/* Progress indicator */}
             <div className="mb-4">
-              <div className="w-64 h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
+              <div className="w-64 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
                 <div 
-                  className="h-full bg-black transition-all duration-300 ease-out rounded-full"
+                  className="h-full bg-black dark:bg-white transition-all duration-500 ease-out rounded-full"
                   style={{ width: `${Math.min(100, Math.max(0, loadingProgress))}%` }}
                 ></div>
               </div>
-              <p className="text-lg text-gray-700 font-medium">
+              <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
                 {Math.round(loadingProgress)}% تکمیل شده
               </p>
             </div>
             
-            <p className="text-lg text-gray-700 animate-pulse">در حال بارگذاری...</p>
+            <p className="text-lg text-gray-700 dark:text-gray-200 animate-pulse">در حال بارگذاری...</p>
           </div>
         </div>
       )}

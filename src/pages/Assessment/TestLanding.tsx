@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -152,6 +151,32 @@ const testData: Record<string, any> = {
       "افراد نارضی از کار"
     ]
   },
+  "eq": {
+    title: "تست هوش عاطفی EQ",
+    description: "سنجش توانایی درک و مدیریت احساسات خود و دیگران",
+    longDescription: "تست هوش عاطفی ابزاری مدرن برای سنجش توانایی‌های عاطفی و اجتماعی افراد است.",
+    category: "عاطفی",
+    duration: "۲۰ دقیقه",
+    questions: 70,
+    benefits: [
+      "بهبود روابط بین‌فردی",
+      "مدیریت بهتر استرس",
+      "افزایش مهارت‌های رهبری",
+      "توسعه همدلی و درک"
+    ],
+    features: [
+      "پنج حوزه هوش عاطفی",
+      "نمودار مهارت‌های EQ",
+      "راهکارهای عملی",
+      "برنامه توسعه فردی"
+    ],
+    whoFor: [
+      "مدیران و رهبران",
+      "مشاوران و درمانگران",
+      "معلمان و والدین",
+      "افراد در مشاغل خدماتی"
+    ]
+  },
   "raven": {
     title: "تست هوش ریون",
     description: "سنجش هوش غیرکلامی و توانایی حل مسئله",
@@ -178,10 +203,10 @@ const testData: Record<string, any> = {
       "مشاوران تحصیلی"
     ]
   },
-  "cattell-b": {
-    title: "تست هوش کتل فرم B",
+  "cattell-iq": {
+    title: "تست هوش کتل",
     description: "ارزیابی جامع هوش عمومی و توانایی‌های شناختی",
-    longDescription: "آزمون هوش کتل فرم B یکی از معتبرترین ابزارهای سنجش هوش عمومی و توانایی‌های شناختی است.",
+    longDescription: "آزمون هوش کتل یکی از معتبرترین ابزارهای سنجش هوش عمومی و توانایی‌های شناختی است.",
     category: "هوش",
     duration: "۴۵ دقیقه",
     questions: 50,
@@ -204,33 +229,7 @@ const testData: Record<string, any> = {
       "مشاوران روانشناس"
     ]
   },
-  "eq-shatt": {
-    title: "تست هوش عاطفی EQ-Shatt",
-    description: "سنجش توانایی درک و مدیریت احساسات خود و دیگران",
-    longDescription: "تست هوش عاطفی شات ابزاری مدرن برای سنجش توانایی‌های عاطفی و اجتماعی افراد است.",
-    category: "عاطفی",
-    duration: "۲۰ دقیقه",
-    questions: 70,
-    benefits: [
-      "بهبود روابط بین‌فردی",
-      "مدیریت بهتر استرس",
-      "افزایش مهارت‌های رهبری",
-      "توسعه همدلی و درک"
-    ],
-    features: [
-      "پنج حوزه هوش عاطفی",
-      "نمودار مهارت‌های EQ",
-      "راهکارهای عملی",
-      "برنامه توسعه فردی"
-    ],
-    whoFor: [
-      "مدیران و رهبران",
-      "مشاوران و درمانگران",
-      "معلمان و والدین",
-      "افراد در مشاغل خدماتی"
-    ]
-  },
-  "coopersmith": {
+  "csei": {
     title: "تست عزت نفس کوپراسمیت",
     description: "ارزیابی میزان اعتماد به نفس و ارزش‌گذاری خود",
     longDescription: "پرسشنامه عزت نفس کوپراسمیت ابزاری معتبر برای سنجش میزان اعتماد به نفس و خودپنداره مثبت است.",
@@ -256,7 +255,7 @@ const testData: Record<string, any> = {
       "معلمان و والدین"
     ]
   },
-  "holland": {
+  "hii": {
     title: "تست علایق شغلی هالند",
     description: "شناسایی علایق شغلی و مسیر شغلی مناسب",
     longDescription: "تست علایق شغلی هالند بر اساس تئوری شش نوع شخصیت و محیط‌های شغلی طراحی شده است.",
@@ -308,7 +307,7 @@ const testData: Record<string, any> = {
       "محققان روانشناسی"
     ]
   },
-  "tuckman": {
+  "tps": {
     title: "تست اهمال‌کاری تاکمن",
     description: "سنجش میزان تمایل به تعویق انداختن کارها",
     longDescription: "مقیاس اهمال‌کاری تاکمن ابزاری کوتاه و دقیق برای سنجش میزان تعلل و اهمال‌کاری افراد است.",
@@ -334,7 +333,7 @@ const testData: Record<string, any> = {
       "افراد با مشکل تعلل"
     ]
   },
-  "hill": {
+  "hpi": {
     title: "تست کمال‌گرایی هیل",
     description: "ارزیابی انواع مختلف کمال‌گرایی و تأثیر آن بر زندگی",
     longDescription: "مقیاس کمال‌گرایی هیل انواع مختلف کمال‌گرایی سازنده و مخرب را در افراد شناسایی می‌کند.",
@@ -360,7 +359,7 @@ const testData: Record<string, any> = {
       "افراد با اضطراب عملکرد"
     ]
   },
-  "harter": {
+  "hems": {
     title: "تست انگیزش تحصیلی هارتر",
     description: "سنجش انگیزه و علاقه به یادگیری و تحصیل",
     longDescription: "مقیاس انگیزش تحصیلی هارتر انگیزه درونی و بیرونی دانش‌آموزان را در فرآیند یادگیری بررسی می‌کند.",
@@ -412,7 +411,7 @@ const testData: Record<string, any> = {
       "روانشناسان کودک"
     ]
   },
-  "miller-hope": {
+  "mhs": {
     title: "تست امید میلر",
     description: "سنجش میزان امیدواری و نگرش مثبت به آینده",
     longDescription: "مقیاس امید میلر میزان امیدواری و انتظارات مثبت افراد نسبت به آینده را اندازه‌گیری می‌کند.",
@@ -438,7 +437,7 @@ const testData: Record<string, any> = {
       "هر کس با ناامیدی"
     ]
   },
-  "internet-addiction": {
+  "iat": {
     title: "تست اعتیاد اینترنتی یانگ",
     description: "ارزیابی میزان وابستگی به اینترنت و فضای مجازی",
     longDescription: "آزمون اعتیاد اینترنتی یانگ معتبرترین ابزار سنجش میزان وابستگی و اعتیاد به اینترنت است.",
@@ -490,7 +489,7 @@ const testData: Record<string, any> = {
       "خانواده‌های درگیر"
     ]
   },
-  "oxford-happiness": {
+  "ohi": {
     title: "تست شادی آکسفورد",
     description: "ارزیابی میزان شادی و رضایت از زندگی",
     longDescription: "مقیاس شادی آکسفورد یکی از معتبرترین ابزارهای سنجش شادی و بهزیستی روانشناختی است.",
@@ -516,7 +515,7 @@ const testData: Record<string, any> = {
       "هر کس خواهان شادی"
     ]
   },
-  "social-loneliness": {
+  "slfs": {
     title: "تست تنهایی اجتماعی",
     description: "سنجش احساس تنهایی و انزوای اجتماعی",
     longDescription: "مقیاس تنهایی اجتماعی میزان احساس انزوا و تنهایی افراد در روابط اجتماعی را بررسی می‌کند.",
@@ -542,7 +541,7 @@ const testData: Record<string, any> = {
       "سالمندان تنها"
     ]
   },
-  "entrepreneurial": {
+  "ept": {
     title: "تست شخصیت کارآفرینی",
     description: "ارزیابی ویژگی‌های کارآفرینی و پتانسیل کسب‌وکار",
     longDescription: "این تست ویژگی‌های شخصیتی لازم برای موفقیت در کارآفرینی و راه‌اندازی کسب‌وکار را بررسی می‌کند.",
@@ -568,7 +567,7 @@ const testData: Record<string, any> = {
       "سرمایه‌گذاران"
     ]
   },
-  "smart-path": {
+  "boundless": {
     title: "تست مسیر هوشمند",
     description: "راهنمای انتخاب مسیر تحصیلی و شغلی مناسب",
     longDescription: "تست مسیر هوشمند با ترکیب علایق، استعدادها و شخصیت، بهترین مسیر تحصیلی و شغلی را پیشنهاد می‌دهد.",
@@ -594,7 +593,7 @@ const testData: Record<string, any> = {
       "مشاوران تحصیلی"
     ]
   },
-  "cattell-visual": {
+  "rorschach": {
     title: "تست هوش تصویری کتل فرم A",
     description: "سنجش هوش بصری و توانایی درک الگوهای تصویری",
     longDescription: "آزمون هوش تصویری کتل فرم A قدرت تجسم فضایی، درک الگوها و هوش بصری افراد را ارزیابی می‌کند.",
@@ -634,7 +633,7 @@ const TestLanding = () => {
       <MainLayout>
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">تست پیدا نشد</h1>
-          <Button onClick={() => navigate('/assessment')}>
+          <Button onClick={() => navigate('/assessment-center')}>
             بازگشت به مرکز ارزیابی
           </Button>
         </div>
@@ -648,7 +647,7 @@ const TestLanding = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
         {/* Hero Section */}
         <section className="py-16 relative overflow-hidden">
           <div className="container max-w-4xl mx-auto">
@@ -659,30 +658,30 @@ const TestLanding = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center">
-                  <Brain size={32} className="text-blue-600" />
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
+                  <Brain size={32} className="text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 {testInfo.title}
               </h1>
               
-              <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
                 {testInfo.description}
               </p>
 
               {/* Test Stats */}
               <div className="flex justify-center gap-6 mb-8">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <Clock size={20} />
                   <span>{testInfo.duration}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <HelpCircle size={20} />
                   <span>{testInfo.questions} سؤال</span>
                 </div>
-                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                <Badge variant="outline" className="text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-700">
                   {testInfo.category}
                 </Badge>
               </div>
@@ -690,7 +689,7 @@ const TestLanding = () => {
               <Button 
                 onClick={handleStartTest}
                 size="lg"
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-full px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-full px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <Play className="mr-2" size={20} />
                 شروع تست
@@ -710,22 +709,22 @@ const TestLanding = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <Card className="h-full border-0 shadow-lg">
+                <Card className="h-full border-0 shadow-lg dark:bg-gray-800/50 dark:border-gray-700">
                   <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4 flex items-center">
-                      <Target className="mr-3 text-blue-600" size={24} />
+                    <h2 className="text-2xl font-bold mb-4 flex items-center dark:text-white">
+                      <Target className="mr-3 text-blue-600 dark:text-blue-400" size={24} />
                       درباره این تست
                     </h2>
-                    <p className="text-gray-600 leading-relaxed mb-6">
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
                       {testInfo.longDescription}
                     </p>
                     
-                    <h3 className="font-semibold mb-3">مزایای شرکت در این تست:</h3>
+                    <h3 className="font-semibold mb-3 dark:text-white">مزایای شرکت در این تست:</h3>
                     <div className="space-y-2">
                       {testInfo.benefits.map((benefit: string, index: number) => (
                         <div key={index} className="flex items-start">
                           <CheckCircle className="text-green-500 mr-2 mt-0.5 flex-shrink-0" size={16} />
-                          <span className="text-sm">{benefit}</span>
+                          <span className="text-sm dark:text-gray-300">{benefit}</span>
                         </div>
                       ))}
                     </div>
@@ -741,17 +740,17 @@ const TestLanding = () => {
                 className="space-y-6"
               >
                 {/* Features */}
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg dark:bg-gray-800/50 dark:border-gray-700">
                   <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4 flex items-center">
-                      <Award className="mr-3 text-green-600" size={24} />
+                    <h2 className="text-2xl font-bold mb-4 flex items-center dark:text-white">
+                      <Award className="mr-3 text-green-600 dark:text-green-400" size={24} />
                       ویژگی‌های تست
                     </h2>
                     <div className="space-y-3">
                       {testInfo.features.map((feature: string, index: number) => (
                         <div key={index} className="flex items-center">
-                          <ArrowRight className="text-blue-500 mr-2" size={16} />
-                          <span>{feature}</span>
+                          <ArrowRight className="text-blue-500 dark:text-blue-400 mr-2" size={16} />
+                          <span className="dark:text-gray-300">{feature}</span>
                         </div>
                       ))}
                     </div>
@@ -759,17 +758,17 @@ const TestLanding = () => {
                 </Card>
 
                 {/* Who It's For */}
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg dark:bg-gray-800/50 dark:border-gray-700">
                   <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4 flex items-center">
-                      <Users className="mr-3 text-purple-600" size={24} />
+                    <h2 className="text-2xl font-bold mb-4 flex items-center dark:text-white">
+                      <Users className="mr-3 text-purple-600 dark:text-purple-400" size={24} />
                       این تست برای چه کسانی است؟
                     </h2>
                     <div className="space-y-3">
                       {testInfo.whoFor.map((person: string, index: number) => (
                         <div key={index} className="flex items-start">
                           <CheckCircle className="text-purple-500 mr-2 mt-0.5 flex-shrink-0" size={16} />
-                          <span className="text-sm">{person}</span>
+                          <span className="text-sm dark:text-gray-300">{person}</span>
                         </div>
                       ))}
                     </div>
@@ -782,7 +781,7 @@ const TestLanding = () => {
 
         {/* Final CTA */}
         <motion.section 
-          className="py-16 bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+          className="py-16 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 text-white"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}

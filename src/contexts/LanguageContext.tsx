@@ -29,7 +29,7 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
-  const [language, setLanguage] = useState<Language>("fa");
+  const [language, setLanguage] = useState<Language>("fa"); // Default to Persian
   const [direction, setDirection] = useState<Direction>("rtl");
   const [translations, setTranslations] = useState<typeof enTranslations | typeof faTranslations>(faTranslations);
 
@@ -39,7 +39,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     if (savedLanguage === "en" || savedLanguage === "fa") {
       setLanguage(savedLanguage);
     } else {
-      // Default to Persian (Farsi)
+      // Explicitly default to Persian (Farsi) for new users
       setLanguage("fa");
       localStorage.setItem("language", "fa");
     }
