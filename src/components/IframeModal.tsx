@@ -104,7 +104,15 @@ const IframeModal: React.FC<IframeModalProps> = ({
   const updatedUrl = url.replace('rafeie.com', 'auth.rafiei.co');
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50">
+    <div 
+      className="fixed z-[9999]"
+      style={{
+        top: `${HEADER_HEIGHT}px`,
+        left: 0,
+        right: 0,
+        height: `calc(100vh - ${HEADER_HEIGHT}px)`
+      }}
+    >
       {/* Close Button - conditionally rendered */}
       {showCloseButton && (
         <button
@@ -118,13 +126,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
       {/* Enhanced Loading Animation with Progress */}
       {isLoading && (
-        <div 
-          className="absolute left-0 right-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700"
-          style={{
-            top: `${HEADER_HEIGHT}px`,
-            height: `calc(100vh - ${HEADER_HEIGHT}px)`
-          }}
-        >
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
           <div className="text-center">
             {/* Rafiei Academy Branded Loader */}
             <div className="mb-8">
@@ -167,17 +169,9 @@ const IframeModal: React.FC<IframeModalProps> = ({
         ref={iframeRef}
         src={updatedUrl}
         title={title}
-        className={`w-full border-0 transition-opacity duration-500 ${
+        className={`w-full h-full border-0 transition-opacity duration-500 ${
           iframeLoaded ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{
-          position: 'fixed',
-          top: `${HEADER_HEIGHT}px`,
-          left: 0,
-          width: '100vw',
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
-          overflow: 'hidden'
-        }}
         onLoad={handleIframeLoad}
         allow="fullscreen"
       />
