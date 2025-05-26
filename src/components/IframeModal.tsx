@@ -8,6 +8,7 @@ interface IframeModalProps {
   title: string;
   url: string;
   height?: string;
+  showCloseButton?: boolean;
 }
 
 const IframeModal: React.FC<IframeModalProps> = ({
@@ -15,7 +16,8 @@ const IframeModal: React.FC<IframeModalProps> = ({
   onClose,
   title,
   url,
-  height = "600px"
+  height = "600px",
+  showCloseButton = true
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
@@ -36,7 +38,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === 'Escape' && isOpen && showCloseButton) {
         onClose();
       }
     };
@@ -48,7 +50,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, showCloseButton]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
@@ -59,16 +61,21 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Update domain from rafeie.com to auth.rafiei.co
+  const updatedUrl = url.replace('rafeie.com', 'auth.rafiei.co');
+
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm">
-      {/* Close Button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-[10000] bg-white/90 hover:bg-white text-black rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
-        aria-label="بستن"
-      >
-        <X size={24} />
-      </button>
+      {/* Close Button - conditionally rendered */}
+      {showCloseButton && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-[10000] bg-white/90 hover:bg-white text-black rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
+          aria-label="بستن"
+        >
+          <X size={24} />
+        </button>
+      )}
 
       {/* Enhanced Loading Animation */}
       {isLoading && (
@@ -111,7 +118,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
       {/* Iframe */}
       <iframe
-        src={url}
+        src={updatedUrl}
         title={title}
         className={`w-full h-full border-0 transition-opacity duration-500 ${
           iframeLoaded ? 'opacity-100' : 'opacity-0'

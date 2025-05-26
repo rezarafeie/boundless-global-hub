@@ -36,6 +36,9 @@ const FreeCourseLanding = ({
     file: FileText
   }[iconType];
 
+  // Update domain from rafeie.com to auth.rafiei.co
+  const updatedIframeUrl = iframeUrl.replace('rafeie.com', 'auth.rafiei.co');
+
   return (
     <MainLayout>
       <Hero
@@ -87,7 +90,7 @@ const FreeCourseLanding = ({
         isOpen={showIframeModal}
         onClose={() => setShowIframeModal(false)}
         title={title}
-        url={iframeUrl}
+        url={updatedIframeUrl}
       />
     </MainLayout>
   );

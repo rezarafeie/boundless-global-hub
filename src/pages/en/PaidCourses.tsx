@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -29,7 +30,7 @@ const PaidCourses = () => {
       duration: "6 months",
       modules: 12,
       students: 450,
-      cartUrl: "https://rafeie.com/?add-to-cart=5311",
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=5311",
       features: [
         "100+ hours of content",
         "180 daily tasks",
@@ -51,7 +52,7 @@ const PaidCourses = () => {
       duration: "4 weeks",
       modules: 6,
       students: 850,
-      cartUrl: "https://rafeie.com/?add-to-cart=5089",
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=5089",
       features: [
         "Content creation strategies",
         "Ad campaign setup",
@@ -73,7 +74,7 @@ const PaidCourses = () => {
       duration: "8 weeks",
       modules: 8,
       students: 620,
-      cartUrl: "https://rafeie.com/?add-to-cart=148",
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=148",
       features: [
         "Financial planning",
         "Investment strategies",
@@ -95,7 +96,7 @@ const PaidCourses = () => {
       duration: "10 weeks",
       modules: 10,
       students: 380,
-      cartUrl: "https://rafeie.com/?add-to-cart=145",
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=145",
       features: [
         "Web3 fundamentals",
         "NFT creation & trading",

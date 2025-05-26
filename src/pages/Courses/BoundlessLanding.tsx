@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -246,7 +245,7 @@ const BoundlessLanding = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="خرید دوره برنامه بدون مرز"
-        url="https://rafeie.com/?add-to-cart=5311"
+        url="https://auth.rafiei.co/?add-to-cart=5311"
       />
 
       <style>

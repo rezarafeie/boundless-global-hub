@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -246,7 +245,7 @@ const MetaverseLanding = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="خرید دوره امپراطوری متاورس"
-        url="https://rafeie.com/?add-to-cart=145"
+        url="https://auth.rafiei.co/?add-to-cart=145"
       />
 
       <style>

@@ -1,12 +1,11 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import IframeModal from "./IframeModal";
 
 interface CourseCardProps {
   title: string;
@@ -47,7 +46,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
 }) => {
   const { translations } = useLanguage();
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
@@ -76,45 +74,17 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Get iframe URL for paid courses with updated domain
-  const getPaidCourseIframeUrl = () => {
-    if (cartUrl) {
-      return cartUrl.replace('rafeie.com', 'auth.rafiei.co');
-    }
-    
-    const urlMapping: Record<string, string> = {
-      "boundless": "https://auth.rafiei.co/?add-to-cart=5311",
-      "instagram": "https://auth.rafiei.co/?add-to-cart=5089", 
-      "wealth": "https://auth.rafiei.co/?add-to-cart=148",
-      "metaverse": "https://auth.rafiei.co/?add-to-cart=145"
-    };
-    
-    return urlMapping[slug] || "https://auth.rafiei.co";
-  };
-
-  // Get iframe URL for free courses with updated domain
-  const getFreeCourseIframeUrl = () => {
-    const urlMapping: Record<string, string> = {
-      "boundless-taste": "https://auth.rafiei.co/mazze-bi-had-o-marz",
-      "passive-income": "https://auth.rafiei.co/daramad-gheir-faal-ai",
-      "change": "https://auth.rafiei.co/taghir",
-      "american-business": "https://auth.rafiei.co/business-america"
-    };
-    
-    return urlMapping[slug] || "https://auth.rafiei.co";
-  };
-
-  // Handle CTA button click
+  // Handle CTA button click - direct navigation instead of modal
   const handleCtaClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     if (isPaid) {
-      // For paid courses, open fullscreen iframe with WooCommerce cart
-      setIsModalOpen(true);
+      // For paid courses, navigate to course landing page
+      navigate(`/courses/${slug}`);
     } else {
-      // For free courses, open fullscreen iframe with WordPress registration
-      setIsModalOpen(true);
+      // For free courses, navigate to course page
+      navigate(`/course/${slug}`);
     }
   };
 
@@ -133,101 +103,91 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <>
-      <Link to={getCourseUrl()} className="block h-full group">
-        <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-          {/* Course Image */}
-          {image && (
-            <div className="aspect-video relative overflow-hidden">
-              <img 
-                src={image} 
-                alt={title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <Link to={getCourseUrl()} className="block h-full group">
+      <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
+        {/* Course Image */}
+        {image && (
+          <div className="aspect-video relative overflow-hidden">
+            <img 
+              src={image} 
+              alt={title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+        )}
+        
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
+              {getCourseIcon()}
             </div>
+            <div className="ml-3">
+              <Badge
+                variant={isPaid ? "default" : "outline"}
+                className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+              >
+                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
+              </Badge>
+            </div>
+          </div>
+          {status && (
+            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+              {status === "active" && translations.activeStatus}
+              {status === "upcoming" && translations.upcomingStatus}
+              {status === "completed" && translations.completedStatus}
+            </Badge>
+          )}
+        </div>
+        
+        <CardContent className="p-4 pt-0 flex-grow">
+          <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
+          {englishTitle && (
+            <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
           )}
           
-          <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
-                {getCourseIcon()}
-              </div>
-              <div className="ml-3">
-                <Badge
-                  variant={isPaid ? "default" : "outline"}
-                  className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
-                >
-                  {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-                </Badge>
-              </div>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
+          
+          <div className="space-y-2 mb-4">
+            <div className="text-sm">
+              <span className="font-medium">✓ </span>
+              {benefits}
             </div>
-            {status && (
-              <Badge className={`text-xs ${getStatusBadgeColor()}`}>
-                {status === "active" && translations.activeStatus}
-                {status === "upcoming" && translations.upcomingStatus}
-                {status === "completed" && translations.completedStatus}
-              </Badge>
-            )}
+            <div className="text-sm">
+              <span className="font-medium">→ </span>
+              {outcome}
+            </div>
           </div>
           
-          <CardContent className="p-4 pt-0 flex-grow">
-            <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
-            {englishTitle && (
-              <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
-            )}
-            
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
-            
-            <div className="space-y-2 mb-4">
-              <div className="text-sm">
-                <span className="font-medium">✓ </span>
-                {benefits}
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">→ </span>
-                {outcome}
-              </div>
+          {instructor && (
+            <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
+              <User size={14} className="mr-1" />
+              {instructorLink ? (
+                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
+                  {instructor}
+                </Link>
+              ) : (
+                <span>{instructor}</span>
+              )}
+              {level && (
+                <Badge variant="outline" className="ml-2 text-xs">
+                  {level}
+                </Badge>
+              )}
             </div>
-            
-            {instructor && (
-              <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
-                <User size={14} className="mr-1" />
-                {instructorLink ? (
-                  <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
-                    {instructor}
-                  </Link>
-                ) : (
-                  <span>{instructor}</span>
-                )}
-                {level && (
-                  <Badge variant="outline" className="ml-2 text-xs">
-                    {level}
-                  </Badge>
-                )}
-              </div>
-            )}
-          </CardContent>
-          
-          <CardFooter className="p-4 pt-0">
-            <Button 
-              onClick={handleCtaClick}
-              className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
-            >
-              {cta || (isPaid ? "خرید دوره" : translations.startFreeCourse)}
-            </Button>
-          </CardFooter>
-        </Card>
-      </Link>
-
-      {/* Fullscreen Iframe Modal */}
-      <IframeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={isPaid ? `خرید دوره ${title}` : `شروع دوره ${title}`}
-        url={isPaid ? getPaidCourseIframeUrl() : getFreeCourseIframeUrl()}
-      />
-    </>
+          )}
+        </CardContent>
+        
+        <CardFooter className="p-4 pt-0">
+          <Button 
+            onClick={handleCtaClick}
+            className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
+          >
+            {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
+          </Button>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 };
 
