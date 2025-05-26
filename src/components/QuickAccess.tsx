@@ -14,37 +14,38 @@ const QuickAccess = () => {
       title: "مرکز آموزش",
       icon: <BookOpen size={28} />,
       link: "/courses",
-      color: "bg-blue-50 text-blue-700"
+      color: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
     },
     {
       title: "مرکز سنجش",
       icon: <Award size={28} />,
       link: "/assessment-center",
-      color: "bg-purple-50 text-purple-700"
+      color: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400"
     },
     {
       title: "مجله",
       icon: <BookCheck size={28} />,
-      link: "/blog",
-      color: "bg-green-50 text-green-700"
+      link: "/mag",
+      color: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
     },
     {
       title: "پشتیبانی",
       icon: <Headphones size={28} />,
       link: "/support",
-      color: "bg-amber-50 text-amber-700"
+      color: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
     },
     {
       title: "دستیار هوشمند",
       icon: <MessageSquare size={28} />,
-      link: "/ai-assistant",
-      color: "bg-pink-50 text-pink-700"
+      link: "https://ai.rafiei.co/",
+      external: true,
+      color: "bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-400"
     },
     {
       title: "برنامه بدون مرز",
       icon: <BookOpenCheck size={28} />,
       link: "/boundless",
-      color: "bg-indigo-50 text-indigo-700"
+      color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
     }
   ];
 
@@ -71,7 +72,7 @@ const QuickAccess = () => {
   };
 
   return (
-    <section className="py-10 bg-white">
+    <section className="py-10 bg-background">
       <div className="container">
         <motion.div 
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6"
@@ -81,16 +82,29 @@ const QuickAccess = () => {
         >
           {quickLinks.map((quickLink, index) => (
             <motion.div key={index} variants={itemVariants}>
-              <Link to={quickLink.link} className="block group h-full">
-                <Card className="h-full border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 overflow-hidden">
-                  <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${quickLink.color}`}>
-                    <div className="mb-3 p-3 rounded-full bg-white/80 backdrop-blur">
-                      {quickLink.icon}
-                    </div>
-                    <p className="font-medium text-sm md:text-base">{quickLink.title}</p>
-                  </CardContent>
-                </Card>
-              </Link>
+              {quickLink.external ? (
+                <a href={quickLink.link} target="_blank" rel="noopener noreferrer" className="block group h-full">
+                  <Card className="h-full border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 overflow-hidden bg-card">
+                    <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${quickLink.color}`}>
+                      <div className="mb-3 p-3 rounded-full bg-background/80 backdrop-blur">
+                        {quickLink.icon}
+                      </div>
+                      <p className="font-medium text-sm md:text-base">{quickLink.title}</p>
+                    </CardContent>
+                  </Card>
+                </a>
+              ) : (
+                <Link to={quickLink.link} className="block group h-full">
+                  <Card className="h-full border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 overflow-hidden bg-card">
+                    <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${quickLink.color}`}>
+                      <div className="mb-3 p-3 rounded-full bg-background/80 backdrop-blur">
+                        {quickLink.icon}
+                      </div>
+                      <p className="font-medium text-sm md:text-base">{quickLink.title}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
             </motion.div>
           ))}
         </motion.div>

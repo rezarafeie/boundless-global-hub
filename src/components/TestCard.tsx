@@ -38,18 +38,18 @@ const TestCard: React.FC<TestCardProps> = ({
   const { direction } = useLanguage();
 
   const cardContent = (
-    <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-white rounded-xl ${slug ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
+    <Card className={`overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-card rounded-xl ${slug ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
       <CardContent className="p-6">
         <div className="flex flex-row items-start gap-3 mb-3">
-          <div className="w-10 h-10 flex-shrink-0 rounded-full bg-black/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+          <div className="w-10 h-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
             {getTestIcon()}
           </div>
-          <h3 className="text-lg font-bold group-hover:text-primary transition-colors">{title}</h3>
+          <h3 className="text-lg font-bold group-hover:text-primary transition-colors text-card-foreground">{title}</h3>
         </div>
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
         
         {(duration || questions) && (
-          <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
             {duration && (
               <div className="flex items-center gap-1">
                 <Clock size={14} />
@@ -67,7 +67,7 @@ const TestCard: React.FC<TestCardProps> = ({
         
         {slug && (
           <div className="mt-auto">
-            <div className="w-full bg-black text-white py-2 px-4 rounded-md group-hover:bg-gray-800 transition-colors text-sm font-medium text-center">
+            <div className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md group-hover:bg-primary/90 transition-colors text-sm font-medium text-center">
               مشاهده جزئیات
             </div>
           </div>
