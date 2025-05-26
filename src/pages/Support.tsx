@@ -56,7 +56,7 @@ const Support = () => {
       <div className="container py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
-            <Card className="border-border shadow-sm">
+            <Card className="border-border shadow-sm bg-card">
               <CardContent className="p-6">
                 <h2 className="text-2xl font-bold mb-6 text-card-foreground">فرم تماس</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -113,7 +113,7 @@ const Support = () => {
           </div>
           
           <div>
-            <Card className="border-border shadow-sm mb-6">
+            <Card className="border-border shadow-sm mb-6 bg-card">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -127,7 +127,7 @@ const Support = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-border shadow-sm mb-6">
+            <Card className="border-border shadow-sm mb-6 bg-card">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -141,7 +141,7 @@ const Support = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-border shadow-sm">
+            <Card className="border-border shadow-sm bg-card">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">

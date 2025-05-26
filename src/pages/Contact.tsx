@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +61,7 @@ const Contact = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <Card className="border-border shadow-xl">
+                <Card className="border-border shadow-xl bg-card">
                   <CardHeader className="pb-6">
                     <CardTitle className="text-2xl font-bold flex items-center text-card-foreground">
                       <Send className="mr-3 text-blue-600" size={28} />
@@ -167,7 +166,7 @@ const Contact = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4 space-x-reverse">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -184,7 +183,7 @@ const Contact = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4 space-x-reverse">
                       <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -201,7 +200,7 @@ const Contact = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4 space-x-reverse">
                       <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -218,7 +217,7 @@ const Contact = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4 space-x-reverse">
                       <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -234,7 +233,7 @@ const Contact = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4 space-x-reverse">
                       <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -253,11 +252,11 @@ const Contact = () => {
                 </Card>
 
                 {/* Map Placeholder */}
-                <Card className="border-0 shadow-lg">
+                <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <h3 className="font-bold text-lg mb-4">موقعیت ما</h3>
-                    <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-gray-500">
+                    <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
                         <MapPin size={48} className="mx-auto mb-2" />
                         <p>نقشه به زودی...</p>
                       </div>

@@ -22,7 +22,7 @@ const enTranslations = {
   coursesSubtitle: "A collection of specialized courses to develop your skills",
   paidCoursesTitle: "Premium Courses",
   paidCoursesSubtitle: "Advanced courses for professional development of your skills",
-  freeCoursesTitle: "Free Courses",
+  freeCoursesTitle: "Rafiei Academy Free Courses",
   freeCoursesSubtitle: "🎉 Completely Free - Summer 2025 Special",
   specialOffersTitle: "Special Offers",
   assessmentCenterTitle: "Assessment Center",

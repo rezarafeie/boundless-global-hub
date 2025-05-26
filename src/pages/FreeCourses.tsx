@@ -77,7 +77,11 @@ const FreeCourses = () => {
         backgroundType="glow"
       />
       
-      <section id="courses" className="py-16 relative before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-full before:bg-gradient-to-b before:from-background before:to-secondary/10 before:z-0">
+      <section id="courses" className="py-16 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-primary/5 to-transparent z-0"></div>
+        <div className="absolute top-1/3 right-0 w-1/3 h-2/3 bg-gradient-to-l from-secondary/10 to-transparent z-0"></div>
+        
         <div className="container relative z-10">
           <SectionTitle
             title={translations.coursesTitle}
