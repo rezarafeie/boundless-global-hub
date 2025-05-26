@@ -50,7 +50,7 @@ const CourseArchive = () => {
       benefits: translations.wealthBenefits,
       outcome: translations.wealthOutcome,
       isPaid: true,
-      status: "active" as const,
+      status: "completed" as const,
       category: "self-development" as const,
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://rafeie.com/?add-to-cart=148"
@@ -61,7 +61,7 @@ const CourseArchive = () => {
       benefits: translations.metaverseBenefits,
       outcome: translations.metaverseOutcome,
       isPaid: true,
-      status: "active" as const,
+      status: "upcoming" as const,
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://rafeie.com/?add-to-cart=145"
