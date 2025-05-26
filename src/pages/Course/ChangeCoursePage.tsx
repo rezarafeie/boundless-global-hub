@@ -10,7 +10,7 @@ const ChangeCoursePage = () => {
       description="یک برنامه جامع برای تغییر مثبت در زندگی شخصی و حرفه‌ای. این دوره به شما کمک می‌کند تا اهداف خود را مشخص کرده و مسیر رسیدن به آن‌ها را بیابید."
       benefitOne="یادگیری تکنیک‌های مؤثر تغییر عادات منفی"
       benefitTwo="ایجاد برنامه‌ای مشخص برای رسیدن به اهداف"
-      iconType="file"
+      iconType="book"
       iframeUrl="https://rafeie.com/taghir"
     />
   );
