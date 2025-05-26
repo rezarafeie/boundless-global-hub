@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -148,6 +147,7 @@ const PaidCourses = () => {
         subtitle={translations.paidCoursesSubtitle}
         ctaText={translations.callToAction}
         ctaLink="#courses"
+        backgroundType="glow"
       />
       
       <section id="courses" className="py-16 relative overflow-hidden">
@@ -184,7 +184,7 @@ const PaidCourses = () => {
                   className="h-full group cursor-pointer" 
                   onClick={() => handleCourseClick(course.title, course.cartUrl)}
                 >
-                  <div className="h-full bg-background border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
+                  <div className="h-full bg-card border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
                     <div className="aspect-video relative">
                       <img 
                         src={course.image} 

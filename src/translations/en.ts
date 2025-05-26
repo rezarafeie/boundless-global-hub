@@ -1,4 +1,3 @@
-
 const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "The Future of Income Generation is in Your Hands",
@@ -24,7 +23,7 @@ const enTranslations = {
   paidCoursesTitle: "Premium Courses",
   paidCoursesSubtitle: "Advanced courses for professional development of your skills",
   freeCoursesTitle: "Free Courses",
-  freeCoursesSubtitle: "Free courses to get familiar with basic concepts",
+  freeCoursesSubtitle: "🎉 Completely Free - Summer 2025 Special",
   specialOffersTitle: "Special Offers",
   assessmentCenterTitle: "Assessment Center",
   assessmentCenterDesc: "Assess your skills and abilities using standard tests and determine your path to progress.",

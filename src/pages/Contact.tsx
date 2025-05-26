@@ -33,7 +33,7 @@ const Contact = () => {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      <section className="py-20 bg-gradient-to-br from-background to-secondary/20">
         <div className="container">
           <motion.div 
             className="text-center mb-16"
@@ -41,13 +41,13 @@ const Contact = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
               تماس با 
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 آکادمی رفیعی
               </span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               ما همیشه آماده پاسخگویی به سوالات شما هستیم. با ما در تماس باشید
             </p>
           </motion.div>
@@ -62,13 +62,13 @@ const Contact = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <Card className="border-0 shadow-xl">
+                <Card className="border-border shadow-xl">
                   <CardHeader className="pb-6">
-                    <CardTitle className="text-2xl font-bold flex items-center">
+                    <CardTitle className="text-2xl font-bold flex items-center text-card-foreground">
                       <Send className="mr-3 text-blue-600" size={28} />
                       ارسال پیام
                     </CardTitle>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground">
                       فرم زیر را تکمیل کنید تا در کوتاه‌ترین زمان با شما تماس بگیریم
                     </p>
                   </CardHeader>
