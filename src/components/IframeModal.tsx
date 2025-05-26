@@ -24,6 +24,9 @@ const IframeModal: React.FC<IframeModalProps> = ({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Header height constant
+  const HEADER_HEIGHT = 80;
+
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
@@ -115,7 +118,13 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
       {/* Enhanced Loading Animation with Progress */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+        <div 
+          className="absolute left-0 right-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700"
+          style={{
+            top: `${HEADER_HEIGHT}px`,
+            height: `calc(100vh - ${HEADER_HEIGHT}px)`
+          }}
+        >
           <div className="text-center">
             {/* Rafiei Academy Branded Loader */}
             <div className="mb-8">
@@ -158,15 +167,15 @@ const IframeModal: React.FC<IframeModalProps> = ({
         ref={iframeRef}
         src={updatedUrl}
         title={title}
-        className={`w-full h-full border-0 transition-opacity duration-500 ${
+        className={`w-full border-0 transition-opacity duration-500 ${
           iframeLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
           position: 'fixed',
-          top: 0,
+          top: `${HEADER_HEIGHT}px`,
           left: 0,
           width: '100vw',
-          height: '100vh',
+          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
           overflow: 'hidden'
         }}
         onLoad={handleIframeLoad}
