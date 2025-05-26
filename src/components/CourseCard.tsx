@@ -68,26 +68,32 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const getCourseUrl = () => {
     if (link) return link;
     if (isPaid) {
-      // Fixed: Ensure paid courses go to their specific landing pages
-      return `/courses/${slug}`;
+      // Map course titles/slugs to correct URLs
+      if (slug === "boundless" || title.includes("بدون مرز") || title.includes("Boundless")) {
+        return "/courses/boundless";
+      } else if (slug === "instagram" || title.includes("اینستاگرام") || title.includes("Instagram")) {
+        return "/courses/instagram";
+      } else if (slug === "metaverse" || title.includes("متاورس") || title.includes("Metaverse")) {
+        return "/courses/metaverse";
+      } else if (slug === "wealth" || slug === "servat" || title.includes("ثروت") || title.includes("Wealth")) {
+        return "/courses/servit";
+      } else {
+        // Generic paid course page
+        return `/courses/${slug}`;
+      }
     } else {
       // Free courses go to their course pages
       return `/course/${slug}`;
     }
   };
 
-  // Handle CTA button click - direct navigation instead of modal
+  // Handle CTA button click
   const handleCtaClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (isPaid) {
-      // For paid courses, navigate to course landing page
-      navigate(`/courses/${slug}`);
-    } else {
-      // For free courses, navigate to course page
-      navigate(`/course/${slug}`);
-    }
+    const targetUrl = getCourseUrl();
+    navigate(targetUrl);
   };
 
   // Get status badge color

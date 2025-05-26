@@ -18,6 +18,7 @@ import FreeCourseView from "./pages/Course/FreeCourseView";
 import BoundlessLanding from "./pages/Courses/BoundlessLanding";
 import InstagramLanding from "./pages/Courses/InstagramLanding";
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
+import ServitLanding from "./pages/Courses/ServitLanding";
 import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
 import InstructorProfilePage from "./pages/InstructorProfile";
 import Support from "./pages/Support";
@@ -84,10 +85,11 @@ const App = () => (
             <Route path="/start/paid-course" element={<PaidCourseStart />} />
             <Route path="/start/paid-course/:slug" element={<PaidCourseStart />} />
             
-            {/* Course Landing Pages */}
+            {/* Paid Course Landing Pages */}
             <Route path="/courses/boundless" element={<BoundlessLanding />} />
             <Route path="/courses/instagram" element={<InstagramLanding />} />
             <Route path="/courses/metaverse" element={<MetaverseLanding />} />
+            <Route path="/courses/servit" element={<ServitLanding />} />
             
             {/* Boundless redirect */}
             <Route path="/boundless" element={<Navigate to="/courses/boundless" replace />} />
@@ -107,6 +109,7 @@ const App = () => (
             <Route path="/en/courses/boundless" element={<BoundlessLanding />} />
             <Route path="/en/courses/instagram" element={<InstagramLanding />} />
             <Route path="/en/courses/metaverse" element={<MetaverseLanding />} />
+            <Route path="/en/courses/servit" element={<ServitLanding />} />
             <Route path="/en/support" element={<Support />} />
             <Route path="/en/blog" element={<Blog />} />
             <Route path="/en/dashboard" element={<Dashboard />} />
