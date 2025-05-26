@@ -9,7 +9,7 @@ type Direction = "ltr" | "rtl";
 interface LanguageContextType {
   language: Language;
   direction: Direction;
-  translations: typeof enTranslations;
+  translations: typeof enTranslations | typeof faTranslations;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
 }
@@ -31,7 +31,7 @@ interface LanguageProviderProps {
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
   const [language, setLanguage] = useState<Language>("fa");
   const [direction, setDirection] = useState<Direction>("rtl");
-  const [translations, setTranslations] = useState(faTranslations);
+  const [translations, setTranslations] = useState<typeof enTranslations | typeof faTranslations>(faTranslations);
 
   useEffect(() => {
     // Check if language is stored in local storage
