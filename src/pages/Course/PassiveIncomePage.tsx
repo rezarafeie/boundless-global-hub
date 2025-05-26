@@ -1,17 +1,17 @@
 
 import React from "react";
-import FreeCourseLanding from "../Courses/FreeCourseLanding";
+import FreeCourseLanding from "@/pages/Courses/FreeCourseLanding";
 
 const PassiveIncomePage = () => {
   return (
     <FreeCourseLanding
-      title="کسب درآمد غیرفعال با هوش مصنوعی"
-      englishTitle="Passive Income with AI"
-      description="یاد بگیرید چگونه با استفاده از هوش مصنوعی و ابزارهای مدرن، جریان درآمد غیرفعال ایجاد کنید"
-      benefitOne="ساخت محتوا با کمک هوش مصنوعی و خودکارسازی فرآیندها"
-      benefitTwo="راه‌اندازی سیستم‌های درآمدزا که بدون حضور مستمر شما کار می‌کنند"
-      iconType="graduation"
-      iframeUrl="https://auth.rafiei.co/?add-to-cart=5311"
+      title="درآمد غیرفعال"
+      englishTitle="Passive Income"
+      description="راهکارهای عملی برای ایجاد منابع درآمد غیرفعال و رسیدن به آزادی مالی. یاد بگیرید چگونه پول برای شما کار کند."
+      benefitOne="شناسایی فرصت‌های سرمایه‌گذاری مناسب"
+      benefitTwo="راه‌اندازی سیستم‌های درآمدزا بدون حضور مستمر"
+      iconType="book"
+      iframeUrl="https://rafeie.com/daramad"
     />
   );
 };
