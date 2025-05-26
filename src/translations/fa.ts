@@ -1,3 +1,4 @@
+
 export const fa = {
   appName: "آکادمی رفیعی",
   home: "خانه",
@@ -151,7 +152,6 @@ export const fa = {
   wealthCourseSubtitle: "💰 راهکارهای عملی برای رسیدن به آزادی مالی",
   metaverseEmpireTitle: "دوره امپراتوری متاورس",
   metaverseEmpireSubtitle: "🌐 ورود به دنیای جدید کسب و کار",
-  freeCourses: "دوره‌های رایگان",
   freeCoursesTitle: "دوره‌های رایگان آکادمی رفیعی",
   freeCoursesSubtitle: "🎉 کاملاً رایگان - ویژه تابستان ۱۴۰۴",
 };

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import enTranslations from "@/translations/en";
-import faTranslations from "@/translations/fa";
+import { fa as faTranslations } from "@/translations/fa";
 
 type Language = "en" | "fa";
 type Direction = "ltr" | "rtl";
