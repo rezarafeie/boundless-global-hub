@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,8 @@ import Support from "./pages/Support";
 import FreeCourseStart from "./pages/Course/FreeCourseStart";
 import PaidCourseStart from "./pages/Course/PaidCourseStart";
 import Blog from "./pages/Blog";
+import Magazine from "./pages/Magazine";
+import PaymentRequest from "./pages/PaymentRequest";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -60,6 +63,8 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/mag" element={<Magazine />} />
+              <Route path="/payreq" element={<PaymentRequest />} />
               
               {/* Free Course Pages */}
               <Route path="/course/change" element={<ChangeCoursePage />} />
@@ -113,6 +118,8 @@ const App = () => (
               <Route path="/en/courses/servit" element={<ServitLanding />} />
               <Route path="/en/support" element={<Support />} />
               <Route path="/en/blog" element={<Blog />} />
+              <Route path="/en/mag" element={<Magazine />} />
+              <Route path="/en/payreq" element={<PaymentRequest />} />
               <Route path="/en/dashboard" element={<Dashboard />} />
               <Route path="/en/courses/:slug" element={<FreeCourseView language="en" />} />
               <Route path="/en/checkout/:courseSlug" element={<Checkout />} />
