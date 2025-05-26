@@ -31,16 +31,16 @@ const IframeModal: React.FC<IframeModalProps> = ({
       setLoadingProgress(0);
       document.body.style.overflow = 'hidden';
       
-      // Simulate progressive loading
+      // Simulate progressive loading - slower progress
       const interval = setInterval(() => {
         setLoadingProgress(prev => {
           if (prev >= 90) {
             clearInterval(interval);
             return 90;
           }
-          return prev + Math.random() * 10;
+          return prev + Math.random() * 6; // Reduced for slower progress
         });
-      }, 150);
+      }, 200); // Slightly slower updates
 
       return () => clearInterval(interval);
     } else {
@@ -68,19 +68,20 @@ const IframeModal: React.FC<IframeModalProps> = ({
     };
   }, [isOpen, onClose, showCloseButton]);
 
-  // Handle automatic checkout redirect for add-to-cart URLs
+  // Enhanced automatic checkout redirect for add-to-cart URLs
   useEffect(() => {
     if (isOpen && url.includes('add-to-cart')) {
       const timer = setTimeout(() => {
         if (iframeRef.current) {
           try {
-            // Redirect to checkout page after add-to-cart
+            // Redirect to checkout page after add-to-cart processes
             iframeRef.current.src = 'https://auth.rafiei.co/checkout/';
+            console.log('Redirecting to checkout after add-to-cart');
           } catch (error) {
             console.log('Iframe redirect handled by server');
           }
         }
-      }, 2000); // Wait 2 seconds for add-to-cart to process
+      }, 3000); // Increased to 3 seconds to ensure add-to-cart processes
 
       return () => clearTimeout(timer);
     }
@@ -91,7 +92,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
     setTimeout(() => {
       setIsLoading(false);
       setIframeLoaded(true);
-    }, 300);
+    }, 400);
   };
 
   if (!isOpen) return null;

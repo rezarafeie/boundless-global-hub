@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Simulate progressive loading
+  // Simulate progressive loading - slower animation
   React.useEffect(() => {
     const interval = setInterval(() => {
       setLoadingProgress(prev => {
@@ -17,9 +17,9 @@ const Dashboard = () => {
           clearInterval(interval);
           return 100;
         }
-        return prev + Math.random() * 15;
+        return prev + Math.random() * 8; // Reduced from 15 to 8 for slower progress
       });
-    }, 200);
+    }, 300); // Increased from 200ms to 300ms for slower updates
 
     return () => clearInterval(interval);
   }, []);

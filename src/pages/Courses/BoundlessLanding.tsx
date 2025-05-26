@@ -1,359 +1,390 @@
+
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Check, BookOpen, Users, Award, Star, Clock, Target } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Crown, 
+  Users, 
+  Calendar, 
+  Trophy,
+  Target,
+  Lightbulb,
+  Zap,
+  Star,
+  ArrowRight,
+  CheckCircle,
+  Gift,
+  Heart,
+  Brain,
+  DollarSign
+} from "lucide-react";
+import IframeModal from "@/components/IframeModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
-import InstructorProfile from "@/components/InstructorProfile";
-import IframeModal from "@/components/IframeModal";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const BoundlessLanding = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Set countdown target for 7 days from now and convert to string
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + 7);
-  const endDateString = targetDate.toISOString();
+  const [showIframeModal, setShowIframeModal] = useState(false);
 
-  const handlePurchaseCourse = () => {
-    setIsModalOpen(true);
+  const handleEnrollClick = () => {
+    setShowIframeModal(true);
   };
+
+  // Calculate countdown end date (30 days from now)
+  const countdownEndDate = new Date();
+  countdownEndDate.setDate(countdownEndDate.getDate() + 30);
+
+  const features = [
+    { icon: Crown, title: "کوچینگ کسب‌وکار", description: "راهنمایی مستقیم برای راه‌اندازی و توسعه کسب‌وکار" },
+    { icon: Brain, title: "کوچینگ روانشناختی", description: "تقویت مهارت‌های ذهنی و مدیریت احساسات" },
+    { icon: Users, title: "جامعه اختصاصی", description: "عضویت در گروه ویژه با دسترسی به شبکه حرفه‌ای‌ها" },
+    { icon: Calendar, title: "۱۸۰ تکلیف روزانه", description: "برنامه عملی و گام‌به‌گام برای پیشرفت مداوم" },
+    { icon: Trophy, title: "جلسات زنده", description: "شرکت در وبینارهای تعاملی و سؤال و جواب" },
+    { icon: Target, title: "دسترسی مادام‌العمر", description: "دسترسی بدون محدودیت زمانی به تمام محتوا" }
+  ];
+
+  const benefits = [
+    "ایجاد درآمد ۵ رقمی دلاری در ۶ ماه",
+    "راه‌اندازی کسب‌وکار بین‌المللی",
+    "ساخت برند شخصی قدرتمند",
+    "دسترسی به بازارهای جهانی",
+    "شبکه‌سازی با موفق‌ترین افراد",
+    "تغییر کامل نگرش و ذهنیت"
+  ];
+
+  const bonuses = [
+    { title: "هوش مصنوعی اختصاصی", value: "$500", description: "دستیار AI شخصی برای مشاوره کسب‌وکار" },
+    { title: "پکیج طراحی برند", value: "$300", description: "لوگو، کارت ویزیت و هویت بصری کامل" },
+    { title: "دوره مکمل اینستاگرام", value: "$200", description: "استراتژی‌های پیشرفته بازاریابی شبکه‌های اجتماعی" },
+    { title: "کتاب الکترونیکی ۱۰۰ صفحه‌ای", value: "$100", description: "راهنمای کامل ساخت امپراتوری کسب‌وکار" }
+  ];
+
+  const testimonials = [
+    {
+      name: "علی محمدی",
+      role: "کارآفرین دیجیتال",
+      content: "در ۴ ماه توانستم درآمدم را ۱۰ برابر کنم. برنامه شروع بدون مرز واقعاً زندگی‌ام را تغییر داد.",
+      rating: 5
+    },
+    {
+      name: "سارا احمدی",
+      role: "صاحب استارتاپ",
+      content: "کوچینگ‌های روانشناختی به من کمک کرد تا اعتماد به نفسم را بازیابم و کسب‌وکار موفقی راه‌اندازی کنم.",
+      rating: 5
+    },
+    {
+      name: "محمد کریمی",
+      role: "مدیر فروش",
+      content: "جامعه اختصاصی این برنامه فوق‌العاده است. شبکه‌ای از افراد موفق که همیشه آماده کمک هستند.",
+      rating: 5
+    }
+  ];
+
+  const modules = [
+    { week: "هفته ۱-۲", title: "پایه‌گذاری ذهنیت", description: "شناخت خود، تعیین اهداف و ساخت ذهنیت پیروزی" },
+    { week: "هفته ۳-۶", title: "راه‌اندازی کسب‌وکار", description: "انتخاب نیچ، ساخت محصول و تعیین استراتژی" },
+    { week: "هفته ۷-۱۲", title: "بازاریابی و فروش", description: "ساخت قیف فروش، تبلیغات و جذب مشتری" },
+    { week: "هفته ۱۳-۱۸", title: "مقیاس‌پذیری", description: "اتوماسیون، استخدام تیم و گسترش کسب‌وکار" },
+    { week: "هفته ۱۹-۲۴", title: "حرفه‌ای‌سازی", description: "بهینه‌سازی سیستم‌ها و ایجاد درآمد غیرفعال" }
+  ];
+
+  const faqs = [
+    {
+      question: "آیا این برنامه برای مبتدیان مناسب است؟",
+      answer: "بله، برنامه شروع بدون مرز از صفر طراحی شده و هیچ پیش‌زمینه‌ای نیاز ندارد. تمام مفاهیم گام‌به‌گام آموزش داده می‌شود."
+    },
+    {
+      question: "چقدر زمان باید روزانه صرف کنم؟",
+      answer: "حداقل ۲ ساعت در روز توصیه می‌شود. اما برنامه طوری طراحی شده که با ۳۰ دقیقه در روز هم قابل اجرا باشد."
+    },
+    {
+      question: "آیا گارانتی بازگشت وجه دارد؟",
+      answer: "بله، ۳۰ روز گارانتی کامل بازگشت وجه داریم. اگر راضی نباشید، تمام پولتان برگردانده می‌شود."
+    },
+    {
+      question: "چه میزان درآمد می‌توانم انتظار داشته باشم؟",
+      answer: "با پیروی از برنامه، اکثر دانشجویان در ۶ ماه درآمد ۵ رقمی دلاری کسب می‌کنند. البته نتایج بستگی به میزان تلاش شما دارد."
+    }
+  ];
 
   return (
     <MainLayout>
-      {/* Hero Section */}
-      <section className="bg-white pt-24 pb-20 relative">
-        {/* Animated Glow Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="glow-circle glow-circle-1 animate-pulse"></div>
-          <div className="glow-circle glow-circle-2 animate-float-fast"></div>
-          <div className="glow-circle glow-circle-3 animate-pulse animation-delay-1000"></div>
-          <div className="glow-circle glow-circle-4 animate-float-slow animation-delay-2000"></div>
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-[20px] z-0"></div>
-        </div>
-        
-        <div className="container max-w-6xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="text-right">
-              <motion.h1 
-                className="text-4xl md:text-6xl font-bold mb-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                برنامه بدون مرز
-              </motion.h1>
-              <motion.p 
-                className="text-xl text-gray-600 mb-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                Boundless Program
-              </motion.p>
-              <motion.p 
-                className="text-lg text-gray-600 mb-8 leading-relaxed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                مجموعه‌ای کامل برای کسب‌وکارهای دیجیتال بدون مرز جغرافیایی. 
-                از ایده تا پیاده‌سازی و رشد، همه چیز در یک برنامه جامع.
-              </motion.p>
+      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50">
+        {/* Hero Section */}
+        <section className="py-20 relative overflow-hidden">
+          <div className="container max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <Badge className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                <Crown className="w-4 h-4 mr-1" />
+                برنامه پریمیوم
+              </Badge>
               
-              <motion.div 
-                className="grid grid-cols-1 gap-4 mb-8"
-                initial={{ opacity: 0, y: 20 }}
+              <motion.h1 
+                className="text-5xl md:text-7xl font-bold text-gray-900 mb-6"
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
+                transition={{ duration: 0.8 }}
               >
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={16} className="text-white" />
-                  </div>
-                  <p className="font-medium">راه‌اندازی کسب‌وکار دیجیتال بدون مرز جغرافیایی</p>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={16} className="text-white" />
-                  </div>
-                  <p className="font-medium">دسترسی به بازارهای بین‌المللی و کسب درآمد ارزی</p>
-                </div>
+                شروع
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> بدون مرز</span>
+              </motion.h1>
+              
+              <motion.p 
+                className="text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                تنها برنامه جامع کسب‌وکار که در ۶ ماه زندگی‌تان را کاملاً متحول می‌کند
+              </motion.p>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={16} className="text-white" />
+              {/* Pricing Section */}
+              <motion.div 
+                className="flex justify-center items-center gap-4 mb-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-2xl text-gray-400 line-through">$50</span>
+                    <span className="text-4xl font-bold text-green-600">$7</span>
+                    <Badge variant="destructive" className="text-xs">
+                      ۸۶% تخفیف
+                    </Badge>
                   </div>
-                  <p className="font-medium">راهکارهای عملی برای غلبه بر محدودیت‌های جغرافیایی</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    معادل ۵۰۰,۰۰۰ تومان
+                  </p>
                 </div>
               </motion.div>
-            </div>
-            
-            <motion.div
-              className="bg-white rounded-xl shadow-lg p-8 border border-black/10"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-black/5 rounded-full mb-4">
-                  <Target size={32} className="text-black" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">شروع کنید الان</h2>
-                <p className="text-gray-600">دسترسی فوری به برنامه کامل</p>
-              </div>
               
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">قیمت ویژه:</span>
-                  <span className="font-bold text-lg">۲,۹۹۰,۰۰۰ تومان</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-green-600">
-                  <Clock size={16} />
-                  <span className="text-sm">دسترسی مادام‌العمر</span>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handlePurchaseCourse}
-                size="lg" 
-                className="w-full bg-black hover:bg-black/90 text-white rounded-full px-8 text-lg py-6 h-auto"
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
               >
-                خرید دوره
-              </Button>
-              
-              <p className="text-xs text-center text-gray-500 mt-4">
-                ۳۰ روز ضمانت بازگشت وجه
-              </p>
-            </motion.div>
-          </div>
-          
-          <div className="mt-16">
-            <CountdownTimer endDate={endDateString} />
-          </div>
-        </div>
-      </section>
-      
-      {/* Course Content Overview */}
-      <section className="bg-gray-50 py-16">
-        <div className="container max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">محتویات دوره</h2>
-            <p className="text-lg text-gray-600">همه چیزی که برای شروع یک کسب‌وکار دیجیتال موفق نیاز دارید</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center p-6">
-              <CardContent className="pt-6">
-                <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen size={24} />
-                </div>
-                <h3 className="font-bold mb-2">مبانی کسب‌وکار دیجیتال</h3>
-                <p className="text-sm text-gray-600">
-                  شناخت بازار، تحلیل رقبا، و شناسایی فرصت‌های طلایی
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center p-6">
-              <CardContent className="pt-6">
-                <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users size={24} />
-                </div>
-                <h3 className="font-bold mb-2">بازاریابی و فروش</h3>
-                <p className="text-sm text-gray-600">
-                  استراتژی‌های مؤثر برای جذب مشتری و افزایش فروش
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center p-6">
-              <CardContent className="pt-6">
-                <div className="w-12 h-12 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Award size={24} />
-                </div>
-                <h3 className="font-bold mb-2">توسعه و رشد</h3>
-                <p className="text-sm text-gray-600">
-                  مقیاس‌سازی کسب‌وکار و ورود به بازارهای جدید
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-      
-      {/* Instructor Section */}
-      <section className="bg-white py-16">
-        <div className="container max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold mb-8 text-center">استاد دوره</h2>
-          <InstructorProfile compact={false} />
-        </div>
-      </section>
-      
-      {/* Testimonials */}
-      <section className="bg-black text-white py-16">
-        <div className="container max-w-6xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-12">
-            نظرات دانشجویان موفق
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white/10 p-6 rounded-xl">
-              <div className="flex items-center justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm mb-4">
-                "برنامه بدون مرز زندگی‌ام رو تغییر داد. الان کسب‌وکارم تو ۳ کشور مختلف داره."
-              </p>
-              <p className="font-medium">احمد محمدی</p>
-            </div>
-            
-            <div className="bg-white/10 p-6 rounded-xl">
-              <div className="flex items-center justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm mb-4">
-                "در ۶ ماه، درآمدم ۵ برابر شد. راهکارهای عملی و کاربردی ارائه می‌ده."
-              </p>
-              <p className="font-medium">سارا احمدی</p>
-            </div>
-            
-            <div className="bg-white/10 p-6 rounded-xl">
-              <div className="flex items-center justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm mb-4">
-                "بهترین سرمایه‌گذاری که تو زندگی‌م کردم. تونستم از صفر شروع کنم."
-              </p>
-              <p className="font-medium">علی رضایی</p>
+                <Button 
+                  onClick={handleEnrollClick}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 rounded-full px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
+                >
+                  <DollarSign className="mr-2" size={24} />
+                  همین حالا شروع کن - فقط $7
+                </Button>
+              </motion.div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Purchase Modal */}
+        {/* Countdown Timer */}
+        <section className="py-8">
+          <div className="container max-w-4xl mx-auto">
+            <CountdownTimer 
+              endDate={countdownEndDate.toISOString()}
+              className="mx-auto"
+            />
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className="py-16">
+          <div className="container max-w-6xl mx-auto">
+            <h2 className="text-4xl font-bold text-center mb-12">چرا شروع بدون مرز؟</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <feature.icon size={32} className="text-purple-600" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                      <p className="text-gray-600">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="py-16 bg-gradient-to-r from-purple-50 to-pink-50">
+          <div className="container max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4">نتایجی که کسب خواهید کرد</h2>
+              <p className="text-xl text-gray-600">تغییراتی که زندگی‌تان را متحول می‌کند</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {benefits.map((benefit, index) => (
+                <motion.div
+                  key={index}
+                  className="flex items-center space-x-4 space-x-reverse bg-white p-6 rounded-lg shadow-md"
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <CheckCircle size={20} className="text-green-600" />
+                  </div>
+                  <span className="text-lg font-medium">{benefit}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Bonuses Section */}
+        <section className="py-16">
+          <div className="container max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4 flex items-center justify-center">
+                <Gift className="mr-3 text-purple-600" />
+                هدایای ویژه
+              </h2>
+              <p className="text-xl text-gray-600">بیش از $1100 هدیه رایگان</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {bonuses.map((bonus, index) => (
+                <Card key={index} className="border-2 border-purple-200 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-bold">{bonus.title}</h3>
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        {bonus.value}
+                      </Badge>
+                    </div>
+                    <p className="text-gray-600">{bonus.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="py-16 bg-gray-50">
+          <div className="container max-w-6xl mx-auto">
+            <h2 className="text-4xl font-bold text-center mb-12">نظرات دانشجویان</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index} className="border-0 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} size={20} className="text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-gray-600 mb-4 italic">"{testimonial.content}"</p>
+                    <div>
+                      <h4 className="font-bold">{testimonial.name}</h4>
+                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Course Modules */}
+        <section className="py-16">
+          <div className="container max-w-4xl mx-auto">
+            <h2 className="text-4xl font-bold text-center mb-12">برنامه ۶ ماهه شما</h2>
+            <div className="space-y-6">
+              {modules.map((module, index) => (
+                <Card key={index} className="border-l-4 border-l-purple-500 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4 space-x-reverse">
+                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-600 font-bold">{index + 1}</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <Badge variant="outline" className="text-xs mr-3">
+                            {module.week}
+                          </Badge>
+                          <h3 className="text-xl font-bold">{module.title}</h3>
+                        </div>
+                        <p className="text-gray-600">{module.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="py-16 bg-gray-50">
+          <div className="container max-w-4xl mx-auto">
+            <h2 className="text-4xl font-bold text-center mb-12">سوالات متداول</h2>
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index}`}>
+                  <AccordionTrigger className="text-right text-lg font-semibold">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-gray-600 leading-relaxed">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-20 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+          <div className="container max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl font-bold mb-4">
+              آخرین فرصت برای تغییر زندگی‌تان
+            </h2>
+            <p className="text-xl mb-8 opacity-90">
+              فقط با $7 به جمع موفق‌ترین کارآفرینان بپیوندید
+            </p>
+            
+            <div className="flex justify-center items-center gap-4 mb-8">
+              <span className="text-2xl line-through opacity-70">$50</span>
+              <span className="text-5xl font-bold">$7</span>
+              <Badge className="bg-red-500 text-white">
+                محدود!
+              </Badge>
+            </div>
+            
+            <Button 
+              onClick={handleEnrollClick}
+              size="lg"
+              className="bg-white text-purple-600 hover:bg-gray-100 rounded-full px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
+            >
+              <Heart className="mr-2" size={24} />
+              همین الان شروع کن
+            </Button>
+            
+            <p className="text-sm mt-4 opacity-80">
+              ✅ ۳۰ روز گارانتی بازگشت وجه • ✅ دسترسی فوری • ✅ پشتیبانی ۲۴/۷
+            </p>
+          </div>
+        </section>
+      </div>
+
       <IframeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="خرید دوره برنامه بدون مرز"
+        isOpen={showIframeModal}
+        onClose={() => setShowIframeModal(false)}
+        title="ثبت‌نام در شروع بدون مرز"
         url="https://auth.rafiei.co/?add-to-cart=5311"
       />
-
-      <style>
-        {`
-        @keyframes pulse {
-          0%, 100% { 
-            opacity: 0.4;
-            transform: scale(1);
-          }
-          50% { 
-            opacity: 0.8;
-            transform: scale(1.15);
-          }
-        }
-        
-        @keyframes float-fast {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.5;
-          }
-          25% {
-            transform: translateY(-30px) translateX(15px);
-            opacity: 0.8;
-          }
-          50% {
-            transform: translateY(-5px) translateX(30px);
-            opacity: 0.6;
-          }
-          75% {
-            transform: translateY(25px) translateX(15px);
-            opacity: 0.8;
-          }
-        }
-        
-        @keyframes float-slow {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.4;
-          }
-          33% {
-            transform: translateY(-15px) translateX(25px);
-            opacity: 0.7;
-          }
-          66% {
-            transform: translateY(20px) translateX(-10px);
-            opacity: 0.5;
-          }
-        }
-        
-        .animate-pulse {
-          animation: pulse 6s infinite ease-in-out;
-        }
-        
-        .animate-float-fast {
-          animation: float-fast 12s infinite ease-in-out;
-        }
-        
-        .animate-float-slow {
-          animation: float-slow 18s infinite ease-in-out;
-        }
-        
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .glow-circle {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(30px);
-        }
-        
-        .glow-circle-1 {
-          width: 450px;
-          height: 450px;
-          background: radial-gradient(circle, rgba(147,112,219,0.45) 0%, rgba(147,112,219,0) 70%);
-          top: -150px;
-          right: 10%;
-        }
-        
-        .glow-circle-2 {
-          width: 550px;
-          height: 550px;
-          background: radial-gradient(circle, rgba(65,105,225,0.4) 0%, rgba(65,105,225,0) 70%);
-          bottom: -180px;
-          left: 10%;
-        }
-        
-        .glow-circle-3 {
-          width: 350px;
-          height: 350px;
-          background: radial-gradient(circle, rgba(123,104,238,0.4) 0%, rgba(123,104,238,0) 70%);
-          top: 30%;
-          left: 25%;
-        }
-        
-        .glow-circle-4 {
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(72,209,204,0.35) 0%, rgba(72,209,204,0) 70%);
-          top: 40%;
-          right: 20%;
-        }
-        `}
-      </style>
     </MainLayout>
   );
 };
