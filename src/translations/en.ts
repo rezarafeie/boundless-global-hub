@@ -322,7 +322,7 @@ const enTranslations = {
   aiAssistantFeature3Title: "Personalized Guidance",
   aiAssistantFeature3Desc: "Receive solutions tailored to your needs and goals",
   aiAssistantFeature4Title: "24/7 Access",
-  aiAssistantFeature4Desc: "Have access to guidance whenever you need it, day or night",
+  aiAssistantFeature4: "Have access to guidance whenever you need it, day or night",
   aiAssistantName: "Rafiei AI Assistant",
   aiAssistantLongDescription: "Get personalized guidance for your business and career goals with our advanced AI assistant trained on Rafiei Academy's exclusive knowledge base.",
   startAssistant: "Chat with Assistant",
