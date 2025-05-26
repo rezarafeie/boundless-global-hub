@@ -1,4 +1,5 @@
 
+
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -233,6 +234,7 @@ export const fa = {
   quizzes: "آزمون‌ها",
   certificate: "گواهی تکمیل دوره",
   lifetime: "دسترسی مادام‌العمر",
+  accessTrainingFiles: "دسترسی به فایل‌های آموزشی",
 
   // Auth modal
   loginTitle: "ورود به حساب",
@@ -258,3 +260,4 @@ export const fa = {
   footerCopyright: "© کلیه حقوق برای آکادمی رفیعی محفوظ است.",
   footerDesc: "آکادمی رفیعی، مرجع آموزش کسب و کار بدون مرز و درآمد ارزی"
 };
+
