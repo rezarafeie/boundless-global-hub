@@ -83,7 +83,10 @@ const Header = () => {
                 <Menu size={20} />
               </Button>
             </SheetTrigger>
-            <SheetContent side={language === "fa" ? "right" : "left"} className="w-[300px] sm:w-[400px]">
+            <SheetContent 
+              side={language === "fa" ? "right" : "left"} 
+              className="w-[300px] sm:w-[400px] z-[10002] [&>div]:z-[10001]"
+            >
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="flex items-center gap-2 pb-6 border-b">
