@@ -17,7 +17,6 @@ const enTranslations = {
   freeCourses: "Free Courses",
   assessmentCenter: "Assessment Center",
   aiAssistant: "AI Assistant",
-  loginRegister: "Login / Register",
   userAccount: "My Account",
   coursesTitle: "Training Courses",
   coursesSubtitle: "A collection of specialized courses to develop your skills",
@@ -154,6 +153,8 @@ const enTranslations = {
   // Footer
   footerCopyright: "© All rights reserved for Rafiei Academy.",
   footerDesc: "Rafiei Academy, the reference for boundless business education and foreign currency income",
+  aboutUs: "About Us",
+  contactUs: "Contact Us",
   faq: "FAQ",
   terms: "Terms & Conditions",
   privacy: "Privacy Policy",
@@ -176,7 +177,29 @@ const enTranslations = {
   downloadResources: "Download Resources",
   joinCommunity: "Join Community",
   trackProgress: "Track Progress",
-  earnCertificate: "Earn Certificate"
+  earnCertificate: "Earn Certificate",
+  
+  // AI Assistant
+  aiAssistantTitle: "AI Assistant",
+  aiAssistantDescription: "Get personalized guidance for your business and career goals using our advanced AI assistant trained on Rafiei Academy's exclusive knowledge base.",
+  aiAssistantAction: "Use AI Assistant",
+  aiAssistantFeature1Title: "Smart Responses",
+  aiAssistantFeature1Desc: "Get answers to your questions using advanced artificial intelligence",
+  aiAssistantFeature2Title: "Exclusive Resources",
+  aiAssistantFeature2Desc: "Access to resources and exclusive information from Rafiei Academy",
+  aiAssistantFeature3Title: "Personalized Guidance",
+  aiAssistantFeature3Desc: "Receive solutions tailored to your needs and goals",
+  aiAssistantFeature4Title: "24/7 Access",
+  aiAssistantFeature4: "Have access to guidance whenever you need it, day or night",
+  aiAssistantName: "Rafiei AI Assistant",
+  aiAssistantLongDescription: "Get personalized guidance for your business and career goals with our advanced AI assistant trained on Rafiei Academy's exclusive knowledge base.",
+  startAssistant: "Chat with Assistant",
+  aiFeature1: "Business Strategy",
+  aiFeature1Desc: "Receive insights and strategies for growing your business",
+  aiFeature2: "Career Development",
+  aiFeature2Desc: "Learn how to advance in your career path",
+  aiFeature3: "Personal Development",
+  aiFeature3Desc: "Discover ways to improve your skills and mindset"
 };
 
 export default enTranslations;

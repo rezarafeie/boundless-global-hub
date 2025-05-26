@@ -9,7 +9,7 @@ type Direction = "ltr" | "rtl";
 interface LanguageContextType {
   language: Language;
   direction: Direction;
-  translations: typeof enTranslations | typeof faTranslations;
+  translations: typeof enTranslations;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
 }
