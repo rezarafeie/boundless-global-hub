@@ -39,10 +39,10 @@ const Hero = ({
       
       {backgroundType === "dots" && (
         <div className="absolute inset-0 opacity-5 dark:opacity-10">
-          <div className="absolute inset-0" style={{ 
+          <div className="absolute inset-0 text-foreground" style={{ 
             backgroundImage: `radial-gradient(currentColor 1px, transparent 0)`, 
             backgroundSize: '20px 20px' 
-          }} className="text-foreground"></div>
+          }}></div>
         </div>
       )}
       
