@@ -24,14 +24,11 @@ const IframeModal: React.FC<IframeModalProps> = ({
     if (isOpen) {
       setIsLoading(true);
       setIframeLoaded(false);
-      // Prevent body scroll when overlay is open
       document.body.style.overflow = 'hidden';
     } else {
-      // Restore body scroll when overlay is closed
       document.body.style.overflow = 'unset';
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -73,12 +70,41 @@ const IframeModal: React.FC<IframeModalProps> = ({
         <X size={24} />
       </button>
 
-      {/* Loading Spinner */}
+      {/* Enhanced Loading Animation */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white">
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
-            <p className="text-lg text-gray-600">در حال بارگذاری...</p>
+            {/* Rafiei Academy Branded Loader */}
+            <div className="mb-8">
+              <div className="relative">
+                {/* Animated logo placeholder */}
+                <div className="w-16 h-16 mx-auto mb-4 bg-black rounded-xl flex items-center justify-center animate-pulse">
+                  <span className="text-white font-bold text-xl">R</span>
+                </div>
+                
+                {/* Pulsing brand text */}
+                <h3 className="text-2xl font-bold text-gray-800 animate-pulse mb-2">
+                  آکادمی رفیعی
+                </h3>
+                <p className="text-gray-600 animate-pulse">
+                  Rafiei Academy
+                </p>
+              </div>
+            </div>
+
+            {/* Animated dots loader */}
+            <div className="flex justify-center items-center space-x-2 mb-4">
+              <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-black rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            
+            <p className="text-lg text-gray-700 animate-pulse">در حال بارگذاری...</p>
+            
+            {/* Progress bar */}
+            <div className="w-64 h-1 bg-gray-200 rounded-full mx-auto mt-4 overflow-hidden">
+              <div className="h-full bg-black rounded-full animate-pulse" style={{ width: '60%' }}></div>
+            </div>
           </div>
         </div>
       )}
@@ -87,7 +113,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
       <iframe
         src={url}
         title={title}
-        className={`w-full h-full border-0 transition-opacity duration-300 ${
+        className={`w-full h-full border-0 transition-opacity duration-500 ${
           iframeLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         style={{

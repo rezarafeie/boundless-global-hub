@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import { useLanguage } from "@/contexts/LanguageContext";
-import RegistrationForm from "@/components/RegistrationForm";
+import IframeModal from "@/components/IframeModal";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +14,8 @@ const PaidCourses = () => {
   const { translations } = useLanguage();
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [showIframeModal, setShowIframeModal] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState("");
 
   const courses = [
     {
@@ -28,6 +29,7 @@ const PaidCourses = () => {
       duration: "6 months",
       modules: 12,
       students: 450,
+      cartUrl: "https://rafeie.com/?add-to-cart=5311",
       features: [
         "100+ hours of content",
         "180 daily tasks",
@@ -49,6 +51,7 @@ const PaidCourses = () => {
       duration: "4 weeks",
       modules: 6,
       students: 850,
+      cartUrl: "https://rafeie.com/?add-to-cart=5089",
       features: [
         "Content creation strategies",
         "Ad campaign setup",
@@ -70,6 +73,7 @@ const PaidCourses = () => {
       duration: "8 weeks",
       modules: 8,
       students: 620,
+      cartUrl: "https://rafeie.com/?add-to-cart=148",
       features: [
         "Financial planning",
         "Investment strategies",
@@ -91,6 +95,7 @@ const PaidCourses = () => {
       duration: "10 weeks",
       modules: 10,
       students: 380,
+      cartUrl: "https://rafeie.com/?add-to-cart=145",
       features: [
         "Web3 fundamentals",
         "NFT creation & trading",
@@ -107,16 +112,10 @@ const PaidCourses = () => {
     ? courses 
     : courses.filter(course => course.category === activeTab);
 
-  const handleCourseClick = (title: string) => {
+  const handleCourseClick = (title: string, cartUrl: string) => {
     setSelectedCourse(title);
-    
-    // Scroll to registration form
-    setTimeout(() => {
-      document.getElementById("registration-form")?.scrollIntoView({ 
-        behavior: "smooth",
-        block: "start"
-      });
-    }, 100);
+    setIframeUrl(cartUrl);
+    setShowIframeModal(true);
   };
 
   const containerVariants = {
@@ -176,13 +175,13 @@ const PaidCourses = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            key={activeTab} // Re-animate when tab changes
+            key={activeTab}
           >
             {filteredCourses.map((course, index) => (
               <motion.div key={index} variants={childVariants} className="h-full">
                 <div 
                   className="h-full group cursor-pointer" 
-                  onClick={() => handleCourseClick(course.title)}
+                  onClick={() => handleCourseClick(course.title, course.cartUrl)}
                 >
                   <div className="h-full bg-background border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
                     <div className="aspect-video relative">
@@ -251,18 +250,12 @@ const PaidCourses = () => {
         </div>
       </section>
 
-      <section id="registration-form" className="py-16 bg-gradient-to-b from-accent/5 to-background">
-        <div className="container">
-          <SectionTitle
-            title={selectedCourse || translations.paidCoursesTitle}
-            subtitle={translations.paidCoursesSubtitle}
-          />
-          
-          <div className="mt-8">
-            <RegistrationForm courseTitle={selectedCourse || ""} isPaid={true} />
-          </div>
-        </div>
-      </section>
+      <IframeModal
+        isOpen={showIframeModal}
+        onClose={() => setShowIframeModal(false)}
+        title={selectedCourse || "Course Purchase"}
+        url={iframeUrl}
+      />
     </MainLayout>
   );
 };

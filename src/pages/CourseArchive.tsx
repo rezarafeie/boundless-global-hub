@@ -1,37 +1,37 @@
 
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Award, Star, Clock, GraduationCap, Briefcase, FileText } from "lucide-react";
+import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import { useLanguage } from "@/contexts/LanguageContext";
-import Hero from "@/components/Hero";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { motion } from "framer-motion";
 
 const CourseArchive = () => {
-  const { translations } = useLanguage();
-  
-  // Track filter states
-  const [activeTab, setActiveTab] = useState("all");
-  const [courseCategory, setCourseCategory] = useState("all");
-  
+  const { translations, direction } = useLanguage();
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const filters = [
+    { id: "all", label: "همه دوره‌ها", labelEn: "All Courses" },
+    { id: "business", label: "کسب‌وکار", labelEn: "Business" },
+    { id: "personal", label: "توسعه فردی", labelEn: "Personal Development" },
+    { id: "free", label: "رایگان", labelEn: "Free" },
+    { id: "upcoming", label: "به‌زودی", labelEn: "Coming Soon" },
+    { id: "completed", label: "تکمیل شده", labelEn: "Completed" }
+  ];
+
   const courses = [
-    // Currently running courses
     {
       title: translations.boundlessProgram,
       description: translations.boundlessProgramDesc,
       benefits: translations.boundlessBenefits,
       outcome: translations.boundlessOutcome,
       isPaid: true,
-      slug: "boundless",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.intermediate,
-      cta: "شروع یادگیری",
       status: "active",
-      category: "business"
+      category: "business",
+      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
+      cartUrl: "https://rafeie.com/?add-to-cart=5311"
     },
     {
       title: translations.instagramEssentials,
@@ -39,70 +39,21 @@ const CourseArchive = () => {
       benefits: translations.instagramBenefits,
       outcome: translations.instagramOutcome,
       isPaid: true,
-      slug: "instagram",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      cta: "شروع یادگیری",
       status: "active",
-      category: "business"
+      category: "business",
+      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
+      cartUrl: "https://rafeie.com/?add-to-cart=5089"
     },
-    {
-      title: translations.passiveIncomeAI,
-      description: translations.passiveIncomeAIDesc,
-      benefits: translations.passiveIncomeAIBenefits,
-      outcome: translations.passiveIncomeAIOutcome,
-      isPaid: false,
-      slug: "passive-income",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      cta: "شروع یادگیری",
-      status: "active",
-      category: "business"
-    },
-    {
-      title: "پروژه تغییر",
-      description: translations.changeProjectDesc,
-      benefits: translations.changeProjectBenefits,
-      outcome: translations.changeProjectOutcome,
-      isPaid: false,
-      slug: "change-project",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      cta: "شروع یادگیری",
-      status: "active",
-      category: "self-development"
-    },
-    {
-      title: "آشنایی با متاورس",
-      description: "آشنایی با مفاهیم پایه متاورس، ارزهای دیجیتال و فرصت‌های این فناوری نوظهور",
-      benefits: "درک مفهوم متاورس و کاربردهای آن در زندگی روزمره",
-      outcome: "آشنایی با مفاهیم اولیه ارزهای دیجیتال و NFT",
-      isPaid: false,
-      slug: "metaverse-free",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      cta: "شروع یادگیری",
-      status: "active",
-      category: "business"
-    },
-    // Upcoming courses
     {
       title: translations.wealthCourse,
       description: translations.wealthCourseDesc,
       benefits: translations.wealthBenefits,
       outcome: translations.wealthOutcome,
       isPaid: true,
-      slug: "wealth",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.intermediate,
-      cta: "شروع یادگیری",
-      status: "upcoming",
-      category: "self-development"
+      status: "active",
+      category: "personal",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
+      cartUrl: "https://rafeie.com/?add-to-cart=148"
     },
     {
       title: translations.metaverseEmpire,
@@ -110,28 +61,10 @@ const CourseArchive = () => {
       benefits: translations.metaverseBenefits,
       outcome: translations.metaverseOutcome,
       isPaid: true,
-      slug: "metaverse",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.advanced,
-      cta: "شروع یادگیری",
-      status: "upcoming",
-      category: "business"
-    },
-    // Past courses
-    {
-      title: translations.americanBusiness,
-      description: translations.americanBusinessDesc,
-      benefits: translations.americanBusinessBenefits,
-      outcome: translations.americanBusinessOutcome,
-      isPaid: false,
-      slug: "american-business",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.intermediate,
-      cta: "شروع یادگیری",
-      status: "completed",
-      category: "business"
+      status: "active",
+      category: "business",
+      image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
+      cartUrl: "https://rafeie.com/?add-to-cart=145"
     },
     {
       title: translations.boundlessTaste,
@@ -139,180 +72,140 @@ const CourseArchive = () => {
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
       isPaid: false,
-      slug: "boundless-taste",
-      instructor: "رضا رفیعی",
-      instructorLink: "/instructor/reza-rafiei",
-      level: translations.beginner,
-      cta: "شروع یادگیری",
-      status: "completed",
-      category: "free"
+      status: "active",
+      category: "free",
+      link: "/course/boundless-taste"
+    },
+    {
+      title: translations.passiveIncomeAI,
+      description: translations.passiveIncomeAIDesc,
+      benefits: translations.passiveIncomeAIBenefits,
+      outcome: translations.passiveIncomeAIOutcome,
+      isPaid: false,
+      status: "active",
+      category: "free",
+      link: "/course/passive-income"
+    },
+    {
+      title: translations.changeProject,
+      description: translations.changeProjectDesc,
+      benefits: translations.changeProjectBenefits,
+      outcome: translations.changeProjectOutcome,
+      isPaid: false,
+      status: "active",
+      category: "free",
+      link: "/course/change"
+    },
+    {
+      title: translations.americanBusiness,
+      description: translations.americanBusinessDesc,
+      benefits: translations.americanBusinessBenefits,
+      outcome: translations.americanBusinessOutcome,
+      isPaid: false,
+      status: "active",
+      category: "free",
+      link: "/course/american-business"
     }
   ];
-  
-  // Filter courses based on active tab and category
-  const filterCourses = () => {
-    let filtered = [...courses];
-    
-    // Filter by status (active tab)
-    if (activeTab !== "all") {
-      filtered = filtered.filter(course => course.status === activeTab);
-    }
-    
-    // Filter by category
-    if (courseCategory !== "all") {
-      filtered = filtered.filter(course => {
-        if (courseCategory === "free") {
-          return !course.isPaid;
-        }
-        return course.category === courseCategory;
+
+  const filteredCourses = activeFilter === "all" 
+    ? courses 
+    : courses.filter(course => {
+        if (activeFilter === "free") return !course.isPaid;
+        if (activeFilter === "upcoming") return course.status === "upcoming";
+        if (activeFilter === "completed") return course.status === "completed";
+        return course.category === activeFilter;
       });
-    }
-    
-    return filtered;
-  };
 
   return (
     <MainLayout>
+      {/* Single Hero Section - Remove dark secondary hero */}
       <Hero
         title={translations.trainingCenter}
         subtitle={translations.trainingCenterDesc}
-        ctaText={translations.startLearning}
+        ctaText={translations.callToAction}
         ctaLink="#courses"
         backgroundType="glow"
       />
-
-      <div className="bg-black text-white py-12">
+      
+      <section id="courses" className="py-16">
         <div className="container">
-          <SectionTitle 
-            title={translations.trainingCenter} 
-            subtitle="مجموعه دوره‌های تخصصی برای توسعه مهارت‌های کسب و کار و کسب درآمد ارزی"
-            isCentered={true}
-            isWhite={true}
+          <SectionTitle
+            title={translations.coursesTitle}
+            subtitle={translations.coursesSubtitle}
           />
-        </div>
-      </div>
-
-      <div className="container py-16">
-        {/* Category Filter Buttons */}
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
-          <Button
-            variant={courseCategory === "all" ? "default" : "outline"}
-            className={`rounded-full ${courseCategory === "all" ? "bg-black text-white" : "border-black/20 text-black"}`}
-            onClick={() => setCourseCategory("all")}
-          >
-            <BookOpen className="mr-2 h-4 w-4" />
-            همه دوره‌ها
-          </Button>
-          <Button
-            variant={courseCategory === "business" ? "default" : "outline"}
-            className={`rounded-full ${courseCategory === "business" ? "bg-black text-white" : "border-black/20 text-black"}`}
-            onClick={() => setCourseCategory("business")}
-          >
-            <Briefcase className="mr-2 h-4 w-4" />
-            {translations.businessCourses}
-          </Button>
-          <Button
-            variant={courseCategory === "self-development" ? "default" : "outline"}
-            className={`rounded-full ${courseCategory === "self-development" ? "bg-black text-white" : "border-black/20 text-black"}`}
-            onClick={() => setCourseCategory("self-development")}
-          >
-            <GraduationCap className="mr-2 h-4 w-4" />
-            {translations.selfDevelopmentCourses}
-          </Button>
-          <Button
-            variant={courseCategory === "free" ? "default" : "outline"}
-            className={`rounded-full ${courseCategory === "free" ? "bg-black text-white" : "border-black/20 text-black"}`}
-            onClick={() => setCourseCategory("free")}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {translations.freeCoursesTitle}
-          </Button>
-        </div>
-        
-        {/* Course Filter Tabs */}
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <div className="flex justify-center mb-12">
-            <TabsList className="bg-black/5 rounded-full p-1">
-              <TabsTrigger value="all" className="rounded-full data-[state=active]:bg-black data-[state=active]:text-white px-6">
-                <BookOpen className="h-4 w-4 mr-2" />
-                <span>همه دوره‌ها</span>
-              </TabsTrigger>
-              <TabsTrigger value="active" className="rounded-full data-[state=active]:bg-black data-[state=active]:text-white px-6">
-                <Star className="h-4 w-4 mr-2" />
-                <span>{translations.activeStatus}</span>
-              </TabsTrigger>
-              <TabsTrigger value="upcoming" className="rounded-full data-[state=active]:bg-black data-[state=active]:text-white px-6">
-                <Award className="h-4 w-4 mr-2" />
-                <span>{translations.upcomingStatus}</span>
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="rounded-full data-[state=active]:bg-black data-[state=active]:text-white px-6">
-                <Clock className="h-4 w-4 mr-2" />
-                <span>{translations.completedStatus}</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
           
-          {/* Active Tab Content */}
-          <TabsContent value={activeTab} className="mt-0">
-            {activeTab === "active" && (
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2">{translations.currentlyRunning}</h3>
-                <p className="text-gray-600 mb-6">{translations.currentlyRunningDesc}</p>
+          {/* Mobile-Optimized Filter Tabs */}
+          <div className="mb-8">
+            {/* Desktop Filters */}
+            <div className="hidden md:flex justify-center">
+              <div className="flex gap-2 p-1 bg-gray-100 rounded-full">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => setActiveFilter(filter.id)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      activeFilter === filter.id
+                        ? 'bg-black text-white shadow-md'
+                        : 'text-gray-600 hover:text-black hover:bg-white'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
               </div>
-            )}
-            
-            {activeTab === "upcoming" && (
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2">{translations.upcomingCourses}</h3>
-                <p className="text-gray-600 mb-6">{translations.upcomingCoursesDesc}</p>
-              </div>
-            )}
-            
-            {activeTab === "completed" && (
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2">{translations.pastCourses}</h3>
-                <p className="text-gray-600 mb-6">{translations.pastCoursesDesc}</p>
-              </div>
-            )}
-            
-            {/* Display filtered courses */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filterCourses().map((course, index) => (
-                <CourseCard
-                  key={index}
-                  title={course.title}
-                  description={course.description}
-                  benefits={course.benefits}
-                  outcome={course.outcome}
-                  isPaid={course.isPaid}
-                  slug={course.slug}
-                  instructor={course.instructor}
-                  instructorLink={course.instructorLink}
-                  level={course.level}
-                  cta={course.cta}
-                  status={course.status as any}
-                />
-              ))}
             </div>
             
-            {filterCourses().length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">هیچ دوره‌ای با فیلترهای انتخابی یافت نشد.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => {
-                    setActiveTab('all');
-                    setCourseCategory('all');
-                  }}
-                >
-                  نمایش همه دوره‌ها
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+            {/* Mobile Horizontal Scrollable Filters */}
+            <div className="md:hidden">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <div className={`flex gap-3 p-4 ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
+                        activeFilter === filter.id
+                          ? 'bg-black text-white border-black shadow-lg'
+                          : 'text-gray-600 border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </div>
+          </div>
+          
+          {/* Course Grid */}
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            key={activeFilter}
+          >
+            {filteredCourses.map((course, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <CourseCard {...course} />
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {filteredCourses.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">هیچ دوره‌ای در این دسته‌بندی یافت نشد.</p>
+            </div>
+          )}
+        </div>
+      </section>
     </MainLayout>
   );
 };
