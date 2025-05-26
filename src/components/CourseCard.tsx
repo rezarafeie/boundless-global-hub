@@ -21,7 +21,6 @@ interface CourseCardProps {
   cta?: string;
   status?: "active" | "upcoming" | "completed";
   category?: "business" | "self-development" | "free";
-  image?: string;
   cartUrl?: string;
   link?: string;
 }
@@ -40,7 +39,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
   cta = "",
   status,
   category,
-  image,
   cartUrl,
   link
 }) => {
@@ -74,16 +72,23 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Handle CTA button click - direct navigation instead of modal
+  // Handle CTA button click - direct navigation
   const handleCtaClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     if (isPaid) {
-      // For paid courses, navigate to course landing page
       navigate(`/courses/${slug}`);
     } else {
-      // For free courses, navigate to course page
+      navigate(`/course/${slug}`);
+    }
+  };
+
+  // Handle card click - navigate to course
+  const handleCardClick = () => {
+    if (isPaid) {
+      navigate(`/courses/${slug}`);
+    } else {
       navigate(`/course/${slug}`);
     }
   };
@@ -103,91 +108,80 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <Link to={getCourseUrl()} className="block h-full group">
-      <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        {/* Course Image */}
-        {image && (
-          <div className="aspect-video relative overflow-hidden">
-            <img 
-              src={image} 
-              alt={title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <Card 
+      className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl cursor-pointer group"
+      onClick={handleCardClick}
+    >
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
+            {getCourseIcon()}
           </div>
+          <div className="ml-3">
+            <Badge
+              variant={isPaid ? "default" : "outline"}
+              className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+            >
+              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
+            </Badge>
+          </div>
+        </div>
+        {status && (
+          <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+            {status === "active" && translations.activeStatus}
+            {status === "upcoming" && translations.upcomingStatus}
+            {status === "completed" && translations.completedStatus}
+          </Badge>
+        )}
+      </div>
+      
+      <CardContent className="p-4 pt-0 flex-grow">
+        <h3 className="text-xl font-bold text-black mb-2 group-hover:text-primary transition-colors">{title}</h3>
+        {englishTitle && (
+          <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
         )}
         
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
-              {getCourseIcon()}
-            </div>
-            <div className="ml-3">
-              <Badge
-                variant={isPaid ? "default" : "outline"}
-                className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
-              >
-                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-              </Badge>
-            </div>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
+        
+        <div className="space-y-2 mb-4">
+          <div className="text-sm">
+            <span className="font-medium">✓ </span>
+            {benefits}
           </div>
-          {status && (
-            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
-              {status === "active" && translations.activeStatus}
-              {status === "upcoming" && translations.upcomingStatus}
-              {status === "completed" && translations.completedStatus}
-            </Badge>
-          )}
+          <div className="text-sm">
+            <span className="font-medium">→ </span>
+            {outcome}
+          </div>
         </div>
         
-        <CardContent className="p-4 pt-0 flex-grow">
-          <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
-          {englishTitle && (
-            <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
-          )}
-          
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
-          
-          <div className="space-y-2 mb-4">
-            <div className="text-sm">
-              <span className="font-medium">✓ </span>
-              {benefits}
-            </div>
-            <div className="text-sm">
-              <span className="font-medium">→ </span>
-              {outcome}
-            </div>
+        {instructor && (
+          <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
+            <User size={14} className="mr-1" />
+            {instructorLink ? (
+              <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
+                {instructor}
+              </Link>
+            ) : (
+              <span>{instructor}</span>
+            )}
+            {level && (
+              <Badge variant="outline" className="ml-2 text-xs">
+                {level}
+              </Badge>
+            )}
           </div>
-          
-          {instructor && (
-            <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
-              <User size={14} className="mr-1" />
-              {instructorLink ? (
-                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
-                  {instructor}
-                </Link>
-              ) : (
-                <span>{instructor}</span>
-              )}
-              {level && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {level}
-                </Badge>
-              )}
-            </div>
-          )}
-        </CardContent>
-        
-        <CardFooter className="p-4 pt-0">
-          <Button 
-            onClick={handleCtaClick}
-            className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
-          >
-            {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+        )}
+      </CardContent>
+      
+      <CardFooter className="p-4 pt-0">
+        <Button 
+          onClick={handleCtaClick}
+          className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all font-semibold"
+        >
+          {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 

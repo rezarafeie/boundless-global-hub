@@ -1,17 +1,17 @@
 
 import React from "react";
-import FreeCourseLanding from "@/pages/Courses/FreeCourseLanding";
+import FreeCourseLanding from "../Courses/FreeCourseLanding";
 
 const AmericanBusinessPage = () => {
   return (
     <FreeCourseLanding
       title="کسب‌وکار آمریکایی"
       englishTitle="American Business"
-      description="راهنمای کاملی برای راه‌اندازی و مدیریت کسب‌وکار در بازار آمریکا. از قوانین تا استراتژی‌های بازاریابی، همه چیز در این دوره آموخته می‌شود."
-      benefitOne="آشنایی با قوانین و مقررات کسب‌وکار در آمریکا"
-      benefitTwo="یادگیری روش‌های مؤثر بازاریابی و فروش"
+      description="آشنایی با اصول راه‌اندازی و مدیریت کسب‌وکار در آمریکا"
+      benefitOne="یادگیری قوانین و مقررات کسب‌وکار آمریکایی"
+      benefitTwo="آماده‌سازی برای ورود به بازار آمریکا و توسعه کسب‌وکار"
       iconType="graduation"
-      iframeUrl="https://rafeie.com/class/americanbusiness/"
+      iframeUrl="https://auth.rafiei.co/?add-to-cart=5311"
     />
   );
 };
