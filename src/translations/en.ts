@@ -33,68 +33,6 @@ const enTranslations = {
   careerTests: "Career Tests",
   emotionTests: "Emotional Intelligence Tests",
   
-  // Test descriptions
-  personalityTestDesc: "Discover your personality traits and how they influence your life and career choices.",
-  intelligenceTestDesc: "Measure different aspects of your cognitive abilities and intellectual potential.",
-  careerTestDesc: "Identify career paths that align with your interests, values, skills, and personality.",
-  emotionTestDesc: "Evaluate your emotional intelligence and ability to understand and manage emotions.",
-  
-  // Test durations
-  testDuration10: "10 min",
-  testDuration12: "12 min",
-  testDuration15: "15 min",
-  testDuration20: "20 min",
-  
-  // Enhanced Assessment translations
-  psychologyTests: "Psychology Tests",
-  cognitiveTests: "Cognitive Tests",
-  aptitudeTests: "Aptitude Tests",
-  professionalTests: "Professional Tests",
-  leadershipTests: "Leadership Tests",
-  communicationTests: "Communication Tests",
-  creativeTests: "Creative Tests",
-  analyticalTests: "Analytical Tests",
-  
-  // Course page enhancements
-  courseFeatures: "Course Features",
-  courseIncludes: "What's Included",
-  courseOutcomes: "Learning Outcomes",
-  courseBenefits: "Course Benefits",
-  limitedTimeOffer: "Limited Time Offer",
-  enrollmentDeadline: "Enrollment Deadline",
-  courseDuration: "Course Duration",
-  courseLevel: "Course Level",
-  courseLanguage: "Course Language",
-  courseFormat: "Course Format",
-  liveSession: "Live Session",
-  recordedContent: "Recorded Content",
-  downloadableResources: "Downloadable Resources",
-  certificateIncluded: "Certificate Included",
-  moneyBackGuarantee: "Money Back Guarantee",
-  
-  // Enhanced UI elements
-  loading: "Loading...",
-  pleaseWait: "Please wait...",
-  processing: "Processing...",
-  almostDone: "Almost done...",
-  loadingContent: "Loading content...",
-  preparingCourse: "Preparing your course...",
-  connectingToServer: "Connecting to server...",
-  
-  // Enhanced navigation
-  previousPage: "Previous Page",
-  nextPage: "Next Page",
-  backToCourses: "Back to Courses",
-  viewAllCourses: "View All Courses",
-  relatedCourses: "Related Courses",
-  recommendedForYou: "Recommended for You",
-  
-  // Enhanced course status
-  enrollNow: "Enroll Now",
-  getInstantAccess: "Get Instant Access",
-  startImmediately: "Start Immediately",
-  joinThousands: "Join Thousands of Students",
-  
   // Course names and descriptions
   boundlessProgram: "Boundless Program",
   boundlessProgramDesc: "Comprehensive course on earning foreign currency and launching an international business",
@@ -212,6 +150,7 @@ const enTranslations = {
   mySettings: "Settings",
   logout: "Logout",
   
+  // BoundlessLanding translations
   boundlessLandingTitle: "Boundless Program",
   boundlessLandingSubtitle: "Master the art of international business",
   boundlessLandingDesc: "Comprehensive course on earning foreign currency and launching an international business",
@@ -282,6 +221,7 @@ const enTranslations = {
   blog: "Blog",
   about: "About Us",
   contact: "Contact Us",
+  loading: "Loading...",
   
   // System messages
   allCourses: "All Courses",

@@ -8,7 +8,7 @@ const faTranslations = {
   buyNow: "خرید دوره",
   joinNow: "ثبت‌نام",
   startLearning: "شروع یادگیری",
-  startTest: "شروع تست",
+  startTest: "شروع آزمون",
   startCourse: "شروع دوره",
   startFreeCourse: "شروع دوره رایگان",
   home: "خانه",
@@ -31,68 +31,6 @@ const faTranslations = {
   intelligenceTests: "آزمون‌های هوش",
   careerTests: "آزمون‌های شغلی",
   emotionTests: "آزمون‌های هوش هیجانی",
-  
-  // Test descriptions
-  personalityTestDesc: "شناخت ویژگی‌های شخصیتی خود و تأثیر آن‌ها بر زندگی و انتخاب‌های شغلی شما.",
-  intelligenceTestDesc: "سنجش جنبه‌های مختلف توانایی‌های ذهنی و پتانسیل فکری شما.",
-  careerTestDesc: "شناسایی مسیرهای شغلی متناسب با علایق، ارزش‌ها، مهارت‌ها و شخصیت شما.",
-  emotionTestDesc: "ارزیابی هوش هیجانی و توانایی درک و مدیریت احساسات شما.",
-  
-  // Test durations
-  testDuration10: "۱۰ دقیقه",
-  testDuration12: "۱۲ دقیقه",
-  testDuration15: "۱۵ دقیقه",
-  testDuration20: "۲۰ دقیقه",
-  
-  // Enhanced Assessment translations
-  psychologyTests: "آزمون‌های روان‌شناسی",
-  cognitiveTests: "آزمون‌های شناختی",
-  aptitudeTests: "آزمون‌های استعداد",
-  professionalTests: "آزمون‌های حرفه‌ای",
-  leadershipTests: "آزمون‌های رهبری",
-  communicationTests: "آزمون‌های ارتباطات",
-  creativeTests: "آزمون‌های خلاقیت",
-  analyticalTests: "آزمون‌های تحلیلی",
-  
-  // Course page enhancements
-  courseFeatures: "ویژگی‌های دوره",
-  courseIncludes: "شامل چه چیزهایی است",
-  courseOutcomes: "نتایج یادگیری",
-  courseBenefits: "مزایای دوره",
-  limitedTimeOffer: "پیشنهاد محدود",
-  enrollmentDeadline: "آخرین مهلت ثبت‌نام",
-  courseDuration: "مدت زمان دوره",
-  courseLevel: "سطح دوره",
-  courseLanguage: "زبان دوره",
-  courseFormat: "فرمت دوره",
-  liveSession: "جلسه زنده",
-  recordedContent: "محتوای ضبط شده",
-  downloadableResources: "منابع قابل دانلود",
-  certificateIncluded: "گواهی شامل است",
-  moneyBackGuarantee: "ضمانت بازگشت وجه",
-  
-  // Enhanced UI elements
-  loading: "در حال بارگذاری...",
-  pleaseWait: "لطفاً صبر کنید...",
-  processing: "در حال پردازش...",
-  almostDone: "تقریباً تمام...",
-  loadingContent: "بارگذاری محتوا...",
-  preparingCourse: "آماده‌سازی دوره شما...",
-  connectingToServer: "اتصال به سرور...",
-  
-  // Enhanced navigation
-  previousPage: "صفحه قبلی",
-  nextPage: "صفحه بعدی",
-  backToCourses: "بازگشت به دوره‌ها",
-  viewAllCourses: "مشاهده همه دوره‌ها",
-  relatedCourses: "دوره‌های مرتبط",
-  recommendedForYou: "پیشنهاد ویژه برای شما",
-  
-  // Enhanced course status
-  enrollNow: "ثبت‌نام کنید",
-  getInstantAccess: "دسترسی فوری",
-  startImmediately: "شروع فوری",
-  joinThousands: "به هزاران دانشجو بپیوندید",
   
   // Course names and descriptions
   boundlessProgram: "برنامه بدون مرز",

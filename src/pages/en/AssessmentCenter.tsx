@@ -35,33 +35,21 @@ const EnglishAssessmentCenter = () => {
               title={translations.personalityTests}
               description="Discover your personality traits and how they influence your life and career choices."
               category={translations.personalityTests}
-              slug="test/mbti"
-              duration="20 min"
-              questions={93}
             />
             <TestCard
               title={translations.intelligenceTests}
               description="Measure different aspects of your cognitive abilities and intellectual potential."
               category={translations.intelligenceTests}
-              slug="test/mii"
-              duration="15 min"
-              questions={40}
             />
             <TestCard
               title={translations.careerTests}
               description="Identify career paths that align with your interests, values, skills, and personality."
               category={translations.careerTests}
-              slug="test/boundless"
-              duration="10 min"
-              questions={25}
             />
             <TestCard
               title={translations.emotionTests}
               description="Evaluate your emotional intelligence and ability to understand and manage emotions."
               category={translations.emotionTests}
-              slug="test/eq-shatt"
-              duration="12 min"
-              questions={30}
             />
           </div>
         </div>

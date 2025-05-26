@@ -35,7 +35,7 @@ const TestCard: React.FC<TestCardProps> = ({
     }
   };
 
-  const { direction, language, translations } = useLanguage();
+  const { direction } = useLanguage();
 
   const cardContent = (
     <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-white rounded-xl ${slug ? 'cursor-pointer' : ''}`}>
@@ -59,7 +59,7 @@ const TestCard: React.FC<TestCardProps> = ({
             {questions && (
               <div className="flex items-center gap-1">
                 <HelpCircle size={14} />
-                <span>{questions} {language === "fa" ? "سؤال" : "questions"}</span>
+                <span>{questions} سؤال</span>
               </div>
             )}
           </div>
