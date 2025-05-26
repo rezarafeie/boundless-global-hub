@@ -68,8 +68,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const getCourseUrl = () => {
     if (link) return link;
     if (isPaid) {
+      // Fixed: Ensure paid courses go to their specific landing pages
       return `/courses/${slug}`;
     } else {
+      // Free courses go to their course pages
       return `/course/${slug}`;
     }
   };
