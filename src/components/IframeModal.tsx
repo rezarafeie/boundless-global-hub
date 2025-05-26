@@ -17,15 +17,15 @@ const IframeModal: React.FC<IframeModalProps> = ({
   title,
   url,
   height = "600px",
-  showCloseButton = true
+  showCloseButton = false
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Header height constant
-  const HEADER_HEIGHT = 80;
+  // Header height constant - adjusted for perfect positioning
+  const HEADER_HEIGHT = 64;
 
   useEffect(() => {
     if (isOpen) {
@@ -62,7 +62,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
       }
     };
 
-    if (isOpen) {
+    if (isOpen && showCloseButton) {
       document.addEventListener('keydown', handleEscKey);
     }
 
@@ -104,7 +104,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
   const updatedUrl = url.replace('rafeie.com', 'auth.rafiei.co');
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] bg-black/50">
       {/* Close Button - conditionally rendered */}
       {showCloseButton && (
         <button
