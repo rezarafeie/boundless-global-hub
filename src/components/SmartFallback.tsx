@@ -7,12 +7,34 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 const SmartFallback = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [iframeFailed, setIframeFailed] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const location = useLocation();
 
   const iframeSrc = `https://auth.rafiei.co${location.pathname}`;
 
+  useEffect(() => {
+    // Progressive loading animation
+    const interval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + Math.random() * 8;
+      });
+    }, 200);
+
+    console.log(`404 Fallback: Loading iframe for path: ${location.pathname}`);
+    console.log(`Iframe source: ${iframeSrc}`);
+
+    return () => clearInterval(interval);
+  }, [location.pathname, iframeSrc]);
+
   const handleIframeLoad = () => {
-    setIsLoading(false);
+    setLoadingProgress(100);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
   };
 
   const handleIframeError = () => {
@@ -20,25 +42,17 @@ const SmartFallback = () => {
     setIframeFailed(true);
   };
 
-  useEffect(() => {
-    console.log(`404 Fallback: Loading iframe for path: ${location.pathname}`);
-    console.log(`Iframe source: ${iframeSrc}`);
-  }, [location.pathname, iframeSrc]);
-
   return (
     <MainLayout>
       <div className="min-h-[calc(100vh-4rem)]">
-        {/* Loading Animation */}
+        {/* Enhanced Loading Animation */}
         {isLoading && (
           <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
             <div className="text-center">
-              <LoadingSpinner size="lg" />
+              <LoadingSpinner size="lg" showProgress={true} progress={loadingProgress} />
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-4 mb-2">
                 در حال بارگذاری صفحه
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                {location.pathname}
-              </p>
             </div>
           </div>
         )}
@@ -53,9 +67,6 @@ const SmartFallback = () => {
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
                 صفحه مورد نظر در هیچ‌یک از پلتفرم‌های آکادمی و auth موجود نیست.
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                مسیر درخواستی: <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">{location.pathname}</code>
               </p>
               <button
                 onClick={() => window.history.back()}

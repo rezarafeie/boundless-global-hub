@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface IframeModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Header height constant - adjusted for perfect positioning
+  // Header height constant
   const HEADER_HEIGHT = 64;
 
   useEffect(() => {
@@ -32,26 +33,36 @@ const IframeModal: React.FC<IframeModalProps> = ({
       setIsLoading(true);
       setIframeLoaded(false);
       setLoadingProgress(0);
+      
+      // Lock scroll when modal opens
       document.body.style.overflow = 'hidden';
       
-      // Slower progressive loading
+      // Progressive loading animation
       const interval = setInterval(() => {
         setLoadingProgress(prev => {
-          if (prev >= 85) {
+          if (prev >= 90) {
             clearInterval(interval);
-            return 85;
+            return 90;
           }
-          return prev + Math.random() * 3; // Much slower progress
+          return prev + Math.random() * 8;
         });
-      }, 400); // Slower updates
+      }, 200);
 
       return () => clearInterval(interval);
     } else {
-      document.body.style.overflow = 'unset';
+      // CRITICAL FIX: Properly restore page state when closing
+      document.body.style.overflow = 'auto';
+      document.body.style.pointerEvents = 'auto';
+      document.documentElement.style.overflow = 'auto';
+      document.documentElement.style.pointerEvents = 'auto';
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      // Cleanup on unmount
+      document.body.style.overflow = 'auto';
+      document.body.style.pointerEvents = 'auto';
+      document.documentElement.style.overflow = 'auto';
+      document.documentElement.style.pointerEvents = 'auto';
     };
   }, [isOpen]);
 
@@ -77,14 +88,13 @@ const IframeModal: React.FC<IframeModalProps> = ({
       const timer = setTimeout(() => {
         if (iframeRef.current) {
           try {
-            // Direct iframe redirect to checkout page
             iframeRef.current.src = 'https://auth.rafiei.co/checkout/';
             console.log('Redirecting iframe to checkout after add-to-cart');
           } catch (error) {
             console.log('Iframe redirect handled by server');
           }
         }
-      }, 2000); // Faster redirect - 2 seconds
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
@@ -95,7 +105,16 @@ const IframeModal: React.FC<IframeModalProps> = ({
     setTimeout(() => {
       setIsLoading(false);
       setIframeLoaded(true);
-    }, 600); // Slightly slower transition
+    }, 300);
+  };
+
+  const handleClose = () => {
+    // Ensure proper cleanup before closing
+    document.body.style.overflow = 'auto';
+    document.body.style.pointerEvents = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    document.documentElement.style.pointerEvents = 'auto';
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -113,10 +132,10 @@ const IframeModal: React.FC<IframeModalProps> = ({
         height: `calc(100vh - ${HEADER_HEIGHT}px)`
       }}
     >
-      {/* Close Button - conditionally rendered */}
+      {/* Close Button */}
       {showCloseButton && (
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 z-[10000] bg-white/90 hover:bg-white text-black rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
           aria-label="بستن"
         >
@@ -124,42 +143,31 @@ const IframeModal: React.FC<IframeModalProps> = ({
         </button>
       )}
 
-      {/* Enhanced Loading Animation with Progress */}
+      {/* Enhanced Loading Animation with Progress Bar */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
-          <div className="text-center">
+          <div className="text-center max-w-md">
             {/* Rafiei Academy Branded Loader */}
             <div className="mb-8">
-              <div className="relative">
-                {/* Animated logo placeholder */}
-                <div className="w-16 h-16 mx-auto mb-4 bg-black dark:bg-white rounded-xl flex items-center justify-center animate-pulse">
-                  <span className="text-white dark:text-black font-bold text-xl">R</span>
-                </div>
-                
-                {/* Pulsing brand text */}
-                <h3 className="text-2xl font-bold text-gray-800 dark:text-white animate-pulse mb-2">
-                  آکادمی رفیعی
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 animate-pulse">
-                  Rafiei Academy
-                </p>
+              <div className="w-16 h-16 mx-auto mb-6 bg-black dark:bg-white rounded-xl flex items-center justify-center animate-pulse">
+                <span className="text-white dark:text-black font-bold text-xl">R</span>
               </div>
-            </div>
-
-            {/* Progress indicator */}
-            <div className="mb-4">
-              <div className="w-64 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
-                <div 
-                  className="h-full bg-black dark:bg-white transition-all duration-500 ease-out rounded-full"
-                  style={{ width: `${Math.min(100, Math.max(0, loadingProgress))}%` }}
-                ></div>
-              </div>
-              <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
-                {Math.round(loadingProgress)}% تکمیل شده
+              
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                آکادمی رفیعی
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Rafiei Academy
               </p>
             </div>
-            
-            <p className="text-lg text-gray-700 dark:text-gray-200 animate-pulse">در حال بارگذاری...</p>
+
+            {/* Progress Bar */}
+            <div className="w-80 mb-4">
+              <Progress value={loadingProgress} className="h-3 mb-3" />
+              <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
+                {Math.round(loadingProgress)}% بارگذاری شده
+              </p>
+            </div>
           </div>
         </div>
       )}

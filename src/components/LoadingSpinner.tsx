@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Progress } from "@/components/ui/progress";
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -22,16 +23,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   return (
     <div className={`flex flex-col items-center justify-center ${className}`}>
-      <div className="relative">
+      <div className="relative mb-6">
         {/* Main spinning ring */}
         <div className={`${sizeClasses[size]} border-4 border-gray-200 rounded-full animate-spin border-t-black`}></div>
         
-        {/* Inner pulsing circle */}
-        <div className={`absolute inset-2 bg-black/10 rounded-full animate-pulse`}></div>
-        
         {/* Center logo/icon */}
         <div className={`absolute inset-0 flex items-center justify-center`}>
-          <div className="w-6 h-6 bg-black rounded-sm flex items-center justify-center animate-pulse">
+          <div className="w-6 h-6 bg-black rounded-sm flex items-center justify-center">
             <span className="text-white text-xs font-bold">R</span>
           </div>
         </div>
@@ -39,22 +37,17 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       
       {/* Progress indicator */}
       {showProgress && (
-        <div className="mt-4 text-center">
-          <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-            <div 
-              className="h-full bg-black transition-all duration-300 ease-out"
-              style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-            ></div>
-          </div>
-          <p className="text-sm text-gray-600 font-medium">
-            {Math.round(progress)}% تکمیل شده
+        <div className="w-64 mb-4">
+          <Progress value={progress} className="h-3 mb-3" />
+          <p className="text-lg text-gray-600 dark:text-gray-300 font-medium text-center">
+            {Math.round(progress)}% بارگذاری شده
           </p>
         </div>
       )}
       
       {/* Loading text */}
-      <div className="mt-3 text-center">
-        <p className="text-sm text-gray-600 animate-pulse">
+      <div className="text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           در حال بارگذاری...
         </p>
       </div>

@@ -1,13 +1,33 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const PaymentRequest = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  useEffect(() => {
+    // Progressive loading animation
+    const interval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + Math.random() * 8;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleIframeLoad = () => {
-    setIsLoading(false);
+    setLoadingProgress(100);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
   };
 
   return (
@@ -22,24 +42,14 @@ const PaymentRequest = () => {
       
       <section id="payment-request" className="py-0">
         <div className="container-fluid p-0">
-          {/* Loading Animation */}
+          {/* Enhanced Loading Animation */}
           {isLoading && (
             <div className="flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700" style={{ height: '600px' }}>
               <div className="text-center">
-                <div className="mb-8">
-                  <div className="relative">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-black dark:bg-white rounded-xl flex items-center justify-center animate-pulse">
-                      <span className="text-white dark:text-black font-bold text-xl">₿</span>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white animate-pulse mb-2">
-                      درخواست پرداخت ارزی
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 animate-pulse">
-                      در حال بارگذاری...
-                    </p>
-                  </div>
-                </div>
+                <LoadingSpinner size="lg" showProgress={true} progress={loadingProgress} />
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mt-4 mb-2">
+                  درخواست پرداخت ارزی
+                </h3>
               </div>
             </div>
           )}
