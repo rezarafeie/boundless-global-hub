@@ -1,4 +1,3 @@
-
 const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "The Future of Income Generation is in Your Hands",
@@ -32,6 +31,56 @@ const enTranslations = {
   intelligenceTests: "Intelligence Tests",
   careerTests: "Career Tests",
   emotionTests: "Emotional Intelligence Tests",
+  
+  // Enhanced Assessment translations
+  psychologyTests: "Psychology Tests",
+  cognitiveTests: "Cognitive Tests",
+  aptitudeTests: "Aptitude Tests",
+  professionalTests: "Professional Tests",
+  leadershipTests: "Leadership Tests",
+  communicationTests: "Communication Tests",
+  creativeTests: "Creative Tests",
+  analyticalTests: "Analytical Tests",
+  
+  // Course page enhancements
+  courseFeatures: "Course Features",
+  courseIncludes: "What's Included",
+  courseOutcomes: "Learning Outcomes",
+  courseBenefits: "Course Benefits",
+  limitedTimeOffer: "Limited Time Offer",
+  enrollmentDeadline: "Enrollment Deadline",
+  courseDuration: "Course Duration",
+  courseLevel: "Course Level",
+  courseLanguage: "Course Language",
+  courseFormat: "Course Format",
+  liveSession: "Live Session",
+  recordedContent: "Recorded Content",
+  downloadableResources: "Downloadable Resources",
+  certificateIncluded: "Certificate Included",
+  moneyBackGuarantee: "Money Back Guarantee",
+  
+  // Enhanced UI elements
+  loading: "Loading...",
+  pleaseWait: "Please wait...",
+  processing: "Processing...",
+  almostDone: "Almost done...",
+  loadingContent: "Loading content...",
+  preparingCourse: "Preparing your course...",
+  connectingToServer: "Connecting to server...",
+  
+  // Enhanced navigation
+  previousPage: "Previous Page",
+  nextPage: "Next Page",
+  backToCourses: "Back to Courses",
+  viewAllCourses: "View All Courses",
+  relatedCourses: "Related Courses",
+  recommendedForYou: "Recommended for You",
+  
+  // Enhanced course status
+  enrollNow: "Enroll Now",
+  getInstantAccess: "Get Instant Access",
+  startImmediately: "Start Immediately",
+  joinThousands: "Join Thousands of Students",
   
   // Course names and descriptions
   boundlessProgram: "Boundless Program",
@@ -150,7 +199,6 @@ const enTranslations = {
   mySettings: "Settings",
   logout: "Logout",
   
-  // BoundlessLanding translations
   boundlessLandingTitle: "Boundless Program",
   boundlessLandingSubtitle: "Master the art of international business",
   boundlessLandingDesc: "Comprehensive course on earning foreign currency and launching an international business",
@@ -221,7 +269,6 @@ const enTranslations = {
   blog: "Blog",
   about: "About Us",
   contact: "Contact Us",
-  loading: "Loading...",
   
   // System messages
   allCourses: "All Courses",

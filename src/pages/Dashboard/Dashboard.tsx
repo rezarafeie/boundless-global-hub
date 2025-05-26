@@ -2,6 +2,7 @@
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import IframeModal from "@/components/IframeModal";
 
 const Dashboard = () => {
   const { translations } = useLanguage();
@@ -18,17 +19,14 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Fullscreen iframe without close button */}
+        {/* Fullscreen iframe without close button using IframeModal */}
         <div className="relative bg-white">
-          <iframe
-            src="https://rafeie.com/my-account"
+          <IframeModal
+            isOpen={true}
+            onClose={() => {}} // No close functionality
             title={translations.myAccount}
-            className="w-full border-0"
-            style={{
-              height: 'calc(100vh - 120px)', // Adjust for header and title
-              minHeight: '600px'
-            }}
-            allow="fullscreen"
+            url="https://auth.rafiei.co/my-account"
+            showCloseButton={false}
           />
         </div>
       </div>
