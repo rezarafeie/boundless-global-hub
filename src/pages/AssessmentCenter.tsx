@@ -361,7 +361,7 @@ const AssessmentCenter = () => {
                   description={test.descriptionFa}
                   duration={test.durationFa}
                   questions={test.questions}
-                  category={category => categories.find(c => c.id === test.category)?.labelFa || test.category}
+                  category={categories.find(c => c.id === test.category)?.labelFa || test.category}
                   slug={`assessment/${test.slug}`}
                 />
               </motion.div>
