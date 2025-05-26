@@ -1,3 +1,4 @@
+
 const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "The Future of Income Generation is in Your Hands",
@@ -31,6 +32,18 @@ const enTranslations = {
   intelligenceTests: "Intelligence Tests",
   careerTests: "Career Tests",
   emotionTests: "Emotional Intelligence Tests",
+  
+  // Test descriptions
+  personalityTestDesc: "Discover your personality traits and how they influence your life and career choices.",
+  intelligenceTestDesc: "Measure different aspects of your cognitive abilities and intellectual potential.",
+  careerTestDesc: "Identify career paths that align with your interests, values, skills, and personality.",
+  emotionTestDesc: "Evaluate your emotional intelligence and ability to understand and manage emotions.",
+  
+  // Test durations
+  testDuration10: "10 min",
+  testDuration12: "12 min",
+  testDuration15: "15 min",
+  testDuration20: "20 min",
   
   // Enhanced Assessment translations
   psychologyTests: "Psychology Tests",
