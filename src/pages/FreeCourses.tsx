@@ -2,7 +2,7 @@
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
-import CourseCard from "@/components/CourseCard";
+import EnhancedFreeCourseCard from "@/components/EnhancedFreeCourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
@@ -16,33 +16,65 @@ const FreeCourses = () => {
       description: translations.boundlessTasteDesc,
       benefits: translations.boundlessTasteBenefits,
       outcome: translations.boundlessTasteOutcome,
-      isPaid: false,
-      slug: "boundless-taste"
+      slug: "boundless-taste",
+      duration: "2 ساعت",
+      studentCount: 1250,
+      features: [
+        "مقدمه‌ای بر کسب‌وکار بین‌المللی",
+        "شناخت بازارهای هدف",
+        "اصول فروش آنلاین",
+        "گواهی شرکت در دوره"
+      ],
+      testimonial: "عالی بود! کمکم کرد تا بفهمم آیا دوره اصلی مناسب منه یا نه."
     },
     {
       title: translations.passiveIncomeAI,
       description: translations.passiveIncomeAIDesc,
       benefits: translations.passiveIncomeAIBenefits,
       outcome: translations.passiveIncomeAIOutcome,
-      isPaid: false,
-      slug: "passive-income"
+      slug: "passive-income",
+      duration: "1.5 ساعت",
+      studentCount: 890,
+      features: [
+        "آشنایی با ابزارهای هوش مصنوعی",
+        "تولید محتوای خودکار",
+        "استراتژی‌های درآمدزایی",
+        "نمونه‌های عملی"
+      ],
+      testimonial: "خیلی کاربردی بود. تونستم از همون روز اول شروع کنم."
     },
     {
       title: translations.changeProject,
       description: translations.changeProjectDesc,
       benefits: translations.changeProjectBenefits,
       outcome: translations.changeProjectOutcome,
-      isPaid: false,
-      slug: "change"
+      slug: "change",
+      duration: "1 ساعت",
+      studentCount: 670,
+      features: [
+        "شناخت موانع ذهنی",
+        "تکنیک‌های تغییر عادت",
+        "برنامه‌ریزی هدفمند",
+        "راهکارهای عملی"
+      ],
+      testimonial: "دوره‌ای که زندگی‌ام رو عوض کرد. خیلی ممنونم استاد رفیعی."
     },
     {
       title: translations.americanBusiness,
       description: translations.americanBusinessDesc,
       benefits: translations.americanBusinessBenefits,
       outcome: translations.americanBusinessOutcome,
-      isPaid: false,
-      slug: "american-business"
-    },
+      slug: "american-business",
+      duration: "3 ساعت",
+      studentCount: 1100,
+      features: [
+        "قوانین کسب‌وکار آمریکا",
+        "مراحل ثبت شرکت",
+        "سیستم مالیاتی",
+        "فرصت‌های سرمایه‌گذاری"
+      ],
+      testimonial: "همه چیزی که برای شروع کار در آمریکا نیاز داشتم رو یاد گرفتم."
+    }
   ];
 
   const containerVariants = {
@@ -85,23 +117,24 @@ const FreeCourses = () => {
           />
           
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
             {courses.map((course, index) => (
               <motion.div key={index} variants={childVariants} className="h-full">
-                <div className="h-full transform transition-all duration-300 group-hover:scale-[1.02]">
-                  <CourseCard
-                    title={course.title}
-                    description={course.description}
-                    benefits={course.benefits}
-                    outcome={course.outcome}
-                    isPaid={course.isPaid}
-                    slug={course.slug}
-                  />
-                </div>
+                <EnhancedFreeCourseCard
+                  title={course.title}
+                  description={course.description}
+                  benefits={course.benefits}
+                  outcome={course.outcome}
+                  slug={course.slug}
+                  duration={course.duration}
+                  studentCount={course.studentCount}
+                  features={course.features}
+                  testimonial={course.testimonial}
+                />
               </motion.div>
             ))}
           </motion.div>

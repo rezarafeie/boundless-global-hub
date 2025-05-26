@@ -64,8 +64,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Generate course URL based on type and slug
   const getCourseUrl = () => {
     if (link) return link;
+    // For paid courses, route to dedicated landing pages
     if (isPaid) {
-      return `/courses/${slug}`;
+      return `/course/${slug}`;
     } else {
       return `/course/${slug}`;
     }
@@ -86,79 +87,79 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <Link to={getCourseUrl()} className="block h-full group">
-      <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
-        
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
-              {getCourseIcon()}
-            </div>
-            <div className="ml-3">
-              <Badge
-                variant={isPaid ? "default" : "outline"}
-                className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
-              >
-                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-              </Badge>
-            </div>
+    <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
+      
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
+            {getCourseIcon()}
           </div>
-          {status && (
-            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
-              {status === "active" && translations.activeStatus}
-              {status === "upcoming" && translations.upcomingStatus}
-              {status === "completed" && translations.completedStatus}
+          <div className="ml-3">
+            <Badge
+              variant={isPaid ? "default" : "outline"}
+              className={`${isPaid ? 'bg-black text-white' : 'bg-white text-black border-black/10'} text-xs`}
+            >
+              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
             </Badge>
-          )}
+          </div>
+        </div>
+        {status && (
+          <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+            {status === "active" && translations.activeStatus}
+            {status === "upcoming" && translations.upcomingStatus}
+            {status === "completed" && translations.completedStatus}
+          </Badge>
+        )}
+      </div>
+      
+      <CardContent className="p-4 pt-0 flex-grow">
+        <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
+        {englishTitle && (
+          <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
+        )}
+        
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
+        
+        <div className="space-y-2 mb-4">
+          <div className="text-sm">
+            <span className="font-medium">✓ </span>
+            {benefits}
+          </div>
+          <div className="text-sm">
+            <span className="font-medium">→ </span>
+            {outcome}
+          </div>
         </div>
         
-        <CardContent className="p-4 pt-0 flex-grow">
-          <h3 className="text-xl font-bold text-black mb-2">{title}</h3>
-          {englishTitle && (
-            <p className="text-sm text-black/60 mb-2">{englishTitle}</p>
-          )}
-          
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{description}</p>
-          
-          <div className="space-y-2 mb-4">
-            <div className="text-sm">
-              <span className="font-medium">✓ </span>
-              {benefits}
-            </div>
-            <div className="text-sm">
-              <span className="font-medium">→ </span>
-              {outcome}
-            </div>
+        {instructor && (
+          <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
+            <User size={14} className="mr-1" />
+            {instructorLink ? (
+              <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
+                {instructor}
+              </Link>
+            ) : (
+              <span>{instructor}</span>
+            )}
+            {level && (
+              <Badge variant="outline" className="ml-2 text-xs">
+                {level}
+              </Badge>
+            )}
           </div>
-          
-          {instructor && (
-            <div className="flex items-center mt-3 pb-2 text-sm text-gray-600">
-              <User size={14} className="mr-1" />
-              {instructorLink ? (
-                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
-                  {instructor}
-                </Link>
-              ) : (
-                <span>{instructor}</span>
-              )}
-              {level && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {level}
-                </Badge>
-              )}
-            </div>
-          )}
-        </CardContent>
-        
-        <CardFooter className="p-4 pt-0">
+        )}
+      </CardContent>
+      
+      <CardFooter className="p-4 pt-0">
+        <Link to={getCourseUrl()} className="w-full">
           <Button 
             className="w-full bg-black text-white hover:bg-black/90 rounded-full transition-all"
           >
             {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
           </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+        </Link>
+      </CardFooter>
+    </Card>
   );
 };
 

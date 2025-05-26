@@ -1,3 +1,4 @@
+
 const faTranslations = {
   websiteName: "آکادمی رفیعی",
   slogan: "آینده درآمدزایی در دستان شماست",
@@ -30,6 +31,18 @@ const faTranslations = {
   intelligenceTests: "آزمون‌های هوش",
   careerTests: "آزمون‌های شغلی",
   emotionTests: "آزمون‌های هوش هیجانی",
+  
+  // Test descriptions
+  personalityTestDesc: "شناخت ویژگی‌های شخصیتی خود و تأثیر آن‌ها بر زندگی و انتخاب‌های شغلی شما.",
+  intelligenceTestDesc: "سنجش جنبه‌های مختلف توانایی‌های ذهنی و پتانسیل فکری شما.",
+  careerTestDesc: "شناسایی مسیرهای شغلی متناسب با علایق، ارزش‌ها، مهارت‌ها و شخصیت شما.",
+  emotionTestDesc: "ارزیابی هوش هیجانی و توانایی درک و مدیریت احساسات شما.",
+  
+  // Test durations
+  testDuration10: "۱۰ دقیقه",
+  testDuration12: "۱۲ دقیقه",
+  testDuration15: "۱۵ دقیقه",
+  testDuration20: "۲۰ دقیقه",
   
   // Enhanced Assessment translations
   psychologyTests: "آزمون‌های روان‌شناسی",
