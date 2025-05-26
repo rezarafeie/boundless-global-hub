@@ -37,41 +37,42 @@ const TestCard: React.FC<TestCardProps> = ({
 
   const { direction } = useLanguage();
 
-  const CardWrapper = slug ? Link : 'div';
-  const cardProps = slug ? { to: `/${slug}` } : {};
-
-  return (
-    <CardWrapper {...cardProps}>
-      <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-white rounded-xl ${slug ? 'cursor-pointer' : ''}`}>
-        <CardContent className="p-6">
-          <div className="flex flex-row items-start gap-3 mb-3">
-            <div className="w-10 h-10 flex-shrink-0 rounded-full bg-black/5 flex items-center justify-center">
-              {getTestIcon()}
-            </div>
-            <h3 className="text-lg font-bold">{title}</h3>
+  const cardContent = (
+    <Card className={`overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-white rounded-xl ${slug ? 'cursor-pointer' : ''}`}>
+      <CardContent className="p-6">
+        <div className="flex flex-row items-start gap-3 mb-3">
+          <div className="w-10 h-10 flex-shrink-0 rounded-full bg-black/5 flex items-center justify-center">
+            {getTestIcon()}
           </div>
-          <p className="text-sm text-muted-foreground mb-4">{description}</p>
-          
-          {(duration || questions) && (
-            <div className="flex items-center gap-4 text-xs text-gray-500 mt-auto">
-              {duration && (
-                <div className="flex items-center gap-1">
-                  <Clock size={14} />
-                  <span>{duration}</span>
-                </div>
-              )}
-              {questions && (
-                <div className="flex items-center gap-1">
-                  <HelpCircle size={14} />
-                  <span>{questions} سؤال</span>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </CardWrapper>
+          <h3 className="text-lg font-bold">{title}</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">{description}</p>
+        
+        {(duration || questions) && (
+          <div className="flex items-center gap-4 text-xs text-gray-500 mt-auto">
+            {duration && (
+              <div className="flex items-center gap-1">
+                <Clock size={14} />
+                <span>{duration}</span>
+              </div>
+            )}
+            {questions && (
+              <div className="flex items-center gap-1">
+                <HelpCircle size={14} />
+                <span>{questions} سؤال</span>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
+
+  if (slug) {
+    return <Link to={`/${slug}`}>{cardContent}</Link>;
+  }
+
+  return cardContent;
 };
 
 export default TestCard;
