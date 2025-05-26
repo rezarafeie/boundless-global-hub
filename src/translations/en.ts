@@ -340,7 +340,58 @@ const enTranslations = {
   online: "Online",
   
   // Theme toggle
-  toggleTheme: "Toggle Theme"
+  toggleTheme: "Toggle Theme",
+  
+  // Additional missing translations for UI consistency
+  darkMode: "Dark Mode",
+  lightMode: "Light Mode",
+  language: "Language",
+  persian: "Persian",
+  english: "English",
+  
+  // Course page specific
+  courseOverview: "Course Overview",
+  courseCurriculum: "Course Curriculum",
+  courseInstructor: "Course Instructor",
+  courseReviews: "Student Reviews",
+  enroll: "Enroll Now",
+  preview: "Preview",
+  
+  // Boundless landing page specific
+  whyChooseBoundless: "Why Choose Boundless?",
+  expectedResults: "Expected Results",
+  specialBonuses: "Special Bonuses",
+  studentTestimonials: "Student Testimonials",
+  frequentlyAskedQuestions: "Frequently Asked Questions",
+  limitedTimeOffer: "Limited Time Offer",
+  enrollToday: "Enroll Today",
+  
+  // Assessment center specific
+  takeTest: "Take Test",
+  testResults: "Test Results",
+  assessmentHistory: "Assessment History",
+  
+  // Common actions
+  save: "Save",
+  cancel: "Cancel",
+  delete: "Delete",
+  edit: "Edit",
+  share: "Share",
+  copy: "Copy",
+  download: "Download",
+  upload: "Upload",
+  next: "Next",
+  previous: "Previous",
+  close: "Close",
+  open: "Open",
+  
+  // Status messages
+  saving: "Saving...",
+  saved: "Saved",
+  uploading: "Uploading...",
+  uploaded: "Uploaded",
+  downloading: "Downloading...",
+  downloaded: "Downloaded"
 };
 
 export default enTranslations;
