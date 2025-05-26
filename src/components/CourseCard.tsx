@@ -22,6 +22,9 @@ interface CourseCardProps {
   cta?: string;
   status?: "active" | "upcoming" | "completed";
   category?: "business" | "self-development" | "free";
+  image?: string;
+  cartUrl?: string;
+  link?: string;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -37,7 +40,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   level = "",
   cta = "",
   status,
-  category
+  category,
+  image,
+  cartUrl,
+  link
 }) => {
   const { translations } = useLanguage();
   const navigate = useNavigate();
@@ -62,6 +68,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
   // Generate course URL based on type and slug
   const getCourseUrl = () => {
+    if (link) return link;
     if (isPaid) {
       return `/courses/${slug}`;
     } else {
@@ -69,16 +76,32 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
-  // Get iframe URL for paid courses with updated URLs
+  // Get iframe URL for paid courses with updated domain
   const getPaidCourseIframeUrl = () => {
+    if (cartUrl) {
+      return cartUrl.replace('rafeie.com', 'auth.rafiei.co');
+    }
+    
     const urlMapping: Record<string, string> = {
-      "boundless": "https://rafeie.com/?add-to-cart=5311",
-      "instagram": "https://rafeie.com/?add-to-cart=5089", 
-      "wealth": "https://rafeie.com/?add-to-cart=148",
-      "metaverse": "https://rafeie.com/?add-to-cart=145"
+      "boundless": "https://auth.rafiei.co/?add-to-cart=5311",
+      "instagram": "https://auth.rafiei.co/?add-to-cart=5089", 
+      "wealth": "https://auth.rafiei.co/?add-to-cart=148",
+      "metaverse": "https://auth.rafiei.co/?add-to-cart=145"
     };
     
-    return urlMapping[slug] || "https://rafeie.com";
+    return urlMapping[slug] || "https://auth.rafiei.co";
+  };
+
+  // Get iframe URL for free courses with updated domain
+  const getFreeCourseIframeUrl = () => {
+    const urlMapping: Record<string, string> = {
+      "boundless-taste": "https://auth.rafiei.co/mazze-bi-had-o-marz",
+      "passive-income": "https://auth.rafiei.co/daramad-gheir-faal-ai",
+      "change": "https://auth.rafiei.co/taghir",
+      "american-business": "https://auth.rafiei.co/business-america"
+    };
+    
+    return urlMapping[slug] || "https://auth.rafiei.co";
   };
 
   // Handle CTA button click
@@ -90,8 +113,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
       // For paid courses, open fullscreen iframe with WooCommerce cart
       setIsModalOpen(true);
     } else {
-      // For free courses, go to course page
-      navigate(`/course/${slug}`);
+      // For free courses, open fullscreen iframe with WordPress registration
+      setIsModalOpen(true);
     }
   };
 
@@ -113,6 +136,18 @@ const CourseCard: React.FC<CourseCardProps> = ({
     <>
       <Link to={getCourseUrl()} className="block h-full group">
         <Card className="overflow-hidden border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-white rounded-xl">
+          {/* Course Image */}
+          {image && (
+            <div className="aspect-video relative overflow-hidden">
+              <img 
+                src={image} 
+                alt={title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+          )}
+          
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center">
               <div className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5">
@@ -185,15 +220,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </Card>
       </Link>
 
-      {/* Fullscreen Iframe Modal for Paid Courses */}
-      {isPaid && (
-        <IframeModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={`خرید دوره ${title}`}
-          url={getPaidCourseIframeUrl()}
-        />
-      )}
+      {/* Fullscreen Iframe Modal */}
+      <IframeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={isPaid ? `خرید دوره ${title}` : `شروع دوره ${title}`}
+        url={isPaid ? getPaidCourseIframeUrl() : getFreeCourseIframeUrl()}
+      />
     </>
   );
 };

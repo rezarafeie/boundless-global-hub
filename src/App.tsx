@@ -8,6 +8,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import Home from "./pages/Index";
 import CourseArchive from "./pages/CourseArchive";
 import AssessmentCenter from "./pages/AssessmentCenter";
+import TestLanding from "./pages/Assessment/TestLanding";
 import NotFound from "./pages/NotFound";
 import EnglishHome from "./pages/en/Index";
 import EnglishCourseArchive from "./pages/en/CourseArchive";
@@ -49,6 +50,10 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/courses" element={<CourseArchive />} />
             <Route path="/assessment-center" element={<AssessmentCenter />} />
+            
+            {/* Assessment Test Routes */}
+            <Route path="/assessment/:slug" element={<TestLanding />} />
+            
             <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
             <Route path="/support" element={<Support />} />
             <Route path="/instructor/reza-rafiei" element={<InstructorProfilePage />} />
@@ -96,6 +101,7 @@ const App = () => (
             <Route path="/en/contact" element={<Contact />} />
             <Route path="/en/courses" element={<EnglishCourseArchive />} />
             <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
+            <Route path="/en/assessment/:slug" element={<TestLanding />} />
             <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
             <Route path="/en/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
             <Route path="/en/courses/boundless" element={<BoundlessLanding />} />

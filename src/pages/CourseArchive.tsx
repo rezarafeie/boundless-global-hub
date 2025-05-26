@@ -31,7 +31,7 @@ const CourseArchive = () => {
       status: "active" as const,
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80",
-      cartUrl: "https://rafeie.com/?add-to-cart=5311"
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=5311"
     },
     {
       title: translations.instagramEssentials,
@@ -42,7 +42,7 @@ const CourseArchive = () => {
       status: "active" as const,
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80",
-      cartUrl: "https://rafeie.com/?add-to-cart=5089"
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=5089"
     },
     {
       title: translations.wealthCourse,
@@ -53,7 +53,7 @@ const CourseArchive = () => {
       status: "completed" as const,
       category: "self-development" as const,
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
-      cartUrl: "https://rafeie.com/?add-to-cart=148"
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=148"
     },
     {
       title: translations.metaverseEmpire,
@@ -64,7 +64,7 @@ const CourseArchive = () => {
       status: "upcoming" as const,
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
-      cartUrl: "https://rafeie.com/?add-to-cart=145"
+      cartUrl: "https://auth.rafiei.co/?add-to-cart=145"
     },
     {
       title: translations.boundlessTaste,
