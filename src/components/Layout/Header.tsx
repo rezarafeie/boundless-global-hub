@@ -1,18 +1,21 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, Sun, Moon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/components/ui/use-toast";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 z-[10000] w-full border-b border-black/5 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 z-[10000] w-full border-b border-black/5 dark:border-white/10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Link 
@@ -24,7 +27,7 @@ const Header = () => {
               alt="Rafiei Academy" 
               className="h-8 w-auto"
             />
-            <span className="text-xl font-bold tracking-tight">
+            <span className="text-xl font-bold tracking-tight text-foreground">
               {translations.websiteName}
             </span>
           </Link>
@@ -32,30 +35,41 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium transition-colors hover:text-black">
+          <Link to="/" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
             {translations.home}
           </Link>
-          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-black">
-            مرکز آموزش
+          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+            {language === "en" ? "Training Center" : "مرکز آموزش"}
           </Link>
-          <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-black">
+          <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
             {translations.assessmentCenter}
           </Link>
-          <Link to="/mag" className="text-sm font-medium transition-colors hover:text-black">
-            مجله
+          <Link to="/mag" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+            {language === "en" ? "Magazine" : "مجله"}
           </Link>
-          <Link to="/support" className="text-sm font-medium transition-colors hover:text-black">
-            پشتیبانی
+          <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+            {language === "en" ? "Support" : "پشتیبانی"}
           </Link>
         </nav>
         
         <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleDarkMode}
+            className="rounded-full hover:bg-accent"
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </Button>
+
           {/* Language Switcher - Icon Only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleLanguage}
-            className="rounded-full hover:bg-gray-100"
+            className="rounded-full hover:bg-accent"
             aria-label={language === "en" ? "Switch to Persian" : "Switch to English"}
           >
             <Globe size={20} />
@@ -66,9 +80,9 @@ const Header = () => {
             variant="default"
             size="sm"
             asChild
-            className="rounded-full bg-black text-white hover:bg-black/90 hidden md:flex"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hidden md:flex"
           >
-            <Link to="/dashboard">حساب کاربری</Link>
+            <Link to="/dashboard">{language === "en" ? "My Account" : "حساب کاربری"}</Link>
           </Button>
           
           {/* Mobile Menu */}
@@ -84,17 +98,17 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent 
               side={language === "fa" ? "right" : "left"} 
-              className="w-[300px] sm:w-[400px] z-[10002] [&>div]:z-[10001]"
+              className="w-[300px] sm:w-[400px] z-[10002] [&>div]:z-[10001] bg-background border-border"
             >
               <div className="flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center gap-2 pb-6 border-b">
+                <div className="flex items-center gap-2 pb-6 border-b border-border">
                   <img 
                     src="/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" 
                     alt="Rafiei Academy" 
                     className="h-8 w-auto"
                   />
-                  <span className="text-lg font-bold">
+                  <span className="text-lg font-bold text-foreground">
                     {translations.websiteName}
                   </span>
                 </div>
@@ -103,52 +117,69 @@ const Header = () => {
                 <nav className="flex flex-col space-y-4 py-6 flex-1">
                   <Link 
                     to="/" 
-                    className="text-lg font-medium transition-colors hover:text-black py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {translations.home}
                   </Link>
                   <Link 
                     to="/courses" 
-                    className="text-lg font-medium transition-colors hover:text-black py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    مرکز آموزش
+                    {language === "en" ? "Training Center" : "مرکز آموزش"}
                   </Link>
                   <Link 
                     to="/assessment-center" 
-                    className="text-lg font-medium transition-colors hover:text-black py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {translations.assessmentCenter}
                   </Link>
                   <Link 
                     to="/mag" 
-                    className="text-lg font-medium transition-colors hover:text-black py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    مجله
+                    {language === "en" ? "Magazine" : "مجله"}
                   </Link>
                   <Link 
                     to="/support" 
-                    className="text-lg font-medium transition-colors hover:text-black py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    پشتیبانی
+                    {language === "en" ? "Support" : "پشتیبانی"}
                   </Link>
                 </nav>
 
                 {/* Footer Actions */}
-                <div className="pt-6 border-t space-y-4">
+                <div className="pt-6 border-t border-border space-y-4">
                   {/* User Account Button */}
                   <Button
                     variant="default"
                     size="lg"
                     asChild
-                    className="w-full rounded-full bg-black text-white hover:bg-black/90"
+                    className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <Link to="/dashboard">حساب کاربری</Link>
+                    <Link to="/dashboard">{language === "en" ? "My Account" : "حساب کاربری"}</Link>
+                  </Button>
+                  
+                  {/* Theme Toggle */}
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => {
+                      toggleDarkMode();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full rounded-full"
+                  >
+                    {isDarkMode ? <Sun size={20} className="mr-2" /> : <Moon size={20} className="mr-2" />}
+                    {isDarkMode ? 
+                      (language === "en" ? "Light Mode" : "حالت روشن") : 
+                      (language === "en" ? "Dark Mode" : "حالت تاریک")
+                    }
                   </Button>
                   
                   {/* Language Toggle */}

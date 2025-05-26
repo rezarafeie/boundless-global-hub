@@ -23,28 +23,31 @@ const Hero = ({
   const { direction } = useLanguage();
 
   return (
-    <div className="relative w-full overflow-hidden bg-white py-20 md:py-28">
+    <div className="relative w-full overflow-hidden bg-background py-20 md:py-28">
       {/* Background Effects */}
       {backgroundType === "gradient" && (
-        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 dark:from-white/5 via-transparent to-transparent"></div>
       )}
       
       {backgroundType === "wave" && (
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-10 dark:opacity-20">
           <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-            <path d="M0,1000 C300,800 400,600 500,500 C600,400 700,300 1000,0 L1000,1000 Z" fill="black"></path>
+            <path d="M0,1000 C300,800 400,600 500,500 C600,400 700,300 1000,0 L1000,1000 Z" fill="currentColor" className="text-foreground"></path>
           </svg>
         </div>
       )}
       
       {backgroundType === "dots" && (
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+        <div className="absolute inset-0 opacity-5 dark:opacity-10">
+          <div className="absolute inset-0" style={{ 
+            backgroundImage: `radial-gradient(currentColor 1px, transparent 0)`, 
+            backgroundSize: '20px 20px' 
+          }} className="text-foreground"></div>
         </div>
       )}
       
       {backgroundType === "image" && image && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-0"></div>
+        <div className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-0"></div>
       )}
       
       {backgroundType === "image" && image && (
@@ -65,7 +68,7 @@ const Hero = ({
             <div className="glow-circle glow-circle-3 animate-pulse animation-delay-1000"></div>
             <div className="glow-circle glow-circle-4 animate-float-slow animation-delay-2000"></div>
           </div>
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[20px] z-0"></div>
+          <div className="absolute inset-0 bg-background/40 dark:bg-background/60 backdrop-blur-[20px] z-0"></div>
         </>
       )}
       
@@ -73,14 +76,14 @@ const Hero = ({
         <div className="flex flex-col items-center text-center">
           {/* Text Content - Center Aligned */}
           <div className="space-y-6 max-w-3xl mx-auto">
-            <h1 className="font-bold tracking-tighter text-4xl md:text-5xl lg:text-6xl animate-slide-down text-balance">
+            <h1 className="font-bold tracking-tighter text-4xl md:text-5xl lg:text-6xl animate-slide-down text-balance text-foreground">
               {title}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground animate-slide-down animation-delay-200 max-w-2xl mx-auto">
               {subtitle}
             </p>
             <div className="animate-slide-down animation-delay-400">
-              <Button asChild className="rounded-full bg-black hover:bg-black/90 text-white">
+              <Button asChild className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground">
                 <a href={ctaLink}>
                   {ctaText}
                 </a>
@@ -193,6 +196,24 @@ const Hero = ({
           background: radial-gradient(circle, rgba(72,209,204,0.35) 0%, rgba(72,209,204,0) 70%);
           top: 40%;
           right: 20%;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          .glow-circle-1 {
+            background: radial-gradient(circle, rgba(147,112,219,0.3) 0%, rgba(147,112,219,0) 70%);
+          }
+          
+          .glow-circle-2 {
+            background: radial-gradient(circle, rgba(65,105,225,0.25) 0%, rgba(65,105,225,0) 70%);
+          }
+          
+          .glow-circle-3 {
+            background: radial-gradient(circle, rgba(123,104,238,0.25) 0%, rgba(123,104,238,0) 70%);
+          }
+          
+          .glow-circle-4 {
+            background: radial-gradient(circle, rgba(72,209,204,0.2) 0%, rgba(72,209,204,0) 70%);
+          }
         }
         `}
       </style>

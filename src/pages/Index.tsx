@@ -94,41 +94,41 @@ const Index = () => {
       <QuickAccess />
       
       {/* AI Assistant CTA */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-background">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-6">{translations.aiAssistantTitle}</h2>
-              <p className="text-lg text-gray-600 mb-8">{translations.aiAssistantDescription}</p>
+              <h2 className="text-3xl font-bold mb-6 text-foreground">{translations.aiAssistantTitle}</h2>
+              <p className="text-lg text-muted-foreground mb-8">{translations.aiAssistantDescription}</p>
               
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                    <MessageCircle size={20} className="text-white" />
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <MessageCircle size={20} className="text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">{translations.aiAssistantFeature1Title}</h3>
-                    <p className="text-sm text-gray-600">{translations.aiFeature1Desc}</p>
+                    <h3 className="font-medium mb-1 text-foreground">{translations.aiAssistantFeature1Title}</h3>
+                    <p className="text-sm text-muted-foreground">{translations.aiFeature1Desc}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                    <Award size={20} className="text-white" />
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <Award size={20} className="text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">{translations.aiAssistantFeature2Title}</h3>
-                    <p className="text-sm text-gray-600">{translations.aiFeature2Desc}</p>
+                    <h3 className="font-medium mb-1 text-foreground">{translations.aiAssistantFeature2Title}</h3>
+                    <p className="text-sm text-muted-foreground">{translations.aiFeature2Desc}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                    <BookOpen size={20} className="text-white" />
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <BookOpen size={20} className="text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">{translations.aiAssistantFeature3Title}</h3>
-                    <p className="text-sm text-gray-600">{translations.aiFeature3Desc}</p>
+                    <h3 className="font-medium mb-1 text-foreground">{translations.aiAssistantFeature3Title}</h3>
+                    <p className="text-sm text-muted-foreground">{translations.aiFeature3Desc}</p>
                   </div>
                 </div>
               </div>
@@ -136,7 +136,7 @@ const Index = () => {
               <div className="mt-8">
                 <Button 
                   asChild 
-                  className="bg-black hover:bg-black/90 text-white rounded-full"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                   size="lg"
                 >
                   <a href="https://ai.rafiei.co/" target="_blank" rel="noopener noreferrer">
@@ -147,9 +147,9 @@ const Index = () => {
             </div>
             
             <div className="relative">
-              <div className="absolute -z-10 top-1/3 right-1/3 w-64 h-64 rounded-full bg-black/5"></div>
-              <div className="relative z-10 rounded-2xl overflow-hidden border border-black/10 shadow-lg flex items-center justify-center aspect-video bg-black/5">
-                <MessageCircle size={64} className="text-black/30" />
+              <div className="absolute -z-10 top-1/3 right-1/3 w-64 h-64 rounded-full bg-primary/5 dark:bg-primary/10"></div>
+              <div className="relative z-10 rounded-2xl overflow-hidden border border-border shadow-lg flex items-center justify-center aspect-video bg-muted/50">
+                <MessageCircle size={64} className="text-muted-foreground" />
               </div>
             </div>
           </div>
@@ -157,34 +157,34 @@ const Index = () => {
       </section>
 
       {/* Featured Course - Boundless */}
-      <section className="py-16 bg-black text-white">
+      <section className="py-16 bg-primary text-primary-foreground">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
-              <span className="inline-block text-sm bg-white/20 px-3 py-1 rounded-full mb-4">
+              <span className="inline-block text-sm bg-primary-foreground/20 px-3 py-1 rounded-full mb-4">
                 {translations.paidCoursesTitle}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">{translations.boundlessProgram}</h2>
-              <p className="text-lg mb-6 text-white/90">{translations.boundlessProgramDesc}</p>
+              <p className="text-lg mb-6 text-primary-foreground/90">{translations.boundlessProgramDesc}</p>
               
               <div className="mb-8 space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={14} className="text-white" />
+                  <div className="h-6 w-6 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check size={14} className="text-primary-foreground" />
                   </div>
-                  <p className="text-white/80">{translations.boundlessBenefits}</p>
+                  <p className="text-primary-foreground/80">{translations.boundlessBenefits}</p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Globe size={14} className="text-white" />
+                  <div className="h-6 w-6 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Globe size={14} className="text-primary-foreground" />
                   </div>
-                  <p className="text-white/80">{translations.boundlessOutcome}</p>
+                  <p className="text-primary-foreground/80">{translations.boundlessOutcome}</p>
                 </div>
               </div>
               
               <Button 
                 asChild 
-                className="bg-white text-black hover:bg-white/90 rounded-full"
+                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-full"
                 size="lg"
               >
                 <Link to="/courses/boundless">
@@ -193,15 +193,15 @@ const Index = () => {
               </Button>
             </div>
             
-            <div className="rounded-2xl overflow-hidden shadow-xl flex items-center justify-center aspect-video bg-black/40">
-              <GraduationCap size={64} className="text-white/70" />
+            <div className="rounded-2xl overflow-hidden shadow-xl flex items-center justify-center aspect-video bg-primary-foreground/10">
+              <GraduationCap size={64} className="text-primary-foreground/70" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Training Center */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-background">
         <div className="container">
           <SectionTitle
             title={translations.trainingCenter}
@@ -230,7 +230,7 @@ const Index = () => {
             <Button 
               asChild 
               size="lg" 
-              className="bg-black hover:bg-black/90 text-white rounded-full"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
             >
               <Link to="/courses">
                 {translations.learnMore}
@@ -241,7 +241,7 @@ const Index = () => {
       </section>
 
       {/* Magazine Section */}
-      <section className="py-16 bg-black/5">
+      <section className="py-16 bg-muted/50">
         <div className="container">
           <SectionTitle
             title={translations.magazine}
@@ -250,16 +250,16 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {blogArticles.map((article, index) => (
-              <Card key={index} className="border border-black/5 hover:border-black/20 transition-all shadow-sm hover:shadow-md h-full">
+              <Card key={index} className="border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md h-full bg-card">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 rounded-full bg-black/10 flex items-center justify-center">
-                      <article.icon size={20} className="text-black" />
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                      <article.icon size={20} className="text-foreground" />
                     </div>
                   </div>
-                  <h3 className="text-lg font-bold mb-2 line-clamp-2">{article.title}</h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-3">{article.description}</p>
-                  <Link to={`/blog/${article.slug}`} className="text-sm font-medium text-black hover:underline flex items-center">
+                  <h3 className="text-lg font-bold mb-2 line-clamp-2 text-foreground">{article.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{article.description}</p>
+                  <Link to={`/blog/${article.slug}`} className="text-sm font-medium text-primary hover:underline flex items-center">
                     {translations.readMore}
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 rtl:rotate-180">
                       <path d="m9 18 6-6-6-6"/>
@@ -275,7 +275,7 @@ const Index = () => {
               asChild 
               size="lg" 
               variant="outline" 
-              className="border-black text-black hover:bg-black/5 rounded-full"
+              className="border-border text-foreground hover:bg-accent rounded-full"
             >
               <Link to="/blog">
                 {translations.learnMore}
@@ -286,20 +286,20 @@ const Index = () => {
       </section>
       
       {/* Assessment Center Promo */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-background">
         <div className="container">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="w-full md:w-1/2">
-              <h2 className="text-3xl font-bold mb-6">
+              <h2 className="text-3xl font-bold mb-6 text-foreground">
                 {translations.assessmentCenterTitle}
               </h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-muted-foreground mb-8">
                 {translations.assessmentCenterDesc}
               </p>
               <Button 
                 asChild 
                 size="lg"
-                className="bg-black hover:bg-black/90 text-white rounded-full"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
               >
                 <Link to="/assessment-center">
                   {translations.learnMore}
@@ -309,45 +309,45 @@ const Index = () => {
             
             <div className="w-full md:w-1/2">
               <div className="grid grid-cols-2 gap-4">
-                <Card className="border-black/5 shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px]">
+                <Card className="border-border shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px] bg-card">
                   <CardContent className="p-6 text-center">
-                    <h3 className="font-medium text-lg mb-2">
+                    <h3 className="font-medium text-lg mb-2 text-foreground">
                       {translations.personalityTests}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       کشف کنید چه شخصیتی دارید و چگونه با دنیای اطراف خود تعامل می‌کنید.
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-black/5 shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px]">
+                <Card className="border-border shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px] bg-card">
                   <CardContent className="p-6 text-center">
-                    <h3 className="font-medium text-lg mb-2">
+                    <h3 className="font-medium text-lg mb-2 text-foreground">
                       {translations.intelligenceTests}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       توانایی‌های شناختی خود را بسنجید و نقاط قوت هوشی خود را کشف کنید.
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-black/5 shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px]">
+                <Card className="border-border shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px] bg-card">
                   <CardContent className="p-6 text-center">
-                    <h3 className="font-medium text-lg mb-2">
+                    <h3 className="font-medium text-lg mb-2 text-foreground">
                       {translations.careerTests}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       مسیر شغلی مناسب خود را بر اساس مهارت‌ها، علایق و شخصیت خود پیدا کنید.
                     </p>
                   </CardContent>
                 </Card>
                 
-                <Card className="border-black/5 shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px]">
+                <Card className="border-border shadow-sm hover:shadow-md transition-all hover:translate-y-[-2px] bg-card">
                   <CardContent className="p-6 text-center">
-                    <h3 className="font-medium text-lg mb-2">
+                    <h3 className="font-medium text-lg mb-2 text-foreground">
                       {translations.emotionTests}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       هوش هیجانی خود را ارزیابی کنید و یاد بگیرید چگونه احساسات خود و دیگران را بهتر درک کنید.
                     </p>
                   </CardContent>

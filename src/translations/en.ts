@@ -331,7 +331,15 @@ const enTranslations = {
   aiFeature2: "Career Development",
   aiFeature2Desc: "Learn how to advance in your career path",
   aiFeature3: "Personal Development",
-  aiFeature3Desc: "Discover ways to improve your skills and mindset"
+  aiFeature3Desc: "Discover ways to improve your skills and mindset",
+
+  // Missing course-related translations
+  freeAccess: "Free Access",
+  community: "Community",
+  certificate: "Certificate",
+  support: "Support",
+  online: "Online",
+  lifetimeAccess: "Lifetime Access"
 };
 
 export default enTranslations;

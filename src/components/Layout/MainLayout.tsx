@@ -18,7 +18,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
   
   return (
-    <div className={`flex min-h-screen flex-col`} dir={direction}>
+    <div className={`flex min-h-screen flex-col bg-background text-foreground`} dir={direction}>
       <Header />
       <main className="flex-1 pt-16">{children}</main>
       {!shouldHideFooter && <Footer />}
