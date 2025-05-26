@@ -1,10 +1,9 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, Users, Award, CheckCircle, Globe, HeadphonesIcon, Certificate } from "lucide-react";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, Users, Award, CheckCircle, Globe, HeadphonesIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
@@ -167,7 +166,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
               <span>انجمن</span>
             </div>
             <div className="flex items-center gap-1">
-              <Certificate size={12} />
+              <Award size={12} />
               <span>گواهی</span>
             </div>
           </div>
