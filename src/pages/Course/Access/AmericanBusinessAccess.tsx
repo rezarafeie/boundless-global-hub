@@ -7,14 +7,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Play, Gift, Bot, MessageCircle, FileText } from "lucide-react";
 
 const AmericanBusinessAccess = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
 
   return (
     <MainLayout>
       <Hero
         title="🇺🇸 به دوره بیزینس آمریکایی خوش آمدید!"
         subtitle="راهنمای جامع ورود به بازار آمریکا در اختیار شماست"
-        ctaText={t.startLearning}
+        ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
         glowTheme="courses"

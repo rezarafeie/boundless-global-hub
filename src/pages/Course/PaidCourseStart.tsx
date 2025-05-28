@@ -9,15 +9,15 @@ import { Play, Download, MessageCircle, Bot, FileText, Gift } from "lucide-react
 
 const PaidCourseStart = () => {
   const { slug } = useParams();
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
 
   // Course-specific content
   const getCourseContent = (courseSlug: string) => {
     switch (courseSlug) {
       case "boundless":
         return {
-          title: t.boundlessProgramTitle,
-          description: t.boundlessProgramDesc,
+          title: translations.boundlessProgramTitle,
+          description: translations.boundlessProgramDesc,
           supportLinks: [
             "https://t.me/m/ToRJiOBHN2E0",
             "https://t.me/m/c43Pi3aXODFk",
@@ -27,15 +27,15 @@ const PaidCourseStart = () => {
         };
       case "instagram":
         return {
-          title: t.instagramEssentialsTitle,
-          description: t.instagramEssentialsDesc,
+          title: translations.instagramEssentialsTitle,
+          description: translations.instagramEssentialsDesc,
           supportLinks: ["https://t.me/m/InstagramSupport"],
           channelLink: "https://t.me/instagramacademy"
         };
       default:
         return {
-          title: t.boundlessProgramTitle,
-          description: t.boundlessProgramDesc,
+          title: translations.boundlessProgramTitle,
+          description: translations.boundlessProgramDesc,
           supportLinks: ["https://t.me/m/ToRJiOBHN2E0"],
           channelLink: "https://t.me/mazeboundless"
         };
@@ -47,9 +47,9 @@ const PaidCourseStart = () => {
   return (
     <MainLayout>
       <Hero
-        title={t.courseAccessGranted}
-        subtitle={t.paidCourseAccessInstructions}
-        ctaText={t.startLearning}
+        title={translations.courseAccessGranted}
+        subtitle={translations.paidCourseAccessInstructions}
+        ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
         glowTheme="courses"
@@ -62,34 +62,34 @@ const PaidCourseStart = () => {
             {/* Course Content */}
             <CourseAccessCard
               title="🎥 محتوای دوره"
-              description={t.courseMaterialsDescription}
+              description={translations.courseMaterialsDescription}
               icon={<Play size={32} className="text-blue-500" />}
               buttons={[
                 {
-                  label: t.rafeiPlayer,
+                  label: translations.rafeiPlayer,
                   url: "#player",
                   variant: "default",
                   icon: <Play size={16} />
                 }
               ]}
-              badge={t.activated}
+              badge={translations.activated}
               className="border-blue-200 hover:border-blue-300"
             />
 
             {/* Course Materials */}
             <CourseAccessCard
-              title={t.courseMaterials}
-              description={t.courseMaterialsDescription}
+              title={translations.courseMaterials}
+              description={translations.courseMaterialsDescription}
               icon={<Download size={32} className="text-green-500" />}
               buttons={[
                 {
-                  label: t.worksheets,
+                  label: translations.worksheets,
                   url: "#worksheets",
                   variant: "outline",
                   icon: <FileText size={16} />
                 },
                 {
-                  label: t.resources,
+                  label: translations.resources,
                   url: "#resources",
                   variant: "outline",
                   icon: <Download size={16} />
@@ -100,12 +100,12 @@ const PaidCourseStart = () => {
 
             {/* AI Assistant */}
             <CourseAccessCard
-              title={t.aiAssistant}
+              title={translations.aiAssistant}
               description="دسترسی به دستیار هوش مصنوعی اختصاصی"
               icon={<Bot size={32} className="text-purple-500" />}
               buttons={[
                 {
-                  label: t.launchAIAssistant,
+                  label: translations.launchAIAssistant,
                   url: "https://t.me/rafiei_bot",
                   variant: "default",
                   icon: <Bot size={16} />
@@ -135,7 +135,7 @@ const PaidCourseStart = () => {
               icon={<FileText size={32} className="text-cyan-500" />}
               buttons={[
                 {
-                  label: t.joinTelegram,
+                  label: translations.joinTelegram,
                   url: courseContent.channelLink,
                   variant: "default",
                   icon: <MessageCircle size={16} />
@@ -166,7 +166,7 @@ const PaidCourseStart = () => {
 
       <section className="py-12 bg-muted/50">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-2xl font-bold mb-4">{t.welcomeToCourse}</h3>
+          <h3 className="text-2xl font-bold mb-4">{translations.welcomeToCourse}</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             از این پس می‌توانید به تمام امکانات و محتوای دوره دسترسی داشته باشید. برای هر گونه سوال از بخش پشتیبانی استفاده کنید.
           </p>

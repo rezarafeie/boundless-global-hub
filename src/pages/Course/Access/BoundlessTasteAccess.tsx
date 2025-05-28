@@ -7,14 +7,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Play, Gift, Bot, MessageCircle, FileText } from "lucide-react";
 
 const BoundlessTasteAccess = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
 
   return (
     <MainLayout>
       <Hero
         title="🍽️ به دوره مزه بدون مرز خوش آمدید!"
         subtitle="تمام محتوای دوره و امکانات اختصاصی در اختیار شماست"
-        ctaText={t.startLearning}
+        ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
         glowTheme="courses"

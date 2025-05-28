@@ -7,14 +7,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Play, Gift, Bot, MessageCircle, FileText } from "lucide-react";
 
 const TaghirAccess = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
 
   return (
     <MainLayout>
       <Hero
         title="📘 به پروژه تغییر خوش آمدید!"
         subtitle="برنامه جامع تغییر زندگی و رشد شخصی"
-        ctaText={t.startLearning}
+        ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
         glowTheme="courses"

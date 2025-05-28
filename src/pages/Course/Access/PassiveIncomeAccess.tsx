@@ -7,14 +7,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Play, Gift, Bot, MessageCircle, FileText, Brain } from "lucide-react";
 
 const PassiveIncomeAccess = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
 
   return (
     <MainLayout>
       <Hero
         title="💸 به دوره درآمد غیرفعال خوش آمدید!"
         subtitle="راهکارهای عملی برای ایجاد درآمد مستمر"
-        ctaText={t.startLearning}
+        ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
         glowTheme="courses"
