@@ -82,13 +82,13 @@ const TaghirAccess = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 py-16">
+      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-700 to-purple-700 dark:from-indigo-900 dark:to-purple-900 py-16">
         <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-          <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-400/20 rounded-full blur-2xl"></div>
-          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-indigo-300/15 rounded-full blur-lg"></div>
+          <div className="absolute top-10 left-10 w-32 h-32 bg-indigo-400/10 rounded-full blur-xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-400/10 rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-indigo-300/10 rounded-full blur-lg"></div>
         </div>
         
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
@@ -127,15 +127,15 @@ const TaghirAccess = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`${step.bgColor} ${step.borderColor} border-2 shadow-lg hover:shadow-xl transition-all duration-300`}>
+                <Card className={`${step.bgColor} ${step.borderColor} border-2 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800`}>
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                        <div className="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-700 rounded-xl shadow-md">
                           {step.icon}
                         </div>
                         <div className="flex-1">
-                          <CardTitle className="text-xl font-bold flex items-center gap-3">
+                          <CardTitle className="text-xl font-bold flex items-center gap-3 text-gray-900 dark:text-white">
                             {step.title}
                             {step.activation && isStepActivated(step.id) && (
                               <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
@@ -144,12 +144,12 @@ const TaghirAccess = () => {
                               </Badge>
                             )}
                           </CardTitle>
-                          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+                          <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm">
                             {step.description}
                           </p>
                         </div>
                       </div>
-                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-600">
+                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">
                         {index + 1}
                       </div>
                     </div>
@@ -159,7 +159,7 @@ const TaghirAccess = () => {
                       <Button
                         key={buttonIndex}
                         size="lg"
-                        className="w-full justify-center gap-3 text-base py-3 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                        className="w-full justify-center gap-3 text-base py-3 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
                         asChild
                         onClick={() => step.activation && handleStepActivation(step.id)}
                       >
@@ -181,7 +181,7 @@ const TaghirAccess = () => {
       </div>
 
       {/* Footer Message */}
-      <div className="py-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+      <div className="py-8 bg-gradient-to-r from-indigo-700 to-purple-700 dark:from-indigo-900 dark:to-purple-900 text-white">
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-xl font-bold mb-2">🌟 آماده برای شروع تغییر زندگی؟</h3>
           <p className="text-indigo-100 max-w-2xl mx-auto">

@@ -55,7 +55,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
       return <Search size={20} className="text-primary" />;
     } else if (title.includes("ثروت") || title.includes("Wealth")) {
       return <DollarSign size={20} className="text-primary" />;
-    } else if (title.includes("بدون مرز") || title.includes("Boundless")) {
+    } else if (title.includes("بدون مرز") || title.includes("Boundless") || title.includes("شروع")) {
       return <GraduationCap size={20} className="text-primary" />;
     } else if (title.includes("غیرفعال") || title.includes("Passive")) {
       return <Star size={20} className="text-primary" />;
@@ -69,7 +69,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
     if (link) return link;
     if (isPaid) {
       // Map course titles/slugs to correct URLs
-      if (slug === "boundless" || title.includes("بدون مرز") || title.includes("Boundless")) {
+      if (slug === "boundless" || title.includes("بدون مرز") || title.includes("Boundless") || title.includes("شروع")) {
         return "/courses/boundless";
       } else if (slug === "instagram" || title.includes("اینستاگرام") || title.includes("Instagram")) {
         return "/courses/instagram";
@@ -100,11 +100,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const getStatusBadgeColor = () => {
     switch(status) {
       case "active":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300 dark:border-green-700";
       case "upcoming":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700";
       case "completed":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600";
       default:
         return "";
     }
