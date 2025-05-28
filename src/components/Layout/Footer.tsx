@@ -10,6 +10,9 @@ const Footer = () => {
   const { translations } = useLanguage();
   const { isDarkMode, toggleDarkMode } = useTheme();
 
+  // Always use white logo in footer since footer has dark background
+  const footerLogoSrc = "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png";
+
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
       <div className="container">
@@ -18,14 +21,20 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <img src="/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" 
+              <img 
+                src={footerLogoSrc}
                 alt={translations.websiteName} 
                 className="h-8 w-auto mr-2"
+                onError={(e) => {
+                  // Fallback to old white logo if new one fails
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png";
+                }}
               />
               <h3 className="text-xl font-bold text-white">{translations.websiteName}</h3>
             </div>
             <p className="text-gray-300 dark:text-gray-400 text-sm leading-relaxed">
-              مرجع تخصصی توسعه فردی و کسب‌وکار. تبدیل دانش به درآمد جهانی با آموزش‌های تخصصی رضا رفیعی
+              {translations.footerDesc}
             </p>
           </div>
           
@@ -38,31 +47,31 @@ const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <Link to="/" className="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors text-sm flex items-center">
-                  صفحه اصلی
+                  {translations.home}
                 </Link>
               </li>
               <li>
                 <Link to="/courses" className="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors text-sm flex items-center">
                   <BookOpen className="mr-2 h-3 w-3" />
-                  مرکز آموزش
+                  {translations.trainingCenter}
                 </Link>
               </li>
               <li>
                 <Link to="/assessment-center" className="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors text-sm flex items-center">
                   <User className="mr-2 h-3 w-3" />
-                  مرکز ارزیابی
+                  {translations.assessmentCenter}
                 </Link>
               </li>
               <li>
                 <Link to="/mag" className="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors text-sm flex items-center">
                   <Mail className="mr-2 h-3 w-3" />
-                  مجله
+                  {translations.magazine}
                 </Link>
               </li>
               <li>
                 <Link to="/support" className="text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 transition-colors text-sm flex items-center">
                   <MessageCircle className="mr-2 h-3 w-3" />
-                  پشتیبانی
+                  {translations.support}
                 </Link>
               </li>
             </ul>
@@ -72,7 +81,7 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 flex items-center text-white">
               <MessageCircle className="mr-2 h-4 w-4" />
-              ارتباط با ما
+              {translations.contact}
             </h4>
             <ul className="space-y-3">
               <li className="flex items-center text-sm">
@@ -138,17 +147,17 @@ const Footer = () => {
         {/* Footer Bottom */}
         <div className="pt-8 border-t border-gray-700 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 dark:text-gray-500 text-sm mb-4 md:mb-0">
-            © ۲۰۲۴ آکادمی رفیعی. تمامی حقوق محفوظ است.
+            {translations.footerCopyright}
           </p>
           <div className="flex space-x-6 rtl:space-x-reverse">
             <Link to="/about" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
-              درباره ما
+              {translations.aboutUs}
             </Link>
             <Link to="/terms" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
-              شرایط استفاده
+              {translations.termsOfService}
             </Link>
             <Link to="/privacy" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 text-sm transition-colors">
-              حریم خصوصی
+              {translations.privacyPolicy}
             </Link>
           </div>
         </div>

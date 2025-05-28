@@ -14,10 +14,10 @@ const Header = () => {
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Use different logos for light/dark modes
+  // Use different logos for light/dark modes with proper fallbacks
   const logoSrc = isDarkMode 
-    ? "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" // white logo for dark mode
-    : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png"; // black logo for light mode
+    ? "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png" // white logo for dark mode
+    : "/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png"; // black logo for light mode
 
   return (
     <header className="fixed top-0 z-[10000] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:border-border/20">
@@ -31,6 +31,13 @@ const Header = () => {
               src={logoSrc}
               alt="Rafiei Academy" 
               className="h-8 w-auto transition-all duration-300"
+              onError={(e) => {
+                // Fallback if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = isDarkMode 
+                  ? "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png"
+                  : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png";
+              }}
             />
             <span className="text-xl font-bold tracking-tight text-foreground">
               {translations.websiteName}
@@ -112,6 +119,12 @@ const Header = () => {
                     src={logoSrc}
                     alt="Rafiei Academy" 
                     className="h-8 w-auto"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = isDarkMode 
+                        ? "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png"
+                        : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png";
+                    }}
                   />
                   <span className="text-lg font-bold text-foreground">
                     {translations.websiteName}

@@ -19,6 +19,7 @@ export const fa = {
   assessment: "آزمون‌ها",
   assessmentCenter: "مرکز ارزیابی",
   blog: "مجله",
+  magazine: "مجله",
   support: "پشتیبانی",
   contact: "تماس با ما",
   aboutUs: "درباره ما",
@@ -217,8 +218,6 @@ export const fa = {
   pastCoursesDesc: "به آرشیو دوره‌های قبلی برگزار شده دسترسی پیدا کنید",
 
   // Magazine section
-  magazine: "مجله",
-  magazineDesc: "آخرین مقالات و بینش‌های آکادمی رفیعی",
   readMore: "ادامه مطلب",
 
   // Additional missing keys from English
@@ -257,7 +256,7 @@ export const fa = {
   mySettings: "تنظیمات",
 
   // Footer
-  footerCopyright: "© کلیه حقوق برای آکادمی رفیعی محفوظ است.",
+  footerCopyright: "© ۲۰۲۴ آکادمی رفیعی. تمامی حقوق محفوظ است.",
   footerDesc: "آکادمی رفیعی، مرجع آموزش کسب و کار بدون مرز و درآمد ارزی",
 
   // New activation links - Adding the missing keys
@@ -272,5 +271,40 @@ export const fa = {
   installApp: "نصب اپلیکیشن",
   installDescription: "برای تجربه بهتر، آکادمی رفیعی را روی دستگاه خود نصب کنید",
   offline: "آفلاین",
-  onlineAgain: "دوباره آنلاین شدید"
+  onlineAgain: "دوباره آنلاین شدید",
+
+  // Additional system translations
+  loading_message: "در حال بارگیری...",
+  error_message: "خطایی رخ داده است",
+  retry: "تلاش مجدد",
+  back: "بازگشت",
+  close: "بستن",
+  open: "باز کردن",
+  save: "ذخیره",
+  update: "بروزرسانی",
+  refresh: "تازه‌سازی",
+  continue: "ادامه",
+  finish: "پایان",
+  start: "شروع",
+  stop: "توقف",
+  pause: "توقف موقت",
+  play: "پخش",
+  download: "دانلود",
+  upload: "آپلود",
+  share: "اشتراک‌گذاری",
+  copy: "کپی",
+  paste: "چسباندن",
+  cut: "برش",
+  undo: "بازگردانی",
+  redo: "تکرار",
+  select: "انتخاب",
+  selectAll: "انتخاب همه",
+  clear: "پاک کردن",
+  clearAll: "پاک کردن همه",
+  ok: "تأیید",
+  yes: "بله",
+  no: "خیر",
+  maybe: "شاید",
+  always: "همیشه",
+  never: "هرگز"
 } as const;
