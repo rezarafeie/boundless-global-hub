@@ -17,6 +17,17 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const hideFooterRoutes = ['/mag', '/payreq'];
   const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
   
+  // Routes where both header and footer should be hidden (access pages)
+  const hideHeaderFooterRoutes = location.pathname.startsWith('/access');
+  
+  if (hideHeaderFooterRoutes) {
+    return (
+      <div className={`min-h-screen flex flex-col bg-background text-foreground`} dir={direction}>
+        <main className="flex-1">{children}</main>
+      </div>
+    );
+  }
+  
   return (
     <div className={`flex min-h-screen flex-col bg-background text-foreground`} dir={direction}>
       <Header />
