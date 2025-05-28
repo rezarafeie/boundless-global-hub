@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +36,10 @@ import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
 import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
 import AmericanBusinessPage from "./pages/Course/AmericanBusinessPage";
 import MetaverseFreePage from "./pages/Course/MetaverseFreePage";
+import BoundlessTasteAccess from "./pages/Course/Access/BoundlessTasteAccess";
+import AmericanBusinessAccess from "./pages/Course/Access/AmericanBusinessAccess";
+import TaghirAccess from "./pages/Course/Access/TaghirAccess";
+import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +75,12 @@ const App = () => (
               <Route path="/course/passive-income" element={<PassiveIncomePage />} />
               <Route path="/course/american-business" element={<AmericanBusinessPage />} />
               <Route path="/course/metaverse-free" element={<MetaverseFreePage />} />
+              
+              {/* Course Access Pages */}
+              <Route path="/access/maze" element={<BoundlessTasteAccess />} />
+              <Route path="/access/americanbusiness" element={<AmericanBusinessAccess />} />
+              <Route path="/access/taghir" element={<TaghirAccess />} />
+              <Route path="/access/daramad" element={<PassiveIncomeAccess />} />
               
               {/* Legacy free course routes - redirect to new format */}
               <Route path="/course/change-project" element={<Navigate to="/course/change" replace />} />
