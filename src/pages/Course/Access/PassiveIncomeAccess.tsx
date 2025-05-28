@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Play, Gift, Bot, MessageCircle, FileText, Check, DollarSign, Brain } from "lucide-react";
+import { Play, Gift, Bot, MessageCircle, FileText, Check, Brain, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 const PassiveIncomeAccess = () => {
@@ -21,11 +21,35 @@ const PassiveIncomeAccess = () => {
 
   const steps = [
     {
+      id: "support",
+      title: "💬 فعال‌سازی پشتیبانی",
+      description: "دسترسی به پشتیبانی اختصاصی درآمد غیرفعال",
+      icon: <MessageCircle size={32} className="text-emerald-600" />,
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+      borderColor: "border-emerald-200 dark:border-emerald-800",
+      buttons: [
+        { label: "💬 فعال‌سازی پشتیبانی", url: "https://t.me/m/ToRJiOBHN2E0" }
+      ],
+      activation: true
+    },
+    {
+      id: "channel",
+      title: "📦 کانال تلگرام دوره",
+      description: "عضویت در کانال برای دریافت محتوای ویژه",
+      icon: <Users size={32} className="text-blue-600" />,
+      bgColor: "bg-blue-50 dark:bg-blue-950/30",
+      borderColor: "border-blue-200 dark:border-blue-800",
+      buttons: [
+        { label: "📦 ورود به کانال", url: "https://t.me/daramadproject" }
+      ]
+    },
+    {
       id: "videos",
       title: "🎥 جلسات دوره",
-      description: "مشاهده تمام جلسات آموزشی",
-      icon: <Play size={40} className="text-emerald-500" />,
-      color: "emerald",
+      description: "مشاهده تمام جلسات آموزشی درآمد غیرفعال",
+      icon: <Play size={32} className="text-violet-600" />,
+      bgColor: "bg-violet-50 dark:bg-violet-950/30",
+      borderColor: "border-violet-200 dark:border-violet-800",
       buttons: [
         { label: "💸 جلسه اول", url: "https://academy.rafiei.co/daramad/one/" },
         { label: "💸 جلسه دوم", url: "https://academy.rafiei.co/daramad/two/" }
@@ -35,8 +59,9 @@ const PassiveIncomeAccess = () => {
       id: "special",
       title: "🧠 محتوای ویژه",
       description: "دسترسی به کارگاه‌ها و محتوای اختصاصی",
-      icon: <Brain size={40} className="text-violet-500" />,
-      color: "violet",
+      icon: <Brain size={32} className="text-rose-600" />,
+      bgColor: "bg-rose-50 dark:bg-rose-950/30",
+      borderColor: "border-rose-200 dark:border-rose-800",
       buttons: [
         { label: "🧠 تک اولویت", url: "https://academy.rafiei.co/daramad/gift/done/takolaviat/" },
         { label: "🧠 کارگاه", url: "https://academy.rafiei.co/daramad/gift/done/workshop/" }
@@ -44,10 +69,11 @@ const PassiveIncomeAccess = () => {
     },
     {
       id: "gifts",
-      title: "🎁 مواد جایزه",
-      description: "دسترسی به محتوای اضافی و جوایز ویژه",
-      icon: <Gift size={40} className="text-yellow-500" />,
-      color: "yellow",
+      title: "🎁 جوایز و مواد اضافی",
+      description: "دسترسی به محتوای ویژه و جوایز اختصاصی",
+      icon: <Gift size={32} className="text-amber-600" />,
+      bgColor: "bg-amber-50 dark:bg-amber-950/30",
+      borderColor: "border-amber-200 dark:border-amber-800",
       buttons: [
         { label: "🎁 مشاهده جوایز", url: "https://academy.rafiei.co/daramad/gift/" }
       ]
@@ -55,128 +81,122 @@ const PassiveIncomeAccess = () => {
     {
       id: "assistant",
       title: "🤖 دستیار هوش مصنوعی",
-      description: "فعال‌سازی دستیار اختصاصی رفیعی",
-      icon: <Bot size={40} className="text-purple-500" />,
-      color: "purple",
+      description: "فعال‌سازی دستیار اختصاصی رفیعی برای پشتیبانی",
+      icon: <Bot size={32} className="text-purple-600" />,
+      bgColor: "bg-purple-50 dark:bg-purple-950/30",
+      borderColor: "border-purple-200 dark:border-purple-800",
       buttons: [
         { label: "🤖 فعال‌سازی دستیار", url: "https://t.me/rafiei_bot" }
       ],
       activation: true
-    },
-    {
-      id: "support",
-      title: "💬 پشتیبانی تلگرام",
-      description: "فعال‌سازی پشتیبانی اختصاصی",
-      icon: <MessageCircle size={40} className="text-green-500" />,
-      color: "green",
-      buttons: [
-        { label: "💬 فعال‌سازی پشتیبانی", url: "https://t.me/m/ToRJiOBHN2E0" }
-      ],
-      activation: true
-    },
-    {
-      id: "channel",
-      title: "📦 کانال تلگرام دوره",
-      description: "دسترسی به فایل‌ها و محتوای اختصاصی",
-      icon: <FileText size={40} className="text-blue-500" />,
-      color: "blue",
-      buttons: [
-        { label: "📦 ورود به کانال", url: "https://t.me/daramadproject" }
-      ]
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-violet-50 to-blue-50 dark:from-emerald-950/20 dark:via-violet-950/20 dark:to-blue-950/20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 dark:from-gray-900 dark:to-emerald-950">
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-violet-600 to-blue-600 py-20">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 to-violet-600 py-16">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-violet-400/20 rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-emerald-300/15 rounded-full blur-lg"></div>
+        </div>
+        
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
-          <motion.h1 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold mb-6"
+            className="max-w-3xl mx-auto"
           >
-            💸 به دوره درآمد غیرفعال خوش آمدید!
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl md:text-2xl text-emerald-100 max-w-3xl mx-auto"
-          >
-            راهنمای جامع ایجاد درآمد پایدار و غیرفعال
-          </motion.p>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">
+              💸 دوره درآمد غیرفعال
+            </h1>
+            <p className="text-lg md:text-xl text-emerald-100">
+              راهنمای جامع ایجاد درآمد پایدار و غیرفعال
+            </p>
+          </motion.div>
         </div>
       </div>
 
       {/* Steps Section */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {steps.map((step, index) => (
-            <motion.div
-              key={step.id}
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className={`border-2 border-${step.color}-200 shadow-lg hover:shadow-xl transition-all duration-300 bg-${step.color}-50/50 dark:bg-${step.color}-950/20`}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-4 rounded-2xl bg-${step.color}-100 dark:bg-${step.color}-900/50`}>
-                        {step.icon}
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              مراحل دسترسی به دوره
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              برای بهترین تجربه یادگیری، مراحل زیر را به ترتیب دنبال کنید
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className={`${step.bgColor} ${step.borderColor} border-2 shadow-lg hover:shadow-xl transition-all duration-300`}>
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-center w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                          {step.icon}
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-xl font-bold flex items-center gap-3">
+                            {step.title}
+                            {step.activation && isStepActivated(step.id) && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                                <Check size={14} className="mr-1" />
+                                فعال شد
+                              </Badge>
+                            )}
+                          </CardTitle>
+                          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+                            {step.description}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                          {step.title}
-                          {step.activation && isStepActivated(step.id) && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              <Check size={16} className="mr-1" />
-                              فعال شد
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <p className="text-muted-foreground mt-2">{step.description}</p>
+                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-600">
+                        {index + 1}
                       </div>
                     </div>
-                    <div className={`text-3xl font-bold text-${step.color}-500`}>
-                      {index + 1}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {step.buttons.map((button, buttonIndex) => (
-                    <Button
-                      key={buttonIndex}
-                      size="lg"
-                      className="w-full justify-start gap-3 text-lg py-6"
-                      asChild
-                      onClick={() => step.activation && handleStepActivation(step.id)}
-                    >
-                      <a 
-                        href={button.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center"
+                  </CardHeader>
+                  <CardContent className="space-y-3 pt-0">
+                    {step.buttons.map((button, buttonIndex) => (
+                      <Button
+                        key={buttonIndex}
+                        size="lg"
+                        className="w-full justify-center gap-3 text-base py-3 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                        asChild
+                        onClick={() => step.activation && handleStepActivation(step.id)}
                       >
-                        {button.label}
-                      </a>
-                    </Button>
-                  ))}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                        <a 
+                          href={button.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
+                          {button.label}
+                        </a>
+                      </Button>
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Footer Message */}
-      <div className="py-12 bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
+      <div className="py-8 bg-gradient-to-r from-emerald-600 to-violet-600 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-2xl font-bold mb-4">💰 مسیر ایجاد درآمد پایدار!</h3>
-          <p className="text-emerald-100 max-w-2xl mx-auto text-lg">
-            با راهنمای‌های این دوره می‌توانید سیستم‌های درآمدزایی غیرفعال خود را بسازید و به آزادی مالی دست یابید.
+          <h3 className="text-xl font-bold mb-2">💰 آماده برای ایجاد درآمد پایدار؟</h3>
+          <p className="text-emerald-100 max-w-2xl mx-auto">
+            با دنبال کردن مراحل بالا، سیستم‌های درآمدزایی غیرفعال خود را بسازید
           </p>
         </div>
       </div>
