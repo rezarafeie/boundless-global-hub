@@ -1,4 +1,3 @@
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -20,6 +19,7 @@ export const fa = {
   assessmentCenter: "مرکز ارزیابی",
   blog: "مجله",
   magazine: "مجله",
+  magazineDesc: "مقالات و راهنماهای تخصصی در زمینه کسب و کار و توسعه شخصی",
   support: "پشتیبانی",
   contact: "تماس با ما",
   aboutUs: "درباره ما",
