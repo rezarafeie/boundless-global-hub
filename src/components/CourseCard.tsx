@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, Users, Award, CheckCircle, Globe, HeadphonesIcon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
   title: string;
@@ -87,6 +87,12 @@ const CourseCard: React.FC<CourseCardProps> = ({
     }
   };
 
+  // Handle card click
+  const handleCardClick = () => {
+    const targetUrl = getCourseUrl();
+    navigate(targetUrl);
+  };
+
   // Handle CTA button click
   const handleCtaClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -111,110 +117,105 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <Link to={getCourseUrl()} className="block h-full group">
-      <Card className="overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-card rounded-xl">
-        
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-muted">
-              {getCourseIcon()}
-            </div>
-            <div className="ml-3">
-              <Badge
-                variant={isPaid ? "default" : "outline"}
-                className={`${isPaid ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground border-border'} text-xs`}
-              >
-                {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-              </Badge>
-            </div>
+    <Card 
+      className="overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg h-full flex flex-col bg-card rounded-xl cursor-pointer group dark:bg-card dark:border-border dark:hover:border-primary/20"
+      onClick={handleCardClick}
+    >
+      
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-muted dark:bg-muted">
+            {getCourseIcon()}
           </div>
-          {status && (
-            <Badge className={`text-xs ${getStatusBadgeColor()}`}>
-              {status === "active" && translations.activeStatus}
-              {status === "upcoming" && translations.upcomingStatus}
-              {status === "completed" && translations.completedStatus}
+          <div className="ml-3">
+            <Badge
+              variant={isPaid ? "default" : "outline"}
+              className={`${isPaid ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground border-border dark:bg-background dark:text-foreground dark:border-border'} text-xs`}
+            >
+              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
             </Badge>
-          )}
+          </div>
         </div>
+        {status && (
+          <Badge className={`text-xs ${getStatusBadgeColor()}`}>
+            {status === "active" && translations.activeStatus}
+            {status === "upcoming" && translations.upcomingStatus}
+            {status === "completed" && translations.completedStatus}
+          </Badge>
+        )}
+      </div>
+      
+      <CardContent className="p-4 pt-0 flex-grow">
+        <h3 className="text-xl font-bold text-card-foreground mb-2 dark:text-card-foreground">{title}</h3>
+        {englishTitle && (
+          <p className="text-sm text-muted-foreground mb-2 dark:text-muted-foreground">{englishTitle}</p>
+        )}
         
-        <CardContent className="p-4 pt-0 flex-grow">
-          <h3 className="text-xl font-bold text-card-foreground mb-2">{title}</h3>
-          {englishTitle && (
-            <p className="text-sm text-muted-foreground mb-2">{englishTitle}</p>
-          )}
-          
-          <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{description}</p>
-          
-          <div className="space-y-3 mb-4">
-            <div className="text-sm text-card-foreground">
-              <span className="font-medium">✓ </span>
-              {benefits}
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 dark:text-muted-foreground">{description}</p>
+        
+        <div className="space-y-3 mb-4">
+          <div className="text-sm text-card-foreground dark:text-card-foreground">
+            <span className="font-medium">✓ </span>
+            {benefits}
+          </div>
+          <div className="text-sm text-card-foreground dark:text-card-foreground">
+            <span className="font-medium">→ </span>
+            {outcome}
+          </div>
+        </div>
+
+        {/* Course Features */}
+        <div className="grid grid-cols-3 gap-2 mb-4 text-xs text-muted-foreground dark:text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Clock size={12} />
+            <span>دسترسی آزاد</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Users size={12} />
+            <span>انجمن</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Award size={12} />
+            <span>گواهی</span>
+          </div>
+        </div>
+
+        {/* Additional Features for Paid Courses */}
+        {isPaid && (
+          <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-muted-foreground dark:text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <HeadphonesIcon size={12} />
+              <span>پشتیبانی</span>
             </div>
-            <div className="text-sm text-card-foreground">
-              <span className="font-medium">→ </span>
-              {outcome}
+            <div className="flex items-center gap-1">
+              <Globe size={12} />
+              <span>آنلاین</span>
             </div>
           </div>
-
-          {/* Course Features */}
-          <div className="grid grid-cols-3 gap-2 mb-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Clock size={12} />
-              <span>دسترسی آزاد</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Users size={12} />
-              <span>انجمن</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Award size={12} />
-              <span>گواهی</span>
-            </div>
-          </div>
-
-          {/* Additional Features for Paid Courses */}
-          {isPaid && (
-            <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <HeadphonesIcon size={12} />
-                <span>پشتیبانی</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Globe size={12} />
-                <span>آنلاین</span>
-              </div>
-            </div>
-          )}
-          
-          {instructor && (
-            <div className="flex items-center mt-3 pb-2 text-sm text-muted-foreground">
-              <User size={14} className="mr-1" />
-              {instructorLink ? (
-                <Link to={instructorLink} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline">
-                  {instructor}
-                </Link>
-              ) : (
-                <span>{instructor}</span>
-              )}
-              {level && (
-                <Badge variant="outline" className="ml-2 text-xs">
-                  {level}
-                </Badge>
-              )}
-            </div>
-          )}
-        </CardContent>
+        )}
         
-        <CardFooter className="p-4 pt-0">
-          <Button 
-            onClick={handleCtaClick}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full transition-all"
-          >
-            {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
+        {instructor && (
+          <div className="flex items-center mt-3 pb-2 text-sm text-muted-foreground dark:text-muted-foreground">
+            <User size={14} className="mr-1" />
+            <span>{instructor}</span>
+            {level && (
+              <Badge variant="outline" className="ml-2 text-xs border-border dark:border-border dark:text-foreground">
+                {level}
+              </Badge>
+            )}
+          </div>
+        )}
+      </CardContent>
+      
+      <CardFooter className="p-4 pt-0">
+        <Button 
+          onClick={handleCtaClick}
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-full transition-all dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+        >
+          {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 

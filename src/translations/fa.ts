@@ -1,3 +1,4 @@
+
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -17,7 +18,7 @@ export const fa = {
   paidCourses: "دوره‌های پولی",
   assessment: "آزمون‌ها",
   assessmentCenter: "مرکز ارزیابی",
-  blog: "بلاگ",
+  blog: "مجله",
   support: "پشتیبانی",
   contact: "تماس با ما",
   aboutUs: "درباره ما",
@@ -265,5 +266,11 @@ export const fa = {
   channelAccess: "دسترسی به کانال‌ها",
   telegramChannels: "کانال‌های تلگرام",
   filesAndGuides: "فایل‌ها و راهنماها",
-  bonusContent: "محتوای جایزه"
+  bonusContent: "محتوای جایزه",
+
+  // PWA specific translations
+  installApp: "نصب اپلیکیشن",
+  installDescription: "برای تجربه بهتر، آکادمی رفیعی را روی دستگاه خود نصب کنید",
+  offline: "آفلاین",
+  onlineAgain: "دوباره آنلاین شدید"
 } as const;

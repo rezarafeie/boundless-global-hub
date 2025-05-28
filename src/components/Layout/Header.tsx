@@ -14,8 +14,13 @@ const Header = () => {
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Use different logos for light/dark modes
+  const logoSrc = isDarkMode 
+    ? "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" // white logo for dark mode
+    : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png"; // black logo for light mode
+
   return (
-    <header className="fixed top-0 z-[10000] w-full border-b border-black/5 dark:border-white/10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0 z-[10000] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:border-border/20">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
           <Link 
@@ -23,9 +28,9 @@ const Header = () => {
             className="flex items-center gap-2"
           >
             <img 
-              src="/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" 
+              src={logoSrc}
               alt="Rafiei Academy" 
-              className="h-8 w-auto"
+              className="h-8 w-auto transition-all duration-300"
             />
             <span className="text-xl font-bold tracking-tight text-foreground">
               {translations.websiteName}
@@ -35,19 +40,19 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+          <Link to="/" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {translations.home}
           </Link>
-          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Training Center" : "مرکز آموزش"}
           </Link>
-          <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+          <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {translations.assessmentCenter}
           </Link>
-          <Link to="/mag" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+          <Link to="/mag" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Magazine" : "مجله"}
           </Link>
-          <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground">
+          <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Support" : "پشتیبانی"}
           </Link>
         </nav>
@@ -58,10 +63,10 @@ const Header = () => {
             variant="ghost"
             size="icon"
             onClick={toggleDarkMode}
-            className="rounded-full hover:bg-accent"
+            className="rounded-full hover:bg-accent dark:hover:bg-accent/50"
             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            {isDarkMode ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-foreground" />}
           </Button>
 
           {/* Language Switcher - Icon Only */}
@@ -69,10 +74,10 @@ const Header = () => {
             variant="ghost"
             size="icon"
             onClick={toggleLanguage}
-            className="rounded-full hover:bg-accent"
+            className="rounded-full hover:bg-accent dark:hover:bg-accent/50"
             aria-label={language === "en" ? "Switch to Persian" : "Switch to English"}
           >
-            <Globe size={20} />
+            <Globe size={20} className="text-foreground" />
           </Button>
           
           {/* User Account Button - Desktop Only */}
@@ -80,7 +85,7 @@ const Header = () => {
             variant="default"
             size="sm"
             asChild
-            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hidden md:flex"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hidden md:flex dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
           >
             <Link to="/dashboard">{language === "en" ? "My Account" : "حساب کاربری"}</Link>
           </Button>
@@ -91,20 +96,20 @@ const Header = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden rounded-full"
+                className="md:hidden rounded-full hover:bg-accent dark:hover:bg-accent/50"
               >
-                <Menu size={20} />
+                <Menu size={20} className="text-foreground" />
               </Button>
             </SheetTrigger>
             <SheetContent 
               side={language === "fa" ? "right" : "left"} 
-              className="w-[300px] sm:w-[400px] z-[10002] [&>div]:z-[10001] bg-background border-border"
+              className="w-[300px] sm:w-[400px] z-[10002] [&>div]:z-[10001] bg-background border-border dark:bg-background dark:border-border"
             >
               <div className="flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center gap-2 pb-6 border-b border-border">
+                <div className="flex items-center gap-2 pb-6 border-b border-border dark:border-border">
                   <img 
-                    src="/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" 
+                    src={logoSrc}
                     alt="Rafiei Academy" 
                     className="h-8 w-auto"
                   />
@@ -117,35 +122,35 @@ const Header = () => {
                 <nav className="flex flex-col space-y-4 py-6 flex-1">
                   <Link 
                     to="/" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {translations.home}
                   </Link>
                   <Link 
                     to="/courses" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {language === "en" ? "Training Center" : "مرکز آموزش"}
                   </Link>
                   <Link 
                     to="/assessment-center" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {translations.assessmentCenter}
                   </Link>
                   <Link 
                     to="/mag" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {language === "en" ? "Magazine" : "مجله"}
                   </Link>
                   <Link 
                     to="/support" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2"
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {language === "en" ? "Support" : "پشتیبانی"}
@@ -153,13 +158,13 @@ const Header = () => {
                 </nav>
 
                 {/* Footer Actions */}
-                <div className="pt-6 border-t border-border space-y-4">
+                <div className="pt-6 border-t border-border dark:border-border space-y-4">
                   {/* User Account Button */}
                   <Button
                     variant="default"
                     size="lg"
                     asChild
-                    className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Link to="/dashboard">{language === "en" ? "My Account" : "حساب کاربری"}</Link>
@@ -173,7 +178,7 @@ const Header = () => {
                       toggleDarkMode();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full rounded-full"
+                    className="w-full rounded-full border-border dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent"
                   >
                     {isDarkMode ? <Sun size={20} className="mr-2" /> : <Moon size={20} className="mr-2" />}
                     {isDarkMode ? 
@@ -190,7 +195,7 @@ const Header = () => {
                       toggleLanguage();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full rounded-full"
+                    className="w-full rounded-full border-border dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent"
                   >
                     <Globe size={20} className="mr-2" />
                     {language === "en" ? "فارسی" : "English"}

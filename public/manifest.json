@@ -1,0 +1,50 @@
+
+{
+  "name": "آکادمی رفیعی | رضا رفیعی",
+  "short_name": "آکادمی رفیعی",
+  "description": "مرجع تخصصی توسعه فردی و کسب‌وکار",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": ["education", "business", "productivity"],
+  "screenshots": [
+    {
+      "src": "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "آکادمی رفیعی - نمای کلی"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
