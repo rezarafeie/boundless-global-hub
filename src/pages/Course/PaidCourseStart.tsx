@@ -16,7 +16,7 @@ const PaidCourseStart = () => {
     switch (courseSlug) {
       case "boundless":
         return {
-          title: translations.boundlessProgramTitle,
+          title: translations.boundlessProgram,
           description: translations.boundlessProgramDesc,
           supportLinks: [
             "https://t.me/m/ToRJiOBHN2E0",
@@ -27,14 +27,14 @@ const PaidCourseStart = () => {
         };
       case "instagram":
         return {
-          title: translations.instagramEssentialsTitle,
+          title: translations.instagramEssentials,
           description: translations.instagramEssentialsDesc,
           supportLinks: ["https://t.me/m/InstagramSupport"],
           channelLink: "https://t.me/instagramacademy"
         };
       default:
         return {
-          title: translations.boundlessProgramTitle,
+          title: translations.boundlessProgram,
           description: translations.boundlessProgramDesc,
           supportLinks: ["https://t.me/m/ToRJiOBHN2E0"],
           channelLink: "https://t.me/mazeboundless"
