@@ -165,13 +165,9 @@ export const fa = {
   metaverseEmpireSubtitle: "🌐 ورود به دنیای جدید کسب و کار",
   freeCoursesTitle: "دوره‌های رایگان آکادمی رفیعی",
   freeCoursesSubtitle: "🎉 کاملاً رایگان - ویژه تابستان ۱۴۰۴",
-
-  // Status badges
   activeStatus: "فعال",
   upcomingStatus: "به زودی",
   completedStatus: "تکمیل شده",
-
-  // AI Assistant translations
   aiAssistant: "دستیار هوش مصنوعی",
   aiAssistantTitle: "دستیار هوش مصنوعی",
   aiAssistantDescription: "راهنمایی شخصی‌سازی شده برای اهداف کسب و کار و شغلی خود با دستیار هوش مصنوعی پیشرفته ما دریافت کنید.",
@@ -193,8 +189,6 @@ export const fa = {
   aiFeature2Desc: "یاد بگیرید چگونه در مسیر شغلی خود پیشرفت کنید",
   aiFeature3: "توسعه شخصی",
   aiFeature3Desc: "راه‌هایی برای بهبود مهارت‌ها و ذهنیت خود کشف کنید",
-
-  // Additional course-related translations
   lessonCount: "تعداد جلسات",
   price: "قیمت",
   discountPrice: "قیمت تخفیف‌دار",
@@ -202,12 +196,8 @@ export const fa = {
   beginner: "مبتدی",
   intermediate: "متوسط",
   advanced: "پیشرفته",
-
-  // Course categories
   businessCourses: "دوره‌های کسب و کار",
   selfDevelopmentCourses: "دوره‌های توسعه شخصی",
-
-  // Training center
   trainingCenter: "مرکز آموزش",
   trainingCenterDesc: "دوره‌های تخصصی برای توسعه شخصی و حرفه‌ای",
   currentlyRunning: "در حال برگزاری",
@@ -216,26 +206,18 @@ export const fa = {
   upcomingCoursesDesc: "برای دوره‌های آینده که به زودی شروع می‌شوند ثبت‌نام کنید",
   pastCourses: "دوره‌های گذشته",
   pastCoursesDesc: "به آرشیو دوره‌های قبلی برگزار شده دسترسی پیدا کنید",
-
-  // Magazine section
   readMore: "ادامه مطلب",
-
-  // Additional missing keys from English
   assessmentCenterTitle: "مرکز ارزیابی",
   assessmentCenterDesc: "مهارت‌ها و توانایی‌های خود را با استفاده از آزمون‌های استاندارد ارزیابی کنید و مسیر پیشرفت خود را تعیین کنید.",
   personalityTests: "آزمون‌های شخصیت",
   intelligenceTests: "آزمون‌های هوش",
   careerTests: "آزمون‌های شغلی",
   emotionTests: "آزمون‌های هوش عاطفی",
-
-  // File types and course materials
   videoLessons: "جلسات ویدیویی",
   quizzes: "آزمون‌ها",
   certificate: "گواهی تکمیل دوره",
   lifetime: "دسترسی مادام‌العمر",
   accessTrainingFiles: "دسترسی به فایل‌های آموزشی",
-
-  // Auth modal
   loginTitle: "ورود به حساب",
   registerTitle: "ثبت‌نام در آکادمی",
   passwordLabel: "رمز عبور",
@@ -247,33 +229,23 @@ export const fa = {
   alreadyHaveAccount: "قبلاً ثبت‌نام کرده‌اید؟",
   dontHaveAccount: "حساب کاربری ندارید؟",
   enterAllFields: "لطفاً همه فیلدها را پر کنید",
-
-  // Account
   myAccount: "حساب من",
   myCourses: "دوره‌های من",
   myAssessments: "ارزیابی‌های من",
   myProfile: "پروفایل من",
   mySettings: "تنظیمات",
-
-  // Footer
   footerCopyright: "© ۲۰۲۴ آکادمی رفیعی. تمامی حقوق محفوظ است.",
   footerDesc: "آکادمی رفیعی، مرجع آموزش کسب و کار بدون مرز و درآمد ارزی",
-
-  // New activation links - Adding the missing keys
   aiAssistantBot: "دستیار هوش مصنوعی",
   supportLinks: "لینک‌های پشتیبانی",
   channelAccess: "دسترسی به کانال‌ها",
   telegramChannels: "کانال‌های تلگرام",
   filesAndGuides: "فایل‌ها و راهنماها",
   bonusContent: "محتوای جایزه",
-
-  // PWA specific translations
   installApp: "نصب اپلیکیشن",
   installDescription: "برای تجربه بهتر، آکادمی رفیعی را روی دستگاه خود نصب کنید",
   offline: "آفلاین",
   onlineAgain: "دوباره آنلاین شدید",
-
-  // Additional system translations
   loading_message: "در حال بارگیری...",
   error_message: "خطایی رخ داده است",
   retry: "تلاش مجدد",
