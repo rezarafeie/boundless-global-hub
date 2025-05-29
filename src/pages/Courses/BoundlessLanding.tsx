@@ -193,14 +193,17 @@ const BoundlessLanding = () => {
         <section className="py-16 bg-gradient-to-r from-purple-100 via-blue-100 via-pink-100 to-orange-100 dark:from-purple-950/30 dark:via-blue-950/30 dark:via-pink-950/30 dark:to-orange-950/30">
           <div className="container max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
-              <motion.h3 
-                className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                زمان باقی‌مانده تا شروع ثبت‌نام
-              </motion.h3>
+              <div className="flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-purple-600 ml-3" />
+                <motion.h3 
+                  className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  زمان باقی‌مانده تا شروع ثبت‌نام
+                </motion.h3>
+              </div>
               <p className="text-muted-foreground text-lg font-medium">۱۹ خردادماه، ساعت ۱۲ ظهر</p>
             </div>
             <motion.div 
@@ -220,10 +223,13 @@ const BoundlessLanding = () => {
         {/* Course Description - Enhanced Colors */}
         <section className="py-20 bg-gradient-to-br from-teal-50/60 to-green-50/60 dark:from-teal-950/20 dark:to-green-950/20">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="درباره دوره شروع بدون مرز" 
-              subtitle="برنامه جامع آموزشی برای ورود به بازارهای بین‌المللی"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <Globe className="w-8 h-8 text-teal-600 ml-3" />
+              <SectionTitle 
+                title="درباره دوره شروع بدون مرز" 
+                subtitle="برنامه جامع آموزشی برای ورود به بازارهای بین‌المللی"
+              />
+            </div>
             
             <motion.div 
               className="max-w-4xl mx-auto"
@@ -251,10 +257,13 @@ const BoundlessLanding = () => {
         {/* Enhanced Course Content */}
         <section className="py-20 bg-gradient-to-br from-blue-50/50 via-purple-50/50 to-pink-50/50 dark:from-blue-950/15 dark:via-purple-950/15 dark:to-pink-950/15">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="محتوای دوره" 
-              subtitle="آنچه در این دوره خواهید آموخت"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <BookOpen className="w-8 h-8 text-blue-600 ml-3" />
+              <SectionTitle 
+                title="محتوای دوره" 
+                subtitle="آنچه در این دوره خواهید آموخت"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courseContent.map((item, index) => {
@@ -288,10 +297,13 @@ const BoundlessLanding = () => {
         {/* Course Gifts - Enhanced */}
         <section className="py-20 bg-background">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title={translations.courseGifts} 
-              subtitle="هدایای ویژه همراه با دوره"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <Gift className="w-8 h-8 text-purple-600 ml-3" />
+              <SectionTitle 
+                title={translations.courseGifts} 
+                subtitle="هدایای ویژه همراه با دوره"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {gifts.map((gift, index) => {
@@ -323,10 +335,13 @@ const BoundlessLanding = () => {
         {/* Course Features - Enhanced */}
         <section className="py-20 bg-gradient-to-br from-green-50/50 to-teal-50/50 dark:from-green-950/10 dark:to-teal-950/10">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title={translations.courseFeatures} 
-              subtitle="چرا این دوره را انتخاب کنید؟"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <CheckCircle className="w-8 h-8 text-green-600 ml-3" />
+              <SectionTitle 
+                title={translations.courseFeatures} 
+                subtitle="چرا این دوره را انتخاب کنید؟"
+              />
+            </div>
             
             <div className="space-y-4 max-w-3xl mx-auto">
               {features.map((feature, index) => {
@@ -353,10 +368,13 @@ const BoundlessLanding = () => {
         {/* Instructor Section */}
         <section className="py-20 bg-background">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="معرفی مدرس" 
-              subtitle="آشنایی با استاد دوره"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <User className="w-8 h-8 text-blue-600 ml-3" />
+              <SectionTitle 
+                title="معرفی مدرس" 
+                subtitle="آشنایی با استاد دوره"
+              />
+            </div>
             
             <Link to="/instructor/reza-rafiei" className="block">
               <div className="hover:scale-105 transition-transform duration-300">
@@ -369,10 +387,13 @@ const BoundlessLanding = () => {
         {/* Testimonials - Enhanced */}
         <section className="py-20 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 dark:from-yellow-950/10 dark:to-orange-950/10">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="نظرات دانشجویان" 
-              subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <Star className="w-8 h-8 text-yellow-600 ml-3" />
+              <SectionTitle 
+                title="نظرات دانشجویان" 
+                subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
@@ -405,10 +426,13 @@ const BoundlessLanding = () => {
         {/* FAQ Section */}
         <section className="py-20 bg-background">
           <div className="container max-w-3xl mx-auto px-4">
-            <SectionTitle 
-              title={translations.faq} 
-              subtitle="پاسخ به سوالات متداول"
-            />
+            <div className="flex items-center justify-center mb-12">
+              <MessageCircle className="w-8 h-8 text-blue-600 ml-3" />
+              <SectionTitle 
+                title={translations.faq} 
+                subtitle="پاسخ به سوالات متداول"
+              />
+            </div>
             
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
