@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css');
 
@@ -102,7 +103,7 @@
     text-align: left;
   }
 
-  /* Persian layout fixes - proper spacing for icons and text */
+  /* Enhanced Persian layout fixes - proper spacing for icons and text */
   .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
     --tw-space-x-reverse: 1;
     margin-right: calc(1rem * var(--tw-space-x-reverse));
@@ -119,6 +120,11 @@
     --tw-space-x-reverse: 1;
     margin-right: calc(1rem * var(--tw-space-x-reverse));
     margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+
+  /* Additional gap utility for consistent RTL spacing */
+  .gap-rtl {
+    gap: 0.75rem;
   }
 }
 
@@ -171,6 +177,10 @@
   
   .animation-delay-800 {
     animation-delay: 800ms;
+  }
+  
+  .animation-delay-1200 {
+    animation-delay: 1200ms;
   }
   
   .text-gradient {

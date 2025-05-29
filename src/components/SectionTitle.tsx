@@ -7,6 +7,7 @@ interface SectionTitleProps {
   align?: "center" | "left" | "right";
   isWhite?: boolean;
   isCentered?: boolean;
+  icon?: React.ReactNode;
 }
 
 const SectionTitle = ({
@@ -15,6 +16,7 @@ const SectionTitle = ({
   align = "center",
   isWhite = false,
   isCentered = false,
+  icon
 }: SectionTitleProps) => {
   const alignClass = {
     center: "text-center mx-auto",
@@ -24,13 +26,20 @@ const SectionTitle = ({
 
   return (
     <div className={`max-w-3xl ${alignClass[align]} mb-12 ${isCentered ? "mx-auto" : ""}`}>
-      <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${
-        isWhite ? "text-white" : "text-foreground"
-      }`}>
-        {title}
-      </h2>
+      <div className="flex items-center justify-center gap-3 mb-4">
+        {icon && (
+          <div className="flex-shrink-0">
+            {icon}
+          </div>
+        )}
+        <h2 className={`text-3xl font-bold tracking-tight sm:text-4xl ${
+          isWhite ? "text-white" : "text-foreground"
+        }`}>
+          {title}
+        </h2>
+      </div>
       {subtitle && (
-        <p className={`mt-4 text-lg ${
+        <p className={`text-lg ${
           isWhite ? "text-white/80" : "text-muted-foreground"
         }`}>
           {subtitle}

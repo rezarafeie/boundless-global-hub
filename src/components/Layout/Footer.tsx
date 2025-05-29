@@ -2,13 +2,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import { BookOpen, Mail, MessageCircle, Phone, Moon, Sun, Home, User, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BookOpen, Mail, MessageCircle, Phone, Home, User, MapPin } from "lucide-react";
 
 const Footer = () => {
   const { translations } = useLanguage();
-  const { isDarkMode, toggleDarkMode } = useTheme();
 
   // Always use white logo in footer since footer has dark background
   const footerLogoSrc = "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png";
@@ -25,7 +22,7 @@ const Footer = () => {
               <img 
                 src={footerLogoSrc}
                 alt={translations.websiteName} 
-                className="h-10 w-auto mr-3"
+                className="h-10 w-auto ml-3"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png";
@@ -37,8 +34,8 @@ const Footer = () => {
               {translations.footerDesc}
             </p>
             
-            {/* Social Media - Moved to brand section */}
-            <div className="flex items-center space-x-4 rtl:space-x-reverse">
+            {/* Social Media - With proper RTL spacing */}
+            <div className="flex items-center gap-4">
               <a 
                 href="https://instagram.com/rafieiacademy" 
                 className="bg-gray-700 hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-500 p-3 rounded-xl transition-all duration-300 transform hover:scale-110"
@@ -69,44 +66,44 @@ const Footer = () => {
           
           {/* Quick Links - Redesigned */}
           <div className="space-y-6">
-            <h4 className="text-xl font-bold text-white flex items-center">
-              <Home className="mr-3 h-5 w-5 text-blue-400" />
+            <h4 className="text-xl font-bold text-white flex items-center gap-3">
+              <Home className="h-5 w-5 text-blue-400" />
               دسترسی سریع
             </h4>
             <ul className="space-y-4">
               <li>
                 <Link 
                   to="/" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full group-hover:bg-white transition-colors"></span>
                   {translations.home}
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/courses" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full group-hover:bg-white transition-colors"></span>
                   {translations.trainingCenter}
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/assessment-center" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full group-hover:bg-white transition-colors"></span>
                   {translations.assessmentCenter}
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/mag" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full group-hover:bg-white transition-colors"></span>
                   {translations.magazine}
                 </Link>
               </li>
@@ -115,13 +112,13 @@ const Footer = () => {
           
           {/* Contact Info - Enhanced */}
           <div className="space-y-6">
-            <h4 className="text-xl font-bold text-white flex items-center">
-              <MessageCircle className="mr-3 h-5 w-5 text-green-400" />
+            <h4 className="text-xl font-bold text-white flex items-center gap-3">
+              <MessageCircle className="h-5 w-5 text-green-400" />
               {translations.contact}
             </h4>
             <ul className="space-y-4">
-              <li className="flex items-center text-base group">
-                <Mail className="mr-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
+              <li className="flex items-center text-base group gap-3">
+                <Mail className="h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
                 <a 
                   href="mailto:hi@rafeie.com" 
                   className="text-gray-300 hover:text-white transition-colors"
@@ -129,8 +126,8 @@ const Footer = () => {
                   hi@rafeie.com
                 </a>
               </li>
-              <li className="flex items-center text-base group">
-                <Phone className="mr-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
+              <li className="flex items-center text-base group gap-3">
+                <Phone className="h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
                 <a 
                   href="tel:02128427131" 
                   className="text-gray-300 hover:text-white transition-colors"
@@ -138,70 +135,48 @@ const Footer = () => {
                   021-28427131
                 </a>
               </li>
-              <li className="flex items-center text-base group">
-                <MapPin className="mr-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
+              <li className="flex items-center text-base group gap-3">
+                <MapPin className="h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
                 <span className="text-gray-300">تهران، ایران</span>
               </li>
             </ul>
           </div>
           
-          {/* Support & Theme */}
+          {/* Support */}
           <div className="space-y-6">
-            <h4 className="text-xl font-bold text-white flex items-center">
-              <User className="mr-3 h-5 w-5 text-purple-400" />
+            <h4 className="text-xl font-bold text-white flex items-center gap-3">
+              <User className="h-5 w-5 text-purple-400" />
               پشتیبانی
             </h4>
             <ul className="space-y-4">
               <li>
                 <Link 
                   to="/support" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full group-hover:bg-white transition-colors"></span>
                   {translations.support}
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/contact" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full group-hover:bg-white transition-colors"></span>
                   تماس با ما
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/about" 
-                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
+                  className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group gap-3"
                 >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full group-hover:bg-white transition-colors"></span>
                   {translations.aboutUs}
                 </Link>
               </li>
             </ul>
-            
-            {/* Theme Toggle */}
-            <div className="pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleDarkMode}
-                className="bg-gray-700 hover:bg-gray-600 border-gray-600 text-white hover:text-white transition-all duration-300"
-              >
-                {isDarkMode ? (
-                  <>
-                    <Sun className="h-4 w-4 mr-2" />
-                    تم روشن
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4 mr-2" />
-                    تم تاریک
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -213,7 +188,7 @@ const Footer = () => {
             <p className="text-gray-400 text-base">
               {translations.footerCopyright}
             </p>
-            <div className="flex items-center space-x-8 rtl:space-x-reverse">
+            <div className="flex items-center gap-8">
               <Link 
                 to="/terms" 
                 className="text-gray-400 hover:text-white text-base transition-colors hover:underline"
