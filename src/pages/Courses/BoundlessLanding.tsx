@@ -503,7 +503,7 @@ const BoundlessLanding = () => {
               transition={{ duration: 0.8, delay: 0.8 }}
             >
               پشتیبانی ۲۴/۷ • دسترسی مادام‌العمر • گارانتی کیفیت
-            </p>
+            </motion.p>
           </div>
         </section>
       </div>
