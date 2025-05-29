@@ -119,9 +119,9 @@ const BoundlessLanding = () => {
           {/* Enhanced Colorful Background */}
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-teal-950/30"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/15 to-purple-400/15 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/15 to-green-400/15 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/20 to-green-400/20 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/15 to-pink-400/15 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
           </div>
           
           <div className="container max-w-6xl mx-auto px-4 relative z-10">
@@ -158,27 +158,27 @@ const BoundlessLanding = () => {
 
               {/* Course Status Alert - Enhanced */}
               <motion.div 
-                className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-orange-200 dark:border-orange-800 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
+                className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-orange-200 dark:border-orange-800 rounded-xl p-8 mb-12 max-w-2xl mx-auto shadow-xl"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
-                    <Ban className="w-5 h-5 text-white" />
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
+                    <Ban className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-foreground">دوره در حال حاضر بسته است</h3>
+                  <h3 className="text-xl font-bold text-foreground">دوره در حال حاضر بسته است</h3>
                 </div>
-                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                <p className="text-muted-foreground text-base mb-6 leading-relaxed">
                   ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
                 </p>
                 
                 <Button 
                   disabled
-                  size="sm"
-                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-6 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-md"
+                  size="lg"
+                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-8 py-3 text-base font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
                 >
-                  <Ban className="mr-2" size={16} />
+                  <Ban className="mr-2" size={18} />
                   {translations.courseSoldOut}
                 </Button>
               </motion.div>
@@ -186,7 +186,7 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Countdown Timer Section - Enhanced */}
+        {/* Countdown Timer Section - Stylish and Colorful */}
         <section className="py-16 bg-gradient-to-r from-blue-50 via-purple-50 to-teal-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-teal-950/20">
           <div className="container max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
@@ -196,12 +196,12 @@ const BoundlessLanding = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                زمان باقی‌مانده تا شروع ثبت‌نام
+                تا آغاز ثبت‌نام فقط...
               </motion.h3>
               <p className="text-muted-foreground text-lg">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده</p>
             </div>
             <motion.div 
-              className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-3xl p-8 shadow-2xl"
+              className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200 dark:border-purple-800 rounded-2xl p-8 shadow-2xl"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -430,15 +430,15 @@ const BoundlessLanding = () => {
             </motion.p>
             
             <motion.div 
-              className="flex justify-center items-center gap-4 mb-8"
+              className="flex justify-center items-center gap-4 mb-12"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <Clock className="w-5 h-5 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-semibold">به زودی...</span>
+              <span className="text-2xl font-semibold">به زودی...</span>
             </motion.div>
             
             <motion.div
@@ -448,16 +448,16 @@ const BoundlessLanding = () => {
             >
               <Button 
                 disabled
-                size="sm"
-                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-8 py-3 text-base font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
+                size="lg"
+                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-12 py-4 text-lg font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
               >
-                <Ban className="mr-2" size={18} />
+                <Ban className="mr-3" size={20} />
                 {translations.courseSoldOut}
               </Button>
             </motion.div>
             
             <motion.p 
-              className="text-sm mt-4 text-muted-foreground"
+              className="text-base mt-6 text-muted-foreground"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.8 }}
