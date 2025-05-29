@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ import {
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
-import EnrollmentCounter from "@/components/EnrollmentCounter";
+import LiveEnrollmentCounter from "@/components/LiveEnrollmentCounter";
 import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
