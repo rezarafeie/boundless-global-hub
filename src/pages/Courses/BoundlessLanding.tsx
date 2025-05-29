@@ -24,7 +24,8 @@ import {
   GraduationCap,
   Award,
   BookOpen,
-  MessageCircle
+  MessageCircle,
+  Ban
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -112,55 +113,72 @@ const BoundlessLanding = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        {/* Hero Section - Modern & Colorful */}
-        <section className="py-20 relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-teal-600">
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="container max-w-6xl mx-auto px-4 relative z-10">
-            <div className="text-center mb-12">
-              <Badge className="mb-4 bg-white/20 text-white border-0 backdrop-blur-sm">
-                <Crown className="w-4 h-4 mr-1" />
-                دوره جامع آموزشی
-              </Badge>
-              
-              <motion.h1 
-                className="text-4xl md:text-6xl font-bold text-white mb-6"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        {/* Hero Section - Ultra Modern Design */}
+        <section className="relative py-20 overflow-hidden">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="absolute top-0 left-0 w-full h-full opacity-20">
+              <div className="absolute top-10 left-10 w-72 h-72 bg-white/10 rounded-full animate-pulse-glow"></div>
+              <div className="absolute bottom-10 right-10 w-96 h-96 bg-white/10 rounded-full animate-float-glow"></div>
+              <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-purple-300/20 rounded-full animate-float"></div>
+            </div>
+          </div>
+          
+          <div className="container max-w-7xl mx-auto px-4 relative z-10">
+            <div className="text-center mb-16">
+              <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
+                className="mb-6"
+              >
+                <Badge className="mb-4 bg-white/20 text-white border-0 backdrop-blur-sm px-6 py-2 text-lg">
+                  <Crown className="w-5 h-5 mr-2" />
+                  دوره پیشرفته و جامع
+                </Badge>
+              </motion.div>
+              
+              <motion.h1 
+                className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.2 }}
               >
                 {translations.boundlessStartTitle}
               </motion.h1>
               
               <motion.p 
-                className="text-xl text-white/90 mb-8 max-w-4xl mx-auto leading-relaxed"
+                className="text-2xl md:text-3xl text-white/95 mb-12 font-semibold"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
               >
                 {translations.boundlessStartDesc}
               </motion.p>
 
-              {/* Sales Status */}
+              {/* Course Status Alert */}
               <motion.div 
-                className="bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl p-6 mb-8 max-w-2xl mx-auto"
+                className="bg-white/15 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-8 mb-12 max-w-3xl mx-auto shadow-2xl"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
               >
-                <div className="flex items-center justify-center mb-4">
-                  <Clock className="w-6 h-6 text-white mr-2" />
-                  <h3 className="text-xl font-bold text-white">🛑 فروش دوره فعلاً متوقف شده است</h3>
+                <div className="flex items-center justify-center mb-6">
+                  <Ban className="w-8 h-8 text-red-300 mr-3" />
+                  <h3 className="text-2xl font-bold text-white">دوره در حال حاضر بسته است</h3>
                 </div>
-                <p className="text-white/90 mb-4">
-                  ظرفیت ثبت‌نام فعلاً تکمیل شده. جهت اطلاع از باز شدن مجدد ثبت‌نام، لطفاً شمارش معکوس زیر را دنبال کن 👇
+                <p className="text-white/90 text-lg mb-6 leading-relaxed">
+                  ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
                 </p>
                 
                 <Button 
                   disabled
                   size="lg"
-                  className="bg-white/20 text-white cursor-not-allowed px-8 py-4 text-lg font-bold rounded-full backdrop-blur-sm"
+                  className="bg-red-500/80 text-white cursor-not-allowed px-10 py-4 text-xl font-bold rounded-xl backdrop-blur-sm hover:bg-red-500/80 disabled:opacity-100"
                 >
+                  <Ban className="mr-3" size={24} />
                   {translations.courseSoldOut}
                 </Button>
               </motion.div>
@@ -168,71 +186,96 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Countdown Timer with Modern Design */}
-        <section className="py-12 bg-gradient-to-r from-orange-500 to-red-500">
-          <div className="container max-w-4xl mx-auto px-4">
-            <div className="text-center mb-6">
-              <h3 className="text-3xl font-bold text-white mb-2">⏳ {translations.nextRegistrationDate}</h3>
-              <p className="text-white/90 text-lg">11 روز دیگر باقی‌مانده...</p>
+        {/* Countdown Timer Section - Enhanced Design */}
+        <section className="py-16 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="container max-w-5xl mx-auto px-4 relative z-10">
+            <div className="text-center mb-8">
+              <motion.h3 
+                className="text-4xl font-bold text-white mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                ⏰ {translations.nextRegistrationDate}
+              </motion.h3>
+              <p className="text-white/90 text-xl">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده...</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6">
+            <motion.div 
+              className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
               <CountdownTimer 
                 endDate={countdownEndDate.toISOString()}
                 className="mx-auto"
               />
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Course Description with Colorful Cards */}
-        <section className="py-16">
+        {/* Course Description - Modern Card Design */}
+        <section className="py-20 bg-white">
           <div className="container max-w-6xl mx-auto px-4">
             <SectionTitle 
-              title="درباره دوره شروع بدون مرز" 
+              title="✨ درباره دوره شروع بدون مرز" 
               subtitle="برنامه جامع آموزشی برای ورود به بازارهای بین‌المللی"
             />
             
-            <div className="max-w-4xl mx-auto">
-              <Card className="border-0 shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50">
-                <CardContent className="p-8">
-                  <p className="text-lg text-gray-700 leading-relaxed">
+            <motion.div 
+              className="max-w-5xl mx-auto"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
+                <CardContent className="p-12">
+                  <div className="flex items-center mb-8">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mr-6">
+                      <Globe className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-900">کسب‌وکار بدون مرز</h3>
+                  </div>
+                  <p className="text-xl text-gray-700 leading-relaxed">
                     این دوره مخصوص افرادی است که می‌خواهند کسب‌وکار آنلاین خود را راه‌اندازی کنند یا از طریق مهارت‌های دیجیتال، درآمد دلاری داشته باشند. با ترکیبی از آموزش تخصصی، پشتیبانی گام‌به‌گام، تست شخصیت، تمرین‌های عملی و مشاوره اختصاصی، این برنامه یک انتخاب کامل برای جهش به سمت جهانی شدن است.
                   </p>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Course Content with Gradient Cards */}
-        <section className="py-16 bg-gradient-to-br from-purple-50 to-pink-50">
+        {/* Course Content - Colorful Grid */}
+        <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
           <div className="container max-w-6xl mx-auto px-4">
             <SectionTitle 
-              title="📦 محتوای دوره" 
+              title="📚 محتوای دوره" 
               subtitle="آنچه در این دوره خواهید آموخت"
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {courseContent.map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="group"
                 >
-                  <Card className={`h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r ${
-                    index % 4 === 0 ? 'from-blue-500 to-cyan-500' :
-                    index % 4 === 1 ? 'from-purple-500 to-pink-500' :
-                    index % 4 === 2 ? 'from-green-500 to-teal-500' :
-                    'from-orange-500 to-red-500'
-                  }`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4 space-x-reverse">
-                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
-                          <span className="text-white font-bold">{index + 1}</span>
+                  <Card className={`h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-gradient-to-br ${
+                    index % 4 === 0 ? 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600' :
+                    index % 4 === 1 ? 'from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' :
+                    index % 4 === 2 ? 'from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600' :
+                    'from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                  } group-hover:scale-105`}>
+                    <CardContent className="p-8">
+                      <div className="flex items-center space-x-6 space-x-reverse">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 backdrop-blur-sm group-hover:bg-white/30 transition-all">
+                          <span className="text-white font-bold text-xl">{index + 1}</span>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-lg font-bold text-white">{item}</h3>
+                          <h3 className="text-xl font-bold text-white leading-relaxed">{item}</h3>
                         </div>
                       </div>
                     </CardContent>
@@ -243,8 +286,8 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Gifts with Animated Cards */}
-        <section className="py-16 bg-gradient-to-r from-green-50 to-emerald-50">
+        {/* Course Gifts - Animated List */}
+        <section className="py-20 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50">
           <div className="container max-w-6xl mx-auto px-4">
             <SectionTitle 
               title={`🎁 ${translations.courseGifts}`} 
@@ -258,14 +301,15 @@ const BoundlessLanding = () => {
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="group"
                 >
-                  <Card className="border-2 border-green-200 shadow-lg hover:shadow-xl transition-all bg-white hover:bg-green-50">
+                  <Card className="border-2 border-green-200 shadow-lg hover:shadow-xl transition-all bg-white hover:bg-green-50 group-hover:scale-105 group-hover:border-green-300">
                     <CardContent className="p-6">
                       <div className="flex items-center space-x-4 space-x-reverse">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Gift size={20} className="text-green-600" />
+                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 transition-all">
+                          <Gift size={24} className="text-green-600" />
                         </div>
-                        <span className="text-lg font-medium text-gray-900">{gift}</span>
+                        <span className="text-lg font-semibold text-gray-900 leading-relaxed">{gift}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -275,35 +319,31 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Features with Modern Design */}
-        <section className="py-16 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        {/* Course Features - Clean Design */}
+        <section className="py-20 bg-white">
           <div className="container max-w-6xl mx-auto px-4">
             <SectionTitle 
-              title={`🔥 ${translations.courseFeatures}`} 
+              title={`⚡ ${translations.courseFeatures}`} 
               subtitle="چرا این دوره را انتخاب کنید؟"
             />
             
-            <div className="space-y-4">
+            <div className="space-y-6 max-w-4xl mx-auto">
               {features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center space-x-4 space-x-reverse bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-md hover:shadow-lg transition-all"
+                  className="flex items-center space-x-6 space-x-reverse bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-md hover:shadow-lg transition-all group hover:from-blue-100 hover:to-indigo-100"
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    index % 3 === 0 ? 'bg-blue-100' :
-                    index % 3 === 1 ? 'bg-purple-100' :
-                    'bg-green-100'
-                  }`}>
-                    <CheckCircle size={20} className={
-                      index % 3 === 0 ? 'text-blue-600' :
-                      index % 3 === 1 ? 'text-purple-600' :
-                      'text-green-600'
-                    } />
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    index % 3 === 0 ? 'bg-blue-500 group-hover:bg-blue-600' :
+                    index % 3 === 1 ? 'bg-purple-500 group-hover:bg-purple-600' :
+                    'bg-green-500 group-hover:bg-green-600'
+                  } transition-all`}>
+                    <CheckCircle size={24} className="text-white" />
                   </div>
-                  <span className="text-lg font-medium text-gray-900">{feature}</span>
+                  <span className="text-xl font-semibold text-gray-900 leading-relaxed">{feature}</span>
                 </motion.div>
               ))}
             </div>
@@ -311,10 +351,10 @@ const BoundlessLanding = () => {
         </section>
 
         {/* Instructor Section */}
-        <section className="py-16 bg-white">
+        <section className="py-20 bg-gradient-to-br from-gray-50 to-slate-100">
           <div className="container max-w-6xl mx-auto px-4">
             <SectionTitle 
-              title="معرفی مدرس" 
+              title="🎓 معرفی مدرس" 
               subtitle="آشنایی با استاد دوره"
             />
             
@@ -322,41 +362,48 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Testimonials with Colorful Cards */}
-        <section className="py-16 bg-gradient-to-r from-yellow-50 to-orange-50">
+        {/* Testimonials - Enhanced Cards */}
+        <section className="py-20 bg-gradient-to-r from-yellow-50 via-orange-50 to-red-50">
           <div className="container max-w-6xl mx-auto px-4">
             <SectionTitle 
-              title="نظرات دانشجویان" 
+              title="💬 نظرات دانشجویان" 
               subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
             />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className={`border-0 shadow-lg hover:shadow-xl transition-all bg-gradient-to-br ${
-                  index % 3 === 0 ? 'from-blue-500 to-purple-500' :
-                  index % 3 === 1 ? 'from-purple-500 to-pink-500' :
-                  'from-green-500 to-blue-500'
-                }`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} size={20} className="text-yellow-300 fill-current" />
-                      ))}
-                    </div>
-                    <p className="text-white/90 mb-4 italic">"{testimonial.content}"</p>
-                    <div>
-                      <h4 className="font-bold text-white">{testimonial.name}</h4>
-                      <p className="text-sm text-white/80">{testimonial.role}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.2 }}
+                >
+                  <Card className={`border-0 shadow-xl hover:shadow-2xl transition-all bg-gradient-to-br hover:scale-105 ${
+                    index % 3 === 0 ? 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' :
+                    index % 3 === 1 ? 'from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' :
+                    'from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600'
+                  }`}>
+                    <CardContent className="p-8">
+                      <div className="flex items-center mb-6">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} size={24} className="text-yellow-300 fill-current" />
+                        ))}
+                      </div>
+                      <p className="text-white/95 mb-6 italic text-lg leading-relaxed">"{testimonial.content}"</p>
+                      <div>
+                        <h4 className="font-bold text-white text-xl">{testimonial.name}</h4>
+                        <p className="text-white/80 text-lg">{testimonial.role}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="py-16 bg-white">
+        {/* FAQ Section */}
+        <section className="py-20 bg-white">
           <div className="container max-w-4xl mx-auto px-4">
             <SectionTitle 
               title={translations.faq} 
@@ -365,11 +412,11 @@ const BoundlessLanding = () => {
             
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-right text-lg font-semibold">
+                <AccordionItem key={index} value={`item-${index}`} className="border-b-2 border-gray-100">
+                  <AccordionTrigger className="text-right text-xl font-bold py-6 hover:text-blue-600 transition-colors">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-600 leading-relaxed">
+                  <AccordionContent className="text-gray-600 text-lg leading-relaxed pb-6">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -378,33 +425,65 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Final CTA with Gradient Background */}
-        <section className="py-20 bg-gradient-to-r from-gray-800 via-gray-900 to-black text-white">
-          <div className="container max-w-4xl mx-auto text-center px-4">
-            <h2 className="text-4xl font-bold mb-4">
-              منتظر بازگشایی ثبت‌نام باشید
-            </h2>
-            <p className="text-xl mb-8 opacity-90">
-              ۱۱ روز دیگر فرصت ثبت‌نام مجدداً فراهم خواهد شد
-            </p>
-            
-            <div className="flex justify-center items-center gap-4 mb-8">
-              <Clock className="w-8 h-8" />
-              <span className="text-2xl font-bold">به زودی...</span>
-            </div>
-            
-            <Button 
-              disabled
-              size="lg"
-              className="bg-white/20 text-white cursor-not-allowed rounded-full px-12 py-6 text-xl font-bold backdrop-blur-sm"
+        {/* Final CTA - Premium Design */}
+        <section className="py-24 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="absolute top-0 left-0 w-full h-full opacity-10">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full animate-pulse-glow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-300/10 rounded-full animate-float-glow"></div>
+          </div>
+          
+          <div className="container max-w-5xl mx-auto text-center px-4 relative z-10">
+            <motion.h2 
+              className="text-5xl font-bold mb-6"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              <MessageCircle className="mr-2" size={24} />
-              {translations.courseSoldOut}
-            </Button>
+              منتظر بازگشایی ثبت‌نام باشید
+            </motion.h2>
+            <motion.p 
+              className="text-2xl mb-12 opacity-90"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              ۱۱ روز دیگر فرصت ثبت‌نام مجدداً فراهم خواهد شد
+            </motion.p>
             
-            <p className="text-sm mt-4 opacity-80">
+            <motion.div 
+              className="flex justify-center items-center gap-6 mb-12"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <Clock className="w-12 h-12 text-orange-400" />
+              <span className="text-3xl font-bold">به زودی...</span>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              <Button 
+                disabled
+                size="lg"
+                className="bg-white/20 text-white cursor-not-allowed rounded-2xl px-16 py-6 text-2xl font-bold backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 disabled:opacity-100"
+              >
+                <Ban className="mr-4" size={28} />
+                {translations.courseSoldOut}
+              </Button>
+            </motion.div>
+            
+            <motion.p 
+              className="text-lg mt-8 opacity-80"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
               ✅ پشتیبانی ۲۴/۷ • ✅ دسترسی مادام‌العمر • ✅ گارانتی کیفیت
-            </p>
+            </motion.p>
           </div>
         </section>
       </div>
