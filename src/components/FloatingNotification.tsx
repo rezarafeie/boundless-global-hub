@@ -14,24 +14,20 @@ const FloatingNotification = () => {
   const [nextId, setNextId] = useState(1);
 
   const activities = [
-    "در دوره بدون مرز ثبت‌نام کرد",
-    "در دوره اصول اینستاگرام ثبت‌نام کرد",
-    "دوره ثروت را تکمیل کرد",
-    "در پروژه درآمد غیرفعال شرکت کرد",
+    "در دوره شروع ثبت‌نام کرد",
+    "در دوره بدون مرز ثبت‌نام کرد", 
     "تست شخصیت کارآفرین را کامل کرد",
-    "در وبینار بیزینس آمریکایی شرکت کرد",
     "دوره امپراتوری متاورس را شروع کرد",
-    "پروژه تغییر خود را آغاز کرد",
-    "در آزمون هوش عاطفی شرکت کرد",
-    "دستیار هوش مصنوعی را فعال کرد",
-    "در آزمون شغلی شرکت کرد",
-    "دوره کسب‌وکار آمریکایی را تکمیل کرد"
+    "در دوره اصول اینستاگرام ثبت‌نام کرد",
+    "تست شخصیت را کامل کرد",
+    "در دوره کسب‌وکار آمریکایی ثبت‌نام کرد",
+    "دوره ثروت را تکمیل کرد"
   ];
   
   const names = [
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
-    "کامران بهرامی", "لیلا قاسمی", "داود مرادی", "نسرین طاهری", "سعید رحیمی"
+    "لیلا حیدری", "احمد صادقی", "کامران بهرامی", "نسرین طاهری", "سعید رحیمی"
   ];
 
   const generateTimestamp = () => {
@@ -40,9 +36,7 @@ const FloatingNotification = () => {
       "۱ دقیقه پیش",
       "۲ دقیقه پیش",
       "۳ دقیقه پیش",
-      "۵ دقیقه پیش",
-      "۷ دقیقه پیش",
-      "۱۰ دقیقه پیش"
+      "۵ دقیقه پیش"
     ];
     return timeOptions[Math.floor(Math.random() * timeOptions.length)];
   };
@@ -66,18 +60,18 @@ const FloatingNotification = () => {
       setNotifications(prev => [...prev, notification]);
       setNextId(prev => prev + 1);
 
-      // Auto remove after 5 seconds
+      // Auto remove after 6 seconds
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
-      }, 5000);
+      }, 6000);
     };
 
-    // Show first notification after 3 seconds
-    const firstTimeout = setTimeout(showNotification, 3000);
+    // Show first notification after 5 seconds
+    const firstTimeout = setTimeout(showNotification, 5000);
 
-    // Show subsequent notifications with random interval (7-20 seconds)
+    // Show subsequent notifications with random interval (15-25 seconds)
     const scheduleNext = () => {
-      const randomInterval = Math.random() * (20000 - 7000) + 7000; // 7-20 seconds
+      const randomInterval = Math.random() * (25000 - 15000) + 15000; // 15-25 seconds
       setTimeout(() => {
         showNotification();
         scheduleNext(); // Schedule the next one
@@ -96,7 +90,7 @@ const FloatingNotification = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 space-y-2 max-w-xs">
+    <div className="fixed bottom-6 right-6 z-50 space-y-2 max-w-sm">
       <AnimatePresence>
         {notifications.map((notification) => (
           <motion.div
@@ -111,18 +105,18 @@ const FloatingNotification = () => {
               stiffness: 120,
               damping: 20
             }}
-            className="bg-background/95 backdrop-blur-sm shadow-lg border border-border rounded-lg p-4 hover:shadow-xl transition-all duration-300 group"
+            className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-xl transition-all duration-300 group"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-relaxed mb-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed mb-1">
                   {notification.message}
                 </p>
-                <p className="text-xs text-muted-foreground">{notification.timestamp}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{notification.timestamp}</p>
               </div>
               <button
                 onClick={() => removeNotification(notification.id)}
-                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <X size={12} />
               </button>
