@@ -2,32 +2,48 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Notification {
   id: number;
   message: string;
   timestamp: string;
+  link: string;
 }
 
 const FloatingNotification = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [nextId, setNextId] = useState(1);
+  const navigate = useNavigate();
 
-  const activities = [
-    "در دوره شروع ثبت‌نام کرد",
-    "در دوره بدون مرز ثبت‌نام کرد", 
-    "تست شخصیت کارآفرین را کامل کرد",
-    "دوره امپراتوری متاورس را شروع کرد",
-    "در دوره اصول اینستاگرام ثبت‌نام کرد",
-    "تست شخصیت را کامل کرد",
-    "در دوره کسب‌وکار آمریکایی ثبت‌نام کرد",
-    "دوره ثروت را تکمیل کرد"
+  // Course activities (70% weight)
+  const courseActivities = [
+    { text: "در دوره شروع بدون مرز ثبت‌نام کرد", link: "/courses/boundless" },
+    { text: "دوره شروع بدون مرز را شروع کرد", link: "/courses/boundless" },
+    { text: "در دوره اصول اینستاگرام ثبت‌نام کرد", link: "/courses/instagram" },
+    { text: "دوره امپراتوری متاورس را شروع کرد", link: "/courses/metaverse" },
+    { text: "در دوره کسب‌وکار آمریکایی ثبت‌نام کرد", link: "/courses/servit" },
+    { text: "دوره ثروت را تکمیل کرد", link: "/courses" },
+    { text: "پروژه درآمد غیرفعال را شروع کرد", link: "/course/passive-income" },
+    { text: "پروژه تغییر را شروع کرد", link: "/course/change" }
+  ];
+
+  // Test activities (30% weight)
+  const testActivities = [
+    { text: "تست شخصیت کارآفرین را کامل کرد", link: "/assessment/personality" },
+    { text: "تست MBTI را تکمیل کرد", link: "/assessment/mbti" },
+    { text: "تست هوش مالی را انجام داد", link: "/assessment/financial" },
+    { text: "تست هوش هیجانی را کامل کرد", link: "/assessment/emotional" },
+    { text: "تست آینده‌نگری را تکمیل کرد", link: "/assessment/future" },
+    { text: "تست شخصیت را کامل کرد", link: "/assessment/personality" }
   ];
   
+  // Mix of Persian and limited Finglish names
   const names = [
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
-    "لیلا حیدری", "احمد صادقی", "کامران بهرامی", "نسرین طاهری", "سعید رحیمی"
+    "لیلا حیدری", "احمد صادقی", "نسرین طاهری", "سعید رحیمی",
+    "Reza M.", "Sara A.", "Ali K.", "Mina R."
   ];
 
   const generateTimestamp = () => {
@@ -42,15 +58,20 @@ const FloatingNotification = () => {
   };
 
   const generateRandomNotification = () => {
-    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
     const randomName = names[Math.floor(Math.random() * names.length)];
     
-    const fullMessage = `${randomName} ${randomActivity}`;
+    // 70% course activities, 30% test activities
+    const isCourse = Math.random() < 0.7;
+    const activities = isCourse ? courseActivities : testActivities;
+    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+    
+    const fullMessage = `${randomName} ${randomActivity.text}`;
     
     return {
       id: nextId,
       message: fullMessage,
-      timestamp: generateTimestamp()
+      timestamp: generateTimestamp(),
+      link: randomActivity.link
     };
   };
 
@@ -66,12 +87,12 @@ const FloatingNotification = () => {
       }, 6000);
     };
 
-    // Show first notification after 5 seconds
-    const firstTimeout = setTimeout(showNotification, 5000);
+    // Show first notification after 8 seconds
+    const firstTimeout = setTimeout(showNotification, 8000);
 
-    // Show subsequent notifications with random interval (15-25 seconds)
+    // Show subsequent notifications with random interval (20-40 seconds)
     const scheduleNext = () => {
-      const randomInterval = Math.random() * (25000 - 15000) + 15000; // 15-25 seconds
+      const randomInterval = Math.random() * (40000 - 20000) + 20000; // 20-40 seconds
       setTimeout(() => {
         showNotification();
         scheduleNext(); // Schedule the next one
@@ -87,6 +108,10 @@ const FloatingNotification = () => {
 
   const removeNotification = (id: number) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleNotificationClick = (link: string) => {
+    navigate(link);
   };
 
   return (
@@ -105,7 +130,8 @@ const FloatingNotification = () => {
               stiffness: 120,
               damping: 20
             }}
-            className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-xl transition-all duration-300 group"
+            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+            onClick={() => handleNotificationClick(notification.link)}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -115,7 +141,10 @@ const FloatingNotification = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400">{notification.timestamp}</p>
               </div>
               <button
-                onClick={() => removeNotification(notification.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeNotification(notification.id);
+                }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <X size={12} />

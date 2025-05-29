@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -59,8 +60,13 @@ const App = () => (
               <Route path="/courses" element={<CourseArchive />} />
               <Route path="/assessment-center" element={<AssessmentCenter />} />
               
-              {/* Assessment Test Routes */}
+              {/* Assessment Test Routes - Enhanced with new test routes */}
               <Route path="/assessment/:slug" element={<TestLanding />} />
+              <Route path="/assessment/personality" element={<TestLanding />} />
+              <Route path="/assessment/mbti" element={<TestLanding />} />
+              <Route path="/assessment/financial" element={<TestLanding />} />
+              <Route path="/assessment/emotional" element={<TestLanding />} />
+              <Route path="/assessment/future" element={<TestLanding />} />
               
               <Route path="/course/:courseType/:courseTitle" element={<PaidCourseView />} />
               <Route path="/support" element={<Support />} />
@@ -119,6 +125,11 @@ const App = () => (
               <Route path="/en/courses" element={<EnglishCourseArchive />} />
               <Route path="/en/assessment-center" element={<EnglishAssessmentCenter />} />
               <Route path="/en/assessment/:slug" element={<TestLanding />} />
+              <Route path="/en/assessment/personality" element={<TestLanding />} />
+              <Route path="/en/assessment/mbti" element={<TestLanding />} />
+              <Route path="/en/assessment/financial" element={<TestLanding />} />
+              <Route path="/en/assessment/emotional" element={<TestLanding />} />
+              <Route path="/en/assessment/future" element={<TestLanding />} />
               <Route path="/en/course/:courseType/:courseTitle" element={<PaidCourseView language="en" />} />
               <Route path="/en/ai-assistant" element={<Navigate to="https://ai.rafiei.co/" replace />} />
               <Route path="/en/courses/boundless" element={<BoundlessLanding />} />

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import PurpleLoader from "@/components/PurpleLoader";
 
 interface IframeModalProps {
   isOpen: boolean;
@@ -22,7 +22,6 @@ const IframeModal: React.FC<IframeModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Header height constant
@@ -32,23 +31,9 @@ const IframeModal: React.FC<IframeModalProps> = ({
     if (isOpen) {
       setIsLoading(true);
       setIframeLoaded(false);
-      setLoadingProgress(0);
       
       // Lock scroll when modal opens
       document.body.style.overflow = 'hidden';
-      
-      // Progressive loading animation
-      const interval = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return 90;
-          }
-          return prev + Math.random() * 8;
-        });
-      }, 200);
-
-      return () => clearInterval(interval);
     } else {
       // CRITICAL FIX: Properly restore page state when closing
       document.body.style.overflow = 'auto';
@@ -101,11 +86,10 @@ const IframeModal: React.FC<IframeModalProps> = ({
   }, [isOpen, url]);
 
   const handleIframeLoad = () => {
-    setLoadingProgress(100);
     setTimeout(() => {
       setIsLoading(false);
       setIframeLoaded(true);
-    }, 300);
+    }, 800);
   };
 
   const handleClose = () => {
@@ -143,33 +127,9 @@ const IframeModal: React.FC<IframeModalProps> = ({
         </button>
       )}
 
-      {/* Enhanced Loading Animation with Progress Bar */}
+      {/* Purple Loading Animation */}
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
-          <div className="text-center max-w-md">
-            {/* Rafiei Academy Branded Loader */}
-            <div className="mb-8">
-              <div className="w-16 h-16 mx-auto mb-6 bg-black dark:bg-white rounded-xl flex items-center justify-center animate-pulse">
-                <span className="text-white dark:text-black font-bold text-xl">R</span>
-              </div>
-              
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-                آکادمی رفیعی
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Rafiei Academy
-              </p>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-80 mb-4">
-              <Progress value={loadingProgress} className="h-3 mb-3" />
-              <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
-                {Math.round(loadingProgress)}% بارگذاری شده
-              </p>
-            </div>
-          </div>
-        </div>
+        <PurpleLoader className="absolute inset-0" />
       )}
 
       {/* Iframe */}

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -114,14 +113,15 @@ const BoundlessLanding = () => {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        {/* Hero Section - Vibrant and Colorful */}
+        {/* Enhanced Hero Section - More Colorful and Modern */}
         <section className="relative py-20 md:py-28 overflow-hidden">
-          {/* Enhanced Colorful Background */}
+          {/* Enhanced Vibrant Background */}
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-teal-950/30"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-teal-400/20 to-green-400/20 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/15 to-pink-400/15 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 via-pink-50 to-orange-50 dark:from-blue-950/40 dark:via-purple-950/40 dark:via-pink-950/40 dark:to-orange-950/40"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-pink-400/25 to-orange-400/25 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-teal-400/15 to-green-400/15 rounded-full blur-2xl animate-pulse animation-delay-1200"></div>
           </div>
           
           <div className="container max-w-6xl mx-auto px-4 relative z-10">
@@ -132,14 +132,14 @@ const BoundlessLanding = () => {
                 transition={{ duration: 0.8 }}
                 className="mb-8"
               >
-                <Badge className="mb-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 px-6 py-2 text-base font-medium shadow-lg">
-                  <Crown className="w-4 h-4 mr-2" />
+                <Badge className="mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white border-0 px-8 py-3 text-lg font-medium shadow-2xl transform hover:scale-105 transition-all">
+                  <Crown className="w-5 h-5 mr-2" />
                   دوره تخصصی
                 </Badge>
               </motion.div>
               
               <motion.h1 
-                className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 via-purple-600 to-teal-600 bg-clip-text text-transparent"
+                className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent"
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.2 }}
@@ -156,29 +156,30 @@ const BoundlessLanding = () => {
                 با یک تصمیم ساده، وارد مسیر موفقیت بین‌المللی شو
               </motion.p>
 
-              {/* Course Status Alert - Enhanced */}
+              {/* Course Status Alert - More Subtle */}
               <motion.div 
-                className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-orange-200 dark:border-orange-800 rounded-xl p-8 mb-12 max-w-2xl mx-auto shadow-xl"
+                className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-orange-200 dark:border-orange-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
-                <div className="flex items-center justify-center mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
-                    <Ban className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
+                    <Ban className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-foreground">دوره در حال حاضر بسته است</h3>
+                  <h3 className="text-lg font-bold text-foreground">دوره در حال حاضر بسته است</h3>
                 </div>
-                <p className="text-muted-foreground text-base mb-6 leading-relaxed">
+                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
                   ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
                 </p>
                 
+                {/* Smaller, More Subtle Button */}
                 <Button 
                   disabled
-                  size="lg"
-                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-8 py-3 text-base font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
+                  size="sm"
+                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-6 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-md"
                 >
-                  <Ban className="mr-2" size={18} />
+                  <Ban className="mr-2" size={14} />
                   {translations.courseSoldOut}
                 </Button>
               </motion.div>
@@ -186,22 +187,22 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Countdown Timer Section - Stylish and Colorful */}
-        <section className="py-16 bg-gradient-to-r from-blue-50 via-purple-50 to-teal-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-teal-950/20">
+        {/* Enhanced Countdown Timer Section */}
+        <section className="py-16 bg-gradient-to-r from-purple-100 via-blue-100 via-pink-100 to-orange-100 dark:from-purple-950/30 dark:via-blue-950/30 dark:via-pink-950/30 dark:to-orange-950/30">
           <div className="container max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
               <motion.h3 
-                className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
+                className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                تا آغاز ثبت‌نام فقط...
+                زمان باقی‌مانده تا شروع ثبت‌نام
               </motion.h3>
-              <p className="text-muted-foreground text-lg">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده</p>
+              <p className="text-muted-foreground text-lg font-medium">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده</p>
             </div>
             <motion.div 
-              className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200 dark:border-purple-800 rounded-2xl p-8 shadow-2xl"
+              className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-3xl p-8 shadow-2xl"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -214,8 +215,8 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Description - Enhanced */}
-        <section className="py-20 bg-background">
+        {/* Course Description - Enhanced Colors */}
+        <section className="py-20 bg-gradient-to-br from-teal-50/60 to-green-50/60 dark:from-teal-950/20 dark:to-green-950/20">
           <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
               title="درباره دوره شروع بدون مرز" 
@@ -228,10 +229,10 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-blue-50/50 dark:from-gray-900 dark:to-blue-950/20 overflow-hidden">
+              <Card className="border-0 shadow-2xl bg-gradient-to-br from-white via-teal-50/30 to-blue-50/50 dark:from-gray-900 dark:via-teal-950/20 dark:to-blue-950/20 overflow-hidden">
                 <CardContent className="p-8 md:p-12">
                   <div className="flex items-center mb-8">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-teal-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4">
                       <Globe className="w-6 h-6 text-white" />
                     </div>
                     <h3 className="text-2xl font-bold text-foreground">کسب‌وکار بدون مرز</h3>
@@ -245,8 +246,8 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Content - Enhanced Grid */}
-        <section className="py-20 bg-gradient-to-br from-teal-50/50 to-blue-50/50 dark:from-teal-950/10 dark:to-blue-950/10">
+        {/* Enhanced Course Content */}
+        <section className="py-20 bg-gradient-to-br from-blue-50/50 via-purple-50/50 to-pink-50/50 dark:from-blue-950/15 dark:via-purple-950/15 dark:to-pink-950/15">
           <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
               title="محتوای دوره" 
@@ -261,10 +262,10 @@ const BoundlessLanding = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900 hover:translate-y-[-4px] group">
+                  <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-purple-950/20 hover:translate-y-[-4px] group">
                     <CardContent className="p-6">
                       <div className="flex items-center space-x-4 space-x-reverse">
-                        <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                           <span className="text-white font-bold text-sm">{index + 1}</span>
                         </div>
                         <div className="flex-1">
@@ -410,10 +411,10 @@ const BoundlessLanding = () => {
         </section>
 
         {/* Final CTA - Enhanced */}
-        <section className="py-20 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950/30 text-foreground">
+        <section className="py-20 bg-gradient-to-r from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-950/30 dark:to-purple-950/30 text-foreground">
           <div className="container max-w-4xl mx-auto text-center px-4">
             <motion.h2 
-              className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+              className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -448,10 +449,10 @@ const BoundlessLanding = () => {
             >
               <Button 
                 disabled
-                size="lg"
-                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-12 py-4 text-lg font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
+                size="sm"
+                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-8 py-3 text-base font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
               >
-                <Ban className="mr-3" size={20} />
+                <Ban className="mr-2" size={16} />
                 {translations.courseSoldOut}
               </Button>
             </motion.div>
