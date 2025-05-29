@@ -2,13 +2,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "@/contexts/ThemeContext";
-import { BookOpen, Mail, MessageCircle, Phone, Moon, Sun, Home, User, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BookOpen, Mail, MessageCircle, Phone, Home, User, MapPin } from "lucide-react";
 
 const Footer = () => {
   const { translations } = useLanguage();
-  const { isDarkMode, toggleDarkMode } = useTheme();
 
   // Always use white logo in footer since footer has dark background
   const footerLogoSrc = "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png";
@@ -25,7 +22,7 @@ const Footer = () => {
               <img 
                 src={footerLogoSrc}
                 alt={translations.websiteName} 
-                className="h-10 w-auto mr-3"
+                className="h-10 w-auto ml-3"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = "/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png";
@@ -37,7 +34,7 @@ const Footer = () => {
               {translations.footerDesc}
             </p>
             
-            {/* Social Media - Moved to brand section */}
+            {/* Social Media - Enhanced RTL spacing */}
             <div className="flex items-center space-x-4 rtl:space-x-reverse">
               <a 
                 href="https://instagram.com/rafieiacademy" 
@@ -67,10 +64,10 @@ const Footer = () => {
             </div>
           </div>
           
-          {/* Quick Links - Redesigned */}
+          {/* Quick Links - Enhanced RTL spacing */}
           <div className="space-y-6">
             <h4 className="text-xl font-bold text-white flex items-center">
-              <Home className="mr-3 h-5 w-5 text-blue-400" />
+              <Home className="ml-3 h-5 w-5 text-blue-400" />
               دسترسی سریع
             </h4>
             <ul className="space-y-4">
@@ -79,7 +76,7 @@ const Footer = () => {
                   to="/" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.home}
                 </Link>
               </li>
@@ -88,7 +85,7 @@ const Footer = () => {
                   to="/courses" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.trainingCenter}
                 </Link>
               </li>
@@ -97,7 +94,7 @@ const Footer = () => {
                   to="/assessment-center" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.assessmentCenter}
                 </Link>
               </li>
@@ -106,22 +103,22 @@ const Footer = () => {
                   to="/mag" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-blue-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.magazine}
                 </Link>
               </li>
             </ul>
           </div>
           
-          {/* Contact Info - Enhanced */}
+          {/* Contact Info - Enhanced RTL spacing */}
           <div className="space-y-6">
             <h4 className="text-xl font-bold text-white flex items-center">
-              <MessageCircle className="mr-3 h-5 w-5 text-green-400" />
+              <MessageCircle className="ml-3 h-5 w-5 text-green-400" />
               {translations.contact}
             </h4>
             <ul className="space-y-4">
               <li className="flex items-center text-base group">
-                <Mail className="mr-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
+                <Mail className="ml-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
                 <a 
                   href="mailto:hi@rafeie.com" 
                   className="text-gray-300 hover:text-white transition-colors"
@@ -130,7 +127,7 @@ const Footer = () => {
                 </a>
               </li>
               <li className="flex items-center text-base group">
-                <Phone className="mr-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
+                <Phone className="ml-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
                 <a 
                   href="tel:02128427131" 
                   className="text-gray-300 hover:text-white transition-colors"
@@ -139,16 +136,16 @@ const Footer = () => {
                 </a>
               </li>
               <li className="flex items-center text-base group">
-                <MapPin className="mr-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
+                <MapPin className="ml-3 h-5 w-5 text-green-400 group-hover:text-white transition-colors" />
                 <span className="text-gray-300">تهران، ایران</span>
               </li>
             </ul>
           </div>
           
-          {/* Support & Theme */}
+          {/* Support - Enhanced RTL spacing */}
           <div className="space-y-6">
             <h4 className="text-xl font-bold text-white flex items-center">
-              <User className="mr-3 h-5 w-5 text-purple-400" />
+              <User className="ml-3 h-5 w-5 text-purple-400" />
               پشتیبانی
             </h4>
             <ul className="space-y-4">
@@ -157,7 +154,7 @@ const Footer = () => {
                   to="/support" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.support}
                 </Link>
               </li>
@@ -166,7 +163,7 @@ const Footer = () => {
                   to="/contact" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   تماس با ما
                 </Link>
               </li>
@@ -175,33 +172,11 @@ const Footer = () => {
                   to="/about" 
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
-                  <span className="w-2 h-2 bg-purple-400 rounded-full mr-3 group-hover:bg-white transition-colors"></span>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.aboutUs}
                 </Link>
               </li>
             </ul>
-            
-            {/* Theme Toggle */}
-            <div className="pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleDarkMode}
-                className="bg-gray-700 hover:bg-gray-600 border-gray-600 text-white hover:text-white transition-all duration-300"
-              >
-                {isDarkMode ? (
-                  <>
-                    <Sun className="h-4 w-4 mr-2" />
-                    تم روشن
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4 mr-2" />
-                    تم تاریک
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         </div>
       </div>

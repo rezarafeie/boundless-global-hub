@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,8 @@ import {
   TestTube
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
-import CountdownTimer from "@/components/CountdownTimer";
+import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
+import LiveEnrollmentCounter from "@/components/LiveEnrollmentCounter";
 import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -39,10 +40,66 @@ import InstructorProfile from "@/components/InstructorProfile";
 
 const BoundlessLanding = () => {
   const [showIframeModal, setShowIframeModal] = useState(false);
+  const [currentHeadline, setCurrentHeadline] = useState({ title: "", subtitle: "" });
+  const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
 
   // Set countdown to ۱۹ خردادماه، ساعت ۱۲ ظهر (June 9th, 12:00 PM - 2025)
-  const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0); // Month is 0-indexed
+  const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0);
+
+  const motivationalHeadlines = [
+    {
+      title: "شروع کن، حتی اگر مطمئن نیستی!",
+      subtitle: "در آکادمی رفیعی، هیچ چیزی غیرممکن نیست."
+    },
+    {
+      title: "آینده‌ات را خودت بساز!",
+      subtitle: "با یک تصمیم درست، زندگی‌ات را متحول کن."
+    },
+    {
+      title: "فرصت طلایی در انتظار توست!",
+      subtitle: "کسب‌وکار جهانی فقط یک کلیک فاصله دارد."
+    },
+    {
+      title: "از صفر تا قله موفقیت!",
+      subtitle: "مسیر درآمد ارزی با ما شروع می‌شود."
+    },
+    {
+      title: "حالا وقت عمل است!",
+      subtitle: "دیگر منتظر نمان، کسب‌وکار بین‌المللی‌ات را شروع کن."
+    },
+    {
+      title: "رویاهایت را واقعی کن!",
+      subtitle: "با علم و تجربه، هر هدفی قابل دستیابی است."
+    },
+    {
+      title: "استعدادت را کشف کن!",
+      subtitle: "پتانسیال پنهان‌ات منتظر آزاد شدن است."
+    },
+    {
+      title: "تغییر از همین امروز شروع شود!",
+      subtitle: "یک قدم کوچک، تفاوتی بزرگ خواهد ساخت."
+    },
+    {
+      title: "مرزها را بشکن!",
+      subtitle: "جهان بدون مرز در انتظار کارآفرینان جوان است."
+    },
+    {
+      title: "موفقیت در دستان توست!",
+      subtitle: "فقط باید جرات شروع کردن را داشته باشی."
+    }
+  ];
+
+  useEffect(() => {
+    // Wait for page to load, then set random headline
+    const timer = setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * motivationalHeadlines.length);
+      setCurrentHeadline(motivationalHeadlines[randomIndex]);
+      setIsLoaded(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const courseContent = [
     { title: "نگرش بدون مرز", icon: Globe },
@@ -115,15 +172,15 @@ const BoundlessLanding = () => {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        {/* Enhanced Hero Section - More Colorful and Modern */}
+        {/* Enhanced Hero Section with Rotating Headlines */}
         <section className="relative py-20 md:py-28 overflow-hidden">
-          {/* Enhanced Vibrant Background */}
+          {/* Enhanced Vibrant Background with Stronger Glow */}
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 via-pink-50 to-orange-50 dark:from-blue-950/40 dark:via-purple-950/40 dark:via-pink-950/40 dark:to-orange-950/40"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-pink-400/25 to-orange-400/25 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-teal-400/15 to-green-400/15 rounded-full blur-2xl animate-pulse animation-delay-1200"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/40 to-purple-500/40 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-pink-400/35 to-orange-400/35 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-teal-400/25 to-green-400/25 rounded-full blur-2xl animate-pulse animation-delay-1200"></div>
           </div>
           
           <div className="container max-w-6xl mx-auto px-4 relative z-10">
@@ -140,25 +197,45 @@ const BoundlessLanding = () => {
                 </Badge>
               </motion.div>
               
-              <motion.h1 
-                className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.2 }}
-              >
-                شروع، نقطه آغاز کسب‌وکار جهانی تو
-              </motion.h1>
-              
+              {/* Rotating Headlines */}
+              {isLoaded && (
+                <motion.div
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 0.2 }}
+                >
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+                    {currentHeadline.title}
+                  </h1>
+                  <p className="text-xl md:text-2xl text-muted-foreground mb-8 font-medium leading-relaxed max-w-4xl mx-auto">
+                    {currentHeadline.subtitle}
+                  </p>
+                </motion.div>
+              )}
+
               <motion.p 
-                className="text-xl md:text-2xl text-muted-foreground mb-12 font-medium leading-relaxed max-w-4xl mx-auto"
+                className="text-lg md:text-xl text-muted-foreground mb-12 font-medium leading-relaxed max-w-3xl mx-auto"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                با یک تصمیم ساده، وارد مسیر موفقیت بین‌المللی شو
+                دوره شروع، نقطه آغاز کسب‌وکار جهانی تو
               </motion.p>
 
-              {/* Course Status Alert - More Subtle */}
+              {/* Live Enrollment Counter */}
+              <motion.div 
+                className="mb-12 max-w-sm mx-auto"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+              >
+                <LiveEnrollmentCounter 
+                  initialCount={2459} 
+                  courseName="شروع بدون مرز"
+                />
+              </motion.div>
+
+              {/* Course Status Alert */}
               <motion.div 
                 className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-orange-200 dark:border-orange-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -175,7 +252,6 @@ const BoundlessLanding = () => {
                   ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
                 </p>
                 
-                {/* Smaller, More Subtle Button */}
                 <Button 
                   disabled
                   size="sm"
@@ -190,30 +266,17 @@ const BoundlessLanding = () => {
         </section>
 
         {/* Enhanced Countdown Timer Section */}
-        <section className="py-16 bg-gradient-to-r from-purple-100 via-blue-100 via-pink-100 to-orange-100 dark:from-purple-950/30 dark:via-blue-950/30 dark:via-pink-950/30 dark:to-orange-950/30">
+        <section className="py-16 bg-gradient-to-r from-purple-100 via-blue-100 via-pink-100 to-orange-100 dark:from-purple-950/30 dark:via-blue-950/30 dark:via-pink-950/40 dark:to-orange-950/30">
           <div className="container max-w-4xl mx-auto px-4">
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center mb-4">
-                <Clock className="w-8 h-8 text-purple-600 ml-3" />
-                <motion.h3 
-                  className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  زمان باقی‌مانده تا شروع ثبت‌نام
-                </motion.h3>
-              </div>
-              <p className="text-muted-foreground text-lg font-medium">۱۹ خردادماه، ساعت ۱۲ ظهر</p>
-            </div>
             <motion.div 
               className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-3xl p-8 shadow-2xl"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <CountdownTimer 
+              <EnhancedCountdownTimer 
                 endDate={countdownEndDate.toISOString()}
+                label="تا شروع ثبت‌نام"
                 className="mx-auto"
               />
             </motion.div>

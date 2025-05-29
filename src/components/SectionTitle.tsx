@@ -30,7 +30,7 @@ const SectionTitle = ({
         {title}
       </h2>
       {subtitle && (
-        <p className={`mt-4 text-lg ${
+        <p className={`mt-4 text-lg font-medium ${
           isWhite ? "text-white/80" : "text-muted-foreground"
         }`}>
           {subtitle}

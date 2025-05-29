@@ -25,7 +25,8 @@ const FloatingNotification = () => {
     { text: "در دوره کسب‌وکار آمریکایی ثبت‌نام کرد", link: "/courses/servit" },
     { text: "دوره ثروت را تکمیل کرد", link: "/courses" },
     { text: "پروژه درآمد غیرفعال را شروع کرد", link: "/course/passive-income" },
-    { text: "پروژه تغییر را شروع کرد", link: "/course/change" }
+    { text: "پروژه تغییر را شروع کرد", link: "/course/change" },
+    { text: "در دوره مزه بدون مرز ثبت‌نام کرد", link: "/course/boundless-taste" }
   ];
 
   // Test activities (30% weight)
@@ -35,15 +36,21 @@ const FloatingNotification = () => {
     { text: "تست هوش مالی را انجام داد", link: "/assessment/financial" },
     { text: "تست هوش هیجانی را کامل کرد", link: "/assessment/emotional" },
     { text: "تست آینده‌نگری را تکمیل کرد", link: "/assessment/future" },
-    { text: "تست شخصیت را کامل کرد", link: "/assessment/personality" }
+    { text: "تست شخصیت را کامل کرد", link: "/assessment/personality" },
+    { text: "تست IQ را انجام داد", link: "/assessment/iq" },
+    { text: "تست مهارت‌های رهبری را تکمیل کرد", link: "/assessment/leadership" }
   ];
   
-  // Mix of Persian and very limited Finglish names
+  // Expanded mix of Persian and Finglish names
   const names = [
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
-    "لیلا حیدری", "احمد صادقی", "نسرین طاهری", "سعید رحیمی",
-    "Reza M.", "Sara A."
+    "لیلا حیدری", "احمد صادقی", "نسرین طاهری", "سعید رحیمی", "نیلوفر قاسمی",
+    "داود کریمی", "شیدا حسنی", "بهرام نجفی", "آرزو محمدی", "کیوان رستمی",
+    "Reza M.", "Sara A.", "Ali K.", "Maryam R.", "Hassan N.",
+    "Zahra B.", "Ahmad S.", "Fateme H.", "Amir J.", "Mina Sh.",
+    "Leila H.", "Saeed R.", "Nilofar G.", "Behram N.", "Arezu M.",
+    "Keyvan R.", "Shida H.", "Mohammad A.", "Nasrin T.", "Davood K."
   ];
 
   const generateTimestamp = () => {
@@ -77,7 +84,7 @@ const FloatingNotification = () => {
 
   useEffect(() => {
     const showNotification = () => {
-      // Limit to 2 notifications max
+      // Strict limit to 2 notifications max
       if (notifications.length >= 2) {
         return;
       }
@@ -86,18 +93,18 @@ const FloatingNotification = () => {
       setNotifications(prev => [...prev, notification]);
       setNextId(prev => prev + 1);
 
-      // Auto remove after 6 seconds
+      // Auto remove after 4 seconds (shorter duration)
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
-      }, 6000);
+      }, 4000);
     };
 
-    // Show first notification after 8 seconds
-    const firstTimeout = setTimeout(showNotification, 8000);
+    // Show first notification after 5 seconds (delay)
+    const firstTimeout = setTimeout(showNotification, 5000);
 
-    // Show subsequent notifications with random interval (20-40 seconds)
+    // Show subsequent notifications with random interval (15-30 seconds)
     const scheduleNext = () => {
-      const randomInterval = Math.random() * (40000 - 20000) + 20000; // 20-40 seconds
+      const randomInterval = Math.random() * (30000 - 15000) + 15000; // 15-30 seconds
       setTimeout(() => {
         showNotification();
         scheduleNext(); // Schedule the next one
@@ -120,30 +127,30 @@ const FloatingNotification = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 space-y-3 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-xs">
       <AnimatePresence mode="popLayout">
         {notifications.map((notification) => (
           <motion.div
             key={notification.id}
-            initial={{ opacity: 0, x: 400, scale: 0.8 }}
+            initial={{ opacity: 0, x: 300, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 400, scale: 0.8 }}
+            exit={{ opacity: 0, x: 300, scale: 0.9 }}
             transition={{ 
-              duration: 0.6, 
+              duration: 0.4, 
               ease: [0.25, 0.46, 0.45, 0.94],
               type: "spring",
-              stiffness: 200,
-              damping: 25
+              stiffness: 300,
+              damping: 30
             }}
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-xl border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-2xl transition-all duration-300 group cursor-pointer"
+            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer text-sm"
             onClick={() => handleNotificationClick(notification.link)}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed mb-2">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug mb-1 line-clamp-2">
                   {notification.message}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{notification.timestamp}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{notification.timestamp}</p>
               </div>
               <button
                 onClick={(e) => {
@@ -152,7 +159,7 @@ const FloatingNotification = () => {
                 }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                <X size={14} />
+                <X size={12} />
               </button>
             </div>
           </motion.div>
