@@ -1,5 +1,4 @@
 
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -286,4 +285,3 @@ export const fa = {
   visitNote: "مراجعه با هماهنگی قبلی",
   downloaded: "دانلود شد"
 } as const;
-
