@@ -1,3 +1,4 @@
+
 const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "The Future of Income Generation is in Your Hands",
@@ -37,6 +38,12 @@ const enTranslations = {
   boundlessProgramDesc: "Comprehensive course on earning foreign currency and launching an international business",
   boundlessBenefits: "Learning principles and strategies of international business",
   boundlessOutcome: "Launching an independent business with foreign currency income",
+  boundlessStartTitle: "Boundless Start Course",
+  boundlessStartDesc: "Your starting point for global business",
+  courseSoldOut: "Registration is currently closed — capacity is full",
+  nextRegistrationDate: "Time remaining until registration opens",
+  courseGifts: "Course Gifts (Completely Free)",
+  courseFeatures: "Key Course Features",
   
   instagramEssentials: "Instagram Essentials",
   instagramEssentialsDesc: "Comprehensive training on marketing and monetizing on Instagram",
@@ -236,8 +243,8 @@ const enTranslations = {
   aboutUs: "About Us",
   contactUs: "Contact Us",
   faq: "FAQ",
-  terms: "Terms & Conditions",
-  privacy: "Privacy Policy",
+  termsOfService: "Terms & Conditions",
+  privacyPolicy: "Privacy Policy",
   
   // Error messages
   notFoundTitle: "Page Not Found",
