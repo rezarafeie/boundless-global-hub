@@ -279,5 +279,9 @@ export const fa = {
   no: "خیر",
   maybe: "شاید",
   always: "همیشه",
-  never: "هرگز"
+  never: "هرگز",
+  openingHoursValue: "9 صبح تا 7 عصر",
+  addressValue: "تهران، محمودیه، خیابان سالار، آکادمی رفیعی",
+  visitNote: "مراجعه با هماهنگی قبلی",
+  downloaded: "دانلود شد"
 } as const;
