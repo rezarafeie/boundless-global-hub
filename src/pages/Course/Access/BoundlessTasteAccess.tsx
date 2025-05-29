@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,7 @@ const BoundlessTasteAccess = () => {
       bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
       borderColor: "border-emerald-200 dark:border-emerald-800",
       buttons: [
-        { label: "💬 فعال‌سازی پشتیبانی", url: "https://t.me/m/Ljua1cGLZjk0" }
+        { label: "💬 فعال‌سازی پشتیبانی", url: "https://t.me/m/c43Pi3aXODFk" }
       ],
       activation: true
     },
