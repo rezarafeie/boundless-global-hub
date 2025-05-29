@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,11 @@ import {
   Download,
   Award,
   Target,
-  Lightbulb
+  Lightbulb,
+  Crown,
+  Gift,
+  User,
+  MessageCircle
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";

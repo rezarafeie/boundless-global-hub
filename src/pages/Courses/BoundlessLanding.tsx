@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -222,7 +221,10 @@ const BoundlessLanding = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <EnrollmentCounter />
+                <LiveEnrollmentCounter 
+                  initialCount={2459}
+                  courseName="boundless"
+                />
               </motion.div>
 
               {/* Course Status Alert */}
