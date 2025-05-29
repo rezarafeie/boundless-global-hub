@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -175,8 +176,8 @@ const Contact = () => {
                       <div>
                         <h3 className="font-bold text-lg mb-2">تلفن تماس</h3>
                         <p className="text-gray-600 mb-2">پاسخگویی در ساعات اداری</p>
-                        <a href="tel:+982112345678" className="text-blue-600 hover:text-blue-700 font-medium">
-                          ۰۲۱-۱۲۳۴۵۶۷۸
+                        <a href="tel:02128427131" className="text-blue-600 hover:text-blue-700 font-medium">
+                          021-28427131
                         </a>
                       </div>
                     </div>
@@ -192,8 +193,8 @@ const Contact = () => {
                       <div>
                         <h3 className="font-bold text-lg mb-2">ایمیل</h3>
                         <p className="text-gray-600 mb-2">پاسخ در کمتر از ۲۴ ساعت</p>
-                        <a href="mailto:info@rafiei.co" className="text-green-600 hover:text-green-700 font-medium">
-                          info@rafiei.co
+                        <a href="mailto:hi@rafeie.com" className="text-green-600 hover:text-green-700 font-medium">
+                          hi@rafeie.com
                         </a>
                       </div>
                     </div>
@@ -226,8 +227,9 @@ const Contact = () => {
                       <div>
                         <h3 className="font-bold text-lg mb-2">آدرس</h3>
                         <p className="text-gray-600">
-                          تهران، ایران
+                          تهران. محمودیه. خیابان سالار. آکادمی رفیعی
                         </p>
+                        <p className="text-sm text-red-500 mt-1">مراجعه با هماهنگی قبلی</p>
                       </div>
                     </div>
                   </CardContent>
@@ -242,8 +244,8 @@ const Contact = () => {
                       <div>
                         <h3 className="font-bold text-lg mb-2">ساعات کاری</h3>
                         <div className="text-gray-600 space-y-1">
-                          <p>شنبه تا چهارشنبه: ۹:۰۰ - ۱۸:۰۰</p>
-                          <p>پنج‌شنبه: ۹:۰۰ - ۱۴:۰۰</p>
+                          <p>شنبه تا چهارشنبه: ۹:۰۰ - ۱۹:۰۰</p>
+                          <p>پنج‌شنبه: ۹:۰۰ - ۱۹:۰۰</p>
                           <p className="text-sm text-red-500">جمعه: تعطیل</p>
                         </div>
                       </div>
@@ -251,15 +253,21 @@ const Contact = () => {
                   </CardContent>
                 </Card>
 
-                {/* Map Placeholder */}
+                {/* Google Maps */}
                 <Card className="border-0 shadow-lg bg-card">
                   <CardContent className="p-6">
                     <h3 className="font-bold text-lg mb-4">موقعیت ما</h3>
-                    <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
-                      <div className="text-center text-muted-foreground">
-                        <MapPin size={48} className="mx-auto mb-2" />
-                        <p>نقشه به زودی...</p>
-                      </div>
+                    <div className="w-full h-64 rounded-lg overflow-hidden">
+                      <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3235.770488452337!2d51.46880197579324!3d35.80556737254741!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e05a7bee90e59%3A0xd2ef2989def31fd1!2z2KLaqdin2K_ZhduMINix2YHbjNi524w!5e0!3m2!1sen!2sus!4v1748501351831!5m2!1sen!2sus" 
+                        width="100%" 
+                        height="100%" 
+                        style={{border:0}} 
+                        allowFullScreen 
+                        loading="lazy" 
+                        referrerPolicy="no-referrer-when-downgrade"
+                        className="rounded-lg"
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -296,7 +304,7 @@ const Contact = () => {
                 className="border-white text-white hover:bg-white hover:text-blue-600 rounded-full px-8"
                 asChild
               >
-                <a href="tel:+982112345678">
+                <a href="tel:02128427131">
                   <Phone className="mr-2" size={20} />
                   تماس فوری
                 </a>

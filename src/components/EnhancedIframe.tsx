@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { Progress } from "@/components/ui/progress";
 
 interface EnhancedIframeProps {
   src: string;
@@ -81,46 +81,73 @@ const EnhancedIframe: React.FC<EnhancedIframeProps> = ({
 
   return (
     <div className="relative w-full h-full">
-      {/* Full-screen Loading Animation */}
+      {/* Enhanced Full-screen Loading Animation */}
       {isLoading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
-          <div className="text-center max-w-md">
-            {/* Rafiei Academy Branded Loader */}
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 animate-fade-in">
+          <div className="text-center max-w-md px-6">
+            {/* Enhanced Brand Logo with Floating Animation */}
             <div className="mb-8">
-              <div className="w-20 h-20 mx-auto mb-6 bg-black dark:bg-white rounded-xl flex items-center justify-center animate-pulse">
-                <span className="text-white dark:text-black font-bold text-2xl">R</span>
+              <div className="relative">
+                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-float">
+                  <span className="text-white font-bold text-3xl animate-pulse">R</span>
+                </div>
+                
+                {/* Floating glow effect */}
+                <div className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-br from-blue-400 to-purple-400 rounded-2xl opacity-30 animate-pulse-glow blur-lg"></div>
               </div>
               
-              <h3 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-                آکادمی رفیعی
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Rafiei Academy
+              <div className="animate-slide-up">
+                <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  آکادمی رفیعی
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium">
+                  Rafiei Academy
+                </p>
+              </div>
+            </div>
+
+            {/* Enhanced Progress Bar with Smooth Animation */}
+            <div className="w-80 max-w-full mb-6 animate-scale-in">
+              <Progress 
+                value={loadingProgress} 
+                className="h-4 mb-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner" 
+              />
+              <div className="flex justify-between items-center">
+                <p className="text-lg text-gray-700 dark:text-gray-200 font-semibold">
+                  {Math.round(loadingProgress)}% بارگذاری شده
+                </p>
+                <div className="flex space-x-1 rtl:space-x-reverse">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Enhanced Loading Messages */}
+            <div className="text-center animate-fade-up">
+              <p className="text-xl text-gray-700 dark:text-gray-200 font-bold mb-2">
+                در حال بارگذاری محتوا...
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                آماده‌سازی بهترین تجربه یادگیری برای شما
               </p>
             </div>
 
-            {/* Enhanced Loading Spinner with Progress */}
-            <LoadingSpinner size="lg" showProgress={true} progress={loadingProgress} />
-            
-            <div className="mt-6">
-              <p className="text-xl text-gray-700 dark:text-gray-200 font-medium">
-                در حال بارگذاری محتوا...
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                لطفاً صبر کنید
-              </p>
-            </div>
+            {/* Animated decorative elements */}
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-200/20 dark:bg-blue-800/20 rounded-full blur-xl animate-float-glow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-200/20 dark:bg-purple-800/20 rounded-full blur-2xl animate-float-glow" style={{animationDelay: '2s'}}></div>
           </div>
         </div>
       )}
 
-      {/* Enhanced Iframe */}
+      {/* Enhanced Iframe with Smooth Transition */}
       <iframe
         ref={iframeRef}
         src={updatedSrc}
         title={title}
-        className={`w-full h-full border-0 transition-opacity duration-500 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
+        className={`w-full h-full border-0 transition-all duration-700 ease-out ${
+          isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
         } ${className}`}
         style={style}
         onLoad={handleIframeLoad}
