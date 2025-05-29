@@ -1,5 +1,3 @@
-
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -284,6 +282,13 @@ export const fa = {
   openingHoursValue: "9 صبح تا 7 عصر",
   addressValue: "تهران، محمودیه، خیابان سالار، آکادمی رفیعی",
   visitNote: "مراجعه با هماهنگی قبلی",
-  downloaded: "دانلود شد"
+  downloaded: "دانلود شد",
+  boundlessStartTitle: "شروع بدون مرز - گامی به سوی کسب‌وکار بین‌المللی و درآمد دلاری",
+  boundlessStartDesc: "دوره «شروع بدون مرز» یک برنامه جامع آموزشی است که مسیر ورود به بازارهای بین‌المللی را برای دانشجویان، کارمندان، صاحبان کسب‌وکار و علاقه‌مندان به درآمد ارزی روشن می‌سازد.",
+  courseSoldOut: "ظرفیت تکمیل شده / فروش متوقف شده",
+  nextRegistrationDate: "شمارش معکوس آغاز ثبت‌نام",
+  courseInstructor: "مدرس دوره",
+  courseGifts: "هدایای دوره",
+  courseFeatures: "ویژگی‌های کلیدی",
+  studentTestimonials: "نظرات دانشجویان"
 } as const;
-
