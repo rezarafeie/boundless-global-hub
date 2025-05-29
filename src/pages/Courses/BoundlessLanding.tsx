@@ -3,6 +3,7 @@ import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import { 
   Crown, 
   Users, 
@@ -24,7 +25,9 @@ import {
   Award,
   BookOpen,
   MessageCircle,
-  Ban
+  Ban,
+  User,
+  TestTube
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -38,36 +41,35 @@ const BoundlessLanding = () => {
   const [showIframeModal, setShowIframeModal] = useState(false);
   const { translations } = useLanguage();
 
-  // Calculate countdown end date (11 days from now)
-  const countdownEndDate = new Date();
-  countdownEndDate.setDate(countdownEndDate.getDate() + 11);
+  // Set countdown to ۱۹ خردادماه، ساعت ۱۲ ظهر (June 9th, 12:00 PM - 2025)
+  const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0); // Month is 0-indexed
 
   const courseContent = [
-    "نگرش بدون مرز",
-    "دراپ‌شیپینگ",
-    "دراپ‌سرویسینگ",
-    "فروش فایل و آکادمی آنلاین",
-    "بازارهای مالی و زیرساخت‌های بین‌المللی",
-    "جلسه پرسش و پاسخ + مشاوره خصوصی",
-    "تست شخصیت کارآفرین برای تعیین مسیر مناسب"
+    { title: "نگرش بدون مرز", icon: Globe },
+    { title: "دراپ‌شیپینگ", icon: DollarSign },
+    { title: "دراپ‌سرویسینگ", icon: Target },
+    { title: "فروش فایل و آکادمی آنلاین", icon: BookOpen },
+    { title: "بازارهای مالی و زیرساخت‌های بین‌المللی", icon: Brain },
+    { title: "جلسه پرسش و پاسخ + مشاوره خصوصی", icon: MessageCircle },
+    { title: "تست شخصیت کارآفرین برای تعیین مسیر مناسب", icon: TestTube }
   ];
 
   const gifts = [
-    "ورکشاپ درآمد فوری دلاری",
-    "اصل تک اولویت (برای تمرکز در مسیر هدف)",
-    "وبینار بیزینس آمریکایی (۲ جلسه با هدایای ویژه)",
-    "پروژه درآمد غیرفعال (۲ جلسه + هدایای کامل)",
-    "پروژه تغییر (۳ جلسه + هدیه)",
-    "پرامپت‌های هوش مصنوعی مخصوص کسب‌وکار",
-    "ده‌ها ابزار و فایل کاربردی برای شروع بیزینس آنلاین"
+    { title: "ورکشاپ درآمد فوری دلاری", icon: Zap },
+    { title: "اصل تک اولویت (برای تمرکز در مسیر هدف)", icon: Target },
+    { title: "وبینار بیزینس آمریکایی (۲ جلسه با هدایای ویژه)", icon: Globe },
+    { title: "پروژه درآمد غیرفعال (۲ جلسه + هدایای کامل)", icon: DollarSign },
+    { title: "پروژه تغییر (۳ جلسه + هدیه)", icon: Heart },
+    { title: "پرامپت‌های هوش مصنوعی مخصوص کسب‌وکار", icon: Brain },
+    { title: "ده‌ها ابزار و فایل کاربردی برای شروع بیزینس آنلاین", icon: Gift }
   ];
 
   const features = [
-    "تدریس توسط رضا رفیعی با زبان ساده و تجربه عملی",
-    "همراه با تست شخصیت و تمرین‌های واقعی",
-    "پشتیبانی اختصاصی + گروه ارتباطی دانشجویان",
-    "بدون نیاز به سرمایه اولیه یا تخصص فنی",
-    "دسترسی دائمی به محتوای دوره"
+    { title: "تدریس توسط رضا رفیعی با زبان ساده و تجربه عملی", icon: User },
+    { title: "همراه با تست شخصیت و تمرین‌های واقعی", icon: TestTube },
+    { title: "پشتیبانی اختصاصی + گروه ارتباطی دانشجویان", icon: Users },
+    { title: "بدون نیاز به سرمایه اولیه یا تخصص فنی", icon: CheckCircle },
+    { title: "دسترسی دائمی به محتوای دوره", icon: Clock }
   ];
 
   const testimonials = [
@@ -106,7 +108,7 @@ const BoundlessLanding = () => {
     },
     {
       question: "چه زمانی دوره مجدداً قابل خرید خواهد بود؟",
-      answer: "طبق شمارش معکوس نمایش داده شده، ۱۱ روز دیگر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
+      answer: "طبق شمارش معکوس نمایش داده شده، ۱۹ خردادماه ساعت ۱۲ ظهر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
     }
   ];
 
@@ -133,7 +135,7 @@ const BoundlessLanding = () => {
                 className="mb-8"
               >
                 <Badge className="mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white border-0 px-8 py-3 text-lg font-medium shadow-2xl transform hover:scale-105 transition-all">
-                  <Crown className="w-5 h-5 mr-2" />
+                  <Crown className="w-5 h-5 ml-2" />
                   دوره تخصصی
                 </Badge>
               </motion.div>
@@ -164,7 +166,7 @@ const BoundlessLanding = () => {
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <div className="flex items-center justify-center mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center ml-3">
                     <Ban className="w-4 h-4 text-white" />
                   </div>
                   <h3 className="text-lg font-bold text-foreground">دوره در حال حاضر بسته است</h3>
@@ -177,10 +179,10 @@ const BoundlessLanding = () => {
                 <Button 
                   disabled
                   size="sm"
-                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-6 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-md"
+                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-4 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-md"
                 >
-                  <Ban className="mr-2" size={14} />
-                  {translations.courseSoldOut}
+                  <Ban className="ml-2" size={14} />
+                  ظرفیت تکمیل
                 </Button>
               </motion.div>
             </div>
@@ -199,7 +201,7 @@ const BoundlessLanding = () => {
               >
                 زمان باقی‌مانده تا شروع ثبت‌نام
               </motion.h3>
-              <p className="text-muted-foreground text-lg font-medium">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده</p>
+              <p className="text-muted-foreground text-lg font-medium">۱۹ خردادماه، ساعت ۱۲ ظهر</p>
             </div>
             <motion.div 
               className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-3xl p-8 shadow-2xl"
@@ -232,7 +234,7 @@ const BoundlessLanding = () => {
               <Card className="border-0 shadow-2xl bg-gradient-to-br from-white via-teal-50/30 to-blue-50/50 dark:from-gray-900 dark:via-teal-950/20 dark:to-blue-950/20 overflow-hidden">
                 <CardContent className="p-8 md:p-12">
                   <div className="flex items-center mb-8">
-                    <div className="w-12 h-12 bg-gradient-to-r from-teal-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center mr-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-teal-500 via-blue-500 to-purple-500 rounded-xl flex items-center justify-center ml-4">
                       <Globe className="w-6 h-6 text-white" />
                     </div>
                     <h3 className="text-2xl font-bold text-foreground">کسب‌وکار بدون مرز</h3>
@@ -255,27 +257,30 @@ const BoundlessLanding = () => {
             />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courseContent.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-purple-950/20 hover:translate-y-[-4px] group">
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4 space-x-reverse">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                          <span className="text-white font-bold text-sm">{index + 1}</span>
+              {courseContent.map((item, index) => {
+                const IconComponent = item.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-purple-950/20 hover:translate-y-[-4px] group">
+                      <CardContent className="p-6">
+                        <div className="flex items-center space-x-4 space-x-reverse">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <IconComponent size={20} className="text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-foreground leading-relaxed">{item.title}</h3>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-foreground leading-relaxed">{item}</h3>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -289,25 +294,28 @@ const BoundlessLanding = () => {
             />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {gifts.map((gift, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <Card className="border border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/20 hover:translate-y-[-2px] group">
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                          <Gift size={16} className="text-white" />
+              {gifts.map((gift, index) => {
+                const IconComponent = gift.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <Card className="border border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/20 hover:translate-y-[-2px] group">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                            <IconComponent size={16} className="text-white" />
+                          </div>
+                          <span className="text-base font-medium text-foreground leading-relaxed">{gift.title}</span>
                         </div>
-                        <span className="text-base font-medium text-foreground leading-relaxed">{gift}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -321,20 +329,23 @@ const BoundlessLanding = () => {
             />
             
             <div className="space-y-4 max-w-3xl mx-auto">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  className="flex items-center space-x-4 space-x-reverse bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-green-200 dark:border-green-800 group hover:translate-y-[-2px]"
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <CheckCircle size={20} className="text-white" />
-                  </div>
-                  <span className="text-lg font-medium text-foreground leading-relaxed">{feature}</span>
-                </motion.div>
-              ))}
+              {features.map((feature, index) => {
+                const IconComponent = feature.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    className="flex items-center space-x-4 space-x-reverse bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-green-200 dark:border-green-800 group hover:translate-y-[-2px]"
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <IconComponent size={20} className="text-white" />
+                    </div>
+                    <span className="text-lg font-medium text-foreground leading-relaxed">{feature.title}</span>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -347,7 +358,11 @@ const BoundlessLanding = () => {
               subtitle="آشنایی با استاد دوره"
             />
             
-            <InstructorProfile />
+            <Link to="/instructor/reza-rafiei" className="block">
+              <div className="hover:scale-105 transition-transform duration-300">
+                <InstructorProfile />
+              </div>
+            </Link>
           </div>
         </section>
 
@@ -427,7 +442,7 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              ۱۱ روز دیگر فرصت ثبت‌نام مجدداً فراهم خواهد شد
+              ۱۹ خردادماه، ساعت ۱۲ ظهر فرصت ثبت‌نام مجدداً فراهم خواهد شد
             </motion.p>
             
             <motion.div 
@@ -450,10 +465,10 @@ const BoundlessLanding = () => {
               <Button 
                 disabled
                 size="sm"
-                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-8 py-3 text-base font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
+                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-6 py-2 text-sm font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
               >
-                <Ban className="mr-2" size={16} />
-                {translations.courseSoldOut}
+                <Ban className="ml-2" size={16} />
+                ظرفیت تکمیل
               </Button>
             </motion.div>
             
@@ -464,7 +479,7 @@ const BoundlessLanding = () => {
               transition={{ duration: 0.8, delay: 0.8 }}
             >
               پشتیبانی ۲۴/۷ • دسترسی مادام‌العمر • گارانتی کیفیت
-            </motion.p>
+            </p>
           </div>
         </section>
       </div>

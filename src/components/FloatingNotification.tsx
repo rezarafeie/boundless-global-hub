@@ -38,21 +38,21 @@ const FloatingNotification = () => {
     { text: "تست شخصیت را کامل کرد", link: "/assessment/personality" }
   ];
   
-  // Mix of Persian and limited Finglish names
+  // Mix of Persian and very limited Finglish names
   const names = [
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
     "لیلا حیدری", "احمد صادقی", "نسرین طاهری", "سعید رحیمی",
-    "Reza M.", "Sara A.", "Ali K.", "Mina R."
+    "Reza M.", "Sara A."
   ];
 
   const generateTimestamp = () => {
     const timeOptions = [
       "همین الان",
-      "۱ دقیقه پیش",
-      "۲ دقیقه پیش",
-      "۳ دقیقه پیش",
-      "۵ دقیقه پیش"
+      "همین الان", 
+      "چند ثانیه پیش",
+      "چند ثانیه پیش",
+      "۱ دقیقه پیش"
     ];
     return timeOptions[Math.floor(Math.random() * timeOptions.length)];
   };
@@ -77,6 +77,11 @@ const FloatingNotification = () => {
 
   useEffect(() => {
     const showNotification = () => {
+      // Limit to 2 notifications max
+      if (notifications.length >= 2) {
+        return;
+      }
+
       const notification = generateRandomNotification();
       setNotifications(prev => [...prev, notification]);
       setNextId(prev => prev + 1);
@@ -104,7 +109,7 @@ const FloatingNotification = () => {
     return () => {
       clearTimeout(firstTimeout);
     };
-  }, [nextId]);
+  }, [nextId, notifications.length]);
 
   const removeNotification = (id: number) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
@@ -115,30 +120,30 @@ const FloatingNotification = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 space-y-2 max-w-sm">
-      <AnimatePresence>
+    <div className="fixed bottom-6 right-6 z-50 space-y-3 max-w-sm">
+      <AnimatePresence mode="popLayout">
         {notifications.map((notification) => (
           <motion.div
             key={notification.id}
-            initial={{ opacity: 0, x: 300, scale: 0.9 }}
+            initial={{ opacity: 0, x: 400, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 300, scale: 0.9 }}
+            exit={{ opacity: 0, x: 400, scale: 0.8 }}
             transition={{ 
-              duration: 0.4, 
-              ease: "easeOut",
+              duration: 0.6, 
+              ease: [0.25, 0.46, 0.45, 0.94],
               type: "spring",
-              stiffness: 120,
-              damping: 20
+              stiffness: 200,
+              damping: 25
             }}
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-xl border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-2xl transition-all duration-300 group cursor-pointer"
             onClick={() => handleNotificationClick(notification.link)}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed mb-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed mb-2">
                   {notification.message}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{notification.timestamp}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{notification.timestamp}</p>
               </div>
               <button
                 onClick={(e) => {
@@ -147,7 +152,7 @@ const FloatingNotification = () => {
                 }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                <X size={12} />
+                <X size={14} />
               </button>
             </div>
           </motion.div>
