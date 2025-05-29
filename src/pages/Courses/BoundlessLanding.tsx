@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,8 +30,7 @@ import {
   TestTube
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
-import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
-import LiveEnrollmentCounter from "@/components/LiveEnrollmentCounter";
+import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -40,64 +39,10 @@ import InstructorProfile from "@/components/InstructorProfile";
 
 const BoundlessLanding = () => {
   const [showIframeModal, setShowIframeModal] = useState(false);
-  const [currentHero, setCurrentHero] = useState(0);
   const { translations } = useLanguage();
 
   // Set countdown to ۱۹ خردادماه، ساعت ۱۲ ظهر (June 9th, 12:00 PM - 2025)
   const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0); // Month is 0-indexed
-
-  // Rotating hero messages
-  const heroMessages = [
-    {
-      title: "شروع کن، حتی اگر مطمئن نیستی!",
-      subtitle: "در آکادمی رفیعی، هیچ چیزی غیرممکن نیست."
-    },
-    {
-      title: "آینده‌ات را امروز بساز",
-      subtitle: "با یک تصمیم، زندگی‌ات را تغییر بده."
-    },
-    {
-      title: "موفقیت منتظر کسانی است که شروع می‌کنند",
-      subtitle: "قدم اول را بردار، بقیه راه خودش باز می‌شود."
-    },
-    {
-      title: "از خواب‌های بزرگ ترسیده نباش",
-      subtitle: "آن‌ها تنها راه رسیدن به موفقیت هستند."
-    },
-    {
-      title: "هر کسب‌وکار جهانی از یک ایده شروع شد",
-      subtitle: "ایده تو می‌تواند بعدی باشد."
-    },
-    {
-      title: "تغییر از امروز شروع می‌شود",
-      subtitle: "منتظر فردا نمان، همین حالا اقدام کن."
-    },
-    {
-      title: "دنیا منتظر ایده‌های توست",
-      subtitle: "با آموزش درست، همه چیز ممکن است."
-    },
-    {
-      title: "موفقیت انتخابی است، نه تصادفی",
-      subtitle: "انتخاب کن که یاد بگیری و رشد کنی."
-    },
-    {
-      title: "هر روز فرصتی برای شروع دوباره است",
-      subtitle: "امروز آن روز تو باشد."
-    },
-    {
-      title: "بزرگ‌ترین ریسک این است که ریسک نکنی",
-      subtitle: "با ما یاد بگیر که چطور هوشمندانه ریسک کنی."
-    }
-  ];
-
-  // Rotate hero messages every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentHero((prev) => (prev + 1) % heroMessages.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [heroMessages.length]);
 
   const courseContent = [
     { title: "نگرش بدون مرز", icon: Globe },
@@ -170,7 +115,7 @@ const BoundlessLanding = () => {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        {/* Enhanced Hero Section */}
+        {/* Enhanced Hero Section - More Colorful and Modern */}
         <section className="relative py-20 md:py-28 overflow-hidden">
           {/* Enhanced Vibrant Background */}
           <div className="absolute inset-0">
@@ -178,6 +123,7 @@ const BoundlessLanding = () => {
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-pink-400/25 to-orange-400/25 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse animation-delay-800"></div>
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-teal-400/15 to-green-400/15 rounded-full blur-2xl animate-pulse animation-delay-1200"></div>
           </div>
           
           <div className="container max-w-6xl mx-auto px-4 relative z-10">
@@ -195,39 +141,24 @@ const BoundlessLanding = () => {
               </motion.div>
               
               <motion.h1 
-                key={currentHero}
                 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent"
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1 }}
+                transition={{ duration: 1, delay: 0.2 }}
               >
-                {heroMessages[currentHero].title}
+                شروع، نقطه آغاز کسب‌وکار جهانی تو
               </motion.h1>
               
               <motion.p 
-                key={`subtitle-${currentHero}`}
                 className="text-xl md:text-2xl text-muted-foreground mb-12 font-medium leading-relaxed max-w-4xl mx-auto"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              >
-                {heroMessages[currentHero].subtitle}
-              </motion.p>
-
-              {/* Enrollment Counter */}
-              <motion.div 
-                className="mb-8 flex justify-center"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                <LiveEnrollmentCounter 
-                  initialCount={2459}
-                  courseName="boundless"
-                />
-              </motion.div>
+                با یک تصمیم ساده، وارد مسیر موفقیت بین‌المللی شو
+              </motion.p>
 
-              {/* Course Status Alert */}
+              {/* Course Status Alert - More Subtle */}
               <motion.div 
                 className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-orange-200 dark:border-orange-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -244,6 +175,7 @@ const BoundlessLanding = () => {
                   ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
                 </p>
                 
+                {/* Smaller, More Subtle Button */}
                 <Button 
                   disabled
                   size="sm"
@@ -260,29 +192,44 @@ const BoundlessLanding = () => {
         {/* Enhanced Countdown Timer Section */}
         <section className="py-16 bg-gradient-to-r from-purple-100 via-blue-100 via-pink-100 to-orange-100 dark:from-purple-950/30 dark:via-blue-950/30 dark:via-pink-950/30 dark:to-orange-950/30">
           <div className="container max-w-4xl mx-auto px-4">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-purple-600 ml-3" />
+                <motion.h3 
+                  className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  زمان باقی‌مانده تا شروع ثبت‌نام
+                </motion.h3>
+              </div>
+              <p className="text-muted-foreground text-lg font-medium">۱۹ خردادماه، ساعت ۱۲ ظهر</p>
+            </div>
             <motion.div 
               className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-3xl p-8 shadow-2xl"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <EnhancedCountdownTimer 
+              <CountdownTimer 
                 endDate={countdownEndDate.toISOString()}
-                label="زمان باقی‌مانده تا شروع ثبت‌نام"
                 className="mx-auto"
               />
             </motion.div>
           </div>
         </section>
 
-        {/* Course Description */}
+        {/* Course Description - Enhanced Colors */}
         <section className="py-20 bg-gradient-to-br from-teal-50/60 to-green-50/60 dark:from-teal-950/20 dark:to-green-950/20">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="درباره دوره شروع بدون مرز" 
-              subtitle="برنامه جامع آموزشی برای ورود به بازارهای بین‌المللی"
-              icon={<Globe className="w-8 h-8 text-teal-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <Globe className="w-8 h-8 text-teal-600 ml-3" />
+              <SectionTitle 
+                title="درباره دوره شروع بدون مرز" 
+                subtitle="برنامه جامع آموزشی برای ورود به بازارهای بین‌المللی"
+              />
+            </div>
             
             <motion.div 
               className="max-w-4xl mx-auto"
@@ -307,14 +254,16 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Content */}
+        {/* Enhanced Course Content */}
         <section className="py-20 bg-gradient-to-br from-blue-50/50 via-purple-50/50 to-pink-50/50 dark:from-blue-950/15 dark:via-purple-950/15 dark:to-pink-950/15">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="محتوای دوره" 
-              subtitle="آنچه در این دوره خواهید آموخت"
-              icon={<BookOpen className="w-8 h-8 text-blue-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <BookOpen className="w-8 h-8 text-blue-600 ml-3" />
+              <SectionTitle 
+                title="محتوای دوره" 
+                subtitle="آنچه در این دوره خواهید آموخت"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courseContent.map((item, index) => {
@@ -328,7 +277,7 @@ const BoundlessLanding = () => {
                   >
                     <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-950/20 dark:to-purple-950/20 hover:translate-y-[-4px] group">
                       <CardContent className="p-6">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center space-x-4 space-x-reverse">
                           <div className="w-12 h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                             <IconComponent size={20} className="text-white" />
                           </div>
@@ -345,14 +294,16 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Gifts */}
+        {/* Course Gifts - Enhanced */}
         <section className="py-20 bg-background">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title={translations.courseGifts} 
-              subtitle="هدایای ویژه همراه با دوره"
-              icon={<Gift className="w-8 h-8 text-purple-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <Gift className="w-8 h-8 text-purple-600 ml-3" />
+              <SectionTitle 
+                title={translations.courseGifts} 
+                subtitle="هدایای ویژه همراه با دوره"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {gifts.map((gift, index) => {
@@ -366,7 +317,7 @@ const BoundlessLanding = () => {
                   >
                     <Card className="border border-purple-200 dark:border-purple-800 shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/20 hover:translate-y-[-2px] group">
                       <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center space-x-3 space-x-reverse">
                           <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                             <IconComponent size={16} className="text-white" />
                           </div>
@@ -381,14 +332,16 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Features */}
+        {/* Course Features - Enhanced */}
         <section className="py-20 bg-gradient-to-br from-green-50/50 to-teal-50/50 dark:from-green-950/10 dark:to-teal-950/10">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title={translations.courseFeatures} 
-              subtitle="چرا این دوره را انتخاب کنید؟"
-              icon={<CheckCircle className="w-8 h-8 text-green-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <CheckCircle className="w-8 h-8 text-green-600 ml-3" />
+              <SectionTitle 
+                title={translations.courseFeatures} 
+                subtitle="چرا این دوره را انتخاب کنید؟"
+              />
+            </div>
             
             <div className="space-y-4 max-w-3xl mx-auto">
               {features.map((feature, index) => {
@@ -396,7 +349,7 @@ const BoundlessLanding = () => {
                 return (
                   <motion.div
                     key={index}
-                    className="flex items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-green-200 dark:border-green-800 group hover:translate-y-[-2px]"
+                    className="flex items-center space-x-4 space-x-reverse bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-green-200 dark:border-green-800 group hover:translate-y-[-2px]"
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -415,11 +368,13 @@ const BoundlessLanding = () => {
         {/* Instructor Section */}
         <section className="py-20 bg-background">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="معرفی مدرس" 
-              subtitle="آشنایی با استاد دوره"
-              icon={<User className="w-8 h-8 text-blue-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <User className="w-8 h-8 text-blue-600 ml-3" />
+              <SectionTitle 
+                title="معرفی مدرس" 
+                subtitle="آشنایی با استاد دوره"
+              />
+            </div>
             
             <Link to="/instructor/reza-rafiei" className="block">
               <div className="hover:scale-105 transition-transform duration-300">
@@ -429,14 +384,16 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Testimonials */}
+        {/* Testimonials - Enhanced */}
         <section className="py-20 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 dark:from-yellow-950/10 dark:to-orange-950/10">
           <div className="container max-w-5xl mx-auto px-4">
-            <SectionTitle 
-              title="نظرات دانشجویان" 
-              subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
-              icon={<Star className="w-8 h-8 text-yellow-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <Star className="w-8 h-8 text-yellow-600 ml-3" />
+              <SectionTitle 
+                title="نظرات دانشجویان" 
+                subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
@@ -469,11 +426,13 @@ const BoundlessLanding = () => {
         {/* FAQ Section */}
         <section className="py-20 bg-background">
           <div className="container max-w-3xl mx-auto px-4">
-            <SectionTitle 
-              title={translations.faq} 
-              subtitle="پاسخ به سوالات متداول"
-              icon={<MessageCircle className="w-8 h-8 text-blue-600" />}
-            />
+            <div className="flex items-center justify-center mb-12">
+              <MessageCircle className="w-8 h-8 text-blue-600 ml-3" />
+              <SectionTitle 
+                title={translations.faq} 
+                subtitle="پاسخ به سوالات متداول"
+              />
+            </div>
             
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
@@ -490,7 +449,7 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Final CTA */}
+        {/* Final CTA - Enhanced */}
         <section className="py-20 bg-gradient-to-r from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-950/30 dark:to-purple-950/30 text-foreground">
           <div className="container max-w-4xl mx-auto text-center px-4">
             <motion.h2 
