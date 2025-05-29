@@ -54,13 +54,13 @@ const BoundlessLanding = () => {
   ];
 
   const gifts = [
-    "🎯 ورکشاپ درآمد فوری دلاری",
-    "📌 اصل تک اولویت (برای تمرکز در مسیر هدف)",
-    "🇺🇸 وبینار بیزینس آمریکایی (۲ جلسه با هدایای ویژه)",
-    "💸 پروژه درآمد غیرفعال (۲ جلسه + هدایای کامل)",
-    "🔄 پروژه تغییر (۳ جلسه + هدیه)",
-    "🤖 پرامپت‌های هوش مصنوعی مخصوص کسب‌وکار",
-    "و ده‌ها ابزار و فایل کاربردی برای شروع بیزینس آنلاین"
+    "ورکشاپ درآمد فوری دلاری",
+    "اصل تک اولویت (برای تمرکز در مسیر هدف)",
+    "وبینار بیزینس آمریکایی (۲ جلسه با هدایای ویژه)",
+    "پروژه درآمد غیرفعال (۲ جلسه + هدایای کامل)",
+    "پروژه تغییر (۳ جلسه + هدیه)",
+    "پرامپت‌های هوش مصنوعی مخصوص کسب‌وکار",
+    "ده‌ها ابزار و فایل کاربردی برای شروع بیزینس آنلاین"
   ];
 
   const features = [
@@ -113,72 +113,65 @@ const BoundlessLanding = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        {/* Hero Section - Ultra Modern Design */}
-        <section className="relative py-20 overflow-hidden">
-          {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="absolute top-0 left-0 w-full h-full opacity-20">
-              <div className="absolute top-10 left-10 w-72 h-72 bg-white/10 rounded-full animate-pulse-glow"></div>
-              <div className="absolute bottom-10 right-10 w-96 h-96 bg-white/10 rounded-full animate-float-glow"></div>
-              <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-purple-300/20 rounded-full animate-float"></div>
-            </div>
-          </div>
+      <div className="min-h-screen bg-background">
+        {/* Hero Section - Clean and Minimal */}
+        <section className="relative py-20 md:py-28 overflow-hidden">
+          {/* Subtle Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-blue-50/30 dark:from-slate-900/50 dark:to-blue-900/30"></div>
           
-          <div className="container max-w-7xl mx-auto px-4 relative z-10">
+          <div className="container max-w-6xl mx-auto px-4 relative z-10">
             <div className="text-center mb-16">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
-                className="mb-6"
+                className="mb-8"
               >
-                <Badge className="mb-4 bg-white/20 text-white border-0 backdrop-blur-sm px-6 py-2 text-lg">
-                  <Crown className="w-5 h-5 mr-2" />
-                  دوره پیشرفته و جامع
+                <Badge className="mb-6 bg-primary/10 text-primary border border-primary/20 px-6 py-2 text-base font-medium">
+                  <Crown className="w-4 h-4 mr-2" />
+                  دوره تخصصی
                 </Badge>
               </motion.div>
               
               <motion.h1 
-                className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight"
+                className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 leading-tight"
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.2 }}
               >
-                {translations.boundlessStartTitle}
+                دوره شروع بدون مرز
               </motion.h1>
               
               <motion.p 
-                className="text-2xl md:text-3xl text-white/95 mb-12 font-semibold"
+                className="text-xl md:text-2xl text-muted-foreground mb-12 font-medium leading-relaxed max-w-4xl mx-auto"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                {translations.boundlessStartDesc}
+                نقطه شروع کسب‌وکار جهانی تو با آکادمی رفیعی
               </motion.p>
 
-              {/* Course Status Alert */}
+              {/* Course Status Alert - Minimal Design */}
               <motion.div 
-                className="bg-white/15 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-8 mb-12 max-w-3xl mx-auto shadow-2xl"
-                initial={{ opacity: 0, scale: 0.9 }}
+                className="bg-card border border-border rounded-xl p-8 mb-12 max-w-2xl mx-auto shadow-sm"
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <div className="flex items-center justify-center mb-6">
-                  <Ban className="w-8 h-8 text-red-300 mr-3" />
-                  <h3 className="text-2xl font-bold text-white">دوره در حال حاضر بسته است</h3>
+                  <Ban className="w-6 h-6 text-destructive mr-3" />
+                  <h3 className="text-xl font-semibold text-foreground">دوره در حال حاضر بسته است</h3>
                 </div>
-                <p className="text-white/90 text-lg mb-6 leading-relaxed">
+                <p className="text-muted-foreground text-base mb-6 leading-relaxed">
                   ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
                 </p>
                 
                 <Button 
                   disabled
                   size="lg"
-                  className="bg-red-500/80 text-white cursor-not-allowed px-10 py-4 text-xl font-bold rounded-xl backdrop-blur-sm hover:bg-red-500/80 disabled:opacity-100"
+                  className="bg-muted text-muted-foreground cursor-not-allowed px-8 py-3 text-base font-medium rounded-lg hover:bg-muted disabled:opacity-100"
                 >
-                  <Ban className="mr-3" size={24} />
+                  <Ban className="mr-2" size={18} />
                   {translations.courseSoldOut}
                 </Button>
               </motion.div>
@@ -186,24 +179,23 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Countdown Timer Section - Enhanced Design */}
-        <section className="py-16 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <div className="container max-w-5xl mx-auto px-4 relative z-10">
+        {/* Countdown Timer Section - Clean Design */}
+        <section className="py-16 bg-muted/30">
+          <div className="container max-w-4xl mx-auto px-4">
             <div className="text-center mb-8">
               <motion.h3 
-                className="text-4xl font-bold text-white mb-4"
+                className="text-2xl md:text-3xl font-bold text-foreground mb-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                ⏰ {translations.nextRegistrationDate}
+                زمان باقی‌مانده تا شروع ثبت‌نام
               </motion.h3>
-              <p className="text-white/90 text-xl">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده...</p>
+              <p className="text-muted-foreground text-lg">فقط ۱۱ روز تا بازگشایی ثبت‌نام باقی مانده</p>
             </div>
             <motion.div 
-              className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl"
-              initial={{ opacity: 0, scale: 0.9 }}
+              className="bg-card border border-border rounded-xl p-8 shadow-sm"
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
@@ -215,29 +207,29 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Description - Modern Card Design */}
-        <section className="py-20 bg-white">
-          <div className="container max-w-6xl mx-auto px-4">
+        {/* Course Description - Minimal Card Design */}
+        <section className="py-20 bg-background">
+          <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
-              title="✨ درباره دوره شروع بدون مرز" 
+              title="درباره دوره شروع بدون مرز" 
               subtitle="برنامه جامع آموزشی برای ورود به بازارهای بین‌المللی"
             />
             
             <motion.div 
-              className="max-w-5xl mx-auto"
+              className="max-w-4xl mx-auto"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
-                <CardContent className="p-12">
+              <Card className="border-0 shadow-sm bg-card">
+                <CardContent className="p-8 md:p-12">
                   <div className="flex items-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mr-6">
-                      <Globe className="w-8 h-8 text-white" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mr-4">
+                      <Globe className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="text-3xl font-bold text-gray-900">کسب‌وکار بدون مرز</h3>
+                    <h3 className="text-2xl font-bold text-foreground">کسب‌وکار بدون مرز</h3>
                   </div>
-                  <p className="text-xl text-gray-700 leading-relaxed">
+                  <p className="text-lg text-muted-foreground leading-relaxed">
                     این دوره مخصوص افرادی است که می‌خواهند کسب‌وکار آنلاین خود را راه‌اندازی کنند یا از طریق مهارت‌های دیجیتال، درآمد دلاری داشته باشند. با ترکیبی از آموزش تخصصی، پشتیبانی گام‌به‌گام، تست شخصیت، تمرین‌های عملی و مشاوره اختصاصی، این برنامه یک انتخاب کامل برای جهش به سمت جهانی شدن است.
                   </p>
                 </CardContent>
@@ -246,36 +238,30 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Content - Colorful Grid */}
-        <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
-          <div className="container max-w-6xl mx-auto px-4">
+        {/* Course Content - Clean Grid */}
+        <section className="py-20 bg-muted/30">
+          <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
-              title="📚 محتوای دوره" 
+              title="محتوای دوره" 
               subtitle="آنچه در این دوره خواهید آموخت"
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courseContent.map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="group"
                 >
-                  <Card className={`h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-gradient-to-br ${
-                    index % 4 === 0 ? 'from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600' :
-                    index % 4 === 1 ? 'from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' :
-                    index % 4 === 2 ? 'from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600' :
-                    'from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
-                  } group-hover:scale-105`}>
-                    <CardContent className="p-8">
-                      <div className="flex items-center space-x-6 space-x-reverse">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 backdrop-blur-sm group-hover:bg-white/30 transition-all">
-                          <span className="text-white font-bold text-xl">{index + 1}</span>
+                  <Card className="h-full border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-card hover:translate-y-[-2px]">
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4 space-x-reverse">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="text-primary font-bold text-sm">{index + 1}</span>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white leading-relaxed">{item}</h3>
+                          <h3 className="text-lg font-semibold text-foreground leading-relaxed">{item}</h3>
                         </div>
                       </div>
                     </CardContent>
@@ -286,30 +272,29 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Gifts - Animated List */}
-        <section className="py-20 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50">
-          <div className="container max-w-6xl mx-auto px-4">
+        {/* Course Gifts - Clean List */}
+        <section className="py-20 bg-background">
+          <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
-              title={`🎁 ${translations.courseGifts}`} 
+              title={translations.courseGifts} 
               subtitle="هدایای ویژه همراه با دوره"
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {gifts.map((gift, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="group"
                 >
-                  <Card className="border-2 border-green-200 shadow-lg hover:shadow-xl transition-all bg-white hover:bg-green-50 group-hover:scale-105 group-hover:border-green-300">
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4 space-x-reverse">
-                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 transition-all">
-                          <Gift size={24} className="text-green-600" />
+                  <Card className="border border-border shadow-sm hover:shadow-md transition-all bg-card hover:translate-y-[-1px]">
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Gift size={16} className="text-primary" />
                         </div>
-                        <span className="text-lg font-semibold text-gray-900 leading-relaxed">{gift}</span>
+                        <span className="text-base font-medium text-foreground leading-relaxed">{gift}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -319,31 +304,27 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Course Features - Clean Design */}
-        <section className="py-20 bg-white">
-          <div className="container max-w-6xl mx-auto px-4">
+        {/* Course Features - Minimal Design */}
+        <section className="py-20 bg-muted/30">
+          <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
-              title={`⚡ ${translations.courseFeatures}`} 
+              title={translations.courseFeatures} 
               subtitle="چرا این دوره را انتخاب کنید؟"
             />
             
-            <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="space-y-4 max-w-3xl mx-auto">
               {features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center space-x-6 space-x-reverse bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-md hover:shadow-lg transition-all group hover:from-blue-100 hover:to-indigo-100"
+                  className="flex items-center space-x-4 space-x-reverse bg-card p-6 rounded-lg shadow-sm hover:shadow-md transition-all border border-border"
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    index % 3 === 0 ? 'bg-blue-500 group-hover:bg-blue-600' :
-                    index % 3 === 1 ? 'bg-purple-500 group-hover:bg-purple-600' :
-                    'bg-green-500 group-hover:bg-green-600'
-                  } transition-all`}>
-                    <CheckCircle size={24} className="text-white" />
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle size={16} className="text-primary" />
                   </div>
-                  <span className="text-xl font-semibold text-gray-900 leading-relaxed">{feature}</span>
+                  <span className="text-lg font-medium text-foreground leading-relaxed">{feature}</span>
                 </motion.div>
               ))}
             </div>
@@ -351,10 +332,10 @@ const BoundlessLanding = () => {
         </section>
 
         {/* Instructor Section */}
-        <section className="py-20 bg-gradient-to-br from-gray-50 to-slate-100">
-          <div className="container max-w-6xl mx-auto px-4">
+        <section className="py-20 bg-background">
+          <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
-              title="🎓 معرفی مدرس" 
+              title="معرفی مدرس" 
               subtitle="آشنایی با استاد دوره"
             />
             
@@ -362,15 +343,15 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Testimonials - Enhanced Cards */}
-        <section className="py-20 bg-gradient-to-r from-yellow-50 via-orange-50 to-red-50">
-          <div className="container max-w-6xl mx-auto px-4">
+        {/* Testimonials - Clean Cards */}
+        <section className="py-20 bg-muted/30">
+          <div className="container max-w-5xl mx-auto px-4">
             <SectionTitle 
-              title="💬 نظرات دانشجویان" 
+              title="نظرات دانشجویان" 
               subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
                 <motion.div
                   key={index}
@@ -378,21 +359,17 @@ const BoundlessLanding = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
                 >
-                  <Card className={`border-0 shadow-xl hover:shadow-2xl transition-all bg-gradient-to-br hover:scale-105 ${
-                    index % 3 === 0 ? 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600' :
-                    index % 3 === 1 ? 'from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' :
-                    'from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600'
-                  }`}>
-                    <CardContent className="p-8">
-                      <div className="flex items-center mb-6">
+                  <Card className="border-0 shadow-sm hover:shadow-md transition-all bg-card hover:translate-y-[-2px] h-full">
+                    <CardContent className="p-6">
+                      <div className="flex items-center mb-4">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} size={24} className="text-yellow-300 fill-current" />
+                          <Star key={i} size={16} className="text-yellow-500 fill-current" />
                         ))}
                       </div>
-                      <p className="text-white/95 mb-6 italic text-lg leading-relaxed">"{testimonial.content}"</p>
+                      <p className="text-muted-foreground mb-4 italic text-base leading-relaxed">"{testimonial.content}"</p>
                       <div>
-                        <h4 className="font-bold text-white text-xl">{testimonial.name}</h4>
-                        <p className="text-white/80 text-lg">{testimonial.role}</p>
+                        <h4 className="font-bold text-foreground text-base">{testimonial.name}</h4>
+                        <p className="text-muted-foreground text-sm">{testimonial.role}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -403,8 +380,8 @@ const BoundlessLanding = () => {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-20 bg-white">
-          <div className="container max-w-4xl mx-auto px-4">
+        <section className="py-20 bg-background">
+          <div className="container max-w-3xl mx-auto px-4">
             <SectionTitle 
               title={translations.faq} 
               subtitle="پاسخ به سوالات متداول"
@@ -412,11 +389,11 @@ const BoundlessLanding = () => {
             
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`} className="border-b-2 border-gray-100">
-                  <AccordionTrigger className="text-right text-xl font-bold py-6 hover:text-blue-600 transition-colors">
+                <AccordionItem key={index} value={`item-${index}`} className="border-b border-border">
+                  <AccordionTrigger className="text-right text-lg font-semibold py-4 hover:text-primary transition-colors">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-600 text-lg leading-relaxed pb-6">
+                  <AccordionContent className="text-muted-foreground text-base leading-relaxed pb-4">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -425,17 +402,11 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Final CTA - Premium Design */}
-        <section className="py-24 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/20"></div>
-          <div className="absolute top-0 left-0 w-full h-full opacity-10">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full animate-pulse-glow"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-300/10 rounded-full animate-float-glow"></div>
-          </div>
-          
-          <div className="container max-w-5xl mx-auto text-center px-4 relative z-10">
+        {/* Final CTA - Minimal Design */}
+        <section className="py-20 bg-muted text-foreground">
+          <div className="container max-w-4xl mx-auto text-center px-4">
             <motion.h2 
-              className="text-5xl font-bold mb-6"
+              className="text-3xl md:text-4xl font-bold mb-6"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -443,7 +414,7 @@ const BoundlessLanding = () => {
               منتظر بازگشایی ثبت‌نام باشید
             </motion.h2>
             <motion.p 
-              className="text-2xl mb-12 opacity-90"
+              className="text-xl mb-12 text-muted-foreground"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -452,13 +423,13 @@ const BoundlessLanding = () => {
             </motion.p>
             
             <motion.div 
-              className="flex justify-center items-center gap-6 mb-12"
-              initial={{ opacity: 0, scale: 0.9 }}
+              className="flex justify-center items-center gap-4 mb-12"
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <Clock className="w-12 h-12 text-orange-400" />
-              <span className="text-3xl font-bold">به زودی...</span>
+              <Clock className="w-8 h-8 text-primary" />
+              <span className="text-2xl font-semibold">به زودی...</span>
             </motion.div>
             
             <motion.div
@@ -469,20 +440,20 @@ const BoundlessLanding = () => {
               <Button 
                 disabled
                 size="lg"
-                className="bg-white/20 text-white cursor-not-allowed rounded-2xl px-16 py-6 text-2xl font-bold backdrop-blur-sm border-2 border-white/30 hover:bg-white/20 disabled:opacity-100"
+                className="bg-muted text-muted-foreground cursor-not-allowed rounded-lg px-12 py-4 text-lg font-medium border border-border hover:bg-muted disabled:opacity-100"
               >
-                <Ban className="mr-4" size={28} />
+                <Ban className="mr-3" size={20} />
                 {translations.courseSoldOut}
               </Button>
             </motion.div>
             
             <motion.p 
-              className="text-lg mt-8 opacity-80"
+              className="text-base mt-6 text-muted-foreground"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.8 }}
             >
-              ✅ پشتیبانی ۲۴/۷ • ✅ دسترسی مادام‌العمر • ✅ گارانتی کیفیت
+              پشتیبانی ۲۴/۷ • دسترسی مادام‌العمر • گارانتی کیفیت
             </motion.p>
           </div>
         </section>
