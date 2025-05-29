@@ -1,4 +1,3 @@
-
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -10,9 +9,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap, BookOpenCheck } from "lucide-react";
 import QuickAccess from "@/components/QuickAccess";
+import RandomHeadlineGenerator from "@/components/RandomHeadlineGenerator";
 
 const Index = () => {
   const { translations } = useLanguage();
+  const randomHeadline = RandomHeadlineGenerator();
 
   const featuredCourses = [
     {
@@ -83,8 +84,8 @@ const Index = () => {
   return (
     <MainLayout>
       <Hero
-        title={translations.slogan}
-        subtitle={translations.tagline}
+        title={randomHeadline.title}
+        subtitle={randomHeadline.subtitle}
         ctaText={translations.callToAction}
         ctaLink="/courses/boundless"
         backgroundType="glow"
