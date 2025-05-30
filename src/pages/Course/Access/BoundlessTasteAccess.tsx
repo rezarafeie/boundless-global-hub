@@ -5,10 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Play, Gift, Bot, MessageCircle, FileText, Check, Users } from "lucide-react";
 import { motion } from "framer-motion";
+import MobileStickyButton from "@/components/MobileStickyButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const BoundlessTasteAccess = () => {
   const { translations } = useLanguage();
   const [activatedSteps, setActivatedSteps] = useState<string[]>([]);
+  const isMobile = useIsMobile();
 
   const handleStepActivation = (stepId: string) => {
     if (!activatedSteps.includes(stepId)) {
@@ -17,6 +20,10 @@ const BoundlessTasteAccess = () => {
   };
 
   const isStepActivated = (stepId: string) => activatedSteps.includes(stepId);
+
+  const handleMainAction = () => {
+    window.open("https://academy.rafiei.co/maze/boundless/one/", "_blank");
+  };
 
   const steps = [
     {
@@ -81,7 +88,7 @@ const BoundlessTasteAccess = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900 dark:to-slate-900">
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900 dark:to-slate-900 ${isMobile ? 'pb-20' : ''}`}>
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black py-16">
         <div className="absolute inset-0">
@@ -188,6 +195,11 @@ const BoundlessTasteAccess = () => {
           </p>
         </div>
       </div>
+
+      {/* Mobile Sticky Button */}
+      <MobileStickyButton onClick={handleMainAction}>
+        🍽️ شروع دوره
+      </MobileStickyButton>
     </div>
   );
 };

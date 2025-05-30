@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Notification {
   id: number;
@@ -15,6 +16,7 @@ const FloatingNotification = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [nextId, setNextId] = useState(1);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Course activities (70% weight)
   const courseActivities = [
@@ -41,9 +43,8 @@ const FloatingNotification = () => {
     { text: "تست مهارت‌های رهبری را تکمیل کرد", link: "/assessment/leadership" }
   ];
   
-  // Enhanced mix of Persian names (90%) and limited Finglish names (10%)
-  const names = [
-    // Persian names (majority - 90%)
+  // Expanded Persian names with much more variety
+  const persianNames = [
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
     "لیلا حیدری", "احمد صادقی", "نسرین طاهری", "سعید رحیمی", "نیلوفر قاسمی",
@@ -57,24 +58,31 @@ const FloatingNotification = () => {
     "شبنم قربانی", "علیرضا زارعی", "پریسا مرادی", "محسن طالبی", "فریده ناصری",
     "عباس کاظمی", "ساناز ولی‌زاده", "حامد جوادی", "نیکی صالحی", "ایمان بشیری",
     "مرجان شاکری", "یاسین بیگی", "سحر قلی‌زاده", "هوشنگ مختاری", "فروغ احمدی",
-    
-    // Limited Finglish names (10%)
-    "Mohammad Ahmadi", "Sara Rezaei", "Ali Hosseini", "Maryam Karimi", "Hassan Mousavi"
+    "جواد میرزایی", "غزاله کریمیان", "پوریا دادور", "شیرین ظریف", "آرش صمدی",
+    "بیتا مهرابی", "کیانوش احمدپور", "نگین هاشمی", "فراز مرتضوی", "یسنا فرامرزی"
   ];
+
+  // Limited Finglish names (about 10% of total)
+  const finglishNames = [
+    "Mohammad A.", "Sara R.", "Ali H.", "Maryam K.", "Hassan M.",
+    "Zahra A.", "Reza N.", "Fateme S.", "Amir J.", "Mina Sh."
+  ];
+
+  // Combine names with proper ratio
+  const allNames = [...persianNames, ...finglishNames];
 
   const generateTimestamp = () => {
     const timeOptions = [
       "همین الان",
-      "همین الان", 
       "چند ثانیه پیش",
-      "چند ثانیه پیش",
-      "۱ دقیقه پیش"
+      "۱ دقیقه پیش",
+      "۲ دقیقه پیش"
     ];
     return timeOptions[Math.floor(Math.random() * timeOptions.length)];
   };
 
   const generateRandomNotification = () => {
-    const randomName = names[Math.floor(Math.random() * names.length)];
+    const randomName = allNames[Math.floor(Math.random() * allNames.length)];
     
     // 70% course activities, 30% test activities
     const isCourse = Math.random() < 0.7;
@@ -93,8 +101,8 @@ const FloatingNotification = () => {
 
   useEffect(() => {
     const showNotification = () => {
-      // Strict limit to 2 notifications max
-      if (notifications.length >= 2) {
+      // Strict limit to 1 notification max (2 only briefly during transition)
+      if (notifications.length >= 1) {
         return;
       }
 
@@ -102,18 +110,18 @@ const FloatingNotification = () => {
       setNotifications(prev => [...prev, notification]);
       setNextId(prev => prev + 1);
 
-      // Auto remove after 4 seconds
+      // Auto remove after 5 seconds
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
-      }, 4000);
+      }, 5000);
     };
 
-    // Show first notification after 5 seconds
-    const firstTimeout = setTimeout(showNotification, 5000);
+    // Show first notification after 8 seconds
+    const firstTimeout = setTimeout(showNotification, 8000);
 
-    // Show subsequent notifications with random interval (15-30 seconds)
+    // Show subsequent notifications with longer intervals (30-60 seconds)
     const scheduleNext = () => {
-      const randomInterval = Math.random() * (30000 - 15000) + 15000; // 15-30 seconds
+      const randomInterval = Math.random() * (60000 - 30000) + 30000; // 30-60 seconds
       setTimeout(() => {
         showNotification();
         scheduleNext(); // Schedule the next one
@@ -136,7 +144,7 @@ const FloatingNotification = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-xs">
+    <div className={`fixed bottom-4 right-4 z-50 space-y-2 ${isMobile ? 'max-w-[280px]' : 'max-w-xs'}`}>
       <AnimatePresence mode="popLayout">
         {notifications.map((notification) => (
           <motion.div
@@ -151,15 +159,15 @@ const FloatingNotification = () => {
               stiffness: 300,
               damping: 30
             }}
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-xl transition-all duration-300 group cursor-pointer text-sm"
+            className={`bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-xl transition-all duration-300 group cursor-pointer ${isMobile ? 'p-2' : 'p-3'}`}
             onClick={() => handleNotificationClick(notification.link)}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug mb-1 line-clamp-2">
+                <p className={`font-medium text-gray-900 dark:text-gray-100 leading-snug mb-1 line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   {notification.message}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{notification.timestamp}</p>
+                <p className={`text-gray-500 dark:text-gray-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>{notification.timestamp}</p>
               </div>
               <button
                 onClick={(e) => {
@@ -168,7 +176,7 @@ const FloatingNotification = () => {
                 }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                <X size={12} />
+                <X size={isMobile ? 10 : 12} />
               </button>
             </div>
           </motion.div>
