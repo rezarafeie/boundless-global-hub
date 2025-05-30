@@ -11,7 +11,7 @@ const Dashboard = () => {
     <MainLayout>
       <div className="min-h-screen">
         <EnhancedIframe
-          src="https://auth.rafiei.co/my-account"
+          src="https://auth.rafiei.co"
           title={translations.myAccount}
           style={{
             height: 'calc(100vh - 80px)',

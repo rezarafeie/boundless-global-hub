@@ -32,7 +32,7 @@ const FloatingNotification = () => {
   // Test activities (30% weight)
   const testActivities = [
     { text: "تست شخصیت کارآفرین را کامل کرد", link: "/assessment/personality" },
-    { text: "تست MBTI را تکمیل کرد", link: "/assessment/mbti" },
+    { text: "تست MBTI را تکمیل کرد", link: "/assessment/personality" },
     { text: "تست هوش مالی را انجام داد", link: "/assessment/financial" },
     { text: "تست هوش هیجانی را کامل کرد", link: "/assessment/emotional" },
     { text: "تست آینده‌نگری را تکمیل کرد", link: "/assessment/future" },
@@ -41,16 +41,25 @@ const FloatingNotification = () => {
     { text: "تست مهارت‌های رهبری را تکمیل کرد", link: "/assessment/leadership" }
   ];
   
-  // Expanded mix of Persian and Finglish names
+  // Enhanced mix of Persian names (90%) and limited Finglish names (10%)
   const names = [
+    // Persian names (majority - 90%)
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
     "لیلا حیدری", "احمد صادقی", "نسرین طاهری", "سعید رحیمی", "نیلوفر قاسمی",
     "داود کریمی", "شیدا حسنی", "بهرام نجفی", "آرزو محمدی", "کیوان رستمی",
-    "Reza M.", "Sara A.", "Ali K.", "Maryam R.", "Hassan N.",
-    "Zahra B.", "Ahmad S.", "Fateme H.", "Amir J.", "Mina Sh.",
-    "Leila H.", "Saeed R.", "Nilofar G.", "Behram N.", "Arezu M.",
-    "Keyvan R.", "Shida H.", "Mohammad A.", "Nasrin T.", "Davood K."
+    "پروین اسدی", "منصور ابراهیمی", "شکوفه ملکی", "رامین باقری", "ملیکا فرزام",
+    "هادی خسروی", "ندا عظیمی", "مجید پناهی", "زینب حکیمی", "ارسلان یوسفی",
+    "گلناز صفری", "فرید امینی", "نرگس بهرامی", "کامران سلطانی", "ژیلا روشن",
+    "مهدی ایرانی", "طاهره جهانی", "وحید فرهادی", "سوده کمالی", "پیمان درویش",
+    "الهام توکلی", "مصطفی نظری", "نازنین غلامی", "سامان رستگار", "مهناز خلیلی",
+    "فرهاد شمسی", "ریحانه تقوی", "کورش رضائی", "مرضیه افشار", "بابک محسنی",
+    "شبنم قربانی", "علیرضا زارعی", "پریسا مرادی", "محسن طالبی", "فریده ناصری",
+    "عباس کاظمی", "ساناز ولی‌زاده", "حامد جوادی", "نیکی صالحی", "ایمان بشیری",
+    "مرجان شاکری", "یاسین بیگی", "سحر قلی‌زاده", "هوشنگ مختاری", "فروغ احمدی",
+    
+    // Limited Finglish names (10%)
+    "Mohammad Ahmadi", "Sara Rezaei", "Ali Hosseini", "Maryam Karimi", "Hassan Mousavi"
   ];
 
   const generateTimestamp = () => {
@@ -93,13 +102,13 @@ const FloatingNotification = () => {
       setNotifications(prev => [...prev, notification]);
       setNextId(prev => prev + 1);
 
-      // Auto remove after 4 seconds (shorter duration)
+      // Auto remove after 4 seconds
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
       }, 4000);
     };
 
-    // Show first notification after 5 seconds (delay)
+    // Show first notification after 5 seconds
     const firstTimeout = setTimeout(showNotification, 5000);
 
     // Show subsequent notifications with random interval (15-30 seconds)
