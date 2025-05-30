@@ -61,15 +61,15 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Get watermark icon
   const getWatermarkIcon = () => {
     if (title.includes("اینستاگرام") || title.includes("Instagram")) {
-      return <Instagram size={120} className="text-pink-100 dark:text-pink-900/20" />;
+      return <Instagram size={100} className="text-gray-100 dark:text-gray-800/30" />;
     } else if (title.includes("ثروت") || title.includes("Wealth") || title.includes("غیرفعال") || title.includes("Passive")) {
-      return <DollarSign size={120} className="text-green-100 dark:text-green-900/20" />;
+      return <DollarSign size={100} className="text-gray-100 dark:text-gray-800/30" />;
     } else if (title.includes("متاورس") || title.includes("Metaverse")) {
-      return <Code size={120} className="text-purple-100 dark:text-purple-900/20" />;
+      return <Code size={100} className="text-gray-100 dark:text-gray-800/30" />;
     } else if (title.includes("بدون مرز") || title.includes("Boundless")) {
-      return <GraduationCap size={120} className="text-blue-100 dark:text-blue-900/20" />;
+      return <GraduationCap size={100} className="text-gray-100 dark:text-gray-800/30" />;
     } else {
-      return <BookOpen size={120} className="text-gray-100 dark:text-gray-900/20" />;
+      return <BookOpen size={100} className="text-gray-100 dark:text-gray-800/30" />;
     }
   };
 
@@ -148,15 +148,15 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
   return (
     <Card 
-      className={`group h-full flex flex-col cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 animate-fade-in border-0 ${
+      className={`group h-full flex flex-col cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-fade-in border ${
         isPaid 
-          ? "bg-gradient-to-br from-gray-900 via-purple-900 to-black dark:from-gray-800 dark:via-purple-800 dark:to-gray-900"
-          : "bg-gradient-to-br from-blue-50 via-green-50 to-cyan-50 dark:from-blue-900/20 dark:via-green-900/20 dark:to-cyan-900/20"
+          ? "bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900 dark:to-gray-900 border-gray-200 dark:border-gray-700"
+          : "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-700"
       }`}
       onClick={handleCardClick}
     >
       {/* Watermark Background */}
-      <div className="absolute top-4 left-4 opacity-30">
+      <div className="absolute top-4 right-4 opacity-20">
         {getWatermarkIcon()}
       </div>
       
@@ -164,10 +164,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
       <div className="relative p-6 pb-4 z-10">
         <div className="flex justify-center mb-4">
           <Badge
-            className={`transform rotate-1 px-4 py-2 text-sm font-bold shadow-lg ${
+            className={`px-4 py-2 text-sm font-bold shadow-sm ${
               isPaid 
-                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-400"
-                : "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-green-400"
+                ? "bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900"
+                : "bg-emerald-600 text-white dark:bg-emerald-500"
             }`}
           >
             {isPaid ? (
@@ -185,20 +185,20 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </div>
         
         <div className="flex items-start gap-3 mb-3">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${
-            isPaid ? "bg-white/10 backdrop-blur-sm" : "bg-white shadow-sm"
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+            isPaid ? "bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700" : "bg-white dark:bg-emerald-800 border border-emerald-200 dark:border-emerald-600"
           }`}>
             {getCourseIcon()}
           </div>
           <div className="flex-1">
             <h3 className={`text-xl font-bold mb-1 line-clamp-2 ${
-              isPaid ? "text-white" : "text-gray-900 dark:text-white"
+              isPaid ? "text-slate-900 dark:text-slate-100" : "text-emerald-900 dark:text-emerald-100"
             }`}>
               {title}
             </h3>
             {englishTitle && (
               <p className={`text-sm ${
-                isPaid ? "text-purple-200" : "text-gray-600 dark:text-gray-400"
+                isPaid ? "text-slate-600 dark:text-slate-400" : "text-emerald-700 dark:text-emerald-300"
               }`}>
                 {englishTitle}
               </p>
@@ -211,7 +211,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         {/* Fixed height description */}
         <div className="h-16 mb-4">
           <p className={`text-sm leading-relaxed line-clamp-3 ${
-            isPaid ? "text-purple-100" : "text-gray-700 dark:text-gray-300"
+            isPaid ? "text-slate-700 dark:text-slate-300" : "text-emerald-800 dark:text-emerald-200"
           }`}>
             {getStandardizedDescription(description)}
           </p>
@@ -220,17 +220,17 @@ const CourseCard: React.FC<CourseCardProps> = ({
         {/* Benefits section */}
         <div className="space-y-3 mb-4 flex-grow min-h-[100px]">
           <div className="flex items-start gap-2 text-sm">
-            <CheckCircle size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
+            <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
             <span className={`line-clamp-2 leading-relaxed ${
-              isPaid ? "text-purple-100" : "text-gray-700 dark:text-gray-200"
+              isPaid ? "text-slate-700 dark:text-slate-300" : "text-emerald-800 dark:text-emerald-200"
             }`}>
               {benefits}
             </span>
           </div>
           <div className="flex items-start gap-2 text-sm">
-            <ArrowLeft size={14} className="text-blue-400 mt-0.5 flex-shrink-0 rtl:rotate-180" />
+            <ArrowLeft size={14} className="text-blue-500 mt-0.5 flex-shrink-0 rtl:rotate-180" />
             <span className={`line-clamp-2 leading-relaxed ${
-              isPaid ? "text-purple-100" : "text-gray-700 dark:text-gray-200"
+              isPaid ? "text-slate-700 dark:text-slate-300" : "text-emerald-800 dark:text-emerald-200"
             }`}>
               {outcome}
             </span>
@@ -240,13 +240,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
         {/* Instructor info */}
         {instructor && (
           <div className="flex items-center gap-2 text-sm mb-4">
-            <User size={12} className={isPaid ? "text-purple-200" : "text-gray-500"} />
-            <span className={isPaid ? "text-purple-200" : "text-gray-500 dark:text-gray-400"}>
+            <User size={12} className={isPaid ? "text-slate-500 dark:text-slate-400" : "text-emerald-600 dark:text-emerald-400"} />
+            <span className={isPaid ? "text-slate-600 dark:text-slate-400" : "text-emerald-700 dark:text-emerald-300"}>
               {instructor}
             </span>
             {level && (
               <Badge variant="outline" className={`text-xs ${
-                isPaid ? "border-purple-300 text-purple-200" : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                isPaid ? "border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300" : "border-emerald-300 text-emerald-700 dark:border-emerald-600 dark:text-emerald-300"
               }`}>
                 {level}
               </Badge>
@@ -255,9 +255,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
         )}
         
         {/* Enrollment count */}
-        <div className="flex items-center gap-2 text-xs mb-4 pb-4 border-b border-gray-200/20">
-          <Users size={12} className={isPaid ? "text-purple-300" : "text-gray-500"} />
-          <span className={isPaid ? "text-purple-300" : "text-gray-600 dark:text-gray-400"}>
+        <div className="flex items-center gap-2 text-xs mb-4 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
+          <Users size={12} className={isPaid ? "text-slate-500 dark:text-slate-400" : "text-emerald-600 dark:text-emerald-400"} />
+          <span className={isPaid ? "text-slate-600 dark:text-slate-400" : "text-emerald-700 dark:text-emerald-300"}>
             {enrollmentCount.toLocaleString()} دانشجو تاکنون
           </span>
         </div>
@@ -266,10 +266,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
       <CardFooter className="p-6 pt-0 z-10">
         <Button 
           onClick={handleCtaClick}
-          className={`w-full text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl text-sm font-bold py-3 ${
+          className={`w-full text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md text-sm font-bold py-3 ${
             isPaid 
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              ? "bg-slate-800 hover:bg-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+              : "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
           }`}
         >
           <Sparkles size={16} className="ml-2" />

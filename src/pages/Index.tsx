@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap, BookOpenCheck } from "lucide-react";
 import QuickAccess from "@/components/QuickAccess";
 import RandomHeadlineGenerator from "@/components/RandomHeadlineGenerator";
-import LiveSection from "@/components/LiveSection";
+import MediaSection from "@/components/MediaSection";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -95,10 +95,8 @@ const Index = () => {
       {/* Quick Access Section */}
       <QuickAccess />
       
-      {/* Live Section */}
-      <div id="live-section">
-        <LiveSection />
-      </div>
+      {/* Media Section */}
+      <MediaSection />
       
       {/* AI Assistant CTA */}
       <section className="py-16 bg-background">

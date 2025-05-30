@@ -19,15 +19,18 @@ const Header = () => {
     ? "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png" // white logo for dark mode
     : "/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png"; // black logo for light mode
 
-  // Add live icon to navigation items after line with Dashboard
+  // Updated navigation items - removed About Us and Contact Us, modified Live
   const navigationItems = [
     { name: translations.home, href: "/" },
     { name: translations.courses, href: "/courses" },
     { name: translations.assessmentCenter, href: "/assessment-center" },
     { name: translations.magazine, href: "/blog" },
-    { name: "📺 Live", href: "/#live-section", className: "text-red-500 animate-pulse" },
-    { name: translations.aboutUs, href: "/about" },
-    { name: translations.contact, href: "/contact" }
+    { 
+      name: "🔴", 
+      href: "/live", 
+      className: "text-red-500 hover:text-red-600 transition-colors",
+      hoverText: "هم اکنون آکادمی رفیعی"
+    }
   ];
 
   return (
@@ -59,13 +62,19 @@ const Header = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
           {navigationItems.map((item, index) => (
-            <Link 
-              key={index} 
-              to={item.href} 
-              className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary"
-            >
-              {item.name}
-            </Link>
+            <div key={index} className="relative group">
+              <Link 
+                to={item.href} 
+                className={`text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary ${item.className || ''}`}
+              >
+                {item.name}
+              </Link>
+              {item.hoverText && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                  {item.hoverText}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
         
@@ -145,7 +154,7 @@ const Header = () => {
                       className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      {item.name}
+                      {item.hoverText || item.name}
                     </Link>
                   ))}
                 </nav>
