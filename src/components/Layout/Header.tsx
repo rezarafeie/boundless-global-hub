@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ const Header = () => {
     { name: translations.assessmentCenter, href: "/assessment-center" },
     { name: translations.magazine, href: "/blog" },
     { name: "📺 Live", href: "/#live-section", className: "text-red-500 animate-pulse" },
-    { name: translations.about, href: "/about" },
+    { name: translations.aboutUs, href: "/about" },
     { name: translations.contact, href: "/contact" }
   ];
 
