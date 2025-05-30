@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,17 @@ const Header = () => {
   const logoSrc = isDarkMode 
     ? "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png" // white logo for dark mode
     : "/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png"; // black logo for light mode
+
+  // Add live icon to navigation items after line with Dashboard
+  const navigationItems = [
+    { name: translations.home, href: "/" },
+    { name: translations.courses, href: "/courses" },
+    { name: translations.assessmentCenter, href: "/assessment-center" },
+    { name: translations.magazine, href: "/blog" },
+    { name: "📺 Live", href: "/#live-section", className: "text-red-500 animate-pulse" },
+    { name: translations.about, href: "/about" },
+    { name: translations.contact, href: "/contact" }
+  ];
 
   return (
     <header className="fixed top-0 z-[10000] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:border-border/20">
@@ -47,21 +57,15 @@ const Header = () => {
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
-            {translations.home}
-          </Link>
-          <Link to="/courses" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
-            {language === "en" ? "Training Center" : "مرکز آموزش"}
-          </Link>
-          <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
-            {translations.assessmentCenter}
-          </Link>
-          <Link to="/mag" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
-            {language === "en" ? "Magazine" : "مجله"}
-          </Link>
-          <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
-            {language === "en" ? "Support" : "پشتیبانی"}
-          </Link>
+          {navigationItems.map((item, index) => (
+            <Link 
+              key={index} 
+              to={item.href} 
+              className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary"
+            >
+              {item.name}
+            </Link>
+          ))}
         </nav>
         
         <div className="flex items-center gap-3">
@@ -133,41 +137,16 @@ const Header = () => {
 
                 {/* Navigation Links */}
                 <nav className="flex flex-col space-y-4 py-6 flex-1">
-                  <Link 
-                    to="/" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {translations.home}
-                  </Link>
-                  <Link 
-                    to="/courses" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {language === "en" ? "Training Center" : "مرکز آموزش"}
-                  </Link>
-                  <Link 
-                    to="/assessment-center" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {translations.assessmentCenter}
-                  </Link>
-                  <Link 
-                    to="/mag" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {language === "en" ? "Magazine" : "مجله"}
-                  </Link>
-                  <Link 
-                    to="/support" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {language === "en" ? "Support" : "پشتیبانی"}
-                  </Link>
+                  {navigationItems.map((item, index) => (
+                    <Link 
+                      key={index} 
+                      to={item.href} 
+                      className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
                 </nav>
 
                 {/* Footer Actions */}
