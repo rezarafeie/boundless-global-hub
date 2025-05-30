@@ -34,7 +34,7 @@ const FloatingNotification = () => {
   // Test activities (30% weight)
   const testActivities = [
     { text: "تست شخصیت کارآفرین را کامل کرد", link: "/assessment/personality" },
-    { text: "تست MBTI را تکمیل کرد", link: "/assessment/personality" },
+    { text: "تست MBTI را تکمیل کرد", link: "/assessment/mbti" },
     { text: "تست هوش مالی را انجام داد", link: "/assessment/financial" },
     { text: "تست هوش هیجانی را کامل کرد", link: "/assessment/emotional" },
     { text: "تست آینده‌نگری را تکمیل کرد", link: "/assessment/future" },
@@ -43,7 +43,7 @@ const FloatingNotification = () => {
     { text: "تست مهارت‌های رهبری را تکمیل کرد", link: "/assessment/leadership" }
   ];
   
-  // Expanded Persian names with much more variety
+  // Extensive Persian names for maximum variety (90%)
   const persianNames = [
     "محمد احمدی", "سارا رضایی", "علی حسینی", "مریم کریمی", "حسن موسوی",
     "زهرا اکبری", "رضا نوری", "فاطمه صادقی", "امیر جعفری", "مینا شریفی",
@@ -59,16 +59,21 @@ const FloatingNotification = () => {
     "عباس کاظمی", "ساناز ولی‌زاده", "حامد جوادی", "نیکی صالحی", "ایمان بشیری",
     "مرجان شاکری", "یاسین بیگی", "سحر قلی‌زاده", "هوشنگ مختاری", "فروغ احمدی",
     "جواد میرزایی", "غزاله کریمیان", "پوریا دادور", "شیرین ظریف", "آرش صمدی",
-    "بیتا مهرابی", "کیانوش احمدپور", "نگین هاشمی", "فراز مرتضوی", "یسنا فرامرزی"
+    "بیتا مهرابی", "کیانوش احمدپور", "نگین هاشمی", "فراز مرتضوی", "یسنا فرامرزی",
+    "مریم میرزایی", "علی‌رضا کریمی", "زهره محمدی", "سارا صفرزاده", "حسین یوسفی",
+    "فاطمه حسینی", "رضا مرادی", "نیلوفر زارع", "امیرحسین نیری", "مونا جهانی",
+    "محمدرضا تقوی", "سمیه رستمی", "بهنام عباسی", "نسیم کریمیان", "آرمین جلالی"
   ];
 
-  // Limited Finglish names (about 10% of total)
+  // Limited Finglish names with more variety (10%)
   const finglishNames = [
     "Mohammad A.", "Sara R.", "Ali H.", "Maryam K.", "Hassan M.",
-    "Zahra A.", "Reza N.", "Fateme S.", "Amir J.", "Mina Sh."
+    "Zahra A.", "Reza N.", "Fateme S.", "Amir J.", "Mina Sh.",
+    "Ahmad R.", "Nasrin T.", "Saeed R.", "Nilofar Q.", "Kian R.",
+    "Parisa M.", "Mohsen T.", "Hamed J.", "Negar H.", "Farshad M."
   ];
 
-  // Combine names with proper ratio
+  // Combine names with proper ratio (90% Persian, 10% Finglish)
   const allNames = [...persianNames, ...finglishNames];
 
   const generateTimestamp = () => {
@@ -76,7 +81,8 @@ const FloatingNotification = () => {
       "همین الان",
       "چند ثانیه پیش",
       "۱ دقیقه پیش",
-      "۲ دقیقه پیش"
+      "۲ دقیقه پیش",
+      "۳ دقیقه پیش"
     ];
     return timeOptions[Math.floor(Math.random() * timeOptions.length)];
   };
@@ -101,7 +107,7 @@ const FloatingNotification = () => {
 
   useEffect(() => {
     const showNotification = () => {
-      // Strict limit to 1 notification max (2 only briefly during transition)
+      // Strict limit to max 1 notification at a time
       if (notifications.length >= 1) {
         return;
       }
@@ -110,18 +116,18 @@ const FloatingNotification = () => {
       setNotifications(prev => [...prev, notification]);
       setNextId(prev => prev + 1);
 
-      // Auto remove after 5 seconds
+      // Auto remove after 6 seconds
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== notification.id));
-      }, 5000);
+      }, 6000);
     };
 
-    // Show first notification after 8 seconds
-    const firstTimeout = setTimeout(showNotification, 8000);
+    // Show first notification after 15 seconds
+    const firstTimeout = setTimeout(showNotification, 15000);
 
-    // Show subsequent notifications with longer intervals (30-60 seconds)
+    // Show subsequent notifications with longer intervals (60-120 seconds)
     const scheduleNext = () => {
-      const randomInterval = Math.random() * (60000 - 30000) + 30000; // 30-60 seconds
+      const randomInterval = Math.random() * (120000 - 60000) + 60000; // 1-2 minutes
       setTimeout(() => {
         showNotification();
         scheduleNext(); // Schedule the next one
@@ -144,7 +150,7 @@ const FloatingNotification = () => {
   };
 
   return (
-    <div className={`fixed bottom-4 right-4 z-50 space-y-2 ${isMobile ? 'max-w-[280px]' : 'max-w-xs'}`}>
+    <div className={`fixed bottom-4 right-4 z-50 space-y-2 ${isMobile ? 'max-w-[240px] bottom-20' : 'max-w-xs'}`}>
       <AnimatePresence mode="popLayout">
         {notifications.map((notification) => (
           <motion.div

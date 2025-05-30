@@ -1,818 +1,257 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+
+import React from "react";
+import { useParams, Navigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Brain, 
-  Clock, 
-  HelpCircle, 
-  Users, 
-  Target, 
-  Award,
-  CheckCircle,
-  Play,
-  ArrowRight
-} from "lucide-react";
-import IframeModal from "@/components/IframeModal";
-import { motion } from "framer-motion";
-
-// Test data with detailed information for ALL tests
-const testData: Record<string, any> = {
-  "mbti": {
-    title: "تست شخصیت MBTI",
-    description: "شناخت نوع شخصیت و الگوهای رفتاری شما بر اساس تئوری مایرز-بریگز",
-    longDescription: "این تست بر اساس تئوری کارل یونگ و توسط کاترین بریگز و ایزابل مایرز توسعه یافته است. MBTI یکی از معتبرترین ابزارهای شناخت شخصیت در جهان محسوب می‌شود.",
-    category: "شخصیت",
-    duration: "۲۰ دقیقه",
-    questions: 60,
-    benefits: [
-      "شناخت عمیق نقاط قوت و ضعف شخصیتی",
-      "درک بهتر نحوه تعامل با دیگران",
-      "انتخاب مسیر شغلی مناسب",
-      "بهبود روابط بین فردی",
-      "افزایش اعتماد به نفس"
-    ],
-    features: [
-      "تحلیل ۱۶ نوع شخصیت",
-      "گزارش جامع و تفصیلی",
-      "توصیه‌های شغلی",
-      "راهنمای تعامل اجتماعی"
-    ],
-    whoFor: [
-      "افرادی که می‌خواهند خود را بهتر بشناسند",
-      "دانشجویان در حال انتخاب رشته",
-      "حرفه‌ای‌ها برای توسعه مهارت‌های کاری",
-      "مدیران برای بهبود مدیریت تیم"
-    ]
-  },
-  "disc": {
-    title: "تست DISC",
-    description: "ارزیابی سبک رفتاری و نحوه تعامل شما با دیگران",
-    longDescription: "مدل DISC یکی از ابزارهای محبوب برای درک انواع شخصیت و سبک‌های ارتباطی است که در محیط‌های کاری و شخصی بسیار مفید است.",
-    category: "شخصیت",
-    duration: "۱۵ دقیقه", 
-    questions: 40,
-    benefits: [
-      "شناخت سبک رهبری طبیعی شما",
-      "بهبود مهارت‌های ارتباطی",
-      "درک تفاوت‌های فردی در تیم",
-      "افزایش اثربخشی در کار گروهی"
-    ],
-    features: [
-      "تحلیل ۴ سبک اصلی رفتاری",
-      "راهنمای کاربردی برای محیط کار",
-      "نکات بهبود ارتباط",
-      "استراتژی‌های مدیریت استرس"
-    ],
-    whoFor: [
-      "مدیران و رهبران تیم",
-      "فروشندگان و متخصصان ارتباط",
-      "افراد شاغل در مشاغل تیمی",
-      "کسانی که می‌خواهند مهارت‌های اجتماعی خود را بهبود دهند"
-    ]
-  },
-  "mii": {
-    title: "تست هوش چندگانه MII",
-    description: "شناسایی انواع مختلف هوش و توانایی‌های ذهنی شما",
-    longDescription: "تست هوش چندگانه بر اساس تئوری هاوارد گاردنر طراحی شده و ۸ نوع مختلف هوش را در شما شناسایی می‌کند.",
-    category: "هوش",
-    duration: "۲۵ دقیقه",
-    questions: 80,
-    benefits: [
-      "شناخت نقاط قوت ذهنی شما",
-      "انتخاب روش‌های یادگیری مناسب",
-      "توسعه مهارت‌های خلاقیت",
-      "بهبود عملکرد تحصیلی و شغلی"
-    ],
-    features: [
-      "ارزیابی ۸ نوع هوش",
-      "نمودار توانایی‌های شما",
-      "پیشنهاد مسیرهای شغلی",
-      "راهنمای توسعه هوش"
-    ],
-    whoFor: [
-      "دانش‌آموزان و دانشجویان",
-      "والدین برای شناخت فرزندان",
-      "معلمان و مربیان",
-      "افراد در حال تغییر شغل"
-    ]
-  },
-  "ocq": {
-    title: "تست تعهد سازمانی OCQ",
-    description: "سنجش میزان تعهد و وفاداری شما نسبت به سازمان",
-    longDescription: "این تست میزان دلبستگی، تعهد و وفاداری کارکنان نسبت به سازمان خود را اندازه‌گیری می‌کند.",
-    category: "سازمانی",
-    duration: "۱۰ دقیقه",
-    questions: 24,
-    benefits: [
-      "ارزیابی میزان تعهد شغلی",
-      "شناخت عوامل انگیزشی",
-      "بهبود رضایت شغلی",
-      "توسعه وفاداری سازمانی"
-    ],
-    features: [
-      "سنجش سه بعد تعهد",
-      "تحلیل عوامل مؤثر",
-      "راهکارهای بهبود",
-      "مقایسه با استانداردها"
-    ],
-    whoFor: [
-      "کارکنان شاغل",
-      "مدیران منابع انسانی",
-      "مشاوران سازمانی",
-      "رهبران تیم"
-    ]
-  },
-  "msq": {
-    title: "تست رضایت شغلی MSQ",
-    description: "ارزیابی میزان رضایت شما از جنبه‌های مختلف کار",
-    longDescription: "پرسشنامه رضایت شغلی مینه‌سوتا ابزاری جامع برای سنجش رضایت از ابعاد مختلف محیط کار است.",
-    category: "شغلی",
-    duration: "۱۵ دقیقه",
-    questions: 100,
-    benefits: [
-      "شناسایی منابع رضایت شغلی",
-      "بهبود عملکرد کاری",
-      "کاهش استرس شغلی",
-      "انتخاب شغل مناسب"
-    ],
-    features: [
-      "بررسی ۲۰ عامل رضایت",
-      "نمره کلی و جزئی",
-      "مقایسه با گروه‌های شغلی",
-      "پیشنهادات بهبود"
-    ],
-    whoFor: [
-      "کارکنان و کارگران",
-      "مشاوران شغلی",
-      "مدیران HR",
-      "افراد نارضی از کار"
-    ]
-  },
-  "eq": {
-    title: "تست هوش عاطفی EQ",
-    description: "سنجش توانایی درک و مدیریت احساسات خود و دیگران",
-    longDescription: "تست هوش عاطفی ابزاری مدرن برای سنجش توانایی‌های عاطفی و اجتماعی افراد است.",
-    category: "عاطفی",
-    duration: "۲۰ دقیقه",
-    questions: 70,
-    benefits: [
-      "بهبود روابط بین‌فردی",
-      "مدیریت بهتر استرس",
-      "افزایش مهارت‌های رهبری",
-      "توسعه همدلی و درک"
-    ],
-    features: [
-      "پنج حوزه هوش عاطفی",
-      "نمودار مهارت‌های EQ",
-      "راهکارهای عملی",
-      "برنامه توسعه فردی"
-    ],
-    whoFor: [
-      "مدیران و رهبران",
-      "مشاوران و درمانگران",
-      "معلمان و والدین",
-      "افراد در مشاغل خدماتی"
-    ]
-  },
-  "raven": {
-    title: "تست هوش ریون",
-    description: "سنجش هوش غیرکلامی و توانایی حل مسئله",
-    longDescription: "تست ماتریس‌های پیشرونده ریون ابزاری معتبر برای سنجش هوش عمومی و توانایی تفکر منطقی است.",
-    category: "هوش",
-    duration: "۳۰ دقیقه",
-    questions: 60,
-    benefits: [
-      "سنجش دقیق هوش عمومی",
-      "ارزیابی بدون تأثیر فرهنگ",
-      "شناخت توانایی حل مسئله",
-      "پیش‌بینی موفقیت تحصیلی"
-    ],
-    features: [
-      "بدون وابستگی به زبان",
-      "استاندارد بین‌المللی",
-      "نمره هوشی دقیق",
-      "مقایسه با جمعیت"
-    ],
-    whoFor: [
-      "دانش‌آموزان و دانشجویان",
-      "متقاضیان شغل",
-      "روانشناسان",
-      "مشاوران تحصیلی"
-    ]
-  },
-  "cattell-iq": {
-    title: "تست هوش کتل فرم B",
-    description: "ارزیابی جامع هوش عمومی و توانایی‌های شناختی",
-    longDescription: "آزمون هوش کتل یکی از معتبرترین ابزارهای سنجش هوش عمومی و توانایی‌های شناختی است.",
-    category: "هوش",
-    duration: "۴۵ دقیقه",
-    questions: 50,
-    benefits: [
-      "سنجش جامع هوش عمومی",
-      "ارزیابی سرعت پردازش",
-      "شناخت استعدادهای ذهنی",
-      "راهنمایی تحصیلی و شغلی"
-    ],
-    features: [
-      "چهار خرده‌آزمون متنوع",
-      "نمره استاندارد IQ",
-      "تحلیل نقاط قوت",
-      "مقایسه سنی"
-    ],
-    whoFor: [
-      "دانشجویان رشته‌های علمی",
-      "متقاضیان مشاغل فنی",
-      "محققان و دانشمندان",
-      "مشاوران روانشناس"
-    ]
-  },
-  "cattell-a": {
-    title: "تست هوش کتل فرم A",
-    description: "نسخه جایگزین آزمون هوش کتل برای سنجش هوش عمومی",
-    longDescription: "آزمون هوش کتل فرم A نسخه موازی فرم B است و برای ارزیابی مجدد یا تحقیقات استفاده می‌شود.",
-    category: "هوش",
-    duration: "۴۵ دقیقه",
-    questions: 50,
-    benefits: [
-      "سنجش جامع هوش عمومی",
-      "ارزیابی سرعت پردازش",
-      "شناخت استعدادهای ذهنی",
-      "راهنمایی تحصیلی و شغلی"
-    ],
-    features: [
-      "چهار خرده‌آزمون متنوع",
-      "نمره استاندارد IQ",
-      "تحلیل نقاط قوت",
-      "مقایسه سنی"
-    ],
-    whoFor: [
-      "دانشجویان رشته‌های علمی",
-      "متقاضیان مشاغل فنی",
-      "محققان و دانشمندان",
-      "مشاوران روانشناس"
-    ]
-  },
-  "csei": {
-    title: "تست عزت نفس کوپراسمیت",
-    description: "ارزیابی میزان اعتماد به نفس و ارزش‌گذاری خود",
-    longDescription: "پرسشنامه عزت نفس کوپراسمیت ابزاری معتبر برای سنجش میزان اعتماد به نفس و خودپنداره مثبت است.",
-    category: "شخصیت",
-    duration: "۱۰ دقیقه",
-    questions: 58,
-    benefits: [
-      "شناخت سطح عزت نفس",
-      "تقویت اعتماد به نفس",
-      "بهبود خودپنداره",
-      "افزایش انگیزه پیشرفت"
-    ],
-    features: [
-      "چهار حوزه عزت نفس",
-      "نمره کلی و جزئی",
-      "شناسایی نقاط ضعف",
-      "برنامه بهبود"
-    ],
-    whoFor: [
-      "نوجوانان و جوانان",
-      "افراد با اضطراب اجتماعی",
-      "مشاوران روانشناختی",
-      "معلمان و والدین"
-    ]
-  },
-  "hii": {
-    title: "تست علایق شغلی هالند",
-    description: "شناسایی علایق شغلی و مسیر شغلی مناسب",
-    longDescription: "تست علایق شغلی هالند بر اساس تئوری شش نوع شخصیت و محیط‌های شغلی طراحی شده است.",
-    category: "شغلی",
-    duration: "۱۵ دقیقه",
-    questions: 84,
-    benefits: [
-      "انتخاب رشته مناسب",
-      "شناخت مشاغل متناسب",
-      "افزایش رضایت شغلی",
-      "برنامه‌ریزی مسیر شغلی"
-    ],
-    features: [
-      "شش نوع شخصیت RIASEC",
-      "فهرست مشاغل پیشنهادی",
-      "تحلیل محیط کاری",
-      "راهنمای انتخاب رشته"
-    ],
-    whoFor: [
-      "دانش‌آموزان آخر دبیرستان",
-      "دانشجویان تردیدی",
-      "افراد در حال تغییر شغل",
-      "مشاوران تحصیلی"
-    ]
-  },
-  "16pf": {
-    title: "تست شخصیت 16PF کتل",
-    description: "بررسی جامع ۱۶ عامل اصلی شخصیت",
-    longDescription: "پرسشنامه 16PF کتل یکی از جامع‌ترین ابزارهای سنجش شخصیت است که ۱۶ بعد اصلی شخصیت را بررسی می‌کند.",
-    category: "شخصیت",
-    duration: "۳۰ دقیقه",
-    questions: 185,
-    benefits: [
-      "شناخت عمیق ویژگی‌های شخصیتی",
-      "پیش‌بینی رفتار در موقعیت‌ها",
-      "بهبود خودآگاهی",
-      "راهنمایی در انتخاب‌های زندگی"
-    ],
-    features: [
-      "۱۶ عامل اولیه شخصیت",
-      "پنج عامل کلی",
-      "پروفایل شخصیتی کامل",
-      "تفسیر تخصصی"
-    ],
-    whoFor: [
-      "روانشناسان بالینی",
-      "مشاوران ازدواج",
-      "متخصصان HR",
-      "محققان روانشناسی"
-    ]
-  },
-  "tps": {
-    title: "تست اهمال‌کاری تاکمن",
-    description: "سنجش میزان تمایل به تعویق انداختن کارها",
-    longDescription: "مقیاس اهمال‌کاری تاکمن ابزاری کوتاه و دقیق برای سنجش میزان تعلل و اهمال‌کاری افراد است.",
-    category: "رفتاری",
-    duration: "۵ دقیقه",
-    questions: 16,
-    benefits: [
-      "شناخت الگوهای تعلل",
-      "بهبود مدیریت زمان",
-      "افزایش بهره‌وری",
-      "کاهش استرس تکالیف"
-    ],
-    features: [
-      "سنجش سریع و دقیق",
-      "نمره استاندارد",
-      "راهکارهای عملی",
-      "برنامه خودکنترلی"
-    ],
-    whoFor: [
-      "دانشجویان",
-      "کارمندان اداری",
-      "مدیران پروژه",
-      "افراد با مشکل تعلل"
-    ]
-  },
-  "hpi": {
-    title: "تست کمال‌گرایی هیل",
-    description: "ارزیابی انواع مختلف کمال‌گرایی و تأثیر آن بر زندگی",
-    longDescription: "مقیاس کمال‌گرایی هیل انواع مختلف کمال‌گرایی سازنده و مخرب را در افراد شناسایی می‌کند.",
-    category: "شخصیت",
-    duration: "۱۰ دقیقه",
-    questions: 59,
-    benefits: [
-      "تشخیص نوع کمال‌گرایی",
-      "کاهش اضطراب عملکرد",
-      "بهبود رضایت از زندگی",
-      "تعادل در انتظارات"
-    ],
-    features: [
-      "سه نوع کمال‌گرایی",
-      "تحلیل مزایا و معایب",
-      "راهبردهای تعدیل",
-      "برنامه خودمراقبتی"
-    ],
-    whoFor: [
-      "دانشجویان پزشکی و مهندسی",
-      "ورزشکاران حرفه‌ای",
-      "هنرمندان و نویسندگان",
-      "افراد با اضطراب عملکرد"
-    ]
-  },
-  "hems": {
-    title: "تست انگیزش تحصیلی هارتر",
-    description: "سنجش انگیزه و علاقه به یادگیری و تحصیل",
-    longDescription: "مقیاس انگیزش تحصیلی هارتر انگیزه درونی و بیرونی دانش‌آموزان را در فرآیند یادگیری بررسی می‌کند.",
-    category: "تحصیلی",
-    duration: "۸ دقیقه",
-    questions: 30,
-    benefits: [
-      "شناخت منابع انگیزشی",
-      "بهبود عملکرد تحصیلی",
-      "افزایش علاقه به یادگیری",
-      "کاهش فرسودگی تحصیلی"
-    ],
-    features: [
-      "انگیزه درونی و بیرونی",
-      "پنج حوزه انگیزشی",
-      "راهکارهای تقویت",
-      "برنامه مطالعه"
-    ],
-    whoFor: [
-      "دانش‌آموزان دبیرستان",
-      "دانشجویان دانشگاه",
-      "معلمان و اساتید",
-      "والدین نگران"
-    ]
-  },
-  "mmtic": {
-    title: "تست MBTI کودکان",
-    description: "نسخه ویژه کودکان برای شناخت شخصیت",
-    longDescription: "MMTIC نسخه تعدیل‌شده MBTI برای کودکان و نوجوانان است که با زبان و مثال‌های مناسب سن طراحی شده.",
-    category: "کودکان",
-    duration: "۱۵ دقیقه",
-    questions: 40,
-    benefits: [
-      "شناخت استعدادهای کودک",
-      "راهنمایی روش‌های یادگیری",
-      "بهبود ارتباط والد-فرزند",
-      "توسعه اعتماد به نفس"
-    ],
-    features: [
-      "مناسب سنین ۷-۱۷ سال",
-      "زبان ساده و قابل فهم",
-      "مثال‌های کودکانه",
-      "راهنمای والدین"
-    ],
-    whoFor: [
-      "کودکان ۷ تا ۱۷ سال",
-      "والدین و خانواده‌ها",
-      "مشاوران مدرسه",
-      "روانشناسان کودک"
-    ]
-  },
-  "mhs": {
-    title: "تست امید میلر",
-    description: "سنجش میزان امیدواری و نگرش مثبت به آینده",
-    longDescription: "مقیاس امید میلر میزان امیدواری و انتظارات مثبت افراد نسبت به آینده را اندازه‌گیری می‌کند.",
-    category: "روانی",
-    duration: "۵ دقیقه",
-    questions: 48,
-    benefits: [
-      "افزایش امیدواری",
-      "تقویت انگیزه زندگی",
-      "بهبود سلامت روان",
-      "مقاومت در برابر مشکلات"
-    ],
-    features: [
-      "چهار بعد امید",
-      "نمره کلی امیدواری",
-      "راهبردهای تقویت",
-      "برنامه مثبت‌اندیشی"
-    ],
-    whoFor: [
-      "افراد در بحران",
-      "بیماران مزمن",
-      "مشاوران و درمانگران",
-      "هر کس با ناامیدی"
-    ]
-  },
-  "iat": {
-    title: "تست اعتیاد اینترنتی یانگ",
-    description: "ارزیابی میزان وابستگی به اینترنت و فضای مجازی",
-    longDescription: "آزمون اعتیاد اینترنتی یانگ معتبرترین ابزار سنجش میزان وابستگی و اعتیاد به اینترنت است.",
-    category: "رفتاری",
-    duration: "۵ دقیقه",
-    questions: 20,
-    benefits: [
-      "تشخیص زودهنگام اعتیاد",
-      "کنترل زمان اینترنت",
-      "بهبود کیفیت زندگی",
-      "افزایش تعاملات واقعی"
-    ],
-    features: [
-      "پنج سطح استفاده",
-      "هشدارهای زودهنگام",
-      "راهکارهای کنترل",
-      "برنامه کاهش تدریجی"
-    ],
-    whoFor: [
-      "نوجوانان و جوانان",
-      "والدین نگران",
-      "دانشجویان",
-      "کاربران پرمصرف اینترنت"
-    ]
-  },
-  "moci": {
-    title: "تست وسواس فکری-عملی",
-    description: "سنجش نشانه‌های اختلال وسواس فکری و عملی",
-    longDescription: "فهرست وسواس مادزلی (MOCI) ابزاری استاندارد برای سنجش نشانه‌های اختلال وسواس فکری-عملی است.",
-    category: "روانی",
-    duration: "۱۰ دقیقه",
-    questions: 30,
-    benefits: [
-      "تشخیص زودهنگام OCD",
-      "سنجش شدت نشانه‌ها",
-      "راهنمایی درمانی",
-      "پیگیری پیشرفت"
-    ],
-    features: [
-      "چهار نوع وسواس",
-      "نمره شدت کلی",
-      "تحلیل تخصصی",
-      "راهنمای ارجاع"
-    ],
-    whoFor: [
-      "افراد مشکوک به OCD",
-      "روانپزشکان",
-      "روانشناسان بالینی",
-      "خانواده‌های درگیر"
-    ]
-  },
-  "ohi": {
-    title: "تست شادی آکسفورد",
-    description: "ارزیابی میزان شادی و رضایت از زندگی",
-    longDescription: "مقیاس شادی آکسفورد یکی از معتبرترین ابزارهای سنجش شادی و بهزیستی روانشناختی است.",
-    category: "روانی",
-    duration: "۱۰ دقیقه",
-    questions: 29,
-    benefits: [
-      "سنجش سطح شادی",
-      "شناخت منابع رضایت",
-      "بهبود کیفیت زندگی",
-      "افزایش بهزیستی"
-    ],
-    features: [
-      "نمره شادی کلی",
-      "مقایسه با جمعیت",
-      "راهکارهای افزایش شادی",
-      "برنامه زندگی شاد"
-    ],
-    whoFor: [
-      "افراد افسرده",
-      "کسانی با کم‌حوصلگی",
-      "مشاوران مثبت‌گرا",
-      "هر کس خواهان شادی"
-    ]
-  },
-  "slfs": {
-    title: "تست تنهایی اجتماعی",
-    description: "سنجش احساس تنهایی و انزوای اجتماعی",
-    longDescription: "مقیاس تنهایی اجتماعی میزان احساس انزوا و تنهایی افراد در روابط اجتماعی را بررسی می‌کند.",
-    category: "اجتماعی",
-    duration: "۸ دقیقه",
-    questions: 20,
-    benefits: [
-      "شناخت علل تنهایی",
-      "بهبود مهارت‌های اجتماعی",
-      "گسترش شبکه دوستان",
-      "افزایش احساس تعلق"
-    ],
-    features: [
-      "سه نوع تنهایی",
-      "تحلیل علل",
-      "راهکارهای عملی",
-      "برنامه اجتماعی‌شدن"
-    ],
-    whoFor: [
-      "افراد منزوی",
-      "دانشجویان تازه‌وارد",
-      "مهاجران",
-      "سالمندان تنها"
-    ]
-  },
-  "ept": {
-    title: "تست شخصیت کارآفرینی",
-    description: "ارزیابی ویژگی‌های کارآفرینی و پتانسیل کسب‌وکار",
-    longDescription: "این تست ویژگی‌های شخصیتی لازم برای موفقیت در کارآفرینی و راه‌اندازی کسب‌وکار را بررسی می‌کند.",
-    category: "کسب‌وکار",
-    duration: "۱۵ دقیقه",
-    questions: 50,
-    benefits: [
-      "شناخت پتانسیل کارآفرینی",
-      "ارزیابی ریسک‌پذیری",
-      "توسعه مهارت‌های کسب‌وکار",
-      "راهنمایی استارتاپ"
-    ],
-    features: [
-      "هفت ویژگی کارآفرینی",
-      "نمره پتانسیل کلی",
-      "نقاط قوت و ضعف",
-      "برنامه توسعه"
-    ],
-    whoFor: [
-      "علاقه‌مندان به کسب‌وکار",
-      "دانشجویان مدیریت",
-      "استارتاپی‌ها",
-      "سرمایه‌گذاران"
-    ]
-  },
-  "boundless": {
-    title: "تست مسیر هوشمند",
-    description: "راهنمای انتخاب مسیر تحصیلی و شغلی مناسب",
-    longDescription: "تست مسیر هوشمند با ترکیب علایق، استعدادها و شخصیت، بهترین مسیر تحصیلی و شغلی را پیشنهاد می‌دهد.",
-    category: "شغلی",
-    duration: "۲۰ دقیقه",
-    questions: 60,
-    benefits: [
-      "انتخاب رشته مناسب",
-      "برنامه‌ریزی مسیر شغلی",
-      "شناخت استعدادهای پنهان",
-      "راهنمایی جامع آینده"
-    ],
-    features: [
-      "تحلیل چندبعدی",
-      "پیشنهاد رشته‌ها",
-      "مسیرهای شغلی",
-      "برنامه عملی"
-    ],
-    whoFor: [
-      "دانش‌آموزان کنکوری",
-      "دانشجویان مردد",
-      "افراد در تغییر مسیر",
-      "مشاوران تحصیلی"
-    ]
-  }
-};
+import { Clock, Users, Award, TrendingUp, CheckCircle, Brain, Heart, DollarSign, Lightbulb, Target, BarChart3 } from "lucide-react";
 
 const TestLanding = () => {
   const { slug } = useParams();
-  const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const testInfo = slug ? testData[slug] : null;
+  // Test data configuration
+  const tests = {
+    personality: {
+      title: "تست شخصیت کارآفرین",
+      englishTitle: "Entrepreneur Personality Test",
+      description: "شخصیت کارآفرینی خود را بشناسید و نقاط قوت و ضعف خود را کشف کنید",
+      icon: <Target className="text-blue-500" size={24} />,
+      duration: "۱۰ دقیقه",
+      questions: "۲۵ سوال",
+      participants: "۵,۲۳۰",
+      features: [
+        "تحلیل کامل شخصیت کارآفرینی",
+        "شناسایی نقاط قوت و ضعف",
+        "پیشنهادات بهبود عملکرد",
+        "گزارش تفصیلی نتایج"
+      ],
+      color: "blue"
+    },
+    mbti: {
+      title: "تست MBTI",
+      englishTitle: "Myers-Briggs Type Indicator",
+      description: "نوع شخصیت خود را بر اساس مدل معتبر MBTI کشف کنید",
+      icon: <Brain className="text-purple-500" size={24} />,
+      duration: "۱۵ دقیقه",
+      questions: "۶۰ سوال",
+      participants: "۸,۱۲۰",
+      features: [
+        "تعیین دقیق نوع شخصیت MBTI",
+        "توضیح کامل ویژگی‌های شخصیتی",
+        "پیشنهادات شغلی مناسب",
+        "راهنمای بهبود روابط"
+      ],
+      color: "purple"
+    },
+    financial: {
+      title: "تست هوش مالی",
+      englishTitle: "Financial Intelligence Test",
+      description: "سطح دانش و هوش مالی خود را ارزیابی کنید",
+      icon: <DollarSign className="text-green-500" size={24} />,
+      duration: "۱۲ دقیقه",
+      questions: "۳۰ سوال",
+      participants: "۳,۸۹۰",
+      features: [
+        "ارزیابی دانش مالی شخصی",
+        "تحلیل نگرش مالی",
+        "پیشنهادات بهبود وضعیت مالی",
+        "راهنمای سرمایه‌گذاری"
+      ],
+      color: "green"
+    },
+    emotional: {
+      title: "تست هوش هیجانی",
+      englishTitle: "Emotional Intelligence Test",
+      description: "سطح هوش هیجانی و توانایی مدیریت احساسات خود را بسنجید",
+      icon: <Heart className="text-red-500" size={24} />,
+      duration: "۱۰ دقیقه",
+      questions: "۲۰ سوال",
+      participants: "۶,۷۵۰",
+      features: [
+        "ارزیابی هوش هیجانی",
+        "تحلیل مهارت‌های اجتماعی",
+        "راهنمای بهبود روابط",
+        "تکنیک‌های مدیریت استرس"
+      ],
+      color: "red"
+    },
+    future: {
+      title: "تست آینده‌نگری",
+      englishTitle: "Future Vision Test",
+      description: "توانایی برنامه‌ریزی و چشم‌انداز آینده خود را ارزیابی کنید",
+      icon: <Lightbulb className="text-yellow-500" size={24} />,
+      duration: "۸ دقیقه",
+      questions: "۱۵ سوال",
+      participants: "۲,۱۴۰",
+      features: [
+        "ارزیابی توانایی برنامه‌ریزی",
+        "تحلیل نگرش به آینده",
+        "پیشنهادات توسعه مهارت",
+        "راهنمای تعیین هدف"
+      ],
+      color: "yellow"
+    },
+    iq: {
+      title: "تست IQ",
+      englishTitle: "Intelligence Quotient Test",
+      description: "ضریب هوشی خود را با تست استاندارد IQ اندازه‌گیری کنید",
+      icon: <BarChart3 className="text-indigo-500" size={24} />,
+      duration: "۲۰ دقیقه",
+      questions: "۴۰ سوال",
+      participants: "۹,۳۲۰",
+      features: [
+        "اندازه‌گیری دقیق ضریب هوشی",
+        "تحلیل انواع هوش",
+        "مقایسه با میانگین جامعه",
+        "پیشنهادات تقویت ذهن"
+      ],
+      color: "indigo"
+    },
+    leadership: {
+      title: "تست مهارت‌های رهبری",
+      englishTitle: "Leadership Skills Test",
+      description: "توانایی‌های رهبری و مدیریت خود را ارزیابی کنید",
+      icon: <TrendingUp className="text-orange-500" size={24} />,
+      duration: "۱۵ دقیقه",
+      questions: "۳۵ سوال",
+      participants: "۴,۶۸۰",
+      features: [
+        "ارزیابی مهارت‌های رهبری",
+        "تحلیل سبک مدیریت",
+        "پیشنهادات توسعه رهبری",
+        "راهنمای تیم‌سازی"
+      ],
+      color: "orange"
+    }
+  };
 
-  if (!testInfo) {
-    return (
-      <MainLayout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">تست پیدا نشد</h1>
-          <Button onClick={() => navigate('/assessment-center')}>
-            بازگشت به مرکز ارزیابی
-          </Button>
-        </div>
-      </MainLayout>
-    );
+  // Get current test or redirect if not found
+  const currentTest = slug ? tests[slug as keyof typeof tests] : null;
+
+  if (!currentTest) {
+    return <Navigate to="/assessment" replace />;
   }
 
-  const handleStartTest = () => {
-    setIsModalOpen(true);
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: "from-blue-500 to-blue-600",
+      purple: "from-purple-500 to-purple-600",
+      green: "from-green-500 to-green-600",
+      red: "from-red-500 to-red-600",
+      yellow: "from-yellow-500 to-yellow-600",
+      indigo: "from-indigo-500 to-indigo-600",
+      orange: "from-orange-500 to-orange-600"
+    };
+    return colorMap[color as keyof typeof colorMap] || "from-blue-500 to-blue-600";
   };
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-        {/* Hero Section */}
-        <section className="py-16 relative overflow-hidden">
-          <div className="container max-w-4xl mx-auto">
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
-                  <Brain size={32} className="text-blue-600 dark:text-blue-400" />
-                </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
+        <div className="container max-w-4xl mx-auto px-4 py-12">
+          
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-lg">
+                {currentTest.icon}
               </div>
-              
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-                {testInfo.title}
-              </h1>
-              
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-                {testInfo.description}
-              </p>
-
-              {/* Test Stats */}
-              <div className="flex justify-center gap-6 mb-8">
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Clock size={20} />
-                  <span>{testInfo.duration}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <HelpCircle size={20} />
-                  <span>{testInfo.questions} سؤال</span>
-                </div>
-                <Badge variant="outline" className="text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-700">
-                  {testInfo.category}
-                </Badge>
-              </div>
-              
-              <Button 
-                onClick={handleStartTest}
-                size="lg"
-                className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-full px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <Play className="mr-2" size={20} />
-                شروع تست
-              </Button>
-            </motion.div>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              {currentTest.title}
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-2">
+              {currentTest.englishTitle}
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              {currentTest.description}
+            </p>
           </div>
-        </section>
 
-        {/* Detailed Information */}
-        <section className="py-16">
-          <div className="container max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              
-              {/* About This Test */}
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <Card className="h-full border-0 shadow-lg dark:bg-gray-800/50 dark:border-gray-700">
-                  <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4 flex items-center dark:text-white">
-                      <Target className="mr-3 text-blue-600 dark:text-blue-400" size={24} />
-                      درباره این تست
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
-                      {testInfo.longDescription}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Test Info */}
+            <div className="lg:col-span-2">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                    اطلاعات تست
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <Clock className="w-6 h-6 text-gray-500 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{currentTest.duration}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">مدت زمان</p>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <CheckCircle className="w-6 h-6 text-gray-500 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{currentTest.questions}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">تعداد سوال</p>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <Users className="w-6 h-6 text-gray-500 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{currentTest.participants}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">شرکت‌کننده</p>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+                      آنچه در این تست دریافت می‌کنید:
+                    </h3>
+                    <div className="space-y-3">
+                      {currentTest.features.map((feature, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Start Test Card */}
+            <div className="lg:col-span-1">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 sticky top-24">
+                <CardContent className="p-6">
+                  <div className="text-center mb-6">
+                    <Award className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      شروع تست
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      آماده دریافت نتایج دقیق هستید؟
                     </p>
-                    
-                    <h3 className="font-semibold mb-3 dark:text-white">مزایای شرکت در این تست:</h3>
-                    <div className="space-y-2">
-                      {testInfo.benefits.map((benefit: string, index: number) => (
-                        <div key={index} className="flex items-start">
-                          <CheckCircle className="text-green-500 mr-2 mt-0.5 flex-shrink-0" size={16} />
-                          <span className="text-sm dark:text-gray-300">{benefit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* Features & Who It's For */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="space-y-6"
-              >
-                {/* Features */}
-                <Card className="border-0 shadow-lg dark:bg-gray-800/50 dark:border-gray-700">
-                  <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4 flex items-center dark:text-white">
-                      <Award className="mr-3 text-green-600 dark:text-green-400" size={24} />
-                      ویژگی‌های تست
-                    </h2>
-                    <div className="space-y-3">
-                      {testInfo.features.map((feature: string, index: number) => (
-                        <div key={index} className="flex items-center">
-                          <ArrowRight className="text-blue-500 dark:text-blue-400 mr-2" size={16} />
-                          <span className="dark:text-gray-300">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Who It's For */}
-                <Card className="border-0 shadow-lg dark:bg-gray-800/50 dark:border-gray-700">
-                  <CardContent className="p-8">
-                    <h2 className="text-2xl font-bold mb-4 flex items-center dark:text-white">
-                      <Users className="mr-3 text-purple-600 dark:text-purple-400" size={24} />
-                      این تست برای چه کسانی است؟
-                    </h2>
-                    <div className="space-y-3">
-                      {testInfo.whoFor.map((person: string, index: number) => (
-                        <div key={index} className="flex items-start">
-                          <CheckCircle className="text-purple-500 mr-2 mt-0.5 flex-shrink-0" size={16} />
-                          <span className="text-sm dark:text-gray-300">{person}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                  </div>
+                  
+                  <Badge variant="outline" className="w-full justify-center py-2 mb-4 border-green-200 text-green-700 dark:border-green-800 dark:text-green-300">
+                    رایگان
+                  </Badge>
+                  
+                  <Button 
+                    size="lg" 
+                    className={`w-full bg-gradient-to-r ${getColorClasses(currentTest.color)} hover:opacity-90 text-white rounded-lg py-3 text-base font-medium`}
+                  >
+                    شروع تست
+                  </Button>
+                  
+                  <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-4">
+                    نتایج فوری و رایگان
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        </section>
-
-        {/* Final CTA */}
-        <motion.section 
-          className="py-16 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 text-white"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-        >
-          <div className="container max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              آماده کشف خودتان هستید؟
-            </h2>
-            <p className="text-xl text-blue-100 mb-8">
-              همین الان شروع کنید و نتایج شگفت‌انگیز را ببینید
-            </p>
-            <Button 
-              onClick={handleStartTest}
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 rounded-full px-8 py-4 text-lg font-semibold"
-            >
-              <Play className="mr-2" size={20} />
-              شروع تست {testInfo.title}
-            </Button>
-          </div>
-        </motion.section>
+        </div>
       </div>
-
-      {/* Test Modal */}
-      <IframeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={testInfo.title}
-        url={`https://auth.rafiei.co/test/${slug}`}
-        showCloseButton={true}
-      />
     </MainLayout>
   );
 };

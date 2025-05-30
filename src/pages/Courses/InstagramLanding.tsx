@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
 import InstructorProfile from "@/components/InstructorProfile";
 import IframeModal from "@/components/IframeModal";
+import MobileStickyButton from "@/components/MobileStickyButton";
 
 const InstagramLanding = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -243,6 +243,11 @@ const InstagramLanding = () => {
           </div>
         </div>
       </section>
+
+      {/* Mobile Sticky Button */}
+      <MobileStickyButton onClick={handlePurchaseCourse}>
+        خرید دوره اینستاگرام
+      </MobileStickyButton>
 
       {/* Purchase Modal */}
       <IframeModal

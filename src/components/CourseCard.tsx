@@ -105,7 +105,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
       onClick={handleCardClick}
     >
       
-      {/* Simple Header */}
+      {/* Clean Header */}
       <div className="relative p-6 pb-4 bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             </div>
             <Badge
               variant="outline"
-              className="text-xs font-medium border-gray-300 dark:border-gray-600"
+              className="text-xs font-medium border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
             >
               {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
             </Badge>
@@ -130,24 +130,24 @@ const CourseCard: React.FC<CourseCardProps> = ({
       </div>
       
       <CardContent className="p-6 pt-4 flex-grow flex flex-col">
-        {/* Fixed height description container */}
-        <div className="h-16 mb-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">{description}</p>
+        {/* Fixed height description container - consistent across all cards */}
+        <div className="h-12 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">{description}</p>
         </div>
         
-        {/* Fixed height benefits section */}
-        <div className="space-y-3 mb-6 flex-grow min-h-[100px]">
+        {/* Fixed height benefits section - consistent layout */}
+        <div className="space-y-3 mb-6 flex-grow min-h-[80px]">
           <div className="flex items-start gap-2 text-sm">
-            <CheckCircle size={14} className="text-green-500 mt-1 flex-shrink-0" />
-            <span className="text-gray-700 dark:text-gray-200 line-clamp-2">{benefits}</span>
+            <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+            <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{benefits}</span>
           </div>
           <div className="flex items-start gap-2 text-sm">
-            <ArrowLeft size={14} className="text-blue-500 mt-1 flex-shrink-0 rtl:rotate-180" />
-            <span className="text-gray-700 dark:text-gray-200 line-clamp-2">{outcome}</span>
+            <ArrowLeft size={14} className="text-blue-500 mt-0.5 flex-shrink-0 rtl:rotate-180" />
+            <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{outcome}</span>
           </div>
         </div>
 
-        {/* Simple Course Features */}
+        {/* Course Features - minimal design */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
             <Clock size={14} className="text-gray-500 mb-1" />
