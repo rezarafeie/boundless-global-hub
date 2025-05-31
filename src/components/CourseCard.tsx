@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Users, CheckCircle, ArrowLeft, Sparkles, Instagram, Gem, Gift } from "lucide-react";
+import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, Users, CheckCircle, ArrowLeft, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface CourseCardProps {
@@ -47,50 +47,24 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const { translations } = useLanguage();
   const navigate = useNavigate();
 
-  // Get enrollment count simulation
-  const getEnrollmentCount = () => {
-    if (title.includes("بدون مرز") || title.includes("Boundless")) return 2847;
-    if (title.includes("اینستاگرام") || title.includes("Instagram")) return 1923;
-    if (title.includes("متاورس") || title.includes("Metaverse")) return 1456;
-    if (title.includes("ثروت") || title.includes("Wealth")) return 3201;
-    if (title.includes("غیرفعال") || title.includes("Passive")) return 4567;
-    if (title.includes("تغییر") || title.includes("Change")) return 2134;
-    return Math.floor(Math.random() * 3000) + 500;
-  };
-
-  // Get watermark icon
-  const getWatermarkIcon = () => {
-    if (title.includes("اینستاگرام") || title.includes("Instagram")) {
-      return <Instagram size={120} className="text-pink-100 dark:text-pink-900/20" />;
-    } else if (title.includes("ثروت") || title.includes("Wealth") || title.includes("غیرفعال") || title.includes("Passive")) {
-      return <DollarSign size={120} className="text-green-100 dark:text-green-900/20" />;
-    } else if (title.includes("متاورس") || title.includes("Metaverse")) {
-      return <Code size={120} className="text-purple-100 dark:text-purple-900/20" />;
-    } else if (title.includes("بدون مرز") || title.includes("Boundless")) {
-      return <GraduationCap size={120} className="text-blue-100 dark:text-blue-900/20" />;
-    } else {
-      return <BookOpen size={120} className="text-gray-100 dark:text-gray-900/20" />;
-    }
-  };
-
-  // Get course icon
+  // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
     if (title.includes("متاورس") || title.includes("Metaverse")) {
-      return <Code size={18} className="text-purple-600" />;
+      return <Code size={20} className="text-purple-500" />;
     } else if (title.includes("اینستاگرام") || title.includes("Instagram")) {
-      return <Instagram size={18} className="text-pink-600" />;
+      return <Search size={20} className="text-pink-500" />;
     } else if (title.includes("ثروت") || title.includes("Wealth")) {
-      return <DollarSign size={18} className="text-green-600" />;
+      return <DollarSign size={20} className="text-green-500" />;
     } else if (title.includes("بدون مرز") || title.includes("Boundless") || title.includes("شروع")) {
-      return <GraduationCap size={18} className="text-blue-600" />;
+      return <GraduationCap size={20} className="text-blue-500" />;
     } else if (title.includes("غیرفعال") || title.includes("Passive")) {
-      return <Star size={18} className="text-orange-600" />;
+      return <Star size={20} className="text-orange-500" />;
     } else {
-      return <BookOpen size={18} className="text-indigo-600" />;
+      return <BookOpen size={20} className="text-indigo-500" />;
     }
   };
 
-  // Generate course URL
+  // Generate course URL based on type and slug
   const getCourseUrl = () => {
     if (link) return link;
     if (isPaid) {
@@ -125,155 +99,90 @@ const CourseCard: React.FC<CourseCardProps> = ({
     navigate(targetUrl);
   };
 
-  // Standardize description to consistent length
-  const getStandardizedDescription = (desc: string) => {
-    const maxLength = 120;
-    if (desc.length > maxLength) {
-      return desc.substring(0, maxLength).trim() + "...";
-    }
-    return desc;
-  };
-
-  // Get course-specific CTAs
-  const getCourseCTA = () => {
-    if (cta) return cta;
-    if (isPaid) {
-      return "شروع کن و به جمع دانشجویان موفق بپیوند";
-    } else {
-      return "همین حالا رایگان شروع کن";
-    }
-  };
-
-  const enrollmentCount = getEnrollmentCount();
-
   return (
     <Card 
-      className={`group h-full flex flex-col cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 animate-fade-in border-0 ${
-        isPaid 
-          ? "bg-gradient-to-br from-gray-900 via-purple-900 to-black dark:from-gray-800 dark:via-purple-800 dark:to-gray-900"
-          : "bg-gradient-to-br from-blue-50 via-green-50 to-cyan-50 dark:from-blue-900/20 dark:via-green-900/20 dark:to-cyan-900/20"
-      }`}
+      className="group h-full flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer overflow-hidden"
       onClick={handleCardClick}
     >
-      {/* Watermark Background */}
-      <div className="absolute top-4 left-4 opacity-30">
-        {getWatermarkIcon()}
-      </div>
       
-      {/* Header with Badge */}
-      <div className="relative p-6 pb-4 z-10">
-        <div className="flex justify-center mb-4">
-          <Badge
-            className={`transform rotate-1 px-4 py-2 text-sm font-bold shadow-lg ${
-              isPaid 
-                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-400"
-                : "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-green-400"
-            }`}
-          >
-            {isPaid ? (
-              <>
-                <Gem size={14} className="ml-1" />
-                💎 دوره‌های ویژه آکادمی رفیعی
-              </>
-            ) : (
-              <>
-                <Gift size={14} className="ml-1" />
-                💸 دوره‌های رایگان آکادمی رفیعی
-              </>
-            )}
-          </Badge>
+      {/* Clean Header */}
+      <div className="relative p-6 pb-4 bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center shadow-sm">
+              {getCourseIcon()}
+            </div>
+            <Badge
+              variant="outline"
+              className="text-xs font-medium border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+            >
+              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
+            </Badge>
+          </div>
         </div>
         
-        <div className="flex items-start gap-3 mb-3">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${
-            isPaid ? "bg-white/10 backdrop-blur-sm" : "bg-white shadow-sm"
-          }`}>
-            {getCourseIcon()}
-          </div>
-          <div className="flex-1">
-            <h3 className={`text-xl font-bold mb-1 line-clamp-2 ${
-              isPaid ? "text-white" : "text-gray-900 dark:text-white"
-            }`}>
-              {title}
-            </h3>
-            {englishTitle && (
-              <p className={`text-sm ${
-                isPaid ? "text-purple-200" : "text-gray-600 dark:text-gray-400"
-              }`}>
-                {englishTitle}
-              </p>
-            )}
-          </div>
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 line-clamp-2">{title}</h3>
+          {englishTitle && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">{englishTitle}</p>
+          )}
         </div>
       </div>
       
-      <CardContent className="p-6 pt-0 flex-grow flex flex-col z-10">
-        {/* Fixed height description */}
-        <div className="h-16 mb-4">
-          <p className={`text-sm leading-relaxed line-clamp-3 ${
-            isPaid ? "text-purple-100" : "text-gray-700 dark:text-gray-300"
-          }`}>
-            {getStandardizedDescription(description)}
-          </p>
+      <CardContent className="p-6 pt-4 flex-grow flex flex-col">
+        {/* Fixed height description container - consistent across all cards */}
+        <div className="h-12 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">{description}</p>
         </div>
         
-        {/* Benefits section */}
-        <div className="space-y-3 mb-4 flex-grow min-h-[100px]">
+        {/* Fixed height benefits section - consistent layout */}
+        <div className="space-y-3 mb-6 flex-grow min-h-[80px]">
           <div className="flex items-start gap-2 text-sm">
-            <CheckCircle size={14} className="text-green-400 mt-0.5 flex-shrink-0" />
-            <span className={`line-clamp-2 leading-relaxed ${
-              isPaid ? "text-purple-100" : "text-gray-700 dark:text-gray-200"
-            }`}>
-              {benefits}
-            </span>
+            <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+            <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{benefits}</span>
           </div>
           <div className="flex items-start gap-2 text-sm">
-            <ArrowLeft size={14} className="text-blue-400 mt-0.5 flex-shrink-0 rtl:rotate-180" />
-            <span className={`line-clamp-2 leading-relaxed ${
-              isPaid ? "text-purple-100" : "text-gray-700 dark:text-gray-200"
-            }`}>
-              {outcome}
-            </span>
+            <ArrowLeft size={14} className="text-blue-500 mt-0.5 flex-shrink-0 rtl:rotate-180" />
+            <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{outcome}</span>
           </div>
         </div>
 
-        {/* Instructor info */}
+        {/* Course Features - minimal design */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+            <Clock size={14} className="text-gray-500 mb-1" />
+            <span className="text-xs text-gray-500 dark:text-gray-400">دسترسی آزاد</span>
+          </div>
+          <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+            <Users size={14} className="text-gray-500 mb-1" />
+            <span className="text-xs text-gray-500 dark:text-gray-400">انجمن</span>
+          </div>
+          <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+            <CheckCircle size={14} className="text-gray-500 mb-1" />
+            <span className="text-xs text-gray-500 dark:text-gray-400">گواهی</span>
+          </div>
+        </div>
+        
         {instructor && (
-          <div className="flex items-center gap-2 text-sm mb-4">
-            <User size={12} className={isPaid ? "text-purple-200" : "text-gray-500"} />
-            <span className={isPaid ? "text-purple-200" : "text-gray-500 dark:text-gray-400"}>
-              {instructor}
-            </span>
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <User size={12} />
+            <span>{instructor}</span>
             {level && (
-              <Badge variant="outline" className={`text-xs ${
-                isPaid ? "border-purple-300 text-purple-200" : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
-              }`}>
+              <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-600">
                 {level}
               </Badge>
             )}
           </div>
         )}
-        
-        {/* Enrollment count */}
-        <div className="flex items-center gap-2 text-xs mb-4 pb-4 border-b border-gray-200/20">
-          <Users size={12} className={isPaid ? "text-purple-300" : "text-gray-500"} />
-          <span className={isPaid ? "text-purple-300" : "text-gray-600 dark:text-gray-400"}>
-            {enrollmentCount.toLocaleString()} دانشجو تاکنون
-          </span>
-        </div>
       </CardContent>
       
-      <CardFooter className="p-6 pt-0 z-10">
+      <CardFooter className="p-6 pt-0">
         <Button 
           onClick={handleCtaClick}
-          className={`w-full text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl text-sm font-bold py-3 ${
-            isPaid 
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-          }`}
+          className="w-full bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200 text-white rounded-lg transition-all duration-300"
         >
           <Sparkles size={16} className="ml-2" />
-          {getCourseCTA()}
+          {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
         </Button>
       </CardFooter>
     </Card>
