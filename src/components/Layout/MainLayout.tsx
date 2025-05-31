@@ -3,7 +3,6 @@ import React, { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "@/components/Layout/Header";
 import Footer from "@/components/Layout/Footer";
-import FloatingNotification from "@/components/FloatingNotification";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MainLayoutProps {
@@ -34,7 +33,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <Header />
       <main className="flex-1 pt-16">{children}</main>
       {!shouldHideFooter && <Footer />}
-      <FloatingNotification />
     </div>
   );
 };
