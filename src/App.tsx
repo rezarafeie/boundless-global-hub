@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,6 +40,7 @@ import BoundlessTasteAccess from "./pages/Course/Access/BoundlessTasteAccess";
 import AmericanBusinessAccess from "./pages/Course/Access/AmericanBusinessAccess";
 import TaghirAccess from "./pages/Course/Access/TaghirAccess";
 import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
+import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +74,9 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/mag" element={<Magazine />} />
               <Route path="/payreq" element={<PaymentRequest />} />
+              
+              {/* Redirect Routes */}
+              <Route path="/redirect/telegram" element={<TelegramRedirect />} />
               
               {/* Free Course Pages */}
               <Route path="/course/change" element={<ChangeCoursePage />} />

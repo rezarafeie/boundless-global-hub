@@ -17,8 +17,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const hideFooterRoutes = ['/mag', '/payreq'];
   const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
   
-  // Routes where both header and footer should be hidden (access pages)
-  const hideHeaderFooterRoutes = location.pathname.startsWith('/access');
+  // Routes where both header and footer should be hidden (access pages and redirect pages)
+  const hideHeaderFooterRoutes = location.pathname.startsWith('/access') || location.pathname.startsWith('/redirect');
   
   if (hideHeaderFooterRoutes) {
     return (
