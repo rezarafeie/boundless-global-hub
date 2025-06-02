@@ -39,7 +39,7 @@ mba
         <CardContent className="p-8 md:p-16">
           {/* Success Icon */}
           <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce">
+            <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
               <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
@@ -65,23 +65,14 @@ mba
             </p>
           </div>
 
-          {/* Large Animated Telegram Button - Main Focus */}
+          {/* Large Static Telegram Button - Main Focus */}
           <div className="text-center mb-12">
             <Button
               onClick={handleTelegramClick}
-              className="w-full max-w-2xl h-24 bg-gradient-to-r from-[#0088cc] via-[#00a1e6] to-[#0077b3] hover:from-[#0077b3] hover:via-[#0088cc] hover:to-[#005a94] text-white py-8 px-12 rounded-3xl text-2xl md:text-3xl font-black transition-all duration-500 shadow-2xl hover:shadow-[0_20px_50px_rgba(0,136,204,0.4)] transform hover:scale-105 active:scale-95 border-0 animate-pulse hover:animate-none relative overflow-hidden group"
+              className="w-full max-w-2xl h-24 bg-gradient-to-r from-[#0088cc] via-[#00a1e6] to-[#0077b3] hover:from-[#0077b3] hover:via-[#0088cc] hover:to-[#005a94] text-white py-8 px-12 rounded-3xl text-2xl md:text-3xl font-black transition-all duration-300 shadow-2xl border-0"
               size="lg"
             >
-              {/* Animated Background Glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20 -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-out"></div>
-              
-              <div className="flex items-center justify-center gap-6 relative z-10">
-                {/* Enhanced Telegram Icon */}
-                <div className="w-16 h-16 bg-white/25 rounded-full flex items-center justify-center animate-bounce">
-                  <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16l-1.58 7.44c-.12.539-.432.672-.864.42l-2.388-1.764-1.152 1.116c-.128.128-.236.236-.484.236l.172-2.436 4.452-4.02c.192-.168-.044-.264-.3-.096L9.732 12.6l-2.388-.756c-.516-.156-.528-.516.108-.768L19.044 7.08c.432-.156.804.108.672.672-.156.744-.432 1.68-.432 1.68l1.284-4.272z"/>
-                  </svg>
-                </div>
+              <div className="flex items-center justify-center gap-6">
                 <div className="text-right">
                   <div className="font-black text-3xl md:text-4xl mb-1">🚀 شروع کنیم!</div>
                   <div className="text-lg font-semibold opacity-90">دسترسی فوری به پشتیبانی</div>
@@ -89,9 +80,9 @@ mba
               </div>
             </Button>
             
-            {/* Encouraging Text */}
+            {/* Static Text */}
             <div className="mt-8 text-center">
-              <p className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2 animate-pulse">
+              <p className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">
                 ⏰ فقط یک کلیک تا شروع!
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
