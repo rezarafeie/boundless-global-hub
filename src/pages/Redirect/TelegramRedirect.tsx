@@ -74,17 +74,13 @@ mba
             >
               <div className="flex items-center justify-center gap-6">
                 <div className="text-right">
-                  <div className="font-black text-3xl md:text-4xl mb-1">🚀 شروع کنیم!</div>
-                  <div className="text-lg font-semibold opacity-90">دسترسی فوری به پشتیبانی</div>
+                  <div className="font-black text-3xl md:text-4xl mb-1">🚀 آماده ام , شروع کنیم!</div>
                 </div>
               </div>
             </Button>
             
             {/* Static Text */}
             <div className="mt-8 text-center">
-              <p className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">
-                ⏰ فقط یک کلیک تا شروع!
-              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
