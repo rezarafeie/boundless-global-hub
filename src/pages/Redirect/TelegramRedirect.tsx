@@ -61,7 +61,9 @@ mba
               دسترسی شما با موفقیت ایجاد شد
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed max-w-xl mx-auto">
-روی دکمه شروع کلیک کنید و همین الان شروع کنید.          </div>
+روی دکمه شروع کلیک کنید و همین الان شروع کنید.     
+            </p>
+            </div>
 
           {/* User Info Display */}
           {(name || lastname || phone || email) && (
@@ -123,6 +125,7 @@ mba
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
+              <P>
 با کلیک روی دکمه شروع ، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. فعالسازی پشتیبانی و دسترسی به آموزش ها و هدایا به صورت خودکار انجام خواهد شد. موفق باشید
             </p>
           </div>
