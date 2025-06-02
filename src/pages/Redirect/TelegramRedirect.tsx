@@ -74,7 +74,7 @@ mba
             >
               <div className="flex items-center justify-center gap-6">
                 <div className="text-right">
-                  <div className="font-black text-3xl md:text-4xl mb-1">🚀 آماده ام , شروع کنیم!</div>
+                  <div className="font-black text-3xl md:text-4xl mb-1">آماده ام , شروع کنیم!</div>
                 </div>
               </div>
             </Button>
