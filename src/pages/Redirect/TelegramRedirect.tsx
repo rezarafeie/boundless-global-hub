@@ -58,12 +58,10 @@ mba
           {/* Main Success Message */}
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              ثبت‌نام شما با موفقیت انجام شد
+              دسترسی شما با موفقیت ایجاد شد
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed max-w-xl mx-auto">
-              برای فعال‌سازی پشتیبانی و دریافت آموزش‌های دوره، روی دکمه زیر کلیک کنید
-            </p>
-          </div>
+روی دکمه شروع کلیک کنید و همین الان شروع کنید.          </div>
 
           {/* User Info Display */}
           {(name || lastname || phone || email) && (
@@ -116,7 +114,7 @@ mba
                     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 8.16l-1.58 7.44c-.12.539-.432.672-.864.42l-2.388-1.764-1.152 1.116c-.128.128-.236.236-.484.236l.172-2.436 4.452-4.02c.192-.168-.044-.264-.3-.096L9.732 12.6l-2.388-.756c-.516-.156-.528-.516.108-.768L19.044 7.08c.432-.156.804.108.672.672-.156.744-.432 1.68-.432 1.68l1.284-4.272z"/>
                   </svg>
                 </div>
-                <span className="font-bold">فعال‌سازی پشتیبانی و شروع دوره</span>
+                <span className="font-bold">شروع</span>
               </div>
             </Button>
             
@@ -125,7 +123,7 @@ mba
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              با کلیک روی دکمه، به صفحه تلگرام هدایت می‌شوید
+با کلیک روی دکمه شروع ، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. فعالسازی پشتیبانی و دسترسی به آموزش ها و هدایا به صورت خودکار انجام خواهد شد. موفق باشید
             </p>
           </div>
         </CardContent>
