@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useLanguage } from "@/contexts/LanguageContext";
 import SectionTitle from "@/components/SectionTitle";
 import InstructorProfile from "@/components/InstructorProfile";
+import AparatPlayer from "@/components/AparatPlayer";
 
 const BoundlessLanding = () => {
   const [showIframeModal, setShowIframeModal] = useState(false);
@@ -310,13 +310,7 @@ const BoundlessLanding = () => {
                     <p className="text-indigo-100">آشنایی کامل با دوره شروع بدون مرز</p>
                   </div>
                   <div className="aspect-video w-full">
-                    <div 
-                      id="52237337651" 
-                      className="w-full h-full"
-                      dangerouslySetInnerHTML={{
-                        __html: `<script type="text/JavaScript" src="https://www.aparat.com/embed/c47mjrd?data[rnddiv]=52237337651&data[responsive]=yes"></script>`
-                      }}
-                    />
+                    <AparatPlayer videoHash="c47mjrd" />
                   </div>
                 </CardContent>
               </Card>
@@ -536,15 +530,7 @@ const BoundlessLanding = () => {
                     </p>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="aspect-video w-full">
-                      <div 
-                        id="88633305364" 
-                        className="w-full h-full"
-                        dangerouslySetInnerHTML={{
-                          __html: `<script type="text/JavaScript" src="https://www.aparat.com/embed/ezi0j4r?data[rnddiv]=88633305364&data[responsive]=yes"></script>`
-                        }}
-                      />
-                    </div>
+                    <AparatPlayer videoHash="ezi0j4r" />
                   </CardContent>
                 </Card>
               </motion.div>

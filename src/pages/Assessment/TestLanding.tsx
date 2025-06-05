@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -588,29 +587,15 @@ const TestLanding = () => {
   if (showIframe && testIframeMap[slug!]) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <div className="container max-w-full mx-auto px-4 py-8">
-            <div className="mb-6">
-              <Button
-                onClick={() => setShowIframe(false)}
-                variant="outline"
-                className="mb-4"
-              >
-                ← بازگشت به معرفی تست
-              </Button>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {currentTest.title}
-              </h1>
-            </div>
-            
-            <div className="w-full h-[calc(100vh-200px)] rounded-lg overflow-hidden shadow-lg">
-              <EnhancedIframe
-                src={testIframeMap[slug!]}
-                title={currentTest.title}
-                className="w-full h-full"
-              />
-            </div>
-          </div>
+        <div className="min-h-screen">
+          <EnhancedIframe
+            src={testIframeMap[slug!]}
+            title={currentTest.title}
+            style={{
+              height: 'calc(100vh - 80px)',
+              minHeight: '600px'
+            }}
+          />
         </div>
       </MainLayout>
     );
