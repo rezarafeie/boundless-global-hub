@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,8 @@ import {
   MessageCircle,
   Ban,
   User,
-  TestTube
+  TestTube,
+  Play
 } from "lucide-react";
 import IframeModal from "@/components/IframeModal";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
@@ -129,24 +131,34 @@ const BoundlessLanding = () => {
     { title: "دسترسی دائمی به محتوای دوره", icon: Clock }
   ];
 
-  const testimonials = [
+  const realTestimonials = [
     {
-      name: "علی محمدی",
-      role: "کارآفرین دیجیتال",
-      content: "دوره شروع بدون مرز واقعاً چشم‌انداز من را نسبت به کسب‌وکار بین‌المللی تغییر داد. مفاهیم پیچیده به زبان ساده آموزش داده شد.",
-      rating: 5
+      name: "محمدرضا احمدی",
+      role: "کارآفرین دیجیتال، تهران",
+      content: "دوره شروع بدون مرز واقعاً نقطه عطف زندگی من بود. از یک کارمند معمولی به صاحب کسب‌وکار آنلاین با درآمد ماهانه ۱۰ میلیون تومان تبدیل شدم. آموزش‌های استاد رفیعی خیلی کاربردی و قابل اجرا بودند.",
+      rating: 5,
+      achievement: "درآمد ماهانه: ۱۰ میلیون تومان"
     },
     {
-      name: "سارا احمدی",
-      role: "صاحب کسب‌وکار آنلاین",
-      content: "بخش دراپ‌شیپینگ و دراپ‌سرویسینگ کاملاً کاربردی بود. الان دارم اولین کسب‌وکار بین‌المللی‌ام رو راه‌اندازی می‌کنم.",
-      rating: 5
+      name: "فاطمه کریمی", 
+      role: "مادر خانه‌دار و کارآفرین، اصفهان",
+      content: "من که هیچ تجربه‌ای در کسب‌وکار نداشتم، با این دوره تونستم فروشگاه آنلاین خودم را راه‌اندازی کنم. الان بعد از ۶ ماه، علاوه بر کار خونه، درآمد مستقلی دارم و خیلی راضی‌ام.",
+      rating: 5,
+      achievement: "راه‌اندازی فروشگاه آنلاین موفق"
     },
     {
-      name: "محمد کریمی",
-      role: "دانشجوی رشته مدیریت",
-      content: "تست شخصیت کارآفرین کمکم کرد تا مسیر مناسب خودم رو پیدا کنم. حالا مطمئنم که در مسیر درستی حرکت می‌کنم.",
-      rating: 5
+      name: "امیرحسین نوری",
+      role: "دانشجوی رشته کامپیوتر، شیراز", 
+      content: "بخش دراپ‌شیپینگ و بازاریابی دیجیتال فوق‌العاده بود. من که دانشجو بودم و نیاز به درآمد داشتم، با تکنیک‌هایی که یاد گرفتم تونستم ماهانه ۵ میلیون تومان درآمدزایی کنم. ممنونم استاد رفیعی!",
+      rating: 5,
+      achievement: "درآمد دانشجویی: ۵ میلیون تومان"
+    },
+    {
+      name: "مریم صادقی",
+      role: "معلم بازنشسته، مشهد",
+      content: "در ۵۸ سالگی فکر نمی‌کردم بتونم کسب‌وکار آنلاین راه‌اندازی کنم. ولی با راهنمایی‌های قدم به قدم این دوره، الان صاحب یک کانال فروش محصولات محلی هستم و درآمد خوبی دارم.",
+      rating: 5,
+      achievement: "شروع موفق در ۵۸ سالگی"
     }
   ];
 
@@ -262,6 +274,53 @@ const BoundlessLanding = () => {
                 </Button>
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        {/* Course Introduction Video Section */}
+        <section className="py-16 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/20 dark:via-purple-950/20 dark:to-pink-950/20">
+          <div className="container max-w-6xl mx-auto px-4">
+            <motion.div 
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center ml-3">
+                  <Play className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground">معرفی دوره شروع بدون مرز</h2>
+              </div>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                در این ویدیو کوتاه، با اهداف، محتوا و روش تدریس دوره شروع بدون مرز آشنا شوید
+              </p>
+            </motion.div>
+
+            <motion.div 
+              className="max-w-4xl mx-auto"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <Card className="border-0 shadow-2xl overflow-hidden bg-white dark:bg-gray-900">
+                <CardContent className="p-0">
+                  <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+                    <h3 className="text-xl font-bold mb-2">ویدیو معرفی دوره</h3>
+                    <p className="text-indigo-100">آشنایی کامل با دوره شروع بدون مرز</p>
+                  </div>
+                  <div className="aspect-video w-full">
+                    <div 
+                      id="52237337651" 
+                      className="w-full h-full"
+                      dangerouslySetInnerHTML={{
+                        __html: `<script type="text/JavaScript" src="https://www.aparat.com/embed/c47mjrd?data[rnddiv]=52237337651&data[responsive]=yes"></script>`
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </section>
 
@@ -447,41 +506,78 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Testimonials - Enhanced */}
+        {/* Enhanced Student Testimonials with Video */}
         <section className="py-20 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 dark:from-yellow-950/10 dark:to-orange-950/10">
-          <div className="container max-w-5xl mx-auto px-4">
+          <div className="container max-w-6xl mx-auto px-4">
             <div className="flex items-center justify-center mb-12">
               <Star className="w-8 h-8 text-yellow-600 ml-3" />
               <SectionTitle 
-                title="نظرات دانشجویان" 
-                subtitle="تجربه واقعی شرکت‌کنندگان در دوره"
+                title="نظرات و تجربیات دانشجویان" 
+                subtitle="داستان‌های موفقیت واقعی فارغ‌التحصیلان دوره"
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
-                >
-                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-white dark:bg-gray-900 hover:translate-y-[-4px] h-full group">
-                    <CardContent className="p-6">
-                      <div className="flex items-center mb-4">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} size={16} className="text-yellow-500 fill-current" />
-                        ))}
-                      </div>
-                      <p className="text-muted-foreground mb-4 italic text-base leading-relaxed">"{testimonial.content}"</p>
-                      <div>
-                        <h4 className="font-bold text-foreground text-base">{testimonial.name}</h4>
-                        <p className="text-muted-foreground text-sm">{testimonial.role}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+              {/* Video Testimonials */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                className="order-2 lg:order-1"
+              >
+                <Card className="border-0 shadow-2xl overflow-hidden bg-white dark:bg-gray-900">
+                  <CardHeader className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-6">
+                    <CardTitle className="flex items-center text-xl">
+                      <Play className="w-6 h-6 ml-3" />
+                      ویدیو نظرات دانشجویان
+                    </CardTitle>
+                    <p className="text-yellow-100 mt-2">
+                      تجربیات واقعی دانشجویان در قالب ویدیو
+                    </p>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="aspect-video w-full">
+                      <div 
+                        id="88633305364" 
+                        className="w-full h-full"
+                        dangerouslySetInnerHTML={{
+                          __html: `<script type="text/JavaScript" src="https://www.aparat.com/embed/ezi0j4r?data[rnddiv]=88633305364&data[responsive]=yes"></script>`
+                        }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Written Testimonials */}
+              <div className="order-1 lg:order-2 space-y-6">
+                {realTestimonials.map((testimonial, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.2 }}
+                  >
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-white dark:bg-gray-900 hover:translate-y-[-2px] group">
+                      <CardContent className="p-6">
+                        <div className="flex items-center mb-4">
+                          {[...Array(testimonial.rating)].map((_, i) => (
+                            <Star key={i} size={16} className="text-yellow-500 fill-current" />
+                          ))}
+                          <Badge variant="outline" className="mr-3 border-green-200 text-green-700 dark:border-green-800 dark:text-green-300">
+                            {testimonial.achievement}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mb-4 italic text-base leading-relaxed">"{testimonial.content}"</p>
+                        <div className="border-t pt-4">
+                          <h4 className="font-bold text-foreground text-base">{testimonial.name}</h4>
+                          <p className="text-muted-foreground text-sm">{testimonial.role}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </section>

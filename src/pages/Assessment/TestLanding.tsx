@@ -1,13 +1,59 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Award, TrendingUp, CheckCircle, Brain, Heart, DollarSign, Lightbulb, Target, BarChart3, Zap, Shield, BookOpen, Star, Puzzle, Trophy } from "lucide-react";
+import EnhancedIframe from "@/components/EnhancedIframe";
+import MobileStickyButton from "@/components/MobileStickyButton";
 
 const TestLanding = () => {
   const { slug } = useParams();
+  const [showIframe, setShowIframe] = useState(false);
+
+  // Test iframe URL mapping
+  const testIframeMap: Record<string, string> = {
+    "ept": "https://auth.rafiei.co/sanjesh/ept",
+    "mbti": "https://auth.rafiei.co/sanjesh/mbti",
+    "disc": "https://auth.rafiei.co/sanjesh/disc",
+    "16pf": "https://auth.rafiei.co/sanjesh/16pf",
+    "csei-ad": "https://auth.rafiei.co/sanjesh/csei-ad",
+    "mhs": "https://auth.rafiei.co/sanjesh/mhs",
+    "slfs": "https://auth.rafiei.co/sanjesh/slfs",
+    "tps": "https://auth.rafiei.co/sanjesh/tps",
+    "hems": "https://auth.rafiei.co/sanjesh/hems",
+    "iat": "https://auth.rafiei.co/sanjesh/iat",
+    "iq": "https://auth.rafiei.co/sanjesh/iq",
+    "iqr": "https://auth.rafiei.co/sanjesh/iqr",
+    "growth": "https://auth.rafiei.co/sanjesh/growth",
+    "riasec": "https://auth.rafiei.co/sanjesh/riasec",
+    "lst": "https://auth.rafiei.co/sanjesh/lst",
+    "mot": "https://auth.rafiei.co/sanjesh/mot",
+    "ps": "https://auth.rafiei.co/sanjesh/ps",
+    "hii": "https://auth.rafiei.co/sanjesh/hii",
+    "boundless": "https://auth.rafiei.co/sanjesh/boundless",
+    "strength": "https://auth.rafiei.co/sanjesh/strength",
+    "dec": "https://auth.rafiei.co/sanjesh/dec",
+    "personality": "https://auth.rafiei.co/sanjesh/ept",
+    "financial": "https://auth.rafiei.co/sanjesh/financial",
+    "emotional": "https://auth.rafiei.co/sanjesh/eq",
+    "future": "https://auth.rafiei.co/sanjesh/future",
+    "leadership": "https://auth.rafiei.co/sanjesh/leadership",
+    "mii": "https://auth.rafiei.co/sanjesh/mii",
+    "ocq": "https://auth.rafiei.co/sanjesh/ocq",
+    "msq": "https://auth.rafiei.co/sanjesh/msq",
+    "raven": "https://auth.rafiei.co/sanjesh/raven",
+    "cattell-iq": "https://auth.rafiei.co/sanjesh/cattell-iq",
+    "eq": "https://auth.rafiei.co/sanjesh/eq",
+    "csei": "https://auth.rafiei.co/sanjesh/csei",
+    "hpi": "https://auth.rafiei.co/sanjesh/hpi",
+    "mmtic": "https://auth.rafiei.co/sanjesh/mmtic",
+    "moci": "https://auth.rafiei.co/sanjesh/moci",
+    "ohi": "https://auth.rafiei.co/sanjesh/ohi",
+    "cattell-a": "https://auth.rafiei.co/sanjesh/cattell-a"
+  };
 
   // Complete test data configuration synced with AssessmentCenter
   const tests = {
@@ -508,12 +554,19 @@ const TestLanding = () => {
     }
   };
 
-  // Get current test or redirect if not found - FIXED REDIRECT PATH
+  // Get current test or redirect if not found
   const currentTest = slug ? tests[slug as keyof typeof tests] : null;
 
   if (!currentTest) {
     return <Navigate to="/assessment-center" replace />;
   }
+
+  const handleStartTest = () => {
+    const testUrl = testIframeMap[slug!];
+    if (testUrl) {
+      setShowIframe(true);
+    }
+  };
 
   const getColorClasses = (color: string) => {
     const colorMap = {
@@ -531,6 +584,37 @@ const TestLanding = () => {
     };
     return colorMap[color as keyof typeof colorMap] || "from-blue-500 to-blue-600";
   };
+
+  if (showIframe && testIframeMap[slug!]) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="container max-w-full mx-auto px-4 py-8">
+            <div className="mb-6">
+              <Button
+                onClick={() => setShowIframe(false)}
+                variant="outline"
+                className="mb-4"
+              >
+                ← بازگشت به معرفی تست
+              </Button>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {currentTest.title}
+              </h1>
+            </div>
+            
+            <div className="w-full h-[calc(100vh-200px)] rounded-lg overflow-hidden shadow-lg">
+              <EnhancedIframe
+                src={testIframeMap[slug!]}
+                title={currentTest.title}
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -623,6 +707,7 @@ const TestLanding = () => {
                   </Badge>
                   
                   <Button 
+                    onClick={handleStartTest}
                     size="lg" 
                     className={`w-full bg-gradient-to-r ${getColorClasses(currentTest.color)} hover:opacity-90 text-white rounded-lg py-3 text-base font-medium`}
                   >
@@ -637,6 +722,11 @@ const TestLanding = () => {
             </div>
           </div>
         </div>
+
+        {/* Mobile Sticky Button */}
+        <MobileStickyButton onClick={handleStartTest}>
+          شروع تست
+        </MobileStickyButton>
       </div>
     </MainLayout>
   );
