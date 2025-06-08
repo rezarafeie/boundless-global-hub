@@ -49,8 +49,6 @@ const BoundlessLanding = () => {
   // Set countdown to ۱۹ خردادماه، ساعت ۱۲ ظهر (June 9th, 12:00 PM - 2025)
   const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0);
 
-  // ... keep existing code (motivationalHeadlines array and useEffect)
-
   const motivationalHeadlines = [
     {
       title: "شروع کن، حتی اگر مطمئن نیستی!",
@@ -104,8 +102,6 @@ const BoundlessLanding = () => {
 
     return () => clearTimeout(timer);
   }, []);
-
-  // ... keep existing code (courseContent, gifts, features, realTestimonials, faqs arrays)
 
   const courseContent = [
     { title: "نگرش بدون مرز", icon: Globe },
@@ -184,6 +180,10 @@ const BoundlessLanding = () => {
       answer: "طبق شمارش معکوس نمایش داده شده، ۱۹ خردادماه ساعت ۱۲ ظهر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
     }
   ];
+
+  const handleRegistrationClick = () => {
+    window.open('https://auth.rafiei.co/?add-to-cart=5311', '_blank');
+  };
 
   return (
     <MainLayout>
@@ -269,7 +269,7 @@ const BoundlessLanding = () => {
                 </p>
                 
                 <Button 
-                  onClick={() => setShowIframeModal(true)}
+                  onClick={handleRegistrationClick}
                   size="sm"
                   className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 shadow-md transition-all transform hover:scale-105"
                 >
@@ -636,7 +636,7 @@ const BoundlessLanding = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               <Button 
-                onClick={() => setShowIframeModal(true)}
+                onClick={handleRegistrationClick}
                 size="lg"
                 className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg px-8 py-3 text-lg font-medium border-0 hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 shadow-lg transition-all transform hover:scale-105"
               >
@@ -656,13 +656,6 @@ const BoundlessLanding = () => {
           </div>
         </section>
       </div>
-
-      <IframeModal
-        isOpen={showIframeModal}
-        onClose={() => setShowIframeModal(false)}
-        title="ثبت‌نام در شروع بدون مرز"
-        url="https://academy.rafiei.co/course/start/"
-      />
     </MainLayout>
   );
 };
