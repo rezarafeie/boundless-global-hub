@@ -49,6 +49,8 @@ const BoundlessLanding = () => {
   // Set countdown to ۱۹ خردادماه، ساعت ۱۲ ظهر (June 9th, 12:00 PM - 2025)
   const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0);
 
+  // ... keep existing code (motivationalHeadlines array and useEffect)
+
   const motivationalHeadlines = [
     {
       title: "شروع کن، حتی اگر مطمئن نیستی!",
@@ -102,6 +104,8 @@ const BoundlessLanding = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // ... keep existing code (courseContent, gifts, features, realTestimonials, faqs arrays)
 
   const courseContent = [
     { title: "نگرش بدون مرز", icon: Globe },
@@ -247,30 +251,30 @@ const BoundlessLanding = () => {
                 />
               </motion.div>
 
-              {/* Course Status Alert */}
+              {/* Course Status Alert - Updated for Registration Open */}
               <motion.div 
-                className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-orange-200 dark:border-orange-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
+                className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200 dark:border-green-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <div className="flex items-center justify-center mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center ml-3">
-                    <Ban className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center ml-3">
+                    <CheckCircle className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-foreground">دوره در حال حاضر بسته است</h3>
+                  <h3 className="text-lg font-bold text-foreground">ثبت نام شروع شد</h3>
                 </div>
                 <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                  ظرفیت ثبت‌نام فعلاً تکمیل شده است. برای اطلاع از باز شدن مجدد ثبت‌نام، شمارش معکوس زیر را دنبال کنید.
+                  اکنون می‌توانید در دوره شروع بدون مرز ثبت‌نام کنید و مسیر کسب‌وکار جهانی خود را آغاز کنید.
                 </p>
                 
                 <Button 
-                  disabled
+                  onClick={() => setShowIframeModal(true)}
                   size="sm"
-                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed px-4 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-md"
+                  className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 shadow-md transition-all transform hover:scale-105"
                 >
-                  <Ban className="ml-2" size={14} />
-                  ظرفیت تکمیل
+                  <CheckCircle className="ml-2" size={14} />
+                  ثبت نام شروع شد
                 </Button>
               </motion.div>
             </div>
@@ -594,16 +598,16 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Final CTA - Enhanced */}
-        <section className="py-20 bg-gradient-to-r from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-950/30 dark:to-purple-950/30 text-foreground">
+        {/* Final CTA - Updated for Registration Open */}
+        <section className="py-20 bg-gradient-to-r from-green-50 via-blue-50 to-purple-50 dark:from-green-900 dark:via-blue-950/30 dark:to-purple-950/30 text-foreground">
           <div className="container max-w-4xl mx-auto text-center px-4">
             <motion.h2 
-              className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
+              className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              منتظر بازگشایی ثبت‌نام باشید
+              همین حالا ثبت‌نام کنید
             </motion.h2>
             <motion.p 
               className="text-xl mb-12 text-muted-foreground"
@@ -611,7 +615,7 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              ۱۹ خردادماه، ساعت ۱۲ ظهر فرصت ثبت‌نام مجدداً فراهم خواهد شد
+              فرصت طلایی برای شروع کسب‌وکار جهانی در دستان شماست
             </motion.p>
             
             <motion.div 
@@ -620,10 +624,10 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-semibold">به زودی...</span>
+              <span className="text-2xl font-semibold">ثبت‌نام باز است!</span>
             </motion.div>
             
             <motion.div
@@ -632,12 +636,12 @@ const BoundlessLanding = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               <Button 
-                disabled
-                size="sm"
-                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed rounded-lg px-6 py-2 text-sm font-medium border-0 hover:bg-gradient-to-r hover:from-gray-400 hover:to-gray-500 disabled:opacity-100 shadow-lg"
+                onClick={() => setShowIframeModal(true)}
+                size="lg"
+                className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg px-8 py-3 text-lg font-medium border-0 hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 shadow-lg transition-all transform hover:scale-105"
               >
-                <Ban className="ml-2" size={16} />
-                ظرفیت تکمیل
+                <ArrowRight className="ml-2" size={20} />
+                ثبت نام شروع شد
               </Button>
             </motion.div>
             
@@ -657,7 +661,7 @@ const BoundlessLanding = () => {
         isOpen={showIframeModal}
         onClose={() => setShowIframeModal(false)}
         title="ثبت‌نام در شروع بدون مرز"
-        url="https://auth.rafiei.co/?add-to-cart=5311"
+        url="https://academy.rafiei.co/course/start/"
       />
     </MainLayout>
   );
