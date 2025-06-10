@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ const BoundlessLanding = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
 
-  // Set countdown to ۲۷ خردادماه، ساعت ۱۲ ظهر (June 17th, 12:00 PM - 2025)
+  // Set countdown to ۱۷ ژوئن، ساعت ۱۲ ظهر (June 17th, 12:00 PM - 2025)
   const countdownEndDate = new Date(2025, 5, 17, 12, 0, 0);
 
   const motivationalHeadlines = [
@@ -177,7 +178,7 @@ const BoundlessLanding = () => {
     },
     {
       question: "چه زمانی دوره مجدداً قابل خرید خواهد بود؟",
-      answer: "طبق شمارش معکوس نمایش داده شده، ۲۷ خردادماه ساعت ۱۲ ظهر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
+      answer: "طبق شمارش معکوس نمایش داده شده، ۱۷ ژوئن ساعت ۱۲ ظهر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
     }
   ];
 
@@ -686,6 +687,3 @@ const BoundlessLanding = () => {
 };
 
 export default BoundlessLanding;
-
-</initial_code>
-undefined
