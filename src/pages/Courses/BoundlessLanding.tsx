@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -183,7 +184,7 @@ const BoundlessLanding = () => {
   ];
 
   const handleStudentLoginClick = () => {
-    window.open('https://auth.rafiei.co/course/start', '_blank');
+    window.open('https://academy.rafiei.co/course/start', '_blank');
   };
 
   return (
@@ -687,3 +688,4 @@ const BoundlessLanding = () => {
 };
 
 export default BoundlessLanding;
+
