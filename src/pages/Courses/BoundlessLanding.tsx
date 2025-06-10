@@ -46,8 +46,8 @@ const BoundlessLanding = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
 
-  // Set countdown to ۱۹ خردادماه، ساعت ۱۲ ظهر (June 9th, 12:00 PM - 2025)
-  const countdownEndDate = new Date(2025, 5, 9, 12, 0, 0);
+  // Set countdown to ۲۷ خردادماه، ساعت ۱۲ ظهر (June 17th, 12:00 PM - 2025)
+  const countdownEndDate = new Date(2025, 5, 17, 12, 0, 0);
 
   const motivationalHeadlines = [
     {
@@ -177,12 +177,12 @@ const BoundlessLanding = () => {
     },
     {
       question: "چه زمانی دوره مجدداً قابل خرید خواهد بود؟",
-      answer: "طبق شمارش معکوس نمایش داده شده، ۱۹ خردادماه ساعت ۱۲ ظهر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
+      answer: "طبق شمارش معکوس نمایش داده شده، ۲۷ خردادماه ساعت ۱۲ ظهر ثبت‌نام مجدداً باز خواهد شد. می‌توانید از طریق کانال‌های اطلاع‌رسانی از بازگشایی مطلع شوید."
     }
   ];
 
-  const handleRegistrationClick = () => {
-    window.open('https://auth.rafiei.co/?add-to-cart=5311', '_blank');
+  const handleStudentLoginClick = () => {
+    window.open('https://auth.rafiei.co/course/start', '_blank');
   };
 
   return (
@@ -251,31 +251,43 @@ const BoundlessLanding = () => {
                 />
               </motion.div>
 
-              {/* Course Status Alert - Updated for Registration Open */}
+              {/* Course Status Alert - Updated for Registration Stopped */}
               <motion.div 
-                className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200 dark:border-green-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
+                className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-red-200 dark:border-red-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <div className="flex items-center justify-center mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center ml-3">
-                    <CheckCircle className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center ml-3">
+                    <Ban className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-foreground">ثبت نام شروع شد</h3>
+                  <h3 className="text-lg font-bold text-foreground">توقف ثبت‌نام</h3>
                 </div>
                 <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                  اکنون می‌توانید در دوره شروع بدون مرز ثبت‌نام کنید و مسیر کسب‌وکار جهانی خود را آغاز کنید.
+                  ثبت‌نام دوره شروع بدون مرز به پایان رسیده است. برای اطلاع از دوره بعدی منتظر شمارش معکوس باشید.
                 </p>
                 
                 <Button 
-                  onClick={handleRegistrationClick}
+                  disabled
                   size="sm"
-                  className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 text-sm font-medium rounded-lg hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 shadow-md transition-all transform hover:scale-105"
+                  className="bg-gradient-to-r from-gray-400 to-gray-500 text-white px-4 py-2 text-sm font-medium rounded-lg cursor-not-allowed opacity-60 mb-3"
                 >
-                  <CheckCircle className="ml-2" size={14} />
-                  ثبت نام شروع شد
+                  <Ban className="ml-2" size={14} />
+                  ثبت‌نام متوقف شده
                 </Button>
+
+                {/* Small Student Login Button */}
+                <div className="mt-3">
+                  <Button 
+                    onClick={handleStudentLoginClick}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-3 py-1 h-7 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400"
+                  >
+                    دانشجوی دوره هستید؟ وارد شوید
+                  </Button>
+                </div>
               </motion.div>
             </div>
           </div>
@@ -333,7 +345,7 @@ const BoundlessLanding = () => {
             >
               <EnhancedCountdownTimer 
                 endDate={countdownEndDate.toISOString()}
-                label="تا شروع ثبت‌نام"
+                label="تا شروع ثبت‌نام بعدی"
                 className="mx-auto"
               />
             </motion.div>
@@ -598,16 +610,16 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Final CTA - Updated for Registration Open */}
-        <section className="py-20 bg-gradient-to-r from-green-50 via-blue-50 to-purple-50 dark:from-green-900 dark:via-blue-950/30 dark:to-purple-950/30 text-foreground">
+        {/* Final CTA - Updated for Registration Stopped */}
+        <section className="py-20 bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-900/20 dark:via-orange-950/20 dark:to-yellow-950/20 text-foreground">
           <div className="container max-w-4xl mx-auto text-center px-4">
             <motion.h2 
-              className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent"
+              className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 bg-clip-text text-transparent"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              همین حالا ثبت‌نام کنید
+              ثبت‌نام متوقف شده است
             </motion.h2>
             <motion.p 
               className="text-xl mb-12 text-muted-foreground"
@@ -615,7 +627,7 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              فرصت طلایی برای شروع کسب‌وکار جهانی در دستان شماست
+              برای اطلاع از دوره بعدی، شمارش معکوس را دنبال کنید
             </motion.p>
             
             <motion.div 
@@ -624,25 +636,38 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+                <Ban className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-semibold">ثبت‌نام باز است!</span>
+              <span className="text-2xl font-semibold">ثبت‌نام بسته شده</span>
             </motion.div>
             
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
+              className="space-y-3"
             >
               <Button 
-                onClick={handleRegistrationClick}
+                disabled
                 size="lg"
-                className="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg px-8 py-3 text-lg font-medium border-0 hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 shadow-lg transition-all transform hover:scale-105"
+                className="bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-lg px-8 py-3 text-lg font-medium border-0 cursor-not-allowed opacity-60"
               >
-                <ArrowRight className="ml-2" size={20} />
-                ثبت نام شروع شد
+                <Ban className="ml-2" size={20} />
+                ثبت‌نام متوقف شده
               </Button>
+
+              {/* Small Student Login Button */}
+              <div className="mt-4">
+                <Button 
+                  onClick={handleStudentLoginClick}
+                  variant="outline"
+                  size="sm"
+                  className="text-sm px-4 py-2 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400"
+                >
+                  دانشجوی دوره هستید؟ وارد شوید
+                </Button>
+              </div>
             </motion.div>
             
             <motion.p 
@@ -661,3 +686,6 @@ const BoundlessLanding = () => {
 };
 
 export default BoundlessLanding;
+
+</initial_code>
+undefined
