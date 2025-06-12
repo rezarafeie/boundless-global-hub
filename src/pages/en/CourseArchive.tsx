@@ -56,7 +56,7 @@ const EnglishCourseArchive = () => {
     {
       title: "The Smart Pack | Life Upgrade with AI",
       description: "Complete package of training and tools for better living with artificial intelligence. Includes podcasts, prompts, tools and practical training.",
-      benefits: ["6 educational podcast episodes", "Complete prompt writing guide", "Top AI tools", "Smart agent creation training"],
+      benefits: "6 educational podcast episodes, Complete prompt writing guide, Top AI tools, Smart agent creation training",
       outcome: "Complete mastery of AI tools to improve personal and professional life",
       isPaid: true,
       slug: "smart-pack",
