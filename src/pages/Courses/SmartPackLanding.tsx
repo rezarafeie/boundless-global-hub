@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,10 @@ import { motion } from "framer-motion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import IframeModal from "@/components/IframeModal";
 import MobileStickyButton from "@/components/MobileStickyButton";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const SmartPackLanding = () => {
+  const { translations } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -82,64 +85,64 @@ const SmartPackLanding = () => {
   const packContents = [
     {
       icon: Mic,
-      title: "۶ اپیزود پادکستی آموزشی",
-      description: "آموزش صوتی جامع برای یادگیری در هر زمان و مکان"
+      title: translations.podcastEpisodes || "۶ اپیزود پادکستی آموزشی",
+      description: translations.podcastDesc || "آموزش صوتی جامع برای یادگیری در هر زمان و مکان"
     },
     {
       icon: FileText,
-      title: "دفترچه پرامپت‌نویسی",
-      description: "راهنمای کامل نوشتن پرامپت‌های حرفه‌ای"
+      title: translations.promptNotebook || "دفترچه پرامپت‌نویسی",
+      description: translations.promptNotebookDesc || "راهنمای کامل نوشتن پرامپت‌های حرفه‌ای"
     },
     {
       icon: Lightbulb,
-      title: "پرامپت‌های آماده",
-      description: "بیش از ۱۰۰ پرامپت آماده برای زندگی و کار"
+      title: translations.readyPrompts || "پرامپت‌های آماده",
+      description: translations.readyPromptsDesc || "بیش از ۱۰۰ پرامپت آماده برای زندگی و کار"
     },
     {
       icon: Cog,
-      title: "ابزارهای برتر AI",
-      description: "معرفی و آموزش کار با بهترین ابزارهای هوش مصنوعی"
+      title: translations.topAiTools || "ابزارهای برتر AI",
+      description: translations.topAiToolsDesc || "معرفی و آموزش کار با بهترین ابزارهای هوش مصنوعی"
     },
     {
       icon: Brain,
-      title: "ساخت ایجنت هوشمند",
-      description: "آموزش گام‌به‌گام ساخت ربات‌های هوشمند"
+      title: translations.smartAgentCreation || "ساخت ایجنت هوشمند",
+      description: translations.smartAgentDesc || "آموزش گام‌به‌گام ساخت ربات‌های هوشمند"
     },
     {
       icon: ExternalLink,
-      title: "فایل‌های عملی",
-      description: "اکسل، چک‌لیست و دفترچه تمرین‌های کاربردی"
+      title: translations.practicalFiles || "فایل‌های عملی",
+      description: translations.practicalFilesDesc || "اکسل، چک‌لیست و دفترچه تمرین‌های کاربردی"
     }
   ];
 
   const curriculum = [
     {
-      title: "زندگی شخصی بهتر با AI",
-      description: "برنامه‌ریزی، سلامتی، بازگشت به خود، انگیزه",
+      title: translations.personalLifeWithAi || "زندگی شخصی بهتر با AI",
+      description: translations.personalLifeDesc || "برنامه‌ریزی، سلامتی، بازگشت به خود، انگیزه",
       icon: Heart,
       items: ["برنامه‌ریزی هوشمند روزانه", "مدیریت سلامت با AI", "تقویت انگیزه و تمرکز"]
     },
     {
-      title: "زندگی کاری هوشمند",
-      description: "مدیریت مالی، بیزینس بدون سرمایه، ایده‌سازی",
+      title: translations.smartWorkLife || "زندگی کاری هوشمند",
+      description: translations.smartWorkLifeDesc || "مدیریت مالی، بیزینس بدون سرمایه، ایده‌سازی",
       icon: DollarSign,
       items: ["استراتژی‌های مالی هوشمند", "راه‌اندازی کسب‌وکار با AI", "تولید ایده‌های نوآورانه"]
     },
     {
-      title: "ساخت ایجنت و خودکارسازی",
-      description: "N8N، Lovable و ابزارهای اتوماسیون",
+      title: translations.agentCreationAutomation || "ساخت ایجنت و خودکارسازی",
+      description: translations.agentCreationDesc || "N8N، Lovable و ابزارهای اتوماسیون",
       icon: Cog,
       items: ["ساخت ربات‌های کاری", "اتوماسیون فرآیندها", "یکپارچه‌سازی سیستم‌ها"]
     },
     {
-      title: "کتابخانه ابزارهای برتر AI",
-      description: "معرفی جامع بهترین ابزارها",
+      title: translations.aiToolsLibrary || "کتابخانه ابزارهای برتر AI",
+      description: translations.aiToolsLibraryDesc || "معرفی جامع بهترین ابزارها",
       icon: BookOpen,
       items: ["ابزارهای تولید محتوا", "پلتفرم‌های تحلیل داده", "سرویس‌های هوش مصنوعی"]
     },
     {
-      title: "مارکتینگ هوشمند",
-      description: "شبکه اجتماعی، تولید ویدیو، موزیک، کپشن",
+      title: translations.smartMarketing || "مارکتینگ هوشمند",
+      description: translations.smartMarketingDesc || "شبکه اجتماعی، تولید ویدیو، موزیک، کپشن",
       icon: TrendingUp,
       items: ["تولید محتوای ویروسی", "ساخت ویدیو و موزیک", "بازاریابی اتوماتیک"]
     }
@@ -174,12 +177,12 @@ const SmartPackLanding = () => {
   ];
 
   const expectedResults = [
-    { icon: TrendingUp, text: "بهره‌وری بیشتر در زندگی" },
-    { icon: CheckCircle, text: "ایجاد عادت‌های هوشمند" },
-    { icon: DollarSign, text: "افزایش درآمد از طریق هوش مصنوعی" },
-    { icon: Rocket, text: "راه‌اندازی بیزینس شخصی" },
-    { icon: Heart, text: "بهبود سلامت و آرامش ذهن" },
-    { icon: Globe, text: "دسترسی به درآمد دلاری" }
+    { icon: TrendingUp, text: translations.increasedProductivity || "بهره‌وری بیشتر در زندگی" },
+    { icon: CheckCircle, text: translations.smartHabits || "ایجاد عادت‌های هوشمند" },
+    { icon: DollarSign, text: translations.increasedIncome || "افزایش درآمد از طریق هوش مصنوعی" },
+    { icon: Rocket, text: translations.personalBusiness || "راه‌اندازی بیزینس شخصی" },
+    { icon: Heart, text: translations.improvedHealth || "بهبود سلامت و آرامش ذهن" },
+    { icon: Globe, text: translations.dollarIncome || "دسترسی به درآمد دلاری" }
   ];
 
   const tools = [
@@ -196,26 +199,26 @@ const SmartPackLanding = () => {
 
   // Student achievements data
   const achievements = [
-    { number: 3200, label: "دانشجو", suffix: "+" },
-    { number: 98, label: "رضایت", suffix: "%" },
-    { number: 75, label: "گزارش موفقیت واقعی", suffix: "+" }
+    { number: 3200, label: translations.studentsCount || "دانشجو", suffix: "+" },
+    { number: 98, label: translations.satisfactionRate || "رضایت", suffix: "%" },
+    { number: 75, label: translations.successReports || "گزارش موفقیت واقعی", suffix: "+" }
   ];
 
   const testimonials = [
     {
-      text: "با پرامپت‌های مالی همین پک، اولین ۱۰۰۰ دلاری‌مو درآوردم.",
+      text: translations.testimonial1 || "با پرامپت‌های مالی همین پک، اولین ۱۰۰۰ دلاری‌مو درآوردم.",
       avatar: "👨‍💻"
     },
     {
-      text: "۴ ساعت وقت آزاد در روز با خودکارسازی کارام",
+      text: translations.testimonial2 || "۴ ساعت وقت آزاد در روز با خودکارسازی کارام",
       avatar: "👩‍💼"
     },
     {
-      text: "تمرین‌های تمرکز ذهنی فوق‌العاده بود!",
+      text: translations.testimonial3 || "تمرین‌های تمرکز ذهنی فوق‌العاده بود!",
       avatar: "🧑‍🎓"
     },
     {
-      text: "درآمد پسیو من با این آموزش‌ها ۳ برابر شد",
+      text: translations.testimonial4 || "درآمد پسیو من با این آموزش‌ها ۳ برابر شد",
       avatar: "👨‍🚀"
     }
   ];
@@ -224,23 +227,23 @@ const SmartPackLanding = () => {
   const enhancedBonuses = [
     {
       icon: Star,
-      title: "دفترچه ۱۰ پرامپت طلایی برای روزهای سخت",
-      description: "پرامپت‌های انگیزشی ویژه"
+      title: translations.goldenPrompts || "دفترچه ۱۰ پرامپت طلایی برای روزهای سخت",
+      description: translations.goldenPromptsDesc || "پرامپت‌های انگیزشی ویژه"
     },
     {
       icon: FileText,
-      title: "فایل Notion برنامه‌ریزی شخصی",
-      description: "قالب آماده برای سازماندهی"
+      title: translations.notionTemplate || "فایل Notion برنامه‌ریزی شخصی",
+      description: translations.notionTemplateDesc || "قالب آماده برای سازماندهی"
     },
     {
       icon: Brain,
-      title: "دستیار GPT روزانه آماده استفاده",
-      description: "ربات شخصی برای کارهای روزمره"
+      title: translations.dailyGptAssistant || "دستیار GPT روزانه آماده استفاده",
+      description: translations.dailyGptAssistantDesc || "ربات شخصی برای کارهای روزمره"
     },
     {
       icon: BookOpen,
-      title: "PDF پرامپت‌بوک برای محتوا و بیزینس",
-      description: "راهنمای کامل تولید محتوا"
+      title: translations.promptBookPdf || "PDF پرامپت‌بوک برای محتوا و بیزینس",
+      description: translations.promptBookPdfDesc || "راهنمای کامل تولید محتوا"
     }
   ];
 
@@ -248,61 +251,61 @@ const SmartPackLanding = () => {
   const trustBadges = [
     {
       icon: Shield,
-      title: "گارانتی ۷ روزه بازگشت وجه",
-      description: "بدون شرط و قید"
+      title: translations.moneyBackGuarantee || "گارانتی ۷ روزه بازگشت وجه",
+      description: translations.moneyBackDesc || "بدون شرط و قید"
     },
     {
       icon: Users,
-      title: "پشتیبانی مستقیم از آکادمی رفیعی",
-      description: "پاسخ سریع به سوالات"
+      title: translations.directSupport || "پشتیبانی مستقیم از آکادمی رفیعی",
+      description: translations.directSupportDesc || "پاسخ سریع به سوالات"
     },
     {
       icon: Download,
-      title: "دسترسی دائمی و دانلود نامحدود",
-      description: "مالکیت مادام‌العمر"
+      title: translations.permanentAccess || "دسترسی دائمی و دانلود نامحدود",
+      description: translations.permanentAccessDesc || "مالکیت مادام‌العمر"
     },
     {
       icon: Gift,
-      title: "آپدیت‌های رایگان مادام‌العمر",
-      description: "محتوای جدید بدون هزینه اضافی"
+      title: translations.freeUpdates || "آپدیت‌های رایگان مادام‌العمر",
+      description: translations.freeUpdatesDesc || "محتوای جدید بدون هزینه اضافی"
     }
   ];
 
   const faqs = [
     {
       id: "programming",
-      question: "آیا برای استفاده از این پک باید برنامه‌نویسی بلد باشم؟",
-      answer: "خیر، این پک برای همه سطوح طراحی شده. حتی اگر هیچ تجربه فنی نداشته باشید، می‌توانید از محتواها استفاده کنید."
+      question: translations.faqProgrammingQ || "آیا برای استفاده از این پک باید برنامه‌نویسی بلد باشم؟",
+      answer: translations.faqProgrammingA || "خیر، این پک برای همه سطوح طراحی شده. حتی اگر هیچ تجربه فنی نداشته باشید، می‌توانید از محتواها استفاده کنید."
     },
     {
       id: "access",
-      question: "چطور به محتواها دسترسی پیدا می‌کنم؟",
-      answer: "بعد از خرید، لینک دسترسی به پنل اختصاصی شما ارسال می‌شود که شامل تمام فایل‌ها و آموزش‌هاست."
+      question: translations.faqAccessQ || "چطور به محتواها دسترسی پیدا می‌کنم؟",
+      answer: translations.faqAccessA || "بعد از خرید، لینک دسترسی به پنل اختصاصی شما ارسال می‌شود که شامل تمام فایل‌ها و آموزش‌هاست."
     },
     {
       id: "activation",
-      question: "بعد از خرید چه چیزهایی برام فعال میشه؟",
-      answer: "دسترسی کامل به پادکست‌ها، فایل‌های PDF، پرامپت‌ها، ابزارها و بونوس‌های ویژه فعال می‌شود."
+      question: translations.faqActivationQ || "بعد از خرید چه چیزهایی برام فعال میشه؟",
+      answer: translations.faqActivationA || "دسترسی کامل به پادکست‌ها، فایل‌های PDF، پرامپت‌ها، ابزارها و بونوس‌های ویژه فعال می‌شود."
     },
     {
       id: "download",
-      question: "می‌تونم فایل‌ها رو دانلود کنم؟",
-      answer: "بله، تمام فایل‌ها قابل دانلود هستند و می‌توانید آن‌ها را برای همیشه نگه دارید."
+      question: translations.faqDownloadQ || "می‌تونم فایل‌ها رو دانلود کنم؟",
+      answer: translations.faqDownloadA || "بله، تمام فایل‌ها قابل دانلود هستند و می‌توانید آن‌ها را برای همیشه نگه دارید."
     },
     {
       id: "updates",
-      question: "آیا آپدیت‌های بعدی هم رایگانه؟",
-      answer: "بله، تمام آپدیت‌ها و محتوای جدید برای اعضای فعلی کاملاً رایگان ارائه می‌شود."
+      question: translations.faqUpdatesQ || "آیا آپدیت‌های بعدی هم رایگانه؟",
+      answer: translations.faqUpdatesA || "بله، تمام آپدیت‌ها و محتوای جدید برای اعضای فعلی کاملاً رایگان ارائه می‌شود."
     },
     {
       id: "beginner",
-      question: "آیا این پک برای کسانی که هیچ دانشی از هوش مصنوعی ندارند هم مفید است؟",
-      answer: "بله! دقیقاً برای همین افراد طراحی شده، آموزش‌ها از صفر و کاربردی هستند."
+      question: translations.faqBeginnerQ || "آیا این پک برای کسانی که هیچ دانشی از هوش مصنوعی ندارند هم مفید است؟",
+      answer: translations.faqBeginnerA || "بله! دقیقاً برای همین افراد طراحی شده، آموزش‌ها از صفر و کاربردی هستند."
     },
     {
       id: "guide",
-      question: "آیا بعد از خرید راهنمای استفاده هم دریافت می‌کنم؟",
-      answer: "بله. بلافاصله بعد از خرید، راهنمای شروع سریع به همراه فایل‌ها در پنل شما فعال می‌شود."
+      question: translations.faqGuideQ || "آیا بعد از خرید راهنمای استفاده هم دریافت می‌کنم؟",
+      answer: translations.faqGuideA || "بله. بلافاصله بعد از خرید، راهنمای شروع سریع به همراه فایل‌ها در پنل شما فعال می‌شود."
     }
   ];
 
@@ -359,7 +362,7 @@ const SmartPackLanding = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.2 }}
               >
-                زندگی‌تو متحول کن
+                {translations.smartPackTitle || "زندگی‌تو متحول کن"}
                 <br />
                 <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
                   با کمک هوش مصنوعی
@@ -372,7 +375,7 @@ const SmartPackLanding = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                پکیج جامع آموزش و ابزار برای بهتر زندگی کردن، با هوش مصنوعی
+                {translations.smartPackSubtitle || "پکیج جامع آموزش و ابزار برای بهتر زندگی کردن، با هوش مصنوعی"}
               </motion.p>
 
               <motion.div
@@ -387,7 +390,7 @@ const SmartPackLanding = () => {
                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full px-12 py-4 text-xl font-bold shadow-2xl transform hover:scale-105 transition-all duration-300"
                 >
                   <Download className="ml-3" size={24} />
-                  دریافت پک هوشمند
+                  {translations.smartPackCta || "دریافت پک هوشمند"}
                 </Button>
                 
                 <div className="flex items-center justify-center gap-6 text-sm text-blue-200">
@@ -413,9 +416,9 @@ const SmartPackLanding = () => {
         <section className="py-20 bg-white dark:bg-gray-900">
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">محتویات پک هوشمند</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.packContentsTitle || "محتویات پک هوشمند"}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                همه چیزی که برای زندگی هوشمندتر با AI نیاز دارید
+                {translations.packContentsSubtitle || "همه چیزی که برای زندگی هوشمندتر با AI نیاز دارید"}
               </p>
             </div>
             
@@ -451,9 +454,9 @@ const SmartPackLanding = () => {
         <section className="py-20" style={{ backgroundColor: '#002B55' }}>
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">دستاوردهای واقعی دانشجویان پک هوشمند</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">{translations.studentAchievementsTitle || "دستاوردهای واقعی دانشجویان پک هوشمند"}</h2>
               <p className="text-lg text-blue-200 max-w-2xl mx-auto">
-                نتایج واقعی و قابل اعتماد از دانشجویان ما
+                {translations.studentAchievementsSubtitle || "نتایج واقعی و قابل اعتماد از دانشجویان ما"}
               </p>
             </div>
             
@@ -514,9 +517,9 @@ const SmartPackLanding = () => {
         <section className="py-20 bg-gray-50 dark:bg-gray-800">
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">سرفصل‌های آموزشی</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.curriculumTitle || "سرفصل‌های آموزشی"}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                برنامه جامع و گام‌به‌گام برای تسلط بر هوش مصنوعی
+                {translations.curriculumSubtitle || "برنامه جامع و گام‌به‌گام برای تسلط بر هوش مصنوعی"}
               </p>
             </div>
             
@@ -568,16 +571,16 @@ const SmartPackLanding = () => {
               <div className="bg-orange-500 text-white p-4 rounded-lg text-center">
                 <div className="flex items-center justify-center gap-2">
                   <AlertTriangle size={20} />
-                  <span className="font-bold">🎉 دریافت این بونس‌ها فقط برای مدت محدود فعال است</span>
+                  <span className="font-bold">{translations.bonusesWarning || "🎉 دریافت این بونس‌ها فقط برای مدت محدود فعال است"}</span>
                 </div>
               </div>
             </div>
 
             <div className="text-center mb-16">
               <Gift className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">هدایای ویژه فقط برای خریداران امروز</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.specialBonusesTitle || "هدایای ویژه فقط برای خریداران امروز"}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                هدایای ارزشمند که فقط با پک هوشمند دریافت می‌کنید
+                {translations.specialBonusesSubtitle || "هدایای ارزشمند که فقط با پک هوشمند دریافت می‌کنید"}
               </p>
             </div>
             
@@ -637,9 +640,9 @@ const SmartPackLanding = () => {
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
               <Target className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">نتایج مورد انتظار</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.expectedResultsTitle || "نتایج مورد انتظار"}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                تغییراتی که بعد از استفاده از پک هوشمند خواهید دید
+                {translations.expectedResultsSubtitle || "تغییراتی که بعد از استفاده از پک هوشمند خواهید دید"}
               </p>
             </div>
             
@@ -670,9 +673,9 @@ const SmartPackLanding = () => {
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
               <Cog className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">ابزارهای معرفی‌شده</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.toolsTitle || "ابزارهای معرفی‌شده"}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                بهترین ابزارهای هوش مصنوعی که در پک آموزش داده می‌شوند
+                {translations.toolsSubtitle || "بهترین ابزارهای هوش مصنوعی که در پک آموزش داده می‌شوند"}
               </p>
             </div>
             
@@ -701,9 +704,9 @@ const SmartPackLanding = () => {
           <div className="container max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
               <Shield className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">ضمانت و اعتماد</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.trustTitle || "ضمانت و اعتماد"}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                خرید امن با ضمانت کامل
+                {translations.trustSubtitle || "خرید امن با ضمانت کامل"}
               </p>
             </div>
             
@@ -734,9 +737,9 @@ const SmartPackLanding = () => {
         <section className="py-20 bg-gray-50 dark:bg-gray-800">
           <div className="container max-w-4xl mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">سوالات متداول</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">{translations.faqTitle || "سوالات متداول"}</h2>
               <p className="text-lg text-muted-foreground">
-                پاسخ سوالات رایج درباره پک هوشمند
+                {translations.faqSubtitle || "پاسخ سوالات رایج درباره پک هوشمند"}
               </p>
             </div>
             
@@ -774,30 +777,30 @@ const SmartPackLanding = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-8">همین حالا شروع کن!</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-8">{translations.checkoutTitle || "همین حالا شروع کن!"}</h2>
               
               <Card className="bg-white/10 backdrop-blur-lg border border-white/20 p-8 mb-8">
                 <div className="text-center">
                   <div className="text-6xl font-bold mb-4">
-                    <span className="line-through text-3xl text-gray-300">۴۹۹,۰۰۰</span>
+                    <span className="line-through text-3xl text-gray-300">{translations.originalPrice || "۴۹۹,۰۰۰"}</span>
                     <br />
-                    <span className="text-orange-400">۲۹۹,۰۰۰</span>
-                    <span className="text-lg font-normal"> تومان</span>
+                    <span className="text-orange-400">{translations.currentPrice || "۲۹۹,۰۰۰"}</span>
+                    <span className="text-lg font-normal"> {translations.currency || "تومان"}</span>
                   </div>
-                  <Badge className="bg-red-500 text-white mb-6">۴۰٪ تخفیف ویژه</Badge>
+                  <Badge className="bg-red-500 text-white mb-6">{translations.specialDiscount || "۴۰٪ تخفیف ویژه"}</Badge>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-sm">
                     <div className="flex items-center justify-center gap-2">
                       <Star className="w-4 h-4 text-yellow-400" />
-                      <span>رضایت ۹۸٪ دانشجویان</span>
+                      <span>{translations.studentSatisfaction || "رضایت ۹۸٪ دانشجویان"}</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="w-4 h-4 text-green-400" />
-                      <span>پشتیبانی کامل</span>
+                      <span>{translations.fullSupport || "پشتیبانی کامل"}</span>
                     </div>
                     <div className="flex items-center justify-center gap-2">
                       <Users className="w-4 h-4 text-blue-400" />
-                      <span>امکان مشاوره</span>
+                      <span>{translations.consultationAvailable || "امکان مشاوره"}</span>
                     </div>
                   </div>
                   
@@ -807,13 +810,13 @@ const SmartPackLanding = () => {
                     className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full px-12 py-4 text-xl font-bold shadow-2xl transform hover:scale-105 transition-all duration-300 w-full md:w-auto"
                   >
                     <Zap className="ml-3" size={24} />
-                    همین حالا دریافت کن
+                    {translations.getItNow || "همین حالا دریافت کن"}
                   </Button>
                 </div>
               </Card>
               
               <p className="text-blue-200 text-sm">
-                دسترسی فوری بعد از خرید • ضمانت ۳۰ روزه بازگشت وجه
+                {translations.instantAccess || "دسترسی فوری بعد از خرید • ضمانت ۳۰ روزه بازگشت وجه"}
               </p>
             </motion.div>
           </div>
@@ -821,7 +824,7 @@ const SmartPackLanding = () => {
 
         {/* Sticky CTA Button */}
         <MobileStickyButton onClick={handlePurchaseClick}>
-          همین حالا پک هوشمند رو دریافت کن + هدیه‌ها
+          {translations.mobileCtaText || "همین حالا پک هوشمند رو دریافت کن + هدیه‌ها"}
         </MobileStickyButton>
 
         {/* Purchase Modal */}

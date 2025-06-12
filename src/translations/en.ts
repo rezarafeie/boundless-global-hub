@@ -1,403 +1,191 @@
 
 const enTranslations = {
-  websiteName: "Rafiei Academy",
-  slogan: "The Future of Income Generation is in Your Hands",
-  tagline: "Pave your way to success and dollar income with Rafiei Academy specialized courses",
-  callToAction: "Start Learning",
-  learnMore: "Learn More",
-  buyNow: "Buy Now",
-  joinNow: "Join Now",
-  startLearning: "Start Learning",
-  startTest: "Start Test",
-  startCourse: "Start Course",
-  startFreeCourse: "Start Free Course",
+  // Navigation and Header
   home: "Home",
   courses: "Courses",
-  paidCourses: "Premium Courses",
   freeCourses: "Free Courses",
+  paidCourses: "Paid Courses",
   assessmentCenter: "Assessment Center",
+  blog: "Blog",
+  about: "About",
+  contact: "Contact",
   aiAssistant: "AI Assistant",
-  loginRegister: "Login / Register",
-  userAccount: "My Account",
-  coursesTitle: "Training Courses",
-  coursesSubtitle: "A collection of specialized courses to develop your skills",
-  paidCoursesTitle: "Premium Courses",
-  paidCoursesSubtitle: "Advanced courses for professional development of your skills",
-  freeCoursesTitle: "Rafiei Academy Free Courses",
-  freeCoursesSubtitle: "🎉 Completely Free - Summer 2025 Special",
-  specialOffersTitle: "Special Offers",
+  toggleLanguage: "فا",
+  
+  // Hero Section
+  heroTitle: "Transform Your Life with AI",
+  heroSubtitle: "Comprehensive training and tools for better living with artificial intelligence",
+  heroCtaMain: "Get Smart Pack",
+  heroCtaSecondary: "Start Learning",
+  
+  // Smart Pack Landing Page
+  smartPackTitle: "Transform Your Life with Artificial Intelligence",
+  smartPackSubtitle: "Comprehensive package of training and tools for better living with artificial intelligence",
+  smartPackCta: "Get Smart Pack",
+  
+  // Pack Contents
+  packContentsTitle: "Smart Pack Contents",
+  packContentsSubtitle: "Everything you need for a smarter life with AI",
+  podcastEpisodes: "6 Educational Podcast Episodes",
+  podcastDesc: "Comprehensive audio training for learning anytime, anywhere",
+  promptNotebook: "Prompt Writing Notebook",
+  promptNotebookDesc: "Complete guide to writing professional prompts",
+  readyPrompts: "Ready-to-Use Prompts",
+  readyPromptsDesc: "Over 100 ready prompts for life and work",
+  topAiTools: "Top AI Tools",
+  topAiToolsDesc: "Introduction and training on the best AI tools",
+  smartAgentCreation: "Smart Agent Creation",
+  smartAgentDesc: "Step-by-step training on building intelligent bots",
+  practicalFiles: "Practical Files",
+  practicalFilesDesc: "Excel, checklists, and practical exercise notebooks",
+  
+  // Student Achievements
+  studentAchievementsTitle: "Real Achievements of Smart Pack Students",
+  studentAchievementsSubtitle: "Real and reliable results from our students",
+  studentsCount: "Students",
+  satisfactionRate: "Satisfaction",
+  successReports: "Real Success Reports",
+  
+  // Testimonials
+  testimonial1: "With the financial prompts from this pack, I earned my first $1000.",
+  testimonial2: "4 hours of free time per day with work automation",
+  testimonial3: "The mental focus exercises were amazing!",
+  testimonial4: "My passive income tripled with these trainings",
+  
+  // Curriculum
+  curriculumTitle: "Course Curriculum",
+  curriculumSubtitle: "Comprehensive and step-by-step program for mastering artificial intelligence",
+  personalLifeWithAi: "Better Personal Life with AI",
+  personalLifeDesc: "Planning, health, self-return, motivation",
+  smartWorkLife: "Smart Work Life",
+  smartWorkLifeDesc: "Financial management, business without capital, idea generation",
+  agentCreationAutomation: "Agent Creation and Automation",
+  agentCreationDesc: "N8N, Lovable and automation tools",
+  aiToolsLibrary: "Top AI Tools Library",
+  aiToolsLibraryDesc: "Comprehensive introduction to the best tools",
+  smartMarketing: "Smart Marketing",
+  smartMarketingDesc: "Social media, video production, music, captions",
+  
+  // Bonuses
+  specialBonusesTitle: "Special Gifts Only for Today's Buyers",
+  specialBonusesSubtitle: "Valuable gifts you'll only receive with the Smart Pack",
+  bonusesWarning: "🎉 Receiving these bonuses is only active for a limited time",
+  goldenPrompts: "10 Golden Prompts Notebook for Tough Days",
+  goldenPromptsDesc: "Special motivational prompts",
+  notionTemplate: "Personal Planning Notion File",
+  notionTemplateDesc: "Ready template for organization",
+  dailyGptAssistant: "Ready-to-Use Daily GPT Assistant",
+  dailyGptAssistantDesc: "Personal bot for daily tasks",
+  promptBookPdf: "Prompt Book PDF for Content and Business",
+  promptBookPdfDesc: "Complete content creation guide",
+  
+  // Expected Results
+  expectedResultsTitle: "Expected Results",
+  expectedResultsSubtitle: "Changes you'll see after using the Smart Pack",
+  increasedProductivity: "Increased productivity in life",
+  smartHabits: "Creating smart habits",
+  increasedIncome: "Increased income through AI",
+  personalBusiness: "Launching personal business",
+  improvedHealth: "Improved health and mental peace",
+  dollarIncome: "Access to dollar income",
+  
+  // Tools Introduced
+  toolsTitle: "Tools Introduced",
+  toolsSubtitle: "Best AI tools taught in the pack",
+  
+  // Trust Section
+  trustTitle: "Guarantee and Trust",
+  trustSubtitle: "Secure purchase with complete guarantee",
+  moneyBackGuarantee: "7-Day Money Back Guarantee",
+  moneyBackDesc: "No conditions or restrictions",
+  directSupport: "Direct Support from Rafiei Academy",
+  directSupportDesc: "Quick response to questions",
+  permanentAccess: "Permanent Access and Unlimited Download",
+  permanentAccessDesc: "Lifetime ownership",
+  freeUpdates: "Free Lifetime Updates",
+  freeUpdatesDesc: "New content at no extra cost",
+  
+  // FAQ
+  faqTitle: "Frequently Asked Questions",
+  faqSubtitle: "Answers to common questions about the Smart Pack",
+  
+  faqProgrammingQ: "Do I need to know programming to use this pack?",
+  faqProgrammingA: "No, this pack is designed for all levels. Even if you have no technical experience, you can use the content.",
+  
+  faqAccessQ: "How do I access the content?",
+  faqAccessA: "After purchase, you'll receive a link to your exclusive panel containing all files and tutorials.",
+  
+  faqActivationQ: "What gets activated after purchase?",
+  faqActivationA: "Complete access to podcasts, PDF files, prompts, tools, and special bonuses is activated.",
+  
+  faqDownloadQ: "Can I download the files?",
+  faqDownloadA: "Yes, all files are downloadable and you can keep them forever.",
+  
+  faqUpdatesQ: "Are future updates also free?",
+  faqUpdatesA: "Yes, all updates and new content are provided completely free for current members.",
+  
+  faqBeginnerQ: "Is this pack also useful for those who have no knowledge of AI?",
+  faqBeginnerA: "Yes! It's designed exactly for these people, the trainings are from scratch and practical.",
+  
+  faqGuideQ: "Do I also receive a usage guide after purchase?",
+  faqGuideA: "Yes. Immediately after purchase, a quick start guide along with files is activated in your panel.",
+  
+  // Checkout Section
+  checkoutTitle: "Start Right Now!",
+  originalPrice: "499,000",
+  currentPrice: "299,000",
+  currency: "Toman",
+  specialDiscount: "40% Special Discount",
+  studentSatisfaction: "98% Student Satisfaction",
+  fullSupport: "Complete Support",
+  consultationAvailable: "Consultation Available",
+  getItNow: "Get It Right Now",
+  instantAccess: "Instant access after purchase • 30-day money back guarantee",
+  
+  // Mobile Sticky Button
+  mobileCtaText: "Get Smart Pack Now + Gifts",
+  
+  // Common UI Elements
+  startTest: "Start Test",
+  startLearning: "Start Learning",
+  learnMore: "Learn More",
+  getAccess: "Get Access",
+  buyNow: "Buy Now",
+  
+  // Assessment Center
   assessmentCenterTitle: "Assessment Center",
-  assessmentCenterDesc: "Assess your skills and abilities using standard tests and determine your path to progress.",
+  assessmentCenterDesc: "Discover your strengths and find your path with scientific tests",
   personalityTests: "Personality Tests",
   intelligenceTests: "Intelligence Tests",
   careerTests: "Career Tests",
-  emotionTests: "Emotional Intelligence Tests",
+  emotionTests: "Emotional Tests",
   
-  // Course names and descriptions
-  boundlessProgram: "Boundless Program",
-  boundlessProgramDesc: "Comprehensive course on earning foreign currency and launching an international business",
-  boundlessBenefits: "Learning principles and strategies of international business",
-  boundlessOutcome: "Launching an independent business with foreign currency income",
-  boundlessStartTitle: "Boundless Start Course",
-  boundlessStartDesc: "Your starting point for global business",
-  courseSoldOut: "Registration is currently closed — capacity is full",
-  nextRegistrationDate: "Time remaining until registration opens",
-  courseGifts: "Course Gifts (Completely Free)",
-  courseFeatures: "Key Course Features",
+  // Free Courses
+  freeCoursesTitle: "Free Courses",
+  freeCoursesSubtitle: "Start your journey with our free courses",
+  coursesTitle: "Available Courses",
+  coursesSubtitle: "Choose the course that suits you",
   
-  instagramEssentials: "Instagram Essentials",
-  instagramEssentialsDesc: "Comprehensive training on marketing and monetizing on Instagram",
-  instagramBenefits: "Growth and monetization strategies on Instagram",
-  instagramOutcome: "Building a personal brand and earning income from Instagram",
-  
-  wealthCourse: "Wealth Course",
-  wealthCourseDesc: "Introduction to wealth building principles and achieving financial independence",
-  wealthBenefits: "Learning investment principles and asset management",
-  wealthOutcome: "Achieving financial independence and building sustainable wealth",
-  
-  metaverseEmpire: "Metaverse Empire",
-  metaverseEmpireDesc: "Introduction to the metaverse world and investment and income opportunities",
-  metaverseBenefits: "Training on blockchain concepts, NFTs and making money in the metaverse",
-  metaverseOutcome: "Entering the metaverse world and leveraging its opportunities",
-  
+  // Course specific translations
   boundlessTaste: "Boundless Taste",
-  boundlessTasteDesc: "Free preview of the main Boundless course",
-  boundlessTasteBenefits: "Introduction to basic concepts of international business",
-  boundlessTasteOutcome: "Making informed decisions to start an international business",
+  boundlessTasteDesc: "Discover the unlimited world of possibilities",
+  boundlessTasteBenefits: "Learn limitless thinking • Overcome mental barriers • Achieve your goals",
+  boundlessTasteOutcome: "You'll be able to think beyond limitations and achieve extraordinary results",
   
   passiveIncomeAI: "Passive Income with AI",
-  passiveIncomeAIDesc: "Introduction to methods of earning passive income using artificial intelligence",
-  passiveIncomeAIBenefits: "Learning content creation with the help of artificial intelligence",
-  passiveIncomeAIOutcome: "Setting up a passive digital income stream",
+  passiveIncomeAIDesc: "Learn to create passive income using artificial intelligence",
+  passiveIncomeAIBenefits: "AI income strategies • Automation techniques • Scalable business models",
+  passiveIncomeAIOutcome: "You'll have multiple streams of passive income using AI tools",
   
   changeProject: "Change Project",
-  changeProjectDesc: "Principles of making fundamental changes in life and business",
-  changeProjectBenefits: "Identifying barriers to change and ways to overcome them",
-  changeProjectOutcome: "Creating sustainable changes on the path to success",
+  changeProjectDesc: "Transform your life with systematic change",
+  changeProjectBenefits: "Personal transformation • Habit building • Goal achievement",
+  changeProjectOutcome: "You'll master the art of positive change in all areas of life",
   
   americanBusiness: "American Business",
-  americanBusinessDesc: "Introduction to the principles of setting up and managing a business in America",
-  americanBusinessBenefits: "Learning American business laws and regulations",
-  americanBusinessOutcome: "Preparing to enter the American market and expand business",
-  
-  // Course lessons, prices, instructors
-  lessonCount: "Number of Sessions",
-  price: "Price",
-  discountPrice: "Discount Price",
-  instructor: "Instructor",
-  level: "Course Level",
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
-  
-  // Status badges
-  activeStatus: "Active",
-  upcomingStatus: "Coming Soon",
-  completedStatus: "Completed",
-  
-  // Course categories
-  businessCourses: "Business Courses",
-  selfDevelopmentCourses: "Self-Development Courses",
-  
-  // Training center
-  trainingCenter: "Training Center",
-  trainingCenterDesc: "Specialized courses for personal and professional development",
-  currentlyRunning: "Currently Running",
-  currentlyRunningDesc: "Join our active courses that are currently in session",
-  upcomingCourses: "Upcoming Courses",
-  upcomingCoursesDesc: "Register for upcoming courses starting soon",
-  pastCourses: "Past Courses",
-  pastCoursesDesc: "Access archives of previously held courses",
-  
-  // Magazine section
-  magazine: "Magazine",
-  magazineDesc: "Latest articles and insights from Rafiei Academy",
-  readMore: "Read More",
-  
-  // Course activation page
-  welcomeToCourse: "Welcome to the Course",
-  accessTrainingFiles: "Access Training Files",
-  activateSupport: "Activate Support",
-  joinTelegram: "Join Telegram Channel",
-  launchAIAssistant: "Launch AI Assistant",
-  activated: "Activated",
-  playerActivationCode: "Player Activation Code",
-  howToActivate: "How to Activate",
-  downloadPlayer: "Download Player",
-  webPlayerAccess: "Access Web Player",
-  
-  // File types and course materials
-  videoLessons: "Video Sessions",
-  worksheets: "Worksheets",
-  quizzes: "Quizzes",
-  certificate: "Course Completion Certificate",
-  resources: "Additional Resources",
-  lifetime: "Lifetime Access",
-  
-  // Auth modal
-  loginTitle: "Login to Account",
-  registerTitle: "Register at Academy",
-  emailLabel: "Email or Mobile Number",
-  passwordLabel: "Password",
-  forgotPassword: "Forgot Password?",
-  loginButton: "Login",
-  registerButton: "Register",
-  googleLogin: "Login with Google",
-  appleLogin: "Login with Apple",
-  alreadyHaveAccount: "Already registered?",
-  dontHaveAccount: "Don't have an account?",
-  enterAllFields: "Please fill in all fields",
-  
-  // Account
-  myAccount: "My Account",
-  myCourses: "My Courses",
-  myAssessments: "My Assessments",
-  myProfile: "My Profile",
-  mySettings: "Settings",
-  logout: "Logout",
-  
-  // BoundlessLanding translations
-  boundlessLandingTitle: "Boundless Program",
-  boundlessLandingSubtitle: "Master the art of international business",
-  boundlessLandingDesc: "Comprehensive course on earning foreign currency and launching an international business",
-  boundlessLandingHeroDesc: "Learn how to create a sustainable business with foreign currency income, regardless of your current location or experience.",
-  boundlessLandingCTA: "Join the Course",
-  boundlessLandingPrice: "$500",
-  boundlessLandingOriginalPrice: "$800",
-  boundlessLandingDiscPrice: "$300",
-  boundlessLandingSpecialOffer: "Special Offer: $300",
-  boundlessLandingInclusive: "Including all taxes and fees",
-  boundlessLandingFeatures: "Course Features",
-  boundlessLandingTargetAudience: "Who is this for?",
-  boundlessLandingWhatLearn: "What will you learn?",
-  boundlessLandingStartCourse: "Start your journey now",
-  boundlessLandingJoinLater: "Learn more before deciding",
-  boundlessLandingCountdown: "Special offer ends in:",
-  boundlessLandingAboutTitle: "What is the Boundless Program?",
-  boundlessLandingWhoFor: "Who is this course for?",
-  boundlessLandingSolutions: "What problems does it solve?",
-  boundlessLandingResultsTitle: "Your expected results",
-  boundlessLandingBonusesTitle: "Special bonuses",
-  boundlessLandingFAQTitle: "Frequently Asked Questions",
-  boundlessLandingBonus1: "AI Content Creation Course",
-  boundlessLandingBonus2: "Professional Personality Assessment",
-  boundlessLandingBonus3: "Guide to First Dollar Income",
-  boundlessLandingTestimonialsTitle: "What our students say",
-  boundlessLandingFitTitle: "Is this course right for me?",
-  boundlessLandingFitStudent: "Students",
-  boundlessLandingFitFreelancer: "Freelancers",
-  boundlessLandingFitRemote: "Remote Workers",
-  boundlessLandingFitEntrepreneur: "Entrepreneurs",
-  boundlessLandingFitMigrate: "Immigration Applicants",
-  boundlessLandingStickyOffer: "Limited Offer: $300",
-  boundlessLandingSkill1: "Global Mindset",
-  boundlessLandingSkill2: "Dropshipping",
-  boundlessLandingSkill3: "Service Delivery",
-  boundlessLandingSkill4: "Digital Products",
-  boundlessLandingSkill5: "Scalable Systems",
-  
-  // Verification
-  verificationTitle: "Verify Email or Mobile Number",
-  verificationDesc: "Enter the verification code sent to your email or mobile number.",
-  verificationButton: "Verify Code",
-  resendCode: "Resend Code",
-  
-  // Course access
-  courseAccessGranted: "Course Access",
-  paidCourseAccessInstructions: "Your course access has been activated. You can now use the course content.",
-  videoPlayerPlaceholder: "Video Player",
-  rafeiPlayer: "Rafiei Academy Exclusive Player",
-  
-  courseMaterials: "Course Materials",
-  courseMaterialsDescription: "Download training files, worksheets and course exercises",
-  
-  communityAccess: "Community Access",
-  communityAccessDescription: "Chat with other students and ask questions from instructors",
-  
-  freeCourseAccess: "Free Course Access",
-  freeCourseAccessInstructions: "Welcome to the free course. Click on the player to watch video content.",
-  youtubeEmbed: "YouTube Video Content",
-  
-  upgradeToPremium: "Upgrade to Premium",
-  upgradeToPremiumDescription: "To access complete and advanced content, upgrade to the full version of the course.",
-  viewPaidCourses: "View Premium Courses",
-  
-  // Navigation and UI elements
-  support: "Support",
-  blog: "Blog",
-  about: "About Us",
-  contact: "Contact Us",
-  loading: "Loading...",
-  
-  // System messages
-  allCourses: "All Courses",
-  business: "Business",
-  personalDevelopment: "Personal Development",
-  free: "Free",
-  comingSoon: "Coming Soon",
-  completed: "Completed",
-  
-  // Footer
-  footerCopyright: "© All rights reserved for Rafiei Academy.",
-  footerDesc: "Rafiei Academy, the reference for boundless business education and foreign currency income",
-  aboutUs: "About Us",
-  contactUs: "Contact Us",
-  faq: "FAQ",
-  termsOfService: "Terms & Conditions",
-  privacyPolicy: "Privacy Policy",
-  
-  // Error messages
-  notFoundTitle: "Page Not Found",
-  notFoundDesc: "Sorry! The page you're looking for doesn't exist.",
-  backToHome: "Back to Home",
-  
-  // Additional UI text for full internationalization
-  getSupport: "Get Support",
-  freeRegistration: "Free Registration",
-  startCourseNow: "Start Course Now",
-  purchaseCourse: "Purchase Course",
-  viewDetails: "View Details",
-  courseContent: "Course Content",
-  instructorProfile: "Instructor Profile",
-  studentReviews: "Student Reviews",
-  coursePreview: "Course Preview",
-  downloadResources: "Download Resources",
-  joinCommunity: "Join Community",
-  trackProgress: "Track Progress",
-  earnCertificate: "Earn Certificate",
-  
-  // Auth related messages
-  error: "Error",
-  enterEmail: "Please enter your email",
-  enterPhone: "Please enter your mobile number",
-  enterEmailOrPhone: "Enter your email or mobile number",
-  emailOrPhonePlaceholder: "example@mail.com | 09123456789",
-  continue: "Continue",
-  success: "Success",
-  registrationSuccess: "Registration completed successfully",
-  accountCreated: "Your account has been created successfully",
-  enterPassword: "Please enter your password",
-  loginSuccess: "Login completed successfully",
-  accessCourse: "Access Course",
-  fillAllFields: "Please fill in all fields",
-  welcomeBack: "Welcome back!",
-  password: "Password",
-  passwordPlaceholder: "Enter your password",
-  firstName: "First Name",
-  firstNamePlaceholder: "Enter your first name",
-  lastName: "Last Name",
-  lastNamePlaceholder: "Enter your last name",
-  emailOrPhone: "Email or Mobile",
-  email: "Email",
-  phone: "Mobile Number",
-  back: "Back",
-  register: "Register",
-  login: "Login",
-  useVerificationCode: "Use verification code",
-  usePassword: "Use password",
-  sendVerificationCode: "Send verification code",
-  creating: "Creating...",
-  
-  // Verification related
-  verify: "Verify",
-  codeSent: "Code sent",
-  codeEmailSent: "Verification code sent to",
-  codePhoneSent: "Verification code sent to",
-  codeExpires: "Code expires in",
-  invalidCode: "Invalid verification code",
-  verificationSuccess: "Verification completed successfully",
-  
-  // BoundlessLanding FAQ
-  boundlessLandingFAQ1Q: "How long does it take to complete the course?",
-  boundlessLandingFAQ1A: "The course can be completed in 8 weeks with consistent effort, but you have lifetime access to go at your own pace.",
-  boundlessLandingFAQ2Q: "Do I need prior business experience?",
-  boundlessLandingFAQ2A: "No, the course is designed for both beginners and experienced entrepreneurs. We start with basic concepts.",
-  boundlessLandingFAQ3Q: "Is technical knowledge required?",
-  boundlessLandingFAQ3A: "No technical expertise is needed. We provide step-by-step guidance for all technical aspects.",
-  boundlessLandingFAQ4Q: "Can I get a refund if I'm not satisfied?",
-  boundlessLandingFAQ4A: "Yes, we offer a 14-day money-back guarantee if you're not completely satisfied with the course.",
-  
-  // AI Assistant
-  aiAssistantTitle: "AI Assistant",
-  aiAssistantDescription: "Get personalized guidance for your business and career goals using our advanced AI assistant trained on Rafiei Academy's exclusive knowledge base.",
-  aiAssistantAction: "Use AI Assistant",
-  aiAssistantFeature1Title: "Smart Responses",
-  aiAssistantFeature1Desc: "Get answers to your questions using advanced artificial intelligence",
-  aiAssistantFeature2Title: "Exclusive Resources",
-  aiAssistantFeature2Desc: "Access to resources and exclusive information from Rafiei Academy",
-  aiAssistantFeature3Title: "Personalized Guidance",
-  aiAssistantFeature3Desc: "Receive solutions tailored to your needs and goals",
-  aiAssistantFeature4Title: "24/7 Access",
-  aiAssistantFeature4: "Have access to guidance whenever you need it, day or night",
-  aiAssistantName: "Rafiei AI Assistant",
-  aiAssistantLongDescription: "Get personalized guidance for your business and career goals with our advanced AI assistant trained on Rafiei Academy's exclusive knowledge base.",
-  startAssistant: "Chat with Assistant",
-  aiFeature1: "Business Strategy",
-  aiFeature1Desc: "Receive insights and strategies for growing your business",
-  aiFeature2: "Career Development",
-  aiFeature2Desc: "Learn how to advance in your career path",
-  aiFeature3: "Personal Development",
-  aiFeature3Desc: "Discover ways to improve your skills and mindset",
-
-  // Course-related translations
-  freeAccess: "Free Access",
-  community: "Community",
-  lifetimeAccess: "Lifetime Access",
-  online: "Online",
-  
-  // Theme toggle
-  toggleTheme: "Toggle Theme",
-  
-  // Additional missing translations for UI consistency
-  darkMode: "Dark Mode",
-  lightMode: "Light Mode",
-  language: "Language",
-  persian: "Persian",
-  english: "English",
-  
-  // Course page specific
-  courseOverview: "Course Overview",
-  courseCurriculum: "Course Curriculum",
-  courseInstructor: "Course Instructor",
-  courseReviews: "Student Reviews",
-  enroll: "Enroll Now",
-  preview: "Preview",
-  
-  // Boundless landing page specific
-  whyChooseBoundless: "Why Choose Boundless?",
-  expectedResults: "Expected Results",
-  specialBonuses: "Special Bonuses",
-  studentTestimonials: "Student Testimonials",
-  frequentlyAskedQuestions: "Frequently Asked Questions",
-  limitedTimeOffer: "Limited Time Offer",
-  enrollToday: "Enroll Today",
-  
-  // Assessment center specific
-  takeTest: "Take Test",
-  testResults: "Test Results",
-  assessmentHistory: "Assessment History",
-  
-  // Common actions
-  save: "Save",
-  cancel: "Cancel",
-  delete: "Delete",
-  edit: "Edit",
-  share: "Share",
-  copy: "Copy",
-  download: "Download",
-  upload: "Upload",
-  next: "Next",
-  previous: "Previous",
-  close: "Close",
-  open: "Open",
-  
-  // Status messages
-  saving: "Saving...",
-  saved: "Saved",
-  uploading: "Uploading...",
-  uploaded: "Uploaded",
-  downloading: "Downloading...",
-  downloaded: "Downloaded"
+  americanBusinessDesc: "Learn American business strategies and mindset",
+  americanBusinessBenefits: "Business mindset • American strategies • Global perspective",
+  americanBusinessOutcome: "You'll think and act like a successful American entrepreneur",
 };
 
 export default enTranslations;
