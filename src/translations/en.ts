@@ -1,4 +1,5 @@
 
+
 const enTranslations = {
   // Navigation and Header
   home: "Home",
@@ -186,6 +187,28 @@ const enTranslations = {
   americanBusinessDesc: "Learn American business strategies and mindset",
   americanBusinessBenefits: "Business mindset • American strategies • Global perspective",
   americanBusinessOutcome: "You'll think and act like a successful American entrepreneur",
+
+  // AI Assistant
+  aiAssistantTitle: "AI Assistant",
+  aiAssistantDescription: "Your personal AI assistant for daily tasks and productivity",
+  aiAssistantFeature1Desc: "Get instant answers to your questions and solve problems efficiently",
+  aiAssistantFeature2Desc: "Automate repetitive tasks and save valuable time",
+  aiAssistantFeature3Desc: "Learn new skills and improve your productivity with AI guidance",
+  aiAssistantAction: "Try AI Assistant",
+
+  // Additional UI elements
+  paidCoursesTitle: "Paid Courses",
+  startFreeCourse: "Start Free Course",
+  websiteName: "Rafiei Academy",
+  footerDesc: "Transform your life with artificial intelligence and advanced education",
+  trainingCenter: "Training Center",
+  magazine: "Magazine",
+  support: "Support",
+  aboutUs: "About Us",
+  footerCopyright: "© 2024 Rafiei Academy. All rights reserved.",
+  termsOfService: "Terms of Service",
+  privacyPolicy: "Privacy Policy",
 };
 
 export default enTranslations;
+
