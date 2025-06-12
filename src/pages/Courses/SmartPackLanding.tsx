@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,15 +28,20 @@ import {
   Play,
   Target,
   Rocket,
-  Globe
+  Globe,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import IframeModal from "@/components/IframeModal";
+import MobileStickyButton from "@/components/MobileStickyButton";
 
 const SmartPackLanding = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
   const handlePurchaseClick = () => {
     setIsModalOpen(true);
@@ -48,6 +52,31 @@ const SmartPackLanding = () => {
     if (checkoutSection) {
       checkoutSection.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // Animated counter hook
+  const useCounter = (end: number, duration: number = 2000) => {
+    const [count, setCount] = useState(0);
+    
+    useEffect(() => {
+      let startTime: number;
+      let animationFrame: number;
+      
+      const animate = (currentTime: number) => {
+        if (!startTime) startTime = currentTime;
+        const progress = Math.min((currentTime - startTime) / duration, 1);
+        setCount(Math.floor(end * progress));
+        
+        if (progress < 1) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+      
+      animationFrame = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(animationFrame);
+    }, [end, duration]);
+    
+    return count;
   };
 
   const packContents = [
@@ -165,6 +194,80 @@ const SmartPackLanding = () => {
     { name: "Google AI Studio", use: "توسعه اپلیکیشن‌های هوشمند" }
   ];
 
+  // Student achievements data
+  const achievements = [
+    { number: 3200, label: "دانشجو", suffix: "+" },
+    { number: 98, label: "رضایت", suffix: "%" },
+    { number: 75, label: "گزارش موفقیت واقعی", suffix: "+" }
+  ];
+
+  const testimonials = [
+    {
+      text: "با پرامپت‌های مالی همین پک، اولین ۱۰۰۰ دلاری‌مو درآوردم.",
+      avatar: "👨‍💻"
+    },
+    {
+      text: "۴ ساعت وقت آزاد در روز با خودکارسازی کارام",
+      avatar: "👩‍💼"
+    },
+    {
+      text: "تمرین‌های تمرکز ذهنی فوق‌العاده بود!",
+      avatar: "🧑‍🎓"
+    },
+    {
+      text: "درآمد پسیو من با این آموزش‌ها ۳ برابر شد",
+      avatar: "👨‍🚀"
+    }
+  ];
+
+  // Enhanced bonuses
+  const enhancedBonuses = [
+    {
+      icon: Star,
+      title: "دفترچه ۱۰ پرامپت طلایی برای روزهای سخت",
+      description: "پرامپت‌های انگیزشی ویژه"
+    },
+    {
+      icon: FileText,
+      title: "فایل Notion برنامه‌ریزی شخصی",
+      description: "قالب آماده برای سازماندهی"
+    },
+    {
+      icon: Brain,
+      title: "دستیار GPT روزانه آماده استفاده",
+      description: "ربات شخصی برای کارهای روزمره"
+    },
+    {
+      icon: BookOpen,
+      title: "PDF پرامپت‌بوک برای محتوا و بیزینس",
+      description: "راهنمای کامل تولید محتوا"
+    }
+  ];
+
+  // Trust badges
+  const trustBadges = [
+    {
+      icon: Shield,
+      title: "گارانتی ۷ روزه بازگشت وجه",
+      description: "بدون شرط و قید"
+    },
+    {
+      icon: Users,
+      title: "پشتیبانی مستقیم از آکادمی رفیعی",
+      description: "پاسخ سریع به سوالات"
+    },
+    {
+      icon: Download,
+      title: "دسترسی دائمی و دانلود نامحدود",
+      description: "مالکیت مادام‌العمر"
+    },
+    {
+      icon: Gift,
+      title: "آپدیت‌های رایگان مادام‌العمر",
+      description: "محتوای جدید بدون هزینه اضافی"
+    }
+  ];
+
   const faqs = [
     {
       id: "programming",
@@ -190,8 +293,39 @@ const SmartPackLanding = () => {
       id: "updates",
       question: "آیا آپدیت‌های بعدی هم رایگانه؟",
       answer: "بله، تمام آپدیت‌ها و محتوای جدید برای اعضای فعلی کاملاً رایگان ارائه می‌شود."
+    },
+    {
+      id: "beginner",
+      question: "آیا این پک برای کسانی که هیچ دانشی از هوش مصنوعی ندارند هم مفید است؟",
+      answer: "بله! دقیقاً برای همین افراد طراحی شده، آموزش‌ها از صفر و کاربردی هستند."
+    },
+    {
+      id: "guide",
+      question: "آیا بعد از خرید راهنمای استفاده هم دریافت می‌کنم؟",
+      answer: "بله. بلافاصله بعد از خرید، راهنمای شروع سریع به همراه فایل‌ها در پنل شما فعال می‌شود."
     }
   ];
+
+  // Testimonial rotation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [testimonials.length]);
+
+  const Counter = ({ end, suffix = "", label }: { end: number; suffix?: string; label: string }) => {
+    const count = useCounter(end);
+    
+    return (
+      <div className="text-center">
+        <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+          {count.toLocaleString()}{suffix}
+        </div>
+        <div className="text-blue-200 text-lg">{label}</div>
+      </div>
+    );
+  };
 
   return (
     <MainLayout>
@@ -313,6 +447,69 @@ const SmartPackLanding = () => {
           </div>
         </section>
 
+        {/* دستاوردهای دانشجویان */}
+        <section className="py-20" style={{ backgroundColor: '#002B55' }}>
+          <div className="container max-w-6xl mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">دستاوردهای واقعی دانشجویان پک هوشمند</h2>
+              <p className="text-lg text-blue-200 max-w-2xl mx-auto">
+                نتایج واقعی و قابل اعتماد از دانشجویان ما
+              </p>
+            </div>
+            
+            {/* Achievement Counters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+              {achievements.map((achievement, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20"
+                >
+                  <Counter
+                    end={achievement.number}
+                    suffix={achievement.suffix}
+                    label={achievement.label}
+                  />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Testimonials Carousel */}
+            <div className="max-w-4xl mx-auto">
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-xl p-8 border border-white/20">
+                <motion.div
+                  key={currentTestimonial}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-center"
+                >
+                  <div className="text-6xl mb-4">{testimonials[currentTestimonial].avatar}</div>
+                  <p className="text-xl text-white font-medium leading-relaxed mb-6">
+                    "{testimonials[currentTestimonial].text}"
+                  </p>
+                </motion.div>
+                
+                {/* Navigation Dots */}
+                <div className="flex justify-center space-x-2 mt-6">
+                  {testimonials.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentTestimonial(index)}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        index === currentTestimonial ? 'bg-orange-400' : 'bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* سرفصل‌ها */}
         <section className="py-20 bg-gray-50 dark:bg-gray-800">
           <div className="container max-w-6xl mx-auto px-4">
@@ -363,17 +560,52 @@ const SmartPackLanding = () => {
           </div>
         </section>
 
-        {/* بونوس‌ها و هدایا */}
+        {/* هدایای ویژه امروز */}
         <section className="py-20 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20">
           <div className="container max-w-6xl mx-auto px-4">
+            {/* Warning Banner */}
+            <div className="mb-8">
+              <div className="bg-orange-500 text-white p-4 rounded-lg text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <AlertTriangle size={20} />
+                  <span className="font-bold">🎉 دریافت این بونس‌ها فقط برای مدت محدود فعال است</span>
+                </div>
+              </div>
+            </div>
+
             <div className="text-center mb-16">
               <Gift className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">بونوس‌ها و هدایای ویژه</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">هدایای ویژه فقط برای خریداران امروز</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 هدایای ارزشمند که فقط با پک هوشمند دریافت می‌کنید
               </p>
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {enhancedBonuses.map((bonus, index) => {
+                const IconComponent = bonus.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <Card className="h-full bg-white/80 backdrop-blur-sm border border-orange-200 hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-6 text-center">
+                        <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <IconComponent size={24} className="text-white" />
+                        </div>
+                        <h3 className="font-bold mb-2 text-foreground">{bonus.title}</h3>
+                        <p className="text-sm text-muted-foreground">{bonus.description}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Original bonuses grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {bonuses.map((bonus, index) => {
                 const IconComponent = bonus.icon;
@@ -382,7 +614,7 @@ const SmartPackLanding = () => {
                     key={index}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    transition={{ duration: 0.6, delay: (index + enhancedBonuses.length) * 0.1 }}
                   >
                     <Card className="h-full bg-white/80 backdrop-blur-sm border border-orange-200 hover:shadow-lg transition-all duration-300">
                       <CardContent className="p-6 text-center">
@@ -464,8 +696,42 @@ const SmartPackLanding = () => {
           </div>
         </section>
 
-        {/* سوالات متداول */}
+        {/* سکشن اعتماد */}
         <section className="py-20 bg-white dark:bg-gray-900">
+          <div className="container max-w-6xl mx-auto px-4">
+            <div className="text-center mb-16">
+              <Shield className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">ضمانت و اعتماد</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                خرید امن با ضمانت کامل
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {trustBadges.map((badge, index) => {
+                const IconComponent = badge.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="text-center p-6 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800"
+                  >
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <IconComponent size={32} className="text-white" />
+                    </div>
+                    <h3 className="font-bold text-lg mb-2 text-foreground">{badge.title}</h3>
+                    <p className="text-sm text-muted-foreground">{badge.description}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* سوالات متداول */}
+        <section className="py-20 bg-gray-50 dark:bg-gray-800">
           <div className="container max-w-4xl mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">سوالات متداول</h2>
@@ -552,6 +818,11 @@ const SmartPackLanding = () => {
             </motion.div>
           </div>
         </section>
+
+        {/* Sticky CTA Button */}
+        <MobileStickyButton onClick={handlePurchaseClick}>
+          همین حالا پک هوشمند رو دریافت کن + هدیه‌ها
+        </MobileStickyButton>
 
         {/* Purchase Modal */}
         <IframeModal
