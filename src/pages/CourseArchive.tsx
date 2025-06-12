@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -65,6 +64,17 @@ const CourseArchive = () => {
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1483058712412-4245e9b90334?auto=format&fit=crop&w=800&q=80",
       cartUrl: "https://auth.rafiei.co/?add-to-cart=145"
+    },
+    {
+      title: "پک هوشمند | زندگی بهتر با هوش مصنوعی",
+      description: "پکیج جامع آموزش و ابزار برای بهتر زندگی کردن با هوش مصنوعی. شامل پادکست، پرامپت‌ها، ابزارها و آموزش عملی.",
+      benefits: ["۶ اپیزود پادکست آموزشی", "دفترچه پرامپت‌نویسی کامل", "ابزارهای برتر هوش مصنوعی", "آموزش ساخت ایجنت هوشمند"],
+      outcome: "تسلط کامل بر ابزارهای هوش مصنوعی برای بهبود زندگی شخصی و کاری",
+      isPaid: true,
+      status: "active" as const,
+      category: "business" as const,
+      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80",
+      link: "/smart-pack"
     },
     {
       title: translations.boundlessTaste,
