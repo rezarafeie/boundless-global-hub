@@ -1,4 +1,5 @@
 
+
 const enTranslations = {
   // Navigation and Header
   home: "Home",
@@ -278,3 +279,4 @@ const enTranslations = {
 };
 
 export default enTranslations;
+
