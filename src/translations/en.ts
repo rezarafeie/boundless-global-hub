@@ -1,5 +1,6 @@
 
 
+
 const enTranslations = {
   // Navigation and Header
   home: "Home",
@@ -241,6 +242,21 @@ const enTranslations = {
   metaverseEmpireDesc: "Build your digital empire in the metaverse and virtual worlds",
   metaverseBenefits: "Virtual real estate • NFT creation • Digital marketing • Future technologies",
   metaverseOutcome: "You'll be positioned to profit from the next generation of digital opportunities",
+
+  // Paid Course Access
+  courseAccessGranted: "Course Access Granted",
+  paidCourseAccessInstructions: "Welcome to your premium course! Access all materials, videos, and exclusive content below.",
+  welcomeToCourse: "Welcome to Your Course",
+  courseMaterials: "Course Materials",
+  courseMaterialsDescription: "Access downloadable resources, worksheets, and study materials",
+  communityAccess: "Community Access",
+  communityAccessDescription: "Join our exclusive community for support and networking",
+  worksheets: "Worksheets",
+  resources: "Resources",
+  activated: "Activated",
+  rafeiPlayer: "Rafiei Player",
+  launchAIAssistant: "Launch AI Assistant",
+  joinTelegram: "Join Telegram",
 
   // Additional UI elements
   paidCoursesTitle: "Paid Courses",
