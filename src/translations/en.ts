@@ -110,6 +110,7 @@ const enTranslations = {
   // FAQ
   faqTitle: "Frequently Asked Questions",
   faqSubtitle: "Answers to common questions about the Smart Pack",
+  faq: "FAQ",
   
   faqProgrammingQ: "Do I need to know programming to use this pack?",
   faqProgrammingA: "No, this pack is designed for all levels. Even if you have no technical experience, you can use the content.",
@@ -153,6 +154,7 @@ const enTranslations = {
   learnMore: "Learn More",
   getAccess: "Get Access",
   buyNow: "Buy Now",
+  callToAction: "Get Started",
   
   // Assessment Center
   assessmentCenterTitle: "Assessment Center",
@@ -167,6 +169,8 @@ const enTranslations = {
   freeCoursesSubtitle: "Start your journey with our free courses",
   coursesTitle: "Available Courses",
   coursesSubtitle: "Choose the course that suits you",
+  trainingCenter: "Training Center",
+  trainingCenterDesc: "Access comprehensive training materials and resources",
   
   // Course specific translations
   boundlessTaste: "Boundless Taste",
@@ -243,6 +247,10 @@ const enTranslations = {
   metaverseBenefits: "Virtual real estate • NFT creation • Digital marketing • Future technologies",
   metaverseOutcome: "You'll be positioned to profit from the next generation of digital opportunities",
 
+  // Course features and gifts
+  courseGifts: "Course Gifts",
+  courseFeatures: "Course Features",
+
   // Paid Course Access
   courseAccessGranted: "Course Access Granted",
   paidCourseAccessInstructions: "Welcome to your premium course! Access all materials, videos, and exclusive content below.",
@@ -263,7 +271,6 @@ const enTranslations = {
   startFreeCourse: "Start Free Course",
   websiteName: "Rafiei Academy",
   footerDesc: "Transform your life with artificial intelligence and advanced education",
-  trainingCenter: "Training Center",
   magazine: "Magazine",
   support: "Support",
   aboutUs: "About Us",
@@ -273,4 +280,3 @@ const enTranslations = {
 };
 
 export default enTranslations;
-
