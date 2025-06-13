@@ -56,7 +56,7 @@ const enTranslations = {
   curriculumTitle: "Course Curriculum",
   curriculumSubtitle: "Comprehensive and step-by-step program for mastering artificial intelligence",
   personalLifeWithAi: "Better Personal Life with AI",
-  personalLifeDesc: "Planning, health, self-return, motivation",
+  personalLifeDesc: "Planning, health, self-improvement, motivation",
   smartWorkLife: "Smart Work Life",
   smartWorkLifeDesc: "Financial management, business without capital, idea generation",
   agentCreationAutomation: "Agent Creation and Automation",
