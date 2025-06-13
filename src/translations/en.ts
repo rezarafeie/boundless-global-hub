@@ -188,13 +188,59 @@ const enTranslations = {
   americanBusinessBenefits: "Business mindset • American strategies • Global perspective",
   americanBusinessOutcome: "You'll think and act like a successful American entrepreneur",
 
-  // AI Assistant
+  // AI Assistant - Complete set
   aiAssistantTitle: "AI Assistant",
+  aiAssistantName: "AI Assistant",
   aiAssistantDescription: "Your personal AI assistant for daily tasks and productivity",
+  aiAssistantLongDescription: "Experience the power of artificial intelligence with our advanced AI assistant that helps you accomplish tasks more efficiently and effectively.",
+  aiAssistantFeature1Title: "Instant Problem Solving",
   aiAssistantFeature1Desc: "Get instant answers to your questions and solve problems efficiently",
+  aiAssistantFeature2Title: "Task Automation",
   aiAssistantFeature2Desc: "Automate repetitive tasks and save valuable time",
+  aiAssistantFeature3Title: "Learning Support",
   aiAssistantFeature3Desc: "Learn new skills and improve your productivity with AI guidance",
+  aiAssistantFeature4Title: "Smart Recommendations",
+  aiAssistantFeature4: "Receive personalized recommendations based on your needs and preferences",
   aiAssistantAction: "Try AI Assistant",
+  startAssistant: "Start Assistant",
+  
+  // AI Features for bottom section
+  aiFeature1: "Smart Analysis",
+  aiFeature1Desc: "Advanced analysis and insights for better decision making",
+  aiFeature2: "Time Management",
+  aiFeature2Desc: "Optimize your schedule and increase productivity",
+  aiFeature3: "Personal Growth",
+  aiFeature3Desc: "Track progress and achieve your personal development goals",
+
+  // Free Course Access
+  freeCourseAccess: "Free Course Access",
+  freeCourseAccessInstructions: "Welcome to your free course! Watch the video below to start your learning journey.",
+  videoPlayerPlaceholder: "Video Player",
+  youtubeEmbed: "YouTube video will be embedded here",
+  upgradeToPremium: "Upgrade to Premium Courses",
+  upgradeToPremiumDescription: "Get access to our complete library of premium courses with advanced content and exclusive materials.",
+  viewPaidCourses: "View Paid Courses",
+
+  // Course Landing Pages
+  boundlessProgram: "Boundless Program",
+  boundlessProgramDesc: "Complete transformation program for limitless thinking and success",
+  boundlessBenefits: "Mindset transformation • Success strategies • Goal achievement • Leadership skills",
+  boundlessOutcome: "You'll develop an unstoppable mindset and achieve extraordinary results in all areas of life",
+  
+  instagramEssentials: "Instagram Essentials",
+  instagramEssentialsDesc: "Master Instagram marketing and grow your personal brand",
+  instagramBenefits: "Content creation • Audience growth • Engagement strategies • Monetization",
+  instagramOutcome: "You'll build a strong Instagram presence and turn followers into customers",
+  
+  wealthCourse: "Wealth Building Course",
+  wealthCourseDesc: "Learn proven strategies for building long-term wealth",
+  wealthBenefits: "Investment strategies • Financial planning • Wealth mindset • Risk management",
+  wealthOutcome: "You'll have a clear roadmap to financial independence and wealth creation",
+  
+  metaverseEmpire: "Metaverse Empire",
+  metaverseEmpireDesc: "Build your digital empire in the metaverse and virtual worlds",
+  metaverseBenefits: "Virtual real estate • NFT creation • Digital marketing • Future technologies",
+  metaverseOutcome: "You'll be positioned to profit from the next generation of digital opportunities",
 
   // Additional UI elements
   paidCoursesTitle: "Paid Courses",
