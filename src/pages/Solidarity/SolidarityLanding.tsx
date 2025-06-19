@@ -24,43 +24,43 @@ const SolidarityLanding = () => {
     {
       title: "شروع بدون مرز",
       slug: "boundless-taste",
-      description: "آموزش کارآفرینی بین‌المللی",
+      description: "اگر نمی‌دونی از کجا شروع کنی، این دوره کمک می‌کنه توی این روزهای سخت مسیرت رو پیدا کنی.",
       icon: Globe
     },
     {
       title: "درآمد غیرفعال", 
       slug: "passive-income",
-      description: "ایجاد منابع درآمد پایدار",
+      description: "حتی وقتی زندگی متوقف شده، می‌تونی راه‌هایی برای ساختن درآمد غیرفعال یاد بگیری.",
       icon: BookOpen
     },
     {
       title: "تغییر",
       slug: "change", 
-      description: "تحول شخصی و حرفه‌ای",
+      description: "برای روزهایی که اضطراب داریم و ذهنمون شلوغه، این دوره کمک می‌کنه آرامش و تمرکز برگرده.",
       icon: Heart
     },
     {
       title: "بیزینس آمریکایی",
       slug: "american-business",
-      description: "استراتژی‌های کسب‌وکار آمریکایی",
+      description: "یاد بگیر چطور حتی از ایران کسب‌وکاری جهانی راه بندازی، تا از جنگ و بحران عبور کنی.",
       icon: Users
     },
     {
       title: "مزه متاورس",
       slug: "metaverse-free", 
-      description: "آینده تکنولوژی و کسب‌وکار",
+      description: "در دل جنگ، وارد آینده‌ای شو که مرزها معنی ندارن. متاورس یعنی آزادی دیجیتال.",
       icon: Globe
     },
     {
       title: "مزه اینستاگرام",
       slug: "instagram-essentials",
-      description: "بازاریابی و برندسازی",
+      description: "یاد بگیر با گوشی‌ات درآمد بسازی، از دل محتوا و رسانه حتی توی این شرایط.",
       icon: Users
     },
     {
       title: "ثروت",
       slug: "wealth",
-      description: "مدیریت مالی و سرمایه‌گذاری", 
+      description: "ثروت فقط پول نیست؛ این دوره کمکت می‌کنه نگرشت رو به زندگی و موفقیت عوض کنی.", 
       icon: BookOpen
     }
   ];
@@ -73,20 +73,9 @@ const SolidarityLanding = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-red-900/10 via-transparent to-gray-900/20 pointer-events-none"></div>
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-600 via-red-700 to-red-600 animate-pulse"></div>
         
-        {/* Iranian Flag - Top Left */}
-        <div className="absolute top-6 left-6 z-20">
-          <div className="w-16 h-12 shadow-2xl rounded border border-gray-700">
-            <div className="w-full h-4 bg-green-600"></div>
-            <div className="w-full h-4 bg-white flex items-center justify-center">
-              <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-            </div>
-            <div className="w-full h-4 bg-red-600"></div>
-          </div>
-        </div>
-
         {/* Hero Section */}
         <section className="relative py-20 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-black/30 to-green-600/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-black/30 to-blue-600/20"></div>
           <div className="relative max-w-6xl mx-auto text-center">
             
             {/* War Status Badge */}
@@ -120,7 +109,7 @@ const SolidarityLanding = () => {
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Button 
                 size="lg" 
-                className="bg-green-700 hover:bg-green-600 text-white px-10 py-5 text-xl rounded-full shadow-2xl hover:shadow-green-500/25 transition-all duration-300 border border-green-600"
+                className="bg-blue-700 hover:bg-blue-600 text-white px-10 py-5 text-xl rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 border border-blue-600"
               >
                 <Download className="w-7 h-7 ml-2" />
                 دریافت رایگان دوره‌ها
@@ -161,10 +150,10 @@ const SolidarityLanding = () => {
               {freeCourses.map((course, index) => {
                 const IconComponent = course.icon;
                 return (
-                  <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border border-gray-700 shadow-xl bg-gray-900/90 backdrop-blur-sm hover:border-red-500/50">
+                  <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border border-gray-700 shadow-xl bg-gray-900/90 backdrop-blur-sm hover:border-blue-500/50">
                     <CardContent className="p-8">
                       <div className="flex items-center mb-6">
-                        <div className="w-14 h-14 bg-gradient-to-r from-red-600 to-green-600 rounded-full flex items-center justify-center ml-4 shadow-lg">
+                        <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center ml-4 shadow-lg">
                           <IconComponent className="w-7 h-7 text-white" />
                         </div>
                         <div>
@@ -176,11 +165,11 @@ const SolidarityLanding = () => {
                           </Badge>
                         </div>
                       </div>
-                      <p className="text-gray-400 mb-6 text-base">
+                      <p className="text-gray-400 mb-6 text-base leading-relaxed">
                         {course.description}
                       </p>
                       <Link to={`/course/${course.slug}`}>
-                        <Button className="w-full bg-red-700 hover:bg-red-600 text-white rounded-lg py-3 shadow-lg hover:shadow-red-500/25 transition-all duration-300">
+                        <Button className="w-full bg-blue-700 hover:bg-blue-600 text-white rounded-lg py-3 shadow-lg hover:shadow-blue-500/25 transition-all duration-300">
                           <BookOpen className="w-5 h-5 ml-2" />
                           شروع یادگیری
                         </Button>
@@ -197,7 +186,7 @@ const SolidarityLanding = () => {
         <section className="py-20 px-4 bg-gradient-to-r from-gray-900/90 via-black/90 to-gray-800/90 backdrop-blur-sm border-t border-red-800/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-red-700 to-green-700 rounded-full mb-8 shadow-2xl">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-700 to-indigo-700 rounded-full mb-8 shadow-2xl">
                 <Shield className="w-12 h-12 text-white" />
               </div>
               <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
@@ -220,7 +209,7 @@ const SolidarityLanding = () => {
                   
                   <div className="space-y-6 mb-10">
                     <div className="flex items-center">
-                      <Wifi className="w-7 h-7 text-green-400 ml-4" />
+                      <Wifi className="w-7 h-7 text-blue-400 ml-4" />
                       <span className="text-gray-200 text-lg">دسترسی مداوم به اینترنت</span>
                     </div>
                     <div className="flex items-center">
@@ -228,7 +217,7 @@ const SolidarityLanding = () => {
                       <span className="text-gray-200 text-lg">امنیت و رمزگذاری پیشرفته</span>
                     </div>
                     <div className="flex items-center">
-                      <Globe className="w-7 h-7 text-blue-400 ml-4" />
+                      <Globe className="w-7 h-7 text-indigo-400 ml-4" />
                       <span className="text-gray-200 text-lg">دور زدن فیلترینگ و محدودیت‌ها</span>
                     </div>
                   </div>
@@ -249,7 +238,7 @@ const SolidarityLanding = () => {
 
                   <Button 
                     size="lg" 
-                    className="w-full bg-gradient-to-r from-red-700 to-green-700 hover:from-red-600 hover:to-green-600 text-white py-5 text-xl rounded-xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 border border-red-600"
+                    className="w-full bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white py-5 text-xl rounded-xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 border border-blue-600"
                     asChild
                   >
                     <a href="https://bnets.co" target="_blank" rel="noopener noreferrer">
@@ -262,7 +251,7 @@ const SolidarityLanding = () => {
 
                 <div className="relative">
                   <div className="bg-gradient-to-br from-gray-800/80 to-black/80 rounded-3xl p-10 text-center border border-gray-700 shadow-2xl">
-                    <div className="inline-flex items-center justify-center w-28 h-28 bg-gradient-to-r from-red-600 to-green-600 rounded-full shadow-2xl mb-8">
+                    <div className="inline-flex items-center justify-center w-28 h-28 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-2xl mb-8">
                       <Unlock className="w-14 h-14 text-white" />
                     </div>
                     <h4 className="text-2xl font-bold text-white mb-6">

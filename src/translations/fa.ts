@@ -307,6 +307,16 @@ export const fa = {
   smartAgentDesc: "آموزش ساخت ایجنت‌های هوش مصنوعی برای کسب‌وکار",
   practicalFiles: "فایل‌های عملی",
   practicalFilesDesc: "فایل‌های آماده برای پیاده‌سازی فوری پروژه‌ها",
+  personalLifeWithAi: "زندگی شخصی با هوش مصنوعی",
+  personalLifeDesc: "بهبود کیفیت زندگی شخصی با ابزارهای هوش مصنوعی",
+  smartWorkLife: "کار هوشمند",
+  smartWorkLifeDesc: "بهینه‌سازی محیط کار با هوش مصنوعی",
+  agentCreationAutomation: "اتوماسیون ایجنت‌ها",
+  agentCreationDesc: "ساخت و مدیریت ایجنت‌های هوش مصنوعی",
+  aiToolsLibrary: "کتابخانه ابزارهای هوش مصنوعی",
+  aiToolsLibraryDesc: "مجموعه کامل ابزارهای هوش مصنوعی برای کارب‌های مختلف",
+  smartMarketing: "بازاریابی هوشمند",
+  smartMarketingDesc: "استراتژی‌های بازاریابی با هوش مصنوعی",
   toggleLanguage: "تغییر زبان",
   about: "درباره ما"
 } as const;
