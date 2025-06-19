@@ -19,6 +19,7 @@ export interface ChatMessage {
   message: string;
   is_pinned: boolean;
   created_at: string;
+  user_id?: number;
 }
 
 export interface LiveSettings {
@@ -45,4 +46,5 @@ export interface ChatMessageInsert {
   sender_role: 'admin' | 'moderator' | 'member';
   message: string;
   is_pinned?: boolean;
+  user_id?: number;
 }
