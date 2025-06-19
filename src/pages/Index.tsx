@@ -1,3 +1,4 @@
+
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap, BookOpenCheck } from "lucide-react";
+import { MessageCircle, Award, BookOpen, Globe, Check, GraduationCap, BookOpenCheck, AlertTriangle } from "lucide-react";
 import QuickAccess from "@/components/QuickAccess";
 import RandomHeadlineGenerator from "@/components/RandomHeadlineGenerator";
 
@@ -90,6 +91,25 @@ const Index = () => {
         ctaLink="/courses/boundless"
         backgroundType="glow"
       />
+      
+      {/* Live War Mode Block */}
+      <section className="py-8 bg-background">
+        <div className="container">
+          <Link to="/solidarity" className="block">
+            <div className="bg-black/90 backdrop-blur-sm border border-red-800/50 rounded-2xl p-6 shadow-2xl hover:shadow-red-500/25 transition-all duration-300 cursor-pointer group">
+              <div className="flex items-center justify-center gap-4" dir="rtl">
+                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                <AlertTriangle className="w-6 h-6 text-red-400 group-hover:animate-pulse" />
+                <span className="text-red-200 font-bold text-lg group-hover:text-white transition-colors">
+                  حالت اضطراری جنگ فعال شده | مشاهده
+                </span>
+                <AlertTriangle className="w-6 h-6 text-red-400 group-hover:animate-pulse" />
+                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
       
       {/* Quick Access Section */}
       <QuickAccess />
