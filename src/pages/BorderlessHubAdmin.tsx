@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -106,43 +105,6 @@ const BorderlessHubAdmin = () => {
   const togglePinChatMessage = (id: number) => {
     console.log('Toggling pin for chat message:', id);
   };
-
-  // Mock existing data
-  const existingAnnouncements = [
-    {
-      id: 1,
-      title: "شروع دوره جدید بدون مرز",
-      type: "urgent",
-      date: "۲۵ بهمن ۱۴۰۳",
-      isPinned: true,
-      views: 245
-    },
-    {
-      id: 2,
-      title: "بروزرسانی پلتفرم آموزشی",
-      type: "technical",
-      date: "۲۳ بهمن ۱۴۰۳",
-      isPinned: false,
-      views: 156
-    }
-  ];
-
-  const recentChatMessages = [
-    {
-      id: 1,
-      sender: "رضا رفیعی",
-      message: "سلام دوستان عزیز!",
-      time: "۱۴:۳۰",
-      isPinned: true
-    },
-    {
-      id: 2,
-      sender: "علی محمدی",
-      message: "ممنون از محتوای عالی",
-      time: "۱۴:۳۲",
-      isPinned: false
-    }
-  ];
 
   return (
     <MainLayout>
