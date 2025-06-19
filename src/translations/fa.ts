@@ -1,5 +1,4 @@
 
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -417,6 +416,7 @@ export const fa = {
   urgent: "فوری",
   updates: "به‌روزرسانی‌ها",
   technical: "فنی",
+  educational: "آموزشی",
   general: "عمومی",
   unreadNotices: "اطلاعیه‌های خوانده نشده",
   typeMessage: "پیام خود را بنویسید...",
@@ -434,4 +434,3 @@ export const fa = {
   yesterday: "دیروز",
   today: "امروز"
 } as const;
-
