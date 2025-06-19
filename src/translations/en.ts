@@ -1,5 +1,3 @@
-
-
 const enTranslations = {
   // Navigation and Header
   home: "Home",
@@ -276,6 +274,35 @@ const enTranslations = {
   footerCopyright: "© 2024 Rafiei Academy. All rights reserved.",
   termsOfService: "Terms of Service",
   privacyPolicy: "Privacy Policy",
+  
+  // Borderless Hub translations - MISSING KEYS ADDED HERE
+  borderlessHub: "Borderless Information Hub",
+  announcements: "Announcements",
+  groupChat: "Group Chat",
+  announcementTitle: "Announcement Title",
+  announcementDate: "Date",
+  announcementMessage: "Message",
+  filterByType: "Filter by Type",
+  urgent: "Urgent",
+  updates: "Updates",
+  technical: "Technical",
+  general: "General",
+  unreadNotices: "Unread Notices",
+  typeMessage: "Type your message...",
+  sendMessage: "Send Message",
+  pinnedMessages: "Pinned Messages",
+  borderlessWelcome: "📢 Dear Borderless companions, follow the latest announcements and group chats on this page.",
+  newNotification: "New Notification",
+  viewDetails: "View Details",
+  downloadFile: "Download File",
+  registerNow: "Register Now",
+  moderator: "Moderator",
+  admin: "Admin",
+  member: "Member",
+  online: "Online",
+  offline: "Offline",
+  today: "Today",
+  yesterday: "Yesterday"
 };
 
 export default enTranslations;

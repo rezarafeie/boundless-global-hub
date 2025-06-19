@@ -311,7 +311,7 @@ export const fa = {
   personalLifeDesc: "بهبود کیفیت زندگی شخصی با ابزارهای هوش مصنوعی",
   smartWorkLife: "کار هوشمند",
   smartWorkLifeDesc: "بهینه‌سازی محیط کار با هوش مصنوعی",
-  agentCreationAutomation: "اتوماسیون ایجنت‌ها",
+  agent Automation: "اتوماسیون ایجنت‌ها",
   agentCreationDesc: "ساخت و مدیریت ایجنت‌های هوش مصنوعی",
   aiToolsLibrary: "کتابخانه ابزارهای هوش مصنوعی",
   aiToolsLibraryDesc: "مجموعه کامل ابزارهای هوش مصنوعی برای کارب‌های مختلف",
@@ -344,7 +344,7 @@ export const fa = {
   promptBookPdfDesc: "راهنمای کامل پرامپت‌ها در قالب PDF",
   moneyBackGuarantee: "ضمانت بازگشت پول",
   
-  // Borderless Hub translations
+  // Borderless Hub translations - MISSING KEYS ADDED HERE
   borderlessHub: "مرکز اطلاع‌رسانی بدون مرز",
   announcements: "اطلاعیه‌ها",
   groupChat: "چت گروهی",
