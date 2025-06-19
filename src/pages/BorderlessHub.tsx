@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,111 +8,34 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Send, Pin, Download, ExternalLink, Filter, Play, Users, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
+import { announcementsService } from '@/lib/supabase';
 
 const BorderlessHub = () => {
   const { translations } = useLanguage();
+  
+  // Real-time data hooks
+  const { announcements, loading: announcementsLoading } = useAnnouncements();
+  const { messages, loading: messagesLoading } = useChatMessages();
+  const { liveSettings, loading: liveLoading } = useLiveSettings();
+  
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [messageText, setMessageText] = useState('');
-  const [unreadCount, setUnreadCount] = useState(3);
   const [expandedAnnouncement, setExpandedAnnouncement] = useState<number | null>(null);
 
-  // Mock announcements data with media support
-  const announcements = [
-    {
-      id: 1,
-      title: "شروع دوره جدید بدون مرز - فروردین ۱۴۰۴",
-      date: "۲۵ بهمن ۱۴۰۳",
-      type: "urgent",
-      isPinned: true,
-      isUnread: true,
-      summary: "ثبت‌نام دوره جدید بدون مرز از فردا آغاز می‌شود. ظرفیت محدود است.",
-      fullText: "دوستان عزیز، با خوشحالی اعلام می‌کنیم که ثبت‌نام دوره جدید بدون مرز از فردا ۲۶ بهمن آغاز خواهد شد. این دوره با محتوای کاملاً به‌روزرسانی شده و امکانات جدید در اختیار شما قرار می‌گیرد.",
-      media: {
-        type: "video",
-        content: '<iframe width="100%" height="300" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>'
-      },
-      actionType: "register",
-      actionText: "ثبت‌نام کنید"
-    },
-    {
-      id: 2,
-      title: "بروزرسانی پلتفرم آموزشی",
-      date: "۲۳ بهمن ۱۴۰۳",
-      type: "technical",
-      isPinned: false,
-      isUnread: false,
-      summary: "سیستم آموزشی به نسخه جدید ارتقاء یافت. امکانات جدیدی اضافه شده است.",
-      fullText: "سیستم آموزشی آکادمی رفیعی با موفقیت به نسخه ۲.۰ ارتقاء یافت. امکانات جدید شامل پخش‌کننده بهبود یافته، سیستم آزمون آنلاین و امکان دانلود فایل‌ها می‌باشد.",
-      media: {
-        type: "image",
-        content: '<img src="/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png" alt="Platform Update" class="w-full rounded-lg" />'
-      },
-      actionType: "view",
-      actionText: "مشاهده تغییرات"
-    },
-    {
-      id: 3,
-      title: "فایل‌های جلسه ۱۵ دوره بدون مرز",
-      date: "۲۰ بهمن ۱۴۰۳",
-      type: "updates",
-      isPinned: false,
-      isUnread: true,
-      summary: "فایل‌های جلسه پانزدهم دوره بدون مرز آماده دانلود است.",
-      fullText: "دوستان شرکت‌کننده در دوره بدون مرز، فایل‌های جلسه پانزدهم شامل ویدیو، فایل PDF و تمرین‌های عملی آماده دانلود است.",
-      media: {
-        type: "audio",
-        content: '<audio controls class="w-full"><source src="https://example.com/audio.mp3" type="audio/mpeg">مرورگر شما از پخش صوت پشتیبانی نمی‌کند.</audio>'
-      },
-      actionType: "download",
-      actionText: "دانلود فایل‌ها"
-    }
-  ];
-
-  // Mock chat messages
-  const chatMessages = [
-    {
-      id: 1,
-      sender: "رضا رفیعی",
-      role: "admin",
-      message: "سلام دوستان عزیز! امیدوارم حالتان خوب باشه",
-      time: "۱۴:۳۰",
-      pinned: true,
-      reactions: { like: 12, heart: 5 }
-    },
-    {
-      id: 2,
-      sender: "علی محمدی",
-      role: "member",
-      message: "سلام استاد، ممنون از محتوای عالی دوره",
-      time: "۱۴:۳۲",
-      pinned: false,
-      reactions: { like: 3 }
-    },
-    {
-      id: 3,
-      sender: "سارا احمدی",
-      role: "moderator",
-      message: "دوستان برای سوالات فنی لطفاً از بخش پشتیبانی استفاده کنید",
-      time: "۱۴:۳۵",
-      pinned: false,
-      reactions: { like: 8, heart: 2 }
-    }
-  ];
-
-  // Mock live stream data
-  const liveStream = {
-    isLive: true,
-    title: "جلسه زنده بدون مرز - استراتژی‌های پیشرفته کسب‌وکار",
-    viewers: 142,
-    streamUrl: "https://www.youtube.com/embed/live_stream_id"
-  };
+  // Calculate unread count (assuming new announcements are unread)
+  const unreadCount = announcements.filter(ann => {
+    const createdDate = new Date(ann.created_at);
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return createdDate > oneDayAgo;
+  }).length;
 
   const filteredAnnouncements = selectedFilter === 'all' 
     ? announcements 
     : announcements.filter(ann => ann.type === selectedFilter);
 
-  const pinnedAnnouncements = filteredAnnouncements.filter(ann => ann.isPinned);
-  const regularAnnouncements = filteredAnnouncements.filter(ann => !ann.isPinned);
+  const pinnedAnnouncements = filteredAnnouncements.filter(ann => ann.is_pinned);
+  const regularAnnouncements = filteredAnnouncements.filter(ann => !ann.is_pinned);
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
@@ -125,7 +48,7 @@ const BorderlessHub = () => {
     switch (type) {
       case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'technical': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'updates': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'educational': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
@@ -138,9 +61,32 @@ const BorderlessHub = () => {
     }
   };
 
-  const toggleAnnouncement = (id: number) => {
+  const toggleAnnouncement = async (id: number) => {
+    if (expandedAnnouncement !== id) {
+      // Increment view count when opening announcement
+      try {
+        await announcementsService.incrementViews(id);
+      } catch (error) {
+        console.error('Error incrementing views:', error);
+      }
+    }
     setExpandedAnnouncement(expandedAnnouncement === id ? null : id);
   };
+
+  const getAnnouncementTypeText = (type: string) => {
+    switch (type) {
+      case 'urgent': return translations.urgent || 'فوری';
+      case 'technical': return translations.technical || 'فنی';
+      case 'educational': return translations.educational || 'آموزشی';
+      default: return translations.general || 'عمومی';
+    }
+  };
+
+  // Get pinned messages for sidebar
+  const pinnedMessages = messages.filter(msg => msg.is_pinned);
+
+  // Get recent messages (last 20)
+  const recentMessages = messages.slice(-20);
 
   return (
     <MainLayout>
@@ -181,7 +127,7 @@ const BorderlessHub = () => {
         </div>
 
         {/* Live Stream Section */}
-        {liveStream.isLive && (
+        {!liveLoading && liveSettings?.is_live && liveSettings?.stream_code && (
           <div className="container mx-auto px-4 py-6">
             <Card className="mb-6 border-red-200 dark:border-red-800">
               <CardHeader className="bg-red-50 dark:bg-red-950">
@@ -194,26 +140,20 @@ const BorderlessHub = () => {
                   <div className="flex items-center gap-4 mr-auto text-sm">
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
-                      {liveStream.viewers} بیننده
+                      {liveSettings.viewers || 0} بیننده
                     </div>
                   </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="aspect-video">
-                  <iframe 
-                    src={liveStream.streamUrl}
-                    width="100%" 
-                    height="100%"
-                    frameBorder="0"
-                    allowFullScreen
-                    className="rounded-b-lg"
-                    title="Live Stream"
-                  />
+                  <div dangerouslySetInnerHTML={{ __html: liveSettings.stream_code }} />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg">{liveStream.title}</h3>
-                </div>
+                {liveSettings.title && (
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg">{liveSettings.title}</h3>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -250,145 +190,164 @@ const BorderlessHub = () => {
                       size="sm"
                       onClick={() => setSelectedFilter('all')}
                     >
-                      همه
+                      همه ({announcements.length})
                     </Button>
                     <Button
                       variant={selectedFilter === 'urgent' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedFilter('urgent')}
                     >
-                      {translations.urgent}
+                      فوری ({announcements.filter(a => a.type === 'urgent').length})
                     </Button>
                     <Button
                       variant={selectedFilter === 'technical' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedFilter('technical')}
                     >
-                      {translations.technical}
+                      فنی ({announcements.filter(a => a.type === 'technical').length})
                     </Button>
                     <Button
-                      variant={selectedFilter === 'updates' ? 'default' : 'outline'}
+                      variant={selectedFilter === 'educational' ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setSelectedFilter('updates')}
+                      onClick={() => setSelectedFilter('educational')}
                     >
-                      {translations.updates}
+                      آموزشی ({announcements.filter(a => a.type === 'educational').length})
+                    </Button>
+                    <Button
+                      variant={selectedFilter === 'general' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedFilter('general')}
+                    >
+                      عمومی ({announcements.filter(a => a.type === 'general').length})
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Pinned Announcements */}
-              {pinnedAnnouncements.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Pin className="w-5 h-5 text-yellow-600" />
-                    اطلاعیه‌های سنجاق شده
-                  </h3>
-                  {pinnedAnnouncements.map((announcement) => (
-                    <Card key={announcement.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-500">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                            <Pin className="w-4 h-4 text-yellow-600" />
-                            {announcement.isUnread && (
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              {announcementsLoading ? (
+                <Card>
+                  <CardContent className="p-8">
+                    <p className="text-center text-slate-500">در حال بارگذاری اطلاعیه‌ها...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Pinned Announcements */}
+                  {pinnedAnnouncements.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Pin className="w-5 h-5 text-yellow-600" />
+                        اطلاعیه‌های سنجاق شده
+                      </h3>
+                      {pinnedAnnouncements.map((announcement) => (
+                        <Card key={announcement.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-500">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2">
+                                <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                                <Pin className="w-4 h-4 text-yellow-600" />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getAnnouncementTypeColor(announcement.type)}>
+                                  {getAnnouncementTypeText(announcement.type)}
+                                </Badge>
+                                <span className="text-sm text-slate-500">
+                                  {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Eye className="w-4 h-4 text-slate-400" />
+                                  <span className="text-sm text-slate-500">{announcement.views}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-slate-700 dark:text-slate-300 mb-4">
+                              {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
+                            </p>
+                            
+                            {/* Media Content */}
+                            {announcement.media_content && expandedAnnouncement === announcement.id && (
+                              <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                                <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
+                              </div>
                             )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                              {announcement.type === 'urgent' ? translations.urgent :
-                               announcement.type === 'technical' ? translations.technical :
-                               announcement.type === 'updates' ? translations.updates : translations.general}
-                            </Badge>
-                            <span className="text-sm text-slate-500">{announcement.date}</span>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-slate-700 dark:text-slate-300 mb-4">
-                          {expandedAnnouncement === announcement.id ? announcement.fullText : announcement.summary}
-                        </p>
-                        
-                        {/* Media Content */}
-                        {announcement.media && expandedAnnouncement === announcement.id && (
-                          <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                            <div dangerouslySetInnerHTML={{ __html: announcement.media.content }} />
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => toggleAnnouncement(announcement.id)}
-                          >
-                            {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
-                          </Button>
-                          <Button size="sm">
-                            {announcement.actionType === 'download' && <Download className="w-4 h-4 mr-2" />}
-                            {announcement.actionType === 'view' && <ExternalLink className="w-4 h-4 mr-2" />}
-                            {announcement.actionText}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleAnnouncement(announcement.id)}
+                              >
+                                {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
 
-              {/* Regular Announcements */}
-              <div className="space-y-4">
-                {regularAnnouncements.map((announcement) => (
-                  <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                          {announcement.isUnread && (
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                            {announcement.type === 'urgent' ? translations.urgent :
-                             announcement.type === 'technical' ? translations.technical :
-                             announcement.type === 'updates' ? translations.updates : translations.general}
-                          </Badge>
-                          <span className="text-sm text-slate-500">{announcement.date}</span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-slate-700 dark:text-slate-300 mb-4">
-                        {expandedAnnouncement === announcement.id ? announcement.fullText : announcement.summary}
-                      </p>
-                      
-                      {/* Media Content */}
-                      {announcement.media && expandedAnnouncement === announcement.id && (
-                        <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                          <div dangerouslySetInnerHTML={{ __html: announcement.media.content }} />
-                        </div>
-                      )}
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => toggleAnnouncement(announcement.id)}
-                        >
-                          {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
-                        </Button>
-                        <Button size="sm">
-                          {announcement.actionType === 'download' && <Download className="w-4 h-4 mr-2" />}
-                          {announcement.actionType === 'view' && <ExternalLink className="w-4 h-4 mr-2" />}
-                          {announcement.actionText}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                  {/* Regular Announcements */}
+                  <div className="space-y-4">
+                    {regularAnnouncements.length === 0 ? (
+                      <Card>
+                        <CardContent className="p-8">
+                          <p className="text-center text-slate-500">
+                            {selectedFilter === 'all' ? 'هیچ اطلاعیه‌ای وجود ندارد' : `هیچ اطلاعیه ${getAnnouncementTypeText(selectedFilter)}ی وجود ندارد`}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      regularAnnouncements.map((announcement) => (
+                        <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2">
+                                <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getAnnouncementTypeColor(announcement.type)}>
+                                  {getAnnouncementTypeText(announcement.type)}
+                                </Badge>
+                                <span className="text-sm text-slate-500">
+                                  {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Eye className="w-4 h-4 text-slate-400" />
+                                  <span className="text-sm text-slate-500">{announcement.views}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-slate-700 dark:text-slate-300 mb-4">
+                              {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
+                            </p>
+                            
+                            {/* Media Content */}
+                            {announcement.media_content && expandedAnnouncement === announcement.id && (
+                              <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                                <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
+                              </div>
+                            )}
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleAnnouncement(announcement.id)}
+                              >
+                                {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </TabsContent>
 
             {/* Group Chat Tab */}
@@ -406,48 +365,40 @@ const BorderlessHub = () => {
                         </Badge>
                         <div className="flex items-center gap-1 mr-auto">
                           <Users className="w-4 h-4" />
-                          <span className="text-sm">۴۸ آنلاین</span>
+                          <span className="text-sm">{messages.length} پیام</span>
                         </div>
                       </CardTitle>
                     </CardHeader>
                     
                     {/* Messages Area */}
                     <CardContent className="flex-1 overflow-y-auto space-y-4">
-                      {chatMessages.map((message) => (
-                        <div key={message.id} className="flex justify-end">
-                          <div className="max-w-[80%]">
-                            <div className="bg-blue-600 text-white rounded-lg rounded-br-none px-4 py-2">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm">{message.sender}</span>
-                                <Badge className={getRoleColor(message.role)}>
-                                  {message.role === 'admin' ? translations.admin :
-                                   message.role === 'moderator' ? translations.moderator : translations.member}
-                                </Badge>
-                                {message.pinned && <Pin className="w-3 h-3" />}
-                              </div>
-                              <p className="text-sm">{message.message}</p>
-                              
-                              {/* Reactions */}
-                              {message.reactions && (
-                                <div className="flex gap-2 mt-2">
-                                  {message.reactions.like && (
-                                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                                      👍 {message.reactions.like}
-                                    </span>
-                                  )}
-                                  {message.reactions.heart && (
-                                    <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
-                                      ❤️ {message.reactions.heart}
-                                    </span>
-                                  )}
+                      {messagesLoading ? (
+                        <p className="text-center text-slate-500">در حال بارگذاری پیام‌ها...</p>
+                      ) : recentMessages.length === 0 ? (
+                        <p className="text-center text-slate-500">هیچ پیامی وجود ندارد</p>
+                      ) : (
+                        recentMessages.map((message) => (
+                          <div key={message.id} className="flex justify-end">
+                            <div className="max-w-[80%]">
+                              <div className="bg-blue-600 text-white rounded-lg rounded-br-none px-4 py-2">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm">{message.sender_name}</span>
+                                  <Badge className={getRoleColor(message.sender_role)}>
+                                    {message.sender_role === 'admin' ? translations.admin || 'مدیر' :
+                                     message.sender_role === 'moderator' ? translations.moderator || 'مدیر بحث' : translations.member || 'عضو'}
+                                  </Badge>
+                                  {message.is_pinned && <Pin className="w-3 h-3" />}
                                 </div>
-                              )}
-                              
-                              <span className="text-xs opacity-75 mt-1 block">{message.time}</span>
+                                <p className="text-sm">{message.message}</p>
+                                
+                                <span className="text-xs opacity-75 mt-1 block">
+                                  {new Date(message.created_at).toLocaleString('fa-IR')}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </CardContent>
                     
                     {/* Message Input - Disabled for regular users */}
@@ -482,21 +433,29 @@ const BorderlessHub = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        {chatMessages.filter(msg => msg.pinned).map((message) => (
-                          <div key={message.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm">{message.sender}</span>
-                              <Badge className={getRoleColor(message.role)}>
-                                {message.role === 'admin' ? translations.admin :
-                                 message.role === 'moderator' ? translations.moderator : translations.member}
-                              </Badge>
+                      {messagesLoading ? (
+                        <p className="text-center text-slate-500 text-sm">در حال بارگذاری...</p>
+                      ) : pinnedMessages.length === 0 ? (
+                        <p className="text-center text-slate-500 text-sm">هیچ پیام سنجاق شده‌ای وجود ندارد</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {pinnedMessages.map((message) => (
+                            <div key={message.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-sm">{message.sender_name}</span>
+                                <Badge className={getRoleColor(message.sender_role)}>
+                                  {message.sender_role === 'admin' ? translations.admin || 'مدیر' :
+                                   message.sender_role === 'moderator' ? translations.moderator || 'مدیر بحث' : translations.member || 'عضو'}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-slate-700 dark:text-slate-300">{message.message}</p>
+                              <span className="text-xs text-slate-500 mt-1 block">
+                                {new Date(message.created_at).toLocaleString('fa-IR')}
+                              </span>
                             </div>
-                            <p className="text-sm text-slate-700 dark:text-slate-300">{message.message}</p>
-                            <span className="text-xs text-slate-500 mt-1 block">{message.time}</span>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
