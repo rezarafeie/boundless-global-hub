@@ -140,6 +140,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rafiei_meet_settings: {
+        Row: {
+          description: string | null
+          id: number
+          is_active: boolean
+          meet_url: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          meet_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          meet_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_sessions: {
         Row: {
           created_at: string | null

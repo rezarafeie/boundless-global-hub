@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -7,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Pin, Eye, Play, Image, Video, AudioLines } from 'lucide-react';
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
+import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService } from '@/lib/supabase';
 import ChatSection from '@/components/Chat/ChatSection';
+import RafieiMeetSection from '@/components/Chat/RafieiMeetSection';
 
 const BorderlessHub = () => {
   const { translations, language } = useLanguage();
@@ -17,6 +18,7 @@ const BorderlessHub = () => {
   // Real-time data hooks
   const { announcements, loading: announcementsLoading } = useAnnouncements();
   const { liveSettings, loading: liveLoading } = useLiveSettings();
+  const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
   
   const [expandedAnnouncement, setExpandedAnnouncement] = useState<number | null>(null);
 
@@ -106,6 +108,13 @@ const BorderlessHub = () => {
             </div>
           </div>
         </div>
+
+        {/* Rafiei Meet Section */}
+        {!rafieiMeetLoading && rafieiMeetSettings && (
+          <div className="container mx-auto px-4 py-6">
+            <RafieiMeetSection settings={rafieiMeetSettings} />
+          </div>
+        )}
 
         {/* Live Stream Section */}
         {!liveLoading && liveSettings?.is_live && liveSettings?.stream_code && (
@@ -276,10 +285,14 @@ const BorderlessHub = () => {
               )}
             </div>
 
-            {/* Chat Section */}
+            {/* Modern Chat Section */}
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                چت گروهی
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <div className="relative">
+                  <span className="text-2xl">💬</span>
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+                چت گروهی بدون مرز
               </h2>
               <ChatSection />
             </div>

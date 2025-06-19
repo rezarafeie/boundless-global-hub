@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle } from 'lucide-react';
+import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video } from 'lucide-react';
 import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
+import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService, chatService, liveService } from '@/lib/supabase';
+import { rafieiMeetService } from '@/lib/rafieiMeet';
 import { useToast } from '@/hooks/use-toast';
 import UserManagement from '@/components/Admin/UserManagement';
 import type { AnnouncementInsert } from '@/types/supabase';
@@ -21,6 +23,7 @@ const BorderlessHubAdmin = () => {
   const { announcements, loading: announcementsLoading } = useAnnouncements();
   const { messages, loading: messagesLoading } = useChatMessages();
   const { liveSettings, loading: liveLoading } = useLiveSettings();
+  const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
 
   // Announcement form state
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementInsert>({
@@ -41,6 +44,14 @@ const BorderlessHubAdmin = () => {
     viewers: 0
   });
 
+  // Rafiei Meet form state
+  const [rafieiMeetForm, setRafieiMeetForm] = useState({
+    is_active: false,
+    title: 'جلسه تصویری رفیعی',
+    description: 'جلسه تصویری زنده برای اعضای بدون مرز',
+    meet_url: 'https://meet.jit.si/rafiei'
+  });
+
   useEffect(() => {
     if (liveSettings) {
       setLiveForm({
@@ -51,6 +62,17 @@ const BorderlessHubAdmin = () => {
       });
     }
   }, [liveSettings]);
+
+  useEffect(() => {
+    if (rafieiMeetSettings) {
+      setRafieiMeetForm({
+        is_active: rafieiMeetSettings.is_active,
+        title: rafieiMeetSettings.title,
+        description: rafieiMeetSettings.description,
+        meet_url: rafieiMeetSettings.meet_url
+      });
+    }
+  }, [rafieiMeetSettings]);
 
   const handleAnnouncementSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +181,23 @@ const BorderlessHubAdmin = () => {
     }
   };
 
+  const handleRafieiMeetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await rafieiMeetService.updateSettings(rafieiMeetForm);
+      toast({
+        title: 'موفق',
+        description: 'تنظیمات جلسه تصویری به‌روزرسانی شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در به‌روزرسانی تنظیمات',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950">
@@ -180,7 +219,7 @@ const BorderlessHubAdmin = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="announcements" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 اطلاعیه‌ها
@@ -196,6 +235,10 @@ const BorderlessHubAdmin = () => {
               <TabsTrigger value="live" className="flex items-center gap-2">
                 <Play className="w-4 h-4" />
                 پخش زنده
+              </TabsTrigger>
+              <TabsTrigger value="rafiei-meet" className="flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                رفیعی میت
               </TabsTrigger>
             </TabsList>
 
@@ -447,6 +490,97 @@ const BorderlessHubAdmin = () => {
                   </form>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="rafiei-meet" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Video className="w-5 h-5 text-blue-600" />
+                    🎥 تنظیمات رفیعی میت (جلسه تصویری)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {rafieiMeetLoading ? (
+                    <p className="text-center">در حال بارگذاری...</p>
+                  ) : (
+                    <form onSubmit={handleRafieiMeetSubmit} className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="rafiei_meet_active"
+                          checked={rafieiMeetForm.is_active}
+                          onCheckedChange={(checked) => setRafieiMeetForm({ ...rafieiMeetForm, is_active: checked })}
+                        />
+                        <Label htmlFor="rafiei_meet_active" className="text-lg font-medium">
+                          {rafieiMeetForm.is_active ? '🟢 جلسه تصویری فعال است' : '🔴 جلسه تصویری غیرفعال است'}
+                        </Label>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="rafiei_meet_title">عنوان جلسه</Label>
+                        <Input
+                          id="rafiei_meet_title"
+                          value={rafieiMeetForm.title}
+                          onChange={(e) => setRafieiMeetForm({ ...rafieiMeetForm, title: e.target.value })}
+                          placeholder="عنوان جلسه تصویری"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="rafiei_meet_description">توضیحات</Label>
+                        <Textarea
+                          id="rafiei_meet_description"
+                          value={rafieiMeetForm.description}
+                          onChange={(e) => setRafieiMeetForm({ ...rafieiMeetForm, description: e.target.value })}
+                          placeholder="توضیحات جلسه تصویری"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="rafiei_meet_url">لینک جلسه</Label>
+                        <Input
+                          id="rafiei_meet_url"
+                          value={rafieiMeetForm.meet_url}
+                          onChange={(e) => setRafieiMeetForm({ ...rafieiMeetForm, meet_url: e.target.value })}
+                          placeholder="https://meet.jit.si/rafiei"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          می‌توانید از Jitsi Meet، Google Meet، Zoom یا هر سرویس دیگری استفاده کنید
+                        </p>
+                      </div>
+                      
+                      <Button type="submit" className="w-full">
+                        <Video className="w-4 h-4 mr-2" />
+                        به‌روزرسانی تنظیمات رفیعی میت
+                      </Button>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Preview Card */}
+              {rafieiMeetSettings?.is_active && (
+                <Card className="border-green-200 dark:border-green-800">
+                  <CardHeader>
+                    <CardTitle className="text-green-800 dark:text-green-200">
+                      پیش‌نمایش جلسه فعال
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                      <p className="text-green-800 dark:text-green-200 mb-2">
+                        ✅ جلسه تصویری در حال حاضر برای کاربران نمایش داده می‌شود
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        عنوان: {rafieiMeetSettings.title}
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        لینک: {rafieiMeetSettings.meet_url}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>

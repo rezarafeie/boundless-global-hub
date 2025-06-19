@@ -1,27 +1,29 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Send, Users, Pin, LogOut } from 'lucide-react';
+import { Pin } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useChatMessages } from '@/hooks/useRealtime';
 import { chatService, chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ChatAuth from './ChatAuth';
 import ChatPreview from './ChatPreview';
+import ModernChatHeader from './ModernChatHeader';
+import ModernChatMessage from './ModernChatMessage';
+import ModernChatInput from './ModernChatInput';
 
 const ChatSection: React.FC = () => {
   const { translations } = useLanguage();
   const { toast } = useToast();
   const { messages, loading: messagesLoading } = useChatMessages();
-  const [messageText, setMessageText] = useState('');
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatBoxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check for existing session
@@ -42,6 +44,7 @@ const ChatSection: React.FC = () => {
       if (result) {
         setSessionToken(token);
         setUserName(result.user.name);
+        setCurrentUserId(result.user.id);
         setIsAuthenticated(true);
         setShowAuthForm(false);
       } else {
@@ -65,7 +68,7 @@ const ChatSection: React.FC = () => {
     setShowAuthForm(true);
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim() || !sessionToken) return;
 
     try {
@@ -88,7 +91,11 @@ const ChatSection: React.FC = () => {
         user_id: result.user.id
       });
 
-      setMessageText('');
+      // Auto scroll after sending
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
     } catch (error) {
       toast({
         title: 'خطا',
@@ -105,29 +112,14 @@ const ChatSection: React.FC = () => {
     localStorage.removeItem('chat_session_token');
     setSessionToken(null);
     setUserName('');
+    setCurrentUserId(null);
     setIsAuthenticated(false);
     setShowAuthForm(false);
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'moderator': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
-
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'admin': return 'مدیر';
-      case 'moderator': return 'مدیر بحث';
-      default: return 'عضو';
-    }
-  };
-
   // Get pinned messages
   const pinnedMessages = messages.filter(msg => msg.is_pinned);
-  const recentMessages = messages.slice(-20);
+  const recentMessages = messages.slice(-50); // Show more messages for better experience
 
   // Show auth form if user clicked register
   if (showAuthForm) {
@@ -147,105 +139,86 @@ const ChatSection: React.FC = () => {
     <div className="space-y-6">
       {/* Pinned Messages */}
       {pinnedMessages.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Pin className="w-5 h-5 text-yellow-600" />
-              پیام‌های سنجاق شده
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pinnedMessages.map((message) => (
-                <div key={message.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm">{message.sender_name}</span>
-                    <Badge className={getRoleColor(message.sender_role)}>
-                      {getRoleText(message.sender_role)}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">{message.message}</p>
-                  <span className="text-xs text-slate-500 mt-1 block">
-                    {new Date(message.created_at).toLocaleString('fa-IR')}
-                  </span>
-                </div>
-              ))}
+        <Card className="border-amber-200 dark:border-amber-800">
+          <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-t-lg">
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+              <Pin className="w-5 h-5" />
+              <span className="font-semibold">پیام‌های مهم</span>
             </div>
-          </CardContent>
+          </div>
+          <div className="p-4 space-y-3">
+            {pinnedMessages.map((message) => (
+              <div key={message.id} 
+                   className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium text-sm text-amber-800 dark:text-amber-300">
+                    {message.sender_name}
+                  </span>
+                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs">
+                    {message.sender_role === 'admin' ? 'مدیر' : message.sender_role === 'moderator' ? 'مدیر بحث' : 'عضو'}
+                  </Badge>
+                </div>
+                <p className="text-sm text-amber-900 dark:text-amber-200">{message.message}</p>
+                <span className="text-xs text-amber-600 dark:text-amber-400 mt-1 block">
+                  {new Date(message.created_at).toLocaleString('fa-IR')}
+                </span>
+              </div>
+            ))}
+          </div>
         </Card>
       )}
 
-      {/* Main Chat */}
-      <Card className="h-[500px] flex flex-col">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Send className="w-5 h-5" />
-              چت گروهی
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                آنلاین
-              </Badge>
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                <span className="text-sm">{recentMessages.length} پیام</span>
-              </div>
-              <span className="text-sm text-slate-600">
-                خوش آمدید، {userName}
-              </span>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
+      {/* Modern Chat Interface */}
+      <Card className="overflow-hidden shadow-lg border-slate-200 dark:border-slate-700">
+        {/* Chat Header */}
+        <ModernChatHeader
+          userName={userName}
+          onlineCount={Math.max(5, Math.floor(Math.random() * 20) + 5)} // Simulated online count
+          onLogout={handleLogout}
+        />
         
         {/* Messages Area */}
-        <CardContent className="flex-1 overflow-y-auto space-y-4">
+        <div 
+          ref={chatBoxRef}
+          className="h-[500px] overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 space-y-1"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f1f5f9' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        >
           {messagesLoading ? (
-            <p className="text-center text-slate-500">در حال بارگذاری پیام‌ها...</p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                <p className="text-slate-500 dark:text-slate-400">در حال بارگذاری پیام‌ها...</p>
+              </div>
+            </div>
           ) : recentMessages.length === 0 ? (
-            <p className="text-center text-slate-500">هیچ پیامی وجود ندارد</p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">💬</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 text-lg">اولین نفری باشید که پیام می‌فرستد!</p>
+                <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">گفتگو رو شروع کنید</p>
+              </div>
+            </div>
           ) : (
             recentMessages.map((message) => (
-              <div key={message.id} className="flex justify-start">
-                <div className="max-w-[80%]">
-                  <div className="bg-slate-100 dark:bg-slate-800 rounded-lg rounded-bl-none px-4 py-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{message.sender_name}</span>
-                      <Badge className={getRoleColor(message.sender_role)}>
-                        {getRoleText(message.sender_role)}
-                      </Badge>
-                      {message.is_pinned && <Pin className="w-3 h-3" />}
-                    </div>
-                    <p className="text-sm">{message.message}</p>
-                    <span className="text-xs opacity-75 mt-1 block">
-                      {new Date(message.created_at).toLocaleString('fa-IR')}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <ModernChatMessage
+                key={message.id}
+                message={message}
+                isOwnMessage={message.user_id === currentUserId}
+              />
             ))
           )}
           <div ref={messagesEndRef} />
-        </CardContent>
+        </div>
         
         {/* Message Input */}
-        <div className="p-4 border-t bg-slate-50 dark:bg-slate-800">
-          <div className="flex gap-2">
-            <Input
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              placeholder="پیام خود را بنویسید..."
-              className="flex-1"
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            />
-            <Button onClick={handleSendMessage} disabled={!messageText.trim()}>
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <ModernChatInput 
+          onSendMessage={handleSendMessage}
+          disabled={messagesLoading}
+        />
       </Card>
     </div>
   );
