@@ -361,6 +361,21 @@ export const fa = {
   faqSupportQ: "چه نوع پشتیبانی ارائه می‌شود؟",
   faqSupportA: "پشتیبانی کامل از طریق چت، ایمیل و تماس تلفنی در دسترس است.",
   
+  // Missing SmartPack FAQ keys that were causing errors
+  faqDownloadQ: "چگونه فایل‌ها را دانلود کنم؟",
+  faqDownloadA: "پس از خرید، لینک دانلود مستقیم برای تمام فایل‌ها برای شما ارسال می‌شود.",
+  faqUpdatesQ: "آیا بروزرسانی‌ها رایگان است؟",
+  faqUpdatesA: "بله، تمام بروزرسانی‌ها و محتویات جدید کاملاً رایگان ارائه می‌شود.",
+  faqBeginnerQ: "آیا برای مبتدیان مناسب است؟",
+  faqBeginnerA: "بله، محتویات به گونه‌ای طراحی شده که هم برای مبتدیان و هم حرفه‌ای‌ها مفید باشد.",
+  faqGuideQ: "آیا راهنمای استفاده وجود دارد؟",
+  faqGuideA: "بله، راهنمای کامل و گام به گام برای استفاده از تمام ابزارها ارائه می‌شود.",
+  
+  // Missing SmartPack content keys
+  smartPackCta: "همین حالا تهیه کنید",
+  packContentsTitle: "محتویات بسته",
+  packContentsSubtitle: "همه چیزی که برای شروع نیاز دارید",
+  
   // Borderless Hub translations
   borderlessHub: "مرکز اطلاع‌رسانی بدون مرز",
   announcements: "اطلاعیه‌ها",
