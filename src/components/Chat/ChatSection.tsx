@@ -114,20 +114,27 @@ const ChatSection: React.FC = () => {
   const pinnedMessages = messages.filter(msg => msg.is_pinned);
   const recentMessages = messages.slice(-50);
 
+  // Container with minimum height to ensure proper modal positioning
+  const containerClass = "space-y-6 min-h-[80vh]";
+
   if (showAuthForm) {
-    return <ChatAuth onAuthenticated={handleAuthenticated} />;
+    return (
+      <div className={containerClass}>
+        <ChatAuth onAuthenticated={handleAuthenticated} />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="space-y-6">
+      <div className={containerClass}>
         <ChatPreview messages={messages} onRegisterClick={handleRegisterClick} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className={containerClass}>
       {/* Pinned Messages */}
       {pinnedMessages.length > 0 && (
         <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/50 dark:to-yellow-950/50">
@@ -159,8 +166,8 @@ const ChatSection: React.FC = () => {
         </Card>
       )}
 
-      {/* Modern Chat Interface */}
-      <Card className="overflow-hidden shadow-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+      {/* Chat Interface */}
+      <Card className="overflow-hidden shadow-2xl border-slate-700 bg-slate-900">
         <ModernChatHeader
           userName={userName}
           onlineCount={Math.max(5, Math.floor(Math.random() * 20) + 5)}
@@ -170,25 +177,25 @@ const ChatSection: React.FC = () => {
         {/* Messages Area */}
         <div 
           ref={chatBoxRef}
-          className="h-[500px] overflow-y-auto bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 p-4"
+          className="h-[500px] overflow-y-auto bg-slate-800 p-4"
         >
           {messagesLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-3"></div>
-                <p className="text-slate-500 dark:text-slate-400">در حال بارگذاری...</p>
+                <p className="text-slate-400">در حال بارگذاری...</p>
               </div>
             </div>
           ) : recentMessages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">💬</span>
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-lg font-medium mb-2">
+                <p className="text-slate-300 text-lg font-medium mb-2">
                   اولین نفری باشید که پیام می‌فرستد!
                 </p>
-                <p className="text-slate-500 dark:text-slate-500 text-sm">
+                <p className="text-slate-500 text-sm">
                   گفتگو رو شروع کنید
                 </p>
               </div>

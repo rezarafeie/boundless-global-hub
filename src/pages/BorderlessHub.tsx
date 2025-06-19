@@ -1,15 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Pin, Eye, Play, Image, Video, AudioLines } from 'lucide-react';
+import { Bell, Pin, Eye, Image, Video, AudioLines } from 'lucide-react';
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService } from '@/lib/supabase';
 import ChatSection from '@/components/Chat/ChatSection';
-import RafieiMeetSection from '@/components/Chat/RafieiMeetSection';
+import LiveStreamCard from '@/components/Chat/LiveStreamCard';
+import RafieiMeetCard from '@/components/Chat/RafieiMeetCard';
 
 const BorderlessHub = () => {
   const { translations, language } = useLanguage();
@@ -50,8 +52,8 @@ const BorderlessHub = () => {
     }
   };
 
-  const getMediaIcon = (mediaType: string) => {
-    switch (mediaType) {
+  const getMediaIcon = (media_type: string) => {
+    switch (media_type) {
       case 'image': return <Image className="w-4 h-4 text-blue-600" />;
       case 'video': return <Video className="w-4 h-4 text-green-600" />;
       case 'audio': return <AudioLines className="w-4 h-4 text-purple-600" />;
@@ -109,45 +111,26 @@ const BorderlessHub = () => {
           </div>
         </div>
 
-        {/* Rafiei Meet Section */}
-        {!rafieiMeetLoading && rafieiMeetSettings && (
-          <div className="container mx-auto px-4 py-6">
-            <RafieiMeetSection settings={rafieiMeetSettings} />
-          </div>
-        )}
+        {/* Dynamic Cards Section */}
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Live Stream Card */}
+            <LiveStreamCard
+              isActive={!liveLoading && liveSettings?.is_live || false}
+              streamCode={liveSettings?.stream_code}
+              title={liveSettings?.title}
+              viewers={liveSettings?.viewers}
+            />
 
-        {/* Live Stream Section */}
-        {!liveLoading && liveSettings?.is_live && liveSettings?.stream_code && (
-          <div className="container mx-auto px-4 py-6">
-            <Card className="mb-6 border-red-200 dark:border-red-800">
-              <CardHeader className="bg-red-50 dark:bg-red-950">
-                <CardTitle className="flex items-center gap-2 text-red-800 dark:text-red-200">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <Play className="w-5 h-5" />
-                    پخش زنده ویژه بدون مرز
-                  </div>
-                  <div className="flex items-center gap-4 mr-auto text-sm">
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" />
-                      {liveSettings.viewers || 0} بیننده
-                    </div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="aspect-video">
-                  <div dangerouslySetInnerHTML={{ __html: liveSettings.stream_code }} />
-                </div>
-                {liveSettings.title && (
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg">{liveSettings.title}</h3>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Rafiei Meet Card */}
+            <RafieiMeetCard
+              isActive={!rafieiMeetLoading && rafieiMeetSettings?.is_active || false}
+              meetUrl={rafieiMeetSettings?.meet_url}
+              title={rafieiMeetSettings?.title}
+              description={rafieiMeetSettings?.description}
+            />
           </div>
-        )}
+        </div>
 
         {/* Main Content - Split Layout */}
         <div className="container mx-auto px-4 py-8">
@@ -285,7 +268,7 @@ const BorderlessHub = () => {
               )}
             </div>
 
-            {/* Modern Chat Section */}
+            {/* Chat Section */}
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <div className="relative">

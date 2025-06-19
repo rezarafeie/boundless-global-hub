@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Clock, CheckCircle } from 'lucide-react';
+import { MessageCircle, Clock, CheckCircle, User, Phone } from 'lucide-react';
 
 interface ChatAuthProps {
   onAuthenticated: (sessionToken: string, userName: string) => void;
@@ -104,28 +104,28 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
 
   if (isRegistered) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-slate-900 dark:to-amber-950">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <Card className="w-full max-w-md bg-slate-900 border-slate-700 shadow-2xl">
           <CardHeader className="text-center pb-6">
             <div className="flex justify-center mb-4">
               <div className="relative">
-                <Clock className="w-12 h-12 text-amber-600" />
+                <Clock className="w-12 h-12 text-amber-400" />
                 {checkingApproval && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full animate-pulse"></div>
                 )}
               </div>
             </div>
-            <CardTitle className="text-amber-800 dark:text-amber-200 text-xl">
+            <CardTitle className="text-white text-xl">
               در انتظار تایید
             </CardTitle>
-            <p className="text-amber-700 dark:text-amber-300 text-sm">
+            <p className="text-slate-400 text-sm">
               درخواست شما ارسال شد
             </p>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="p-4 bg-white/50 dark:bg-slate-800/50 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-2" />
-              <p className="text-slate-700 dark:text-slate-300 text-sm">
+            <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
+              <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
+              <p className="text-slate-300 text-sm">
                 شماره تلفن: {phone}
               </p>
             </div>
@@ -134,7 +134,7 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
               variant="outline" 
               onClick={checkApprovalStatus}
               disabled={checkingApproval}
-              className="w-full bg-white/80 hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
+              className="w-full bg-slate-800 hover:bg-slate-700 border-slate-600 text-white"
             >
               {checkingApproval ? 'در حال بررسی...' : 'بررسی وضعیت'}
             </Button>
@@ -142,7 +142,7 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
             <Button 
               variant="ghost" 
               onClick={() => setIsRegistered(false)}
-              className="w-full text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
+              className="w-full text-slate-400 hover:text-white hover:bg-slate-800"
             >
               ویرایش اطلاعات
             </Button>
@@ -153,26 +153,27 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <Card className="w-full max-w-md bg-white dark:bg-slate-900 shadow-xl border-slate-200 dark:border-slate-700">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <Card className="w-full max-w-md bg-slate-900 border-slate-700 shadow-2xl">
         <CardHeader className="text-center pb-6">
           <div className="flex justify-center mb-4">
             <div className="relative">
-              <MessageCircle className="w-12 h-12 text-amber-600" />
+              <MessageCircle className="w-12 h-12 text-amber-400" />
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
             </div>
           </div>
-          <CardTitle className="text-slate-800 dark:text-white text-xl">
+          <CardTitle className="text-white text-xl">
             ورود به چت گروهی
           </CardTitle>
-          <p className="text-slate-600 dark:text-slate-400 text-sm">
+          <p className="text-slate-400 text-sm">
             برای شرکت در گفتگو، لطفاً اطلاعات خود را وارد کنید
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-slate-700 dark:text-slate-300">
+              <Label htmlFor="name" className="text-slate-300 flex items-center gap-2">
+                <User className="w-4 h-4" />
                 نام و نام خانوادگی
               </Label>
               <Input
@@ -180,12 +181,13 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="نام خود را وارد کنید"
-                className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-amber-500 dark:focus:border-amber-400"
+                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-amber-400"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300">
+              <Label htmlFor="phone" className="text-slate-300 flex items-center gap-2">
+                <Phone className="w-4 h-4" />
                 شماره تلفن
               </Label>
               <Input
@@ -193,13 +195,13 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="09xxxxxxxxx"
-                className="bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:border-amber-500 dark:focus:border-amber-400"
+                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-amber-400"
                 required
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105" 
+              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl transition-all duration-200" 
               disabled={loading}
             >
               {loading ? 'در حال ارسال...' : 'درخواست عضویت'}
