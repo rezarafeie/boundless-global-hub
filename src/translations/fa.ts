@@ -1,4 +1,3 @@
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -333,6 +332,16 @@ export const fa = {
   testimonial1: "شهادت ۱",
   testimonial2: "شهادت ۲",
   testimonial3: "شهادت ۳",
+  testimonial4: "شهادت ۴",
+  goldenPrompts: "پرامپت‌های طلایی",
+  goldenPromptsDesc: "مجموعه‌ای از بهترین پرامپت‌ها برای استفاده روزانه",
+  notionTemplate: "قالب نوشن",
+  notionTemplateDesc: "قالب آماده برای مدیریت پروژه‌ها در نوشن",
+  dailyGptAssistant: "دستیار روزانه GPT",
+  dailyGptAssistantDesc: "دستیار هوش مصنوعی برای کارهای روزانه",
+  promptBookPdf: "کتاب پرامپت PDF",
+  promptBookPdfDesc: "راهنمای کامل پرامپت‌ها در قالب PDF",
+  moneyBackGuarantee: "ضمانت بازگشت پول",
   
   // Borderless Hub translations
   borderlessHub: "مرکز اطلاع‌رسانی بدون مرز",
