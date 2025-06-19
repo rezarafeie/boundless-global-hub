@@ -1,4 +1,3 @@
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -312,9 +311,10 @@ export const fa = {
   smartWorkLife: "کار هوشمند",
   smartWorkLifeDesc: "بهینه‌سازی محیط کار با هوش مصنوعی",
   agentAutomation: "اتوماسیون ایجنت‌ها",
+  agentCreationAutomation: "اتوماسیون ساخت ایجنت",
   agentCreationDesc: "ساخت و مدیریت ایجنت‌های هوش مصنوعی",
   aiToolsLibrary: "کتابخانه ابزارهای هوش مصنوعی",
-  aiToolsLibraryDesc: "مجموعه کامل ابزارهای هوش مصنوعی برای کارب‌های مختلف",
+  aiToolsLibraryDesc: "مجموعه کامل ابزارهای هوش مصنوعی برای کارهای مختلف",
   smartMarketing: "بازاریابی هوشمند",
   smartMarketingDesc: "استراتژی‌های بازاریابی با هوش مصنوعی",
   toggleLanguage: "تغییر زبان",
@@ -343,8 +343,25 @@ export const fa = {
   promptBookPdf: "کتاب پرامپت PDF",
   promptBookPdfDesc: "راهنمای کامل پرامپت‌ها در قالب PDF",
   moneyBackGuarantee: "ضمانت بازگشت پول",
+  moneyBackDesc: "ضمانت ۳۰ روزه بازگشت کامل پول",
+  directSupport: "پشتیبانی مستقیم",
+  directSupportDesc: "دسترسی مستقیم به پشتیبانی تخصصی",
+  permanentAccess: "دسترسی دائمی",
+  permanentAccessDesc: "دسترسی مادام‌العمر به تمام محتویات",
+  freeUpdates: "بروزرسانی‌های رایگان",
+  freeUpdatesDesc: "تمام بروزرسانی‌ها و محتویات جدید رایگان",
   
-  // Borderless Hub translations - MISSING KEYS ADDED HERE
+  // FAQ translations for SmartPack
+  faqProgrammingQ: "آیا نیاز به دانش برنامه‌نویسی دارم؟",
+  faqProgrammingA: "خیر، تمام ابزارها و آموزش‌ها به گونه‌ای طراحی شده‌اند که بدون نیاز به دانش برنامه‌نویسی قابل استفاده باشند.",
+  faqAccessQ: "چگونه به محتویات دسترسی پیدا کنم؟",
+  faqAccessA: "پس از خرید، فوراً لینک دانلود و دسترسی‌های لازم برای شما ارسال می‌شود.",
+  faqActivationQ: "زمان فعال‌سازی چقدر است؟",
+  faqActivationA: "فعال‌سازی فوری است و می‌توانید بلافاصله از تمام امکانات استفاده کنید.",
+  faqSupportQ: "چه نوع پشتیبانی ارائه می‌شود؟",
+  faqSupportA: "پشتیبانی کامل از طریق چت، ایمیل و تماس تلفنی در دسترس است.",
+  
+  // Borderless Hub translations
   borderlessHub: "مرکز اطلاع‌رسانی بدون مرز",
   announcements: "اطلاعیه‌ها",
   groupChat: "چت گروهی",
