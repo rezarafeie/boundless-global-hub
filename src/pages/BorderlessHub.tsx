@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -33,17 +34,32 @@ const BorderlessHub = () => {
   const pinnedAnnouncements = announcements.filter(ann => ann.is_pinned);
   const regularAnnouncements = announcements.filter(ann => !ann.is_pinned);
 
-  // Dynamic section ordering logic - Fixed order: notifications, chat, meet, live
+  // Dynamic section ordering logic - Active meet/live sections move to top
   const isLiveActive = !liveLoading && liveSettings?.is_live;
   const isMeetActive = !rafieiMeetLoading && rafieiMeetSettings?.is_active;
 
   const getSectionOrder = () => {
-    const sections = [
-      { id: 'notifications', component: 'notifications', priority: 1 },
-      { id: 'chat', component: 'chat', priority: 2 },
-      { id: 'meet', component: 'meet', priority: 3 },
-      { id: 'live', component: 'live', priority: 4 }
-    ];
+    const sections = [];
+    
+    // Add active sections first
+    if (isMeetActive) {
+      sections.push({ id: 'meet', component: 'meet', priority: 1 });
+    }
+    if (isLiveActive) {
+      sections.push({ id: 'live', component: 'live', priority: 2 });
+    }
+    
+    // Add remaining sections
+    sections.push({ id: 'notifications', component: 'notifications', priority: 3 });
+    sections.push({ id: 'chat', component: 'chat', priority: 4 });
+    
+    // Add inactive meet/live sections at the end
+    if (!isMeetActive) {
+      sections.push({ id: 'meet', component: 'meet', priority: 5 });
+    }
+    if (!isLiveActive) {
+      sections.push({ id: 'live', component: 'live', priority: 6 });
+    }
 
     return sections.sort((a, b) => a.priority - b.priority);
   };
