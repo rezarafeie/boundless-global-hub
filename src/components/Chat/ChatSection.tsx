@@ -10,6 +10,7 @@ import { useChatMessages } from '@/hooks/useRealtime';
 import { chatService, chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ChatAuth from './ChatAuth';
+import ChatPreview from './ChatPreview';
 
 const ChatSection: React.FC = () => {
   const { translations } = useLanguage();
@@ -19,6 +20,7 @@ const ChatSection: React.FC = () => {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,11 +43,14 @@ const ChatSection: React.FC = () => {
         setSessionToken(token);
         setUserName(result.user.name);
         setIsAuthenticated(true);
+        setShowAuthForm(false);
       } else {
         localStorage.removeItem('chat_session_token');
+        setIsAuthenticated(false);
       }
     } catch (error) {
       localStorage.removeItem('chat_session_token');
+      setIsAuthenticated(false);
     }
   };
 
@@ -53,6 +58,11 @@ const ChatSection: React.FC = () => {
     setSessionToken(token);
     setUserName(name);
     setIsAuthenticated(true);
+    setShowAuthForm(false);
+  };
+
+  const handleRegisterClick = () => {
+    setShowAuthForm(true);
   };
 
   const handleSendMessage = async () => {
@@ -96,6 +106,7 @@ const ChatSection: React.FC = () => {
     setSessionToken(null);
     setUserName('');
     setIsAuthenticated(false);
+    setShowAuthForm(false);
   };
 
   const getRoleColor = (role: string) => {
@@ -118,8 +129,18 @@ const ChatSection: React.FC = () => {
   const pinnedMessages = messages.filter(msg => msg.is_pinned);
   const recentMessages = messages.slice(-20);
 
-  if (!isAuthenticated) {
+  // Show auth form if user clicked register
+  if (showAuthForm) {
     return <ChatAuth onAuthenticated={handleAuthenticated} />;
+  }
+
+  // Show preview for unregistered users
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-6">
+        <ChatPreview messages={messages} onRegisterClick={handleRegisterClick} />
+      </div>
+    );
   }
 
   return (
