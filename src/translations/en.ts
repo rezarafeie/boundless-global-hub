@@ -1,3 +1,4 @@
+
 const enTranslations = {
   // Navigation and Header
   home: "Home",
@@ -10,6 +11,12 @@ const enTranslations = {
   contact: "Contact",
   aiAssistant: "AI Assistant",
   toggleLanguage: "فا",
+  
+  // App Info
+  appName: "Rafiei Academy",
+  websiteName: "Rafiei Academy",
+  slogan: "Transform Your Life with AI",
+  tagline: "Comprehensive training and tools for better living with artificial intelligence",
   
   // Hero Section
   heroTitle: "Transform Your Life with AI",
@@ -152,6 +159,12 @@ const enTranslations = {
   getAccess: "Get Access",
   buyNow: "Buy Now",
   callToAction: "Get Started",
+  readMore: "Read More",
+  
+  // Course Levels
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
   
   // Assessment Center
   assessmentCenterTitle: "Assessment Center",
@@ -265,15 +278,24 @@ const enTranslations = {
 
   // Additional UI elements
   paidCoursesTitle: "Paid Courses",
+  paidCoursesSubtitle: "💎 Advanced training for professionals",
   startFreeCourse: "Start Free Course",
   websiteName: "Rafiei Academy",
   footerDesc: "Transform your life with artificial intelligence and advanced education",
   magazine: "Magazine",
+  magazineDesc: "Professional articles and guides about business and personal development",
   support: "Support",
   aboutUs: "About Us",
   footerCopyright: "© 2024 Rafiei Academy. All rights reserved.",
   termsOfService: "Terms of Service",
   privacyPolicy: "Privacy Policy",
+  
+  // User Account
+  myAccount: "My Account",
+  myCourses: "My Courses",
+  myAssessments: "My Assessments",
+  myProfile: "My Profile",
+  mySettings: "Settings",
   
   // Borderless Hub translations - MISSING KEYS ADDED HERE
   borderlessHub: "Borderless Information Hub",
