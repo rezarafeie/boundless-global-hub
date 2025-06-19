@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -20,7 +21,7 @@ const BorderlessHubAdmin = () => {
     type: 'general',
     summary: '',
     fullText: '',
-    mediaType: '',
+    mediaType: 'none',
     mediaContent: '',
     isPinned: false
   });
@@ -74,7 +75,7 @@ const BorderlessHubAdmin = () => {
       type: 'general',
       summary: '',
       fullText: '',
-      mediaType: '',
+      mediaType: 'none',
       mediaContent: '',
       isPinned: false
     });
@@ -105,6 +106,43 @@ const BorderlessHubAdmin = () => {
   const togglePinChatMessage = (id: number) => {
     console.log('Toggling pin for chat message:', id);
   };
+
+  // Mock existing data
+  const existingAnnouncements = [
+    {
+      id: 1,
+      title: "شروع دوره جدید بدون مرز",
+      type: "urgent",
+      date: "۲۵ بهمن ۱۴۰۳",
+      isPinned: true,
+      views: 245
+    },
+    {
+      id: 2,
+      title: "بروزرسانی پلتفرم آموزشی",
+      type: "technical",
+      date: "۲۳ بهمن ۱۴۰۳",
+      isPinned: false,
+      views: 156
+    }
+  ];
+
+  const recentChatMessages = [
+    {
+      id: 1,
+      sender: "رضا رفیعی",
+      message: "سلام دوستان عزیز!",
+      time: "۱۴:۳۰",
+      isPinned: true
+    },
+    {
+      id: 2,
+      sender: "علی محمدی",
+      message: "ممنون از محتوای عالی",
+      time: "۱۴:۳۲",
+      isPinned: false
+    }
+  ];
 
   return (
     <MainLayout>
@@ -218,7 +256,7 @@ const BorderlessHubAdmin = () => {
                             <SelectValue placeholder="انتخاب کنید..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">بدون مدیا</SelectItem>
+                            <SelectItem value="none">بدون مدیا</SelectItem>
                             <SelectItem value="image">تصویر</SelectItem>
                             <SelectItem value="audio">صوت</SelectItem>
                             <SelectItem value="video">ویدیو</SelectItem>
@@ -226,7 +264,7 @@ const BorderlessHubAdmin = () => {
                         </Select>
                       </div>
 
-                      {announcementForm.mediaType && (
+                      {announcementForm.mediaType && announcementForm.mediaType !== 'none' && (
                         <div>
                           <Label htmlFor="mediaContent">
                             کد HTML مدیا ({announcementForm.mediaType === 'image' ? '<img>' : 
