@@ -33,16 +33,16 @@ const BorderlessHub = () => {
   const pinnedAnnouncements = announcements.filter(ann => ann.is_pinned);
   const regularAnnouncements = announcements.filter(ann => !ann.is_pinned);
 
-  // Dynamic section ordering logic
+  // Dynamic section ordering logic - Fixed order: notifications, chat, meet, live
   const isLiveActive = !liveLoading && liveSettings?.is_live;
   const isMeetActive = !rafieiMeetLoading && rafieiMeetSettings?.is_active;
 
   const getSectionOrder = () => {
     const sections = [
-      { id: 'notifications', component: 'notifications', priority: 4 },
-      { id: 'chat', component: 'chat', priority: 3 },
-      { id: 'meet', component: 'meet', priority: isMeetActive ? 1 : 2 },
-      { id: 'live', component: 'live', priority: isLiveActive ? 1 : 1 }
+      { id: 'notifications', component: 'notifications', priority: 1 },
+      { id: 'chat', component: 'chat', priority: 2 },
+      { id: 'meet', component: 'meet', priority: 3 },
+      { id: 'live', component: 'live', priority: 4 }
     ];
 
     return sections.sort((a, b) => a.priority - b.priority);
@@ -89,30 +89,6 @@ const BorderlessHub = () => {
 
   const renderSection = (sectionId: string) => {
     switch (sectionId) {
-      case 'live':
-        return (
-          <div key="live-section" className="mb-8">
-            <LiveStreamCard
-              isActive={isLiveActive || false}
-              streamCode={liveSettings?.stream_code}
-              title={liveSettings?.title}
-              viewers={liveSettings?.viewers}
-            />
-          </div>
-        );
-      
-      case 'meet':
-        return (
-          <div key="meet-section" className="mb-8">
-            <RafieiMeetCard
-              isActive={isMeetActive || false}
-              meetUrl={rafieiMeetSettings?.meet_url}
-              title={rafieiMeetSettings?.title}
-              description={rafieiMeetSettings?.description}
-            />
-          </div>
-        );
-      
       case 'notifications':
         return (
           <div key="notifications-section" className="space-y-6">
@@ -259,6 +235,30 @@ const BorderlessHub = () => {
               چت گروهی بدون مرز
             </h2>
             <ChatSection />
+          </div>
+        );
+      
+      case 'meet':
+        return (
+          <div key="meet-section" className="mb-8">
+            <RafieiMeetCard
+              isActive={isMeetActive || false}
+              meetUrl={rafieiMeetSettings?.meet_url}
+              title={rafieiMeetSettings?.title}
+              description={rafieiMeetSettings?.description}
+            />
+          </div>
+        );
+      
+      case 'live':
+        return (
+          <div key="live-section" className="mb-8">
+            <LiveStreamCard
+              isActive={isLiveActive || false}
+              streamCode={liveSettings?.stream_code}
+              title={liveSettings?.title}
+              viewers={liveSettings?.viewers}
+            />
           </div>
         );
       
