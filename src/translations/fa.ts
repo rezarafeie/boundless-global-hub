@@ -311,7 +311,7 @@ export const fa = {
   personalLifeDesc: "بهبود کیفیت زندگی شخصی با ابزارهای هوش مصنوعی",
   smartWorkLife: "کار هوشمند",
   smartWorkLifeDesc: "بهینه‌سازی محیط کار با هوش مصنوعی",
-  agent Automation: "اتوماسیون ایجنت‌ها",
+  agentAutomation: "اتوماسیون ایجنت‌ها",
   agentCreationDesc: "ساخت و مدیریت ایجنت‌های هوش مصنوعی",
   aiToolsLibrary: "کتابخانه ابزارهای هوش مصنوعی",
   aiToolsLibraryDesc: "مجموعه کامل ابزارهای هوش مصنوعی برای کارب‌های مختلف",
