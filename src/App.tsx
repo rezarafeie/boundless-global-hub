@@ -41,6 +41,7 @@ import TaghirAccess from "./pages/Course/Access/TaghirAccess";
 import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
 import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
 import SmartPackLanding from "@/pages/Courses/SmartPackLanding";
+import SolidarityLanding from "@/pages/Solidarity/SolidarityLanding";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,10 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/courses" element={<CourseArchive />} />
               <Route path="/assessment-center" element={<AssessmentCenter />} />
+              
+              {/* Solidarity Landing Page */}
+              <Route path="/solidarity" element={<SolidarityLanding />} />
+              <Route path="/همبستگی" element={<SolidarityLanding />} />
               
               {/* Assessment Test Routes - Enhanced with new test routes */}
               <Route path="/assessment/:slug" element={<TestLanding />} />
