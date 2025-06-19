@@ -289,5 +289,24 @@ export const fa = {
   openingHoursValue: "9 صبح تا 7 عصر",
   addressValue: "تهران، محمودیه، خیابان سالار، آکادمی رفیعی",
   visitNote: "مراجعه با هماهنگی قبلی",
-  downloaded: "دانلود شد"
+  downloaded: "دانلود شد",
+  
+  // Smart Pack Landing translations
+  smartPackTitle: "اسمارت پک",
+  smartPackSubtitle: "مجموعه کامل ابزارهای هوش مصنوعی",
+  smartPackDescription: "تمام ابزارهای لازم برای موفقیت در عصر هوش مصنوعی",
+  podcastEpisodes: "قسمت‌های پادکست",
+  podcastDesc: "پادکست تخصصی درباره هوش مصنوعی و کسب‌وکار",
+  promptNotebook: "دفترچه پرامپت",
+  promptNotebookDesc: "مجموعه کامل پرامپت‌های آماده برای کارهای مختلف",
+  readyPrompts: "پرامپت‌های آماده",
+  readyPromptsDesc: "پرامپت‌های تست شده و بهینه‌سازی شده برای نتایج بهتر",
+  topAiTools: "برترین ابزارهای هوش مصنوعی",
+  topAiToolsDesc: "فهرست کامل بهترین ابزارهای هوش مصنوعی بازار",
+  smartAgentCreation: "ساخت ایجنت هوشمند",
+  smartAgentDesc: "آموزش ساخت ایجنت‌های هوش مصنوعی برای کسب‌وکار",
+  practicalFiles: "فایل‌های عملی",
+  practicalFilesDesc: "فایل‌های آماده برای پیاده‌سازی فوری پروژه‌ها",
+  toggleLanguage: "تغییر زبان",
+  about: "درباره ما"
 } as const;
