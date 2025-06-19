@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -18,8 +17,15 @@ import {
   Unlock,
   AlertTriangle
 } from "lucide-react";
+import HubSection from "@/components/Chat/HubSection";
+import { useLiveSettings } from '@/hooks/useRealtime';
+import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 
 const SolidarityLanding = () => {
+  // Real-time data hooks for hub section
+  const { liveSettings, loading: liveLoading } = useLiveSettings();
+  const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
+
   const freeCourses = [
     {
       title: "شروع بدون مرز",
@@ -47,19 +53,19 @@ const SolidarityLanding = () => {
     },
     {
       title: "مزه متاورس",
-      slug: "metaverse-free", 
+      slug: "metaverse-taste", 
       description: "در دل جنگ، وارد آینده‌ای شو که مرزها معنی ندارن. متاورس یعنی آزادی دیجیتال.",
       icon: Globe
     },
     {
       title: "مزه اینستاگرام",
-      slug: "instagram-essentials",
+      slug: "instagram-taste",
       description: "یاد بگیر با گوشی‌ات درآمد بسازی، از دل محتوا و رسانه حتی توی این شرایط.",
       icon: Users
     },
     {
       title: "ثروت",
-      slug: "wealth",
+      slug: "wealth-free",
       description: "ثروت فقط پول نیست؛ این دوره کمکت می‌کنه نگرشت رو به زندگی و موفقیت عوض کنی.", 
       icon: BookOpen
     }
@@ -107,13 +113,15 @@ const SolidarityLanding = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button 
-                size="lg" 
-                className="bg-blue-700 hover:bg-blue-600 text-white px-10 py-5 text-xl rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 border border-blue-600"
-              >
-                <Download className="w-7 h-7 ml-2" />
-                دریافت رایگان دوره‌ها
-              </Button>
+              <Link to="/courses">
+                <Button 
+                  size="lg" 
+                  className="bg-blue-700 hover:bg-blue-600 text-white px-10 py-5 text-xl rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 border border-blue-600"
+                >
+                  <Download className="w-7 h-7 ml-2" />
+                  دریافت رایگان دوره‌ها
+                </Button>
+              </Link>
               <Button 
                 size="lg" 
                 variant="outline"
@@ -181,6 +189,12 @@ const SolidarityLanding = () => {
             </div>
           </div>
         </section>
+
+        {/* Hub Section */}
+        <HubSection 
+          liveSettings={!liveLoading ? liveSettings : undefined}
+          rafieiMeetSettings={!rafieiMeetLoading ? rafieiMeetSettings : undefined}
+        />
 
         {/* Internet Freedom Section */}
         <section className="py-20 px-4 bg-gradient-to-r from-gray-900/90 via-black/90 to-gray-800/90 backdrop-blur-sm border-t border-red-800/30">

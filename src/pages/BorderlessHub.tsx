@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -33,6 +32,21 @@ const BorderlessHub = () => {
 
   const pinnedAnnouncements = announcements.filter(ann => ann.is_pinned);
   const regularAnnouncements = announcements.filter(ann => !ann.is_pinned);
+
+  // Dynamic section ordering logic
+  const isLiveActive = !liveLoading && liveSettings?.is_live;
+  const isMeetActive = !rafieiMeetLoading && rafieiMeetSettings?.is_active;
+
+  const getSectionOrder = () => {
+    const sections = [
+      { id: 'notifications', component: 'notifications', priority: 4 },
+      { id: 'chat', component: 'chat', priority: 3 },
+      { id: 'meet', component: 'meet', priority: isMeetActive ? 1 : 2 },
+      { id: 'live', component: 'live', priority: isLiveActive ? 1 : 1 }
+    ];
+
+    return sections.sort((a, b) => a.priority - b.priority);
+  };
 
   const getAnnouncementTypeColor = (type: string) => {
     switch (type) {
@@ -73,6 +87,186 @@ const BorderlessHub = () => {
     setExpandedAnnouncement(expandedAnnouncement === id ? null : id);
   };
 
+  const renderSection = (sectionId: string) => {
+    switch (sectionId) {
+      case 'live':
+        return (
+          <div key="live-section" className="mb-8">
+            <LiveStreamCard
+              isActive={isLiveActive || false}
+              streamCode={liveSettings?.stream_code}
+              title={liveSettings?.title}
+              viewers={liveSettings?.viewers}
+            />
+          </div>
+        );
+      
+      case 'meet':
+        return (
+          <div key="meet-section" className="mb-8">
+            <RafieiMeetCard
+              isActive={isMeetActive || false}
+              meetUrl={rafieiMeetSettings?.meet_url}
+              title={rafieiMeetSettings?.title}
+              description={rafieiMeetSettings?.description}
+            />
+          </div>
+        );
+      
+      case 'notifications':
+        return (
+          <div key="notifications-section" className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Bell className="w-6 h-6" />
+              {translations.announcements}
+            </h2>
+
+            {announcementsLoading ? (
+              <Card>
+                <CardContent className="p-8">
+                  <p className="text-center text-slate-500">در حال بارگذاری اطلاعیه‌ها...</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Pinned Announcements */}
+                {pinnedAnnouncements.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Pin className="w-5 h-5 text-yellow-600" />
+                      اطلاعیه‌های سنجاق شده
+                    </h3>
+                    {pinnedAnnouncements.map((announcement) => (
+                      <Card key={announcement.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-500">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              {getMediaIcon(announcement.media_type)}
+                              <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                              <Pin className="w-4 h-4 text-yellow-600" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getAnnouncementTypeColor(announcement.type)}>
+                                {getAnnouncementTypeText(announcement.type)}
+                              </Badge>
+                              <span className="text-sm text-slate-500">
+                                {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Eye className="w-4 h-4 text-slate-400" />
+                                <span className="text-sm text-slate-500">{announcement.views}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-slate-700 dark:text-slate-300 mb-4">
+                            {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
+                          </p>
+                          
+                          {/* Media Content */}
+                          {announcement.media_content && expandedAnnouncement === announcement.id && (
+                            <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                              <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => toggleAnnouncement(announcement.id)}
+                            >
+                              {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {/* Regular Announcements */}
+                <div className="space-y-4">
+                  {regularAnnouncements.length === 0 ? (
+                    <Card>
+                      <CardContent className="p-8">
+                        <p className="text-center text-slate-500">هیچ اطلاعیه‌ای وجود ندارد</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    regularAnnouncements.map((announcement) => (
+                      <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              {getMediaIcon(announcement.media_type)}
+                              <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getAnnouncementTypeColor(announcement.type)}>
+                                {getAnnouncementTypeText(announcement.type)}
+                              </Badge>
+                              <span className="text-sm text-slate-500">
+                                {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Eye className="w-4 h-4 text-slate-400" />
+                                <span className="text-sm text-slate-500">{announcement.views}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-slate-700 dark:text-slate-300 mb-4">
+                            {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
+                          </p>
+                          
+                          {/* Media Content */}
+                          {announcement.media_content && expandedAnnouncement === announcement.id && (
+                            <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                              <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => toggleAnnouncement(announcement.id)}
+                            >
+                              {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      
+      case 'chat':
+        return (
+          <div key="chat-section" className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <div className="relative">
+                <span className="text-2xl">💬</span>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
+              چت گروهی بدون مرز
+            </h2>
+            <ChatSection />
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
   return (
     <MainLayout>
       <div className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -100,7 +294,7 @@ const BorderlessHub = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                    {translations.borderlessHub}
+                    مرکز ارتباط بدون مرز
                   </h1>
                   <p className="text-slate-600 dark:text-slate-300 text-sm">
                     مرکز اطلاع‌رسانی و ارتباطات بدون مرز
@@ -111,174 +305,10 @@ const BorderlessHub = () => {
           </div>
         </div>
 
-        {/* Dynamic Cards Section */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Live Stream Card */}
-            <LiveStreamCard
-              isActive={!liveLoading && liveSettings?.is_live || false}
-              streamCode={liveSettings?.stream_code}
-              title={liveSettings?.title}
-              viewers={liveSettings?.viewers}
-            />
-
-            {/* Rafiei Meet Card */}
-            <RafieiMeetCard
-              isActive={!rafieiMeetLoading && rafieiMeetSettings?.is_active || false}
-              meetUrl={rafieiMeetSettings?.meet_url}
-              title={rafieiMeetSettings?.title}
-              description={rafieiMeetSettings?.description}
-            />
-          </div>
-        </div>
-
-        {/* Main Content - Split Layout */}
+        {/* Dynamic Sections */}
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Announcements Section */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <Bell className="w-6 h-6" />
-                {translations.announcements}
-              </h2>
-
-              {announcementsLoading ? (
-                <Card>
-                  <CardContent className="p-8">
-                    <p className="text-center text-slate-500">در حال بارگذاری اطلاعیه‌ها...</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  {/* Pinned Announcements */}
-                  {pinnedAnnouncements.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <Pin className="w-5 h-5 text-yellow-600" />
-                        اطلاعیه‌های سنجاق شده
-                      </h3>
-                      {pinnedAnnouncements.map((announcement) => (
-                        <Card key={announcement.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-500">
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-2">
-                                {getMediaIcon(announcement.media_type)}
-                                <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                                <Pin className="w-4 h-4 text-yellow-600" />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                                  {getAnnouncementTypeText(announcement.type)}
-                                </Badge>
-                                <span className="text-sm text-slate-500">
-                                  {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  <Eye className="w-4 h-4 text-slate-400" />
-                                  <span className="text-sm text-slate-500">{announcement.views}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-slate-700 dark:text-slate-300 mb-4">
-                              {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
-                            </p>
-                            
-                            {/* Media Content */}
-                            {announcement.media_content && expandedAnnouncement === announcement.id && (
-                              <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                                <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
-                              </div>
-                            )}
-                            
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => toggleAnnouncement(announcement.id)}
-                              >
-                                {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Regular Announcements */}
-                  <div className="space-y-4">
-                    {regularAnnouncements.length === 0 ? (
-                      <Card>
-                        <CardContent className="p-8">
-                          <p className="text-center text-slate-500">هیچ اطلاعیه‌ای وجود ندارد</p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      regularAnnouncements.map((announcement) => (
-                        <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-2">
-                                {getMediaIcon(announcement.media_type)}
-                                <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                                  {getAnnouncementTypeText(announcement.type)}
-                                </Badge>
-                                <span className="text-sm text-slate-500">
-                                  {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  <Eye className="w-4 h-4 text-slate-400" />
-                                  <span className="text-sm text-slate-500">{announcement.views}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-slate-700 dark:text-slate-300 mb-4">
-                              {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
-                            </p>
-                            
-                            {/* Media Content */}
-                            {announcement.media_content && expandedAnnouncement === announcement.id && (
-                              <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                                <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
-                              </div>
-                            )}
-                            
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => toggleAnnouncement(announcement.id)}
-                              >
-                                {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Chat Section */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <div className="relative">
-                  <span className="text-2xl">💬</span>
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-                چت گروهی بدون مرز
-              </h2>
-              <ChatSection />
-            </div>
+            {getSectionOrder().map((section) => renderSection(section.id))}
           </div>
         </div>
       </div>
