@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import { announcementsService, chatService, liveService } from '@/lib/supabase';
 import type { Announcement, ChatMessage, LiveSettings } from '@/types/supabase';
 
 export const useAnnouncements = () => {
@@ -11,13 +12,8 @@ export const useAnnouncements = () => {
     // Initial fetch
     const fetchAnnouncements = async () => {
       try {
-        const { data, error } = await supabase
-          .from('announcements')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        setAnnouncements(data || []);
+        const data = await announcementsService.getAll();
+        setAnnouncements(data);
       } catch (error) {
         console.error('Error fetching announcements:', error);
         setAnnouncements([]);
@@ -63,13 +59,8 @@ export const useChatMessages = () => {
     // Initial fetch
     const fetchMessages = async () => {
       try {
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .order('created_at', { ascending: true });
-        
-        if (error) throw error;
-        setMessages(data || []);
+        const data = await chatService.getMessages();
+        setMessages(data);
       } catch (error) {
         console.error('Error fetching messages:', error);
         setMessages([]);
@@ -115,12 +106,7 @@ export const useLiveSettings = () => {
     // Initial fetch
     const fetchLiveSettings = async () => {
       try {
-        const { data, error } = await supabase
-          .from('live_settings')
-          .select('*')
-          .maybeSingle();
-        
-        if (error && error.code !== 'PGRST116') throw error;
+        const data = await liveService.getSettings();
         setLiveSettings(data);
       } catch (error) {
         console.error('Error fetching live settings:', error);

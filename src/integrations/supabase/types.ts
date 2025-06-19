@@ -9,13 +9,108 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          created_at: string | null
+          full_text: string
+          id: number
+          is_pinned: boolean | null
+          media_content: string | null
+          media_type: string
+          summary: string
+          title: string
+          type: string
+          views: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_text: string
+          id?: number
+          is_pinned?: boolean | null
+          media_content?: string | null
+          media_type?: string
+          summary: string
+          title: string
+          type: string
+          views?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          full_text?: string
+          id?: number
+          is_pinned?: boolean | null
+          media_content?: string | null
+          media_type?: string
+          summary?: string
+          title?: string
+          type?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_pinned: boolean | null
+          message: string
+          sender_name: string
+          sender_role: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_pinned?: boolean | null
+          message: string
+          sender_name: string
+          sender_role: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_pinned?: boolean | null
+          message?: string
+          sender_name?: string
+          sender_role?: string
+        }
+        Relationships: []
+      }
+      live_settings: {
+        Row: {
+          id: number
+          is_live: boolean | null
+          stream_code: string | null
+          title: string | null
+          updated_at: string | null
+          viewers: number | null
+        }
+        Insert: {
+          id?: number
+          is_live?: boolean | null
+          stream_code?: string | null
+          title?: string | null
+          updated_at?: string | null
+          viewers?: number | null
+        }
+        Update: {
+          id?: number
+          is_live?: boolean | null
+          stream_code?: string | null
+          title?: string | null
+          updated_at?: string | null
+          viewers?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_views: {
+        Args: { announcement_id: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
