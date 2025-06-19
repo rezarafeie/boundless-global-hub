@@ -11,7 +11,7 @@ export const announcementsService = {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as Announcement[];
   },
 
   async create(announcement: AnnouncementInsert): Promise<Announcement> {
@@ -22,7 +22,7 @@ export const announcementsService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return data as Announcement;
   },
 
   async delete(id: number): Promise<void> {
@@ -59,7 +59,7 @@ export const chatService = {
       .order('created_at', { ascending: true });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as ChatMessage[];
   },
 
   async sendMessage(message: ChatMessageInsert): Promise<ChatMessage> {
@@ -70,7 +70,7 @@ export const chatService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return data as ChatMessage;
   },
 
   async deleteMessage(id: number): Promise<void> {
@@ -101,7 +101,7 @@ export const liveService = {
       .single();
     
     if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    return data as LiveSettings | null;
   },
 
   async updateSettings(settings: Partial<LiveSettings>): Promise<LiveSettings> {
@@ -113,6 +113,6 @@ export const liveService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return data as LiveSettings;
   }
 };
