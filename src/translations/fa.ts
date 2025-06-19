@@ -1,4 +1,5 @@
 
+
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -315,7 +316,7 @@ export const fa = {
   agentCreationAutomation: "اتوماسیون ساخت ایجنت",
   agentCreationDesc: "ساخت و مدیریت ایجنت‌های هوش مصنوعی",
   aiToolsLibrary: "کتابخانه ابزارهای هوش مصنوعی",
-  aiToolsLibraryDesc: "مجموعه کامل ابزارهای هوش مصنوعی برای کارهای مختلف",
+  aiToolsLibraryDesc: "مجموعه کامل ابزارهای هو مصنوعی برای کارهای مختلف",
   smartMarketing: "بازاریابی هوشمند",
   smartMarketingDesc: "استراتژی‌های بازاریابی با هوش مصنوعی",
   toggleLanguage: "تغییر زبان",
@@ -430,7 +431,7 @@ export const fa = {
   admin: "ادمین",
   member: "عضو",
   online: "آنلاین",
-  offline: "آفلاین",
-  today: "امروز",
-  yesterday: "دیروز"
+  yesterday: "دیروز",
+  today: "امروز"
 } as const;
+
