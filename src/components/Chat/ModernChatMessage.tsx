@@ -15,9 +15,9 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
 }) => {
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'moderator': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'admin': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'moderator': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
     }
   };
 
@@ -33,19 +33,19 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
     <div className={`flex mb-4 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[70%] sm:max-w-[60%] ${isOwnMessage ? 'order-2' : ''}`}>
         <div
-          className={`rounded-2xl px-4 py-3 shadow-sm ${
+          className={`rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
             isOwnMessage
               ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-br-md'
               : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
           }`}
         >
-          {/* Header with name and role */}
+          {/* Header */}
           {!isOwnMessage && (
             <div className="flex items-center gap-2 mb-2">
               <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
                 {message.sender_name}
               </span>
-              <Badge className={`${getRoleColor(message.sender_role)} text-xs px-2 py-0.5`}>
+              <Badge className={`${getRoleColor(message.sender_role)} text-xs px-2 py-0.5 border`}>
                 {getRoleText(message.sender_role)}
               </Badge>
               {message.is_pinned && (
@@ -55,7 +55,9 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
           )}
           
           {/* Message content */}
-          <p className={`text-sm leading-relaxed ${isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>
+          <p className={`text-sm leading-relaxed ${
+            isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+          }`}>
             {message.message}
           </p>
           

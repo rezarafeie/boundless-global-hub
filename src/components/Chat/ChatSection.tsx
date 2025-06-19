@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Pin } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useChatMessages } from '@/hooks/useRealtime';
 import { chatService, chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +13,6 @@ import ModernChatMessage from './ModernChatMessage';
 import ModernChatInput from './ModernChatInput';
 
 const ChatSection: React.FC = () => {
-  const { translations } = useLanguage();
   const { toast } = useToast();
   const { messages, loading: messagesLoading } = useChatMessages();
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -26,7 +24,6 @@ const ChatSection: React.FC = () => {
   const chatBoxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check for existing session
     const token = localStorage.getItem('chat_session_token');
     if (token) {
       validateSession(token);
@@ -34,7 +31,6 @@ const ChatSection: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Auto scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -72,7 +68,6 @@ const ChatSection: React.FC = () => {
     if (!messageText.trim() || !sessionToken) return;
 
     try {
-      // Get user info from session
       const result = await chatUserService.validateSession(sessionToken);
       if (!result) {
         toast({
@@ -91,7 +86,6 @@ const ChatSection: React.FC = () => {
         user_id: result.user.id
       });
 
-      // Auto scroll after sending
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -117,16 +111,13 @@ const ChatSection: React.FC = () => {
     setShowAuthForm(false);
   };
 
-  // Get pinned messages
   const pinnedMessages = messages.filter(msg => msg.is_pinned);
-  const recentMessages = messages.slice(-50); // Show more messages for better experience
+  const recentMessages = messages.slice(-50);
 
-  // Show auth form if user clicked register
   if (showAuthForm) {
     return <ChatAuth onAuthenticated={handleAuthenticated} />;
   }
 
-  // Show preview for unregistered users
   if (!isAuthenticated) {
     return (
       <div className="space-y-6">
@@ -139,8 +130,8 @@ const ChatSection: React.FC = () => {
     <div className="space-y-6">
       {/* Pinned Messages */}
       {pinnedMessages.length > 0 && (
-        <Card className="border-amber-200 dark:border-amber-800">
-          <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-t-lg">
+        <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/50 dark:to-yellow-950/50">
+          <div className="p-4 border-b border-amber-200 dark:border-amber-700">
             <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
               <Pin className="w-5 h-5" />
               <span className="font-semibold">پیام‌های مهم</span>
@@ -149,12 +140,12 @@ const ChatSection: React.FC = () => {
           <div className="p-4 space-y-3">
             {pinnedMessages.map((message) => (
               <div key={message.id} 
-                   className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                   className="p-3 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-amber-200 dark:border-amber-800">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="font-medium text-sm text-amber-800 dark:text-amber-300">
                     {message.sender_name}
                   </span>
-                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs">
+                  <Badge className="bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200 text-xs">
                     {message.sender_role === 'admin' ? 'مدیر' : message.sender_role === 'moderator' ? 'مدیر بحث' : 'عضو'}
                   </Badge>
                 </div>
@@ -169,27 +160,23 @@ const ChatSection: React.FC = () => {
       )}
 
       {/* Modern Chat Interface */}
-      <Card className="overflow-hidden shadow-lg border-slate-200 dark:border-slate-700">
-        {/* Chat Header */}
+      <Card className="overflow-hidden shadow-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <ModernChatHeader
           userName={userName}
-          onlineCount={Math.max(5, Math.floor(Math.random() * 20) + 5)} // Simulated online count
+          onlineCount={Math.max(5, Math.floor(Math.random() * 20) + 5)}
           onLogout={handleLogout}
         />
         
         {/* Messages Area */}
         <div 
           ref={chatBoxRef}
-          className="h-[500px] overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 space-y-1"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f1f5f9' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
+          className="h-[500px] overflow-y-auto bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 p-4"
         >
           {messagesLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                <p className="text-slate-500 dark:text-slate-400">در حال بارگذاری پیام‌ها...</p>
+                <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                <p className="text-slate-500 dark:text-slate-400">در حال بارگذاری...</p>
               </div>
             </div>
           ) : recentMessages.length === 0 ? (
@@ -198,8 +185,12 @@ const ChatSection: React.FC = () => {
                 <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">💬</span>
                 </div>
-                <p className="text-slate-500 dark:text-slate-400 text-lg">اولین نفری باشید که پیام می‌فرستد!</p>
-                <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">گفتگو رو شروع کنید</p>
+                <p className="text-slate-600 dark:text-slate-400 text-lg font-medium mb-2">
+                  اولین نفری باشید که پیام می‌فرستد!
+                </p>
+                <p className="text-slate-500 dark:text-slate-500 text-sm">
+                  گفتگو رو شروع کنید
+                </p>
               </div>
             </div>
           ) : (
@@ -214,7 +205,6 @@ const ChatSection: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
         
-        {/* Message Input */}
         <ModernChatInput 
           onSendMessage={handleSendMessage}
           disabled={messagesLoading}

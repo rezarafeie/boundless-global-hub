@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Smile } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 interface ModernChatInputProps {
   onSendMessage: (message: string) => void;
@@ -34,7 +34,6 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
     }
   };
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -43,33 +42,25 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   }, [message]);
 
   return (
-    <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 rounded-b-xl">
+    <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
       <form onSubmit={handleSubmit} className="flex items-end gap-3">
-        <div className="flex-1 relative">
+        <div className="flex-1">
           <Textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="پیامت رو بنویس..."
-            className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 min-h-[48px] max-h-32 text-right"
+            className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 min-h-[48px] max-h-32 text-right focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
             disabled={disabled}
             rows={1}
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute left-2 bottom-2 text-slate-400 hover:text-slate-600"
-          >
-            <Smile className="w-4 h-4" />
-          </Button>
         </div>
         
         <Button
           type="submit"
           disabled={!message.trim() || disabled}
-          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl px-6 py-3 h-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl px-6 py-3 h-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
         >
           <Send className="w-4 h-4" />
         </Button>
