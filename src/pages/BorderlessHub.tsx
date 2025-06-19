@@ -10,7 +10,7 @@ import { Bell, Send, Pin, Download, ExternalLink, Filter } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const BorderlessHub = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [messageText, setMessageText] = useState('');
   const [unreadCount, setUnreadCount] = useState(3);
@@ -121,10 +121,10 @@ const BorderlessHub = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                    {t.borderlessHub}
+                    {translations.borderlessHub}
                   </h1>
                   <p className="text-slate-600 dark:text-slate-300 text-sm">
-                    {t.borderlessWelcome}
+                    {translations.borderlessWelcome}
                   </p>
                 </div>
               </div>
@@ -138,11 +138,11 @@ const BorderlessHub = () => {
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="announcements" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
-                {t.announcements}
+                {translations.announcements}
               </TabsTrigger>
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <Send className="w-4 h-4" />
-                {t.groupChat}
+                {translations.groupChat}
               </TabsTrigger>
             </TabsList>
 
@@ -153,7 +153,7 @@ const BorderlessHub = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Filter className="w-5 h-5" />
-                    {t.filterByType}
+                    {translations.filterByType}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -170,21 +170,21 @@ const BorderlessHub = () => {
                       size="sm"
                       onClick={() => setSelectedFilter('urgent')}
                     >
-                      {t.urgent}
+                      {translations.urgent}
                     </Button>
                     <Button
                       variant={selectedFilter === 'technical' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedFilter('technical')}
                     >
-                      {t.technical}
+                      {translations.technical}
                     </Button>
                     <Button
                       variant={selectedFilter === 'updates' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedFilter('updates')}
                     >
-                      {t.updates}
+                      {translations.updates}
                     </Button>
                   </div>
                 </CardContent>
@@ -199,9 +199,9 @@ const BorderlessHub = () => {
                         <CardTitle className="text-lg">{announcement.title}</CardTitle>
                         <div className="flex items-center gap-2">
                           <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                            {announcement.type === 'urgent' ? t.urgent :
-                             announcement.type === 'technical' ? t.technical :
-                             announcement.type === 'updates' ? t.updates : t.general}
+                            {announcement.type === 'urgent' ? translations.urgent :
+                             announcement.type === 'technical' ? translations.technical :
+                             announcement.type === 'updates' ? translations.updates : translations.general}
                           </Badge>
                           <span className="text-sm text-slate-500">{announcement.date}</span>
                         </div>
@@ -231,9 +231,9 @@ const BorderlessHub = () => {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Send className="w-5 h-5" />
-                        {t.groupChat}
+                        {translations.groupChat}
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          {t.online}
+                          {translations.online}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
@@ -246,9 +246,9 @@ const BorderlessHub = () => {
                             <div className="bg-blue-600 text-white rounded-lg rounded-br-none px-4 py-2">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-medium text-sm">{message.sender}</span>
-                                <Badge className={getRoleColor(message.role)} size="sm">
-                                  {message.role === 'admin' ? t.admin :
-                                   message.role === 'moderator' ? t.moderator : t.member}
+                                <Badge className={getRoleColor(message.role)}>
+                                  {message.role === 'admin' ? translations.admin :
+                                   message.role === 'moderator' ? translations.moderator : translations.member}
                                 </Badge>
                                 {message.pinned && <Pin className="w-3 h-3" />}
                               </div>
@@ -266,7 +266,7 @@ const BorderlessHub = () => {
                         <Input
                           value={messageText}
                           onChange={(e) => setMessageText(e.target.value)}
-                          placeholder={t.typeMessage}
+                          placeholder={translations.typeMessage}
                           className="flex-1"
                           onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                         />
@@ -284,7 +284,7 @@ const BorderlessHub = () => {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Pin className="w-5 h-5" />
-                        {t.pinnedMessages}
+                        {translations.pinnedMessages}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -293,9 +293,9 @@ const BorderlessHub = () => {
                           <div key={message.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium text-sm">{message.sender}</span>
-                              <Badge className={getRoleColor(message.role)} size="sm">
-                                {message.role === 'admin' ? t.admin :
-                                 message.role === 'moderator' ? t.moderator : t.member}
+                              <Badge className={getRoleColor(message.role)}>
+                                {message.role === 'admin' ? translations.admin :
+                                 message.role === 'moderator' ? translations.moderator : translations.member}
                               </Badge>
                             </div>
                             <p className="text-sm text-slate-700 dark:text-slate-300">{message.message}</p>
