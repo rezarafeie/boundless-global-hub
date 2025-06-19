@@ -4,23 +4,20 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Send, Pin, Download, ExternalLink, Filter, Play, Users, Eye } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
+import { Bell, Pin, Eye, Play, Image, Video, AudioLines } from 'lucide-react';
+import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { announcementsService } from '@/lib/supabase';
+import ChatSection from '@/components/Chat/ChatSection';
 
 const BorderlessHub = () => {
-  const { translations } = useLanguage();
+  const { translations, language } = useLanguage();
+  const isRTL = language === 'fa';
   
   // Real-time data hooks
   const { announcements, loading: announcementsLoading } = useAnnouncements();
-  const { messages, loading: messagesLoading } = useChatMessages();
   const { liveSettings, loading: liveLoading } = useLiveSettings();
   
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [messageText, setMessageText] = useState('');
   const [expandedAnnouncement, setExpandedAnnouncement] = useState<number | null>(null);
 
   // Calculate unread count (assuming new announcements are unread)
@@ -30,19 +27,8 @@ const BorderlessHub = () => {
     return createdDate > oneDayAgo;
   }).length;
 
-  const filteredAnnouncements = selectedFilter === 'all' 
-    ? announcements 
-    : announcements.filter(ann => ann.type === selectedFilter);
-
-  const pinnedAnnouncements = filteredAnnouncements.filter(ann => ann.is_pinned);
-  const regularAnnouncements = filteredAnnouncements.filter(ann => !ann.is_pinned);
-
-  const handleSendMessage = () => {
-    if (messageText.trim()) {
-      console.log('Sending message:', messageText);
-      setMessageText('');
-    }
-  };
+  const pinnedAnnouncements = announcements.filter(ann => ann.is_pinned);
+  const regularAnnouncements = announcements.filter(ann => !ann.is_pinned);
 
   const getAnnouncementTypeColor = (type: string) => {
     switch (type) {
@@ -53,11 +39,21 @@ const BorderlessHub = () => {
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'moderator': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+  const getAnnouncementTypeText = (type: string) => {
+    switch (type) {
+      case 'urgent': return 'فوری';
+      case 'technical': return 'فنی';
+      case 'educational': return 'آموزشی';
+      default: return 'عمومی';
+    }
+  };
+
+  const getMediaIcon = (mediaType: string) => {
+    switch (mediaType) {
+      case 'image': return <Image className="w-4 h-4 text-blue-600" />;
+      case 'video': return <Video className="w-4 h-4 text-green-600" />;
+      case 'audio': return <AudioLines className="w-4 h-4 text-purple-600" />;
+      default: return null;
     }
   };
 
@@ -73,24 +69,9 @@ const BorderlessHub = () => {
     setExpandedAnnouncement(expandedAnnouncement === id ? null : id);
   };
 
-  const getAnnouncementTypeText = (type: string) => {
-    switch (type) {
-      case 'urgent': return translations.urgent || 'فوری';
-      case 'technical': return translations.technical || 'فنی';
-      case 'educational': return translations.educational || 'آموزشی';
-      default: return translations.general || 'عمومی';
-    }
-  };
-
-  // Get pinned messages for sidebar
-  const pinnedMessages = messages.filter(msg => msg.is_pinned);
-
-  // Get recent messages (last 20)
-  const recentMessages = messages.slice(-20);
-
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950">
+      <div className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 ${isRTL ? 'rtl' : 'ltr'}`}>
         {/* Alert Banner */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3">
           <div className="container mx-auto px-4 text-center">
@@ -159,70 +140,15 @@ const BorderlessHub = () => {
           </div>
         )}
 
-        {/* Main Content */}
+        {/* Main Content - Split Layout */}
         <div className="container mx-auto px-4 py-8">
-          <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="announcements" className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Announcements Section */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <Bell className="w-6 h-6" />
                 {translations.announcements}
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="flex items-center gap-2">
-                <Send className="w-4 h-4" />
-                {translations.groupChat}
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Announcements Tab */}
-            <TabsContent value="announcements" className="space-y-6">
-              {/* Filter Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Filter className="w-5 h-5" />
-                    {translations.filterByType}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant={selectedFilter === 'all' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedFilter('all')}
-                    >
-                      همه ({announcements.length})
-                    </Button>
-                    <Button
-                      variant={selectedFilter === 'urgent' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedFilter('urgent')}
-                    >
-                      فوری ({announcements.filter(a => a.type === 'urgent').length})
-                    </Button>
-                    <Button
-                      variant={selectedFilter === 'technical' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedFilter('technical')}
-                    >
-                      فنی ({announcements.filter(a => a.type === 'technical').length})
-                    </Button>
-                    <Button
-                      variant={selectedFilter === 'educational' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedFilter('educational')}
-                    >
-                      آموزشی ({announcements.filter(a => a.type === 'educational').length})
-                    </Button>
-                    <Button
-                      variant={selectedFilter === 'general' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedFilter('general')}
-                    >
-                      عمومی ({announcements.filter(a => a.type === 'general').length})
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              </h2>
 
               {announcementsLoading ? (
                 <Card>
@@ -244,6 +170,7 @@ const BorderlessHub = () => {
                           <CardHeader>
                             <div className="flex justify-between items-start">
                               <div className="flex items-center gap-2">
+                                {getMediaIcon(announcement.media_type)}
                                 <CardTitle className="text-lg">{announcement.title}</CardTitle>
                                 <Pin className="w-4 h-4 text-yellow-600" />
                               </div>
@@ -293,9 +220,7 @@ const BorderlessHub = () => {
                     {regularAnnouncements.length === 0 ? (
                       <Card>
                         <CardContent className="p-8">
-                          <p className="text-center text-slate-500">
-                            {selectedFilter === 'all' ? 'هیچ اطلاعیه‌ای وجود ندارد' : `هیچ اطلاعیه ${getAnnouncementTypeText(selectedFilter)}ی وجود ندارد`}
-                          </p>
+                          <p className="text-center text-slate-500">هیچ اطلاعیه‌ای وجود ندارد</p>
                         </CardContent>
                       </Card>
                     ) : (
@@ -304,6 +229,7 @@ const BorderlessHub = () => {
                           <CardHeader>
                             <div className="flex justify-between items-start">
                               <div className="flex items-center gap-2">
+                                {getMediaIcon(announcement.media_type)}
                                 <CardTitle className="text-lg">{announcement.title}</CardTitle>
                               </div>
                               <div className="flex items-center gap-2">
@@ -348,120 +274,16 @@ const BorderlessHub = () => {
                   </div>
                 </>
               )}
-            </TabsContent>
+            </div>
 
-            {/* Group Chat Tab */}
-            <TabsContent value="chat" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Chat Area */}
-                <div className="lg:col-span-3">
-                  <Card className="h-[600px] flex flex-col">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Send className="w-5 h-5" />
-                        {translations.groupChat}
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          {translations.online}
-                        </Badge>
-                        <div className="flex items-center gap-1 mr-auto">
-                          <Users className="w-4 h-4" />
-                          <span className="text-sm">{messages.length} پیام</span>
-                        </div>
-                      </CardTitle>
-                    </CardHeader>
-                    
-                    {/* Messages Area */}
-                    <CardContent className="flex-1 overflow-y-auto space-y-4">
-                      {messagesLoading ? (
-                        <p className="text-center text-slate-500">در حال بارگذاری پیام‌ها...</p>
-                      ) : recentMessages.length === 0 ? (
-                        <p className="text-center text-slate-500">هیچ پیامی وجود ندارد</p>
-                      ) : (
-                        recentMessages.map((message) => (
-                          <div key={message.id} className="flex justify-end">
-                            <div className="max-w-[80%]">
-                              <div className="bg-blue-600 text-white rounded-lg rounded-br-none px-4 py-2">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-sm">{message.sender_name}</span>
-                                  <Badge className={getRoleColor(message.sender_role)}>
-                                    {message.sender_role === 'admin' ? translations.admin || 'مدیر' :
-                                     message.sender_role === 'moderator' ? translations.moderator || 'مدیر بحث' : translations.member || 'عضو'}
-                                  </Badge>
-                                  {message.is_pinned && <Pin className="w-3 h-3" />}
-                                </div>
-                                <p className="text-sm">{message.message}</p>
-                                
-                                <span className="text-xs opacity-75 mt-1 block">
-                                  {new Date(message.created_at).toLocaleString('fa-IR')}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </CardContent>
-                    
-                    {/* Message Input - Disabled for regular users */}
-                    <div className="p-4 border-t bg-slate-50 dark:bg-slate-800">
-                      <div className="flex gap-2">
-                        <Input
-                          value={messageText}
-                          onChange={(e) => setMessageText(e.target.value)}
-                          placeholder="فقط ادمین‌ها قابلیت ارسال پیام دارند"
-                          className="flex-1"
-                          disabled
-                          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        />
-                        <Button onClick={handleSendMessage} disabled>
-                          <Send className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-2">
-                        💡 چت فقط برای خواندن است. برای ارسال پیام با پشتیبانی تماس بگیرید.
-                      </p>
-                    </div>
-                  </Card>
-                </div>
-
-                {/* Pinned Messages Sidebar */}
-                <div className="lg:col-span-1">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Pin className="w-5 h-5" />
-                        {translations.pinnedMessages}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {messagesLoading ? (
-                        <p className="text-center text-slate-500 text-sm">در حال بارگذاری...</p>
-                      ) : pinnedMessages.length === 0 ? (
-                        <p className="text-center text-slate-500 text-sm">هیچ پیام سنجاق شده‌ای وجود ندارد</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {pinnedMessages.map((message) => (
-                            <div key={message.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm">{message.sender_name}</span>
-                                <Badge className={getRoleColor(message.sender_role)}>
-                                  {message.sender_role === 'admin' ? translations.admin || 'مدیر' :
-                                   message.sender_role === 'moderator' ? translations.moderator || 'مدیر بحث' : translations.member || 'عضو'}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-slate-700 dark:text-slate-300">{message.message}</p>
-                              <span className="text-xs text-slate-500 mt-1 block">
-                                {new Date(message.created_at).toLocaleString('fa-IR')}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+            {/* Chat Section */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+                چت گروهی
+              </h2>
+              <ChatSection />
+            </div>
+          </div>
         </div>
       </div>
     </MainLayout>

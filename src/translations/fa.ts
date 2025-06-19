@@ -1,4 +1,3 @@
-
 export const fa = {
   appName: "آکادمی رفیعی",
   websiteName: "آکادمی رفیعی",
@@ -431,6 +430,6 @@ export const fa = {
   admin: "ادمین",
   member: "عضو",
   online: "آنلاین",
-  yesterday: "دیروز",
+   yesterday: "دیروز",
   today: "امروز"
 } as const;

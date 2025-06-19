@@ -2,6 +2,25 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Announcement, ChatMessage, LiveSettings, AnnouncementInsert, ChatMessageInsert } from '@/types/supabase';
 
+// Define additional types for new tables
+export type ChatUser = {
+  id: number;
+  name: string;
+  phone: string;
+  is_approved: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserSession = {
+  id: string;
+  user_id: number;
+  session_token: string;
+  is_active: boolean;
+  last_activity: string;
+  created_at: string;
+};
+
 // Helper functions for database operations
 export const announcementsService = {
   async getAll(): Promise<Announcement[]> {
@@ -87,6 +106,72 @@ export const chatService = {
       .from('chat_messages')
       .update({ is_pinned: !isPinned })
       .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+export const chatUserService = {
+  async register(name: string, phone: string): Promise<ChatUser> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .insert([{ name, phone }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data as ChatUser;
+  },
+
+  async getApprovedUsers(): Promise<ChatUser[]> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('is_approved', true);
+    
+    if (error) throw error;
+    return (data || []) as ChatUser[];
+  },
+
+  async createSession(userId: number): Promise<UserSession> {
+    const sessionToken = crypto.randomUUID();
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .insert([{ user_id: userId, session_token: sessionToken }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data as UserSession;
+  },
+
+  async validateSession(sessionToken: string): Promise<{ user: ChatUser; session: UserSession } | null> {
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('user_sessions')
+      .select('*, chat_users(*)')
+      .eq('session_token', sessionToken)
+      .eq('is_active', true)
+      .single();
+    
+    if (sessionError || !sessionData) return null;
+    
+    // Update last activity
+    await supabase
+      .from('user_sessions')
+      .update({ last_activity: new Date().toISOString() })
+      .eq('session_token', sessionToken);
+    
+    return {
+      user: sessionData.chat_users as ChatUser,
+      session: sessionData as UserSession
+    };
+  },
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    const { error } = await supabase
+      .from('user_sessions')
+      .update({ is_active: false })
+      .eq('session_token', sessionToken);
     
     if (error) throw error;
   }

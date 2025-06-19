@@ -54,24 +54,62 @@ export type Database = {
           id: number
           is_pinned: boolean | null
           message: string
-          sender_name: string
+          sender_name: string | null
           sender_role: string
+          user_id: number | null
         }
         Insert: {
           created_at?: string | null
           id?: number
           is_pinned?: boolean | null
           message: string
-          sender_name: string
+          sender_name?: string | null
           sender_role: string
+          user_id?: number | null
         }
         Update: {
           created_at?: string | null
           id?: number
           is_pinned?: boolean | null
           message?: string
-          sender_name?: string
+          sender_name?: string | null
           sender_role?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_users: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_approved: boolean | null
+          name: string
+          phone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_approved?: boolean | null
+          name: string
+          phone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_approved?: boolean | null
+          name?: string
+          phone?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -102,11 +140,50 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_activity: string | null
+          session_token: string
+          user_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_token: string
+          user_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_token?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      cleanup_inactive_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       increment_views: {
         Args: { announcement_id: number }
         Returns: undefined
