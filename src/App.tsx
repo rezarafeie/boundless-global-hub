@@ -42,6 +42,7 @@ import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
 import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
 import SmartPackLanding from "@/pages/Courses/SmartPackLanding";
 import SolidarityLanding from "@/pages/Solidarity/SolidarityLanding";
+import BorderlessHub from "./pages/BorderlessHub";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,10 @@ function App() {
               {/* Solidarity Landing Page */}
               <Route path="/solidarity" element={<SolidarityLanding />} />
               <Route path="/همبستگی" element={<SolidarityLanding />} />
+              
+              {/* Borderless Hub */}
+              <Route path="/borderless-hub" element={<BorderlessHub />} />
+              <Route path="/hub" element={<BorderlessHub />} />
               
               {/* Assessment Test Routes - Enhanced with new test routes */}
               <Route path="/assessment/:slug" element={<TestLanding />} />
@@ -149,6 +154,7 @@ function App() {
               <Route path="/en/dashboard" element={<Dashboard />} />
               <Route path="/en/courses/:slug" element={<FreeCourseView language="en" />} />
               <Route path="/en/checkout/:courseSlug" element={<Checkout />} />
+              <Route path="/en/borderless-hub" element={<BorderlessHub />} />
               
               {/* Legacy redirects */}
               <Route path="/paid-courses" element={<Navigate to="/courses" replace />} />
