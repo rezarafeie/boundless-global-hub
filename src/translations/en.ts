@@ -1,4 +1,3 @@
-
 const enTranslations = {
   // Navigation and Header
   home: "Home",
@@ -280,7 +279,6 @@ const enTranslations = {
   paidCoursesTitle: "Paid Courses",
   paidCoursesSubtitle: "💎 Advanced training for professionals",
   startFreeCourse: "Start Free Course",
-  websiteName: "Rafiei Academy",
   footerDesc: "Transform your life with artificial intelligence and advanced education",
   magazine: "Magazine",
   magazineDesc: "Professional articles and guides about business and personal development",
