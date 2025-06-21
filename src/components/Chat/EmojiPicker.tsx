@@ -48,9 +48,9 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect }) => {
       </Button>
 
       {isOpen && (
-        <div className="absolute bottom-12 left-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl w-80 z-50">
+        <div className="absolute bottom-12 right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl w-80 z-50" dir="rtl">
           {/* Category tabs */}
-          <div className="flex border-b border-slate-200 dark:border-slate-600 p-2">
+          <div className="flex border-b border-slate-200 dark:border-slate-600 p-2" dir="rtl">
             {Object.keys(EMOJI_CATEGORIES).map((category) => (
               <button
                 key={category}

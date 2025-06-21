@@ -62,7 +62,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 z-10">
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2" dir="rtl">
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
@@ -70,11 +70,13 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="پیامت رو بنویس..."
-            className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
+            className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pl-12 min-h-[48px] max-h-32 text-right focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
             disabled={disabled}
             rows={1}
+            dir="rtl"
+            style={{ textAlign: 'right' }}
           />
-          <div className="absolute left-2 bottom-2">
+          <div className="absolute right-2 bottom-2 emoji-picker">
             <EmojiPicker onEmojiSelect={handleEmojiSelect} />
           </div>
         </div>
