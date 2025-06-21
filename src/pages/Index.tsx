@@ -52,7 +52,7 @@ const Index = () => {
       title: language === "en" ? "Business Knowledge Assessment" : "آزمون دانش کسب و کار",
       description: language === "en" ? "Test your business knowledge" : "دانش کسب و کار خود را بسنجید",
       duration: language === "en" ? "30 minutes" : "۳۰ دقیقه",
-      questions: language === "en" ? "25 questions" : "۲۵ سوال",
+      questions: 25,
       category: language === "en" ? "Business" : "کسب و کار",
       link: "/assessment-center"
     }
