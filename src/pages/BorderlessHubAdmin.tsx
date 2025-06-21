@@ -1,94 +1,61 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { 
-  Settings, 
-  Bell, 
-  MessageCircle, 
-  Video, 
-  Wifi, 
-  Play,
-  Pin,
-  Eye,
-  Calendar,
-  Users,
-  ArrowLeft,
-  Plus,
-  Edit2,
-  Trash2,
-  Save,
-  Upload,
-  Image,
-  Music,
-  Monitor
-} from 'lucide-react';
-import { useAnnouncements } from '@/hooks/useRealtime';
-import { useLiveSettings } from '@/hooks/useRealtime';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video } from 'lucide-react';
+import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
-import { supabase } from '@/integrations/supabase/client';
+import { announcementsService, chatService, liveService } from '@/lib/supabase';
+import { rafieiMeetService } from '@/lib/rafieiMeet';
 import { useToast } from '@/hooks/use-toast';
-import TopicManagement from '@/components/Chat/TopicManagement';
 import UserManagement from '@/components/Admin/UserManagement';
+import type { AnnouncementInsert } from '@/types/supabase';
 
-interface AnnouncementForm {
-  title: string;
-  full_text: string;
-  summary: string;
-  type: 'urgent' | 'general' | 'technical' | 'educational';
-  is_pinned: boolean;
-  media_type: 'none' | 'image' | 'audio' | 'video' | 'iframe';
-  media_content: string;
-}
-
-const BorderlessHubAdmin: React.FC = () => {
+const BorderlessHubAdmin = () => {
+  const { toast } = useToast();
   const { announcements, loading: announcementsLoading } = useAnnouncements();
+  const { messages, loading: messagesLoading } = useChatMessages();
   const { liveSettings, loading: liveLoading } = useLiveSettings();
   const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
-  const { toast } = useToast();
 
-  const refetchData = () => {
-    window.location.reload();
-  };
-
-  const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>({
+  // Announcement form state
+  const [announcementForm, setAnnouncementForm] = useState<AnnouncementInsert>({
     title: '',
-    full_text: '',
-    summary: '',
     type: 'general',
-    is_pinned: false,
+    summary: '',
+    full_text: '',
     media_type: 'none',
-    media_content: ''
+    media_content: '',
+    is_pinned: false
   });
-  const [isSubmittingAnnouncement, setIsSubmittingAnnouncement] = useState(false);
 
+  // Live settings state
   const [liveForm, setLiveForm] = useState({
-    is_live: liveSettings?.is_live || false,
-    stream_code: liveSettings?.stream_code || '',
-    title: liveSettings?.title || '',
-    viewers: liveSettings?.viewers || 0
+    is_live: false,
+    stream_code: '',
+    title: '',
+    viewers: 0
   });
-  const [isUpdatingLive, setIsUpdatingLive] = useState(false);
 
-  const [meetForm, setMeetForm] = useState({
-    is_active: rafieiMeetSettings?.is_active || false,
-    meet_url: rafieiMeetSettings?.meet_url || '',
-    title: rafieiMeetSettings?.title || '',
-    description: rafieiMeetSettings?.description || ''
+  // Rafiei Meet form state
+  const [rafieiMeetForm, setRafieiMeetForm] = useState({
+    is_active: false,
+    title: 'جلسه تصویری رفیعی',
+    description: 'جلسه تصویری زنده برای اعضای بدون مرز',
+    meet_url: 'https://meet.jit.si/rafiei'
   });
-  const [isUpdatingMeet, setIsUpdatingMeet] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (liveSettings) {
       setLiveForm({
-        is_live: liveSettings.is_live,
+        is_live: liveSettings.is_live || false,
         stream_code: liveSettings.stream_code || '',
         title: liveSettings.title || '',
         viewers: liveSettings.viewers || 0
@@ -96,594 +63,526 @@ const BorderlessHubAdmin: React.FC = () => {
     }
   }, [liveSettings]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (rafieiMeetSettings) {
-      setMeetForm({
+      setRafieiMeetForm({
         is_active: rafieiMeetSettings.is_active,
-        meet_url: rafieiMeetSettings.meet_url || '',
-        title: rafieiMeetSettings.title || '',
-        description: rafieiMeetSettings.description || ''
+        title: rafieiMeetSettings.title,
+        description: rafieiMeetSettings.description,
+        meet_url: rafieiMeetSettings.meet_url
       });
     }
   }, [rafieiMeetSettings]);
 
-  const handleAnnouncementSubmit = async () => {
-    if (!announcementForm.title.trim() || !announcementForm.full_text.trim()) {
-      toast({
-        title: "خطا",
-        description: "عنوان و متن اطلاعیه الزامی است",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const formData = {
-      ...announcementForm,
-      summary: announcementForm.summary || announcementForm.full_text.substring(0, 100)
-    };
-
-    setIsSubmittingAnnouncement(true);
+  const handleAnnouncementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const { error } = await supabase
-        .from('announcements')
-        .insert([formData]);
-
-      if (error) throw error;
-
+      await announcementsService.create(announcementForm);
       toast({
-        title: "موفق",
-        description: "اطلاعیه جدید منتشر شد"
+        title: 'موفق',
+        description: 'اطلاعیه جدید ایجاد شد',
       });
-      
       setAnnouncementForm({
         title: '',
-        full_text: '',
-        summary: '',
         type: 'general',
-        is_pinned: false,
+        summary: '',
+        full_text: '',
         media_type: 'none',
-        media_content: ''
+        media_content: '',
+        is_pinned: false
       });
-      
-      refetchData();
     } catch (error) {
       toast({
-        title: "خطا",
-        description: "خطا در انتشار اطلاعیه",
-        variant: "destructive"
+        title: 'خطا',
+        description: 'خطا در ایجاد اطلاعیه',
+        variant: 'destructive',
       });
-    } finally {
-      setIsSubmittingAnnouncement(false);
-    }
-  };
-
-  const handleLiveUpdate = async () => {
-    setIsUpdatingLive(true);
-    try {
-      const { error } = await supabase
-        .from('live_settings')
-        .upsert([liveForm]);
-
-      if (error) throw error;
-
-      toast({
-        title: "موفق",
-        description: "تنظیمات پخش زنده به‌روزرسانی شد"
-      });
-      
-      refetchData();
-    } catch (error) {
-      toast({
-        title: "خطا",
-        description: "خطا در به‌روزرسانی تنظیمات",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdatingLive(false);
-    }
-  };
-
-  const handleMeetUpdate = async () => {
-    setIsUpdatingMeet(true);
-    try {
-      const { error } = await supabase
-        .from('rafiei_meet_settings')
-        .upsert([meetForm]);
-
-      if (error) throw error;
-
-      toast({
-        title: "موفق",
-        description: "تنظیمات جلسه تصویری به‌روزرسانی شد"
-      });
-      
-      refetchData();
-    } catch (error) {
-      toast({
-        title: "خطا",
-        description: "خطا در به‌روزرسانی تنظیمات",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUpdatingMeet(false);
     }
   };
 
   const handleDeleteAnnouncement = async (id: number) => {
     try {
-      const { error } = await supabase
-        .from('announcements')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
+      await announcementsService.delete(id);
       toast({
-        title: "موفق",
-        description: "اطلاعیه حذف شد"
+        title: 'موفق',
+        description: 'اطلاعیه حذف شد',
       });
-      
-      refetchData();
     } catch (error) {
       toast({
-        title: "خطا",
-        description: "خطا در حذف اطلاعیه",
-        variant: "destructive"
+        title: 'خطا',
+        description: 'خطا در حذف اطلاعیه',
+        variant: 'destructive',
       });
     }
   };
 
-  const getAnnouncementTypeColor = (type: string) => {
-    switch (type) {
-      case 'urgent':
-        return 'bg-red-600 text-white';
-      case 'general':
-        return 'bg-blue-600 text-white';
-      case 'technical':
-        return 'bg-purple-600 text-white';
-      case 'educational':
-        return 'bg-green-600 text-white';
-      default:
-        return 'bg-gray-600 text-white';
+  const handleToggleAnnouncementPin = async (id: number, isPinned: boolean) => {
+    try {
+      await announcementsService.togglePin(id, isPinned);
+      toast({
+        title: 'موفق',
+        description: isPinned ? 'اطلاعیه از سنجاق برداشته شد' : 'اطلاعیه سنجاق شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در تغییر وضعیت سنجاق',
+        variant: 'destructive',
+      });
     }
   };
 
-  const getAnnouncementTypeLabel = (type: string) => {
-    switch (type) {
-      case 'urgent':
-        return 'فوری';
-      case 'general':
-        return 'عمومی';
-      case 'technical':
-        return 'فنی';
-      case 'educational':
-        return 'آموزشی';
-      default:
-        return 'عمومی';
+  const handleDeleteMessage = async (id: number) => {
+    try {
+      await chatService.deleteMessage(id);
+      toast({
+        title: 'موفق',
+        description: 'پیام حذف شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در حذف پیام',
+        variant: 'destructive',
+      });
     }
   };
 
-  const getMediaTypeIcon = (type: string) => {
-    switch (type) {
-      case 'image':
-        return <Image className="w-4 h-4" />;
-      case 'audio':
-        return <Music className="w-4 h-4" />;
-      case 'video':
-        return <Video className="w-4 h-4" />;
-      case 'iframe':
-        return <Monitor className="w-4 h-4" />;
-      default:
-        return null;
+  const handleToggleMessagePin = async (id: number, isPinned: boolean) => {
+    try {
+      await chatService.togglePin(id, isPinned);
+      toast({
+        title: 'موفق',
+        description: isPinned ? 'پیام از سنجاق برداشته شد' : 'پیام سنجاق شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در تغییر وضعیت سنجاق',
+        variant: 'destructive',
+      });
     }
   };
 
-  const getMediaTypeLabel = (type: string) => {
-    switch (type) {
-      case 'image':
-        return 'تصویر';
-      case 'audio':
-        return 'صدا';
-      case 'video':
-        return 'ویدیو';
-      case 'iframe':
-        return 'کد iframe';
-      default:
-        return 'بدون رسانه';
+  const handleLiveSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await liveService.updateSettings(liveForm);
+      toast({
+        title: 'موفق',
+        description: 'تنظیمات پخش زنده به‌روزرسانی شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در به‌روزرسانی تنظیمات',
+        variant: 'destructive',
+      });
     }
   };
 
-  const renderMediaInput = () => {
-    switch (announcementForm.media_type) {
-      case 'image':
-        return (
-          <Input
-            value={announcementForm.media_content}
-            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
-            placeholder="لینک تصویر یا آپلود کنید..."
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-          />
-        );
-      case 'audio':
-        return (
-          <Input
-            value={announcementForm.media_content}
-            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
-            placeholder="لینک فایل صوتی MP3..."
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-          />
-        );
-      case 'video':
-        return (
-          <Input
-            value={announcememtForm.media_content}
-            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
-            placeholder="لینک ویدیو یوتیوب/آپارات یا MP4..."
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-          />
-        );
-      case 'iframe':
-        return (
-          <Textarea
-            value={announcementForm.media_content}
-            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
-            placeholder="کد HTML یا iframe..."
-            rows={3}
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-          />
-        );
-      default:
-        return null;
+  const handleRafieiMeetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await rafieiMeetService.updateSettings(rafieiMeetForm);
+      toast({
+        title: 'موفق',
+        description: 'تنظیمات جلسه تصویری به‌روزرسانی شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در به‌روزرسانی تنظیمات',
+        variant: 'destructive',
+      });
     }
   };
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-black dark:to-gray-800" dir="rtl" style={{ paddingTop: '100px' }}>
-        <div className="container mx-auto px-4 py-8 space-y-8">
-          
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-700 to-pink-700 rounded-full mb-6 shadow-2xl">
-              <Settings className="w-10 h-10 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950">
+        <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center gap-3">
+              <Settings className="w-8 h-8 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+                  پنل مدیریت بدون مرز
+                </h1>
+                <p className="text-slate-600 dark:text-slate-300 text-sm">
+                  مدیریت اطلاعیه‌ها، چت گروهی، کاربران و پخش زنده
+                </p>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
-              پنل مدیریت مرکز بدون مرز
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-              مدیریت اطلاعیه‌ها، پخش زنده، جلسات و کاربران
-            </p>
           </div>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardContent className="p-6 text-center">
-                <Bell className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{announcements.length}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">اطلاعیه فعال</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardContent className="p-6 text-center">
-                <Play className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {liveSettings?.is_live ? 'فعال' : 'غیرفعال'}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">پخش زنده</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardContent className="p-6 text-center">
-                <Video className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {rafieiMeetSettings?.is_active ? 'فعال' : 'غیرفعال'}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">جلسه تصویری</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardContent className="p-6 text-center">
-                <Users className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{liveSettings?.viewers || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">بیننده آنلاین</p>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="container mx-auto px-4 py-8">
+          <Tabs defaultValue="announcements" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="announcements" className="flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                اطلاعیه‌ها
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                مدیریت چت
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                مدیریت کاربران
+              </TabsTrigger>
+              <TabsTrigger value="live" className="flex items-center gap-2">
+                <Play className="w-4 h-4" />
+                پخش زنده
+              </TabsTrigger>
+              <TabsTrigger value="rafiei-meet" className="flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                رفیعی میت
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* User Management */}
-            <UserManagement />
-            
-            {/* Topic Management */}
-            <TopicManagement />
-            
-            {/* Announcements Management */}
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
-                  <Bell className="w-6 h-6 text-blue-400" />
-                  📢 مدیریت اطلاعیه‌ها
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Add New Announcement Form */}
-                <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">اطلاعیه جدید</h3>
-                  
-                  <Input
-                    value={announcementForm.title}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
-                    placeholder="عنوان اطلاعیه..."
-                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                  />
-                  
-                  <Textarea
-                    value={announcementForm.full_text}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, full_text: e.target.value})}
-                    placeholder="متن کامل اطلاعیه..."
-                    rows={4}
-                    className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select
-                      value={announcementForm.type}
-                      onValueChange={(value: any) => setAnnouncementForm({...announcementForm, type: value})}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                        <SelectValue placeholder="نوع اطلاعیه" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">عمومی</SelectItem>
-                        <SelectItem value="urgent">فوری</SelectItem>
-                        <SelectItem value="technical">فنی</SelectItem>
-                        <SelectItem value="educational">آموزشی</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={announcementForm.is_pinned}
-                        onCheckedChange={(checked) => setAnnouncementForm({...announcementForm, is_pinned: checked})}
+            <TabsContent value="announcements" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>ایجاد اطلاعیه جدید</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="title">عنوان</Label>
+                      <Input
+                        id="title"
+                        value={announcementForm.title}
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                        required
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">سنجاق شده</span>
                     </div>
-                  </div>
-
-                  {/* Media Type Selection */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      نوع رسانه (اختیاری):
-                    </label>
-                    <div className="flex gap-2 flex-wrap">
-                      {[
-                        { value: 'none', label: 'بدون رسانه', icon: null },
-                        { value: 'image', label: 'تصویر 📷', icon: <Image className="w-4 h-4" /> },
-                        { value: 'audio', label: 'صدا 🎧', icon: <Music className="w-4 h-4" /> },
-                        { value: 'video', label: 'ویدیو 🎥', icon: <Video className="w-4 h-4" /> },
-                        { value: 'iframe', label: 'کد iframe 💻', icon: <Monitor className="w-4 h-4" /> }
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setAnnouncementForm({...announcementForm, media_type: option.value as any, media_content: ''})}
-                          className={`px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
-                            announcementForm.media_type === option.value
-                              ? 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
-                              : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
-                          }`}
-                        >
-                          {option.icon}
-                          {option.label}
-                        </button>
-                      ))}
+                    <div>
+                      <Label htmlFor="type">نوع</Label>
+                      <Select onValueChange={(value) => setAnnouncementForm({ ...announcementForm, type: value as any })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب نوع اطلاعیه" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">عمومی</SelectItem>
+                          <SelectItem value="urgent">فوری</SelectItem>
+                          <SelectItem value="technical">فنی</SelectItem>
+                          <SelectItem value="educational">آموزشی</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    
-                    {/* Media Content Input */}
+                    <div>
+                      <Label htmlFor="summary">خلاصه</Label>
+                      <Input
+                        id="summary"
+                        value={announcementForm.summary}
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="full_text">متن کامل</Label>
+                      <Textarea
+                        id="full_text"
+                        value={announcementForm.full_text}
+                        onChange={(e) => setAnnouncementForm({ ...announcementForm, full_text: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="media_type">نوع رسانه</Label>
+                      <Select onValueChange={(value) => setAnnouncementForm({ ...announcementForm, media_type: value as any })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب نوع رسانه" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">بدون رسانه</SelectItem>
+                          <SelectItem value="image">تصویر</SelectItem>
+                          <SelectItem value="audio">صوت</SelectItem>
+                          <SelectItem value="video">ویدیو</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     {announcementForm.media_type !== 'none' && (
-                      <div className="mt-3">
-                        <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
-                          محتوای رسانه ({getMediaTypeLabel(announcementForm.media_type)}):
-                        </label>
-                        {renderMediaInput()}
+                      <div>
+                        <Label htmlFor="media_content">کد رسانه</Label>
+                        <Textarea
+                          id="media_content"
+                          value={announcementForm.media_content || ''}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, media_content: e.target.value })}
+                          placeholder="کد HTML برای تصویر، صوت یا ویدیو"
+                        />
                       </div>
                     )}
-                  </div>
-                  
-                  <Button
-                    onClick={handleAnnouncementSubmit}
-                    disabled={isSubmittingAnnouncement}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="w-4 h-4 ml-2" />
-                    انتشار اطلاعیه
-                  </Button>
-                </div>
-
-                {/* Existing Announcements */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">اطلاعیه‌های موجود</h3>
-                  {announcementsLoading ? (
-                    <div className="text-center py-4">
-                      <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="is_pinned"
+                        checked={announcementForm.is_pinned}
+                        onCheckedChange={(checked) => setAnnouncementForm({ ...announcementForm, is_pinned: checked })}
+                      />
+                      <Label htmlFor="is_pinned">سنجاق شود؟</Label>
                     </div>
-                  ) : announcements.length === 0 ? (
-                    <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-                      هنوز اطلاعیه‌ای منتشر نشده است
-                    </p>
+                    <Button type="submit">ایجاد اطلاعیه</Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>مدیریت اطلاعیه‌ها</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {announcementsLoading ? (
+                    <p className="text-center">در حال بارگذاری اطلاعیه‌ها...</p>
                   ) : (
-                    announcements.map((announcement) => (
-                      <div key={announcement.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                              {getAnnouncementTypeLabel(announcement.type)}
-                            </Badge>
-                            {announcement.is_pinned && (
-                              <Pin className="w-3 h-3 text-amber-500" />
-                            )}
-                            {announcement.media_type !== 'none' && (
-                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                {getMediaTypeIcon(announcement.media_type)}
-                                <span>{getMediaTypeLabel(announcement.media_type)}</span>
-                              </div>
-                            )}
-                          </div>
-                          <h4 className="font-medium text-gray-900 dark:text-white text-sm">
-                            {announcement.title}
-                          </h4>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                            {announcement.full_text}
-                          </p>
-                        </div>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent dir="rtl" className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-gray-900 dark:text-white">حذف اطلاعیه</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
-                                آیا مطمئن هستید که می‌خواهید این اطلاعیه را حذف کنید؟
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600">
-                                لغو
-                              </AlertDialogCancel>
-                              <AlertDialogAction
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {announcements.map((announcement) => (
+                        <Card key={announcement.id}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle>{announcement.title}</CardTitle>
+                              <Badge>{announcement.type}</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p>{announcement.summary}</p>
+                            <div className="flex justify-between mt-4">
+                              <Button
+                                variant="destructive"
+                                size="sm"
                                 onClick={() => handleDeleteAnnouncement(announcement.id)}
-                                className="bg-red-600 hover:bg-red-700"
                               >
-                                حذف
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    ))
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleAnnouncementPin(announcement.id, announcement.is_pinned)}
+                              >
+                                {announcement.is_pinned ? (
+                                  <>
+                                    <Pin className="w-4 h-4" />
+                                    برداشتن سنجاق
+                                  </>
+                                ) : (
+                                  <>
+                                    <Pin className="w-4 h-4" />
+                                    سنجاق
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Live Stream Management */}
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
-                  <Play className="w-6 h-6 text-red-400" />
-                  🔴 مدیریت پخش زنده
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={liveForm.is_live}
-                    onCheckedChange={(checked) => setLiveForm({...liveForm, is_live: checked})}
-                  />
-                  <span className="text-gray-900 dark:text-white">
-                    {liveForm.is_live ? '🔴 پخش زنده فعال' : '⚫ پخش زنده غیرفعال'}
-                  </span>
-                </div>
-                
-                <Input
-                  value={liveForm.stream_code}
-                  onChange={(e) => setLiveForm({...liveForm, stream_code: e.target.value})}
-                  placeholder="کد پخش آپارات..."
-                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-                
-                <Input
-                  value={liveForm.title}
-                  onChange={(e) => setLiveForm({...liveForm, title: e.target.value})}
-                  placeholder="عنوان پخش زنده..."
-                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-                
-                <Input
-                  type="number"
-                  value={liveForm.viewers}
-                  onChange={(e) => setLiveForm({...liveForm, viewers: parseInt(e.target.value) || 0})}
-                  placeholder="تعداد بینندگان..."
-                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-                
-                <Button
-                  onClick={handleLiveUpdate}
-                  disabled={isUpdatingLive}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  <Save className="w-4 h-4 ml-2" />
-                  ذخیره تنظیمات
-                </Button>
-              </CardContent>
-            </Card>
-            
-            {/* Rafiei Meet Management */}
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
-                  <Video className="w-6 h-6 text-green-400" />
-                  📹 مدیریت جلسه تصویری
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={meetForm.is_active}
-                    onCheckedChange={(checked) => setMeetForm({...meetForm, is_active: checked})}
-                  />
-                  <span className="text-gray-900 dark:text-white">
-                    {meetForm.is_active ? '🟢 جلسه فعال' : '🔴 جلسه غیرفعال'}
-                  </span>
-                </div>
-                
-                <Input
-                  value={meetForm.meet_url}
-                  onChange={(e) => setMeetForm({...meetForm, meet_url: e.target.value})}
-                  placeholder="لینک جلسه..."
-                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-                
-                <Input
-                  value={meetForm.title}
-                  onChange={(e) => setMeetForm({...meetForm, title: e.target.value})}
-                  placeholder="عنوان جلسه..."
-                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-                
-                <Textarea
-                  value={meetForm.description}
-                  onChange={(e) => setMeetForm({...meetForm, description: e.target.value})}
-                  placeholder="توضیحات جلسه..."
-                  rows={3}
-                  className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
-                />
-                
-                <Button
-                  onClick={handleMeetUpdate}
-                  disabled={isUpdatingMeet}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <Save className="w-4 h-4 ml-2" />
-                  ذخیره تنظیمات
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="chat" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>مدیریت پیام‌های چت</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {messagesLoading ? (
+                    <p className="text-center">در حال بارگذاری پیام‌ها...</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {messages.map((message) => (
+                        <Card key={message.id}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle>{message.sender_name}</CardTitle>
+                              <Badge>{message.sender_role}</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p>{message.message}</p>
+                            <div className="flex justify-between mt-4">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteMessage(message.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleMessagePin(message.id, message.is_pinned || false)}
+                              >
+                                {message.is_pinned ? (
+                                  <>
+                                    <Pin className="w-4 h-4" />
+                                    برداشتن سنجاق
+                                  </>
+                                ) : (
+                                  <>
+                                    <Pin className="w-4 h-4" />
+                                    سنجاق
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
+            </TabsContent>
+
+            <TabsContent value="live" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>تنظیمات پخش زنده</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleLiveSettingsSubmit} className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="is_live"
+                        checked={liveForm.is_live}
+                        onCheckedChange={(checked) => setLiveForm({ ...liveForm, is_live: checked })}
+                      />
+                      <Label htmlFor="is_live">پخش زنده فعال باشد؟</Label>
+                    </div>
+                    <div>
+                      <Label htmlFor="stream_code">کد استریم</Label>
+                      <Textarea
+                        id="stream_code"
+                        value={liveForm.stream_code}
+                        onChange={(e) => setLiveForm({ ...liveForm, stream_code: e.target.value })}
+                        placeholder="کد HTML برای پخش زنده"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="title">عنوان پخش زنده</Label>
+                      <Input
+                        id="title"
+                        value={liveForm.title}
+                        onChange={(e) => setLiveForm({ ...liveForm, title: e.target.value })}
+                        placeholder="عنوان پخش زنده"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="viewers">تعداد بینندگان</Label>
+                      <Input
+                        type="number"
+                        id="viewers"
+                        value={liveForm.viewers}
+                        onChange={(e) => setLiveForm({ ...liveForm, viewers: parseInt(e.target.value) })}
+                        placeholder="تعداد بینندگان"
+                      />
+                    </div>
+                    <Button type="submit">
+                      به‌روزرسانی تنظیمات
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rafiei-meet" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Video className="w-5 h-5 text-blue-600" />
+                    🎥 تنظیمات رفیعی میت (جلسه تصویری)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {rafieiMeetLoading ? (
+                    <p className="text-center">در حال بارگذاری...</p>
+                  ) : (
+                    <form onSubmit={handleRafieiMeetSubmit} className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="rafiei_meet_active"
+                          checked={rafieiMeetForm.is_active}
+                          onCheckedChange={(checked) => setRafieiMeetForm({ ...rafieiMeetForm, is_active: checked })}
+                        />
+                        <Label htmlFor="rafiei_meet_active" className="text-lg font-medium">
+                          {rafieiMeetForm.is_active ? '🟢 جلسه تصویری فعال است' : '🔴 جلسه تصویری غیرفعال است'}
+                        </Label>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="rafiei_meet_title">عنوان جلسه</Label>
+                        <Input
+                          id="rafiei_meet_title"
+                          value={rafieiMeetForm.title}
+                          onChange={(e) => setRafieiMeetForm({ ...rafieiMeetForm, title: e.target.value })}
+                          placeholder="عنوان جلسه تصویری"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="rafiei_meet_description">توضیحات</Label>
+                        <Textarea
+                          id="rafiei_meet_description"
+                          value={rafieiMeetForm.description}
+                          onChange={(e) => setRafieiMeetForm({ ...rafieiMeetForm, description: e.target.value })}
+                          placeholder="توضیحات جلسه تصویری"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="rafiei_meet_url">لینک جلسه</Label>
+                        <Input
+                          id="rafiei_meet_url"
+                          value={rafieiMeetForm.meet_url}
+                          onChange={(e) => setRafieiMeetForm({ ...rafieiMeetForm, meet_url: e.target.value })}
+                          placeholder="https://meet.jit.si/rafiei"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          می‌توانید از Jitsi Meet، Google Meet، Zoom یا هر سرویس دیگری استفاده کنید
+                        </p>
+                      </div>
+                      
+                      <Button type="submit" className="w-full">
+                        <Video className="w-4 h-4 mr-2" />
+                        به‌روزرسانی تنظیمات رفیعی میت
+                      </Button>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Preview Card */}
+              {rafieiMeetSettings?.is_active && (
+                <Card className="border-green-200 dark:border-green-800">
+                  <CardHeader>
+                    <CardTitle className="text-green-800 dark:text-green-200">
+                      پیش‌نمایش جلسه فعال
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                      <p className="text-green-800 dark:text-green-200 mb-2">
+                        ✅ جلسه تصویری در حال حاضر برای کاربران نمایش داده می‌شود
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        عنوان: {rafieiMeetSettings.title}
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        لینک: {rafieiMeetSettings.meet_url}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </MainLayout>

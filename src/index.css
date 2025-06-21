@@ -102,15 +102,6 @@
     text-align: left;
   }
 
-  /* Light mode heading fixes */
-  h1, h2, h3, h4, h5, h6 {
-    @apply text-foreground;
-  }
-  
-  .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
-    @apply text-gray-900;
-  }
-
   /* Persian layout fixes - proper spacing for icons and text */
   .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
     --tw-space-x-reverse: 1;

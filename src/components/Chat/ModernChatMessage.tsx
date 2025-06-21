@@ -2,7 +2,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Pin } from 'lucide-react';
-import UserAvatar from './UserAvatar';
 import type { ChatMessage } from '@/types/supabase';
 
 interface ModernChatMessageProps {
@@ -16,9 +15,9 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
 }) => {
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700';
-      case 'moderator': return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700';
-      default: return 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
+      case 'admin': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'moderator': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
     }
   };
 
@@ -31,33 +30,22 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
   };
 
   return (
-    <div className={`flex mb-3 gap-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`} dir="rtl">
-      {/* Avatar - only show for other users' messages */}
-      {!isOwnMessage && (
-        <div className="flex-shrink-0 mt-1">
-          <UserAvatar 
-            name={message.sender_name || 'کاربر'} 
-            userId={message.user_id?.toString()}
-            size={36}
-          />
-        </div>
-      )}
-      
-      <div className={`max-w-[75%] sm:max-w-[65%] ${isOwnMessage ? 'mr-12' : 'ml-12'}`}>
+    <div className={`flex mb-4 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-[70%] sm:max-w-[60%] ${isOwnMessage ? 'order-2' : ''}`}>
         <div
           className={`rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
             isOwnMessage
-              ? 'bg-blue-500 text-white rounded-bl-md'
-              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-br-md border border-gray-200 dark:border-gray-700'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-br-md'
+              : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
           }`}
         >
-          {/* Header - only for other users */}
+          {/* Header */}
           {!isOwnMessage && (
-            <div className="flex items-center gap-2 mb-2" dir="rtl">
-              <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
                 {message.sender_name}
               </span>
-              <Badge className={`${getRoleColor(message.sender_role)} text-xs px-2 py-0.5 border rounded-full`}>
+              <Badge className={`${getRoleColor(message.sender_role)} text-xs px-2 py-0.5 border`}>
                 {getRoleText(message.sender_role)}
               </Badge>
               {message.is_pinned && (
@@ -67,18 +55,18 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
           )}
           
           {/* Message content */}
-          <p className={`text-sm leading-relaxed break-words ${
-            isOwnMessage ? 'text-white' : 'text-gray-800 dark:text-gray-200'
-          }`} dir="rtl">
+          <p className={`text-sm leading-relaxed ${
+            isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+          }`}>
             {message.message}
           </p>
           
           {/* Timestamp */}
           <div className={`flex items-center justify-end mt-2 text-xs ${
-            isOwnMessage ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-          }`} dir="rtl">
+            isOwnMessage ? 'text-amber-100' : 'text-slate-500 dark:text-slate-400'
+          }`}>
             {message.is_pinned && isOwnMessage && (
-              <Pin className="w-3 h-3 ml-1" />
+              <Pin className="w-3 h-3 mr-1" />
             )}
             <span>
               {new Date(message.created_at).toLocaleTimeString('fa-IR', {

@@ -1,22 +1,38 @@
 
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import Header from "./Header";
-import Footer from "./Footer";
+import React, { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
+import Header from "@/components/Layout/Header";
+import Footer from "@/components/Layout/Footer";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+const MainLayout = ({ children }: MainLayoutProps) => {
+  const { direction } = useLanguage();
+  const location = useLocation();
+  
+  // Routes where footer should be hidden
+  const hideFooterRoutes = ['/mag', '/payreq'];
+  const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
+  
+  // Routes where both header and footer should be hidden (access pages and redirect pages)
+  const hideHeaderFooterRoutes = location.pathname.startsWith('/access') || location.pathname.startsWith('/redirect');
+  
+  if (hideHeaderFooterRoutes) {
+    return (
+      <div className={`min-h-screen flex flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
+        <main className="flex-1">{children}</main>
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
-      <main className="flex-1">
-        {children}
-      </main>
-      <Footer />
-      <Toaster />
+      <main className="flex-1 pt-16">{children}</main>
+      {!shouldHideFooter && <Footer />}
     </div>
   );
 };
