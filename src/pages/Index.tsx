@@ -10,9 +10,10 @@ import SectionTitle from '@/components/SectionTitle';
 import FloatingNotification from '@/components/FloatingNotification';
 import HubCTABanner from '@/components/HubCTABanner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { BookOpen, MessageCircle } from 'lucide-react';
 
 const Index = () => {
-  const { t } = useLanguage();
+  const { translations } = useLanguage();
   const [showWarNotification, setShowWarNotification] = useState(true);
 
   // Auto-hide war notification after 10 seconds
@@ -35,7 +36,7 @@ const Index = () => {
       link: "/courses/instagram",
       isPaid: true,
       price: "۲۹۹,۰۰۰ تومان",
-      benefits: ["آموزش تولید محتوا", "استراتژی‌های رشد", "تبلیغات هدفمند"],
+      benefits: "آموزش تولید محتوا، استراتژی‌های رشد، تبلیغات هدفمند",
       outcome: "تسلط کامل بر بازاریابی اینستاگرام"
     },
     {
@@ -49,7 +50,7 @@ const Index = () => {
       link: "/courses/metaverse",
       isPaid: false,
       price: "رایگان",
-      benefits: ["درک مفهوم متاورس", "شناسایی فرصت‌ها", "راه‌های کسب درآمد"],
+      benefits: "درک مفهوم متاورس، شناسایی فرصت‌ها، راه‌های کسب درآمد",
       outcome: "آمادگی برای ورود به دنیای متاورس"
     }
   ];
@@ -79,7 +80,7 @@ const Index = () => {
     {
       title: "دوره‌های آموزشی",
       description: "آموزش‌های تخصصی با گواهینامه معتبر",
-      icon: "📚",
+      icon: BookOpen,
       link: "/courses",
       type: "course" as const,
       gradient: "from-blue-500 to-purple-600",
@@ -88,7 +89,7 @@ const Index = () => {
     {
       title: "مشاوره تخصصی",
       description: "مشاوره یک به یک با کارشناسان مجرب",
-      icon: "🎯",
+      icon: MessageCircle,
       link: "/contact",
       type: "consultation" as const,
       gradient: "from-green-500 to-teal-600",
@@ -99,19 +100,23 @@ const Index = () => {
   return (
     <MainLayout>
       <Hero
-        title={t.heroTitle || "آکادمی رفیعی"}
-        subtitle={t.heroSubtitle || "راه خود را به سوی موفقیت پیدا کنید"}
-        ctaText={t.heroCTA || "شروع کنید"}
+        title={translations.slogan || "آکادمی رفیعی"}
+        subtitle={translations.tagline || "راه خود را به سوی موفقیت پیدا کنید"}
+        ctaText={translations.callToAction || "شروع کنید"}
         ctaLink="/courses"
         backgroundType="glow"
         glowTheme="home"
       />
 
-      <FloatingNotification
-        message="⚠️ به دلیل وضعیت جنگی و نامعلوم بودن شرایط، تمام دوره‌ها تا اطلاع ثانوی متوقف شده‌اند."
-        type="warning"
-        isVisible={showWarNotification}
-      />
+      {showWarNotification && (
+        <div className="container mx-auto px-4 py-4">
+          <div className="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
+            <p className="text-amber-800 dark:text-amber-200 font-medium">
+              ⚠️ به دلیل وضعیت جنگی و نامعلوم بودن شرایط، تمام دوره‌ها تا اطلاع ثانوی متوقف شده‌اند.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hub CTA Banner */}
       <div className="container mx-auto px-4">
@@ -121,7 +126,7 @@ const Index = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <SectionTitle 
-            title={t.featuredCourses || "دوره‌های ویژه"} 
+            title={translations.paidCoursesTitle || "دوره‌های ویژه"} 
             subtitle="بهترین دوره‌ها برای شروع مسیر یادگیری شما" 
           />
           
@@ -171,6 +176,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <FloatingNotification />
     </MainLayout>
   );
 };
