@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Announcement, ChatMessage, LiveSettings, AnnouncementInsert, ChatMessageInsert } from '@/types/supabase';
+import type { Announcement, ChatMessage, LiveSettings, AnnouncementInsert, ChatMessageInsert, ChatTopic, ChatTopicInsert } from '@/types/supabase';
 
 // Define additional types for new tables
 export type ChatUser = {
@@ -80,6 +80,17 @@ export const chatService = {
     return (data || []) as ChatMessage[];
   },
 
+  async getMessagesByTopic(topicId: number): Promise<ChatMessage[]> {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('topic_id', topicId)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return (data || []) as ChatMessage[];
+  },
+
   async sendMessage(message: ChatMessageInsert): Promise<ChatMessage> {
     const { data, error } = await supabase
       .from('chat_messages')
@@ -104,6 +115,60 @@ export const chatService = {
     const { error } = await supabase
       .from('chat_messages')
       .update({ is_pinned: !isPinned })
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+export const chatTopicsService = {
+  async getAll(): Promise<ChatTopic[]> {
+    const { data, error } = await supabase
+      .from('chat_topics')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return (data || []) as ChatTopic[];
+  },
+
+  async create(topic: ChatTopicInsert): Promise<ChatTopic> {
+    const { data, error } = await supabase
+      .from('chat_topics')
+      .insert([topic])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data as ChatTopic;
+  },
+
+  async update(id: number, updates: Partial<ChatTopicInsert>): Promise<ChatTopic> {
+    const { data, error } = await supabase
+      .from('chat_topics')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data as ChatTopic;
+  },
+
+  async delete(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('chat_topics')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
+  async toggleActive(id: number, isActive: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('chat_topics')
+      .update({ is_active: !isActive, updated_at: new Date().toISOString() })
       .eq('id', id);
     
     if (error) throw error;

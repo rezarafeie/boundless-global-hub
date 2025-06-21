@@ -56,6 +56,7 @@ export type Database = {
           message: string
           sender_name: string | null
           sender_role: string
+          topic_id: number | null
           user_id: number | null
         }
         Insert: {
@@ -65,6 +66,7 @@ export type Database = {
           message: string
           sender_name?: string | null
           sender_role: string
+          topic_id?: number | null
           user_id?: number | null
         }
         Update: {
@@ -74,9 +76,17 @@ export type Database = {
           message?: string
           sender_name?: string | null
           sender_role?: string
+          topic_id?: number | null
           user_id?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_messages_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "chat_topics"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chat_messages_user_id_fkey"
             columns: ["user_id"]
@@ -85,6 +95,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      chat_topics: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       chat_users: {
         Row: {

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -15,7 +16,8 @@ import {
   Wifi,
   Lock,
   Unlock,
-  AlertTriangle
+  AlertTriangle,
+  MessageCircle
 } from "lucide-react";
 import HubSection from "@/components/Chat/HubSection";
 import { useLiveSettings } from '@/hooks/useRealtime';
@@ -135,6 +137,38 @@ const SolidarityLanding = () => {
                 </a>
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Hub CTA Section */}
+        <section className="py-16 px-4 bg-gradient-to-r from-blue-900/20 via-indigo-900/20 to-purple-900/20 border-t border-blue-800/30">
+          <div className="max-w-4xl mx-auto text-center">
+            <Card className="bg-gradient-to-r from-blue-900/80 to-indigo-900/80 backdrop-blur-sm border border-blue-700/50 shadow-2xl">
+              <CardContent className="p-8">
+                <div className="flex justify-center mb-6">
+                  <div className="relative">
+                    <MessageCircle className="w-16 h-16 text-blue-400" />
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-4">
+                  📢 مرکز ارتباط بدون مرز فعال شد
+                </h3>
+                <p className="text-xl text-blue-200 mb-6 leading-relaxed">
+                  برای دسترسی به اطلاعیه‌های فوری، پخش زنده، جلسات تصویری و گفتگوی گروهی با اعضای جامعه بدون مرز وارد شوید
+                </p>
+                <Link to="/hub">
+                  <Button 
+                    size="lg" 
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-10 py-5 text-xl rounded-full shadow-2xl hover:shadow-blue-500/25 transition-all duration-300"
+                  >
+                    <MessageCircle className="w-7 h-7 ml-2" />
+                    ورود به مرکز ارتباط بدون مرز
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </section>
 

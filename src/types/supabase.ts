@@ -20,6 +20,16 @@ export interface ChatMessage {
   is_pinned: boolean;
   created_at: string;
   user_id?: number;
+  topic_id?: number;
+}
+
+export interface ChatTopic {
+  id: number;
+  title: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LiveSettings {
@@ -47,4 +57,11 @@ export interface ChatMessageInsert {
   message: string;
   is_pinned?: boolean;
   user_id?: number;
+  topic_id?: number;
+}
+
+export interface ChatTopicInsert {
+  title: string;
+  description?: string;
+  is_active?: boolean;
 }
