@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import MessengerAuth from '@/components/Chat/MessengerAuth';
 import MessengerInbox from '@/components/Chat/MessengerInbox';
 import MessengerChatView from '@/components/Chat/MessengerChatView';
+import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, ArrowRight } from 'lucide-react';
@@ -51,6 +53,7 @@ const BorderlessHubMessenger: React.FC = () => {
         }
       } catch (error) {
         localStorage.removeItem('messenger_session_token');
+        console.error('Session validation error:', error);
       }
     }
     setLoading(false);
@@ -81,6 +84,10 @@ const BorderlessHubMessenger: React.FC = () => {
   const handleBackToInbox = () => {
     setShowMobileChat(false);
     setSelectedRoom(null);
+  };
+
+  const handleBackToHub = () => {
+    navigate('/hub');
   };
 
   const handleLogout = () => {
@@ -138,12 +145,29 @@ const BorderlessHubMessenger: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
+      {/* Mobile Header */}
+      {showMobileChat ? (
+        <div className="md:hidden">
+          <MobileMessengerHeader
+            onBack={handleBackToInbox}
+            onLogout={handleLogout}
+          />
+        </div>
+      ) : (
+        <div className="md:hidden">
+          <MobileMessengerHeader
+            onBack={handleBackToHub}
+            onLogout={handleLogout}
+          />
+        </div>
+      )}
+
+      {/* Desktop Header */}
+      <div className="hidden md:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/hub')}
+              onClick={handleBackToHub}
               className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowRight className="w-5 h-5" />

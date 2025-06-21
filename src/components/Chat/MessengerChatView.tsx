@@ -2,9 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Send, Users, HeadphonesIcon } from 'lucide-react';
+import { ArrowLeft, Send, Users, HeadphonesIcon, AlertCircle } from 'lucide-react';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 import ModernChatInput from './ModernChatInput';
@@ -47,6 +45,28 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }
       channelRef.current = null;
       isSubscribedRef.current = false;
+    }
+  };
+
+  const fetchMessages = async () => {
+    try {
+      setError(null);
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
+      let fetchedMessages: MessengerMessage[] = [];
+      if (room.type === 'support_chat') {
+        fetchedMessages = await messengerService.getPrivateMessages(currentUser.id, sessionToken);
+      } else {
+        fetchedMessages = await messengerService.getRoomMessages(room.id, sessionToken);
+      }
+      setMessages(fetchedMessages);
+      console.log(`Loaded ${fetchedMessages.length} messages for room ${room.name}`);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setError('خطا در بارگذاری پیام‌ها. لطفاً دوباره تلاش کنید.');
     }
   };
 
@@ -120,37 +140,27 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   }, [messages]);
 
-  const fetchMessages = async () => {
-    try {
-      let fetchedMessages: MessengerMessage[] = [];
-      if (room.type === 'support_chat') {
-        fetchedMessages = await messengerService.getPrivateMessages(currentUser.id);
-      } else {
-        fetchedMessages = await messengerService.getRoomMessages(room.id);
-      }
-      setMessages(fetchedMessages);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      setError('خطا در بارگذاری پیام‌ها');
-    }
-  };
-
   const handleSendMessage = async (messageText: string): Promise<void> => {
     if (!messageText.trim() || sendingMessage) return;
     
     setSendingMessage(true);
     try {
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
+
       const messageData = {
-        room_id: room.type === 'support_chat' ? null : room.id,
+        room_id: room.type === 'support_chat' ? undefined : room.id,
         sender_id: currentUser.id,
-        recipient_id: room.type === 'support_chat' ? 1 : null, // Assuming support agent has ID 1
+        recipient_id: room.type === 'support_chat' ? 1 : undefined, // Assuming support agent has ID 1
         message: messageText,
         message_type: 'text'
       };
 
       console.log('Sending message with data:', messageData);
       
-      await messengerService.sendMessage(messageData);
+      await messengerService.sendMessage(messageData, sessionToken);
       
       // Success feedback
       toast({
@@ -168,17 +178,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       
       toast({
         title: 'خطا در ارسال',
-        description: (
-          <div className="flex items-center gap-2">
-            <span>{errorMessage}</span>
-            <button
-              onClick={() => handleSendMessage(messageText)}
-              className="text-blue-500 hover:text-blue-600 underline text-sm"
-            >
-              تلاش مجدد 🔄
-            </button>
-          </div>
-        ),
+        description: errorMessage,
         variant: 'destructive',
       });
       
@@ -206,10 +206,18 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
+  const handleRetry = () => {
+    setLoading(true);
+    fetchMessages().finally(() => setLoading(false));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>در حال بارگذاری پیام‌ها...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p>در حال بارگذاری پیام‌ها...</p>
+        </div>
       </div>
     );
   }
@@ -217,9 +225,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-4">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>
-          رفرش صفحه
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <p className="text-red-500 mb-4 text-center">{error}</p>
+        <Button onClick={handleRetry} variant="outline">
+          تلاش مجدد
         </Button>
       </div>
     );
@@ -242,21 +251,30 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`mb-2 flex flex-col ${message.sender_id === currentUser.id ? 'items-end' : 'items-start'}`}
-          >
-            <div className={`max-w-2/3 rounded-xl px-4 py-2 ${message.sender_id === currentUser.id
-              ? 'bg-blue-100 dark:bg-blue-900 text-slate-900 dark:text-slate-50'
-              : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-50'}`}>
-              {message.message}
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {new Date(message.created_at).toLocaleTimeString()}
-              </div>
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-slate-500">
+              <p>هنوز پیامی ارسال نشده</p>
+              <p className="text-sm mt-2">اولین پیام را ارسال کنید! 💬</p>
             </div>
           </div>
-        ))}
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={`mb-2 flex flex-col ${message.sender_id === currentUser.id ? 'items-end' : 'items-start'}`}
+            >
+              <div className={`max-w-2/3 rounded-xl px-4 py-2 ${message.sender_id === currentUser.id
+                ? 'bg-blue-100 dark:bg-blue-900 text-slate-900 dark:text-slate-50'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-50'}`}>
+                {message.message}
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {new Date(message.created_at).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
         <div ref={chatBottomRef} />
       </div>
 

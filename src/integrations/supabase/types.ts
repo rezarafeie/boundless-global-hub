@@ -483,6 +483,10 @@ export type Database = {
         Args: { announcement_id: number }
         Returns: undefined
       }
+      set_session_context: {
+        Args: { session_token: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

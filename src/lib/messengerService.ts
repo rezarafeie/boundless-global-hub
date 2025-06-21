@@ -48,6 +48,20 @@ export type UserSession = {
   created_at: string;
 };
 
+// Helper function to set session context for RLS
+const setSessionContext = async (sessionToken: string) => {
+  try {
+    const { error } = await supabase.rpc('set_session_context', {
+      session_token: sessionToken
+    });
+    if (error) {
+      console.warn('Could not set session context:', error);
+    }
+  } catch (error) {
+    console.warn('Error setting session context:', error);
+  }
+};
+
 export const messengerService = {
   // User authentication and session management
   async register(name: string, phone: string, isBoundlessStudent: boolean = false): Promise<MessengerUser> {
@@ -90,6 +104,9 @@ export const messengerService = {
   },
 
   async validateSession(sessionToken: string): Promise<{ user: MessengerUser; session: UserSession } | null> {
+    // Set session context for RLS
+    await setSessionContext(sessionToken);
+    
     const { data: sessionData, error: sessionError } = await supabase
       .from('user_sessions')
       .select(`
@@ -124,18 +141,27 @@ export const messengerService = {
   },
 
   // Chat rooms management
-  async getRooms(): Promise<ChatRoom[]> {
+  async getRooms(sessionToken: string): Promise<ChatRoom[]> {
+    // Set session context for RLS
+    await setSessionContext(sessionToken);
+    
     const { data, error } = await supabase
       .from('chat_rooms')
       .select('*')
       .eq('is_active', true)
       .order('id', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching rooms:', error);
+      throw error;
+    }
     return (data || []) as ChatRoom[];
   },
 
-  async getRoomMessages(roomId: number): Promise<MessengerMessage[]> {
+  async getRoomMessages(roomId: number, sessionToken: string): Promise<MessengerMessage[]> {
+    // Set session context for RLS
+    await setSessionContext(sessionToken);
+    
     const { data, error } = await supabase
       .from('messenger_messages')
       .select(`
@@ -145,11 +171,17 @@ export const messengerService = {
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching room messages:', error);
+      throw error;
+    }
     return (data || []) as MessengerMessage[];
   },
 
-  async getPrivateMessages(userId: number): Promise<MessengerMessage[]> {
+  async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
+    // Set session context for RLS
+    await setSessionContext(sessionToken);
+    
     const { data, error } = await supabase
       .from('messenger_messages')
       .select(`
@@ -160,7 +192,10 @@ export const messengerService = {
       .is('room_id', null)
       .order('created_at', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching private messages:', error);
+      throw error;
+    }
     return (data || []) as MessengerMessage[];
   },
 
@@ -170,7 +205,10 @@ export const messengerService = {
     recipient_id?: number;
     message: string;
     message_type?: string;
-  }): Promise<MessengerMessage> {
+  }, sessionToken: string): Promise<MessengerMessage> {
+    // Set session context for RLS
+    await setSessionContext(sessionToken);
+    
     const { data, error } = await supabase
       .from('messenger_messages')
       .insert([{
@@ -183,12 +221,18 @@ export const messengerService = {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
     return data as MessengerMessage;
   },
 
   // Support agent functions
-  async getSupportConversations(supportAgentId: number): Promise<any[]> {
+  async getSupportConversations(supportAgentId: number, sessionToken: string): Promise<any[]> {
+    // Set session context for RLS
+    await setSessionContext(sessionToken);
+    
     const { data, error } = await supabase
       .from('messenger_messages')
       .select(`
@@ -200,7 +244,10 @@ export const messengerService = {
       .is('room_id', null)
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching support conversations:', error);
+      throw error;
+    }
     return data || [];
   }
 };

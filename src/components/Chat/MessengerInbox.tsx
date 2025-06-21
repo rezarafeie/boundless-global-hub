@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Users, Megaphone, HeadphonesIcon } from 'lucide-react';
-import { type MessengerUser } from '@/lib/messengerService';
+import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw } from 'lucide-react';
+import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { Button } from '@/components/ui/button';
 
 interface ChatRoom {
   id: number;
@@ -30,82 +30,18 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const channelRef = useRef<any>(null);
-  const isSubscribedRef = useRef(false);
-
-  const cleanupChannel = () => {
-    if (channelRef.current && isSubscribedRef.current) {
-      try {
-        supabase.removeChannel(channelRef.current);
-        console.log('Inbox channel cleaned up successfully');
-      } catch (error) {
-        console.error('Error cleaning up inbox channel:', error);
-      }
-      channelRef.current = null;
-      isSubscribedRef.current = false;
-    }
-  };
-
-  useEffect(() => {
-    const setupRoomsAndSubscription = async () => {
-      try {
-        setError(null);
-        await fetchRooms();
-        
-        // Clean up existing channel
-        cleanupChannel();
-        
-        // Set up new real-time subscription for rooms
-        const channelName = `rooms_inbox_${currentUser.id}_${Date.now()}`;
-        channelRef.current = supabase.channel(channelName);
-        
-        channelRef.current
-          .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'chat_rooms' },
-            () => {
-              console.log('Rooms updated, refetching...');
-              fetchRooms();
-            }
-          )
-          .subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              isSubscribedRef.current = true;
-              console.log('Successfully subscribed to rooms channel:', channelName);
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('Rooms channel subscription error');
-              setError('Connection error. Please refresh the page.');
-            }
-          });
-
-      } catch (error) {
-        console.error('Error setting up rooms and subscription:', error);
-        setError('Failed to load rooms');
-      }
-    };
-
-    setupRoomsAndSubscription();
-
-    return cleanupChannel;
-  }, [currentUser.id]);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchRooms = async () => {
     try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .eq('is_active', true)
-        .order('id', { ascending: true });
+      setError(null);
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found');
+      }
 
-      if (error) throw error;
-
-      // Filter rooms based on user permissions
-      const accessibleRooms = (data || []).filter(room => {
-        if (room.type === 'boundless_group' && !currentUser.bedoun_marz_approved) {
-          return false;
-        }
-        return true;
-      });
-
+      const roomsData = await messengerService.getRooms(sessionToken);
+      
       // Add support chat room for all users
       const supportRoom: ChatRoom = {
         id: -1, // Special ID for support chat
@@ -115,14 +51,25 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         is_boundless_only: false
       };
 
-      setRooms([...accessibleRooms, supportRoom]);
+      setRooms([...roomsData, supportRoom]);
+      console.log('Loaded rooms:', roomsData.length + 1);
     } catch (error) {
       console.error('Error fetching rooms:', error);
+      setError('خطا در بارگذاری گفتگوها. لطفاً دوباره تلاش کنید.');
       setRooms([]);
-      setError('Failed to load rooms');
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchRooms();
+  }, [currentUser.id]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setLoading(true);
+    fetchRooms();
   };
 
   const getRoomIcon = (type: string) => {
@@ -166,12 +113,15 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     return (
       <div className="p-4 text-center">
         <p className="text-red-500 mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Refresh
-        </button>
+        <Button onClick={handleRetry} variant="outline" size="sm">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          تلاش مجدد
+        </Button>
+        {retryCount > 2 && (
+          <p className="text-xs text-slate-500 mt-2">
+            اگر مشکل ادامه دارد، لطفاً صفحه را رفرش کنید
+          </p>
+        )}
       </div>
     );
   }
@@ -184,67 +134,74 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           گفتگوها
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          {currentUser.name}
+          {rooms.length} گفتگو موجود
         </p>
       </div>
 
       {/* Rooms List */}
       <div className="flex-1 overflow-y-auto">
-        {rooms.map((room) => {
-          const Icon = getRoomIcon(room.type);
-          const isSelected = selectedRoom?.id === room.id;
-          
-          return (
-            <div
-              key={room.id}
-              onClick={() => onRoomSelect(room)}
-              className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                isSelected ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  room.type === 'boundless_group' ? 'bg-indigo-100 dark:bg-indigo-900' :
-                  room.type === 'support_chat' ? 'bg-green-100 dark:bg-green-900' :
-                  room.type === 'announcement_channel' ? 'bg-amber-100 dark:bg-amber-900' :
-                  'bg-blue-100 dark:bg-blue-900'
-                }`}>
-                  <Icon className={`w-6 h-6 ${
-                    room.type === 'boundless_group' ? 'text-indigo-600 dark:text-indigo-400' :
-                    room.type === 'support_chat' ? 'text-green-600 dark:text-green-400' :
-                    room.type === 'announcement_channel' ? 'text-amber-600 dark:text-amber-400' :
-                    'text-blue-600 dark:text-blue-400'
-                  }`} />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                      {room.name}
-                    </h3>
-                    {getRoomBadge(room)}
+        {rooms.length === 0 ? (
+          <div className="p-8 text-center">
+            <MessageCircle className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-500 dark:text-slate-400">
+              هیچ گفتگویی موجود نیست
+            </p>
+            <Button onClick={handleRetry} variant="ghost" size="sm" className="mt-2">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              بارگذاری مجدد
+            </Button>
+          </div>
+        ) : (
+          rooms.map((room) => {
+            const Icon = getRoomIcon(room.type);
+            const isSelected = selectedRoom?.id === room.id;
+            
+            return (
+              <div
+                key={room.id}
+                onClick={() => onRoomSelect(room)}
+                className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
+                  isSelected ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    room.type === 'boundless_group' ? 'bg-indigo-100 dark:bg-indigo-900' :
+                    room.type === 'support_chat' ? 'bg-green-100 dark:bg-green-900' :
+                    room.type === 'announcement_channel' ? 'bg-amber-100 dark:bg-amber-900' :
+                    'bg-blue-100 dark:bg-blue-900'
+                  }`}>
+                    <Icon className={`w-6 h-6 ${
+                      room.type === 'boundless_group' ? 'text-indigo-600 dark:text-indigo-400' :
+                      room.type === 'support_chat' ? 'text-green-600 dark:text-green-400' :
+                      room.type === 'announcement_channel' ? 'text-amber-600 dark:text-amber-400' :
+                      'text-blue-600 dark:text-blue-400'
+                    }`} />
                   </div>
                   
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
-                    {room.description}
-                  </p>
-                  
-                  {room.last_message && (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-1">
-                      {room.last_message}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-slate-900 dark:text-white truncate">
+                        {room.name}
+                      </h3>
+                      {getRoomBadge(room)}
+                    </div>
+                    
+                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
+                      {room.description}
                     </p>
+                  </div>
+
+                  {room.unread_count && room.unread_count > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {room.unread_count}
+                    </Badge>
                   )}
                 </div>
-
-                {room.unread_count && room.unread_count > 0 && (
-                  <Badge variant="destructive" className="text-xs">
-                    {room.unread_count}
-                  </Badge>
-                )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );
