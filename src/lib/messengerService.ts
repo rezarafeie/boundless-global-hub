@@ -294,14 +294,15 @@ class MessengerService {
 
   async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
     try {
-      // Set session context for RLS
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
+      console.log('Getting private messages for user:', userId);
       
-      // Get or create support conversation first
+      // Get or create support conversation first with proper error handling
       const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken);
+      console.log('Got conversation:', conversation.id);
       
       // Get messages for this conversation
       const messages = await supportService.getConversationMessages(conversation.id);
+      console.log('Got messages:', messages.length);
       
       // Convert to MessengerMessage format
       return messages.map(msg => ({

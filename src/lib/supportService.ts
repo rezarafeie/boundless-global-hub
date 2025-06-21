@@ -31,14 +31,21 @@ export type SupportMessage = {
 };
 
 class SupportService {
-  // Helper method to set session context
+  // Helper method to set session context - now more robust
   private async setSessionContext(sessionToken: string): Promise<void> {
     try {
-      const { error } = await supabase.rpc('set_session_context', { session_token: sessionToken });
+      console.log('Setting session context for token:', sessionToken.substring(0, 8) + '...');
+      
+      const { error } = await supabase.rpc('set_session_context', { 
+        session_token: sessionToken 
+      });
+      
       if (error) {
         console.error('Failed to set session context:', error);
-        throw error;
+        throw new Error(`Failed to set session context: ${error.message}`);
       }
+      
+      console.log('Session context set successfully');
     } catch (error) {
       console.error('Error setting session context:', error);
       throw error;
@@ -204,68 +211,80 @@ class SupportService {
     } as SupportMessage;
   }
 
-  // Create or get support conversation for user
+  // Create or get support conversation for user - FIXED VERSION
   async getOrCreateUserConversation(userId: number, sessionToken: string): Promise<SupportConversation> {
-    // Set session context for RLS
+    console.log('Getting or creating conversation for user:', userId);
+    
+    // ALWAYS set session context first
     await this.setSessionContext(sessionToken);
     
-    console.log('Setting session context and looking for existing conversation for user:', userId);
-    
-    // Check if conversation already exists
-    const { data: existing, error: fetchError } = await supabase
-      .from('support_conversations')
-      .select(`
-        *,
-        chat_users!support_conversations_user_id_fkey(name, phone)
-      `)
-      .eq('user_id', userId)
-      .in('status', ['open', 'assigned'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    try {
+      // First, try to find existing conversation
+      console.log('Looking for existing conversation...');
+      const { data: existing, error: fetchError } = await supabase
+        .from('support_conversations')
+        .select(`
+          *,
+          chat_users!support_conversations_user_id_fkey(name, phone)
+        `)
+        .eq('user_id', userId)
+        .in('status', ['open', 'assigned'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (existing && !fetchError) {
-      console.log('Found existing conversation:', existing.id);
+      if (fetchError) {
+        console.error('Error fetching existing conversation:', fetchError);
+        throw fetchError;
+      }
+
+      if (existing) {
+        console.log('Found existing conversation:', existing.id);
+        return {
+          ...existing,
+          user_name: existing.chat_users?.name,
+          user_phone: existing.chat_users?.phone,
+          status: existing.status as 'open' | 'assigned' | 'closed' | null,
+          priority: existing.priority as 'low' | 'normal' | 'high' | 'urgent' | null
+        } as SupportConversation;
+      }
+
+      console.log('No existing conversation found, creating new one...');
+      
+      // Create new conversation - the RLS policy should now allow this
+      const { data: newConversation, error: createError } = await supabase
+        .from('support_conversations')
+        .insert([{ 
+          user_id: userId,
+          status: 'open',
+          priority: 'normal',
+          last_message_at: new Date().toISOString()
+        }])
+        .select(`
+          *,
+          chat_users!support_conversations_user_id_fkey(name, phone)
+        `)
+        .single();
+
+      if (createError) {
+        console.error('Error creating support conversation:', createError);
+        throw createError;
+      }
+
+      console.log('Successfully created conversation:', newConversation.id);
+
       return {
-        ...existing,
-        user_name: existing.chat_users?.name,
-        user_phone: existing.chat_users?.phone,
-        status: existing.status as 'open' | 'assigned' | 'closed' | null,
-        priority: existing.priority as 'low' | 'normal' | 'high' | 'urgent' | null
+        ...newConversation,
+        user_name: newConversation.chat_users?.name,
+        user_phone: newConversation.chat_users?.phone,
+        status: newConversation.status as 'open' | 'assigned' | 'closed' | null,
+        priority: newConversation.priority as 'low' | 'normal' | 'high' | 'urgent' | null
       } as SupportConversation;
-    }
 
-    console.log('Creating new support conversation for user:', userId);
-    
-    // Create new conversation
-    const { data, error } = await supabase
-      .from('support_conversations')
-      .insert([{ 
-        user_id: userId,
-        status: 'open',
-        priority: 'normal',
-        last_message_at: new Date().toISOString()
-      }])
-      .select(`
-        *,
-        chat_users!support_conversations_user_id_fkey(name, phone)
-      `)
-      .single();
-
-    if (error) {
-      console.error('Error creating support conversation:', error);
+    } catch (error) {
+      console.error('Error in getOrCreateUserConversation:', error);
       throw error;
     }
-
-    console.log('Successfully created conversation:', data.id);
-
-    return {
-      ...data,
-      user_name: data.chat_users?.name,
-      user_phone: data.chat_users?.phone,
-      status: data.status as 'open' | 'assigned' | 'closed' | null,
-      priority: data.priority as 'low' | 'normal' | 'high' | 'urgent' | null
-    } as SupportConversation;
   }
 }
 
