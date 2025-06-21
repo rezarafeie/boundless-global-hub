@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { supportService } from './supportService';
 
@@ -93,7 +92,50 @@ const setSessionContextOptional = async (sessionToken: string): Promise<void> =>
   }
 };
 
+// Ensure system support user exists
+const ensureSystemSupportUser = async (): Promise<void> => {
+  try {
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('chat_users')
+      .select('id')
+      .eq('id', 1)
+      .maybeSingle();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error checking system support user:', fetchError);
+      return;
+    }
+    
+    if (!existingUser) {
+      console.log('Creating system support user...');
+      const { error: insertError } = await supabase
+        .from('chat_users')
+        .insert([{
+          id: 1,
+          name: 'پشتیبانی سیستم',
+          phone: 'system',
+          is_approved: true,
+          is_support_agent: true,
+          role: 'system_support'
+        }]);
+      
+      if (insertError) {
+        console.error('Error creating system support user:', insertError);
+      } else {
+        console.log('System support user created successfully');
+      }
+    }
+  } catch (error) {
+    console.error('Error ensuring system support user:', error);
+  }
+};
+
 class MessengerService {
+  constructor() {
+    // Ensure system support user exists on service initialization
+    ensureSystemSupportUser();
+  }
+
   // User authentication and session management
   async register(name: string, phone: string, isBoundlessStudent: boolean = false): Promise<MessengerUser> {
     const { data, error } = await supabase
@@ -375,9 +417,10 @@ class MessengerService {
     }
     
     try {
-      // For support messages, set optional session context
+      // Ensure system support user exists before sending support messages
       if (messageData.recipient_id === 1 && !messageData.room_id) {
-        console.log('Support message detected - setting optional session context');
+        console.log('Support message detected - ensuring system support user exists');
+        await ensureSystemSupportUser();
         await setSessionContextOptional(sessionToken);
       }
       

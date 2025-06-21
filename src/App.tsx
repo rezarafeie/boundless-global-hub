@@ -137,6 +137,7 @@ function App() {
                 <Route path="/hub" element={<BorderlessHub />} />
                 <Route path="/hub/chat" element={<BorderlessHubChat />} />
                 <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
+                <Route path="/hub/messenger/pending" element={<MessengerPending />} />
                 <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
                 <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
                 <Route path="/messenger-pending" element={<MessengerPending />} />
