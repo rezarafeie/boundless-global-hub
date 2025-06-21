@@ -91,7 +91,7 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
             <ModernChatMessage
               key={message.id}
               message={message}
-              isOwnMessage={message.user_id === currentUserId}
+              isOwn={message.user_id === currentUserId}
             />
           ))
         )}

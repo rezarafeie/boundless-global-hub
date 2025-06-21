@@ -70,8 +70,8 @@ const BorderlessHubChat = () => {
     }
   };
 
-  const handleAuthSuccess = (userData: any) => {
-    setUser(userData);
+  const handleAuthenticated = (token: string, name: string) => {
+    setUser({ name, id: Date.now() }); // Simple user object
     setIsAuthenticated(true);
   };
 
@@ -87,7 +87,7 @@ const BorderlessHubChat = () => {
   }
 
   if (!isAuthenticated) {
-    return <ChatAuth onAuthSuccess={handleAuthSuccess} />;
+    return <ChatAuth onAuthenticated={handleAuthenticated} />;
   }
 
   if (topicsLoading) {

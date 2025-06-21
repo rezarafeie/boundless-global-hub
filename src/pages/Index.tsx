@@ -10,6 +10,7 @@ import EducationCard from "@/components/EducationCard";
 import FloatingNotification from "@/components/FloatingNotification";
 import HubCTABanner from "@/components/HubCTABanner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { BookOpen, Users } from "lucide-react";
 
 const Index = () => {
   const { translations, language } = useLanguage();
@@ -18,6 +19,9 @@ const Index = () => {
     {
       id: 1,
       title: language === "en" ? "American Business" : "کسب و کار آمریکایی",
+      description: language === "en" ? "Learn American business strategies and mindset" : "استراتژی‌های کسب و کار آمریکایی را بیاموزید",
+      benefits: language === "en" ? "Business mindset • Strategic thinking • Leadership" : "تفکر کسب و کار • تفکر استراتژیک • رهبری",
+      outcome: language === "en" ? "Master American business practices" : "تسلط بر شیوه‌های کسب و کار آمریکایی",
       instructor: language === "en" ? "Ramin Rafiei" : "رامین رفیعی",
       duration: language === "en" ? "8 weeks" : "۸ هفته",
       level: language === "en" ? "Intermediate" : "متوسط",
@@ -29,6 +33,9 @@ const Index = () => {
     {
       id: 2,
       title: language === "en" ? "Passive Income Strategies" : "درآمد غیرفعال",
+      description: language === "en" ? "Build multiple streams of passive income" : "جریان‌های متعدد درآمد غیرفعال بسازید",
+      benefits: language === "en" ? "Investment strategies • Online income • Automation" : "استراتژی‌های سرمایه‌گذاری • درآمد آنلاین • اتوماسیون",
+      outcome: language === "en" ? "Create sustainable passive income" : "درآمد غیرفعال پایدار بسازید",
       instructor: language === "en" ? "Ramin Rafiei" : "رامین رفیعی",
       duration: language === "en" ? "6 weeks" : "۶ هفته",
       level: language === "en" ? "Beginner" : "مبتدی",
@@ -46,6 +53,7 @@ const Index = () => {
       description: language === "en" ? "Test your business knowledge" : "دانش کسب و کار خود را بسنجید",
       duration: language === "en" ? "30 minutes" : "۳۰ دقیقه",
       questions: language === "en" ? "25 questions" : "۲۵ سوال",
+      category: language === "en" ? "Business" : "کسب و کار",
       link: "/assessment-center"
     }
   ];
@@ -54,35 +62,33 @@ const Index = () => {
     {
       title: language === "en" ? "Free Business Course" : "دوره رایگان کسب و کار",
       description: language === "en" ? "Start your business journey" : "سفر کسب و کار خود را آغاز کنید",
-      icon: "📚",
+      icon: BookOpen,
       link: "/courses/free",
-      type: "course" as const
+      gradient: "from-blue-500 to-purple-600",
+      iconColor: "bg-blue-500"
     },
     {
       title: language === "en" ? "1-on-1 Consultation" : "مشاوره تک به تک",
       description: language === "en" ? "Personal business guidance" : "راهنمایی شخصی کسب و کار",
-      icon: "💼",
+      icon: Users,
       link: "/contact",
-      type: "consultation" as const
+      gradient: "from-green-500 to-teal-600",
+      iconColor: "bg-green-500"
     }
   ];
 
   return (
     <MainLayout>
       <Hero
-        title={translations.heroTitle}
-        subtitle={translations.heroSubtitle}
-        ctaText={translations.heroCTA}
+        title={translations.slogan || "تبدیل زندگی با هوش مصنوعی"}
+        subtitle={translations.tagline || "آموزش جامع و ابزارهای لازم برای زندگی بهتر با هوش مصنوعی"}
+        ctaText={translations.callToAction || "شروع کنید"}
         ctaLink="/courses"
         backgroundType="glow"
         glowTheme="home"
       />
 
-      <FloatingNotification 
-        message={language === "en" ? "⚠️ Support for Ukraine - We stand with the Ukrainian people during this difficult time." : "⚠️ حمایت از اوکراین - ما در این زمان سخت در کنار مردم اوکراین ایستاده‌ایم."}
-        type="war-notice"
-        isVisible={true}
-      />
+      <FloatingNotification />
 
       <HubCTABanner />
 
@@ -90,7 +96,7 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-16">
         <SectionTitle 
-          title={translations.featuredCourses}
+          title={translations.coursesTitle || "دوره‌ها"}
           subtitle={language === "en" ? "Discover our most popular courses" : "محبوب‌ترین دوره‌های ما را کشف کنید"}
         />
         
