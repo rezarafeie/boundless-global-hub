@@ -11,11 +11,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const TopicManagement: React.FC = () => {
-  const { topics, loading, refetch } = useChatTopics();
+  const { topics, loading } = useChatTopics();
   const { toast } = useToast();
   const [newTopicName, setNewTopicName] = useState('');
-  const [editingTopic, setEditingTopic] = useState<{ id: string; name: string } | null>(null);
+  const [editingTopic, setEditingTopic] = useState<{ id: number; title: string } | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  const refetchTopics = async () => {
+    // This is a simple refetch by reloading the component
+    window.location.reload();
+  };
 
   const handleAddTopic = async () => {
     if (!newTopicName.trim()) {
@@ -31,7 +36,7 @@ const TopicManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('chat_topics')
-        .insert([{ name: newTopicName.trim() }]);
+        .insert([{ title: newTopicName.trim() }]);
 
       if (error) throw error;
 
@@ -41,7 +46,7 @@ const TopicManagement: React.FC = () => {
       });
       
       setNewTopicName('');
-      refetch();
+      refetchTopics();
     } catch (error) {
       toast({
         title: "خطا",
@@ -54,12 +59,12 @@ const TopicManagement: React.FC = () => {
   };
 
   const handleEditTopic = async () => {
-    if (!editingTopic || !editingTopic.name.trim()) return;
+    if (!editingTopic || !editingTopic.title.trim()) return;
 
     try {
       const { error } = await supabase
         .from('chat_topics')
-        .update({ name: editingTopic.name.trim() })
+        .update({ title: editingTopic.title.trim() })
         .eq('id', editingTopic.id);
 
       if (error) throw error;
@@ -70,7 +75,7 @@ const TopicManagement: React.FC = () => {
       });
       
       setEditingTopic(null);
-      refetch();
+      refetchTopics();
     } catch (error) {
       toast({
         title: "خطا",
@@ -80,7 +85,7 @@ const TopicManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteTopic = async (topicId: string) => {
+  const handleDeleteTopic = async (topicId: number) => {
     try {
       const { error } = await supabase
         .from('chat_topics')
@@ -94,7 +99,7 @@ const TopicManagement: React.FC = () => {
         description: "تاپیک حذف شد"
       });
       
-      refetch();
+      refetchTopics();
     } catch (error) {
       toast({
         title: "خطا",
@@ -142,7 +147,7 @@ const TopicManagement: React.FC = () => {
               <div key={topic.id} className="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="text-blue-400 border-blue-400">
-                    #{topic.name}
+                    #{topic.title}
                   </Badge>
                 </div>
                 
@@ -151,7 +156,7 @@ const TopicManagement: React.FC = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => setEditingTopic({ id: topic.id, name: topic.name })}
+                    onClick={() => setEditingTopic({ id: topic.id, title: topic.title })}
                     className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -172,7 +177,7 @@ const TopicManagement: React.FC = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-white">حذف تاپیک</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-400">
-                          آیا مطمئن هستید که می‌خواهید تاپیک "{topic.name}" را حذف کنید؟ این عمل قابل بازگشت نیست.
+                          آیا مطمئن هستید که می‌خواهید تاپیک "{topic.title}" را حذف کنید؟ این عمل قابل بازگشت نیست.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -207,8 +212,8 @@ const TopicManagement: React.FC = () => {
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md" dir="rtl">
               <h3 className="text-lg font-semibold text-white mb-4">ویرایش تاپیک</h3>
               <Input
-                value={editingTopic.name}
-                onChange={(e) => setEditingTopic({ ...editingTopic, name: e.target.value })}
+                value={editingTopic.title}
+                onChange={(e) => setEditingTopic({ ...editingTopic, title: e.target.value })}
                 placeholder="نام تاپیک..."
                 className="mb-4 bg-gray-800 border-gray-600 text-white"
                 onKeyPress={(e) => e.key === 'Enter' && handleEditTopic()}

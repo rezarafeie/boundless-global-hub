@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, MessageCircle } from 'lucide-react';
-import { useUser } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import ModernChatMessage from '@/components/Chat/ModernChatMessage';
 import ModernChatInput from '@/components/Chat/ModernChatInput';
@@ -21,14 +21,10 @@ interface TopicSelectorProps {
 }
 
 const TopicSelector: React.FC<TopicSelectorProps> = ({ selectedTopic, onTopicChange }) => {
-  const { topics, loading, error } = useChatTopics();
+  const { topics, loading } = useChatTopics();
 
   if (loading) {
     return <div className="text-center py-4 text-gray-500">در حال بارگیری تاپیک‌ها...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-4 text-red-500">خطا در بارگیری تاپیک‌ها</div>;
   }
 
   return (
@@ -37,11 +33,11 @@ const TopicSelector: React.FC<TopicSelectorProps> = ({ selectedTopic, onTopicCha
         {topics.map((topic) => (
           <TabsTrigger 
             key={topic.id} 
-            value={topic.id} 
-            onClick={() => onTopicChange(topic.id)}
+            value={topic.id.toString()} 
+            onClick={() => onTopicChange(topic.id.toString())}
             className={`data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-300 rounded-full px-4 py-2 text-sm transition-colors duration-200 hover:bg-blue-50 dark:hover:bg-blue-950`}
           >
-            {topic.name}
+            {topic.title}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -79,7 +75,7 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({ topicId, currentU
         <ModernChatMessage
           key={message.id}
           message={message}
-          isOwnMessage={message.sender_id === currentUserId}
+          isOwnMessage={message.user_id?.toString() === currentUserId}
         />
       ))}
     </div>
@@ -87,8 +83,7 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({ topicId, currentU
 };
 
 const BorderlessHubChat: React.FC = () => {
-  const [selectedTopic, setSelectedTopic] = useState('general');
-  const user = useUser();
+  const [selectedTopic, setSelectedTopic] = useState('1');
   const { isAuthenticated, currentUser } = useAuth();
   const { toast } = useToast();
   const { onlineUsers } = useOnlineUsers();
@@ -110,8 +105,8 @@ const BorderlessHubChat: React.FC = () => {
         .from('chat_messages')
         .insert([
           {
-            topic_id: selectedTopic,
-            sender_id: user?.id,
+            topic_id: parseInt(selectedTopic),
+            user_id: parseInt(currentUser?.id),
             sender_name: currentUser?.displayName || 'کاربر بدون نام',
             sender_role: currentUser?.role || 'member',
             message: messageText,
@@ -182,19 +177,17 @@ const BorderlessHubChat: React.FC = () => {
           </div>
 
           {/* Chat Input */}
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 p-4">
-            <ModernChatInput 
-              onSendMessage={handleSendMessage}
-              disabled={!isAuthenticated || !currentUser?.approved}
-              placeholder={
-                !isAuthenticated 
-                  ? "برای ارسال پیام وارد شوید..."
-                  : !currentUser?.approved 
-                  ? "حساب شما در انتظار تأیید است..."
-                  : "پیام خود را بنویسید..."
-              }
-            />
-          </div>
+          <ModernChatInput 
+            onSendMessage={handleSendMessage}
+            disabled={!isAuthenticated || !currentUser?.approved}
+            placeholder={
+              !isAuthenticated 
+                ? "برای ارسال پیام وارد شوید..."
+                : !currentUser?.approved 
+                ? "حساب شما در انتظار تأیید است..."
+                : "پیام خود را بنویسید..."
+            }
+          />
         </div>
       </div>
     </MainLayout>

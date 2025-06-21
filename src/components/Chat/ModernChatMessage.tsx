@@ -36,8 +36,8 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
       {!isOwnMessage && (
         <div className="flex-shrink-0">
           <UserAvatar 
-            name={message.sender_name} 
-            userId={message.sender_id}
+            name={message.sender_name || 'کاربر'} 
+            userId={message.user_id?.toString()}
             size={32}
           />
         </div>

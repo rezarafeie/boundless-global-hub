@@ -8,11 +8,13 @@ import EmojiPicker from './EmojiPicker';
 interface ModernChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 const ModernChatInput: React.FC<ModernChatInputProps> = ({ 
   onSendMessage, 
-  disabled = false 
+  disabled = false,
+  placeholder = "پیامت رو بنویس..."
 }) => {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -61,18 +63,19 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   }, [message]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 z-10">
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
+    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 p-4">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="پیامت رو بنویس..."
+            placeholder={placeholder}
             className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
             disabled={disabled}
             rows={1}
+            dir="rtl"
           />
           <div className="absolute left-2 bottom-2">
             <EmojiPicker onEmojiSelect={handleEmojiSelect} />
