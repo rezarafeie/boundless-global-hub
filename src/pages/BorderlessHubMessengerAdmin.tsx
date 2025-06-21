@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Users, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Users, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +23,8 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState<string>('');
   const [editingRoom, setEditingRoom] = useState<ChatRoom | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   // Room form state
   const [roomForm, setRoomForm] = useState({
@@ -55,17 +57,29 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
+      console.log('Fetching admin data...');
+      
       const [usersData, roomsData] = await Promise.all([
         messengerService.getApprovedUsers(),
         messengerService.getRooms(sessionToken)
       ]);
+      
+      console.log('Fetched users:', usersData.length);
+      console.log('Fetched rooms:', roomsData.length);
+      
       setUsers(usersData);
       setRooms(roomsData);
-    } catch (error) {
+      
+      toast({
+        title: 'موفق',
+        description: `${roomsData.length} اتاق و ${usersData.length} کاربر بارگذاری شد`,
+      });
+    } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری داده‌ها',
+        description: error.message || 'خطا در بارگذاری داده‌ها',
         variant: 'destructive',
       });
     } finally {
@@ -92,28 +106,56 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sessionToken) return;
+    if (!sessionToken) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً دوباره وارد شوید',
+        variant: 'destructive',
+      });
+      return;
+    }
 
+    if (!roomForm.name.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'نام اتاق الزامی است',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCreateLoading(true);
     try {
-      await messengerService.createRoom(roomForm, sessionToken);
+      console.log('Creating room with data:', roomForm);
+      
+      const newRoom = await messengerService.createRoom(roomForm, sessionToken);
+      
+      console.log('Room created successfully:', newRoom);
+      
       toast({
         title: 'موفق',
-        description: 'اتاق جدید ایجاد شد',
+        description: `اتاق "${newRoom.name}" ایجاد شد`,
       });
+      
+      // Reset form
       setRoomForm({
         name: '',
         type: 'public_group',
         description: '',
         is_boundless_only: false
       });
-      fetchData();
+      
+      // Refresh data
+      await fetchData();
     } catch (error: any) {
       console.error('Error creating room:', error);
       toast({
-        title: 'خطا',
-        description: error.message || 'خطا در ایجاد اتاق',
+        title: 'خطا در ایجاد اتاق',
+        description: error.message || 'خطا در ایجاد اتاق جدید',
         variant: 'destructive',
       });
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -121,42 +163,56 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
     if (!sessionToken) return;
 
     try {
-      await messengerService.updateRoom(room.id, updates, sessionToken);
+      console.log('Updating room:', room.id, updates);
+      
+      const updatedRoom = await messengerService.updateRoom(room.id, updates, sessionToken);
+      
+      console.log('Room updated successfully:', updatedRoom);
+      
       toast({
         title: 'موفق',
-        description: 'اتاق به‌روزرسانی شد',
+        description: `اتاق "${updatedRoom.name}" به‌روزرسانی شد`,
       });
       setEditingRoom(null);
-      fetchData();
+      await fetchData();
     } catch (error: any) {
       console.error('Error updating room:', error);
       toast({
-        title: 'خطا',
+        title: 'خطا در به‌روزرسانی',
         description: error.message || 'خطا در به‌روزرسانی اتاق',
         variant: 'destructive',
       });
     }
   };
 
-  const handleDeleteRoom = async (roomId: number) => {
+  const handleDeleteRoom = async (roomId: number, roomName: string) => {
     if (!sessionToken) return;
     
-    if (!confirm('آیا از حذف این اتاق اطمینان دارید؟')) return;
+    if (!confirm(`آیا از حذف اتاق "${roomName}" اطمینان دارید؟`)) return;
 
+    setDeleteLoading(roomId);
     try {
+      console.log('Deleting room:', roomId);
+      
       await messengerService.deleteRoom(roomId, sessionToken);
+      
+      console.log('Room deleted successfully');
+      
       toast({
         title: 'موفق',
-        description: 'اتاق حذف شد',
+        description: `اتاق "${roomName}" حذف شد`,
       });
-      fetchData();
+      
+      await fetchData();
     } catch (error: any) {
       console.error('Error deleting room:', error);
       toast({
-        title: 'خطا',
+        title: 'خطا در حذف',
         description: error.message || 'خطا در حذف اتاق',
         variant: 'destructive',
       });
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -178,8 +234,8 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
       <MainLayout>
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
           <div className="text-center">
-            <MessageSquare className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
-            <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری...</p>
+            <Loader2 className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+            <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پنل مدیریت...</p>
           </div>
         </div>
       </MainLayout>
@@ -299,6 +355,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
                         id="room-name"
                         value={roomForm.name}
                         onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
+                        placeholder="نام اتاق را وارد کنید"
                         required
                       />
                     </div>
@@ -321,6 +378,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
                         id="room-description"
                         value={roomForm.description}
                         onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
+                        placeholder="توضیحات اتاق"
                       />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -331,9 +389,18 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
                       />
                       <Label htmlFor="boundless-only">فقط برای دانش‌پذیران بدون مرز</Label>
                     </div>
-                    <Button type="submit">
-                      <Plus className="w-4 h-4 mr-2" />
-                      ایجاد اتاق
+                    <Button type="submit" disabled={createLoading}>
+                      {createLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          در حال ایجاد...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          ایجاد اتاق
+                        </>
+                      )}
                     </Button>
                   </form>
                 </CardContent>
@@ -344,43 +411,58 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
                   <CardTitle>اتاق‌های موجود ({rooms.length} اتاق)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {rooms.map((room) => (
-                      <div key={room.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <h3 className="font-medium">{room.name}</h3>
-                          <p className="text-sm text-slate-500">{room.description}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline">{getRoomTypeLabel(room.type)}</Badge>
-                            {room.is_boundless_only && (
-                              <Badge variant="secondary">بدون مرز</Badge>
-                            )}
-                            {room.is_active ? (
-                              <Badge variant="default" className="bg-green-500">فعال</Badge>
-                            ) : (
-                              <Badge variant="destructive">غیرفعال</Badge>
-                            )}
+                  {rooms.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">هیچ اتاقی موجود نیست</p>
+                      <Button onClick={fetchData} variant="ghost" className="mt-2">
+                        بارگذاری مجدد
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {rooms.map((room) => (
+                        <div key={room.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <h3 className="font-medium">{room.name}</h3>
+                            <p className="text-sm text-slate-500">{room.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline">{getRoomTypeLabel(room.type)}</Badge>
+                              {room.is_boundless_only && (
+                                <Badge variant="secondary">بدون مرز</Badge>
+                              )}
+                              {room.is_active ? (
+                                <Badge variant="default" className="bg-green-500">فعال</Badge>
+                              ) : (
+                                <Badge variant="destructive">غیرفعال</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setEditingRoom(room)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeleteRoom(room.id, room.name)}
+                              disabled={deleteLoading === room.id}
+                            >
+                              {deleteLoading === room.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setEditingRoom(room)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleDeleteRoom(room.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

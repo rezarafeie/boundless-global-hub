@@ -52,14 +52,31 @@ export type UserSession = {
 const setSessionContext = async (sessionToken: string): Promise<boolean> => {
   try {
     console.log('Setting session context for token:', sessionToken.substring(0, 8) + '...');
+    
+    // First validate the session exists
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('user_sessions')
+      .select('id, user_id, is_active')
+      .eq('session_token', sessionToken)
+      .eq('is_active', true)
+      .single();
+
+    if (sessionError || !sessionData) {
+      console.error('Session validation failed:', sessionError);
+      return false;
+    }
+
+    // Now set the context
     const { error } = await supabase.rpc('set_session_context', {
       session_token: sessionToken
     });
+    
     if (error) {
       console.error('Session context error:', error);
       return false;
     }
-    console.log('Session context set successfully');
+    
+    console.log('Session context set successfully for user:', sessionData.user_id);
     return true;
   } catch (error) {
     console.error('Failed to set session context:', error);
@@ -155,11 +172,14 @@ export const messengerService = {
   async getRooms(sessionToken: string): Promise<ChatRoom[]> {
     console.log('Fetching rooms with session token:', sessionToken.substring(0, 8) + '...');
     
-    // Set session context before querying
+    // Set session context before querying - this is critical
     const contextSet = await setSessionContext(sessionToken);
     if (!contextSet) {
-      console.warn('Session context not set, rooms may not load properly');
+      throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add a small delay to ensure session context is fully set
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const { data, error } = await supabase
       .from('chat_rooms')
@@ -189,6 +209,9 @@ export const messengerService = {
     if (!contextSet) {
       throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add delay to ensure session context is set
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     const { data, error } = await supabase
       .from('chat_rooms')
@@ -219,6 +242,9 @@ export const messengerService = {
     if (!contextSet) {
       throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add delay to ensure session context is set
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     const { data, error } = await supabase
       .from('chat_rooms')
@@ -247,10 +273,13 @@ export const messengerService = {
     if (!contextSet) {
       throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add delay to ensure session context is set
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ is_active: false })
+      .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', roomId);
     
     if (error) {
@@ -267,8 +296,11 @@ export const messengerService = {
     // Set session context before querying
     const contextSet = await setSessionContext(sessionToken);
     if (!contextSet) {
-      console.warn('Session context not set, messages may not load properly');
+      throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add delay to ensure session context is set
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -294,8 +326,11 @@ export const messengerService = {
     // Set session context before querying
     const contextSet = await setSessionContext(sessionToken);
     if (!contextSet) {
-      console.warn('Session context not set, private messages may not load properly');
+      throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add delay to ensure session context is set
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -331,8 +366,8 @@ export const messengerService = {
       throw new Error('Failed to authenticate session. Please try logging in again.');
     }
 
-    // Wait a moment for session context to be fully set
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait longer for session context to be fully set
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -362,8 +397,11 @@ export const messengerService = {
     // Set session context before querying
     const contextSet = await setSessionContext(sessionToken);
     if (!contextSet) {
-      console.warn('Session context not set, support conversations may not load properly');
+      throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Add delay to ensure session context is set
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const { data, error } = await supabase
       .from('messenger_messages')
