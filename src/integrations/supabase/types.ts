@@ -230,6 +230,7 @@ export type Database = {
       }
       messenger_messages: {
         Row: {
+          conversation_id: number | null
           created_at: string | null
           id: number
           is_read: boolean | null
@@ -242,6 +243,7 @@ export type Database = {
           sender_id: number | null
         }
         Insert: {
+          conversation_id?: number | null
           created_at?: string | null
           id?: number
           is_read?: boolean | null
@@ -254,6 +256,7 @@ export type Database = {
           sender_id?: number | null
         }
         Update: {
+          conversation_id?: number | null
           created_at?: string | null
           id?: number
           is_read?: boolean | null
@@ -266,6 +269,13 @@ export type Database = {
           sender_id?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "messenger_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "support_conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messenger_messages_recipient_id_fkey"
             columns: ["recipient_id"]
@@ -382,6 +392,54 @@ export type Database = {
             foreignKeyName: "support_agents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_conversations: {
+        Row: {
+          agent_id: number | null
+          created_at: string | null
+          id: number
+          last_message_at: string | null
+          priority: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: number | null
+        }
+        Insert: {
+          agent_id?: number | null
+          created_at?: string | null
+          id?: number
+          last_message_at?: string | null
+          priority?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: number | null
+        }
+        Update: {
+          agent_id?: number | null
+          created_at?: string | null
+          id?: number
+          last_message_at?: string | null
+          priority?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_conversations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "chat_users"
             referencedColumns: ["id"]
           },

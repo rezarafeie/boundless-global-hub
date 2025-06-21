@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -11,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Users, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { MessageSquare, Users, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, ArrowLeft, Loader2, UserCheck } from 'lucide-react';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
+import SupportAgentManagement from '@/components/Admin/SupportAgentManagement';
 
 const BorderlessHubMessengerAdmin: React.FC = () => {
   const navigate = useNavigate();
@@ -274,10 +274,14 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="rooms" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 مدیریت کاربران
+              </TabsTrigger>
+              <TabsTrigger value="support-agents" className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                پشتیبانان
               </TabsTrigger>
               <TabsTrigger value="rooms" className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
@@ -340,6 +344,10 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="support-agents" className="space-y-6">
+              <SupportAgentManagement />
             </TabsContent>
 
             <TabsContent value="rooms" className="space-y-6">

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type MessengerUser = {
@@ -70,7 +69,7 @@ const validateSessionToken = async (sessionToken: string): Promise<boolean> => {
   }
 };
 
-export const messengerService = {
+class MessengerService {
   // User authentication and session management
   async register(name: string, phone: string, isBoundlessStudent: boolean = false): Promise<MessengerUser> {
     const { data, error } = await supabase
@@ -87,7 +86,7 @@ export const messengerService = {
     
     if (error) throw error;
     return data as MessengerUser;
-  },
+  }
 
   async getApprovedUsers(): Promise<MessengerUser[]> {
     const { data, error } = await supabase
@@ -97,7 +96,7 @@ export const messengerService = {
     
     if (error) throw error;
     return (data || []) as MessengerUser[];
-  },
+  }
 
   async createSession(userId: number): Promise<UserSession> {
     const sessionToken = crypto.randomUUID();
@@ -109,7 +108,7 @@ export const messengerService = {
     
     if (error) throw error;
     return data as UserSession;
-  },
+  }
 
   async validateSession(sessionToken: string): Promise<{ user: MessengerUser; session: UserSession } | null> {
     // Use the new validation function
@@ -144,7 +143,7 @@ export const messengerService = {
       user: sessionData.chat_users as MessengerUser,
       session: sessionData as UserSession
     };
-  },
+  }
 
   async deactivateSession(sessionToken: string): Promise<void> {
     const { error } = await supabase
@@ -153,7 +152,7 @@ export const messengerService = {
       .eq('session_token', sessionToken);
     
     if (error) throw error;
-  },
+  }
 
   // Chat rooms management - simplified without session context
   async getRooms(sessionToken: string): Promise<ChatRoom[]> {
@@ -178,7 +177,7 @@ export const messengerService = {
     
     console.log('Successfully fetched rooms:', data?.length || 0);
     return (data || []) as ChatRoom[];
-  },
+  }
 
   async createRoom(roomData: {
     name: string;
@@ -213,7 +212,7 @@ export const messengerService = {
     
     console.log('Room created successfully:', data);
     return data as ChatRoom;
-  },
+  }
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>, sessionToken: string): Promise<ChatRoom> {
     console.log('Updating room:', roomId, updates);
@@ -241,7 +240,7 @@ export const messengerService = {
     
     console.log('Room updated successfully:', data);
     return data as ChatRoom;
-  },
+  }
 
   async deleteRoom(roomId: number, sessionToken: string): Promise<void> {
     console.log('Deleting room:', roomId);
@@ -263,7 +262,7 @@ export const messengerService = {
     }
     
     console.log('Room deleted successfully');
-  },
+  }
 
   async getRoomMessages(roomId: number, sessionToken: string): Promise<MessengerMessage[]> {
     console.log('Fetching messages for room:', roomId);
@@ -290,7 +289,7 @@ export const messengerService = {
     
     console.log('Successfully fetched messages:', data?.length || 0);
     return (data || []) as MessengerMessage[];
-  },
+  }
 
   async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
     console.log('Fetching private messages for user:', userId);
@@ -318,7 +317,7 @@ export const messengerService = {
     
     console.log('Successfully fetched private messages:', data?.length || 0);
     return (data || []) as MessengerMessage[];
-  },
+  }
 
   async sendMessage(messageData: {
     room_id?: number;
@@ -355,7 +354,7 @@ export const messengerService = {
     
     console.log('Message sent successfully:', data);
     return data as MessengerMessage;
-  },
+  }
 
   // Support agent functions
   async getSupportConversations(supportAgentId: number, sessionToken: string): Promise<any[]> {
@@ -385,4 +384,36 @@ export const messengerService = {
     
     return data || [];
   }
-};
+
+  // Update user role (support agent status)
+  async updateUserRole(userId: number, updates: { is_support_agent: boolean }): Promise<MessengerUser> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as MessengerUser;
+  }
+
+  // Get support agents
+  async getSupportAgents(): Promise<MessengerUser[]> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('is_support_agent', true)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as MessengerUser[];
+  }
+}
+
+export const messengerService = new MessengerService();
+export type { MessengerUser, ChatRoom };
