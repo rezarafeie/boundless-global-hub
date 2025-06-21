@@ -1,173 +1,302 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "./contexts/LanguageContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import MainLayout from "@/components/Layout/MainLayout";
+import NotFound from "@/pages/NotFound";
 
-// Import all pages
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Blog from "./pages/Blog";
-import Magazine from "./pages/Magazine";
-import CourseArchive from "./pages/CourseArchive";
-import FreeCourses from "./pages/FreeCourses";
-import PaidCourses from "./pages/PaidCourses";
-import Support from "./pages/Support";
-import Checkout from "./pages/Checkout";
-import PaymentRequest from "./pages/PaymentRequest";
-
-// Course pages
-import MetaverseLanding from "./pages/Courses/MetaverseLanding";
-import InstagramLanding from "./pages/Courses/InstagramLanding";
-import InstagramEssentialsLanding from "./pages/Courses/InstagramEssentialsLanding";
-import BoundlessLanding from "./pages/Courses/BoundlessLanding";
-import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
-import SmartPackLanding from "./pages/Courses/SmartPackLanding";
-import ServitLanding from "./pages/Courses/ServitLanding";
-
-// Course access and view pages
-import FreeCourseStart from "./pages/Course/FreeCourseStart";
-import FreeCourseView from "./pages/Course/FreeCourseView";
-import PaidCourseStart from "./pages/Course/PaidCourseStart";
-import PaidCourseView from "./pages/Course/PaidCourseView";
-import MetaverseFreePage from "./pages/Course/MetaverseFreePage";
-import ChangeCoursePage from "./pages/Course/ChangeCoursePage";
-import AmericanBusinessPage from "./pages/Course/AmericanBusinessPage";
-import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
-import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
-
-// Course access pages
-import TaghirAccess from "./pages/Course/Access/TaghirAccess";
-import BoundlessTasteAccess from "./pages/Course/Access/BoundlessTasteAccess";
-import AmericanBusinessAccess from "./pages/Course/Access/AmericanBusinessAccess";
-import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
-
-// Hub and admin pages
-import BorderlessHub from "./pages/BorderlessHub";
-import BorderlessHubChat from "./pages/BorderlessHubChat";
-import BorderlessHubMessenger from "./pages/BorderlessHubMessenger";
-import BorderlessHubAdmin from "./pages/BorderlessHubAdmin";
-import BorderlessHubMessengerAdmin from "./pages/BorderlessHubMessengerAdmin";
-import MessengerPending from "./pages/MessengerPending";
-
-// Assessment and other pages
-import AssessmentCenter from "./pages/AssessmentCenter";
-import TestLanding from "./pages/Assessment/TestLanding";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import InstructorProfile from "./pages/InstructorProfile";
-import AIAssistant from "./pages/AIAssistant";
-import SolidarityLanding from "./pages/Solidarity/SolidarityLanding";
-import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
-
-// English pages
-import EnIndex from "./pages/en/Index";
-import EnFreeCourses from "./pages/en/FreeCourses";
-import EnPaidCourses from "./pages/en/PaidCourses";
-import EnCourseArchive from "./pages/en/CourseArchive";
-import EnAssessmentCenter from "./pages/en/AssessmentCenter";
+// Lazy load components
+const Index = lazy(() => import("@/pages/Index"));
+const About = lazy(() => import("@/pages/About"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const Support = lazy(() => import("@/pages/Support"));
+const FreeCourses = lazy(() => import("@/pages/FreeCourses"));
+const PaidCourses = lazy(() => import("@/pages/PaidCourses"));
+const CourseArchive = lazy(() => import("@/pages/CourseArchive"));
+const AssessmentCenter = lazy(() => import("@/pages/AssessmentCenter"));
+const TestLanding = lazy(() => import("@/pages/Assessment/TestLanding"));
+const Dashboard = lazy(() => import("@/pages/Dashboard/Dashboard"));
+const Blog = lazy(() => import("@/pages/Blog"));
+const InstructorProfile = lazy(() => import("@/pages/InstructorProfile"));
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const PaymentRequest = lazy(() => import("@/pages/PaymentRequest"));
+const Magazine = lazy(() => import("@/pages/Magazine"));
+const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
+const BorderlessHub = lazy(() => import("@/pages/BorderlessHub"));
+const BorderlessHubChat = lazy(() => import("@/pages/BorderlessHubChat"));
+const BorderlessHubAdmin = lazy(() => import("@/pages/BorderlessHubAdmin"));
+const BorderlessHubMessenger = lazy(() => import("@/pages/BorderlessHubMessenger"));
+const BorderlessHubMessengerAdmin = lazy(() => import("@/pages/BorderlessHubMessengerAdmin"));
+const MessengerPending = lazy(() => import("@/pages/MessengerPending"));
+const CoursePage = lazy(() => import("@/pages/CoursePage"));
+const ModulePage = lazy(() => import("@/pages/ModulePage"));
+const AccessDenied = lazy(() => import("@/pages/AccessDenied"));
+const AccessGranted = lazy(() => import("@/pages/AccessGranted"));
+const RedirectTo = lazy(() => import("@/pages/RedirectTo"));
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
       <LanguageProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Main pages */}
-                <Route path="/" element={<Index />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/magazine" element={<Magazine />} />
-                <Route path="/mag" element={<Magazine />} />
-                <Route path="/courses" element={<CourseArchive />} />
-                <Route path="/course" element={<CourseArchive />} />
-                <Route path="/free-courses" element={<FreeCourses />} />
-                <Route path="/paid-courses" element={<PaidCourses />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/payment-request" element={<PaymentRequest />} />
-
-                {/* Course landing pages */}
-                <Route path="/courses/metaverse" element={<MetaverseLanding />} />
-                <Route path="/courses/instagram" element={<InstagramLanding />} />
-                <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
-                <Route path="/courses/boundless" element={<BoundlessLanding />} />
-                <Route path="/courses/free-course" element={
-                  <FreeCourseLanding 
-                    title="Free Course"
-                    englishTitle="Free Course"
-                    description="Start your learning journey with our free course"
-                    benefitOne="Basic concepts"
-                    benefitTwo="Practical exercises"
-                    iconType="book"
-                    iframeUrl="https://example.com/course-iframe"
-                  />
-                } />
-                <Route path="/courses/smart-pack" element={<SmartPackLanding />} />
-                <Route path="/courses/servit" element={<ServitLanding />} />
-
-                {/* Course access pages */}
-                <Route path="/course/free-start" element={<FreeCourseStart />} />
-                <Route path="/course/free-view" element={<FreeCourseView />} />
-                <Route path="/course/paid-start" element={<PaidCourseStart />} />
-                <Route path="/course/paid-view" element={<PaidCourseView />} />
-                <Route path="/course/metaverse-free" element={<MetaverseFreePage />} />
-                <Route path="/course/change" element={<ChangeCoursePage />} />
-                <Route path="/course/american-business" element={<AmericanBusinessPage />} />
-                <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
-                <Route path="/course/passive-income" element={<PassiveIncomePage />} />
-
-                {/* Course access control */}
-                <Route path="/course/access/taghir" element={<TaghirAccess />} />
-                <Route path="/course/access/boundless-taste" element={<BoundlessTasteAccess />} />
-                <Route path="/course/access/american-business" element={<AmericanBusinessAccess />} />
-                <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
-
-                {/* Hub pages */}
-                <Route path="/hub" element={<BorderlessHub />} />
-                <Route path="/hub/chat" element={<BorderlessHubChat />} />
-                <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
-                <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
-                <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
-                <Route path="/messenger-pending" element={<MessengerPending />} />
-
-                {/* Assessment */}
-                <Route path="/assessment" element={<AssessmentCenter />} />
-                <Route path="/assessment/test-landing" element={<TestLanding />} />
-
-                {/* Other pages */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/instructor" element={<InstructorProfile />} />
-                <Route path="/ai-assistant" element={<AIAssistant />} />
-                <Route path="/solidarity" element={<SolidarityLanding />} />
-                <Route path="/telegram" element={<TelegramRedirect />} />
-
-                {/* English routes */}
-                <Route path="/en" element={<EnIndex />} />
-                <Route path="/en/free-courses" element={<EnFreeCourses />} />
-                <Route path="/en/paid-courses" element={<EnPaidCourses />} />
-                <Route path="/en/courses" element={<EnCourseArchive />} />
-                <Route path="/en/assessment" element={<EnAssessmentCenter />} />
-
-                {/* 404 fallback */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Index />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <About />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/contact"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Contact />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/support"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Support />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/free-courses"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <FreeCourses />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/paid-courses"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <PaidCourses />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/courses"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <CourseArchive />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/assessment-center"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <AssessmentCenter />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/test/:testId"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <TestLanding />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Dashboard />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/blog"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Blog />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/instructor/:instructorId"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <InstructorProfile />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Checkout />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/payreq"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <PaymentRequest />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/mag"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <Magazine />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/ai"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <AIAssistant />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route path="/course/:courseId" element={
+                <MainLayout>
+                  <Suspense fallback={<div>Loading Course...</div>}>
+                    <CoursePage />
+                  </Suspense>
+                </MainLayout>
+              } />
+              <Route path="/module/:moduleId" element={
+                <MainLayout>
+                  <Suspense fallback={<div>Loading Module...</div>}>
+                    <ModulePage />
+                  </Suspense>
+                </MainLayout>
+              } />
+              <Route path="/access/denied" element={
+                <Suspense fallback={<div>Access Denied...</div>}>
+                  <AccessDenied />
+                </Suspense>
+              } />
+              <Route path="/access/granted" element={
+                <Suspense fallback={<div>Access Granted...</div>}>
+                  <AccessGranted />
+                </Suspense>
+              } />
+              <Route path="/redirect/:url" element={
+                <Suspense fallback={<div>Redirecting...</div>}>
+                  <RedirectTo />
+                </Suspense>
+              } />
+              
+              <Route
+                path="/hub"
+                element={
+                  <MainLayout>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <BorderlessHub />
+                    </Suspense>
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/hub/chat"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <BorderlessHubChat />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/hub/messenger"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <BorderlessHubMessenger />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/hub/messenger/pending"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <MessengerPending />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/hub/admin"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <BorderlessHubAdmin />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/hub/messenger-admin"
+                element={
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <BorderlessHubMessengerAdmin />
+                  </Suspense>
+                }
+              />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </LanguageProvider>
-    </QueryClientProvider>
-  );
-}
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;

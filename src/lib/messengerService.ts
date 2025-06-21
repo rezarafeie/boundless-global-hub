@@ -375,9 +375,38 @@ class MessengerService {
     }
     
     try {
-      // For support messages, set optional session context
+      // For support messages, ensure system support user exists
       if (messageData.recipient_id === 1 && !messageData.room_id) {
-        console.log('Support message detected - setting optional session context');
+        console.log('Support message detected - ensuring system user exists');
+        
+        // Check if system support user exists
+        const { data: systemUser, error: systemUserError } = await supabase
+          .from('chat_users')
+          .select('id')
+          .eq('id', 1)
+          .single();
+        
+        if (systemUserError || !systemUser) {
+          console.error('System support user not found, creating one...');
+          
+          // Create system support user
+          const { error: createError } = await supabase
+            .from('chat_users')
+            .insert([{
+              id: 1,
+              name: 'پشتیبانی سیستم',
+              phone: '00000000000',
+              is_approved: true,
+              is_support_agent: true,
+              role: 'system'
+            }]);
+          
+          if (createError) {
+            console.error('Failed to create system user:', createError);
+            throw new Error('System configuration error. Please contact administrator.');
+          }
+        }
+        
         await setSessionContextOptional(sessionToken);
       }
       
@@ -411,7 +440,7 @@ class MessengerService {
         throw new Error('Permission denied. Please refresh the page and try again.');
       }
       if (errorMessage.includes('violates foreign key constraint')) {
-        throw new Error('Invalid recipient or room. Please refresh the page.');
+        throw new Error('System configuration error. Please contact administrator.');
       }
       
       throw new Error(`Failed to send message: ${errorMessage}`);
