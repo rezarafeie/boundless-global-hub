@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, MessageCircle, Clock, Sun, Moon } from 'lucide-react';
+import { ArrowRight, MessageCircle, Clock, Sun, Moon, Loader2, CheckCircle } from 'lucide-react';
 import { useChatTopics } from '@/hooks/useChatTopics';
 import { useChatMessagesByTopic } from '@/hooks/useChatMessagesByTopic';
 import { chatService, chatUserService } from '@/lib/supabase';
@@ -154,37 +154,51 @@ const BorderlessHubChat: React.FC = () => {
   // Show waiting for approval if authenticated but not approved
   if (isAuthenticated && !isApproved) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:via-black dark:to-slate-800 flex items-center justify-center" dir="rtl">
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-2xl">
-          <div className="p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:via-black dark:to-slate-800 flex items-center justify-center p-4" dir="rtl">
+        <div className="w-full max-w-sm mx-auto bg-white dark:bg-slate-900 border-0 shadow-2xl rounded-3xl overflow-hidden">
+          <div className="p-8 text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <Clock className="w-16 h-16 text-amber-400" />
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center">
+                  <Clock className="w-10 h-10 text-white" />
+                </div>
                 {checkingApproval && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full animate-pulse"></div>
+                  <div className="absolute -top-1 -right-1">
+                    <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+                  </div>
                 )}
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
               در انتظار تایید مدیر
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-6">
+            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
               درخواست شما ارسال شد. منتظر تایید مدیر باشید تا بتوانید در گفتگوها شرکت کنید.
             </p>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Button 
                 onClick={checkApprovalStatus}
                 disabled={checkingApproval}
-                className="w-full bg-amber-600 hover:bg-amber-700"
+                className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium rounded-2xl"
               >
-                {checkingApproval ? 'در حال بررسی...' : 'بررسی وضعیت'}
+                {checkingApproval ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال بررسی...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    بررسی وضعیت
+                  </>
+                )}
               </Button>
               
               <Button 
                 variant="ghost" 
                 onClick={() => navigate('/hub')}
-                className="w-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                className="w-full h-12 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl font-medium"
               >
                 بازگشت به مرکز ارتباط
               </Button>
@@ -198,13 +212,13 @@ const BorderlessHubChat: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-slate-900" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 z-20">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 z-20 shadow-sm">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/hub')}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-2xl h-10 px-4"
           >
             <ArrowRight className="w-5 h-5 ml-2" />
             بازگشت
@@ -212,7 +226,7 @@ const BorderlessHubChat: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">💬 گفت‌وگوهای بدون مرز</h1>
+          <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">💬 گفت‌وگوهای بدون مرز</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -220,12 +234,12 @@ const BorderlessHubChat: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={toggleTheme}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-2xl h-10 w-10"
           >
             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
           
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-slate-900 dark:text-white">{userName}</p>
           </div>
           
@@ -233,7 +247,7 @@ const BorderlessHubChat: React.FC = () => {
             variant="ghost" 
             size="sm" 
             onClick={handleLogout}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-2xl h-10 px-4"
           >
             خروج
           </Button>
@@ -260,7 +274,7 @@ const BorderlessHubChat: React.FC = () => {
           />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800">
-            <div className="text-center">
+            <div className="text-center p-8">
               <MessageCircle className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
               <p className="text-slate-600 dark:text-slate-300 text-lg font-medium mb-2">
                 {topicsLoading ? 'در حال بارگذاری موضوعات...' : 'موضوعی برای گفتگو یافت نشد'}
@@ -277,9 +291,6 @@ const BorderlessHubChat: React.FC = () => {
           disabled={messagesLoading}
         />
       )}
-      
-      {/* Bottom padding for fixed input */}
-      <div className="h-20"></div>
     </div>
   );
 };

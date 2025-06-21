@@ -61,8 +61,8 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   }, [message]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 z-10">
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
+    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 safe-area-padding-bottom">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-3">
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
@@ -70,11 +70,11 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="پیامت رو بنویس..."
-            className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
+            className="resize-none border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 text-base"
             disabled={disabled}
             rows={1}
           />
-          <div className="absolute left-2 bottom-2">
+          <div className="absolute left-3 bottom-3">
             <EmojiPicker onEmojiSelect={handleEmojiSelect} />
           </div>
         </div>
@@ -82,7 +82,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
         <Button
           type="submit"
           disabled={!message.trim() || disabled}
-          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl px-4 py-3 h-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl h-12 w-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl flex-shrink-0"
         >
           <Send className="w-5 h-5" />
         </Button>
