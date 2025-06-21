@@ -1,69 +1,91 @@
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useLanguage } from '@/contexts/LanguageContext';
-import RandomHeadlineGenerator from './RandomHeadlineGenerator';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
-const Hero = () => {
-  const { language } = useLanguage();
-  const [mounted, setMounted] = useState(false);
+interface HeroProps {
+  title: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  backgroundType?: "gradient" | "glow" | "simple";
+  glowTheme?: "blue" | "purple" | "pink";
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+const Hero: React.FC<HeroProps> = ({ 
+  title, 
+  subtitle, 
+  ctaText, 
+  ctaLink, 
+  backgroundType = "gradient",
+  glowTheme = "blue" 
+}) => {
+  const getBackgroundClasses = () => {
+    switch (backgroundType) {
+      case "glow":
+        return `relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 overflow-hidden`;
+      case "simple":
+        return "bg-background py-20";
+      default:
+        return "relative min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 overflow-hidden";
+    }
+  };
 
-  if (!mounted) {
-    return null;
-  }
+  const getGlowClasses = () => {
+    switch (glowTheme) {
+      case "purple":
+        return "from-purple-400/20 to-pink-600/20";
+      case "pink":
+        return "from-pink-400/20 to-red-600/20";
+      default:
+        return "from-blue-400/20 to-purple-600/20";
+    }
+  };
 
   return (
-    <section className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 flex items-center justify-center overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-blue-300/10 to-purple-400/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center space-y-8">
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-200/20 dark:border-blue-800/20 rounded-full px-6 py-3"
-            >
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                {language === 'fa' ? '🚀 آموزش آنلاین نسل جدید' : '🚀 Next-Gen Online Learning'}
-              </span>
-            </motion.div>
-
-            {/* Main Heading */}
-            <div className="space-y-4">
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
+    <section className={getBackgroundClasses()}>
+      {backgroundType === "glow" && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className={`absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br ${getGlowClasses()} rounded-full blur-3xl`}></div>
+          <div className={`absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-tr ${getGlowClasses()} rounded-full blur-3xl`}></div>
+          <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br ${getGlowClasses()} rounded-full blur-3xl`}></div>
+        </div>
+      )}
+      
+      <div className="relative z-10 container mx-auto px-4 py-20 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h1 className={`text-4xl md:text-6xl font-bold mb-6 ${
+            backgroundType === "glow" 
+              ? "bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent" 
+              : "text-white"
+          }`}>
+            {title}
+          </h1>
+          
+          {subtitle && (
+            <p className={`text-xl md:text-2xl mb-8 ${
+              backgroundType === "glow" 
+                ? "text-slate-600 dark:text-slate-300" 
+                : "text-white/90"
+            }`}>
+              {subtitle}
+            </p>
+          )}
+          
+          {ctaText && ctaLink && (
+            <Link to={ctaLink}>
+              <Button 
+                size="lg" 
+                className={`text-lg px-8 py-4 ${
+                  backgroundType === "glow"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    : "bg-white text-blue-600 hover:bg-gray-100"
+                }`}
               >
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy'}
-                </span>
-              </motion.h1>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-              >
-                <RandomHeadlineGenerator />
-              </motion.div>
-            </div>
-          </div>
+                {ctaText}
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </section>
