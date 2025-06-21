@@ -30,12 +30,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     fetchMessages();
 
-    const channel = supabase
-      .channel(`room_messages_${room.id}_${Date.now()}`) // Add timestamp to ensure unique channel
+    // Clean up existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    channelRef.current = supabase
+      .channel(`room_messages_${room.id}_${currentUser.id}_${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
@@ -50,9 +57,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [room.id, currentUser.id]); // Add dependencies
+  }, [room.id, currentUser.id]);
 
   useEffect(() => {
     // Scroll to bottom when messages change

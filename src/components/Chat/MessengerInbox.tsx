@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Users, Megaphone, HeadphonesIcon } from 'lucide-react';
@@ -29,13 +28,20 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     fetchRooms();
     
-    // Set up real-time subscription for rooms
-    const channel = supabase
-      .channel('messenger_rooms_inbox')
+    // Clean up existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    
+    // Set up new real-time subscription for rooms
+    channelRef.current = supabase
+      .channel(`messenger_rooms_inbox_${currentUser.id}_${Date.now()}`)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'chat_rooms' },
         () => fetchRooms()
@@ -43,9 +49,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [currentUser.id]); // Add currentUser.id as dependency
+  }, [currentUser.id]);
 
   const fetchRooms = async () => {
     try {
