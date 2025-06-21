@@ -31,7 +31,6 @@ export interface ChatTopic {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  is_bedoun_marz_only?: boolean;
 }
 
 export interface LiveSettings {
@@ -40,35 +39,6 @@ export interface LiveSettings {
   stream_code: string | null;
   title: string | null;
   viewers: number;
-  updated_at: string;
-}
-
-export interface SupportMessage {
-  id: number;
-  user_id: number;
-  sender_id: number;
-  message: string;
-  is_from_support: boolean;
-  created_at: string;
-  read_at: string | null;
-}
-
-export interface SupportAgent {
-  id: number;
-  user_id: number;
-  phone: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface ChatUser {
-  id: number;
-  name: string;
-  phone: string;
-  is_approved: boolean;
-  bedoun_marz_request: boolean;
-  bedoun_marz_approved: boolean;
-  created_at: string;
   updated_at: string;
 }
 
@@ -96,12 +66,4 @@ export interface ChatTopicInsert {
   title: string;
   description?: string;
   is_active?: boolean;
-  is_bedoun_marz_only?: boolean;
-}
-
-export interface SupportMessageInsert {
-  user_id: number;
-  sender_id: number;
-  message: string;
-  is_from_support: boolean;
 }

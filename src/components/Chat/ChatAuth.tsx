@@ -4,10 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Clock, CheckCircle, User, Phone, Loader2, Star } from 'lucide-react';
+import { MessageCircle, Clock, CheckCircle, User, Phone, Loader2 } from 'lucide-react';
 
 interface ChatAuthProps {
   onAuthenticated: (sessionToken: string, userName: string) => void;
@@ -17,7 +16,6 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [bedounMarzRequest, setBedounMarzRequest] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(false);
@@ -79,7 +77,7 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
         return;
       }
 
-      await chatUserService.register(name, phone, bedounMarzRequest);
+      await chatUserService.register(name, phone);
       setIsRegistered(true);
       toast({
         title: 'ثبت‌نام موفق',
@@ -126,11 +124,6 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
             </CardTitle>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
               درخواست شما ارسال شد
-              {bedounMarzRequest && (
-                <span className="block mt-1 text-amber-600 dark:text-amber-400 font-medium">
-                  ✨ با درخواست دسترسی بدون مرز
-                </span>
-              )}
             </p>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
@@ -221,20 +214,6 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
                 required
               />
             </div>
-            
-            <div className="flex items-center space-x-2 space-x-reverse p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl border border-amber-200 dark:border-amber-800">
-              <Checkbox
-                id="bedoun-marz"
-                checked={bedounMarzRequest}
-                onCheckedChange={(checked) => setBedounMarzRequest(checked as boolean)}
-                className="border-amber-500 data-[state=checked]:bg-amber-500"
-              />
-              <Label htmlFor="bedoun-marz" className="text-amber-800 dark:text-amber-200 font-medium flex items-center gap-2 cursor-pointer">
-                <Star className="w-4 h-4" />
-                دانش‌پذیر بدون مرز هستم
-              </Label>
-            </div>
-            
             <Button 
               type="submit" 
               className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105" 

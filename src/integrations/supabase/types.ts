@@ -128,8 +128,6 @@ export type Database = {
       }
       chat_users: {
         Row: {
-          bedoun_marz_approved: boolean | null
-          bedoun_marz_request: boolean | null
           created_at: string | null
           id: number
           is_approved: boolean | null
@@ -138,8 +136,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          bedoun_marz_approved?: boolean | null
-          bedoun_marz_request?: boolean | null
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
@@ -148,8 +144,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          bedoun_marz_approved?: boolean | null
-          bedoun_marz_request?: boolean | null
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
@@ -213,89 +207,11 @@ export type Database = {
         }
         Relationships: []
       }
-      support_agents: {
-        Row: {
-          created_at: string | null
-          id: number
-          is_active: boolean | null
-          phone: string
-          user_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          is_active?: boolean | null
-          phone: string
-          user_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          is_active?: boolean | null
-          phone?: string
-          user_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_agents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "chat_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      support_messages: {
-        Row: {
-          created_at: string | null
-          id: number
-          is_from_support: boolean | null
-          message: string
-          read_at: string | null
-          sender_id: number | null
-          user_id: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          is_from_support?: boolean | null
-          message: string
-          read_at?: string | null
-          sender_id?: number | null
-          user_id?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          is_from_support?: boolean | null
-          message?: string
-          read_at?: string | null
-          sender_id?: number | null
-          user_id?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "support_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "chat_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "support_messages_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "chat_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_sessions: {
         Row: {
           created_at: string | null
           id: string
           is_active: boolean | null
-          is_support_agent: boolean | null
           last_activity: string | null
           session_token: string
           user_id: number | null
@@ -304,7 +220,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
-          is_support_agent?: boolean | null
           last_activity?: string | null
           session_token: string
           user_id?: number | null
@@ -313,7 +228,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
-          is_support_agent?: boolean | null
           last_activity?: string | null
           session_token?: string
           user_id?: number | null
