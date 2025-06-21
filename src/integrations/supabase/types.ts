@@ -318,6 +318,34 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_messenger_messages_conversation"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "support_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_messenger_messages_recipient"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_messenger_messages_room"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_messenger_messages_sender"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messenger_messages_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false

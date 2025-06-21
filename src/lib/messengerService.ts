@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { supportService } from './supportService';
 
@@ -295,8 +296,8 @@ class MessengerService {
       .from('messenger_messages')
       .select(`
         *,
-        sender:chat_users!sender_id(name),
-        reply_to:chat_users!reply_to_message_id(message)
+        sender:chat_users!fk_messenger_messages_sender(name),
+        reactions:message_reactions(*)
       `)
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
@@ -307,7 +308,11 @@ class MessengerService {
     }
     
     console.log('Successfully fetched messages:', data?.length || 0);
-    return (data || []) as MessengerMessage[];
+    return (data || []).map(msg => ({
+      ...msg,
+      sender_name: msg.sender?.name || 'کاربر',
+      reactions: msg.reactions || []
+    })) as MessengerMessage[];
   }
 
   async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
@@ -339,7 +344,8 @@ class MessengerService {
         sender_name: msg.sender_name,
         is_from_support: msg.is_from_support || false,
         reply_to_message_id: null,
-        forwarded_from_message_id: null
+        forwarded_from_message_id: null,
+        reactions: []
       }));
     } catch (error) {
       console.error('Error fetching private messages:', error);
@@ -412,6 +418,86 @@ class MessengerService {
     }
   }
 
+  // Add reaction to message
+  async addReaction(messageId: number, reaction: string, sessionToken: string): Promise<void> {
+    console.log('Adding reaction:', reaction, 'to message:', messageId);
+    
+    const isValid = await validateSessionToken(sessionToken);
+    if (!isValid) {
+      throw new Error('Invalid session. Please log in again.');
+    }
+
+    // Get user ID from session
+    const { data: sessionData } = await supabase
+      .from('user_sessions')
+      .select('user_id')
+      .eq('session_token', sessionToken)
+      .eq('is_active', true)
+      .single();
+
+    if (!sessionData?.user_id) {
+      throw new Error('User not found in session');
+    }
+
+    // Set session context for RLS
+    await setSessionContextOptional(sessionToken);
+
+    const { error } = await supabase
+      .from('message_reactions')
+      .insert([{
+        message_id: messageId,
+        user_id: sessionData.user_id,
+        reaction: reaction
+      }]);
+
+    if (error) {
+      // If it's a duplicate, try to remove it instead
+      if (error.code === '23505') {
+        await this.removeReaction(messageId, reaction, sessionToken);
+      } else {
+        console.error('Error adding reaction:', error);
+        throw new Error(`Failed to add reaction: ${error.message}`);
+      }
+    }
+  }
+
+  // Remove reaction from message
+  async removeReaction(messageId: number, reaction: string, sessionToken: string): Promise<void> {
+    console.log('Removing reaction:', reaction, 'from message:', messageId);
+    
+    const isValid = await validateSessionToken(sessionToken);
+    if (!isValid) {
+      throw new Error('Invalid session. Please log in again.');
+    }
+
+    // Get user ID from session
+    const { data: sessionData } = await supabase
+      .from('user_sessions')
+      .select('user_id')
+      .eq('session_token', sessionToken)
+      .eq('is_active', true)
+      .single();
+
+    if (!sessionData?.user_id) {
+      throw new Error('User not found in session');
+    }
+
+    // Set session context for RLS
+    await setSessionContextOptional(sessionToken);
+
+    const { error } = await supabase
+      .from('message_reactions')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', sessionData.user_id)
+      .eq('reaction', reaction);
+
+    if (error) {
+      console.error('Error removing reaction:', error);
+      throw new Error(`Failed to remove reaction: ${error.message}`);
+    }
+  }
+
   // Add method for updating user boundless status
   async updateUserBoundlessStatus(userId: number, isBoundless: boolean): Promise<MessengerUser> {
     const { data, error } = await supabase
@@ -442,8 +528,8 @@ class MessengerService {
       .from('messenger_messages')
       .select(`
         *,
-        sender:chat_users!sender_id(name),
-        recipient:chat_users!recipient_id(name)
+        sender:chat_users!fk_messenger_messages_sender(name),
+        recipient:chat_users!fk_messenger_messages_recipient(name)
       `)
       .or(`sender_id.eq.${supportAgentId},recipient_id.eq.${supportAgentId}`)
       .is('room_id', null)

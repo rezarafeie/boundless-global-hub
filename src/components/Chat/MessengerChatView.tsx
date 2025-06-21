@@ -136,6 +136,44 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               }
             }
           )
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'message_reactions' },
+            (payload) => {
+              try {
+                console.log('New reaction received:', payload);
+                const newReaction = payload.new;
+                setMessages((prevMessages) => 
+                  prevMessages.map(msg => 
+                    msg.id === newReaction.message_id 
+                      ? { ...msg, reactions: [...(msg.reactions || []), newReaction] }
+                      : msg
+                  )
+                );
+              } catch (error) {
+                console.error('Error processing new reaction:', error);
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: 'DELETE', schema: 'public', table: 'message_reactions' },
+            (payload) => {
+              try {
+                console.log('Reaction removed:', payload);
+                const removedReaction = payload.old;
+                setMessages((prevMessages) => 
+                  prevMessages.map(msg => 
+                    msg.id === removedReaction.message_id 
+                      ? { ...msg, reactions: (msg.reactions || []).filter(r => r.id !== removedReaction.id) }
+                      : msg
+                  )
+                );
+              } catch (error) {
+                console.error('Error processing removed reaction:', error);
+              }
+            }
+          )
           .subscribe((status) => {
             console.log('Subscription status:', status);
             if (status === 'SUBSCRIBED') {
@@ -215,8 +253,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const handleReaction = async (messageId: number, reaction: string) => {
-    // Implementation for adding reactions
-    console.log('Adding reaction:', reaction, 'to message:', messageId);
+    try {
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('No session token found. Please log in again.');
+      }
+
+      await messengerService.addReaction(messageId, reaction, sessionToken);
+      console.log('Reaction added successfully');
+    } catch (error: any) {
+      console.error('Error adding reaction:', error);
+      toast({
+        title: 'خطا در افزودن واکنش',
+        description: error.message || 'خطا در افزودن واکنش',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleReply = (messageId: number) => {
@@ -232,12 +284,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   const handleForward = (messageId: number) => {
     console.log('Forwarding message:', messageId);
-    // Implementation for forwarding messages
+    // Implementation for forwarding messages will be added later
   };
 
   const handleReact = (messageId: number) => {
     console.log('React to message:', messageId);
-    // Implementation for quick reactions
+    // This can be used for quick reactions
   };
 
   const getChatTitle = () => {
