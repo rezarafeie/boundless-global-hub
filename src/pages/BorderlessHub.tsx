@@ -5,13 +5,13 @@ import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Pin, Eye, Image, Video, AudioLines } from 'lucide-react';
+import { Bell, Pin, Eye, Image, Video, AudioLines, MessageCircle, Users } from 'lucide-react';
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService } from '@/lib/supabase';
-import ChatSection from '@/components/Chat/ChatSection';
-import LiveStreamCard from '@/components/Chat/LiveStreamCard';
-import RafieiMeetCard from '@/components/Chat/RafieiMeetCard';
+import EnhancedLiveStreamCard from '@/components/Chat/EnhancedLiveStreamCard';
+import EnhancedRafieiMeetCard from '@/components/Chat/EnhancedRafieiMeetCard';
+import ChatModal from '@/components/Chat/ChatModal';
 
 const BorderlessHub = () => {
   const { translations, language } = useLanguage();
@@ -23,8 +23,9 @@ const BorderlessHub = () => {
   const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
   
   const [expandedAnnouncement, setExpandedAnnouncement] = useState<number | null>(null);
+  const [showChatModal, setShowChatModal] = useState(false);
 
-  // Calculate unread count (assuming new announcements are unread)
+  // Calculate unread count
   const unreadCount = announcements.filter(ann => {
     const createdDate = new Date(ann.created_at);
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -34,35 +35,8 @@ const BorderlessHub = () => {
   const pinnedAnnouncements = announcements.filter(ann => ann.is_pinned);
   const regularAnnouncements = announcements.filter(ann => !ann.is_pinned);
 
-  // Dynamic section ordering logic - Active meet/live sections move to top
   const isLiveActive = !liveLoading && liveSettings?.is_live;
   const isMeetActive = !rafieiMeetLoading && rafieiMeetSettings?.is_active;
-
-  const getSectionOrder = () => {
-    const sections = [];
-    
-    // Add active sections first
-    if (isMeetActive) {
-      sections.push({ id: 'meet', component: 'meet', priority: 1 });
-    }
-    if (isLiveActive) {
-      sections.push({ id: 'live', component: 'live', priority: 2 });
-    }
-    
-    // Add remaining sections
-    sections.push({ id: 'notifications', component: 'notifications', priority: 3 });
-    sections.push({ id: 'chat', component: 'chat', priority: 4 });
-    
-    // Add inactive meet/live sections at the end
-    if (!isMeetActive) {
-      sections.push({ id: 'meet', component: 'meet', priority: 5 });
-    }
-    if (!isLiveActive) {
-      sections.push({ id: 'live', component: 'live', priority: 6 });
-    }
-
-    return sections.sort((a, b) => a.priority - b.priority);
-  };
 
   const getAnnouncementTypeColor = (type: string) => {
     switch (type) {
@@ -93,7 +67,6 @@ const BorderlessHub = () => {
 
   const toggleAnnouncement = async (id: number) => {
     if (expandedAnnouncement !== id) {
-      // Increment view count when opening announcement
       try {
         await announcementsService.incrementViews(id);
       } catch (error) {
@@ -101,186 +74,6 @@ const BorderlessHub = () => {
       }
     }
     setExpandedAnnouncement(expandedAnnouncement === id ? null : id);
-  };
-
-  const renderSection = (sectionId: string) => {
-    switch (sectionId) {
-      case 'notifications':
-        return (
-          <div key="notifications-section" className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <Bell className="w-6 h-6" />
-              {translations.announcements}
-            </h2>
-
-            {announcementsLoading ? (
-              <Card>
-                <CardContent className="p-8">
-                  <p className="text-center text-slate-500">در حال بارگذاری اطلاعیه‌ها...</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {/* Pinned Announcements */}
-                {pinnedAnnouncements.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Pin className="w-5 h-5 text-yellow-600" />
-                      اطلاعیه‌های سنجاق شده
-                    </h3>
-                    {pinnedAnnouncements.map((announcement) => (
-                      <Card key={announcement.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-500">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                              {getMediaIcon(announcement.media_type)}
-                              <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                              <Pin className="w-4 h-4 text-yellow-600" />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                                {getAnnouncementTypeText(announcement.type)}
-                              </Badge>
-                              <span className="text-sm text-slate-500">
-                                {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <Eye className="w-4 h-4 text-slate-400" />
-                                <span className="text-sm text-slate-500">{announcement.views}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-slate-700 dark:text-slate-300 mb-4">
-                            {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
-                          </p>
-                          
-                          {/* Media Content */}
-                          {announcement.media_content && expandedAnnouncement === announcement.id && (
-                            <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                              <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
-                            </div>
-                          )}
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => toggleAnnouncement(announcement.id)}
-                            >
-                              {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-
-                {/* Regular Announcements */}
-                <div className="space-y-4">
-                  {regularAnnouncements.length === 0 ? (
-                    <Card>
-                      <CardContent className="p-8">
-                        <p className="text-center text-slate-500">هیچ اطلاعیه‌ای وجود ندارد</p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    regularAnnouncements.map((announcement) => (
-                      <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                              {getMediaIcon(announcement.media_type)}
-                              <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                                {getAnnouncementTypeText(announcement.type)}
-                              </Badge>
-                              <span className="text-sm text-slate-500">
-                                {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <Eye className="w-4 h-4 text-slate-400" />
-                                <span className="text-sm text-slate-500">{announcement.views}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-slate-700 dark:text-slate-300 mb-4">
-                            {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
-                          </p>
-                          
-                          {/* Media Content */}
-                          {announcement.media_content && expandedAnnouncement === announcement.id && (
-                            <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
-                              <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
-                            </div>
-                          )}
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => toggleAnnouncement(announcement.id)}
-                            >
-                              {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        );
-      
-      case 'chat':
-        return (
-          <div key="chat-section" className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <div className="relative">
-                <span className="text-2xl">💬</span>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              </div>
-              چت گروهی بدون مرز
-            </h2>
-            <ChatSection />
-          </div>
-        );
-      
-      case 'meet':
-        return (
-          <div key="meet-section" className="mb-8">
-            <RafieiMeetCard
-              isActive={isMeetActive || false}
-              meetUrl={rafieiMeetSettings?.meet_url}
-              title={rafieiMeetSettings?.title}
-              description={rafieiMeetSettings?.description}
-            />
-          </div>
-        );
-      
-      case 'live':
-        return (
-          <div key="live-section" className="mb-8">
-            <LiveStreamCard
-              isActive={isLiveActive || false}
-              streamCode={liveSettings?.stream_code}
-              title={liveSettings?.title}
-              viewers={liveSettings?.viewers}
-            />
-          </div>
-        );
-      
-      default:
-        return null;
-    }
   };
 
   return (
@@ -321,12 +114,213 @@ const BorderlessHub = () => {
           </div>
         </div>
 
-        {/* Dynamic Sections */}
         <div className="container mx-auto px-4 py-8">
+          {/* Live Stream and Meet Cards - Above Fold */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <EnhancedLiveStreamCard
+              isActive={isLiveActive || false}
+              streamCode={liveSettings?.stream_code}
+              title={liveSettings?.title}
+              viewers={liveSettings?.viewers}
+            />
+            
+            <EnhancedRafieiMeetCard
+              isActive={isMeetActive || false}
+              meetUrl={rafieiMeetSettings?.meet_url}
+              title={rafieiMeetSettings?.title}
+              description={rafieiMeetSettings?.description}
+            />
+          </div>
+
+          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {getSectionOrder().map((section) => renderSection(section.id))}
+            {/* Notifications Section */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <Bell className="w-6 h-6" />
+                {translations.announcements}
+              </h2>
+
+              {announcementsLoading ? (
+                <Card>
+                  <CardContent className="p-8">
+                    <p className="text-center text-slate-500">در حال بارگذاری اطلاعیه‌ها...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Pinned Announcements */}
+                  {pinnedAnnouncements.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Pin className="w-5 h-5 text-yellow-600" />
+                        اطلاعیه‌های سنجاق شده
+                      </h3>
+                      {pinnedAnnouncements.map((announcement) => (
+                        <Card key={announcement.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-yellow-500">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2">
+                                {getMediaIcon(announcement.media_type)}
+                                <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                                <Pin className="w-4 h-4 text-yellow-600" />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getAnnouncementTypeColor(announcement.type)}>
+                                  {getAnnouncementTypeText(announcement.type)}
+                                </Badge>
+                                <span className="text-sm text-slate-500">
+                                  {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Eye className="w-4 h-4 text-slate-400" />
+                                  <span className="text-sm text-slate-500">{announcement.views}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-slate-700 dark:text-slate-300 mb-4">
+                              {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
+                            </p>
+                            
+                            {/* Media Content */}
+                            {announcement.media_content && expandedAnnouncement === announcement.id && (
+                              <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                                <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
+                              </div>
+                            )}
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleAnnouncement(announcement.id)}
+                              >
+                                {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Regular Announcements */}
+                  <div className="space-y-4">
+                    {regularAnnouncements.length === 0 ? (
+                      <Card>
+                        <CardContent className="p-8">
+                          <p className="text-center text-slate-500">هیچ اطلاعیه‌ای وجود ندارد</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      regularAnnouncements.map((announcement) => (
+                        <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2">
+                                {getMediaIcon(announcement.media_type)}
+                                <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getAnnouncementTypeColor(announcement.type)}>
+                                  {getAnnouncementTypeText(announcement.type)}
+                                </Badge>
+                                <span className="text-sm text-slate-500">
+                                  {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Eye className="w-4 h-4 text-slate-400" />
+                                  <span className="text-sm text-slate-500">{announcement.views}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-slate-700 dark:text-slate-300 mb-4">
+                              {expandedAnnouncement === announcement.id ? announcement.full_text : announcement.summary}
+                            </p>
+                            
+                            {/* Media Content */}
+                            {announcement.media_content && expandedAnnouncement === announcement.id && (
+                              <div className="mb-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                                <div dangerouslySetInnerHTML={{ __html: announcement.media_content }} />
+                              </div>
+                            )}
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toggleAnnouncement(announcement.id)}
+                              >
+                                {expandedAnnouncement === announcement.id ? 'خلاصه' : 'ادامه مطلب'}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Chat Section */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <div className="relative">
+                  <MessageCircle className="w-6 h-6 text-green-600" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+                چت گروهی بدون مرز
+              </h2>
+              
+              <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+                <CardContent className="p-8 text-center">
+                  <div className="relative mb-6">
+                    <MessageCircle className="w-16 h-16 mx-auto text-green-600 mb-4" />
+                    <div className="absolute top-0 right-1/2 transform translate-x-1/2 -translate-y-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">
+                    به گفتگوی زنده بپیوندید
+                  </h3>
+                  
+                  <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                    با دیگر اعضای جامعه بدون مرز در گفتگوی زنده شرکت کنید
+                  </p>
+                  
+                  <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Users className="w-5 h-5" />
+                      <span className="font-medium">فعال</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm">آنلاین</span>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => setShowChatModal(true)}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 px-8 py-3"
+                  >
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    📥 ورود به چت
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
+
+        {/* Chat Modal */}
+        <ChatModal 
+          isOpen={showChatModal}
+          onClose={() => setShowChatModal(false)}
+        />
       </div>
     </MainLayout>
   );
