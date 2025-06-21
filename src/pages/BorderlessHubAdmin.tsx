@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video } from 'lucide-react';
+import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video, Image, AudioLines, Monitor } from 'lucide-react';
 import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService, chatService, liveService } from '@/lib/supabase';
@@ -34,6 +34,7 @@ const BorderlessHubAdmin = () => {
     full_text: '',
     media_type: 'none',
     media_content: '',
+    media_url: '',
     is_pinned: false
   });
 
@@ -90,6 +91,7 @@ const BorderlessHubAdmin = () => {
         full_text: '',
         media_type: 'none',
         media_content: '',
+        media_url: '',
         is_pinned: false
       });
     } catch (error) {
@@ -199,9 +201,29 @@ const BorderlessHubAdmin = () => {
     }
   };
 
+  const getMediaTypeIcon = (type: string) => {
+    switch (type) {
+      case 'image': return <Image className="w-4 h-4" />;
+      case 'video': return <Video className="w-4 h-4" />;
+      case 'audio': return <AudioLines className="w-4 h-4" />;
+      case 'iframe': return <Monitor className="w-4 h-4" />;
+      default: return null;
+    }
+  };
+
+  const getMediaTypeLabel = (type: string) => {
+    switch (type) {
+      case 'image': return 'تصویر';
+      case 'video': return 'ویدیو';
+      case 'audio': return 'صوت';
+      case 'iframe': return 'iframe';
+      default: return 'بدون رسانه';
+    }
+  };
+
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20 admin-page">
         <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center gap-3">
@@ -295,23 +317,55 @@ const BorderlessHubAdmin = () => {
                         required
                       />
                     </div>
+                    
+                    {/* Media Type Selection */}
                     <div>
                       <Label htmlFor="media_type">نوع رسانه</Label>
-                      <Select onValueChange={(value) => setAnnouncementForm({ ...announcementForm, media_type: value as any })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب نوع رسانه" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">بدون رسانه</SelectItem>
-                          <SelectItem value="image">تصویر</SelectItem>
-                          <SelectItem value="audio">صوت</SelectItem>
-                          <SelectItem value="video">ویدیو</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2">
+                        {[
+                          { value: 'none', label: 'بدون رسانه', icon: null },
+                          { value: 'image', label: 'تصویر', icon: <Image className="w-4 h-4" /> },
+                          { value: 'video', label: 'ویدیو', icon: <Video className="w-4 h-4" /> },
+                          { value: 'audio', label: 'صوت', icon: <AudioLines className="w-4 h-4" /> },
+                          { value: 'iframe', label: 'iframe', icon: <Monitor className="w-4 h-4" /> }
+                        ].map((mediaType) => (
+                          <Button
+                            key={mediaType.value}
+                            type="button"
+                            variant={announcementForm.media_type === mediaType.value ? "default" : "outline"}
+                            className="flex items-center gap-2 justify-center"
+                            onClick={() => setAnnouncementForm({ ...announcementForm, media_type: mediaType.value as any })}
+                          >
+                            {mediaType.icon}
+                            {mediaType.label}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
+
+                    {/* Media URL Input */}
                     {announcementForm.media_type !== 'none' && (
                       <div>
-                        <Label htmlFor="media_content">کد رسانه</Label>
+                        <Label htmlFor="media_url">لینک رسانه</Label>
+                        <Input
+                          id="media_url"
+                          value={announcementForm.media_url || ''}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, media_url: e.target.value })}
+                          placeholder="مثال: https://www.aparat.com/v/xxxxx"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          {announcementForm.media_type === 'iframe' ? 
+                            'برای iframe کد HTML کامل وارد کنید' : 
+                            'لینک مستقیم فایل را وارد کنید'
+                          }
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Media Content (fallback) */}
+                    {announcementForm.media_type !== 'none' && (
+                      <div>
+                        <Label htmlFor="media_content">کد رسانه (اختیاری)</Label>
                         <Textarea
                           id="media_content"
                           value={announcementForm.media_content || ''}
@@ -320,6 +374,7 @@ const BorderlessHubAdmin = () => {
                         />
                       </div>
                     )}
+
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="is_pinned"

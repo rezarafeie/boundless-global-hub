@@ -17,6 +17,7 @@ export type Database = {
           is_pinned: boolean | null
           media_content: string | null
           media_type: string
+          media_url: string | null
           summary: string
           title: string
           type: string
@@ -29,6 +30,7 @@ export type Database = {
           is_pinned?: boolean | null
           media_content?: string | null
           media_type?: string
+          media_url?: string | null
           summary: string
           title: string
           type: string
@@ -41,6 +43,7 @@ export type Database = {
           is_pinned?: boolean | null
           media_content?: string | null
           media_type?: string
+          media_url?: string | null
           summary?: string
           title?: string
           type?: string

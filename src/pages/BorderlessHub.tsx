@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -8,19 +9,20 @@ import {
   Bell, 
   MessageCircle, 
   Video, 
-  Wifi, 
   Play,
   Pin,
   Eye,
   Calendar,
   Users,
-  ArrowLeft
+  ArrowLeft,
+  Sparkles
 } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/useRealtime';
 import { useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import EnhancedLiveStreamCard from '@/components/Chat/EnhancedLiveStreamCard';
 import EnhancedRafieiMeetCard from '@/components/Chat/EnhancedRafieiMeetCard';
+import AnnouncementMedia from '@/components/Chat/AnnouncementMedia';
 
 const BorderlessHub: React.FC = () => {
   const { announcements, loading: announcementsLoading } = useAnnouncements();
@@ -29,43 +31,6 @@ const BorderlessHub: React.FC = () => {
 
   const isLiveActive = liveSettings?.is_live || false;
   const isMeetActive = rafieiMeetSettings?.is_active || false;
-
-  const renderMediaContent = (mediaType: string, mediaContent: string | null) => {
-    if (!mediaContent || mediaType === 'none') return null;
-
-    switch (mediaType) {
-      case 'image':
-        return (
-          <div className="mt-4">
-            <img 
-              src={mediaContent} 
-              alt="تصویر اطلاعیه" 
-              className="w-full rounded-lg shadow-lg max-h-64 object-cover"
-            />
-          </div>
-        );
-      case 'audio':
-        return (
-          <div className="mt-4">
-            <audio controls className="w-full">
-              <source src={mediaContent} type="audio/mpeg" />
-              مرورگر شما از پخش صوت پشتیبانی نمی‌کند.
-            </audio>
-          </div>
-        );
-      case 'video':
-        return (
-          <div className="mt-4">
-            <div 
-              className="relative w-full h-64 bg-black rounded-lg overflow-hidden"
-              dangerouslySetInnerHTML={{ __html: mediaContent }}
-            />
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
 
   const getAnnouncementTypeColor = (type: string) => {
     switch (type) {
@@ -100,26 +65,36 @@ const BorderlessHub: React.FC = () => {
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 hub-page pt-20">
-        <div className="container mx-auto px-4 py-8">
-          
-          {/* Header */}
-          <div className="text-center mb-12">
+        
+        {/* Hero Header */}
+        <section className="py-16 px-4 text-center">
+          <div className="container mx-auto max-w-4xl">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-6 shadow-2xl">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
               🌟 مرکز بدون مرز
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
               مرکز اطلاع‌رسانی، پخش زنده و گفت‌وگوهای گروهی جامعه رفیعی
             </p>
           </div>
+        </section>
 
-          {/* Live Cards Section - Show when active */}
+        <div className="container mx-auto px-4 pb-16">
+          
+          {/* Active Services Section */}
           {(isLiveActive || isMeetActive) && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white text-center mb-6">
-                🔴 پخش زنده فعال
-              </h2>
+            <section className="mb-16">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center justify-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  پخش زنده فعال
+                </h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-red-500 to-pink-500 mx-auto rounded-full"></div>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                 {isLiveActive && !liveLoading && (
                   <EnhancedLiveStreamCard
                     isActive={true}
@@ -138,46 +113,55 @@ const BorderlessHub: React.FC = () => {
                   />
                 )}
               </div>
-            </div>
+            </section>
           )}
 
           {/* Chat Access Section */}
-          <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700 hover:border-green-500/50 transition-all duration-300 shadow-2xl">
-            <CardHeader className="text-center pb-6">
-              <div className="flex justify-center mb-4">
-                <div className="relative">
-                  <MessageCircle className="w-16 h-16 text-green-400" />
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+          <section className="mb-16">
+            <div className="max-w-4xl mx-auto">
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-slate-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="relative">
+                      <MessageCircle className="w-16 h-16 text-white" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    💬 گفت‌وگوهای بدون مرز
+                  </h2>
+                  <p className="text-green-100 text-lg">
+                    به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید
+                  </p>
                 </div>
-              </div>
-              <CardTitle className="text-2xl text-white mb-2">
-                💬 گفت‌وگوهای بدون مرز
-              </CardTitle>
-              <p className="text-gray-400">
-                به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید و در موضوعات مختلف شرکت کنید
-              </p>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Link to="/hub/chat">
-                <Button 
-                  size="lg"
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-green-500/25 transition-all duration-300"
-                >
-                  <MessageCircle className="w-6 h-6 ml-2" />
-                  ورود به گفت‌وگوها
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+                <CardContent className="text-center p-8">
+                  <p className="text-slate-600 dark:text-slate-300 mb-6 text-lg">
+                    در موضوعات مختلف شرکت کنید و با دیگر اعضا در ارتباط باشید
+                  </p>
+                  <Link to="/hub/chat">
+                    <Button 
+                      size="lg"
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-green-500/25 transition-all duration-300 rounded-full"
+                    >
+                      <MessageCircle className="w-6 h-6 ml-2" />
+                      ورود به گفت‌وگوها
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
 
           {/* Announcements Section */}
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-white mb-2">
+          <section className="mb-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 flex items-center justify-center gap-3">
+                <Bell className="w-8 h-8 text-blue-600" />
                 📢 اطلاعیه‌های مهم
               </h2>
-              <p className="text-gray-400">
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full mb-4"></div>
+              <p className="text-slate-600 dark:text-slate-300 text-lg">
                 آخرین اخبار و اطلاعیه‌های مهم از تیم بدون مرز
               </p>
             </div>
@@ -187,80 +171,94 @@ const BorderlessHub: React.FC = () => {
                 <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
               </div>
             ) : announcements.length === 0 ? (
-              <Card className="bg-gray-900/50 border-gray-700 text-center py-12">
-                <Bell className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">
-                  هنوز اطلاعیه‌ای منتشر نشده است
-                </p>
-              </Card>
+              <div className="max-w-2xl mx-auto">
+                <Card className="bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-center py-16">
+                  <Bell className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-medium text-slate-600 dark:text-slate-300 mb-2">
+                    هنوز اطلاعیه‌ای منتشر نشده است
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    به‌زودی اطلاعیه‌های جدید منتشر خواهد شد
+                  </p>
+                </Card>
+              </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-8 max-w-4xl mx-auto">
                 {announcements.map((announcement) => (
                   <Card 
                     key={announcement.id} 
-                    className={`bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-slate-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300 ${
-                      announcement.is_pinned ? 'border-amber-500/50 bg-gradient-to-r from-amber-50/20 to-yellow-50/20 dark:from-amber-900/20 dark:to-yellow-900/20' : ''
+                    className={`bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ${
+                      announcement.is_pinned ? 'ring-2 ring-amber-400 shadow-amber-100 dark:shadow-amber-900/20' : ''
                     }`}
                   >
-                    <CardHeader>
+                    <CardHeader className="pb-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
+                          <div className="flex items-center gap-3 mb-4">
                             {announcement.is_pinned && (
-                              <Pin className="w-5 h-5 text-amber-400" />
+                              <div className="flex items-center gap-1 text-amber-600">
+                                <Pin className="w-4 h-4" />
+                                <span className="text-xs font-medium">سنجاق شده</span>
+                              </div>
                             )}
                             <Badge className={getAnnouncementTypeColor(announcement.type)}>
                               {getAnnouncementTypeLabel(announcement.type)}
                             </Badge>
-                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                               <Calendar className="w-4 h-4" />
                               {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
                             </div>
                           </div>
                           
-                          <CardTitle className="text-xl md:text-2xl text-white mb-3">
+                          <CardTitle className="text-xl md:text-2xl text-slate-900 dark:text-white mb-4 leading-tight">
                             {announcement.title}
                           </CardTitle>
                           
-                          <p className="text-gray-300 leading-relaxed">
+                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg">
                             {announcement.full_text}
                           </p>
                         </div>
                         
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                           <Eye className="w-4 h-4" />
                           <span>{announcement.views || 0}</span>
                         </div>
                       </div>
                     </CardHeader>
                     
-                    {announcement.media_content && (
-                      <CardContent>
-                        {renderMediaContent(announcement.media_type, announcement.media_content)}
-                      </CardContent>
-                    )}
+                    <CardContent className="pt-0">
+                      <AnnouncementMedia
+                        mediaType={announcement.media_type}
+                        mediaUrl={announcement.media_url}
+                        mediaContent={announcement.media_content}
+                        title={announcement.title}
+                      />
+                    </CardContent>
                   </Card>
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Inactive Live Cards Section */}
+          {/* Inactive Services Section */}
           {(!isLiveActive || !isMeetActive) && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white text-center mb-6">
-                📺 سرویس‌های پخش
-              </h2>
+            <section className="mb-16">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                  📺 سرویس‌های پخش
+                </h2>
+                <div className="w-16 h-1 bg-gradient-to-r from-slate-400 to-slate-600 mx-auto rounded-full"></div>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 {!isLiveActive && (
-                  <Card className="bg-gray-900/50 border-gray-700 opacity-60">
-                    <CardHeader className="text-center">
-                      <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Play className="w-8 h-8 text-gray-400" />
+                  <Card className="bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 opacity-75">
+                    <CardHeader className="text-center py-12">
+                      <div className="w-16 h-16 bg-slate-300 dark:bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Play className="w-8 h-8 text-slate-500 dark:text-gray-400" />
                       </div>
-                      <CardTitle className="text-white">پخش زنده آپارات</CardTitle>
-                      <p className="text-gray-400 text-sm">
+                      <CardTitle className="text-slate-700 dark:text-slate-300">پخش زنده آپارات</CardTitle>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">
                         در حال حاضر غیرفعال
                       </p>
                     </CardHeader>
@@ -268,20 +266,20 @@ const BorderlessHub: React.FC = () => {
                 )}
                 
                 {!isMeetActive && (
-                  <Card className="bg-gray-900/50 border-gray-700 opacity-60">
-                    <CardHeader className="text-center">
-                      <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-8 h-8 text-gray-400" />
+                  <Card className="bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 opacity-75">
+                    <CardHeader className="text-center py-12">
+                      <div className="w-16 h-16 bg-slate-300 dark:bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Video className="w-8 h-8 text-slate-500 dark:text-gray-400" />
                       </div>
-                      <CardTitle className="text-white">جلسه تصویری رفیعی</CardTitle>
-                      <p className="text-gray-400 text-sm">
+                      <CardTitle className="text-slate-700 dark:text-slate-300">جلسه تصویری رفیعی</CardTitle>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">
                         در حال حاضر غیرفعال
                       </p>
                     </CardHeader>
                   </Card>
                 )}
               </div>
-            </div>
+            </section>
           )}
         </div>
       </div>

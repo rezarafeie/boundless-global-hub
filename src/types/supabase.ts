@@ -5,8 +5,9 @@ export interface Announcement {
   type: 'urgent' | 'general' | 'technical' | 'educational';
   summary: string;
   full_text: string;
-  media_type: 'none' | 'image' | 'audio' | 'video';
+  media_type: 'none' | 'image' | 'audio' | 'video' | 'iframe';
   media_content: string | null;
+  media_url: string | null;
   is_pinned: boolean;
   created_at: string;
   views: number;
@@ -46,8 +47,9 @@ export interface AnnouncementInsert {
   type: 'urgent' | 'general' | 'technical' | 'educational';
   summary: string;
   full_text: string;
-  media_type: 'none' | 'image' | 'audio' | 'video';
+  media_type: 'none' | 'image' | 'audio' | 'video' | 'iframe';
   media_content?: string;
+  media_url?: string;
   is_pinned?: boolean;
 }
 
