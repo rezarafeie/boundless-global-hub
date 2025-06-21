@@ -176,6 +176,91 @@ export const messengerService = {
     return (data || []) as ChatRoom[];
   },
 
+  async createRoom(roomData: {
+    name: string;
+    type: string;
+    description: string;
+    is_boundless_only?: boolean;
+  }, sessionToken: string): Promise<ChatRoom> {
+    console.log('Creating room:', roomData);
+    
+    // Set session context before creating
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      throw new Error('Failed to authenticate session. Please try logging in again.');
+    }
+    
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .insert([{
+        name: roomData.name,
+        type: roomData.type,
+        description: roomData.description,
+        is_boundless_only: roomData.is_boundless_only || false,
+        is_active: true
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating room:', error);
+      throw new Error(`Failed to create room: ${error.message}`);
+    }
+    
+    console.log('Room created successfully:', data);
+    return data as ChatRoom;
+  },
+
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>, sessionToken: string): Promise<ChatRoom> {
+    console.log('Updating room:', roomId, updates);
+    
+    // Set session context before updating
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      throw new Error('Failed to authenticate session. Please try logging in again.');
+    }
+    
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', roomId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating room:', error);
+      throw new Error(`Failed to update room: ${error.message}`);
+    }
+    
+    console.log('Room updated successfully:', data);
+    return data as ChatRoom;
+  },
+
+  async deleteRoom(roomId: number, sessionToken: string): Promise<void> {
+    console.log('Deleting room:', roomId);
+    
+    // Set session context before deleting
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      throw new Error('Failed to authenticate session. Please try logging in again.');
+    }
+    
+    const { error } = await supabase
+      .from('chat_rooms')
+      .update({ is_active: false })
+      .eq('id', roomId);
+    
+    if (error) {
+      console.error('Error deleting room:', error);
+      throw new Error(`Failed to delete room: ${error.message}`);
+    }
+    
+    console.log('Room deleted successfully');
+  },
+
   async getRoomMessages(roomId: number, sessionToken: string): Promise<MessengerMessage[]> {
     console.log('Fetching messages for room:', roomId);
     
@@ -240,11 +325,14 @@ export const messengerService = {
   }, sessionToken: string): Promise<MessengerMessage> {
     console.log('Sending message:', messageData);
     
-    // Set session context before sending
+    // Set session context before sending - this is critical for RLS
     const contextSet = await setSessionContext(sessionToken);
     if (!contextSet) {
       throw new Error('Failed to authenticate session. Please try logging in again.');
     }
+
+    // Wait a moment for session context to be fully set
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const { data, error } = await supabase
       .from('messenger_messages')

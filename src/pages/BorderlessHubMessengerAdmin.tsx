@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -11,16 +12,17 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Users, Settings, Plus, Edit, Trash2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 
 const BorderlessHubMessengerAdmin: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<MessengerUser[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState<string>('');
+  const [editingRoom, setEditingRoom] = useState<ChatRoom | null>(null);
 
   // Room form state
   const [roomForm, setRoomForm] = useState({
@@ -31,16 +33,19 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
   });
 
   useEffect(() => {
-    // Get session token from localStorage or create admin session
+    // Get session token from localStorage
     const storedToken = localStorage.getItem('messenger_session_token');
     if (storedToken) {
       setSessionToken(storedToken);
     } else {
-      // For admin access, we'll use a placeholder token
-      // In a real implementation, you'd have proper admin authentication
-      setSessionToken('admin-session-token');
+      toast({
+        title: 'خطا',
+        description: 'لطفاً وارد پیام‌رسان شوید تا دسترسی مدیریت داشته باشید',
+        variant: 'destructive',
+      });
+      navigate('/hub/messenger');
     }
-  }, []);
+  }, [navigate, toast]);
 
   useEffect(() => {
     if (sessionToken) {
@@ -70,7 +75,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
 
   const handleApproveUser = async (userId: number, approve: boolean) => {
     try {
-      // Update user approval status
+      // This would require an admin function to approve users
       toast({
         title: approve ? 'کاربر تایید شد' : 'کاربر رد شد',
         description: 'وضعیت کاربر به‌روزرسانی شد.',
@@ -87,8 +92,10 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!sessionToken) return;
+
     try {
-      // Create new room logic would go here
+      await messengerService.createRoom(roomForm, sessionToken);
       toast({
         title: 'موفق',
         description: 'اتاق جدید ایجاد شد',
@@ -100,12 +107,69 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
         is_boundless_only: false
       });
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error creating room:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در ایجاد اتاق',
+        description: error.message || 'خطا در ایجاد اتاق',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleUpdateRoom = async (room: ChatRoom, updates: Partial<ChatRoom>) => {
+    if (!sessionToken) return;
+
+    try {
+      await messengerService.updateRoom(room.id, updates, sessionToken);
+      toast({
+        title: 'موفق',
+        description: 'اتاق به‌روزرسانی شد',
+      });
+      setEditingRoom(null);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error updating room:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در به‌روزرسانی اتاق',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: number) => {
+    if (!sessionToken) return;
+    
+    if (!confirm('آیا از حذف این اتاق اطمینان دارید؟')) return;
+
+    try {
+      await messengerService.deleteRoom(roomId, sessionToken);
+      toast({
+        title: 'موفق',
+        description: 'اتاق حذف شد',
+      });
+      fetchData();
+    } catch (error: any) {
+      console.error('Error deleting room:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در حذف اتاق',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getRoomTypeLabel = (type: string) => {
+    switch (type) {
+      case 'public_group':
+        return 'گروه عمومی';
+      case 'boundless_group':
+        return 'گروه بدون مرز';
+      case 'announcement_channel':
+        return 'کانال اطلاعیه';
+      default:
+        return type;
     }
   };
 
@@ -153,7 +217,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          <Tabs defaultValue="users" className="w-full">
+          <Tabs defaultValue="rooms" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -172,7 +236,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
             <TabsContent value="users" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>مدیریت کاربران</CardTitle>
+                  <CardTitle>مدیریت کاربران ({users.length} کاربر)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -240,7 +304,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
                     </div>
                     <div>
                       <Label htmlFor="room-type">نوع اتاق</Label>
-                      <Select onValueChange={(value) => setRoomForm({ ...roomForm, type: value })}>
+                      <Select value={roomForm.type} onValueChange={(value) => setRoomForm({ ...roomForm, type: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="انتخاب نوع اتاق" />
                         </SelectTrigger>
@@ -277,22 +341,40 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>اتاق‌های موجود</CardTitle>
+                  <CardTitle>اتاق‌های موجود ({rooms.length} اتاق)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {rooms.map((room) => (
                       <div key={room.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
+                        <div className="flex-1">
                           <h3 className="font-medium">{room.name}</h3>
                           <p className="text-sm text-slate-500">{room.description}</p>
-                          <Badge variant="outline">{room.type}</Badge>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline">{getRoomTypeLabel(room.type)}</Badge>
+                            {room.is_boundless_only && (
+                              <Badge variant="secondary">بدون مرز</Badge>
+                            )}
+                            {room.is_active ? (
+                              <Badge variant="default" className="bg-green-500">فعال</Badge>
+                            ) : (
+                              <Badge variant="destructive">غیرفعال</Badge>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setEditingRoom(room)}
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="destructive">
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeleteRoom(room.id)}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
