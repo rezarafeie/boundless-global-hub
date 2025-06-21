@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css');
 
@@ -154,6 +155,23 @@
   .input-modern {
     @apply px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-black/80 dark:focus:ring-white/80 transition-all;
   }
+
+  /* Hub CTA Banner */
+  .hub-cta-banner {
+    @apply bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/50 dark:to-yellow-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-8 text-center space-y-4 my-8;
+  }
+
+  .hub-cta-banner h3 {
+    @apply text-2xl font-bold text-amber-800 dark:text-amber-200;
+  }
+
+  .hub-cta-banner p {
+    @apply text-amber-700 dark:text-amber-300 text-lg;
+  }
+
+  .hub-cta-banner .btn-primary {
+    @apply inline-block bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-lg;
+  }
 }
 
 @layer utilities {
@@ -178,21 +196,25 @@
   }
 }
 
-/* Enhanced Typography with Dark Mode Support */
+/* Enhanced Typography with Dark Mode Support - FIXED FOR LIGHT MODE */
 .h1 {
-  @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground;
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  color: hsl(var(--foreground));
 }
 
 .h2 {
-  @apply text-3xl md:text-4xl font-bold tracking-tight text-foreground;
+  @apply text-3xl md:text-4xl font-bold tracking-tight;
+  color: hsl(var(--foreground));
 }
 
 .h3 {
-  @apply text-2xl md:text-3xl font-bold text-foreground;
+  @apply text-2xl md:text-3xl font-bold;
+  color: hsl(var(--foreground));
 }
 
 .h4 {
-  @apply text-xl md:text-2xl font-semibold text-foreground;
+  @apply text-xl md:text-2xl font-semibold;
+  color: hsl(var(--foreground));
 }
 
 .body-lg {
@@ -215,6 +237,30 @@
 /* Enhanced Button with Animations */
 .apple-button {
   @apply bg-black dark:bg-white text-white dark:text-black rounded-full px-6 py-3 font-medium hover:bg-black/90 dark:hover:bg-white/90 transition-all duration-200 hover:scale-105 active:scale-95;
+}
+
+/* Light mode typography fixes - ensure proper colors */
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: hsl(240 10% 3.9%) !important;
+}
+
+html:not(.dark) .text-white {
+  color: hsl(240 10% 3.9%) !important;
+}
+
+/* Dark mode keeps original styling */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: hsl(0 0% 98%);
 }
 
 /* Hero Glow Effects - Page Specific */
