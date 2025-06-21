@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -28,32 +29,63 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
+
+  const cleanupChannel = () => {
+    if (channelRef.current && isSubscribedRef.current) {
+      try {
+        supabase.removeChannel(channelRef.current);
+        console.log('Inbox channel cleaned up successfully');
+      } catch (error) {
+        console.error('Error cleaning up inbox channel:', error);
+      }
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
+  };
 
   useEffect(() => {
-    fetchRooms();
-    
-    // Clean up existing channel first
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    
-    // Set up new real-time subscription for rooms
-    channelRef.current = supabase
-      .channel(`messenger_rooms_inbox_${currentUser.id}_${Date.now()}`)
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'chat_rooms' },
-        () => fetchRooms()
-      )
-      .subscribe();
+    const setupRoomsAndSubscription = async () => {
+      try {
+        setError(null);
+        await fetchRooms();
+        
+        // Clean up existing channel
+        cleanupChannel();
+        
+        // Set up new real-time subscription for rooms
+        const channelName = `rooms_inbox_${currentUser.id}_${Date.now()}`;
+        channelRef.current = supabase.channel(channelName);
+        
+        channelRef.current
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'chat_rooms' },
+            () => {
+              console.log('Rooms updated, refetching...');
+              fetchRooms();
+            }
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              isSubscribedRef.current = true;
+              console.log('Successfully subscribed to rooms channel:', channelName);
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('Rooms channel subscription error');
+              setError('Connection error. Please refresh the page.');
+            }
+          });
 
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+      } catch (error) {
+        console.error('Error setting up rooms and subscription:', error);
+        setError('Failed to load rooms');
       }
     };
+
+    setupRoomsAndSubscription();
+
+    return cleanupChannel;
   }, [currentUser.id]);
 
   const fetchRooms = async () => {
@@ -87,6 +119,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     } catch (error) {
       console.error('Error fetching rooms:', error);
       setRooms([]);
+      setError('Failed to load rooms');
     } finally {
       setLoading(false);
     }
@@ -125,6 +158,20 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Refresh
+        </button>
       </div>
     );
   }

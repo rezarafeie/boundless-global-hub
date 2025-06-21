@@ -29,48 +29,95 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
+
+  const cleanupChannel = () => {
+    if (channelRef.current && isSubscribedRef.current) {
+      try {
+        supabase.removeChannel(channelRef.current);
+        console.log('Channel cleaned up successfully');
+      } catch (error) {
+        console.error('Error cleaning up channel:', error);
+      }
+      channelRef.current = null;
+      isSubscribedRef.current = false;
+    }
+  };
 
   useEffect(() => {
-    fetchMessages();
+    const setupMessagesAndSubscription = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch initial messages
+        await fetchMessages();
 
-    // Clean up existing channel first
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+        // Clean up any existing channel
+        cleanupChannel();
 
-    channelRef.current = supabase
-      .channel(`room_messages_${room.id}_${currentUser.id}_${Date.now()}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
-        (payload) => {
-          if (payload.new.room_id === room.id || 
-              (room.type === 'support_chat' && 
-               (payload.new.sender_id === currentUser.id || payload.new.recipient_id === currentUser.id))) {
-            setMessages((prevMessages) => [...prevMessages, payload.new as MessengerMessage]);
-          }
-        }
-      )
-      .subscribe();
+        // Create unique channel name
+        const channelName = `messages_${room.type}_${room.id}_${currentUser.id}_${Date.now()}`;
+        
+        channelRef.current = supabase.channel(channelName);
+        
+        channelRef.current
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
+            (payload) => {
+              try {
+                const newMessage = payload.new as MessengerMessage;
+                if (room.type === 'support_chat') {
+                  // For support chat, show messages where user is sender or recipient
+                  if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
+                    setMessages((prevMessages) => [...prevMessages, newMessage]);
+                  }
+                } else {
+                  // For room messages, show messages in this room
+                  if (newMessage.room_id === room.id) {
+                    setMessages((prevMessages) => [...prevMessages, newMessage]);
+                  }
+                }
+              } catch (error) {
+                console.error('Error processing new message:', error);
+              }
+            }
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              isSubscribedRef.current = true;
+              console.log('Successfully subscribed to channel:', channelName);
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('Channel subscription error');
+              setError('Connection error. Please refresh the page.');
+            }
+          });
 
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+      } catch (error) {
+        console.error('Error setting up messages and subscription:', error);
+        setError('Failed to load messages. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
-  }, [room.id, currentUser.id]);
+
+    setupMessagesAndSubscription();
+
+    return cleanupChannel;
+  }, [room.id, room.type, currentUser.id]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const fetchMessages = async () => {
-    setLoading(true);
     try {
       let fetchedMessages: MessengerMessage[] = [];
       if (room.type === 'support_chat') {
@@ -81,24 +128,24 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setMessages(fetchedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
-    } finally {
-      setLoading(false);
+      setError('Failed to load messages');
     }
   };
 
   const handleSendMessage = async () => {
-    if (newMessage.trim()) {
-      try {
-        await messengerService.sendMessage({
-          room_id: room.type === 'support_chat' ? null : room.id,
-          sender_id: currentUser.id,
-          recipient_id: room.type === 'support_chat' ? 1 : null, // Assuming support agent has ID 1
-          message: newMessage,
-        });
-        setNewMessage('');
-      } catch (error) {
-        console.error('Error sending message:', error);
-      }
+    if (!newMessage.trim()) return;
+    
+    try {
+      await messengerService.sendMessage({
+        room_id: room.type === 'support_chat' ? null : room.id,
+        sender_id: currentUser.id,
+        recipient_id: room.type === 'support_chat' ? 1 : null, // Assuming support agent has ID 1
+        message: newMessage,
+      });
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError('Failed to send message');
     }
   };
 
@@ -124,6 +171,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     return (
       <div className="flex items-center justify-center h-full">
         <p>Loading messages...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>
+          Refresh Page
+        </Button>
       </div>
     );
   }
