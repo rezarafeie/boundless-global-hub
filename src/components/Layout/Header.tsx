@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
-  const { isDarkMode, toggleDarkMode } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -69,7 +69,7 @@ const Header = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleDarkMode}
+            onClick={toggleTheme}
             className="rounded-full hover:bg-accent dark:hover:bg-accent/50"
             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -188,7 +188,7 @@ const Header = () => {
                     variant="outline"
                     size="lg"
                     onClick={() => {
-                      toggleDarkMode();
+                      toggleTheme();
                       setIsMenuOpen(false);
                     }}
                     className="w-full rounded-full border-border dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent"
