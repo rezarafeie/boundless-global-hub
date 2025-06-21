@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -21,6 +20,7 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
   const [users, setUsers] = useState<MessengerUser[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sessionToken, setSessionToken] = useState<string>('');
 
   // Room form state
   const [roomForm, setRoomForm] = useState({
@@ -31,19 +31,38 @@ const BorderlessHubMessengerAdmin: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchData();
+    // Get session token from localStorage or create admin session
+    const storedToken = localStorage.getItem('messenger_session_token');
+    if (storedToken) {
+      setSessionToken(storedToken);
+    } else {
+      // For admin access, we'll use a placeholder token
+      // In a real implementation, you'd have proper admin authentication
+      setSessionToken('admin-session-token');
+    }
   }, []);
+
+  useEffect(() => {
+    if (sessionToken) {
+      fetchData();
+    }
+  }, [sessionToken]);
 
   const fetchData = async () => {
     try {
       const [usersData, roomsData] = await Promise.all([
         messengerService.getApprovedUsers(),
-        messengerService.getRooms()
+        messengerService.getRooms(sessionToken)
       ]);
       setUsers(usersData);
       setRooms(roomsData);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در بارگذاری داده‌ها',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
