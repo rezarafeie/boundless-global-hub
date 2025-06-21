@@ -5,17 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Globe, Sun, Moon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/components/ui/use-toast";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const isDarkMode = theme === 'dark';
-  const toggleDarkMode = () => setTheme(isDarkMode ? 'light' : 'dark');
 
   // Use different logos for light/dark modes with proper fallbacks
   const logoSrc = isDarkMode 
