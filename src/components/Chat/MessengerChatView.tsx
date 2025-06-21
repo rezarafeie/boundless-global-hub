@@ -181,7 +181,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       console.log('Sending message with data:', messageData);
       
-      await messengerService.sendMessage(messageData, sessionToken);
+      const sentMessage = await messengerService.sendMessage(messageData, sessionToken);
+      
+      // Immediately add the message to the local state for instant feedback
+      setMessages((prevMessages) => [...prevMessages, sentMessage]);
       
       // Success feedback
       toast({
@@ -207,21 +210,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
-  const getChatHeader = () => {
+  const getChatTitle = () => {
     if (room.type === 'support_chat') {
-      return (
-        <div className="flex items-center gap-2">
-          <HeadphonesIcon className="w-4 h-4 text-green-500" />
-          <span>پشتیبانی</span>
-        </div>
-      );
+      return 'پشتیبانی';
     } else {
-      return (
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-blue-500" />
-          <span>{room.name}</span>
-        </div>
-      );
+      return room.name;
+    }
+  };
+
+  const getChatIcon = () => {
+    if (room.type === 'support_chat') {
+      return <HeadphonesIcon className="w-5 h-5 text-green-500" />;
+    } else {
+      return <Users className="w-5 h-5 text-blue-500" />;
     }
   };
 
@@ -264,40 +265,56 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
-        <div className="flex items-center justify-between">
-          <button onClick={onBack} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="font-semibold text-slate-900 dark:text-white">
-            {getChatHeader()}
+      {/* Minimal Chat Header with Title */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onBack}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {getChatIcon()}
+            <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
+              {getChatTitle()}
+            </h2>
           </div>
-          <div></div> {/* Placeholder for alignment */}
         </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-slate-500">
-              <p>هنوز پیامی ارسال نشده</p>
-              <p className="text-sm mt-2">اولین پیام را ارسال کنید! 💬</p>
+              <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">💬</span>
+              </div>
+              <p className="text-lg font-medium mb-2">هنوز پیامی ارسال نشده</p>
+              <p className="text-sm">اولین پیام را ارسال کنید!</p>
             </div>
           </div>
         ) : (
           messages.map((message) => (
             <div
               key={message.id}
-              className={`mb-2 flex flex-col ${message.sender_id === currentUser.id ? 'items-end' : 'items-start'}`}
+              className={`mb-3 flex flex-col ${message.sender_id === currentUser.id ? 'items-end' : 'items-start'}`}
             >
-              <div className={`max-w-2/3 rounded-xl px-4 py-2 ${message.sender_id === currentUser.id
-                ? 'bg-blue-100 dark:bg-blue-900 text-slate-900 dark:text-slate-50'
-                : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-50'}`}>
-                {message.message}
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {new Date(message.created_at).toLocaleTimeString()}
+              <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.sender_id === currentUser.id
+                ? 'bg-blue-500 text-white'
+                : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
+                <p className="text-sm leading-relaxed">{message.message}</p>
+                <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
+                  ? 'text-blue-100' 
+                  : 'text-slate-500 dark:text-slate-400'}`}>
+                  {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </div>
               </div>
             </div>
