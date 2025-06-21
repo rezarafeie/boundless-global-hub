@@ -17,11 +17,14 @@ export const useOnlineUsers = () => {
     channel
       .on('presence', { event: 'sync' }, () => {
         const newState = channel.presenceState();
-        const users = Object.keys(newState).map(key => ({
-          id: key,
-          name: newState[key][0]?.name || newState[key][0]?.user_name || 'کاربر ناشناس',
-          presence_ref: newState[key][0]?.presence_ref || ''
-        }));
+        const users = Object.keys(newState).map(key => {
+          const presence = newState[key][0];
+          return {
+            id: key,
+            name: presence?.display_name || presence?.user_name || presence?.name || 'کاربر ناشناس',
+            presence_ref: presence?.presence_ref || ''
+          };
+        });
         setOnlineUsers(users);
       })
       .subscribe();
