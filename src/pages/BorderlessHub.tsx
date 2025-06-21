@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,7 +172,6 @@ const BorderlessHub = () => {
                           {announcement.media_type !== 'none' && (
                             <div className="mt-2">
                               <AnnouncementMedia 
-                                title={announcement.title}
                                 mediaType={announcement.media_type} 
                                 mediaUrl={announcement.media_url} 
                                 mediaContent={announcement.media_content} 
@@ -202,12 +202,7 @@ const BorderlessHub = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <EnhancedLiveStreamCard 
-                isActive={liveSettings?.is_live || false}
-                streamCode={liveSettings?.stream_code}
-                title={liveSettings?.title}
-                viewers={liveSettings?.viewers}
-              />
+              <EnhancedLiveStreamCard settings={liveSettings} />
             </motion.div>
 
             {/* Rafiei Meet Card */}
@@ -216,12 +211,7 @@ const BorderlessHub = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <EnhancedRafieiMeetCard 
-                isActive={rafieiMeetSettings?.is_active || false}
-                meetUrl={rafieiMeetSettings?.meet_url}
-                title={rafieiMeetSettings?.title}
-                description={rafieiMeetSettings?.description}
-              />
+              <EnhancedRafieiMeetCard settings={rafieiMeetSettings} />
             </motion.div>
           </div>
 
@@ -236,29 +226,7 @@ const BorderlessHub = () => {
               🚀 دسترسی سریع
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  title: 'صفحه اصلی',
-                  description: 'بازگشت به صفحه اصلی',
-                  icon: Home,
-                  href: '/',
-                  color: 'bg-gradient-to-br from-blue-500 to-blue-600'
-                },
-                {
-                  title: 'دوره‌ها',
-                  description: 'مشاهده تمام دوره‌های آموزشی',
-                  icon: BookOpen,
-                  href: '/courses',
-                  color: 'bg-gradient-to-br from-green-500 to-green-600'
-                },
-                {
-                  title: 'آزمون‌ها',
-                  description: 'مرکز ارزیابی و آزمون‌ها',
-                  icon: ClipboardCheck,
-                  href: '/assessment',
-                  color: 'bg-gradient-to-br from-purple-500 to-purple-600'
-                }
-              ].map((item, index) => (
+              {quickAccessItems.map((item, index) => (
                 <Link key={index} to={item.href}>
                   <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border-white/20 h-full">
                     <CardContent className="p-6 text-center">
