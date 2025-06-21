@@ -25,7 +25,10 @@ import {
   Edit2,
   Trash2,
   Save,
-  Upload
+  Upload,
+  Image,
+  Music,
+  Monitor
 } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/useRealtime';
 import { useLiveSettings } from '@/hooks/useRealtime';
@@ -33,6 +36,7 @@ import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import TopicManagement from '@/components/Chat/TopicManagement';
+import UserManagement from '@/components/Admin/UserManagement';
 
 interface AnnouncementForm {
   title: string;
@@ -40,7 +44,7 @@ interface AnnouncementForm {
   summary: string;
   type: 'urgent' | 'general' | 'technical' | 'educational';
   is_pinned: boolean;
-  media_type: 'none' | 'image' | 'audio' | 'video';
+  media_type: 'none' | 'image' | 'audio' | 'video' | 'iframe';
   media_content: string;
 }
 
@@ -50,12 +54,10 @@ const BorderlessHubAdmin: React.FC = () => {
   const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
   const { toast } = useToast();
 
-  // Simple refetch by reloading (since hooks don't expose refetch)
   const refetchData = () => {
     window.location.reload();
   };
 
-  // Announcement form state
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>({
     title: '',
     full_text: '',
@@ -67,7 +69,6 @@ const BorderlessHubAdmin: React.FC = () => {
   });
   const [isSubmittingAnnouncement, setIsSubmittingAnnouncement] = useState(false);
 
-  // Live stream state
   const [liveForm, setLiveForm] = useState({
     is_live: liveSettings?.is_live || false,
     stream_code: liveSettings?.stream_code || '',
@@ -76,7 +77,6 @@ const BorderlessHubAdmin: React.FC = () => {
   });
   const [isUpdatingLive, setIsUpdatingLive] = useState(false);
 
-  // Rafiei Meet state
   const [meetForm, setMeetForm] = useState({
     is_active: rafieiMeetSettings?.is_active || false,
     meet_url: rafieiMeetSettings?.meet_url || '',
@@ -85,7 +85,6 @@ const BorderlessHubAdmin: React.FC = () => {
   });
   const [isUpdatingMeet, setIsUpdatingMeet] = useState(false);
 
-  // Update forms when data loads
   React.useEffect(() => {
     if (liveSettings) {
       setLiveForm({
@@ -118,7 +117,6 @@ const BorderlessHubAdmin: React.FC = () => {
       return;
     }
 
-    // Generate summary if empty
     const formData = {
       ...announcementForm,
       summary: announcementForm.summary || announcementForm.full_text.substring(0, 100)
@@ -265,9 +263,83 @@ const BorderlessHubAdmin: React.FC = () => {
     }
   };
 
+  const getMediaTypeIcon = (type: string) => {
+    switch (type) {
+      case 'image':
+        return <Image className="w-4 h-4" />;
+      case 'audio':
+        return <Music className="w-4 h-4" />;
+      case 'video':
+        return <Video className="w-4 h-4" />;
+      case 'iframe':
+        return <Monitor className="w-4 h-4" />;
+      default:
+        return null;
+    }
+  };
+
+  const getMediaTypeLabel = (type: string) => {
+    switch (type) {
+      case 'image':
+        return 'تصویر';
+      case 'audio':
+        return 'صدا';
+      case 'video':
+        return 'ویدیو';
+      case 'iframe':
+        return 'کد iframe';
+      default:
+        return 'بدون رسانه';
+    }
+  };
+
+  const renderMediaInput = () => {
+    switch (announcementForm.media_type) {
+      case 'image':
+        return (
+          <Input
+            value={announcementForm.media_content}
+            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
+            placeholder="لینک تصویر یا آپلود کنید..."
+            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+          />
+        );
+      case 'audio':
+        return (
+          <Input
+            value={announcementForm.media_content}
+            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
+            placeholder="لینک فایل صوتی MP3..."
+            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+          />
+        );
+      case 'video':
+        return (
+          <Input
+            value={announcememtForm.media_content}
+            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
+            placeholder="لینک ویدیو یوتیوب/آپارات یا MP4..."
+            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+          />
+        );
+      case 'iframe':
+        return (
+          <Textarea
+            value={announcementForm.media_content}
+            onChange={(e) => setAnnouncementForm({...announcementForm, media_content: e.target.value})}
+            placeholder="کد HTML یا iframe..."
+            rows={3}
+            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-black dark:to-gray-800" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-black dark:to-gray-800" dir="rtl" style={{ paddingTop: '100px' }}>
         <div className="container mx-auto px-4 py-8 space-y-8">
           
           {/* Header */}
@@ -279,7 +351,7 @@ const BorderlessHubAdmin: React.FC = () => {
               پنل مدیریت مرکز بدون مرز
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-              مدیریت اطلاعیه‌ها، پخش زنده، جلسات و تنظیمات
+              مدیریت اطلاعیه‌ها، پخش زنده، جلسات و کاربران
             </p>
           </div>
 
@@ -325,6 +397,9 @@ const BorderlessHubAdmin: React.FC = () => {
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
+            {/* User Management */}
+            <UserManagement />
+            
             {/* Topic Management */}
             <TopicManagement />
             
@@ -356,7 +431,7 @@ const BorderlessHubAdmin: React.FC = () => {
                     className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                   />
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Select
                       value={announcementForm.type}
                       onValueChange={(value: any) => setAnnouncementForm({...announcementForm, type: value})}
@@ -379,6 +454,46 @@ const BorderlessHubAdmin: React.FC = () => {
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300">سنجاق شده</span>
                     </div>
+                  </div>
+
+                  {/* Media Type Selection */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      نوع رسانه (اختیاری):
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { value: 'none', label: 'بدون رسانه', icon: null },
+                        { value: 'image', label: 'تصویر 📷', icon: <Image className="w-4 h-4" /> },
+                        { value: 'audio', label: 'صدا 🎧', icon: <Music className="w-4 h-4" /> },
+                        { value: 'video', label: 'ویدیو 🎥', icon: <Video className="w-4 h-4" /> },
+                        { value: 'iframe', label: 'کد iframe 💻', icon: <Monitor className="w-4 h-4" /> }
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setAnnouncementForm({...announcementForm, media_type: option.value as any, media_content: ''})}
+                          className={`px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
+                            announcementForm.media_type === option.value
+                              ? 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
+                              : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {option.icon}
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Media Content Input */}
+                    {announcementForm.media_type !== 'none' && (
+                      <div className="mt-3">
+                        <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
+                          محتوای رسانه ({getMediaTypeLabel(announcementForm.media_type)}):
+                        </label>
+                        {renderMediaInput()}
+                      </div>
+                    )}
                   </div>
                   
                   <Button
@@ -412,6 +527,12 @@ const BorderlessHubAdmin: React.FC = () => {
                             </Badge>
                             {announcement.is_pinned && (
                               <Pin className="w-3 h-3 text-amber-500" />
+                            )}
+                            {announcement.media_type !== 'none' && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                {getMediaTypeIcon(announcement.media_type)}
+                                <span>{getMediaTypeLabel(announcement.media_type)}</span>
+                              </div>
                             )}
                           </div>
                           <h4 className="font-medium text-gray-900 dark:text-white text-sm">
