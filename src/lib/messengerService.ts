@@ -70,6 +70,55 @@ const validateSessionToken = async (sessionToken: string): Promise<boolean> => {
   }
 };
 
+// Enhanced function to set session context with better persistence for messages
+const setSessionContextForMessage = async (sessionToken: string, retries: number = 5): Promise<void> => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Setting session context for message attempt ${attempt}/${retries}`);
+      
+      const { error } = await supabase.rpc('set_session_context', { 
+        session_token: sessionToken 
+      });
+      
+      if (error) {
+        console.error(`Session context attempt ${attempt} failed:`, error);
+        if (attempt === retries) {
+          throw new Error(`Failed to set session context after ${retries} attempts: ${error.message}`);
+        }
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 300));
+        continue;
+      }
+      
+      console.log(`Session context set successfully on attempt ${attempt}`);
+      
+      // Double-check that the context was actually set
+      try {
+        const { data: verifyData } = await supabase.rpc('is_session_valid', {
+          session_token_param: sessionToken
+        });
+        if (!verifyData) {
+          console.warn(`Session context verification failed on attempt ${attempt}`);
+          if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 300));
+            continue;
+          }
+        }
+      } catch (verifyError) {
+        console.warn(`Session context verification error on attempt ${attempt}:`, verifyError);
+      }
+      
+      return;
+    } catch (error) {
+      console.error(`Session context attempt ${attempt} error:`, error);
+      if (attempt === retries) {
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 300));
+    }
+  }
+};
+
 // Enhanced function to set session context with retry logic
 const setSessionContextWithRetry = async (sessionToken: string, retries: number = 3): Promise<void> => {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -377,15 +426,19 @@ class MessengerService {
       throw new Error('Invalid session. Please log in again.');
     }
     
-    // CRITICAL: For support messages, ALWAYS set session context with retry logic
+    // CRITICAL: For support messages, ALWAYS set session context with enhanced persistence
     if (messageData.recipient_id === 1 && !messageData.room_id) {
-      console.log('Support message detected - setting session context with retry logic');
+      console.log('Support message detected - setting session context with enhanced persistence');
       try {
-        await setSessionContextWithRetry(sessionToken, 3);
+        await setSessionContextForMessage(sessionToken, 5);
         console.log('Session context set successfully for support message');
+        
+        // Add a small delay to ensure the context is fully propagated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
       } catch (error) {
         console.error('Critical: Failed to set session context for support message:', error);
-        throw new Error('Failed to prepare support message. Please try again.');
+        throw new Error('Failed to prepare support message. Please refresh the page and try again.');
       }
     }
     
@@ -404,10 +457,18 @@ class MessengerService {
     if (error) {
       console.error('Error sending message:', error);
       
-      // Enhanced error handling for RLS violations
+      // Enhanced error handling for various scenarios
       if (error.message.includes('row-level security policy')) {
-        console.error('RLS Policy violation detected - this should not happen with our new setup');
+        console.error('RLS Policy violation detected during message send');
         throw new Error('Permission denied. Please refresh the page and try again.');
+      }
+      
+      if (error.message.includes('permission denied')) {
+        throw new Error('Access denied. Please refresh the page and log in again.');
+      }
+      
+      if (error.message.includes('violates foreign key constraint')) {
+        throw new Error('Invalid recipient or room. Please refresh the page.');
       }
       
       throw new Error(`Failed to send message: ${error.message}`);
