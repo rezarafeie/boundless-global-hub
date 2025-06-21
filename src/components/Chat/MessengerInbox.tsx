@@ -1,18 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Users, Megaphone, HeadphonesIcon } from 'lucide-react';
-
-interface ChatUser {
-  id: number;
-  name: string;
-  phone: string;
-  is_approved: boolean;
-  bedoun_marz_approved: boolean;
-  is_support_agent: boolean;
-  role: string;
-}
+import { type MessengerUser } from '@/lib/messengerService';
 
 interface ChatRoom {
   id: number;
@@ -26,7 +16,7 @@ interface ChatRoom {
 }
 
 interface MessengerInboxProps {
-  currentUser: ChatUser;
+  currentUser: MessengerUser;
   onRoomSelect: (room: ChatRoom) => void;
   selectedRoom: ChatRoom | null;
 }

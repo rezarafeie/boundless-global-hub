@@ -1,23 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import MessengerAuth from '@/components/Chat/MessengerAuth';
 import MessengerInbox from '@/components/Chat/MessengerInbox';
 import MessengerChatView from '@/components/Chat/MessengerChatView';
-import { chatUserService } from '@/lib/supabase';
+import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, ArrowRight } from 'lucide-react';
-
-interface ChatUser {
-  id: number;
-  name: string;
-  phone: string;
-  is_approved: boolean;
-  bedoun_marz_approved: boolean;
-  is_support_agent: boolean;
-  role: string;
-}
 
 interface ChatRoom {
   id: number;
@@ -33,7 +22,7 @@ interface ChatRoom {
 const BorderlessHubMessenger: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<ChatUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -47,7 +36,7 @@ const BorderlessHubMessenger: React.FC = () => {
     const token = localStorage.getItem('messenger_session_token');
     if (token) {
       try {
-        const result = await chatUserService.validateSession(token);
+        const result = await messengerService.validateSession(token);
         if (result) {
           setCurrentUser(result.user);
           setSessionToken(token);
@@ -61,7 +50,7 @@ const BorderlessHubMessenger: React.FC = () => {
     setLoading(false);
   };
 
-  const handleAuthenticated = (token: string, userName: string, user: ChatUser) => {
+  const handleAuthenticated = (token: string, userName: string, user: MessengerUser) => {
     setSessionToken(token);
     setCurrentUser(user);
     localStorage.setItem('messenger_session_token', token);
@@ -83,7 +72,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const handleLogout = () => {
     if (sessionToken) {
-      chatUserService.deactivateSession(sessionToken);
+      messengerService.deactivateSession(sessionToken);
     }
     localStorage.removeItem('messenger_session_token');
     setCurrentUser(null);

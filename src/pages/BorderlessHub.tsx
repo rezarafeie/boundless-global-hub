@@ -19,8 +19,11 @@ import {
 import ChatSection from '@/components/Chat/ChatSection';
 import HubSection from '@/components/Chat/HubSection';
 import RafieiMeetSection from '@/components/Chat/RafieiMeetSection';
+import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 
 const BorderlessHub: React.FC = () => {
+  const { settings } = useRafieiMeet();
+
   const features = [
     {
       title: 'آرشیو دوره‌ها',
@@ -125,7 +128,7 @@ const BorderlessHub: React.FC = () => {
               </Card>
 
               {/* Live Sections */}
-              <RafieiMeetSection />
+              {settings && <RafieiMeetSection settings={settings} />}
               <HubSection />
 
               {/* Quick Access Features */}
