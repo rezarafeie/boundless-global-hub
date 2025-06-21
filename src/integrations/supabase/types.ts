@@ -479,13 +479,28 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_user_from_session: {
+        Args: { session_token_param: string }
+        Returns: number
+      }
       increment_views: {
         Args: { announcement_id: number }
         Returns: undefined
       }
+      is_session_valid: {
+        Args: { session_token_param: string }
+        Returns: boolean
+      }
       set_session_context: {
         Args: { session_token: string }
         Returns: undefined
+      }
+      validate_user_session: {
+        Args: { session_token_param: string }
+        Returns: {
+          user_id: number
+          is_valid: boolean
+        }[]
       }
     }
     Enums: {
