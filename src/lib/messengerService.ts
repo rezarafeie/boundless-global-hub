@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type MessengerUser = {
@@ -293,31 +292,35 @@ class MessengerService {
   }
 
   async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
-    console.log('Fetching private messages for user:', userId);
-    
-    // Validate session first
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
-    }
-    
-    const { data, error } = await supabase
-      .from('messenger_messages')
-      .select(`
-        *,
-        sender:chat_users!sender_id(name)
-      `)
-      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-      .is('room_id', null)
-      .order('created_at', { ascending: true });
-    
-    if (error) {
+    try {
+      // Set session context for RLS
+      await supabase.rpc('set_session_context', { session_token: sessionToken });
+      
+      // Get or create support conversation first
+      const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken);
+      
+      // Get messages for this conversation
+      const messages = await supportService.getConversationMessages(conversation.id);
+      
+      // Convert to MessengerMessage format
+      return messages.map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        room_id: null,
+        message: msg.message,
+        message_type: msg.message_type || 'text',
+        media_url: msg.media_url,
+        media_content: null,
+        is_read: msg.is_read || false,
+        created_at: msg.created_at || new Date().toISOString(),
+        sender_name: msg.sender_name,
+        is_from_support: msg.is_from_support || false
+      }));
+    } catch (error) {
       console.error('Error fetching private messages:', error);
-      throw new Error(`Failed to fetch private messages: ${error.message}`);
+      throw error;
     }
-    
-    console.log('Successfully fetched private messages:', data?.length || 0);
-    return (data || []) as MessengerMessage[];
   }
 
   async sendMessage(messageData: {
