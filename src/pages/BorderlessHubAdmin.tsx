@@ -16,6 +16,7 @@ import { announcementsService, chatService, liveService } from '@/lib/supabase';
 import { rafieiMeetService } from '@/lib/rafieiMeet';
 import { useToast } from '@/hooks/use-toast';
 import UserManagement from '@/components/Admin/UserManagement';
+import TopicManagement from '@/components/Admin/TopicManagement';
 import type { AnnouncementInsert } from '@/types/supabase';
 
 const BorderlessHubAdmin = () => {
@@ -200,7 +201,7 @@ const BorderlessHubAdmin = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20">
         <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center gap-3">
@@ -219,7 +220,7 @@ const BorderlessHubAdmin = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="announcements" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 اطلاعیه‌ها
@@ -227,6 +228,10 @@ const BorderlessHubAdmin = () => {
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
                 مدیریت چت
+              </TabsTrigger>
+              <TabsTrigger value="topics" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                تاپیک‌ها
               </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -435,6 +440,10 @@ const BorderlessHubAdmin = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="topics" className="space-y-6">
+              <TopicManagement />
             </TabsContent>
 
             <TabsContent value="users" className="space-y-6">

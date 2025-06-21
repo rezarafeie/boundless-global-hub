@@ -99,19 +99,16 @@ const BorderlessHub: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-black dark:to-gray-800" dir="rtl">
-        <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 hub-page pt-20">
+        <div className="container mx-auto px-4 py-8">
           
           {/* Header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-700 to-indigo-700 rounded-full mb-6 shadow-2xl">
-              <MessageCircle className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              مرکز ارتباط بدون مرز
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
+              🌟 مرکز بدون مرز
             </h1>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              اطلاعیه‌ها، گفتگوی زنده، جلسات تصویری و پخش مستقیم - همه در یک مکان
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              مرکز اطلاع‌رسانی، پخش زنده و گفت‌وگوهای گروهی جامعه رفیعی
             </p>
           </div>
 

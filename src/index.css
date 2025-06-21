@@ -543,3 +543,59 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+/* Light Mode Title Fixes */
+.light h1,
+.light h2, 
+.light h3,
+.light h4,
+.light h5,
+.light h6,
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: #1a1a1a !important;
+}
+
+/* Hub page specific fixes for light mode */
+html:not(.dark) .hub-page h1,
+html:not(.dark) .hub-page h2,
+html:not(.dark) .hub-page h3,
+html:not(.dark) .admin-page h1,
+html:not(.dark) .admin-page h2,
+html:not(.dark) .admin-page h3 {
+  color: #1f2937 !important;
+}
+
+/* Ensure text readability in light mode */
+html:not(.dark) .text-white {
+  color: #1f2937 !important;
+}
+
+html:not(.dark) .bg-slate-900 {
+  background-color: #f8fafc !important;
+  color: #1f2937 !important;
+}
+
+/* User avatar styles */
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Ensure proper spacing for RTL layout in chat */
+.rtl .flex-row-reverse {
+  direction: rtl;
+}

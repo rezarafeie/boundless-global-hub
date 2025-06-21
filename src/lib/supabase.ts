@@ -118,6 +118,38 @@ export const chatService = {
       .eq('id', id);
     
     if (error) throw error;
+  },
+
+  async createTopic(topicData: { title: string; description: string; is_active: boolean }) {
+    const { data, error } = await supabase
+      .from('chat_topics')
+      .insert([topicData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateTopic(id: number, updates: Partial<{ title: string; description: string; is_active: boolean }>) {
+    const { data, error } = await supabase
+      .from('chat_topics')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteTopic(id: number) {
+    const { error } = await supabase
+      .from('chat_topics')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 };
 
