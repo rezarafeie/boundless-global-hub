@@ -2,40 +2,62 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, MessageCircle, Clock, Sun, Moon, Loader2, CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowRight, MessageCircle, Clock, Sun, Moon, Loader2, CheckCircle, HeadphonesIcon, Users, Star } from 'lucide-react';
 import { useChatTopics } from '@/hooks/useChatTopics';
 import { useChatMessagesByTopic } from '@/hooks/useChatMessagesByTopic';
-import { chatService, chatUserService } from '@/lib/supabase';
+import { chatService, chatUserService, chatTopicsService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import ChatAuth from '@/components/Chat/ChatAuth';
 import TopicSelector from '@/components/Chat/TopicSelector';
 import ChatTopicMessages from '@/components/Chat/ChatTopicMessages';
 import ModernChatInput from '@/components/Chat/ModernChatInput';
+import SupportChat from '@/components/Chat/SupportChat';
+import SupportAgentDashboard from '@/components/Chat/SupportAgentDashboard';
 import type { ChatTopic } from '@/types/supabase';
 
 const BorderlessHubChat: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
-  const { topics, loading: topicsLoading } = useChatTopics();
+  const [topics, setTopics] = useState<ChatTopic[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTopic, setActiveTopic] = useState<ChatTopic | null>(null);
   const { messages, loading: messagesLoading } = useChatMessagesByTopic(activeTopic?.id || null);
   
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(false);
+  const [isSupportAgent, setIsSupportAgent] = useState(false);
+  const [activeTab, setActiveTab] = useState('chat');
 
-  // Set first topic as active when topics load
+  // Load topics based on user access
   useEffect(() => {
-    if (topics.length > 0 && !activeTopic) {
-      setActiveTopic(topics[0]);
-    }
-  }, [topics, activeTopic]);
+    const loadTopics = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const userTopics = await chatTopicsService.getAllForUser(currentUser.bedoun_marz_approved);
+        setTopics(userTopics);
+        
+        if (userTopics.length > 0 && !activeTopic) {
+          setActiveTopic(userTopics[0]);
+        }
+      } catch (error) {
+        console.error('Error loading topics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTopics();
+  }, [currentUser, activeTopic]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -54,9 +76,20 @@ const BorderlessHubChat: React.FC = () => {
         setSessionToken(token);
         setUserName(result.user.name);
         setCurrentUserId(result.user.id);
+        setCurrentUser(result.user);
         setIsAuthenticated(true);
         setIsApproved(true);
+        setIsSupportAgent(result.session.is_support_agent);
         setShowAuthForm(false);
+        
+        // Set default tab based on user type
+        if (result.session.is_support_agent) {
+          setActiveTab('support-agent');
+        } else if (result.user.bedoun_marz_approved) {
+          setActiveTab('chat');
+        } else {
+          setActiveTab('chat');
+        }
       } else {
         localStorage.removeItem('chat_session_token');
         setShowAuthForm(true);
@@ -73,6 +106,9 @@ const BorderlessHubChat: React.FC = () => {
     setIsAuthenticated(true);
     setIsApproved(true);
     setShowAuthForm(false);
+    
+    // Re-validate to get full user info
+    validateSession(token);
   };
 
   const handleSendMessage = async (messageText: string) => {
@@ -115,8 +151,10 @@ const BorderlessHubChat: React.FC = () => {
     setSessionToken(null);
     setUserName('');
     setCurrentUserId(null);
+    setCurrentUser(null);
     setIsAuthenticated(false);
     setIsApproved(false);
+    setIsSupportAgent(false);
     setShowAuthForm(true);
   };
 
@@ -226,7 +264,9 @@ const BorderlessHubChat: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
-          <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">💬 گفت‌وگوهای بدون مرز</h1>
+          <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
+            {isSupportAgent ? '🎧 پنل پشتیبانی' : '💬 گفت‌وگوهای بدون مرز'}
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -240,7 +280,11 @@ const BorderlessHubChat: React.FC = () => {
           </Button>
           
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">{userName}</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
+              {isSupportAgent && <HeadphonesIcon className="w-4 h-4 text-green-500" />}
+              {currentUser?.bedoun_marz_approved && <Star className="w-4 h-4 text-amber-500" />}
+              {userName}
+            </p>
           </div>
           
           <Button 
@@ -254,43 +298,75 @@ const BorderlessHubChat: React.FC = () => {
         </div>
       </div>
 
-      {/* Topic Selector */}
-      {!topicsLoading && topics.length > 0 && (
-        <TopicSelector
-          topics={topics}
-          activeTopic={activeTopic}
-          onTopicChange={setActiveTopic}
-          isMobile={window.innerWidth < 768}
-        />
-      )}
-      
-      {/* Messages Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {activeTopic ? (
-          <ChatTopicMessages
-            messages={messages}
-            loading={messagesLoading}
-            currentUserId={currentUserId}
-          />
+        {isSupportAgent ? (
+          // Support Agent Dashboard
+          <SupportAgentDashboard currentUserId={currentUserId!} userName={userName} />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800">
-            <div className="text-center p-8">
-              <MessageCircle className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-300 text-lg font-medium mb-2">
-                {topicsLoading ? 'در حال بارگذاری موضوعات...' : 'موضوعی برای گفتگو یافت نشد'}
-              </p>
-            </div>
-          </div>
+          // Regular User Interface
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2 mx-4 mt-4">
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                گفتگوی گروهی
+              </TabsTrigger>
+              {currentUser?.bedoun_marz_approved && (
+                <TabsTrigger value="support" className="flex items-center gap-2">
+                  <HeadphonesIcon className="w-4 h-4" />
+                  پشتیبانی
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            <TabsContent value="chat" className="flex-1 flex flex-col overflow-hidden mt-0">
+              {/* Topic Selector */}
+              {!loading && topics.length > 0 && (
+                <TopicSelector
+                  topics={topics}
+                  activeTopic={activeTopic}
+                  onTopicChange={setActiveTopic}
+                  isMobile={window.innerWidth < 768}
+                />
+              )}
+              
+              {/* Messages Area */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {activeTopic ? (
+                  <ChatTopicMessages
+                    messages={messages}
+                    loading={messagesLoading}
+                    currentUserId={currentUserId}
+                  />
+                ) : (
+                  <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800">
+                    <div className="text-center p-8">
+                      <MessageCircle className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+                      <p className="text-slate-600 dark:text-slate-300 text-lg font-medium mb-2">
+                        {loading ? 'در حال بارگذاری موضوعات...' : 'موضوعی برای گفتگو یافت نشد'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Chat Input - Fixed at bottom */}
+              {activeTopic && (
+                <ModernChatInput 
+                  onSendMessage={handleSendMessage}
+                  disabled={messagesLoading}
+                />
+              )}
+            </TabsContent>
+
+            {currentUser?.bedoun_marz_approved && (
+              <TabsContent value="support" className="flex-1 flex flex-col overflow-hidden mt-0">
+                <SupportChat currentUserId={currentUserId!} userName={userName} />
+              </TabsContent>
+            )}
+          </Tabs>
         )}
       </div>
-      
-      {/* Chat Input - Fixed at bottom */}
-      {activeTopic && (
-        <ModernChatInput 
-          onSendMessage={handleSendMessage}
-          disabled={messagesLoading}
-        />
-      )}
     </div>
   );
 };
