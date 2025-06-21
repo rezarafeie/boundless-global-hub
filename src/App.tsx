@@ -1,14 +1,15 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { ThemeProvider } from './components/ui/theme-provider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { LanguageProvider } from './contexts/LanguageContext';
-import IndexPage from './pages';
-import ContactPage from './pages/ContactPage';
-import AboutUsPage from './pages/AboutUsPage';
+import IndexPage from './pages/Index';
+import ContactPage from './pages/Contact';
+import AboutUsPage from './pages/About';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import SupportPage from './pages/SupportPage';
+import SupportPage from './pages/Support';
 import AdminDashboard from './pages/AdminDashboard';
 import { Toaster } from '@/components/ui/toaster';
 import BorderlessHub from './pages/BorderlessHub';

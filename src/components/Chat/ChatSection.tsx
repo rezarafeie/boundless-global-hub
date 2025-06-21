@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -120,7 +119,7 @@ const ChatSection: React.FC = () => {
   if (showAuthForm) {
     return (
       <div className={containerClass}>
-        <ChatAuth onAuthenticated={handleAuthenticated} />
+        <ChatAuth onAuthSuccess={handleAuthenticated} />
       </div>
     );
   }
