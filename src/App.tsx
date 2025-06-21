@@ -45,6 +45,7 @@ import BorderlessHub from "./pages/BorderlessHub";
 import BorderlessHubAdmin from "./pages/BorderlessHubAdmin";
 import BorderlessHubChat from "./pages/BorderlessHubChat";
 import BorderlessHubMessenger from "./pages/BorderlessHubMessenger";
+import BorderlessHubMessengerAdmin from "./pages/BorderlessHubMessengerAdmin";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ function App() {
               <Route path="/hub/chat" element={<BorderlessHubChat />} />
               <Route path="/borderless-hub/admin" element={<BorderlessHubAdmin />} />
               <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
+              <Route path="/hub/admin/messenger" element={<BorderlessHubMessengerAdmin />} />
               <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
               
               {/* Assessment Test Routes - Enhanced with new test routes */}

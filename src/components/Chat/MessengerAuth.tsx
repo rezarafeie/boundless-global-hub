@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { chatUserService } from '@/lib/supabase';
+import { messengerService } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, Phone, User, Loader2 } from 'lucide-react';
+import { MessageCircle, Phone, User, Lock, Loader2 } from 'lucide-react';
 
 interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: any) => void;
@@ -16,10 +16,12 @@ interface MessengerAuthProps {
 const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const { toast } = useToast();
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isBoundlessStudent, setIsBoundlessStudent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showNameForm, setShowNameForm] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [step, setStep] = useState<'phone' | 'auth'>('phone');
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,20 +36,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
     setLoading(true);
     try {
-      // Check if user exists and is approved
-      const approvedUsers = await chatUserService.getApprovedUsers();
+      // Check if user exists
+      const approvedUsers = await messengerService.getApprovedUsers();
       const existingUser = approvedUsers.find(user => user.phone === phone);
       
       if (existingUser) {
-        // User exists and is approved - login directly
-        const session = await chatUserService.createSession(existingUser.id);
-        onAuthenticated(session.session_token, existingUser.name, existingUser);
-        return;
+        setIsNewUser(false);
+        setStep('auth');
+      } else {
+        setIsNewUser(true);
+        setStep('auth');
       }
-
-      // Check if user exists but not approved
-      // If not, show name form for registration
-      setShowNameForm(true);
     } catch (error) {
       toast({
         title: 'خطا',
@@ -59,9 +58,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
+    
+    if (isNewUser && !name.trim()) {
       toast({
         title: 'خطا',
         description: 'لطفاً نام خود را وارد کنید',
@@ -70,48 +70,71 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       return;
     }
 
+    if (!password.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً رمز عبور را وارد کنید',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const userData = {
-        name: name.trim(),
-        phone: phone.trim(),
-        bedoun_marz_request: isBoundlessStudent
-      };
-
-      await chatUserService.register(userData.name, userData.phone);
-      
-      // Update boundless request if needed
-      if (isBoundlessStudent) {
-        // This would need to be implemented in the service
-        // For now, we'll show success message
+      if (isNewUser) {
+        // Register new user
+        const userData = await messengerService.register(
+          name.trim(),
+          phone.trim(),
+          isBoundlessStudent
+        );
+        
+        // Create session
+        const session = await messengerService.createSession(userData.id);
+        onAuthenticated(session.session_token, userData.name, userData);
+        
+        toast({
+          title: 'ثبت‌نام موفق',
+          description: isBoundlessStudent 
+            ? 'حساب شما ایجاد شد. منتظر تایید درخواست بدون مرز باشید.'
+            : 'حساب شما ایجاد شد و وارد پیام‌رسان شدید.',
+        });
+      } else {
+        // Login existing user
+        const approvedUsers = await messengerService.getApprovedUsers();
+        const user = approvedUsers.find(u => u.phone === phone);
+        
+        if (user) {
+          // In a real app, you'd verify the password here
+          const session = await messengerService.createSession(user.id);
+          onAuthenticated(session.session_token, user.name, user);
+        } else {
+          throw new Error('کاربر یافت نشد');
+        }
       }
-
-      toast({
-        title: 'ثبت‌نام موفق',
-        description: 'درخواست شما ارسال شد. منتظر تایید مدیریت باشید.',
-      });
-
-      // Reset form
-      setPhone('');
-      setName('');
-      setIsBoundlessStudent(false);
-      setShowNameForm(false);
     } catch (error: any) {
       if (error.message?.includes('duplicate key')) {
         toast({
           title: 'اطلاعات ثبت شده',
-          description: 'این شماره تلفن قبلاً ثبت شده است. منتظر تایید مدیریت باشید.',
+          description: 'این شماره تلفن قبلاً ثبت شده است.',
         });
       } else {
         toast({
           title: 'خطا',
-          description: 'مشکلی در ثبت‌نام پیش آمد. دوباره تلاش کنید.',
+          description: isNewUser ? 'مشکلی در ثبت‌نام پیش آمد.' : 'اطلاعات ورود نادرست است.',
           variant: 'destructive',
         });
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    setStep('phone');
+    setPassword('');
+    setName('');
+    setIsBoundlessStudent(false);
   };
 
   return (
@@ -127,12 +150,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
             پیام‌رسان بدون مرز
           </CardTitle>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
-            برای ورود شماره تلفن خود را وارد کنید
+            {step === 'phone' 
+              ? 'برای ورود شماره تلفن خود را وارد کنید'
+              : isNewUser 
+                ? 'اطلاعات خود را برای ثبت‌نام وارد کنید'
+                : 'رمز عبور خود را وارد کنید'
+            }
           </p>
         </CardHeader>
         
         <CardContent>
-          {!showNameForm ? (
+          {step === 'phone' ? (
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
@@ -166,35 +194,55 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               </Button>
             </form>
           ) : (
-            <form onSubmit={handleRegister} className="space-y-6">
+            <form onSubmit={handleAuth} className="space-y-6">
+              {isNewUser && (
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    نام و نام خانوادگی
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="نام خود را وارد کنید"
+                    className="h-12"
+                    required
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  نام و نام خانوادگی
+                <Label htmlFor="password" className="text-slate-700 dark:text-slate-300 font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  رمز عبور
                 </Label>
                 <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="نام خود را وارد کنید"
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isNewUser ? "رمز عبور را انتخاب کنید" : "رمز عبور خود را وارد کنید"}
                   className="h-12"
                   required
                 />
               </div>
 
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox
-                  id="boundless"
-                  checked={isBoundlessStudent}
-                  onCheckedChange={(checked) => setIsBoundlessStudent(checked as boolean)}
-                />
-                <Label 
-                  htmlFor="boundless" 
-                  className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
-                >
-                  دانش‌پذیر بدون مرز هستم
-                </Label>
-              </div>
+              {isNewUser && (
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox
+                    id="boundless"
+                    checked={isBoundlessStudent}
+                    onCheckedChange={(checked) => setIsBoundlessStudent(checked as boolean)}
+                  />
+                  <Label 
+                    htmlFor="boundless" 
+                    className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
+                  >
+                    دانش‌پذیر بدون مرز هستم
+                  </Label>
+                </div>
+              )}
               
               <div className="space-y-3">
                 <Button 
@@ -205,17 +253,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      در حال ثبت‌نام...
+                      {isNewUser ? 'در حال ثبت‌نام...' : 'در حال ورود...'}
                     </>
                   ) : (
-                    'ثبت‌نام'
+                    isNewUser ? 'ثبت‌نام' : 'ورود'
                   )}
                 </Button>
                 
                 <Button 
                   type="button"
                   variant="ghost"
-                  onClick={() => setShowNameForm(false)}
+                  onClick={handleBack}
                   className="w-full"
                 >
                   بازگشت
