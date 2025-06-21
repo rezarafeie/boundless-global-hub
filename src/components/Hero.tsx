@@ -87,7 +87,7 @@ const Hero = () => {
                   className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
                 >
                   <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {language === 'fa' ? 'آکادمی رفیعی' : translations.hero?.title || translations.heroTitle || 'Rafiei Academy'}
+                    {language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy'}
                   </span>
                 </motion.h1>
                 
@@ -107,7 +107,7 @@ const Hero = () => {
                 transition={{ duration: 0.6, delay: 0.6 }}
                 className="text-lg md:text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0"
               >
-                {language === 'fa' ? 'با هوش مصنوعی زندگی‌تان را تغیی­ر دهید' : translations.hero?.subtitle || translations.heroSubtitle || 'Transform your life with AI'}
+                {language === 'fa' ? 'با هوش مصنوعی زندگی‌تان را تغییر دهید' : 'Transform your life with AI'}
               </motion.p>
 
               {/* CTA Buttons */}
@@ -122,7 +122,7 @@ const Hero = () => {
                     size="lg" 
                     className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                   >
-                    {language === 'fa' ? 'مشاهده دوره‌ها' : translations.hero?.cta?.primary || translations.heroCtaMain || 'View Courses'}
+                    {language === 'fa' ? 'مشاهده دوره‌ها' : 'View Courses'}
                     <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
@@ -134,7 +134,7 @@ const Hero = () => {
                     className="group bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-white/20 hover:bg-white/90 dark:hover:bg-slate-800/90 w-full sm:w-auto"
                   >
                     <Play className="ml-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                    {language === 'fa' ? 'شروع رایگان' : translations.hero?.cta?.secondary || translations.heroCtaSecondary || 'Start Free'}
+                    {language === 'fa' ? 'شروع رایگان' : 'Start Free'}
                   </Button>
                 </Link>
               </motion.div>
