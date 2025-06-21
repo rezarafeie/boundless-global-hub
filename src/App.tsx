@@ -62,7 +62,7 @@ function App() {
               <Router>
                 <Routes>
                   {/* Persian (Default) Routes */}
-                  <Route path="/" element={<Index />} />
+                  <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/courses" element={<CourseArchive />} />

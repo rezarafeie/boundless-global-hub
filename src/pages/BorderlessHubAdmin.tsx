@@ -37,6 +37,7 @@ import TopicManagement from '@/components/Chat/TopicManagement';
 interface AnnouncementForm {
   title: string;
   full_text: string;
+  summary: string;
   type: 'urgent' | 'general' | 'technical' | 'educational';
   is_pinned: boolean;
   media_type: 'none' | 'image' | 'audio' | 'video';
@@ -44,15 +45,21 @@ interface AnnouncementForm {
 }
 
 const BorderlessHubAdmin: React.FC = () => {
-  const { announcements, loading: announcementsLoading, refetch: refetchAnnouncements } = useAnnouncements();
-  const { liveSettings, loading: liveLoading, refetch: refetchLive } = useLiveSettings();
-  const { settings: rafieiMeetSettings, loading: rafieiMeetLoading, refetch: refetchMeet } = useRafieiMeet();
+  const { announcements, loading: announcementsLoading } = useAnnouncements();
+  const { liveSettings, loading: liveLoading } = useLiveSettings();
+  const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
   const { toast } = useToast();
+
+  // Simple refetch by reloading (since hooks don't expose refetch)
+  const refetchData = () => {
+    window.location.reload();
+  };
 
   // Announcement form state
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>({
     title: '',
     full_text: '',
+    summary: '',
     type: 'general',
     is_pinned: false,
     media_type: 'none',
@@ -111,11 +118,17 @@ const BorderlessHubAdmin: React.FC = () => {
       return;
     }
 
+    // Generate summary if empty
+    const formData = {
+      ...announcementForm,
+      summary: announcementForm.summary || announcementForm.full_text.substring(0, 100)
+    };
+
     setIsSubmittingAnnouncement(true);
     try {
       const { error } = await supabase
         .from('announcements')
-        .insert([announcementForm]);
+        .insert([formData]);
 
       if (error) throw error;
 
@@ -127,13 +140,14 @@ const BorderlessHubAdmin: React.FC = () => {
       setAnnouncementForm({
         title: '',
         full_text: '',
+        summary: '',
         type: 'general',
         is_pinned: false,
         media_type: 'none',
         media_content: ''
       });
       
-      refetchAnnouncements();
+      refetchData();
     } catch (error) {
       toast({
         title: "خطا",
@@ -159,7 +173,7 @@ const BorderlessHubAdmin: React.FC = () => {
         description: "تنظیمات پخش زنده به‌روزرسانی شد"
       });
       
-      refetchLive();
+      refetchData();
     } catch (error) {
       toast({
         title: "خطا",
@@ -185,7 +199,7 @@ const BorderlessHubAdmin: React.FC = () => {
         description: "تنظیمات جلسه تصویری به‌روزرسانی شد"
       });
       
-      refetchMeet();
+      refetchData();
     } catch (error) {
       toast({
         title: "خطا",
@@ -197,7 +211,7 @@ const BorderlessHubAdmin: React.FC = () => {
     }
   };
 
-  const handleDeleteAnnouncement = async (id: string) => {
+  const handleDeleteAnnouncement = async (id: number) => {
     try {
       const { error } = await supabase
         .from('announcements')
@@ -211,7 +225,7 @@ const BorderlessHubAdmin: React.FC = () => {
         description: "اطلاعیه حذف شد"
       });
       
-      refetchAnnouncements();
+      refetchData();
     } catch (error) {
       toast({
         title: "خطا",

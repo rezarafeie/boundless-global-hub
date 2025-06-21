@@ -110,9 +110,9 @@ const TopicManagement: React.FC = () => {
   };
 
   return (
-    <Card className="bg-gray-900/50 border-gray-700" dir="rtl">
+    <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700" dir="rtl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-white">
+        <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
           <MessageCircle className="w-6 h-6 text-blue-400" />
           💬 مدیریت تاپیک‌ها
         </CardTitle>
@@ -124,7 +124,7 @@ const TopicManagement: React.FC = () => {
             value={newTopicName}
             onChange={(e) => setNewTopicName(e.target.value)}
             placeholder="نام تاپیک جدید..."
-            className="flex-1 bg-gray-800 border-gray-600 text-white"
+            className="flex-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
             onKeyPress={(e) => e.key === 'Enter' && handleAddTopic()}
           />
           <Button 
@@ -144,9 +144,9 @@ const TopicManagement: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {topics.map((topic) => (
-              <div key={topic.id} className="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
+              <div key={topic.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-blue-400 border-blue-400">
+                  <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400">
                     #{topic.title}
                   </Badge>
                 </div>
@@ -157,7 +157,7 @@ const TopicManagement: React.FC = () => {
                     size="sm"
                     variant="ghost"
                     onClick={() => setEditingTopic({ id: topic.id, title: topic.title })}
-                    className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
+                    className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-500 dark:hover:text-yellow-300 hover:bg-yellow-600/10 dark:hover:bg-yellow-400/10"
                   >
                     <Edit2 className="w-4 h-4" />
                   </Button>
@@ -168,20 +168,20 @@ const TopicManagement: React.FC = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                        className="text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-600/10 dark:hover:bg-red-400/10"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent dir="rtl" className="bg-gray-900 border-gray-700">
+                    <AlertDialogContent dir="rtl" className="bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700">
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="text-white">حذف تاپیک</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-400">
+                        <AlertDialogTitle className="text-gray-900 dark:text-white">حذف تاپیک</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
                           آیا مطمئن هستید که می‌خواهید تاپیک "{topic.title}" را حذف کنید؟ این عمل قابل بازگشت نیست.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-gray-700 text-white border-gray-600">
+                        <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600">
                           لغو
                         </AlertDialogCancel>
                         <AlertDialogAction
@@ -198,7 +198,7 @@ const TopicManagement: React.FC = () => {
             ))}
             
             {topics.length === 0 && (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>هنوز تاپیکی اضافه نشده است</p>
               </div>
@@ -209,20 +209,20 @@ const TopicManagement: React.FC = () => {
         {/* Edit Topic Modal */}
         {editingTopic && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md" dir="rtl">
-              <h3 className="text-lg font-semibold text-white mb-4">ویرایش تاپیک</h3>
+            <div className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg p-6 w-full max-w-md" dir="rtl">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">ویرایش تاپیک</h3>
               <Input
                 value={editingTopic.title}
                 onChange={(e) => setEditingTopic({ ...editingTopic, title: e.target.value })}
                 placeholder="نام تاپیک..."
-                className="mb-4 bg-gray-800 border-gray-600 text-white"
+                className="mb-4 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                 onKeyPress={(e) => e.key === 'Enter' && handleEditTopic()}
               />
               <div className="flex gap-3 justify-end">
                 <Button
                   variant="ghost"
                   onClick={() => setEditingTopic(null)}
-                  className="text-gray-400"
+                  className="text-gray-600 dark:text-gray-400"
                 >
                   لغو
                 </Button>

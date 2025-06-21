@@ -19,7 +19,7 @@ export const useOnlineUsers = () => {
         const newState = channel.presenceState();
         const users = Object.keys(newState).map(key => ({
           id: key,
-          name: newState[key][0]?.name || 'کاربر ناشناس',
+          name: newState[key][0]?.name || newState[key][0]?.user_name || 'کاربر ناشناس',
           presence_ref: newState[key][0]?.presence_ref || ''
         }));
         setOnlineUsers(users);

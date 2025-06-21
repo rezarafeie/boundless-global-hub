@@ -19,7 +19,14 @@ export const useChatMessages = (topicId: string) => {
           .order('created_at', { ascending: true });
 
         if (error) throw error;
-        setMessages(data || []);
+        
+        // Ensure proper typing by casting sender_role to the expected union type
+        const typedMessages: ChatMessage[] = (data || []).map(msg => ({
+          ...msg,
+          sender_role: (msg.sender_role as 'admin' | 'moderator' | 'member') || 'member'
+        }));
+        
+        setMessages(typedMessages);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'خطا در بارگیری پیام‌ها');
       } finally {
