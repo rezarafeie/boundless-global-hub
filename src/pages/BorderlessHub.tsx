@@ -203,7 +203,12 @@ const BorderlessHub = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              {liveSettings && <EnhancedLiveStreamCard {...liveSettings} />}
+              {liveSettings && (
+                <EnhancedLiveStreamCard 
+                  {...liveSettings} 
+                  isActive={liveSettings.is_live}
+                />
+              )}
             </motion.div>
 
             {/* Rafiei Meet Card */}
@@ -212,7 +217,12 @@ const BorderlessHub = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              {rafieiMeetSettings && <EnhancedRafieiMeetCard {...rafieiMeetSettings} />}
+              {rafieiMeetSettings && (
+                <EnhancedRafieiMeetCard 
+                  {...rafieiMeetSettings} 
+                  isActive={rafieiMeetSettings.is_active}
+                />
+              )}
             </motion.div>
           </div>
 

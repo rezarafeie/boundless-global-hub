@@ -31,8 +31,27 @@ export type SupportMessage = {
 };
 
 class SupportService {
+  // Helper method to set session context
+  private async setSessionContext(sessionToken: string): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('set_session_context', { session_token: sessionToken });
+      if (error) {
+        console.error('Failed to set session context:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error setting session context:', error);
+      throw error;
+    }
+  }
+
   // Get all support conversations for admin view
   async getSupportConversations(): Promise<SupportConversation[]> {
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (sessionToken) {
+      await this.setSessionContext(sessionToken);
+    }
+
     const { data, error } = await supabase
       .from('support_conversations')
       .select(`
@@ -56,6 +75,11 @@ class SupportService {
 
   // Get conversations assigned to a specific agent
   async getAgentConversations(agentId: number): Promise<SupportConversation[]> {
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (sessionToken) {
+      await this.setSessionContext(sessionToken);
+    }
+
     const { data, error } = await supabase
       .from('support_conversations')
       .select(`
@@ -78,6 +102,11 @@ class SupportService {
 
   // Assign conversation to an agent
   async assignConversation(conversationId: number, agentId: number): Promise<void> {
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (sessionToken) {
+      await this.setSessionContext(sessionToken);
+    }
+
     const { error } = await supabase
       .from('support_conversations')
       .update({ 
@@ -92,6 +121,11 @@ class SupportService {
 
   // Update conversation status
   async updateConversationStatus(conversationId: number, status: 'open' | 'assigned' | 'closed'): Promise<void> {
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (sessionToken) {
+      await this.setSessionContext(sessionToken);
+    }
+
     const { error } = await supabase
       .from('support_conversations')
       .update({ 
@@ -105,6 +139,11 @@ class SupportService {
 
   // Get messages for a conversation
   async getConversationMessages(conversationId: number): Promise<SupportMessage[]> {
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (sessionToken) {
+      await this.setSessionContext(sessionToken);
+    }
+
     const { data, error } = await supabase
       .from('messenger_messages')
       .select(`
@@ -126,6 +165,11 @@ class SupportService {
 
   // Send support message
   async sendSupportMessage(conversationId: number, senderId: number, message: string, recipientId?: number): Promise<SupportMessage> {
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (sessionToken) {
+      await this.setSessionContext(sessionToken);
+    }
+
     const { data, error } = await supabase
       .from('messenger_messages')
       .insert([{
@@ -160,10 +204,12 @@ class SupportService {
     } as SupportMessage;
   }
 
-  // Create or get support conversation for user - This is the main function causing issues
+  // Create or get support conversation for user
   async getOrCreateUserConversation(userId: number, sessionToken: string): Promise<SupportConversation> {
     // Set session context for RLS
-    await supabase.rpc('set_session_context', { session_token: sessionToken });
+    await this.setSessionContext(sessionToken);
+    
+    console.log('Setting session context and looking for existing conversation for user:', userId);
     
     // Check if conversation already exists
     const { data: existing, error: fetchError } = await supabase
@@ -179,6 +225,7 @@ class SupportService {
       .maybeSingle();
 
     if (existing && !fetchError) {
+      console.log('Found existing conversation:', existing.id);
       return {
         ...existing,
         user_name: existing.chat_users?.name,
@@ -188,13 +235,16 @@ class SupportService {
       } as SupportConversation;
     }
 
-    // Create new conversation - this should work with the updated RLS policy
+    console.log('Creating new support conversation for user:', userId);
+    
+    // Create new conversation
     const { data, error } = await supabase
       .from('support_conversations')
       .insert([{ 
         user_id: userId,
         status: 'open',
-        priority: 'normal'
+        priority: 'normal',
+        last_message_at: new Date().toISOString()
       }])
       .select(`
         *,
@@ -206,6 +256,8 @@ class SupportService {
       console.error('Error creating support conversation:', error);
       throw error;
     }
+
+    console.log('Successfully created conversation:', data.id);
 
     return {
       ...data,
