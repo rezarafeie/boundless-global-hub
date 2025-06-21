@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { supportService } from './supportService';
 
@@ -68,6 +67,39 @@ const validateSessionToken = async (sessionToken: string): Promise<boolean> => {
   } catch (error) {
     console.error('Failed to validate session:', error);
     return false;
+  }
+};
+
+// Enhanced function to set session context with retry logic
+const setSessionContextWithRetry = async (sessionToken: string, retries: number = 3): Promise<void> => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Setting session context attempt ${attempt}/${retries}`);
+      
+      const { error } = await supabase.rpc('set_session_context', { 
+        session_token: sessionToken 
+      });
+      
+      if (error) {
+        console.error(`Session context attempt ${attempt} failed:`, error);
+        if (attempt === retries) {
+          throw new Error(`Failed to set session context after ${retries} attempts: ${error.message}`);
+        }
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+        continue;
+      }
+      
+      console.log(`Session context set successfully on attempt ${attempt}`);
+      return;
+    } catch (error) {
+      console.error(`Session context attempt ${attempt} error:`, error);
+      if (attempt === retries) {
+        throw error;
+      }
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+    }
   }
 };
 
@@ -345,18 +377,15 @@ class MessengerService {
       throw new Error('Invalid session. Please log in again.');
     }
     
-    // Enhanced session context setup for support messages
+    // CRITICAL: For support messages, ALWAYS set session context with retry logic
     if (messageData.recipient_id === 1 && !messageData.room_id) {
-      console.log('Setting up session context for support message');
+      console.log('Support message detected - setting session context with retry logic');
       try {
-        const { error } = await supabase.rpc('set_session_context', { 
-          session_token: sessionToken 
-        });
-        if (error) {
-          console.error('Failed to set session context:', error);
-        }
+        await setSessionContextWithRetry(sessionToken, 3);
+        console.log('Session context set successfully for support message');
       } catch (error) {
-        console.error('Error setting session context:', error);
+        console.error('Critical: Failed to set session context for support message:', error);
+        throw new Error('Failed to prepare support message. Please try again.');
       }
     }
     
@@ -374,6 +403,13 @@ class MessengerService {
     
     if (error) {
       console.error('Error sending message:', error);
+      
+      // Enhanced error handling for RLS violations
+      if (error.message.includes('row-level security policy')) {
+        console.error('RLS Policy violation detected - this should not happen with our new setup');
+        throw new Error('Permission denied. Please refresh the page and try again.');
+      }
+      
       throw new Error(`Failed to send message: ${error.message}`);
     }
     

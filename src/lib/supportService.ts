@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type SupportConversation = {
@@ -31,24 +30,35 @@ export type SupportMessage = {
 };
 
 class SupportService {
-  // Helper method to set session context - enhanced with better error handling
-  private async setSessionContext(sessionToken: string): Promise<void> {
-    try {
-      console.log('Setting session context for token:', sessionToken.substring(0, 8) + '...');
-      
-      const { error } = await supabase.rpc('set_session_context', { 
-        session_token: sessionToken 
-      });
-      
-      if (error) {
-        console.error('Failed to set session context:', error);
-        throw new Error(`Failed to set session context: ${error.message}`);
+  // Enhanced helper method to set session context with better error handling and retries
+  private async setSessionContext(sessionToken: string, retries: number = 3): Promise<void> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`Setting session context for support service - attempt ${attempt}/${retries}`);
+        
+        const { error } = await supabase.rpc('set_session_context', { 
+          session_token: sessionToken 
+        });
+        
+        if (error) {
+          console.error(`Session context attempt ${attempt} failed:`, error);
+          if (attempt === retries) {
+            throw new Error(`Failed to set session context after ${retries} attempts: ${error.message}`);
+          }
+          // Wait before retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+          continue;
+        }
+        
+        console.log(`Session context set successfully on attempt ${attempt}`);
+        return;
+      } catch (error) {
+        console.error(`Session context attempt ${attempt} error:`, error);
+        if (attempt === retries) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
       }
-      
-      console.log('Session context set successfully');
-    } catch (error) {
-      console.error('Error setting session context:', error);
-      throw error;
     }
   }
 
@@ -59,7 +69,7 @@ class SupportService {
     }
     
     try {
-      await this.setSessionContext(sessionToken);
+      await this.setSessionContext(sessionToken, 3);
     } catch (error) {
       console.error('Failed to ensure session context:', error);
       throw new Error('Authentication failed. Please log in again.');
@@ -225,7 +235,7 @@ class SupportService {
     } as SupportMessage;
   }
 
-  // Create or get support conversation for user - ENHANCED VERSION
+  // Create or get support conversation for user - ENHANCED VERSION with better session handling
   async getOrCreateUserConversation(userId: number, sessionToken: string): Promise<SupportConversation> {
     console.log('Getting or creating conversation for user:', userId);
     
@@ -233,8 +243,10 @@ class SupportService {
       throw new Error('Session token is required');
     }
     
-    // ALWAYS set session context first - this is critical for RLS
+    // CRITICAL: ALWAYS set session context first with retry logic
+    console.log('Setting session context before conversation operations...');
     await this.ensureSessionContext(sessionToken);
+    console.log('Session context set successfully');
     
     try {
       // First, try to find existing conversation
@@ -269,7 +281,10 @@ class SupportService {
 
       console.log('No existing conversation found, creating new one...');
       
-      // Create new conversation - the new permissive policy should allow this
+      // Ensure session context is still set before creating new conversation
+      await this.ensureSessionContext(sessionToken);
+      
+      // Create new conversation - the permissive policy should allow this
       const { data: newConversation, error: createError } = await supabase
         .from('support_conversations')
         .insert([{ 
@@ -286,6 +301,13 @@ class SupportService {
 
       if (createError) {
         console.error('Error creating support conversation:', createError);
+        
+        // Enhanced error handling for RLS violations
+        if (createError.message.includes('row-level security policy')) {
+          console.error('RLS Policy violation during conversation creation - this should not happen');
+          throw new Error('Permission denied while creating conversation. Please refresh and try again.');
+        }
+        
         throw createError;
       }
 
@@ -301,6 +323,17 @@ class SupportService {
 
     } catch (error) {
       console.error('Error in getOrCreateUserConversation:', error);
+      
+      // Provide user-friendly error messages
+      if (error instanceof Error) {
+        if (error.message.includes('authentication') || error.message.includes('session')) {
+          throw new Error('Session expired. Please refresh the page and log in again.');
+        }
+        if (error.message.includes('permission') || error.message.includes('security')) {
+          throw new Error('Access denied. Please refresh the page and try again.');
+        }
+      }
+      
       throw error;
     }
   }
