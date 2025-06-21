@@ -116,11 +116,11 @@ const BorderlessHub: React.FC = () => {
             </section>
           )}
 
-          {/* Chat Access Section */}
+          {/* Messenger Access Section */}
           <section className="mb-16">
             <div className="max-w-4xl mx-auto">
               <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-slate-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-center">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center">
                   <div className="flex justify-center mb-4">
                     <div className="relative">
                       <MessageCircle className="w-16 h-16 text-white" />
@@ -128,23 +128,23 @@ const BorderlessHub: React.FC = () => {
                     </div>
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-2">
-                    💬 گفت‌وگوهای بدون مرز
+                    📩 پیام‌رسان بدون مرز
                   </h2>
-                  <p className="text-green-100 text-lg">
-                    به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید
+                  <p className="text-blue-100 text-lg">
+                    برای ارتباط با پشتیبان‌ها و شرکت در گفت‌وگوهای اختصاصی وارد پیام‌رسان شوید
                   </p>
                 </div>
                 <CardContent className="text-center p-8">
                   <p className="text-slate-600 dark:text-slate-300 mb-6 text-lg">
-                    در موضوعات مختلف شرکت کنید و با دیگر اعضا در ارتباط باشید
+                    پشتیبانی اختصاصی، گفتگوهای گروهی و دسترسی به محتوای ویژه
                   </p>
-                  <Link to="/hub/chat">
+                  <Link to="/hub/messenger">
                     <Button 
                       size="lg"
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-green-500/25 transition-all duration-300 rounded-full"
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-blue-500/25 transition-all duration-300 rounded-full"
                     >
                       <MessageCircle className="w-6 h-6 ml-2" />
-                      ورود به گفت‌وگوها
+                      ورود به پیام‌رسان
                       <ArrowLeft className="w-5 h-5 mr-2" />
                     </Button>
                   </Link>
