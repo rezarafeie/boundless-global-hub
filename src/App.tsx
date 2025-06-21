@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -45,6 +44,7 @@ import SolidarityLanding from "@/pages/Solidarity/SolidarityLanding";
 import BorderlessHub from "./pages/BorderlessHub";
 import BorderlessHubAdmin from "./pages/BorderlessHubAdmin";
 import BorderlessHubChat from "./pages/BorderlessHubChat";
+import BorderlessHubMessenger from "./pages/BorderlessHubMessenger";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +72,7 @@ function App() {
               <Route path="/hub/chat" element={<BorderlessHubChat />} />
               <Route path="/borderless-hub/admin" element={<BorderlessHubAdmin />} />
               <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
+              <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
               
               {/* Assessment Test Routes - Enhanced with new test routes */}
               <Route path="/assessment/:slug" element={<TestLanding />} />

@@ -99,6 +99,39 @@ export type Database = {
           },
         ]
       }
+      chat_rooms: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          is_active: boolean | null
+          is_boundless_only: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean | null
+          is_boundless_only?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean | null
+          is_boundless_only?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_topics: {
         Row: {
           created_at: string | null
@@ -128,27 +161,42 @@ export type Database = {
       }
       chat_users: {
         Row: {
+          bedoun_marz_approved: boolean | null
+          bedoun_marz_request: boolean | null
           created_at: string | null
           id: number
           is_approved: boolean | null
+          is_support_agent: boolean | null
+          last_seen: string | null
           name: string
           phone: string
+          role: string | null
           updated_at: string | null
         }
         Insert: {
+          bedoun_marz_approved?: boolean | null
+          bedoun_marz_request?: boolean | null
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
+          is_support_agent?: boolean | null
+          last_seen?: string | null
           name: string
           phone: string
+          role?: string | null
           updated_at?: string | null
         }
         Update: {
+          bedoun_marz_approved?: boolean | null
+          bedoun_marz_request?: boolean | null
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
+          is_support_agent?: boolean | null
+          last_seen?: string | null
           name?: string
           phone?: string
+          role?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -180,6 +228,67 @@ export type Database = {
         }
         Relationships: []
       }
+      messenger_messages: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_read: boolean | null
+          media_content: string | null
+          media_url: string | null
+          message: string
+          message_type: string | null
+          recipient_id: number | null
+          room_id: number | null
+          sender_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          media_content?: string | null
+          media_url?: string | null
+          message: string
+          message_type?: string | null
+          recipient_id?: number | null
+          room_id?: number | null
+          sender_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          media_content?: string | null
+          media_url?: string | null
+          message?: string
+          message_type?: string | null
+          recipient_id?: number | null
+          room_id?: number | null
+          sender_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messenger_messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messenger_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messenger_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rafiei_meet_settings: {
         Row: {
           description: string | null
@@ -207,11 +316,128 @@ export type Database = {
         }
         Relationships: []
       }
+      room_memberships: {
+        Row: {
+          id: number
+          joined_at: string | null
+          last_read_at: string | null
+          room_id: number | null
+          user_id: number | null
+        }
+        Insert: {
+          id?: number
+          joined_at?: string | null
+          last_read_at?: string | null
+          room_id?: number | null
+          user_id?: number | null
+        }
+        Update: {
+          id?: number
+          joined_at?: string | null
+          last_read_at?: string | null
+          room_id?: number | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_memberships_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_agents: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          phone: string
+          user_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          phone: string
+          user_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          phone?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_from_support: boolean | null
+          message: string
+          read_at: string | null
+          sender_id: number | null
+          user_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_from_support?: boolean | null
+          message: string
+          read_at?: string | null
+          sender_id?: number | null
+          user_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_from_support?: boolean | null
+          message?: string
+          read_at?: string | null
+          sender_id?: number | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_sessions: {
         Row: {
           created_at: string | null
           id: string
           is_active: boolean | null
+          is_support_agent: boolean | null
           last_activity: string | null
           session_token: string
           user_id: number | null
@@ -220,6 +446,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_support_agent?: boolean | null
           last_activity?: string | null
           session_token: string
           user_id?: number | null
@@ -228,6 +455,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_support_agent?: boolean | null
           last_activity?: string | null
           session_token?: string
           user_id?: number | null
