@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -34,12 +35,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     fetchMessages();
 
     const channel = supabase
-      .channel(`room_${room.id}`)
+      .channel(`room_messages_${room.id}_${Date.now()}`) // Add timestamp to ensure unique channel
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
         (payload) => {
-          if (payload.new.room_id === room.id) {
+          if (payload.new.room_id === room.id || 
+              (room.type === 'support_chat' && 
+               (payload.new.sender_id === currentUser.id || payload.new.recipient_id === currentUser.id))) {
             setMessages((prevMessages) => [...prevMessages, payload.new as MessengerMessage]);
           }
         }
@@ -49,7 +52,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room.id]);
+  }, [room.id, currentUser.id]); // Add dependencies
 
   useEffect(() => {
     // Scroll to bottom when messages change

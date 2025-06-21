@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     
     // Set up real-time subscription for rooms
     const channel = supabase
-      .channel('messenger_rooms')
+      .channel('messenger_rooms_inbox')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'chat_rooms' },
         () => fetchRooms()
@@ -44,7 +45,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUser]);
+  }, [currentUser.id]); // Add currentUser.id as dependency
 
   const fetchRooms = async () => {
     try {
