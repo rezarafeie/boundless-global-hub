@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Send, Users, HeadphonesIcon, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, Users, HeadphonesIcon, AlertCircle, RefreshCw } from 'lucide-react';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 import ModernChatInput from './ModernChatInput';
@@ -31,6 +31,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
@@ -53,8 +54,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setError(null);
       const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) {
-        throw new Error('No session token found');
+        throw new Error('No session token found. Please log in again.');
       }
+
+      console.log(`Fetching messages for room: ${room.name} (${room.type})`);
 
       let fetchedMessages: MessengerMessage[] = [];
       if (room.type === 'support_chat') {
@@ -62,11 +65,23 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       } else {
         fetchedMessages = await messengerService.getRoomMessages(room.id, sessionToken);
       }
+      
       setMessages(fetchedMessages);
-      console.log(`Loaded ${fetchedMessages.length} messages for room ${room.name}`);
-    } catch (error) {
+      console.log(`Successfully loaded ${fetchedMessages.length} messages`);
+      
+      // Reset retry count on successful fetch
+      setRetryCount(0);
+    } catch (error: any) {
       console.error('Error fetching messages:', error);
-      setError('خطا در بارگذاری پیام‌ها. لطفاً دوباره تلاش کنید.');
+      const errorMessage = error.message || 'خطا در بارگذاری پیام‌ها. لطفاً دوباره تلاش کنید.';
+      setError(errorMessage);
+      
+      // Show toast for user feedback
+      toast({
+        title: 'خطا در بارگذاری پیام‌ها',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -85,6 +100,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         // Create unique channel name with timestamp to avoid conflicts
         const channelName = `messages_${room.type}_${room.id}_${currentUser.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
+        console.log('Setting up realtime subscription:', channelName);
         channelRef.current = supabase.channel(channelName);
         
         channelRef.current
@@ -93,6 +109,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
             (payload) => {
               try {
+                console.log('New message received:', payload);
                 const newMessage = payload.new as MessengerMessage;
                 if (room.type === 'support_chat') {
                   // For support chat, show messages where user is sender or recipient
@@ -111,18 +128,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             }
           )
           .subscribe((status) => {
+            console.log('Subscription status:', status);
             if (status === 'SUBSCRIBED') {
               isSubscribedRef.current = true;
               console.log('Successfully subscribed to channel:', channelName);
             } else if (status === 'CHANNEL_ERROR') {
               console.error('Channel subscription error');
-              setError('خطا در اتصال. لطفاً صفحه را رفرش کنید.');
+              toast({
+                title: 'خطا در اتصال',
+                description: 'خطا در اتصال به‌روزرسانی زنده. پیام‌های جدید ممکن است با تاخیر نمایش داده شوند.',
+                variant: 'destructive',
+              });
             }
           });
 
       } catch (error) {
         console.error('Error setting up messages and subscription:', error);
-        setError('خطا در بارگذاری پیام‌ها. لطفاً دوباره تلاش کنید.');
       } finally {
         setLoading(false);
       }
@@ -147,13 +168,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     try {
       const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) {
-        throw new Error('No session token found');
+        throw new Error('No session token found. Please log in again.');
       }
 
       const messageData = {
         room_id: room.type === 'support_chat' ? undefined : room.id,
         sender_id: currentUser.id,
-        recipient_id: room.type === 'support_chat' ? 1 : undefined, // Assuming support agent has ID 1
+        recipient_id: room.type === 'support_chat' ? 1 : undefined, // Support agent ID
         message: messageText,
         message_type: 'text'
       };
@@ -171,13 +192,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     } catch (error: any) {
       console.error('Error sending message:', error);
       
-      // Show user-friendly error message
-      const errorMessage = error?.message?.includes('policy') 
-        ? 'خطا در ارسال پیام. لطفاً دوباره تلاش کنید.'
-        : 'ارسال پیام با مشکل مواجه شد.';
+      // Show detailed error message
+      const errorMessage = error?.message || 'ارسال پیام با مشکل مواجه شد.';
       
       toast({
-        title: 'خطا در ارسال',
+        title: 'خطا در ارسال پیام',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -207,16 +226,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
     setLoading(true);
     fetchMessages().finally(() => setLoading(false));
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex flex-col items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p>در حال بارگذاری پیام‌ها...</p>
+          <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پیام‌ها...</p>
         </div>
       </div>
     );
@@ -227,9 +247,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       <div className="flex flex-col items-center justify-center h-full p-4">
         <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
         <p className="text-red-500 mb-4 text-center">{error}</p>
-        <Button onClick={handleRetry} variant="outline">
-          تلاش مجدد
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={handleRetry} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            تلاش مجدد
+          </Button>
+          {retryCount > 2 && (
+            <p className="text-xs text-slate-500 text-center">
+              اگر مشکل ادامه دارد، لطفاً از حساب خود خارج شده و دوباره وارد شوید
+            </p>
+          )}
+        </div>
       </div>
     );
   }

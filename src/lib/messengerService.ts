@@ -48,17 +48,22 @@ export type UserSession = {
   created_at: string;
 };
 
-// Helper function to set session context for RLS
-const setSessionContext = async (sessionToken: string) => {
+// Helper function to set session context with better error handling
+const setSessionContext = async (sessionToken: string): Promise<boolean> => {
   try {
+    console.log('Setting session context for token:', sessionToken.substring(0, 8) + '...');
     const { error } = await supabase.rpc('set_session_context', {
       session_token: sessionToken
     });
     if (error) {
-      console.warn('Could not set session context:', error);
+      console.error('Session context error:', error);
+      return false;
     }
+    console.log('Session context set successfully');
+    return true;
   } catch (error) {
-    console.warn('Error setting session context:', error);
+    console.error('Failed to set session context:', error);
+    return false;
   }
 };
 
@@ -104,8 +109,11 @@ export const messengerService = {
   },
 
   async validateSession(sessionToken: string): Promise<{ user: MessengerUser; session: UserSession } | null> {
-    // Set session context for RLS
-    await setSessionContext(sessionToken);
+    // Set session context first
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      console.warn('Failed to set session context, but continuing...');
+    }
     
     const { data: sessionData, error: sessionError } = await supabase
       .from('user_sessions')
@@ -117,7 +125,10 @@ export const messengerService = {
       .eq('is_active', true)
       .single();
     
-    if (sessionError || !sessionData) return null;
+    if (sessionError || !sessionData) {
+      console.error('Session validation failed:', sessionError);
+      return null;
+    }
     
     // Update last activity
     await supabase
@@ -142,8 +153,13 @@ export const messengerService = {
 
   // Chat rooms management
   async getRooms(sessionToken: string): Promise<ChatRoom[]> {
-    // Set session context for RLS
-    await setSessionContext(sessionToken);
+    console.log('Fetching rooms with session token:', sessionToken.substring(0, 8) + '...');
+    
+    // Set session context before querying
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      console.warn('Session context not set, rooms may not load properly');
+    }
     
     const { data, error } = await supabase
       .from('chat_rooms')
@@ -153,14 +169,21 @@ export const messengerService = {
     
     if (error) {
       console.error('Error fetching rooms:', error);
-      throw error;
+      throw new Error(`Failed to fetch rooms: ${error.message}`);
     }
+    
+    console.log('Successfully fetched rooms:', data?.length || 0);
     return (data || []) as ChatRoom[];
   },
 
   async getRoomMessages(roomId: number, sessionToken: string): Promise<MessengerMessage[]> {
-    // Set session context for RLS
-    await setSessionContext(sessionToken);
+    console.log('Fetching messages for room:', roomId);
+    
+    // Set session context before querying
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      console.warn('Session context not set, messages may not load properly');
+    }
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -173,14 +196,21 @@ export const messengerService = {
     
     if (error) {
       console.error('Error fetching room messages:', error);
-      throw error;
+      throw new Error(`Failed to fetch messages: ${error.message}`);
     }
+    
+    console.log('Successfully fetched messages:', data?.length || 0);
     return (data || []) as MessengerMessage[];
   },
 
   async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
-    // Set session context for RLS
-    await setSessionContext(sessionToken);
+    console.log('Fetching private messages for user:', userId);
+    
+    // Set session context before querying
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      console.warn('Session context not set, private messages may not load properly');
+    }
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -194,8 +224,10 @@ export const messengerService = {
     
     if (error) {
       console.error('Error fetching private messages:', error);
-      throw error;
+      throw new Error(`Failed to fetch private messages: ${error.message}`);
     }
+    
+    console.log('Successfully fetched private messages:', data?.length || 0);
     return (data || []) as MessengerMessage[];
   },
 
@@ -206,8 +238,13 @@ export const messengerService = {
     message: string;
     message_type?: string;
   }, sessionToken: string): Promise<MessengerMessage> {
-    // Set session context for RLS
-    await setSessionContext(sessionToken);
+    console.log('Sending message:', messageData);
+    
+    // Set session context before sending
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      throw new Error('Failed to authenticate session. Please try logging in again.');
+    }
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -223,15 +260,22 @@ export const messengerService = {
     
     if (error) {
       console.error('Error sending message:', error);
-      throw error;
+      throw new Error(`Failed to send message: ${error.message}`);
     }
+    
+    console.log('Message sent successfully:', data);
     return data as MessengerMessage;
   },
 
   // Support agent functions
   async getSupportConversations(supportAgentId: number, sessionToken: string): Promise<any[]> {
-    // Set session context for RLS
-    await setSessionContext(sessionToken);
+    console.log('Fetching support conversations for agent:', supportAgentId);
+    
+    // Set session context before querying
+    const contextSet = await setSessionContext(sessionToken);
+    if (!contextSet) {
+      console.warn('Session context not set, support conversations may not load properly');
+    }
     
     const { data, error } = await supabase
       .from('messenger_messages')
@@ -246,8 +290,9 @@ export const messengerService = {
     
     if (error) {
       console.error('Error fetching support conversations:', error);
-      throw error;
+      throw new Error(`Failed to fetch support conversations: ${error.message}`);
     }
+    
     return data || [];
   }
 };

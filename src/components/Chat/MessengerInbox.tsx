@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw } from 'lucide-react';
+import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw, AlertCircle } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { Button } from '@/components/ui/button';
 
@@ -37,9 +37,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       setError(null);
       const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) {
-        throw new Error('No session token found');
+        throw new Error('No session token found. Please log in again.');
       }
 
+      console.log('Fetching rooms for user:', currentUser.name);
       const roomsData = await messengerService.getRooms(sessionToken);
       
       // Add support chat room for all users
@@ -51,11 +52,17 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         is_boundless_only: false
       };
 
-      setRooms([...roomsData, supportRoom]);
-      console.log('Loaded rooms:', roomsData.length + 1);
-    } catch (error) {
+      const allRooms = [...roomsData, supportRoom];
+      setRooms(allRooms);
+      
+      console.log('Successfully loaded rooms:', allRooms.length);
+      
+      // Reset retry count on successful fetch
+      setRetryCount(0);
+    } catch (error: any) {
       console.error('Error fetching rooms:', error);
-      setError('خطا در بارگذاری گفتگوها. لطفاً دوباره تلاش کنید.');
+      const errorMessage = error.message || 'خطا در بارگذاری گفتگوها. لطفاً دوباره تلاش کنید.';
+      setError(errorMessage);
       setRooms([]);
     } finally {
       setLoading(false);
@@ -94,6 +101,9 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     if (room.type === 'announcement_channel') {
       return <Badge variant="outline" className="text-xs">کانال</Badge>;
     }
+    if (room.type === 'support_chat') {
+      return <Badge variant="default" className="text-xs bg-green-500">پشتیبانی</Badge>;
+    }
     return null;
   };
 
@@ -112,16 +122,19 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   if (error) {
     return (
       <div className="p-4 text-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
         <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={handleRetry} variant="outline" size="sm">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          تلاش مجدد
-        </Button>
-        {retryCount > 2 && (
-          <p className="text-xs text-slate-500 mt-2">
-            اگر مشکل ادامه دارد، لطفاً صفحه را رفرش کنید
-          </p>
-        )}
+        <div className="space-y-2">
+          <Button onClick={handleRetry} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            تلاش مجدد
+          </Button>
+          {retryCount > 2 && (
+            <p className="text-xs text-slate-500 mt-2">
+              اگر مشکل ادامه دارد، لطفاً از حساب خود خارج شده و دوباره وارد شوید
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -130,12 +143,19 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-          گفتگوها
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {rooms.length} گفتگو موجود
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              گفتگوها
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {rooms.length} گفتگو موجود
+            </p>
+          </div>
+          <Button onClick={handleRetry} variant="ghost" size="sm">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Rooms List */}
@@ -143,10 +163,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         {rooms.length === 0 ? (
           <div className="p-8 text-center">
             <MessageCircle className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-500 dark:text-slate-400">
+            <p className="text-slate-500 dark:text-slate-400 mb-4">
               هیچ گفتگویی موجود نیست
             </p>
-            <Button onClick={handleRetry} variant="ghost" size="sm" className="mt-2">
+            <Button onClick={handleRetry} variant="ghost" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               بارگذاری مجدد
             </Button>
