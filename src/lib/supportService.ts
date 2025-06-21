@@ -3,13 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type SupportConversation = {
   id: number;
-  user_id: number;
+  user_id: number | null;
   agent_id: number | null;
-  status: 'open' | 'assigned' | 'closed';
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  created_at: string;
-  updated_at: string;
-  last_message_at: string;
+  status: string | null;
+  priority: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  last_message_at: string | null;
   user_name?: string;
   user_phone?: string;
   agent_name?: string;
@@ -18,14 +18,14 @@ export type SupportConversation = {
 
 export type SupportMessage = {
   id: number;
-  conversation_id: number;
-  sender_id: number;
+  conversation_id: number | null;
+  sender_id: number | null;
   recipient_id: number | null;
   message: string;
-  message_type: 'text' | 'image' | 'file';
+  message_type: string | null;
   media_url: string | null;
-  is_read: boolean;
-  created_at: string;
+  is_read: boolean | null;
+  created_at: string | null;
   sender_name?: string;
   is_from_support?: boolean;
 };
@@ -49,7 +49,7 @@ class SupportService {
       user_name: conv.chat_users?.name,
       user_phone: conv.chat_users?.phone,
       agent_name: conv.support_agent?.name
-    }));
+    })) as SupportConversation[];
   }
 
   // Get conversations assigned to a specific agent
@@ -69,7 +69,7 @@ class SupportService {
       ...conv,
       user_name: conv.chat_users?.name,
       user_phone: conv.chat_users?.phone
-    }));
+    })) as SupportConversation[];
   }
 
   // Assign conversation to an agent
@@ -116,7 +116,7 @@ class SupportService {
       ...msg,
       sender_name: msg.sender?.name,
       is_from_support: msg.sender?.is_support_agent || false
-    }));
+    })) as SupportMessage[];
   }
 
   // Send support message
@@ -151,7 +151,7 @@ class SupportService {
       ...data,
       sender_name: data.sender?.name,
       is_from_support: data.sender?.is_support_agent || false
-    };
+    } as SupportMessage;
   }
 
   // Create or get support conversation for user
@@ -172,7 +172,7 @@ class SupportService {
         ...existing,
         user_name: existing.chat_users?.name,
         user_phone: existing.chat_users?.phone
-      };
+      } as SupportConversation;
     }
 
     // Create new conversation
@@ -191,7 +191,7 @@ class SupportService {
       ...data,
       user_name: data.chat_users?.name,
       user_phone: data.chat_users?.phone
-    };
+    } as SupportConversation;
   }
 }
 

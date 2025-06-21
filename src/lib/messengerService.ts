@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export type MessengerUser = {
@@ -416,4 +417,3 @@ class MessengerService {
 }
 
 export const messengerService = new MessengerService();
-export type { MessengerUser, ChatRoom };
