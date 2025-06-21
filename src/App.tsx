@@ -112,11 +112,8 @@ function App() {
                     description="دوره جامع و رایگان آموزش متاورس"
                     benefitOne="آموزش کامل و رایگان"
                     benefitTwo="دسترسی آسان و سریع"
-                    benefitThree="محتوای به‌روز و کاربردی"
-                    instructorName="استاد رفیعی"
-                    instructorImage="/lovable-uploads/instructor-avatar.jpg"
-                    courseImage="/lovable-uploads/metaverse-course.jpg"
-                    price="رایگان"
+                    iconType="book"
+                    iframeUrl="https://example.com/course-iframe"
                   />
                 } />
                 <Route path="/course/smart-pack" element={<SmartPackLanding />} />
