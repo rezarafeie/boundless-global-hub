@@ -24,10 +24,6 @@ const TestCard: React.FC<TestCardProps> = ({
 }) => {
   // Get icon based on test category
   const getTestIcon = () => {
-    if (!category) {
-      return <Brain size={28} className="text-primary" />;
-    }
-    
     if (category.includes("شخصیت") || category.includes("Personality")) {
       return <Brain size={28} className="text-primary" />;
     } else if (category.includes("هوش") || category.includes("Intelligence")) {

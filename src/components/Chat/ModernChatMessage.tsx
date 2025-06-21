@@ -6,79 +6,75 @@ import type { ChatMessage } from '@/types/supabase';
 
 interface ModernChatMessageProps {
   message: ChatMessage;
-  isOwn?: boolean;
+  isOwnMessage?: boolean;
 }
 
-const ModernChatMessage: React.FC<ModernChatMessageProps> = ({ message, isOwn = false }) => {
-  const getRoleBadgeColor = (role: string) => {
+const ModernChatMessage: React.FC<ModernChatMessageProps> = ({ 
+  message, 
+  isOwnMessage = false 
+}) => {
+  const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin':
-        return 'bg-red-500 hover:bg-red-600';
-      case 'moderator':
-        return 'bg-blue-500 hover:bg-blue-600';
-      default:
-        return 'bg-slate-500 hover:bg-slate-600';
+      case 'admin': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'moderator': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
     }
   };
 
   const getRoleText = (role: string) => {
     switch (role) {
-      case 'admin':
-        return 'مدیر';
-      case 'moderator':
-        return 'ناظر';
-      default:
-        return 'عضو';
+      case 'admin': return 'مدیر';
+      case 'moderator': return 'مدیر بحث';
+      default: return 'عضو';
     }
   };
 
   return (
-    <div className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'} group`} dir="rtl">
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-          {message.sender_name?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-      </div>
-
-      {/* Message Content */}
-      <div className={`flex-1 max-w-xl ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
-        {/* Header */}
-        <div className={`flex items-center gap-2 mb-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-          <span className="font-medium text-slate-900 dark:text-white text-sm">
-            {message.sender_name || 'کاربر ناشناس'}
-          </span>
-          <Badge 
-            className={`text-xs px-2 py-0.5 text-white ${getRoleBadgeColor(message.sender_role)}`}
-          >
-            {getRoleText(message.sender_role)}
-          </Badge>
-          {message.is_pinned && (
-            <Pin className="w-3 h-3 text-amber-500" />
-          )}
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </span>
-        </div>
-
-        {/* Message Bubble */}
-        <div 
-          className={`px-4 py-2 rounded-2xl max-w-full break-words message-bubble ${
-            isOwn
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
+    <div className={`flex mb-4 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-[70%] sm:max-w-[60%] ${isOwnMessage ? 'order-2' : ''}`}>
+        <div
+          className={`rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
+            isOwnMessage
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-br-md'
+              : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
           }`}
-          style={{ 
-            textAlign: 'right',
-            direction: 'rtl'
-          }}
         >
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">
+          {/* Header */}
+          {!isOwnMessage && (
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
+                {message.sender_name}
+              </span>
+              <Badge className={`${getRoleColor(message.sender_role)} text-xs px-2 py-0.5 border`}>
+                {getRoleText(message.sender_role)}
+              </Badge>
+              {message.is_pinned && (
+                <Pin className="w-3 h-3 text-amber-500" />
+              )}
+            </div>
+          )}
+          
+          {/* Message content */}
+          <p className={`text-sm leading-relaxed ${
+            isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+          }`}>
             {message.message}
           </p>
+          
+          {/* Timestamp */}
+          <div className={`flex items-center justify-end mt-2 text-xs ${
+            isOwnMessage ? 'text-amber-100' : 'text-slate-500 dark:text-slate-400'
+          }`}>
+            {message.is_pinned && isOwnMessage && (
+              <Pin className="w-3 h-3 mr-1" />
+            )}
+            <span>
+              {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </span>
+          </div>
         </div>
       </div>
     </div>

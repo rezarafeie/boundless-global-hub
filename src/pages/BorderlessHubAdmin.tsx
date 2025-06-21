@@ -16,7 +16,6 @@ import { announcementsService, chatService, liveService } from '@/lib/supabase';
 import { rafieiMeetService } from '@/lib/rafieiMeet';
 import { useToast } from '@/hooks/use-toast';
 import UserManagement from '@/components/Admin/UserManagement';
-import TopicManagement from '@/components/Chat/TopicManagement';
 import type { AnnouncementInsert } from '@/types/supabase';
 
 const BorderlessHubAdmin = () => {
@@ -220,14 +219,10 @@ const BorderlessHubAdmin = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="announcements" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 اطلاعیه‌ها
-              </TabsTrigger>
-              <TabsTrigger value="topics" className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                مدیریت تاپیک‌ها
               </TabsTrigger>
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
@@ -385,10 +380,6 @@ const BorderlessHubAdmin = () => {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="topics" className="space-y-6">
-              <TopicManagement />
             </TabsContent>
 
             <TabsContent value="chat" className="space-y-6">
