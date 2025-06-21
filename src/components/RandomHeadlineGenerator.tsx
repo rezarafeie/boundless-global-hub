@@ -132,10 +132,16 @@ const RandomHeadlineGenerator = () => {
     setCurrentHeadline(headlines[randomIndex]);
   }, []);
 
-  return {
-    title: currentHeadline.title,
-    subtitle: currentHeadline.subtitle
-  };
+  return (
+    <div className="text-center">
+      <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mb-2">
+        {currentHeadline.title}
+      </h2>
+      <p className="text-lg text-slate-600 dark:text-slate-300">
+        {currentHeadline.subtitle}
+      </p>
+    </div>
+  );
 };
 
 export default RandomHeadlineGenerator;

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -102,7 +103,17 @@ function App() {
                 <Route path="/courses/instagram" element={<InstagramLanding />} />
                 <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
                 <Route path="/courses/boundless" element={<BoundlessLanding />} />
-                <Route path="/courses/free-course" element={<FreeCourseLanding />} />
+                <Route path="/courses/free-course" element={
+                  <FreeCourseLanding 
+                    title="Free Course"
+                    englishTitle="Free Course"
+                    description="Start your learning journey with our free course"
+                    benefitOne="Basic concepts"
+                    benefitTwo="Practical exercises"
+                    benefitThree="Community access"
+                    outcome="You'll gain foundational knowledge"
+                  />
+                } />
                 <Route path="/courses/smart-pack" element={<SmartPackLanding />} />
                 <Route path="/courses/servit" element={<ServitLanding />} />
 

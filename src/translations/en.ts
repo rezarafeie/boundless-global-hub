@@ -18,6 +18,14 @@ const enTranslations = {
   tagline: "Comprehensive training and tools for better living with artificial intelligence",
   
   // Hero Section
+  hero: {
+    title: "Transform Your Life with AI",
+    subtitle: "Comprehensive training and tools for better living with artificial intelligence",
+    cta: {
+      primary: "Get Smart Pack",
+      secondary: "Start Learning"
+    }
+  },
   heroTitle: "Transform Your Life with AI",
   heroSubtitle: "Comprehensive training and tools for better living with artificial intelligence",
   heroCtaMain: "Get Smart Pack",
