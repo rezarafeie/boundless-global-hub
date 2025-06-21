@@ -1,227 +1,267 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  MessageCircle, 
-  Users, 
-  Calendar,
-  BookOpen,
-  TrendingUp,
-  Globe,
-  ArrowLeft,
-  Zap,
-  Bell
-} from 'lucide-react';
-import ChatSection from '@/components/Chat/ChatSection';
-import HubSection from '@/components/Chat/HubSection';
-import RafieiMeetSection from '@/components/Chat/RafieiMeetSection';
+import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings } from 'lucide-react';
+import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
-import { useAnnouncements } from '@/hooks/useRealtime';
+import { Link } from 'react-router-dom';
+import AnnouncementMedia from '@/components/Chat/AnnouncementMedia';
+import EnhancedLiveStreamCard from '@/components/Chat/EnhancedLiveStreamCard';
+import EnhancedRafieiMeetCard from '@/components/Chat/EnhancedRafieiMeetCard';
+import { motion } from 'framer-motion';
 
-const BorderlessHub: React.FC = () => {
-  const { settings } = useRafieiMeet();
-  const { announcements } = useAnnouncements();
+const BorderlessHub = () => {
+  const { announcements, loading: announcementsLoading } = useAnnouncements();
+  const { liveSettings } = useLiveSettings();
+  const { settings: rafieiMeetSettings } = useRafieiMeet();
+  const [sessionToken, setSessionToken] = useState<string>('');
 
-  const quickAccessFeatures = [
+  useEffect(() => {
+    const storedToken = localStorage.getItem('messenger_session_token');
+    if (storedToken) {
+      setSessionToken(storedToken);
+    }
+  }, []);
+
+  const handleGoHome = () => {
+    window.location.href = '/';
+  };
+
+  const quickAccessItems = [
     {
-      title: 'آرشیو دوره‌ها',
-      description: 'دسترسی به تمام دوره‌های آموزشی',
+      title: 'صفحه اصلی',
+      description: 'بازگشت به صفحه اصلی',
+      icon: Home,
+      href: '/',
+      color: 'bg-gradient-to-br from-blue-500 to-blue-600'
+    },
+    {
+      title: 'دوره‌ها',
+      description: 'مشاهده تمام دوره‌های آموزشی',
       icon: BookOpen,
       href: '/courses',
-      color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+      color: 'bg-gradient-to-br from-green-500 to-green-600'
     },
     {
-      title: 'مرکز ارزیابی',
-      description: 'تست‌های شخصیت‌شناسی و ارزیابی',
-      icon: TrendingUp,
-      href: '/assessment-center',
-      color: 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-    },
-    {
-      title: 'وبسایت اصلی',
-      description: 'بازگشت به صفحه اصلی',
-      icon: Globe,
-      href: '/',
-      color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+      title: 'آزمون‌ها',
+      description: 'مرکز ارزیابی و آزمون‌ها',
+      icon: ClipboardCheck,
+      href: '/assessment',
+      color: 'bg-gradient-to-br from-purple-500 to-purple-600'
     }
   ];
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Hero Section with Glows */}
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 pt-20 overflow-hidden">
+        {/* Background Glows */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-blue-300/10 to-purple-400/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative z-10 container mx-auto px-4 py-8">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Zap className="w-8 h-8 text-white" />
-              </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+                🌟 هاب بدون مرز
+              </h1>
+              <p className="text-lg text-slate-600 dark:text-slate-300">
+                مرکز ارتباطات، اطلاعیه‌ها و جلسات تصویری
+              </p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
-              هاب بدون مرز
-            </h1>
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              مرکز فعالیت‌های تعاملی، گفتگوها و ابزارهای آموزشی
-            </p>
-          </div>
+          </motion.div>
 
-          {/* Live Sessions - Only show if active */}
-          {settings?.is_active && (
-            <div className="mb-8">
-              <RafieiMeetSection settings={settings} />
-            </div>
-          )}
-
-          {/* Main Content */}
-          <div className="space-y-8">
-            {/* Boundless Messenger CTA */}
-            <Card className="bg-white dark:bg-slate-800 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-1">
-                <div className="bg-white dark:bg-slate-800 rounded-lg">
-                  <CardHeader className="pb-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
-                          <MessageCircle className="w-8 h-8 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-2xl text-slate-900 dark:text-white mb-2">
-                            پیام‌رسان بدون مرز
-                          </CardTitle>
-                          <p className="text-slate-600 dark:text-slate-400">
-                            ارتباط مستقیم با جامعه و پشتیبانی
-                          </p>
-                        </div>
+          {/* Main Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* Messenger Card */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <Link to="/hub/messenger">
+                <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 h-full">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                        <MessageCircle className="w-6 h-6" />
                       </div>
-                      <div className="hidden md:flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          <Users className="w-3 h-3 mr-1" />
-                          گفتگوی گروهی
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          <MessageCircle className="w-3 h-3 mr-1" />
-                          پشتیبانی آنلاین
-                        </Badge>
+                      <div>
+                        <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
+                          💬 پیام‌رسان
+                        </CardTitle>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          گفتگو و ارتباط با دیگران
+                        </p>
                       </div>
                     </div>
                   </CardHeader>
-                  
-                  <CardContent className="pt-0">
-                    <div className="space-y-6">
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                          <h4 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                            <Users className="w-5 h-5 text-blue-500" />
-                            گفتگوهای گروهی
-                          </h4>
-                          <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
-                            <li className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              گفتگوی عمومی برای همه کا‍ربران
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                              گروه اختصاصی دانش‌پذیران بدون مرز
-                            </li>
-                          </ul>
-                        </div>
-                        
-                        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4">
-                          <h4 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                            <MessageCircle className="w-5 h-5 text-green-500" />
-                            پشتیبانی خصوصی
-                          </h4>
-                          <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
-                            <li className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              چت مستقیم با تیم پشتیبانی
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                              پاسخ سریع به سوالات شما
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                      
-                      <Link to="/hub/messenger" className="block">
-                        <Button className="w-full h-14 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-lg font-medium rounded-2xl shadow-lg hover:shadow-xl transition-all">
-                          ورود به پیام‌رسان
-                          <ArrowLeft className="w-5 h-5 mr-3" />
-                        </Button>
-                      </Link>
+                  <CardContent>
+                    <p className="text-slate-600 dark:text-slate-300 mb-4">
+                      به گفتگوهای گروهی بپیوندید، با پشتیبانی در ارتباط باشید و با سایر اعضای جامعه بدون مرز تعامل کنید.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">گفتگوی زنده</Badge>
+                      <Badge variant="outline">پشتیبانی</Badge>
                     </div>
                   </CardContent>
-                </div>
-              </div>
-            </Card>
+                </Card>
+              </Link>
+            </motion.div>
 
-            {/* Announcements */}
-            {announcements.length > 0 && (
-              <Card className="bg-white dark:bg-slate-800 border-0 shadow-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <Bell className="w-6 h-6 text-amber-500" />
-                    آخرین اطلاعیه‌ها
-                  </CardTitle>
+            {/* Announcements Card */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white">
+                      <Bell className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">📢 اطلاعیه‌ها</CardTitle>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        آخرین اخبار و اطلاعیه‌ها
+                      </p>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {announcements.slice(0, 3).map((announcement) => (
-                      <div key={announcement.id} className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium text-slate-900 dark:text-white mb-1">
-                              {announcement.title}
-                            </h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
-                              {announcement.summary}
-                            </p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {announcement.type}
-                          </Badge>
+                  {announcementsLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : announcements.length > 0 ? (
+                    <div className="space-y-4 max-h-64 overflow-y-auto">
+                      {announcements.slice(0, 3).map((announcement) => (
+                        <div key={announcement.id} className="p-3 bg-slate-50/50 dark:bg-slate-700/50 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={announcement.type === 'urgent' ? 'destructive' : 'secondary'}>
+                              {announcement.type === 'urgent' ? '🚨 فوری' : '📝 عمومی'}
+                            </Badge>
+                            {announcement.is_pinned && (
+                              <Badge variant="outline">📌 سنجاق</Badge>
+                            )}
+                          </div>
+                          <h4 className="font-medium text-slate-800 dark:text-slate-200 mb-1">
+                            {announcement.title}
+                          </h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                            {announcement.summary}
+                          </p>
+                          {announcement.media_type !== 'none' && (
+                            <div className="mt-2">
+                              <AnnouncementMedia 
+                                mediaType={announcement.media_type} 
+                                mediaUrl={announcement.media_url} 
+                                mediaContent={announcement.media_content} 
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <Bell className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+                      <p className="text-slate-500 dark:text-slate-400">
+                        اطلاعیه‌ای موجود نیست
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            )}
+            </motion.div>
+          </div>
 
-            {/* Hub Section */}
-            <HubSection />
+          {/* Live Stream & Rafiei Meet Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* Live Stream Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <EnhancedLiveStreamCard settings={liveSettings} />
+            </motion.div>
 
-            {/* Quick Access Features */}
-            <div className="grid md:grid-cols-3 gap-6">
-              {quickAccessFeatures.map((feature, index) => (
-                <Link key={index} to={feature.href}>
-                  <Card className="bg-white dark:bg-slate-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full">
-                    <CardContent className="p-8 text-center">
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${feature.color}`}>
-                        <feature.icon className="w-8 h-8" />
+            {/* Rafiei Meet Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <EnhancedRafieiMeetCard settings={rafieiMeetSettings} />
+            </motion.div>
+          </div>
+
+          {/* Quick Access Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="mb-12"
+          >
+            <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-8">
+              🚀 دسترسی سریع
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {quickAccessItems.map((item, index) => (
+                <Link key={index} to={item.href}>
+                  <Card className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border-white/20 h-full">
+                    <CardContent className="p-6 text-center">
+                      <div className={`inline-flex p-4 rounded-2xl ${item.color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                        <item.icon className="w-8 h-8 text-white" />
                       </div>
-                      <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
-                        {feature.title}
+                      <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {item.title}
                       </h3>
-                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {feature.description}
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {item.description}
                       </p>
                     </CardContent>
                   </Card>
                 </Link>
               ))}
             </div>
+          </motion.div>
 
-            {/* Legacy Chat - Smaller section */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6">
-              <ChatSection />
-            </div>
-          </div>
+          {/* Admin Access */}
+          {sessionToken && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="text-center"
+            >
+              <Link to="/hub/admin">
+                <Button variant="outline" className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl border-white/20 hover:bg-white/90 dark:hover:bg-slate-800/90">
+                  <Settings className="w-4 h-4 mr-2" />
+                  پنل مدیریت
+                </Button>
+              </Link>
+            </motion.div>
+          )}
         </div>
       </div>
     </MainLayout>
