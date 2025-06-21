@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { Send, Smile } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
 
 interface ModernChatInputProps {
@@ -25,7 +25,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       onSendMessage(message.trim());
       setMessage('');
       if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = '44px';
       }
     }
   };
@@ -45,7 +45,6 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       const newMessage = message.slice(0, start) + emoji + message.slice(end);
       setMessage(newMessage);
       
-      // Focus back to textarea and set cursor position
       setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(start + emoji.length, start + emoji.length);
@@ -57,14 +56,14 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      textareaRef.current.style.height = '44px';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
     }
   }, [message]);
 
   return (
-    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 p-4">
-      <form onSubmit={handleSubmit} className="flex items-end gap-2">
+    <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 p-4">
+      <form onSubmit={handleSubmit} className="flex items-end gap-3">
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
@@ -72,20 +71,29 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
-            className="resize-none border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-amber-500 dark:focus:border-amber-400 transition-colors"
+            className="resize-none border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 rounded-3xl px-4 py-3 pr-12 min-h-[44px] max-h-[120px] text-right focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 focus:ring-2 focus:ring-blue-500/20"
             disabled={disabled}
             rows={1}
             dir="rtl"
           />
-          <div className="absolute left-2 bottom-2">
-            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+          <div className="absolute left-3 bottom-3">
+            <EmojiPicker onEmojiSelect={handleEmojiSelect}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <Smile className="w-5 h-5" />
+              </Button>
+            </EmojiPicker>
           </div>
         </div>
         
         <Button
           type="submit"
           disabled={!message.trim() || disabled}
-          className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl px-4 py-3 h-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-11 h-11 p-0 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl flex items-center justify-center"
         >
           <Send className="w-5 h-5" />
         </Button>
