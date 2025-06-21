@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { supportService } from './supportService';
 
 export type MessengerUser = {
   id: number;
@@ -305,11 +306,11 @@ class MessengerService {
       // Convert to MessengerMessage format
       return messages.map(msg => ({
         id: msg.id,
-        sender_id: msg.sender_id,
-        recipient_id: msg.recipient_id,
+        sender_id: msg.sender_id || 0,
+        recipient_id: msg.recipient_id || null,
         room_id: null,
         message: msg.message,
-        message_type: msg.message_type || 'text',
+        message_type: (msg.message_type as 'text' | 'image' | 'file') || 'text',
         media_url: msg.media_url,
         media_content: null,
         is_read: msg.is_read || false,

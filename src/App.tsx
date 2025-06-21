@@ -109,6 +109,8 @@ function App() {
                     description="Start your learning journey with our free course"
                     benefitOne="Basic concepts"
                     benefitTwo="Practical exercises"
+                    iconType="book"
+                    iframeUrl="https://example.com/course-iframe"
                   />
                 } />
                 <Route path="/courses/smart-pack" element={<SmartPackLanding />} />
