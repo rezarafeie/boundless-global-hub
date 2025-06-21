@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserCheck, UserX, LogOut, Clock, Ban } from 'lucide-react';
+import { Users, UserCheck, UserX, LogOut, Clock } from 'lucide-react';
 import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatUser } from '@/lib/supabase';
@@ -50,7 +50,7 @@ const UserManagement: React.FC = () => {
       await chatUserAdminService.approveUser(userId);
       toast({
         title: 'موفق',
-        description: 'کاربر تایید شد و اکنون می‌تواند وارد چت شود',
+        description: 'کاربر تایید شد',
       });
       fetchData();
     } catch (error) {
@@ -67,7 +67,7 @@ const UserManagement: React.FC = () => {
       await chatUserAdminService.rejectUser(userId);
       toast({
         title: 'موفق',
-        description: 'کاربر رد و حذف شد',
+        description: 'کاربر رد شد',
       });
       fetchData();
     } catch (error) {
@@ -84,7 +84,7 @@ const UserManagement: React.FC = () => {
       await chatUserAdminService.deactivateUser(userId);
       toast({
         title: 'موفق',
-        description: 'کاربر غیرفعال شد و دیگر نمی‌تواند وارد چت شود',
+        description: 'کاربر غیرفعال شد',
       });
       fetchData();
     } catch (error) {
@@ -115,63 +115,54 @@ const UserManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700">
+      <Card>
         <CardContent className="p-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-            <p className="mr-3 text-gray-600 dark:text-gray-400">در حال بارگذاری...</p>
-          </div>
+          <p className="text-center">در حال بارگذاری...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700" dir="rtl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-gray-900 dark:text-white">
-          <Users className="w-6 h-6 text-blue-400" />
-          👥 مدیریت کاربران چت
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="pending" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              در انتظار تایید ({pendingUsers.length})
-            </TabsTrigger>
-            <TabsTrigger value="approved" className="flex items-center gap-2">
-              <UserCheck className="w-4 h-4" />
-              کاربران فعال ({approvedUsers.length})
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              جلسات آنلاین ({activeSessions.length})
-            </TabsTrigger>
-          </TabsList>
+    <div className="space-y-6">
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            در انتظار تایید ({pendingUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4" />
+            کاربران تایید شده ({approvedUsers.length})
+          </TabsTrigger>
+          <TabsTrigger value="sessions" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            جلسات فعال ({activeSessions.length})
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="pending">
-            {pendingUsers.length === 0 ? (
-              <div className="text-center py-8">
-                <Clock className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-gray-500 dark:text-gray-400">هیچ کاربری در انتظار تایید نیست</p>
-              </div>
-            ) : (
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <TabsContent value="pending">
+          <Card>
+            <CardHeader>
+              <CardTitle>کاربران در انتظار تایید</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingUsers.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">هیچ کاربری در انتظار تایید نیست</p>
+              ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50 dark:bg-gray-800">
-                      <TableHead className="text-right">نام کامل</TableHead>
-                      <TableHead className="text-right">شماره تلفن</TableHead>
-                      <TableHead className="text-right">تاریخ درخواست</TableHead>
-                      <TableHead className="text-right">عملیات</TableHead>
+                    <TableRow>
+                      <TableHead>نام</TableHead>
+                      <TableHead>شماره تلفن</TableHead>
+                      <TableHead>تاریخ درخواست</TableHead>
+                      <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pendingUsers.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.name}</TableCell>
                         <TableCell>{user.phone}</TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString('fa-IR')}
@@ -181,9 +172,9 @@ const UserManagement: React.FC = () => {
                             <Button
                               size="sm"
                               onClick={() => handleApproveUser(user.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              className="bg-green-600 hover:bg-green-700"
                             >
-                              <UserCheck className="w-4 h-4 ml-1" />
+                              <UserCheck className="w-4 h-4 mr-1" />
                               تایید
                             </Button>
                             <Button
@@ -191,7 +182,7 @@ const UserManagement: React.FC = () => {
                               variant="destructive"
                               onClick={() => handleRejectUser(user.id)}
                             >
-                              <UserX className="w-4 h-4 ml-1" />
+                              <UserX className="w-4 h-4 mr-1" />
                               رد
                             </Button>
                           </div>
@@ -200,38 +191,40 @@ const UserManagement: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-            )}
-          </TabsContent>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="approved">
-            {approvedUsers.length === 0 ? (
-              <div className="text-center py-8">
-                <UserCheck className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-gray-500 dark:text-gray-400">هیچ کاربر فعالی وجود ندارد</p>
-              </div>
-            ) : (
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <TabsContent value="approved">
+          <Card>
+            <CardHeader>
+              <CardTitle>کاربران تایید شده</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {approvedUsers.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">هیچ کاربر تایید شده‌ای وجود ندارد</p>
+              ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50 dark:bg-gray-800">
-                      <TableHead className="text-right">نام کامل</TableHead>
-                      <TableHead className="text-right">شماره تلفن</TableHead>
-                      <TableHead className="text-right">تاریخ عضویت</TableHead>
-                      <TableHead className="text-right">وضعیت</TableHead>
-                      <TableHead className="text-right">عملیات</TableHead>
+                    <TableRow>
+                      <TableHead>نام</TableHead>
+                      <TableHead>شماره تلفن</TableHead>
+                      <TableHead>تاریخ عضویت</TableHead>
+                      <TableHead>وضعیت</TableHead>
+                      <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {approvedUsers.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.name}</TableCell>
                         <TableCell>{user.phone}</TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString('fa-IR')}
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                          <Badge className="bg-green-100 text-green-800">
                             فعال
                           </Badge>
                         </TableCell>
@@ -240,9 +233,8 @@ const UserManagement: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDeactivateUser(user.id)}
-                            className="text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
-                            <Ban className="w-4 h-4 ml-1" />
+                            <UserX className="w-4 h-4 mr-1" />
                             غیرفعال
                           </Button>
                         </TableCell>
@@ -250,33 +242,33 @@ const UserManagement: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-            )}
-          </TabsContent>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="sessions">
-            {activeSessions.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-gray-500 dark:text-gray-400">هیچ جلسه فعالی وجود ندارد</p>
-              </div>
-            ) : (
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <TabsContent value="sessions">
+          <Card>
+            <CardHeader>
+              <CardTitle>جلسات فعال</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {activeSessions.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">هیچ جلسه فعالی وجود ندارد</p>
+              ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50 dark:bg-gray-800">
-                      <TableHead className="text-right">نام کاربر</TableHead>
-                      <TableHead className="text-right">آخرین فعالیت</TableHead>
-                      <TableHead className="text-right">مدت جلسه</TableHead>
-                      <TableHead className="text-right">عملیات</TableHead>
+                    <TableRow>
+                      <TableHead>نام کاربر</TableHead>
+                      <TableHead>آخرین فعالیت</TableHead>
+                      <TableHead>مدت جلسه</TableHead>
+                      <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {activeSessions.map((session) => (
                       <TableRow key={session.id}>
-                        <TableCell className="font-medium">
-                          {session.chat_users?.name || 'نامشخص'}
-                        </TableCell>
+                        <TableCell>{session.chat_users?.name || 'نامشخص'}</TableCell>
                         <TableCell>
                           {new Date(session.last_activity).toLocaleString('fa-IR')}
                         </TableCell>
@@ -289,7 +281,7 @@ const UserManagement: React.FC = () => {
                             variant="destructive"
                             onClick={() => handleForceLogout(session.session_token)}
                           >
-                            <LogOut className="w-4 h-4 ml-1" />
+                            <LogOut className="w-4 h-4 mr-1" />
                             خروج اجباری
                           </Button>
                         </TableCell>
@@ -297,12 +289,12 @@ const UserManagement: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
