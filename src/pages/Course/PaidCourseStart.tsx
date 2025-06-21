@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -52,7 +51,7 @@ const PaidCourseStart = () => {
         ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
-        glowTheme="courses"
+        glowTheme="purple"
       />
 
       <section className="py-16 bg-gradient-to-b from-background to-muted/20" id="course-content">

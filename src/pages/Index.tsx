@@ -81,7 +81,12 @@ const Index = () => {
 
   return (
     <MainLayout>
-      <Hero />
+      <Hero 
+        title={translations.slogan}
+        subtitle={translations.tagline}
+        ctaText={translations.callToAction}
+        ctaLink="/courses"
+      />
       
       {/* Live War Mode Block */}
       <section className="py-8 bg-background">
