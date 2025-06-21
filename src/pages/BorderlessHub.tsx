@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -57,15 +56,10 @@ const BorderlessHub: React.FC = () => {
       case 'video':
         return (
           <div className="mt-4">
-            <div className="relative w-full h-64 bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={mediaContent}
-                className="absolute inset-0 w-full h-full"
-                frameBorder="0"
-                allowFullScreen
-                title="ویدیو اطلاعیه"
-              />
-            </div>
+            <div 
+              className="relative w-full h-64 bg-black rounded-lg overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: mediaContent }}
+            />
           </div>
         );
       default:
@@ -105,7 +99,7 @@ const BorderlessHub: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-black dark:to-gray-800" dir="rtl">
         <div className="container mx-auto px-4 py-8 space-y-8">
           
           {/* Header */}
@@ -151,7 +145,7 @@ const BorderlessHub: React.FC = () => {
           )}
 
           {/* Chat Access Section */}
-          <Card className="bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-green-500/50 transition-all duration-300 shadow-2xl">
+          <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-slate-200 dark:border-gray-700 hover:border-green-500/50 transition-all duration-300 shadow-2xl">
             <CardHeader className="text-center pb-6">
               <div className="flex justify-center mb-4">
                 <div className="relative">
@@ -207,8 +201,8 @@ const BorderlessHub: React.FC = () => {
                 {announcements.map((announcement) => (
                   <Card 
                     key={announcement.id} 
-                    className={`bg-gray-900/90 backdrop-blur-sm border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300 ${
-                      announcement.is_pinned ? 'border-amber-500/50 bg-gradient-to-r from-amber-900/20 to-yellow-900/20' : ''
+                    className={`bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-slate-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300 ${
+                      announcement.is_pinned ? 'border-amber-500/50 bg-gradient-to-r from-amber-50/20 to-yellow-50/20 dark:from-amber-900/20 dark:to-yellow-900/20' : ''
                     }`}
                   >
                     <CardHeader>
