@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export type SupportConversation = {
@@ -30,57 +31,22 @@ export type SupportMessage = {
 };
 
 class SupportService {
-  // Enhanced robust session context setter with multiple retry strategies
+  // Simplified session context setter - no longer critical since trigger is self-contained
   private async setSessionContext(sessionToken: string): Promise<void> {
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Setting session context - attempt ${attempt}/${maxRetries}`);
-        
-        // Use multiple approaches to ensure session context is set
-        const { error: contextError } = await supabase.rpc('set_session_context', { 
-          session_token: sessionToken 
-        });
-        
-        if (contextError) {
-          console.warn(`Session context attempt ${attempt} failed:`, contextError);
-          lastError = new Error(`Session context failed: ${contextError.message}`);
-          
-          if (attempt < maxRetries) {
-            // Wait with exponential backoff before retry
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
-            continue;
-          }
-        } else {
-          console.log(`Session context set successfully on attempt ${attempt}`);
-          
-          // Verify the context was actually set by testing session validity
-          const { data: isValid } = await supabase.rpc('is_session_valid', {
-            session_token_param: sessionToken
-          });
-          
-          if (isValid) {
-            console.log('Session context verified successfully');
-            return;
-          } else {
-            console.warn(`Session context verification failed on attempt ${attempt}`);
-          }
-        }
-      } catch (error) {
-        console.error(`Session context attempt ${attempt} error:`, error);
-        lastError = error as Error;
-      }
+    try {
+      console.log('Setting session context for better user experience');
       
-      if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
+      const { error } = await supabase.rpc('set_session_context', { 
+        session_token: sessionToken 
+      });
+      
+      if (error) {
+        console.warn('Session context setting failed (non-critical):', error);
+      } else {
+        console.log('Session context set successfully');
       }
-    }
-    
-    // If all attempts failed, throw the last error
-    if (lastError) {
-      throw new Error(`Failed to set session context after ${maxRetries} attempts: ${lastError.message}`);
+    } catch (error) {
+      console.warn('Session context error (non-critical):', error);
     }
   }
 
@@ -239,7 +205,7 @@ class SupportService {
     } as SupportMessage;
   }
 
-  // Enhanced method to get or create support conversation with multiple fallback strategies
+  // Simplified method to get or create support conversation - now relies on trigger
   async getOrCreateUserConversation(userId: number, sessionToken: string): Promise<SupportConversation> {
     console.log('Getting or creating conversation for user:', userId);
     
@@ -247,115 +213,67 @@ class SupportService {
       throw new Error('Session token is required');
     }
     
-    const maxRetries = 3;
-    let lastError: Error | null = null;
+    try {
+      // Set session context for better user experience (optional now)
+      await this.setSessionContext(sessionToken);
+      
+      // First, try to find existing conversation
+      console.log('Looking for existing conversation...');
+      const { data: existing, error: fetchError } = await supabase
+        .from('support_conversations')
+        .select(`
+          *,
+          chat_users!support_conversations_user_id_fkey(name, phone)
+        `)
+        .eq('user_id', userId)
+        .in('status', ['open', 'assigned'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Conversation attempt ${attempt}/${maxRetries}`);
-        
-        // Set session context with enhanced error handling
-        await this.setSessionContext(sessionToken);
-        
-        // First, try to find existing conversation
-        console.log('Looking for existing conversation...');
-        const { data: existing, error: fetchError } = await supabase
-          .from('support_conversations')
-          .select(`
-            *,
-            chat_users!support_conversations_user_id_fkey(name, phone)
-          `)
-          .eq('user_id', userId)
-          .in('status', ['open', 'assigned'])
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error('Error fetching existing conversation:', fetchError);
-          throw fetchError;
-        }
-
-        if (existing) {
-          console.log('Found existing conversation:', existing.id);
-          return {
-            ...existing,
-            user_name: existing.chat_users?.name,
-            user_phone: existing.chat_users?.phone,
-            status: existing.status as 'open' | 'assigned' | 'closed' | null,
-            priority: existing.priority as 'low' | 'normal' | 'high' | 'urgent' | null
-          } as SupportConversation;
-        }
-
-        console.log('No existing conversation found, creating new one...');
-        
-        // Re-ensure session context before creating
-        await this.setSessionContext(sessionToken);
-        
-        // Create new conversation with the improved RLS policies
-        const { data: newConversation, error: createError } = await supabase
-          .from('support_conversations')
-          .insert([{ 
-            user_id: userId,
-            status: 'open',
-            priority: 'normal',
-            last_message_at: new Date().toISOString()
-          }])
-          .select(`
-            *,
-            chat_users!support_conversations_user_id_fkey(name, phone)
-          `)
-          .single();
-
-        if (createError) {
-          console.error('Error creating support conversation:', createError);
-          lastError = new Error(`Conversation creation failed: ${createError.message}`);
-          
-          // If it's still a permission error, try next attempt
-          if (createError.message.includes('row-level security') || 
-              createError.message.includes('permission denied')) {
-            if (attempt < maxRetries) {
-              console.warn(`Permission error on attempt ${attempt}, retrying...`);
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 200));
-              continue;
-            }
-          }
-          
-          throw lastError;
-        }
-
-        console.log('Successfully created conversation:', newConversation.id);
-
-        return {
-          ...newConversation,
-          user_name: newConversation.chat_users?.name,
-          user_phone: newConversation.chat_users?.phone,
-          status: newConversation.status as 'open' | 'assigned' | 'closed' | null,
-          priority: newConversation.priority as 'low' | 'normal' | 'high' | 'urgent' | null
-        } as SupportConversation;
-
-      } catch (error) {
-        console.error(`Conversation attempt ${attempt} error:`, error);
-        lastError = error as Error;
-        
-        if (attempt < maxRetries) {
-          // Wait before retry with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 300));
-        }
+      if (fetchError) {
+        console.error('Error fetching existing conversation:', fetchError);
+        throw fetchError;
       }
-    }
 
-    // If all attempts failed, provide user-friendly error message
-    const errorMessage = lastError?.message || 'Unknown error occurred';
-    
-    if (errorMessage.includes('authentication') || errorMessage.includes('session')) {
-      throw new Error('Session expired. Please refresh the page and log in again.');
+      if (existing) {
+        console.log('Found existing conversation:', existing.id);
+        return {
+          ...existing,
+          user_name: existing.chat_users?.name,
+          user_phone: existing.chat_users?.phone,
+          status: existing.status as 'open' | 'assigned' | 'closed' | null,
+          priority: existing.priority as 'low' | 'normal' | 'high' | 'urgent' | null
+        } as SupportConversation;
+      }
+
+      console.log('No existing conversation found, will be created automatically by trigger when first message is sent');
+      
+      // Return a placeholder conversation - the actual conversation will be created by the trigger
+      return {
+        id: -1, // Temporary ID
+        user_id: userId,
+        agent_id: null,
+        status: 'open',
+        priority: 'normal',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString()
+      } as SupportConversation;
+
+    } catch (error) {
+      console.error('Error in getOrCreateUserConversation:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('authentication') || errorMessage.includes('session')) {
+        throw new Error('Session expired. Please refresh the page and log in again.');
+      }
+      if (errorMessage.includes('permission') || errorMessage.includes('security')) {
+        throw new Error('Access denied. Please refresh the page and try again.');
+      }
+      
+      throw new Error(`Failed to get conversation: ${errorMessage}`);
     }
-    if (errorMessage.includes('permission') || errorMessage.includes('security')) {
-      throw new Error('Access denied. Please refresh the page and try again.');
-    }
-    
-    throw new Error(`Failed to create conversation after ${maxRetries} attempts: ${errorMessage}`);
   }
 }
 

@@ -70,54 +70,22 @@ const validateSessionToken = async (sessionToken: string): Promise<boolean> => {
   }
 };
 
-// Enhanced session context function with better retry logic for messages
-const setSessionContextForMessage = async (sessionToken: string): Promise<void> => {
-  const maxRetries = 3;
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Setting session context for message - attempt ${attempt}/${maxRetries}`);
-      
-      const { error } = await supabase.rpc('set_session_context', { 
-        session_token: sessionToken 
-      });
-      
-      if (error) {
-        console.error(`Session context attempt ${attempt} failed:`, error);
-        lastError = new Error(`Session context failed: ${error.message}`);
-        
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 200));
-          continue;
-        }
-      } else {
-        console.log(`Session context set successfully on attempt ${attempt}`);
-        
-        // Verify the context was set
-        const { data: verifyData } = await supabase.rpc('is_session_valid', {
-          session_token_param: sessionToken
-        });
-        
-        if (verifyData) {
-          console.log('Session context verified successfully');
-          return;
-        } else {
-          console.warn(`Session context verification failed on attempt ${attempt}`);
-        }
-      }
-    } catch (error) {
-      console.error(`Session context attempt ${attempt} error:`, error);
-      lastError = error as Error;
-    }
+// Simplified session context function - no longer critical
+const setSessionContextOptional = async (sessionToken: string): Promise<void> => {
+  try {
+    console.log('Setting optional session context');
     
-    if (attempt < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 200));
+    const { error } = await supabase.rpc('set_session_context', { 
+      session_token: sessionToken 
+    });
+    
+    if (error) {
+      console.warn('Optional session context failed (non-critical):', error);
+    } else {
+      console.log('Optional session context set successfully');
     }
-  }
-  
-  if (lastError) {
-    throw new Error(`Failed to set session context after ${maxRetries} attempts: ${lastError.message}`);
+  } catch (error) {
+    console.warn('Optional session context error (non-critical):', error);
   }
 };
 
@@ -344,6 +312,12 @@ class MessengerService {
       const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken);
       console.log('Got conversation:', conversation.id);
       
+      // If it's a placeholder conversation, return empty messages
+      if (conversation.id === -1) {
+        console.log('Placeholder conversation, returning empty messages');
+        return [];
+      }
+      
       const messages = await supportService.getConversationMessages(conversation.id);
       console.log('Got messages:', messages.length);
       
@@ -370,7 +344,7 @@ class MessengerService {
     }
   }
 
-  // Enhanced sendMessage method with comprehensive retry logic
+  // Simplified sendMessage method - trigger handles conversation creation
   async sendMessage(messageData: {
     room_id?: number;
     sender_id: number;
@@ -386,77 +360,46 @@ class MessengerService {
       throw new Error('Invalid session. Please log in again.');
     }
     
-    const maxRetries = 3;
-    let lastError: Error | null = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Message send attempt ${attempt}/${maxRetries}`);
-        
-        // For support messages, ensure session context is set with enhanced retry
-        if (messageData.recipient_id === 1 && !messageData.room_id) {
-          console.log('Support message detected - setting session context with enhanced retry');
-          await setSessionContextForMessage(sessionToken);
-          
-          // Additional delay to ensure context propagation
-          await new Promise(resolve => setTimeout(resolve, 150));
-        }
-        
-        const { data, error } = await supabase
-          .from('messenger_messages')
-          .insert([{
-            room_id: messageData.room_id || null,
-            sender_id: messageData.sender_id,
-            recipient_id: messageData.recipient_id || null,
-            message: messageData.message,
-            message_type: messageData.message_type || 'text'
-          }])
-          .select()
-          .single();
-        
-        if (error) {
-          console.error(`Message send attempt ${attempt} error:`, error);
-          lastError = new Error(`Message send failed: ${error.message}`);
-          
-          // Retry on permission errors
-          if ((error.message.includes('row-level security policy') || 
-               error.message.includes('permission denied')) && 
-              attempt < maxRetries) {
-            console.warn(`Permission error on attempt ${attempt}, retrying...`);
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 300));
-            continue;
-          }
-          
-          throw lastError;
-        }
-        
-        console.log('Message sent successfully:', data);
-        return data as MessengerMessage;
-        
-      } catch (error) {
-        console.error(`Message send attempt ${attempt} error:`, error);
-        lastError = error as Error;
-        
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 300));
-        }
+    try {
+      // For support messages, set optional session context
+      if (messageData.recipient_id === 1 && !messageData.room_id) {
+        console.log('Support message detected - setting optional session context');
+        await setSessionContextOptional(sessionToken);
       }
+      
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .insert([{
+          room_id: messageData.room_id || null,
+          sender_id: messageData.sender_id,
+          recipient_id: messageData.recipient_id || null,
+          message: messageData.message,
+          message_type: messageData.message_type || 'text'
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Message send error:', error);
+        throw new Error(`Failed to send message: ${error.message}`);
+      }
+      
+      console.log('Message sent successfully:', data);
+      return data as MessengerMessage;
+      
+    } catch (error) {
+      console.error('Message send error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('permission denied') || errorMessage.includes('row-level security')) {
+        throw new Error('Permission denied. Please refresh the page and try again.');
+      }
+      if (errorMessage.includes('violates foreign key constraint')) {
+        throw new Error('Invalid recipient or room. Please refresh the page.');
+      }
+      
+      throw new Error(`Failed to send message: ${errorMessage}`);
     }
-    
-    // Enhanced error handling with user-friendly messages
-    const errorMessage = lastError?.message || 'Unknown error occurred';
-    
-    if (errorMessage.includes('row-level security policy')) {
-      throw new Error('Permission denied. Please refresh the page and try again.');
-    }
-    if (errorMessage.includes('permission denied')) {
-      throw new Error('Access denied. Please refresh the page and log in again.');
-    }
-    if (errorMessage.includes('violates foreign key constraint')) {
-      throw new Error('Invalid recipient or room. Please refresh the page.');
-    }
-    
-    throw new Error(`Failed to send message after ${maxRetries} attempts: ${errorMessage}`);
   }
 
   // Support agent functions
