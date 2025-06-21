@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes,Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -74,7 +74,7 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <ThemeProvider>
         <LanguageProvider>
           <TooltipProvider>
             <Toaster />
@@ -105,7 +105,20 @@ function App() {
                 <Route path="/course/boundless" element={<BoundlessLanding />} />
                 <Route path="/course/instagram" element={<InstagramLanding />} />
                 <Route path="/course/instagram-essentials" element={<InstagramEssentialsLanding />} />
-                <Route path="/course/free" element={<FreeCourseLanding />} />
+                <Route path="/course/free" element={
+                  <FreeCourseLanding 
+                    title="دوره رایگان متاورس"
+                    englishTitle="Free Metaverse Course"
+                    description="دوره جامع و رایگان آموزش متاورس"
+                    benefitOne="آموزش کامل و رایگان"
+                    benefitTwo="دسترسی آسان و سریع"
+                    benefitThree="محتوای به‌روز و کاربردی"
+                    instructorName="استاد رفیعی"
+                    instructorImage="/lovable-uploads/instructor-avatar.jpg"
+                    courseImage="/lovable-uploads/metaverse-course.jpg"
+                    price="رایگان"
+                  />
+                } />
                 <Route path="/course/smart-pack" element={<SmartPackLanding />} />
                 <Route path="/course/servit" element={<ServitLanding />} />
 
