@@ -1,11 +1,13 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Send, Users, HeadphonesIcon, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Users, HeadphonesIcon, AlertCircle, RefreshCw, GraduationCap } from 'lucide-react';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
-import ModernChatInput from './ModernChatInput';
+import MessageAvatar from './MessageAvatar';
+import MessageReactions from './MessageReactions';
+import MessageActions from './MessageActions';
+import EnhancedChatInput from './EnhancedChatInput';
 
 interface ChatRoom {
   id: number;
@@ -13,6 +15,21 @@ interface ChatRoom {
   type: string;
   description: string;
   is_boundless_only: boolean;
+  thread_type_id?: number;
+}
+
+interface EnhancedMessage extends MessengerMessage {
+  sender_name?: string;
+  is_from_support?: boolean;
+  reactions?: any[];
+  reply_to_message_id?: number;
+  forwarded_from_message_id?: number;
+}
+
+interface ReplyingTo {
+  messageId: number;
+  message: string;
+  senderName: string;
 }
 
 interface MessengerChatViewProps {
@@ -27,11 +44,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   onBack
 }) => {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<MessengerMessage[]>([]);
+  const [messages, setMessages] = useState<EnhancedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
@@ -59,24 +77,21 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       console.log(`Fetching messages for room: ${room.name} (${room.type})`);
 
-      let fetchedMessages: MessengerMessage[] = [];
-      if (room.type === 'support_chat') {
-        fetchedMessages = await messengerService.getPrivateMessages(currentUser.id, sessionToken);
+      let fetchedMessages: EnhancedMessage[] = [];
+      if (room.type === 'academy_support' || room.type === 'boundless_support') {
+        fetchedMessages = await messengerService.getPrivateMessages(currentUser.id, sessionToken) as EnhancedMessage[];
       } else {
-        fetchedMessages = await messengerService.getRoomMessages(room.id, sessionToken);
+        fetchedMessages = await messengerService.getRoomMessages(room.id, sessionToken) as EnhancedMessage[];
       }
       
       setMessages(fetchedMessages);
       console.log(`Successfully loaded ${fetchedMessages.length} messages`);
-      
-      // Reset retry count on successful fetch
       setRetryCount(0);
     } catch (error: any) {
       console.error('Error fetching messages:', error);
       const errorMessage = error.message || 'خطا در بارگذاری پیام‌ها. لطفاً دوباره تلاش کنید.';
       setError(errorMessage);
       
-      // Show toast for user feedback
       toast({
         title: 'خطا در بارگذاری پیام‌ها',
         description: errorMessage,
@@ -91,13 +106,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         setLoading(true);
         setError(null);
         
-        // Fetch initial messages
         await fetchMessages();
-
-        // Clean up any existing channel
         cleanupChannel();
 
-        // Create unique channel name with timestamp to avoid conflicts
         const channelName = `messages_${room.type}_${room.id}_${currentUser.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         console.log('Setting up realtime subscription:', channelName);
@@ -110,14 +121,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             (payload) => {
               try {
                 console.log('New message received:', payload);
-                const newMessage = payload.new as MessengerMessage;
-                if (room.type === 'support_chat') {
-                  // For support chat, show messages where user is sender or recipient
+                const newMessage = payload.new as EnhancedMessage;
+                if (room.type === 'academy_support' || room.type === 'boundless_support') {
                   if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
                     setMessages((prevMessages) => [...prevMessages, newMessage]);
                   }
                 } else {
-                  // For room messages, show messages in this room
                   if (newMessage.room_id === room.id) {
                     setMessages((prevMessages) => [...prevMessages, newMessage]);
                   }
@@ -150,18 +159,16 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     };
 
     setupMessagesAndSubscription();
-
     return cleanupChannel;
   }, [room.id, room.type, currentUser.id]);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
     if (chatBottomRef.current) {
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  const handleSendMessage = async (messageText: string): Promise<void> => {
+  const handleSendMessage = async (messageText: string, replyToId?: number): Promise<void> => {
     if (!messageText.trim() || sendingMessage) return;
     
     setSendingMessage(true);
@@ -172,21 +179,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }
 
       const messageData = {
-        room_id: room.type === 'support_chat' ? undefined : room.id,
+        room_id: (room.type === 'academy_support' || room.type === 'boundless_support') ? undefined : room.id,
         sender_id: currentUser.id,
-        recipient_id: room.type === 'support_chat' ? 1 : undefined, // Support agent ID
+        recipient_id: (room.type === 'academy_support' || room.type === 'boundless_support') ? 1 : undefined,
         message: messageText,
-        message_type: 'text'
+        message_type: 'text',
+        reply_to_message_id: replyToId
       };
 
       console.log('Sending message with data:', messageData);
       
       const sentMessage = await messengerService.sendMessage(messageData, sessionToken);
+      setMessages((prevMessages) => [...prevMessages,  sentMessage as EnhancedMessage]);
       
-      // Immediately add the message to the local state for instant feedback
-      setMessages((prevMessages) => [...prevMessages, sentMessage]);
-      
-      // Success feedback
       toast({
         title: 'پیام ارسال شد',
         description: 'پیام شما با موفقیت ارسال شد.',
@@ -195,7 +200,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     } catch (error: any) {
       console.error('Error sending message:', error);
       
-      // Show detailed error message
       const errorMessage = error?.message || 'ارسال پیام با مشکل مواجه شد.';
       
       toast({
@@ -204,23 +208,53 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         variant: 'destructive',
       });
       
-      throw error; // Re-throw to let ModernChatInput handle it
+      throw error;
     } finally {
       setSendingMessage(false);
     }
   };
 
+  const handleReaction = async (messageId: number, reaction: string) => {
+    // Implementation for adding reactions
+    console.log('Adding reaction:', reaction, 'to message:', messageId);
+  };
+
+  const handleReply = (messageId: number) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      setReplyingTo({
+        messageId,
+        message: message.message,
+        senderName: message.sender_name || 'کاربر'
+      });
+    }
+  };
+
+  const handleForward = (messageId: number) => {
+    console.log('Forwarding message:', messageId);
+    // Implementation for forwarding messages
+  };
+
+  const handleReact = (messageId: number) => {
+    console.log('React to message:', messageId);
+    // Implementation for quick reactions
+  };
+
   const getChatTitle = () => {
-    if (room.type === 'support_chat') {
-      return 'پشتیبانی';
+    if (room.type === 'academy_support') {
+      return '🎓 پشتیبانی آکادمی رفیعی';
+    } else if (room.type === 'boundless_support') {
+      return '🟦 پشتیبانی بدون مرز';
     } else {
       return room.name;
     }
   };
 
   const getChatIcon = () => {
-    if (room.type === 'support_chat') {
-      return <HeadphonesIcon className="w-5 h-5 text-green-500" />;
+    if (room.type === 'academy_support') {
+      return <GraduationCap className="w-5 h-5 text-amber-500" />;
+    } else if (room.type === 'boundless_support') {
+      return <HeadphonesIcon className="w-5 h-5 text-blue-500" />;
     } else {
       return <Users className="w-5 h-5 text-blue-500" />;
     }
@@ -265,7 +299,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Minimal Chat Header with Title */}
+      {/* Chat Header */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
         <div className="flex items-center gap-3">
           <Button 
@@ -302,20 +336,63 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           messages.map((message) => (
             <div
               key={message.id}
-              className={`mb-3 flex flex-col ${message.sender_id === currentUser.id ? 'items-end' : 'items-start'}`}
+              className={`mb-4 flex ${message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'} group`}
             >
-              <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.sender_id === currentUser.id
-                ? 'bg-blue-500 text-white'
-                : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
-                <p className="text-sm leading-relaxed">{message.message}</p>
-                <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
-                  ? 'text-blue-100' 
-                  : 'text-slate-500 dark:text-slate-400'}`}>
-                  {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+              <div className={`max-w-[70%] ${message.sender_id === currentUser.id ? 'order-2' : 'order-1'}`}>
+                {/* Sender info for other users' messages */}
+                {message.sender_id !== currentUser.id && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <MessageAvatar 
+                      name={message.sender_name || 'کاربر'} 
+                      userId={message.sender_id} 
+                    />
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {message.sender_name || 'کاربر'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Reply indicator */}
+                {message.reply_to_message_id && (
+                  <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-t-lg mb-1 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">پاسخ به پیام</span>
+                  </div>
+                )}
+
+                {/* Message bubble */}
+                <div className={`rounded-2xl px-4 py-3 ${message.sender_id === currentUser.id
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
+                  <p className="text-sm leading-relaxed">{message.message}</p>
+                  <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
+                    ? 'text-blue-100' 
+                    : 'text-slate-500 dark:text-slate-400'}`}>
+                    {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
                 </div>
+
+                {/* Message reactions */}
+                <MessageReactions
+                  messageId={message.id}
+                  reactions={message.reactions || []}
+                  onAddReaction={handleReaction}
+                  currentUserId={currentUser.id}
+                />
+              </div>
+
+              {/* Message actions */}
+              <div className={`${message.sender_id === currentUser.id ? 'order-1 mr-2' : 'order-2 ml-2'} flex items-center`}>
+                <MessageActions
+                  messageId={message.id}
+                  onReply={handleReply}
+                  onForward={handleForward}
+                  onReact={handleReact}
+                  currentUserId={currentUser.id}
+                  senderId={message.sender_id}
+                />
               </div>
             </div>
           ))
@@ -323,10 +400,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         <div ref={chatBottomRef} />
       </div>
 
-      {/* Modern Chat Input */}
-      <ModernChatInput 
+      {/* Enhanced Chat Input */}
+      <EnhancedChatInput 
         onSendMessage={handleSendMessage}
         disabled={sendingMessage}
+        replyingTo={replyingTo}
+        onCancelReply={() => setReplyingTo(null)}
       />
     </div>
   );

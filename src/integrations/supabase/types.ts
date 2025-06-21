@@ -161,6 +161,7 @@ export type Database = {
       }
       chat_users: {
         Row: {
+          bedoun_marz: boolean | null
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
           created_at: string | null
@@ -174,6 +175,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           created_at?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           created_at?: string | null
@@ -228,10 +231,50 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_id: number
+          reaction: string
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_id: number
+          reaction: string
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_id?: number
+          reaction?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messenger_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messenger_messages: {
         Row: {
           conversation_id: number | null
           created_at: string | null
+          forwarded_from_message_id: number | null
           id: number
           is_read: boolean | null
           media_content: string | null
@@ -239,12 +282,14 @@ export type Database = {
           message: string
           message_type: string | null
           recipient_id: number | null
+          reply_to_message_id: number | null
           room_id: number | null
           sender_id: number | null
         }
         Insert: {
           conversation_id?: number | null
           created_at?: string | null
+          forwarded_from_message_id?: number | null
           id?: number
           is_read?: boolean | null
           media_content?: string | null
@@ -252,12 +297,14 @@ export type Database = {
           message: string
           message_type?: string | null
           recipient_id?: number | null
+          reply_to_message_id?: number | null
           room_id?: number | null
           sender_id?: number | null
         }
         Update: {
           conversation_id?: number | null
           created_at?: string | null
+          forwarded_from_message_id?: number | null
           id?: number
           is_read?: boolean | null
           media_content?: string | null
@@ -265,6 +312,7 @@ export type Database = {
           message?: string
           message_type?: string | null
           recipient_id?: number | null
+          reply_to_message_id?: number | null
           room_id?: number | null
           sender_id?: number | null
         }
@@ -277,10 +325,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messenger_messages_forwarded_from_message_id_fkey"
+            columns: ["forwarded_from_message_id"]
+            isOneToOne: false
+            referencedRelation: "messenger_messages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messenger_messages_recipient_id_fkey"
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messenger_messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messenger_messages"
             referencedColumns: ["id"]
           },
           {
@@ -405,6 +467,7 @@ export type Database = {
           last_message_at: string | null
           priority: string | null
           status: string | null
+          thread_type_id: number | null
           updated_at: string | null
           user_id: number | null
         }
@@ -415,6 +478,7 @@ export type Database = {
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          thread_type_id?: number | null
           updated_at?: string | null
           user_id?: number | null
         }
@@ -425,6 +489,7 @@ export type Database = {
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          thread_type_id?: number | null
           updated_at?: string | null
           user_id?: number | null
         }
@@ -434,6 +499,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_conversations_thread_type_id_fkey"
+            columns: ["thread_type_id"]
+            isOneToOne: false
+            referencedRelation: "support_thread_types"
             referencedColumns: ["id"]
           },
           {
@@ -490,6 +562,36 @@ export type Database = {
           },
         ]
       }
+      support_thread_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_name: string
+          id: number
+          is_active: boolean | null
+          is_boundless_only: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          id: number
+          is_active?: boolean | null
+          is_boundless_only?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          id?: number
+          is_active?: boolean | null
+          is_boundless_only?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
       user_sessions: {
         Row: {
           created_at: string | null
@@ -536,6 +638,10 @@ export type Database = {
       cleanup_inactive_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_user_avatar_color: {
+        Args: { user_name: string }
+        Returns: string
       }
       get_user_from_session: {
         Args: { session_token_param: string }

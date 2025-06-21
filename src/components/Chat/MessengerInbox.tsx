@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw, AlertCircle } from 'lucide-react';
+import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw, AlertCircle, GraduationCap } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { Button } from '@/components/ui/button';
 
@@ -14,6 +13,7 @@ interface ChatRoom {
   last_message?: string;
   last_message_time?: string;
   unread_count?: number;
+  thread_type_id?: number;
 }
 
 interface MessengerInboxProps {
@@ -43,21 +43,34 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       console.log('Fetching rooms for user:', currentUser.name);
       const roomsData = await messengerService.getRooms(sessionToken);
       
-      // Add support chat room for all users
-      const supportRoom: ChatRoom = {
-        id: -1, // Special ID for support chat
-        name: 'پشتیبانی',
-        type: 'support_chat',
-        description: 'گفتگوی خصوصی با پشتیبانی',
-        is_boundless_only: false
-      };
+      // Add support chat rooms for all users
+      const supportRooms: ChatRoom[] = [
+        {
+          id: -1, // Academy support
+          name: '🎓 پشتیبانی آکادمی رفیعی',
+          type: 'academy_support',
+          description: 'پشتیبانی عمومی آکادمی رفیعی',
+          is_boundless_only: false,
+          thread_type_id: 1
+        }
+      ];
 
-      const allRooms = [...roomsData, supportRoom];
+      // Add Boundless support only for boundless users
+      if (currentUser.bedoun_marz_approved) {
+        supportRooms.push({
+          id: -2, // Boundless support
+          name: '🟦 پشتیبانی بدون مرز',
+          type: 'boundless_support',
+          description: 'پشتیبانی ویژه اعضای بدون مرز', 
+          is_boundless_only: true,
+          thread_type_id: 2
+        });
+      }
+
+      const allRooms = [...roomsData, ...supportRooms];
       setRooms(allRooms);
       
       console.log('Successfully loaded rooms:', allRooms.length);
-      
-      // Reset retry count on successful fetch
       setRetryCount(0);
     } catch (error: any) {
       console.error('Error fetching rooms:', error);
@@ -87,6 +100,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         return MessageCircle;
       case 'announcement_channel':
         return Megaphone;
+      case 'academy_support':
+        return GraduationCap;
+      case 'boundless_support':
+        return HeadphonesIcon;
       case 'support_chat':
         return HeadphonesIcon;
       default:
@@ -100,6 +117,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     }
     if (room.type === 'announcement_channel') {
       return <Badge variant="outline" className="text-xs">کانال</Badge>;
+    }
+    if (room.type === 'academy_support') {
+      return <Badge variant="default" className="text-xs bg-amber-500">آکادمی</Badge>;
+    }
+    if (room.type === 'boundless_support') {
+      return <Badge variant="default" className="text-xs bg-blue-500">بدون مرز</Badge>;
     }
     if (room.type === 'support_chat') {
       return <Badge variant="default" className="text-xs bg-green-500">پشتیبانی</Badge>;
@@ -187,12 +210,16 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                     room.type === 'boundless_group' ? 'bg-indigo-100 dark:bg-indigo-900' :
+                    room.type === 'academy_support' ? 'bg-amber-100 dark:bg-amber-900' :
+                    room.type === 'boundless_support' ? 'bg-blue-100 dark:bg-blue-900' :
                     room.type === 'support_chat' ? 'bg-green-100 dark:bg-green-900' :
                     room.type === 'announcement_channel' ? 'bg-amber-100 dark:bg-amber-900' :
                     'bg-blue-100 dark:bg-blue-900'
                   }`}>
                     <Icon className={`w-6 h-6 ${
                       room.type === 'boundless_group' ? 'text-indigo-600 dark:text-indigo-400' :
+                      room.type === 'academy_support' ? 'text-amber-600 dark:text-amber-400' :
+                      room.type === 'boundless_support' ? 'text-blue-600 dark:text-blue-400' :
                       room.type === 'support_chat' ? 'text-green-600 dark:text-green-400' :
                       room.type === 'announcement_channel' ? 'text-amber-600 dark:text-amber-400' :
                       'text-blue-600 dark:text-blue-400'

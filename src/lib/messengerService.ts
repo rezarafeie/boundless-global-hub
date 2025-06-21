@@ -8,6 +8,7 @@ export type MessengerUser = {
   is_approved: boolean;
   bedoun_marz_approved: boolean;
   bedoun_marz_request: boolean;
+  bedoun_marz: boolean;
   is_support_agent: boolean;
   role: string;
   created_at: string;
@@ -37,6 +38,8 @@ export type MessengerMessage = {
   media_content: string | null;
   is_read: boolean;
   created_at: string;
+  reply_to_message_id?: number | null;
+  forwarded_from_message_id?: number | null;
 };
 
 export type UserSession = {
@@ -98,6 +101,7 @@ class MessengerService {
         name, 
         phone, 
         bedoun_marz_request: isBoundlessStudent,
+        bedoun_marz: isBoundlessStudent,
         is_approved: false,
         bedoun_marz_approved: false
       }])
@@ -291,7 +295,8 @@ class MessengerService {
       .from('messenger_messages')
       .select(`
         *,
-        sender:chat_users!sender_id(name)
+        sender:chat_users!sender_id(name),
+        reply_to:chat_users!reply_to_message_id(message)
       `)
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
@@ -312,7 +317,6 @@ class MessengerService {
       const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken);
       console.log('Got conversation:', conversation.id);
       
-      // If it's a placeholder conversation, return empty messages
       if (conversation.id === -1) {
         console.log('Placeholder conversation, returning empty messages');
         return [];
@@ -333,7 +337,9 @@ class MessengerService {
         is_read: msg.is_read || false,
         created_at: msg.created_at || new Date().toISOString(),
         sender_name: msg.sender_name,
-        is_from_support: msg.is_from_support || false
+        is_from_support: msg.is_from_support || false,
+        reply_to_message_id: null,
+        forwarded_from_message_id: null
       }));
     } catch (error) {
       console.error('Error fetching private messages:', error);
@@ -344,13 +350,15 @@ class MessengerService {
     }
   }
 
-  // Simplified sendMessage method - trigger handles conversation creation
+  // Enhanced sendMessage method with reply and forward support
   async sendMessage(messageData: {
     room_id?: number;
     sender_id: number;
     recipient_id?: number;
     message: string;
     message_type?: string;
+    reply_to_message_id?: number;
+    forwarded_from_message_id?: number;
   }, sessionToken: string): Promise<MessengerMessage> {
     console.log('Sending message:', messageData);
     
@@ -374,7 +382,9 @@ class MessengerService {
           sender_id: messageData.sender_id,
           recipient_id: messageData.recipient_id || null,
           message: messageData.message,
-          message_type: messageData.message_type || 'text'
+          message_type: messageData.message_type || 'text',
+          reply_to_message_id: messageData.reply_to_message_id || null,
+          forwarded_from_message_id: messageData.forwarded_from_message_id || null
         }])
         .select()
         .single();
@@ -400,6 +410,23 @@ class MessengerService {
       
       throw new Error(`Failed to send message: ${errorMessage}`);
     }
+  }
+
+  // Add method for updating user boundless status
+  async updateUserBoundlessStatus(userId: number, isBoundless: boolean): Promise<MessengerUser> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .update({
+        bedoun_marz: isBoundless,
+        bedoun_marz_approved: isBoundless,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as MessengerUser;
   }
 
   // Support agent functions
