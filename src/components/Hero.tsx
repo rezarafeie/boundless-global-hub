@@ -4,7 +4,23 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import RandomHeadlineGenerator from './RandomHeadlineGenerator';
 
-const Hero = () => {
+export interface HeroProps {
+  title?: string;
+  subtitle?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  backgroundType?: 'default' | 'glow';
+  glowTheme?: 'blue' | 'purple' | 'pink';
+}
+
+const Hero: React.FC<HeroProps> = ({ 
+  title,
+  subtitle,
+  ctaText,
+  ctaLink,
+  backgroundType = 'default',
+  glowTheme = 'blue'
+}) => {
   const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
@@ -51,7 +67,7 @@ const Hero = () => {
                 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
               >
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy'}
+                  {title || (language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy')}
                 </span>
               </motion.h1>
               
@@ -60,9 +76,31 @@ const Hero = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
               >
-                <RandomHeadlineGenerator />
+                {subtitle ? (
+                  <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300">
+                    {subtitle}
+                  </p>
+                ) : (
+                  <RandomHeadlineGenerator />
+                )}
               </motion.div>
             </div>
+
+            {/* CTA Button */}
+            {ctaText && ctaLink && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+              >
+                <a
+                  href={ctaLink}
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                >
+                  {ctaText}
+                </a>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

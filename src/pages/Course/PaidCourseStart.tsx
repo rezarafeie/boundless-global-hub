@@ -52,7 +52,7 @@ const PaidCourseStart = () => {
         ctaText={translations.startLearning}
         ctaLink="#course-content"
         backgroundType="glow"
-        glowTheme="courses"
+        glowTheme="purple"
       />
 
       <section className="py-16 bg-gradient-to-b from-background to-muted/20" id="course-content">

@@ -172,6 +172,7 @@ const BorderlessHub = () => {
                           {announcement.media_type !== 'none' && (
                             <div className="mt-2">
                               <AnnouncementMedia 
+                                title={announcement.title}
                                 mediaType={announcement.media_type} 
                                 mediaUrl={announcement.media_url} 
                                 mediaContent={announcement.media_content} 
@@ -202,7 +203,7 @@ const BorderlessHub = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <EnhancedLiveStreamCard settings={liveSettings} />
+              {liveSettings && <EnhancedLiveStreamCard {...liveSettings} />}
             </motion.div>
 
             {/* Rafiei Meet Card */}
@@ -211,7 +212,7 @@ const BorderlessHub = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <EnhancedRafieiMeetCard settings={rafieiMeetSettings} />
+              {rafieiMeetSettings && <EnhancedRafieiMeetCard {...rafieiMeetSettings} />}
             </motion.div>
           </div>
 
