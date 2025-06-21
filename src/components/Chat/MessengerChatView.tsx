@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Send, Users, HeadphonesIcon } from 'lucide-react';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
+import { useToast } from '@/hooks/use-toast';
+import ModernChatInput from './ModernChatInput';
 
 interface ChatRoom {
   id: number;
@@ -26,10 +28,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   currentUser,
   onBack
 }) => {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
   const isSubscribedRef = useRef(false);
@@ -59,8 +62,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         // Clean up any existing channel
         cleanupChannel();
 
-        // Create unique channel name
-        const channelName = `messages_${room.type}_${room.id}_${currentUser.id}_${Date.now()}`;
+        // Create unique channel name with timestamp to avoid conflicts
+        const channelName = `messages_${room.type}_${room.id}_${currentUser.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         channelRef.current = supabase.channel(channelName);
         
@@ -93,13 +96,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               console.log('Successfully subscribed to channel:', channelName);
             } else if (status === 'CHANNEL_ERROR') {
               console.error('Channel subscription error');
-              setError('Connection error. Please refresh the page.');
+              setError('خطا در اتصال. لطفاً صفحه را رفرش کنید.');
             }
           });
 
       } catch (error) {
         console.error('Error setting up messages and subscription:', error);
-        setError('Failed to load messages. Please try again.');
+        setError('خطا در بارگذاری پیام‌ها. لطفاً دوباره تلاش کنید.');
       } finally {
         setLoading(false);
       }
@@ -128,24 +131,60 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setMessages(fetchedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      setError('Failed to load messages');
+      setError('خطا در بارگذاری پیام‌ها');
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const handleSendMessage = async (messageText: string): Promise<void> => {
+    if (!messageText.trim() || sendingMessage) return;
     
+    setSendingMessage(true);
     try {
-      await messengerService.sendMessage({
+      const messageData = {
         room_id: room.type === 'support_chat' ? null : room.id,
         sender_id: currentUser.id,
         recipient_id: room.type === 'support_chat' ? 1 : null, // Assuming support agent has ID 1
-        message: newMessage,
+        message: messageText,
+        message_type: 'text'
+      };
+
+      console.log('Sending message with data:', messageData);
+      
+      await messengerService.sendMessage(messageData);
+      
+      // Success feedback
+      toast({
+        title: 'پیام ارسال شد',
+        description: 'پیام شما با موفقیت ارسال شد.',
       });
-      setNewMessage('');
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Error sending message:', error);
-      setError('Failed to send message');
+      
+      // Show user-friendly error message
+      const errorMessage = error?.message?.includes('policy') 
+        ? 'خطا در ارسال پیام. لطفاً دوباره تلاش کنید.'
+        : 'ارسال پیام با مشکل مواجه شد.';
+      
+      toast({
+        title: 'خطا در ارسال',
+        description: (
+          <div className="flex items-center gap-2">
+            <span>{errorMessage}</span>
+            <button
+              onClick={() => handleSendMessage(messageText)}
+              className="text-blue-500 hover:text-blue-600 underline text-sm"
+            >
+              تلاش مجدد 🔄
+            </button>
+          </div>
+        ),
+        variant: 'destructive',
+      });
+      
+      throw error; // Re-throw to let ModernChatInput handle it
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -170,7 +209,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>Loading messages...</p>
+        <p>در حال بارگذاری پیام‌ها...</p>
       </div>
     );
   }
@@ -180,7 +219,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       <div className="flex flex-col items-center justify-center h-full p-4">
         <p className="text-red-500 mb-4">{error}</p>
         <Button onClick={() => window.location.reload()}>
-          Refresh Page
+          رفرش صفحه
         </Button>
       </div>
     );
@@ -221,26 +260,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         <div ref={chatBottomRef} />
       </div>
 
-      {/* Chat Input */}
-      <div className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4">
-        <div className="flex items-center">
-          <Input
-            type="text"
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 rounded-l-md"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSendMessage();
-              }
-            }}
-          />
-          <Button onClick={handleSendMessage} className="rounded-r-md bg-blue-500 hover:bg-blue-600 text-white">
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      {/* Modern Chat Input */}
+      <ModernChatInput 
+        onSendMessage={handleSendMessage}
+        disabled={sendingMessage}
+      />
     </div>
   );
 };

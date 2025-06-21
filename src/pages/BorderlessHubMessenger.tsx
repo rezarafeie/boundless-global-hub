@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -41,6 +40,12 @@ const BorderlessHubMessenger: React.FC = () => {
         if (result) {
           setCurrentUser(result.user);
           setSessionToken(token);
+          
+          // Check if user is approved, if not redirect to pending page
+          if (!result.user.is_approved) {
+            navigate('/hub/messenger/pending', { replace: true });
+            return;
+          }
         } else {
           localStorage.removeItem('messenger_session_token');
         }
@@ -55,6 +60,13 @@ const BorderlessHubMessenger: React.FC = () => {
     setSessionToken(token);
     setCurrentUser(user);
     localStorage.setItem('messenger_session_token', token);
+    
+    // Check if user needs approval
+    if (!user.is_approved) {
+      navigate('/hub/messenger/pending', { replace: true });
+      return;
+    }
+    
     toast({
       title: 'خوش آمدید!',
       description: `${userName} عزیز، به پیام‌رسان بدون مرز خوش آمدید.`,
@@ -101,6 +113,7 @@ const BorderlessHubMessenger: React.FC = () => {
     return <MessengerAuth onAuthenticated={handleAuthenticated} />;
   }
 
+  // This check is now redundant since we redirect to pending, but keep as fallback
   if (!currentUser.is_approved) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">

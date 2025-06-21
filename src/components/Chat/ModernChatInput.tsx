@@ -15,16 +15,24 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   disabled = false 
 }) => {
   const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
+    if (!message.trim() || disabled || isSending) return;
+    
+    setIsSending(true);
+    try {
+      await onSendMessage(message.trim());
       setMessage('');
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -60,6 +68,8 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
     }
   }, [message]);
 
+  const isMessageValid = message.trim().length > 0;
+
   return (
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 safe-area-padding-bottom">
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-3">
@@ -69,10 +79,12 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="پیامت رو بنویس..."
+            placeholder="برای نوشتن پیام اینجا بنویسید... ✍️"
             className="resize-none border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 text-base"
-            disabled={disabled}
+            disabled={disabled || isSending}
             rows={1}
+            dir="rtl"
+            style={{ direction: 'rtl', textAlign: 'right' }}
           />
           <div className="absolute left-3 bottom-3">
             <EmojiPicker onEmojiSelect={handleEmojiSelect} />
@@ -81,12 +93,24 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
         
         <Button
           type="submit"
-          disabled={!message.trim() || disabled}
-          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl h-12 w-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl flex-shrink-0"
+          disabled={!isMessageValid || disabled || isSending}
+          className={`rounded-2xl h-12 w-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl flex-shrink-0 ${
+            isMessageValid && !disabled && !isSending
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
+              : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
+          }`}
         >
           <Send className="w-5 h-5" />
         </Button>
       </form>
+      
+      {isSending && (
+        <div className="text-center mt-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            در حال ارسال پیام...
+          </span>
+        </div>
+      )}
     </div>
   );
 };
