@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { supportService } from './supportService';
 
@@ -296,7 +297,7 @@ class MessengerService {
     try {
       console.log('Getting private messages for user:', userId);
       
-      // Get or create support conversation first with proper error handling
+      // Get or create support conversation first with enhanced error handling
       const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken);
       console.log('Got conversation:', conversation.id);
       
@@ -321,6 +322,10 @@ class MessengerService {
       }));
     } catch (error) {
       console.error('Error fetching private messages:', error);
+      // Provide a more user-friendly error message
+      if (error instanceof Error && error.message.includes('authentication')) {
+        throw new Error('Session expired. Please log in again.');
+      }
       throw error;
     }
   }
@@ -340,7 +345,21 @@ class MessengerService {
       throw new Error('Invalid session. Please log in again.');
     }
     
-    // Since RLS is temporarily disabled, we can send the message directly
+    // Enhanced session context setup for support messages
+    if (messageData.recipient_id === 1 && !messageData.room_id) {
+      console.log('Setting up session context for support message');
+      try {
+        const { error } = await supabase.rpc('set_session_context', { 
+          session_token: sessionToken 
+        });
+        if (error) {
+          console.error('Failed to set session context:', error);
+        }
+      } catch (error) {
+        console.error('Error setting session context:', error);
+      }
+    }
+    
     const { data, error } = await supabase
       .from('messenger_messages')
       .insert([{

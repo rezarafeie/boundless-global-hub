@@ -31,7 +31,7 @@ export type SupportMessage = {
 };
 
 class SupportService {
-  // Helper method to set session context - now more robust
+  // Helper method to set session context - enhanced with better error handling
   private async setSessionContext(sessionToken: string): Promise<void> {
     try {
       console.log('Setting session context for token:', sessionToken.substring(0, 8) + '...');
@@ -52,11 +52,25 @@ class SupportService {
     }
   }
 
+  // Enhanced method to ensure session context is set before any operation
+  private async ensureSessionContext(sessionToken: string): Promise<void> {
+    if (!sessionToken) {
+      throw new Error('Session token is required for this operation');
+    }
+    
+    try {
+      await this.setSessionContext(sessionToken);
+    } catch (error) {
+      console.error('Failed to ensure session context:', error);
+      throw new Error('Authentication failed. Please log in again.');
+    }
+  }
+
   // Get all support conversations for admin view
   async getSupportConversations(): Promise<SupportConversation[]> {
     const sessionToken = localStorage.getItem('messenger_session_token');
     if (sessionToken) {
-      await this.setSessionContext(sessionToken);
+      await this.ensureSessionContext(sessionToken);
     }
 
     const { data, error } = await supabase
@@ -84,7 +98,7 @@ class SupportService {
   async getAgentConversations(agentId: number): Promise<SupportConversation[]> {
     const sessionToken = localStorage.getItem('messenger_session_token');
     if (sessionToken) {
-      await this.setSessionContext(sessionToken);
+      await this.ensureSessionContext(sessionToken);
     }
 
     const { data, error } = await supabase
@@ -111,7 +125,7 @@ class SupportService {
   async assignConversation(conversationId: number, agentId: number): Promise<void> {
     const sessionToken = localStorage.getItem('messenger_session_token');
     if (sessionToken) {
-      await this.setSessionContext(sessionToken);
+      await this.ensureSessionContext(sessionToken);
     }
 
     const { error } = await supabase
@@ -130,7 +144,7 @@ class SupportService {
   async updateConversationStatus(conversationId: number, status: 'open' | 'assigned' | 'closed'): Promise<void> {
     const sessionToken = localStorage.getItem('messenger_session_token');
     if (sessionToken) {
-      await this.setSessionContext(sessionToken);
+      await this.ensureSessionContext(sessionToken);
     }
 
     const { error } = await supabase
@@ -148,7 +162,7 @@ class SupportService {
   async getConversationMessages(conversationId: number): Promise<SupportMessage[]> {
     const sessionToken = localStorage.getItem('messenger_session_token');
     if (sessionToken) {
-      await this.setSessionContext(sessionToken);
+      await this.ensureSessionContext(sessionToken);
     }
 
     const { data, error } = await supabase
@@ -174,7 +188,7 @@ class SupportService {
   async sendSupportMessage(conversationId: number, senderId: number, message: string, recipientId?: number): Promise<SupportMessage> {
     const sessionToken = localStorage.getItem('messenger_session_token');
     if (sessionToken) {
-      await this.setSessionContext(sessionToken);
+      await this.ensureSessionContext(sessionToken);
     }
 
     const { data, error } = await supabase
@@ -211,12 +225,16 @@ class SupportService {
     } as SupportMessage;
   }
 
-  // Create or get support conversation for user - FIXED VERSION
+  // Create or get support conversation for user - ENHANCED VERSION
   async getOrCreateUserConversation(userId: number, sessionToken: string): Promise<SupportConversation> {
     console.log('Getting or creating conversation for user:', userId);
     
-    // ALWAYS set session context first
-    await this.setSessionContext(sessionToken);
+    if (!sessionToken) {
+      throw new Error('Session token is required');
+    }
+    
+    // ALWAYS set session context first - this is critical for RLS
+    await this.ensureSessionContext(sessionToken);
     
     try {
       // First, try to find existing conversation
@@ -251,7 +269,7 @@ class SupportService {
 
       console.log('No existing conversation found, creating new one...');
       
-      // Create new conversation - the RLS policy should now allow this
+      // Create new conversation - the new permissive policy should allow this
       const { data: newConversation, error: createError } = await supabase
         .from('support_conversations')
         .insert([{ 
