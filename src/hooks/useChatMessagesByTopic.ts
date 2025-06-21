@@ -24,7 +24,7 @@ export const useChatMessagesByTopic = (topicId: number | null) => {
           .order('created_at', { ascending: true });
         
         if (error) throw error;
-        setMessages(data || []);
+        setMessages((data || []) as ChatMessage[]);
       } catch (error) {
         console.error('Error fetching messages:', error);
         setMessages([]);
