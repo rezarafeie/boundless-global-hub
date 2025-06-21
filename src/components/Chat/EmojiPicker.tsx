@@ -5,6 +5,7 @@ import { Smile } from 'lucide-react';
 
 interface EmojiPickerProps {
   onEmojiSelect: (emoji: string) => void;
+  children?: React.ReactNode;
 }
 
 const EMOJI_CATEGORIES = {
@@ -14,7 +15,7 @@ const EMOJI_CATEGORIES = {
   'اشیاء': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💯', '💢', '💥', '💦', '💨', '🕳️', '💬', '🗯️', '💭', '🔥', '⭐']
 };
 
-const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect }) => {
+const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('اخیر');
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -37,15 +38,21 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect }) => {
 
   return (
     <div className="relative" ref={pickerRef}>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-slate-500 hover:text-amber-500 hover:bg-transparent p-2"
-      >
-        <Smile className="w-5 h-5" />
-      </Button>
+      {children ? (
+        <div onClick={() => setIsOpen(!isOpen)}>
+          {children}
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-slate-500 hover:text-amber-500 hover:bg-transparent p-2"
+        >
+          <Smile className="w-5 h-5" />
+        </Button>
+      )}
 
       {isOpen && (
         <div className="absolute bottom-12 left-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xl w-80 z-50">

@@ -1,3 +1,4 @@
+
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
@@ -5,7 +6,12 @@ import Hero from "@/components/Hero";
 const Home = () => {
   return (
     <MainLayout>
-      <Hero />
+      <Hero 
+        title="آکادمی رفیعی"
+        subtitle="مسیر شما به سوی موفقیت و رشد شخصی"
+        ctaText="شروع کنید"
+        ctaLink="/courses"
+      />
       
       {/* Borderless Hub CTA Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-8 px-4" dir="rtl">
