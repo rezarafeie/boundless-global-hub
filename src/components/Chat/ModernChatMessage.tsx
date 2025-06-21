@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Pin } from 'lucide-react';
+import UserAvatar from './UserAvatar';
 import type { ChatMessage } from '@/types/supabase';
 
 interface ModernChatMessageProps {
@@ -30,18 +31,29 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
   };
 
   return (
-    <div className={`flex mb-4 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[70%] sm:max-w-[60%] ${isOwnMessage ? 'order-2' : ''}`}>
+    <div className={`flex mb-4 gap-3 ${isOwnMessage ? 'justify-end flex-row-reverse' : 'justify-start'}`} dir="rtl">
+      {/* Avatar - only show for other users' messages */}
+      {!isOwnMessage && (
+        <div className="flex-shrink-0">
+          <UserAvatar 
+            name={message.sender_name} 
+            userId={message.sender_id}
+            size={32}
+          />
+        </div>
+      )}
+      
+      <div className={`max-w-[70%] sm:max-w-[60%]`}>
         <div
           className={`rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
             isOwnMessage
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-br-md'
-              : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-bl-md'
+              : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-br-md border border-slate-200 dark:border-slate-700'
           }`}
         >
           {/* Header */}
           {!isOwnMessage && (
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2" dir="rtl">
               <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
                 {message.sender_name}
               </span>
@@ -57,16 +69,16 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
           {/* Message content */}
           <p className={`text-sm leading-relaxed ${
             isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
-          }`}>
+          }`} dir="rtl">
             {message.message}
           </p>
           
           {/* Timestamp */}
-          <div className={`flex items-center justify-end mt-2 text-xs ${
+          <div className={`flex items-center justify-start mt-2 text-xs ${
             isOwnMessage ? 'text-amber-100' : 'text-slate-500 dark:text-slate-400'
-          }`}>
+          }`} dir="rtl">
             {message.is_pinned && isOwnMessage && (
-              <Pin className="w-3 h-3 mr-1" />
+              <Pin className="w-3 h-3 ml-1" />
             )}
             <span>
               {new Date(message.created_at).toLocaleTimeString('fa-IR', {

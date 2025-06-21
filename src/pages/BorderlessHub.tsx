@@ -107,10 +107,10 @@ const BorderlessHub: React.FC = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-700 to-indigo-700 rounded-full mb-6 shadow-2xl">
               <MessageCircle className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
               مرکز ارتباط بدون مرز
             </h1>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
               اطلاعیه‌ها، گفتگوی زنده، جلسات تصویری و پخش مستقیم - همه در یک مکان
             </p>
           </div>
@@ -118,7 +118,7 @@ const BorderlessHub: React.FC = () => {
           {/* Live Cards Section - Show when active */}
           {(isLiveActive || isMeetActive) && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
                 🔴 پخش زنده فعال
               </h2>
               
@@ -153,10 +153,10 @@ const BorderlessHub: React.FC = () => {
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
               </div>
-              <CardTitle className="text-2xl text-white mb-2">
+              <CardTitle className="text-2xl text-gray-900 dark:text-white mb-2">
                 💬 گفت‌وگوهای بدون مرز
               </CardTitle>
-              <p className="text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400">
                 به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید و در موضوعات مختلف شرکت کنید
               </p>
             </CardHeader>
@@ -177,10 +177,10 @@ const BorderlessHub: React.FC = () => {
           {/* Announcements Section */}
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-white mb-2">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 📢 اطلاعیه‌های مهم
               </h2>
-              <p className="text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400">
                 آخرین اخبار و اطلاعیه‌های مهم از تیم بدون مرز
               </p>
             </div>
@@ -190,9 +190,9 @@ const BorderlessHub: React.FC = () => {
                 <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
               </div>
             ) : announcements.length === 0 ? (
-              <Card className="bg-gray-900/50 border-gray-700 text-center py-12">
-                <Bell className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">
+              <Card className="bg-white/50 dark:bg-gray-900/50 border-gray-300 dark:border-gray-700 text-center py-12">
+                <Bell className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
                   هنوز اطلاعیه‌ای منتشر نشده است
                 </p>
               </Card>
@@ -215,22 +215,22 @@ const BorderlessHub: React.FC = () => {
                             <Badge className={getAnnouncementTypeColor(announcement.type)}>
                               {getAnnouncementTypeLabel(announcement.type)}
                             </Badge>
-                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                               <Calendar className="w-4 h-4" />
                               {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
                             </div>
                           </div>
                           
-                          <CardTitle className="text-xl md:text-2xl text-white mb-3">
+                          <CardTitle className="text-xl md:text-2xl text-gray-900 dark:text-white mb-3">
                             {announcement.title}
                           </CardTitle>
                           
-                          <p className="text-gray-300 leading-relaxed">
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                             {announcement.full_text}
                           </p>
                         </div>
                         
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                           <Eye className="w-4 h-4" />
                           <span>{announcement.views || 0}</span>
                         </div>
@@ -251,19 +251,19 @@ const BorderlessHub: React.FC = () => {
           {/* Inactive Live Cards Section */}
           {(!isLiveActive || !isMeetActive) && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
                 📺 سرویس‌های پخش
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {!isLiveActive && (
-                  <Card className="bg-gray-900/50 border-gray-700 opacity-60">
+                  <Card className="bg-white/30 dark:bg-gray-900/50 border-gray-300 dark:border-gray-700 opacity-60">
                     <CardHeader className="text-center">
-                      <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Play className="w-8 h-8 text-gray-400" />
+                      <div className="w-16 h-16 bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Play className="w-8 h-8 text-gray-500 dark: text-gray-400" />
                       </div>
-                      <CardTitle className="text-white">پخش زنده آپارات</CardTitle>
-                      <p className="text-gray-400 text-sm">
+                      <CardTitle className="text-gray-700 dark:text-white">پخش زنده آپارات</CardTitle>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
                         در حال حاضر غیرفعال
                       </p>
                     </CardHeader>
@@ -271,13 +271,13 @@ const BorderlessHub: React.FC = () => {
                 )}
                 
                 {!isMeetActive && (
-                  <Card className="bg-gray-900/50 border-gray-700 opacity-60">
+                  <Card className="bg-white/30 dark:bg-gray-900/50 border-gray-300 dark:border-gray-700 opacity-60">
                     <CardHeader className="text-center">
-                      <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Video className="w-8 h-8 text-gray-400" />
+                      <div className="w-16 h-16 bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Video className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                       </div>
-                      <CardTitle className="text-white">جلسه تصویری رفیعی</CardTitle>
-                      <p className="text-gray-400 text-sm">
+                      <CardTitle className="text-gray-700 dark:text-white">جلسه تصویری رفیعی</CardTitle>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
                         در حال حاضر غیرفعال
                       </p>
                     </CardHeader>

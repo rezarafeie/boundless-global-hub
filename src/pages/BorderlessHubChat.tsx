@@ -1,286 +1,203 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import MainLayout from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, MessageCircle, Clock, Sun, Moon } from 'lucide-react';
-import { useChatTopics } from '@/hooks/useChatTopics';
-import { useChatMessagesByTopic } from '@/hooks/useChatMessagesByTopic';
-import { chatService, chatUserService } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-import { useTheme } from '@/contexts/ThemeContext';
-import ChatAuth from '@/components/Chat/ChatAuth';
-import TopicSelector from '@/components/Chat/TopicSelector';
-import ChatTopicMessages from '@/components/Chat/ChatTopicMessages';
+import { Badge } from '@/components/ui/badge';
+import { ArrowRight, MessageCircle } from 'lucide-react';
+import { useUser } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
+import ModernChatMessage from '@/components/Chat/ModernChatMessage';
 import ModernChatInput from '@/components/Chat/ModernChatInput';
-import type { ChatTopic } from '@/types/supabase';
+import { useChatMessages } from '@/hooks/useChatMessages';
+import { useOnlineUsers } from '@/hooks/useOnlineUsers';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
+import { useChatTopics } from '@/hooks/useChatTopics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const BorderlessHubChat: React.FC = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { isDarkMode, toggleTheme } = useTheme();
-  const { topics, loading: topicsLoading } = useChatTopics();
-  const [activeTopic, setActiveTopic] = useState<ChatTopic | null>(null);
-  const { messages, loading: messagesLoading } = useChatMessagesByTopic(activeTopic?.id || null);
-  
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>('');
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showAuthForm, setShowAuthForm] = useState(false);
-  const [isApproved, setIsApproved] = useState(false);
-  const [checkingApproval, setCheckingApproval] = useState(false);
+interface TopicSelectorProps {
+  selectedTopic: string;
+  onTopicChange: (topicId: string) => void;
+}
 
-  // Set first topic as active when topics load
-  useEffect(() => {
-    if (topics.length > 0 && !activeTopic) {
-      setActiveTopic(topics[0]);
-    }
-  }, [topics, activeTopic]);
+const TopicSelector: React.FC<TopicSelectorProps> = ({ selectedTopic, onTopicChange }) => {
+  const { topics, loading, error } = useChatTopics();
 
-  // Check authentication on mount
-  useEffect(() => {
-    const token = localStorage.getItem('chat_session_token');
-    if (token) {
-      validateSession(token);
-    } else {
-      setShowAuthForm(true);
-    }
-  }, []);
-
-  const validateSession = async (token: string) => {
-    try {
-      const result = await chatUserService.validateSession(token);
-      if (result) {
-        setSessionToken(token);
-        setUserName(result.user.name);
-        setCurrentUserId(result.user.id);
-        setIsAuthenticated(true);
-        setIsApproved(true);
-        setShowAuthForm(false);
-      } else {
-        localStorage.removeItem('chat_session_token');
-        setShowAuthForm(true);
-      }
-    } catch (error) {
-      localStorage.removeItem('chat_session_token');
-      setShowAuthForm(true);
-    }
-  };
-
-  const handleAuthenticated = (token: string, name: string) => {
-    setSessionToken(token);
-    setUserName(name);
-    setIsAuthenticated(true);
-    setIsApproved(true);
-    setShowAuthForm(false);
-  };
-
-  const handleSendMessage = async (messageText: string) => {
-    if (!messageText.trim() || !sessionToken || !activeTopic) return;
-
-    try {
-      const result = await chatUserService.validateSession(sessionToken);
-      if (!result) {
-        toast({
-          title: 'خطا',
-          description: 'جلسه شما منقضی شده است. دوباره وارد شوید.',
-          variant: 'destructive',
-        });
-        handleLogout();
-        return;
-      }
-
-      await chatService.sendMessage({
-        message: messageText,
-        sender_name: result.user.name,
-        sender_role: 'member',
-        user_id: result.user.id,
-        topic_id: activeTopic.id
-      });
-
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'پیام ارسال نشد. دوباره تلاش کنید.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleLogout = () => {
-    if (sessionToken) {
-      chatUserService.deactivateSession(sessionToken);
-    }
-    localStorage.removeItem('chat_session_token');
-    setSessionToken(null);
-    setUserName('');
-    setCurrentUserId(null);
-    setIsAuthenticated(false);
-    setIsApproved(false);
-    setShowAuthForm(true);
-  };
-
-  const checkApprovalStatus = async () => {
-    if (!sessionToken) return;
-    
-    setCheckingApproval(true);
-    try {
-      const result = await chatUserService.validateSession(sessionToken);
-      if (result) {
-        setIsApproved(true);
-        toast({
-          title: 'خوش آمدید!',
-          description: 'حساب شما تایید شد و وارد چت شدید.',
-        });
-      }
-    } catch (error) {
-      // Silent fail for auto-check
-    } finally {
-      setCheckingApproval(false);
-    }
-  };
-
-  // Show auth form if not authenticated
-  if (showAuthForm) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:via-black dark:to-slate-800 flex items-center justify-center" dir="rtl">
-        <div className="container mx-auto px-4 py-8">
-          <ChatAuth onAuthenticated={handleAuthenticated} />
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div className="text-center py-4 text-gray-500">در حال بارگیری تاپیک‌ها...</div>;
   }
 
-  // Show waiting for approval if authenticated but not approved
-  if (isAuthenticated && !isApproved) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:via-black dark:to-slate-800 flex items-center justify-center" dir="rtl">
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-2xl">
-          <div className="p-8 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <Clock className="w-16 h-16 text-amber-400" />
-                {checkingApproval && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full animate-pulse"></div>
-                )}
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-              در انتظار تایید مدیر
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-6">
-              درخواست شما ارسال شد. منتظر تایید مدیر باشید تا بتوانید در گفتگوها شرکت کنید.
-            </p>
-            
-            <div className="space-y-4">
-              <Button 
-                onClick={checkApprovalStatus}
-                disabled={checkingApproval}
-                className="w-full bg-amber-600 hover:bg-amber-700"
-              >
-                {checkingApproval ? 'در حال بررسی...' : 'بررسی وضعیت'}
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate('/hub')}
-                className="w-full text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              >
-                بازگشت به مرکز ارتباط
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (error) {
+    return <div className="text-center py-4 text-red-500">خطا در بارگیری تاپیک‌ها</div>;
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-slate-900" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 z-20">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/hub')}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+    <Tabs defaultValue={selectedTopic} className="border-b border-gray-200 dark:border-gray-700">
+      <TabsList className="p-4 space-x-3 flex justify-center">
+        {topics.map((topic) => (
+          <TabsTrigger 
+            key={topic.id} 
+            value={topic.id} 
+            onClick={() => onTopicChange(topic.id)}
+            className={`data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900 dark:data-[state=active]:text-blue-300 rounded-full px-4 py-2 text-sm transition-colors duration-200 hover:bg-blue-50 dark:hover:bg-blue-950`}
           >
-            <ArrowRight className="w-5 h-5 ml-2" />
-            بازگشت
-          </Button>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">💬 گفت‌وگوهای بدون مرز</h1>
-        </div>
+            {topic.name}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+};
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleTheme}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-          >
-            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
-          
-          <div className="text-right">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">{userName}</p>
-          </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleLogout}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-          >
-            خروج
-          </Button>
-        </div>
-      </div>
+interface ChatTopicMessagesProps {
+  topicId: string;
+  currentUserId?: string;
+}
 
-      {/* Topic Selector */}
-      {!topicsLoading && topics.length > 0 && (
-        <TopicSelector
-          topics={topics}
-          activeTopic={activeTopic}
-          onTopicChange={setActiveTopic}
-          isMobile={window.innerWidth < 768}
+const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({ topicId, currentUserId }) => {
+  const { messages, loading, error } = useChatMessages(topicId);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  if (loading) {
+    return <div className="text-center py-4 text-gray-500">در حال بارگیری پیام‌ها...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-4 text-red-500">خطا در بارگیری پیام‌ها</div>;
+  }
+
+  return (
+    <div ref={chatContainerRef} className="space-y-3">
+      {messages.map((message) => (
+        <ModernChatMessage
+          key={message.id}
+          message={message}
+          isOwnMessage={message.sender_id === currentUserId}
         />
-      )}
-      
-      {/* Messages Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {activeTopic ? (
-          <ChatTopicMessages
-            messages={messages}
-            loading={messagesLoading}
-            currentUserId={currentUserId}
-          />
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800">
-            <div className="text-center">
-              <MessageCircle className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
-              <p className="text-slate-600 dark:text-slate-300 text-lg font-medium mb-2">
-                {topicsLoading ? 'در حال بارگذاری موضوعات...' : 'موضوعی برای گفتگو یافت نشد'}
-              </p>
+      ))}
+    </div>
+  );
+};
+
+const BorderlessHubChat: React.FC = () => {
+  const [selectedTopic, setSelectedTopic] = useState('general');
+  const user = useUser();
+  const { isAuthenticated, currentUser } = useAuth();
+  const { toast } = useToast();
+  const { onlineUsers } = useOnlineUsers();
+
+  const handleSendMessage = async (messageText: string) => {
+    if (!isAuthenticated || !currentUser?.approved) {
+      toast({
+        title: "خطا",
+        description: "برای ارسال پیام وارد شوید و حساب کاربری خود را فعال کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!messageText.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            topic_id: selectedTopic,
+            sender_id: user?.id,
+            sender_name: currentUser?.displayName || 'کاربر بدون نام',
+            sender_role: currentUser?.role || 'member',
+            message: messageText,
+          },
+        ]);
+
+      if (error) throw error;
+    } catch (error) {
+      toast({
+        title: "خطا",
+        description: "خطا در ارسال پیام",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:via-black dark:to-gray-800" dir="rtl">
+        <div className="h-screen flex flex-col">
+          
+          {/* Chat Header */}
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Link to="/hub">
+                  <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      گفت‌وگوهای بدون مرز
+                    </h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {onlineUsers.length} نفر آنلاین
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  فعال
+                </Badge>
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Topic Selector */}
+          <TopicSelector 
+            selectedTopic={selectedTopic} 
+            onTopicChange={setSelectedTopic} 
+          />
+
+          {/* Chat Messages Area */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full p-4 overflow-y-auto">
+              <ChatTopicMessages 
+                topicId={selectedTopic} 
+                currentUserId={currentUser?.id}
+              />
+            </div>
+          </div>
+
+          {/* Chat Input */}
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 p-4">
+            <ModernChatInput 
+              onSendMessage={handleSendMessage}
+              disabled={!isAuthenticated || !currentUser?.approved}
+              placeholder={
+                !isAuthenticated 
+                  ? "برای ارسال پیام وارد شوید..."
+                  : !currentUser?.approved 
+                  ? "حساب شما در انتظار تأیید است..."
+                  : "پیام خود را بنویسید..."
+              }
+            />
+          </div>
+        </div>
       </div>
-      
-      {/* Chat Input - Fixed at bottom */}
-      {activeTopic && (
-        <ModernChatInput 
-          onSendMessage={handleSendMessage}
-          disabled={messagesLoading}
-        />
-      )}
-      
-      {/* Bottom padding for fixed input */}
-      <div className="h-20"></div>
-    </div>
+    </MainLayout>
   );
 };
 
