@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,10 +12,12 @@ import { messengerService, type MessengerUser } from '@/lib/messengerService';
 
 interface ConversationWithDetails extends SupportConversation {
   user?: {
+    id: number;
     name: string;
     phone: string;
   };
   thread_type?: {
+    id: number;
     display_name: string;
   };
   agent?: {
@@ -37,10 +38,15 @@ const SupportManagementTab = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching support data...');
+      
       const [conversationsData, agentsData] = await Promise.all([
         supportService.getAllConversations(),
         messengerService.getAllUsers().then(users => users.filter(u => u.is_support_agent))
       ]);
+      
+      console.log('Conversations fetched:', conversationsData.length);
+      console.log('Support agents fetched:', agentsData.length);
       
       setConversations(conversationsData);
       setSupportAgents(agentsData);
@@ -49,7 +55,7 @@ const SupportManagementTab = () => {
       console.error('Error fetching data:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری اطلاعات',
+        description: 'خطا در بارگذاری اطلاعات پشتیبانی',
         variant: 'destructive',
       });
     } finally {
@@ -83,7 +89,7 @@ const SupportManagementTab = () => {
 
   const handleAssignAgent = async (conversationId: number, agentId: number) => {
     try {
-      // This would need to be implemented in the support service
+      // Update conversation assignment - this would need a proper implementation
       toast({
         title: 'موفق',
         description: 'پشتیبان اختصاص داده شد',
@@ -207,8 +213,7 @@ const SupportManagementTab = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="جستجو بر اساس نام، شماره یا شناسه گفت
-گو..."
+                placeholder="جستجو بر اساس نام، شماره یا شناسه گفتگو..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -244,11 +249,11 @@ const SupportManagementTab = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>شناسه</TableHead>
                   <TableHead>کاربر</TableHead>
                   <TableHead>نوع درخواست</TableHead>
                   <TableHead>وضعیت</TableHead>
                   <TableHead>اولویت</TableHead>
-                  <TableHead>پشتیبان</TableHead>
                   <TableHead>آخرین پیام</TableHead>
                   <TableHead>عملیات</TableHead>
                 </TableRow>
@@ -257,9 +262,12 @@ const SupportManagementTab = () => {
                 {filteredConversations.map((conversation) => (
                   <TableRow key={conversation.id}>
                     <TableCell>
+                      <Badge variant="outline">#{conversation.id}</Badge>
+                    </TableCell>
+                    <TableCell>
                       <div>
                         <p className="font-medium">{conversation.user?.name || 'نامشخص'}</p>
-                        <p className="text-sm text-slate-500">{conversation.user?.phone}</p>
+                        <p className="text-sm text-slate-500">{conversation.user?.phone || 'شماره نامشخص'}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -275,31 +283,6 @@ const SupportManagementTab = () => {
                     </TableCell>
                     <TableCell>
                       {getPriorityBadge(conversation.priority || 'normal')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <UserCog className="w-4 h-4 text-slate-400" />
-                        <Select 
-                          value={conversation.agent_id?.toString() || 'unassigned'}
-                          onValueChange={(value) => {
-                            if (value !== 'unassigned') {
-                              handleAssignAgent(conversation.id, parseInt(value));
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue placeholder="انتخاب پشتیبان" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unassigned">بدون اختصاص</SelectItem>
-                            {supportAgents.map((agent) => (
-                              <SelectItem key={agent.id} value={agent.id.toString()}>
-                                {agent.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-slate-500">

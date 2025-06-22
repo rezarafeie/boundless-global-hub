@@ -99,12 +99,10 @@ class SupportService {
     try {
       console.log('Getting messages for conversation:', conversationId);
       
+      // Get messages from messenger_messages table where conversation_id matches
       const { data, error } = await supabase
         .from('messenger_messages')
-        .select(`
-          *,
-          sender:chat_users!fk_messenger_messages_sender(name)
-        `)
+        .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       
@@ -112,6 +110,15 @@ class SupportService {
         console.error('Error fetching conversation messages:', error);
         throw error;
       }
+      
+      // Get sender names separately to avoid complex joins
+      const senderIds = [...new Set(data?.map(msg => msg.sender_id).filter(id => id) || [])];
+      const { data: senders } = await supabase
+        .from('chat_users')
+        .select('id, name')
+        .in('id', senderIds);
+      
+      const senderMap = new Map(senders?.map(s => [s.id, s.name]) || []);
       
       const messages = (data || []).map(msg => ({
         id: msg.id,
@@ -122,8 +129,8 @@ class SupportService {
         recipient_id: msg.recipient_id,
         is_read: msg.is_read,
         created_at: msg.created_at,
-        sender_name: msg.sender?.name || 'کاربر',
-        is_from_support: msg.sender_id === 1 || (msg.sender_id !== null && msg.sender_id !== msg.recipient_id)
+        sender_name: senderMap.get(msg.sender_id) || 'کاربر',
+        is_from_support: msg.sender_id === 1 || msg.recipient_id !== 1
       }));
       
       console.log('Fetched messages:', messages.length);
@@ -145,13 +152,11 @@ class SupportService {
           conversation_id: conversationId,
           message: message,
           sender_id: senderId,
+          recipient_id: senderId === 1 ? null : 1, // If support agent, send to user, otherwise send to support
           message_type: 'text',
           is_read: false
         }])
-        .select(`
-          *,
-          sender:chat_users!fk_messenger_messages_sender(name)
-        `)
+        .select()
         .single();
       
       if (error) {
@@ -168,6 +173,13 @@ class SupportService {
         })
         .eq('id', conversationId);
       
+      // Get sender name
+      const { data: sender } = await supabase
+        .from('chat_users')
+        .select('name')
+        .eq('id', senderId)
+        .single();
+      
       return {
         id: data.id,
         message: data.message,
@@ -177,7 +189,7 @@ class SupportService {
         recipient_id: data.recipient_id,
         is_read: data.is_read,
         created_at: data.created_at,
-        sender_name: data.sender?.name || 'کاربر',
+        sender_name: sender?.name || 'کاربر',
         is_from_support: data.sender_id === 1
       };
       
@@ -187,23 +199,53 @@ class SupportService {
     }
   }
 
-  async getAllConversations(): Promise<SupportConversation[]> {
+  async getAllConversations(): Promise<any[]> {
     try {
-      const { data, error } = await supabase
+      console.log('Fetching all support conversations...');
+      
+      // Get conversations
+      const { data: conversations, error } = await supabase
         .from('support_conversations')
-        .select(`
-          *,
-          user:chat_users!support_conversations_user_id_fkey(name, phone),
-          thread_type:support_thread_types!support_conversations_thread_type_id_fkey(display_name)
-        `)
+        .select('*')
         .order('last_message_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching all conversations:', error);
+        console.error('Error fetching conversations:', error);
         throw error;
       }
       
-      return (data || []) as SupportConversation[];
+      if (!conversations || conversations.length === 0) {
+        console.log('No conversations found');
+        return [];
+      }
+      
+      // Get user details separately
+      const userIds = conversations.map(c => c.user_id).filter(id => id);
+      const { data: users } = await supabase
+        .from('chat_users')
+        .select('id, name, phone')
+        .in('id', userIds);
+      
+      const userMap = new Map(users?.map(u => [u.id, u]) || []);
+      
+      // Get thread types separately
+      const threadTypeIds = conversations.map(c => c.thread_type_id).filter(id => id);
+      const { data: threadTypes } = await supabase
+        .from('support_thread_types')
+        .select('id, display_name')
+        .in('id', threadTypeIds);
+      
+      const threadTypeMap = new Map(threadTypes?.map(t => [t.id, t]) || []);
+      
+      // Combine data
+      const enrichedConversations = conversations.map(conv => ({
+        ...conv,
+        user: userMap.get(conv.user_id),
+        thread_type: threadTypeMap.get(conv.thread_type_id)
+      }));
+      
+      console.log('Fetched conversations with details:', enrichedConversations.length);
+      return enrichedConversations;
       
     } catch (error) {
       console.error('Error fetching conversations:', error);
