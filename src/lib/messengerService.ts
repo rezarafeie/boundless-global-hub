@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -261,16 +262,31 @@ class MessengerService {
     }
   }
 
-  // Message management
+  // Message management - Fixed ambiguous relationship issue
   async getMessages(roomId: number, sessionToken: string): Promise<MessengerMessageWithUser[]> {
     try {
       await this.setSessionContext(sessionToken);
       
+      // Use explicit joins to avoid ambiguous relationship error
       const { data: messages, error } = await supabase
         .from('messenger_messages')
         .select(`
           *,
-          sender:chat_users!sender_id (*)
+          sender:sender_id (
+            id,
+            name,
+            phone,
+            role,
+            is_approved,
+            is_support_agent,
+            is_messenger_admin,
+            bedoun_marz,
+            bedoun_marz_approved,
+            bedoun_marz_request,
+            created_at,
+            updated_at,
+            last_seen
+          )
         `)
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
@@ -283,7 +299,11 @@ class MessengerService {
       const messagesWithReactions = await Promise.all(
         (messages || []).map(async (message) => {
           const reactions = await this.getMessageReactions(message.id, sessionToken);
-          return { ...message, reactions } as MessengerMessageWithUser;
+          return { 
+            ...message, 
+            reactions,
+            sender_name: message.sender?.name || 'کاربر'
+          } as MessengerMessageWithUser;
         })
       );
 
@@ -294,19 +314,30 @@ class MessengerService {
     }
   }
 
-  async getRoomMessages(roomId: number, sessionToken: string): Promise<MessengerMessageWithUser[]> {
-    return this.getMessages(roomId, sessionToken);
-  }
-
   async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessageWithUser[]> {
     try {
       await this.setSessionContext(sessionToken);
       
+      // Use explicit joins to avoid ambiguous relationship error
       const { data: messages, error } = await supabase
         .from('messenger_messages')
         .select(`
           *,
-          sender:chat_users!sender_id (*)
+          sender:sender_id (
+            id,
+            name,
+            phone,
+            role,
+            is_approved,
+            is_support_agent,
+            is_messenger_admin,
+            bedoun_marz,
+            bedoun_marz_approved,
+            bedoun_marz_request,
+            created_at,
+            updated_at,
+            last_seen
+          )
         `)
         .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
         .is('room_id', null)
@@ -320,7 +351,12 @@ class MessengerService {
       const messagesWithReactions = await Promise.all(
         (messages || []).map(async (message) => {
           const reactions = await this.getMessageReactions(message.id, sessionToken);
-          return { ...message, reactions } as MessengerMessageWithUser;
+          return { 
+            ...message, 
+            reactions,
+            sender_name: message.sender?.name || 'کاربر',
+            is_from_support: message.sender_id === 1
+          } as MessengerMessageWithUser;
         })
       );
 
