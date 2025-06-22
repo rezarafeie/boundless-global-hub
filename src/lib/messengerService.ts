@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -411,25 +412,6 @@ class MessengerService {
     }
   }
 
-  async deleteMessage(messageId: number, sessionToken: string): Promise<void> {
-    try {
-      await this.setSessionContext(sessionToken);
-      
-      const { error } = await supabase
-        .from('messenger_messages')
-        .delete()
-        .eq('id', messageId);
-
-      if (error) {
-        console.error('Error deleting message:', error);
-        throw new Error(`Failed to delete message: ${error.message}`);
-      }
-    } catch (error: any) {
-      console.error('Error in deleteMessage:', error);
-      throw error;
-    }
-  }
-
   // User management
   async getApprovedUsers(): Promise<MessengerUser[]> {
     try {
@@ -506,7 +488,12 @@ class MessengerService {
     }
   }
 
-  async updateUserRole(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean }): Promise<MessengerUser> {
+  async updateUserRole(userId: number, updates: { 
+    is_support_agent?: boolean; 
+    is_messenger_admin?: boolean;
+    is_approved?: boolean;
+    bedoun_marz_approved?: boolean;
+  }): Promise<MessengerUser> {
     return this.updateUser(userId, updates);
   }
 
