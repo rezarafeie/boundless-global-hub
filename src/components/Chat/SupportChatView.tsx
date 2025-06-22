@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<SupportTag[]>(conversation.tag_list || []);
+  const [selectedTags, setSelectedTags] = useState<SupportTag[]>((conversation.tag_list as SupportTag[]) || []);
   const [selectedStatus, setSelectedStatus] = useState(conversation.status || 'open');
   const [selectedPriority, setSelectedPriority] = useState(conversation.priority || 'normal');
   const chatBottomRef = useRef<HTMLDivElement>(null);

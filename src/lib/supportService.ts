@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupportMessage {
@@ -9,6 +10,7 @@ export interface SupportMessage {
   recipient_id: number | null;
   is_read: boolean | null;
   created_at: string | null;
+  conversation_id?: number | null;
   sender_name?: string;
   is_from_support?: boolean;
   unread_by_support?: boolean;
@@ -25,7 +27,7 @@ export interface SupportConversation {
   updated_at: string | null;
   last_message_at: string | null;
   tags?: string[];
-  tag_list?: string[];
+  tag_list?: SupportTag[];
   internal_notes?: string;
   assigned_agent_name?: string;
   unread_count?: number;
