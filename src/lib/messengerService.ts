@@ -267,12 +267,12 @@ class MessengerService {
     try {
       await this.setSessionContext(sessionToken);
       
-      // Use explicit joins to avoid ambiguous relationship error
+      // Use explicit foreign key syntax to avoid ambiguous relationship error
       const { data: messages, error } = await supabase
         .from('messenger_messages')
         .select(`
           *,
-          sender:sender_id (
+          sender:chat_users!messenger_messages_sender_id_fkey (
             id,
             name,
             phone,
@@ -318,12 +318,12 @@ class MessengerService {
     try {
       await this.setSessionContext(sessionToken);
       
-      // Use explicit joins to avoid ambiguous relationship error
+      // Use explicit foreign key syntax to avoid ambiguous relationship error
       const { data: messages, error } = await supabase
         .from('messenger_messages')
         .select(`
           *,
-          sender:sender_id (
+          sender:chat_users!messenger_messages_sender_id_fkey (
             id,
             name,
             phone,
