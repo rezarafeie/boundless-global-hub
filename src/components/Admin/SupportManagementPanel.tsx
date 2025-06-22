@@ -163,8 +163,11 @@ const SupportManagementPanel = () => {
           <CardContent className="p-4 text-center">
             <User className="w-6 h-6 mx-auto mb-2 text-blue-600" />
             <p className="text-2xl font-bold">{stats.assigned}</p>
-            <p className="text-sm text-slate-600">ا]
-      <Card>
+            <p className="text-sm text-slate-600">اختصاص یافته</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
           <CardContent className="p-4 text-center">
             <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-600" />
             <p className="text-2xl font-bold">{stats.resolved}</p>
