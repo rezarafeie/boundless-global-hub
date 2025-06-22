@@ -337,22 +337,9 @@ class MessengerService {
 
       console.log('Found private messages:', data?.length || 0);
 
-      // Get sender names
-      const senderIds = [...new Set(data?.map(msg => msg.sender_id).filter(id => id) || [])];
-      let senderMap = new Map();
-      
-      if (senderIds.length > 0) {
-        const { data: senders } = await supabase
-          .from('chat_users')
-          .select('id, name')
-          .in('id', senderIds);
-        
-        senderMap = new Map(senders?.map(s => [s.id, s.name]) || []);
-      }
-
       const messages = (data || []).map(msg => ({
         id: msg.id,
-        room_id: null, // Private messages don't have room_id
+        room_id: msg.room_id,
         sender_id: msg.sender_id,
         recipient_id: msg.recipient_id,
         message: msg.message,
@@ -364,8 +351,7 @@ class MessengerService {
         reply_to_message_id: msg.reply_to_message_id,
         forwarded_from_message_id: msg.forwarded_from_message_id,
         conversation_id: msg.conversation_id,
-        sender_name: msg.sender_id === 1 ? 'پشتیبانی' : (senderMap.get(msg.sender_id) || 'کاربر'),
-        reactions: []
+        unread_by_support: msg.unread_by_support || false
       }));
 
       return messages;
@@ -463,13 +449,6 @@ class MessengerService {
           .eq('id', conversationId);
       }
 
-      // Get sender name
-      const { data: sender } = await supabase
-        .from('chat_users')
-        .select('name')
-        .eq('id', messageData.sender_id)
-        .maybeSingle();
-
       return {
         id: data.id,
         room_id: data.room_id,
@@ -484,8 +463,7 @@ class MessengerService {
         reply_to_message_id: data.reply_to_message_id,
         forwarded_from_message_id: data.forwarded_from_message_id,
         conversation_id: data.conversation_id,
-        sender_name: sender?.name || 'کاربر',
-        reactions: []
+        unread_by_support: data.unread_by_support || false
       };
     } catch (error) {
       console.error('Error in sendMessage:', error);
@@ -916,4 +894,3 @@ class MessengerService {
 }
 
 export const messengerService = new MessengerService();
-export type { MessengerUser, MessengerMessage, MessengerRoom };
