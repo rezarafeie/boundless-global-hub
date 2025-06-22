@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,24 +10,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video, Image, AudioLines, Monitor, Shield, UserCog } from 'lucide-react';
+import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, Video, Image, AudioLines, Monitor, Shield, UserCog, Plus, Edit, Loader2, Search } from 'lucide-react';
 import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService, chatService, liveService } from '@/lib/supabase';
 import { rafieiMeetService } from '@/lib/rafieiMeet';
+import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 import UserManagement from '@/components/Admin/UserManagement';
 import TopicManagement from '@/components/Admin/TopicManagement';
 import SupportAgentManagement from '@/components/Admin/SupportAgentManagement';
 import SupportAgentAssignments from '@/components/Admin/SupportAgentAssignments';
+import MessageManagement from '@/components/Admin/MessageManagement';
 import type { AnnouncementInsert } from '@/types/supabase';
 
 const BorderlessHubAdmin = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { announcements, loading: announcementsLoading } = useAnnouncements();
   const { messages, loading: messagesLoading } = useChatMessages();
   const { liveSettings, loading: liveLoading } = useLiveSettings();
   const { settings: rafieiMeetSettings, loading: rafieiMeetLoading } = useRafieiMeet();
+
+  // Messenger state
+  const [messengerUsers, setMessengerUsers] = useState<MessengerUser[]>([]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [messengerLoading, setMessengerLoading] = useState(true);
+  const [sessionToken, setSessionToken] = useState<string>('');
+  const [editingRoom, setEditingRoom] = useState<ChatRoom | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   // Announcement form state
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementInsert>({
@@ -56,6 +69,22 @@ const BorderlessHubAdmin = () => {
     meet_url: 'https://meet.jit.si/rafiei'
   });
 
+  // Room form state
+  const [roomForm, setRoomForm] = useState({
+    name: '',
+    type: 'public_group',
+    description: '',
+    is_boundless_only: false
+  });
+
+  useEffect(() => {
+    // Get session token from localStorage for messenger functionality
+    const storedToken = localStorage.getItem('messenger_session_token');
+    if (storedToken) {
+      setSessionToken(storedToken);
+    }
+  }, []);
+
   useEffect(() => {
     if (liveSettings) {
       setLiveForm({
@@ -77,6 +106,37 @@ const BorderlessHubAdmin = () => {
       });
     }
   }, [rafieiMeetSettings]);
+
+  useEffect(() => {
+    if (sessionToken) {
+      fetchMessengerData();
+    }
+  }, [sessionToken]);
+
+  const fetchMessengerData = async () => {
+    try {
+      setMessengerLoading(true);
+      console.log('Fetching messenger admin data...');
+      
+      const [usersData, roomsData] = await Promise.all([
+        messengerService.getApprovedUsers(),
+        sessionToken ? messengerService.getRooms(sessionToken) : Promise.resolve([])
+      ]);
+      
+      console.log('Fetched messenger users:', usersData.length);
+      console.log('Fetched messenger rooms:', roomsData.length);
+      
+      setMessengerUsers(usersData);
+      setRooms(roomsData);
+    } catch (error: any) {
+      console.error('Error fetching messenger data:', error);
+      if (!sessionToken) {
+        console.log('No session token - some messenger features may be limited');
+      }
+    } finally {
+      setMessengerLoading(false);
+    }
+  };
 
   const handleAnnouncementSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,6 +263,129 @@ const BorderlessHubAdmin = () => {
     }
   };
 
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sessionToken) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً دوباره وارد شوید',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!roomForm.name.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'نام اتاق الزامی است',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      console.log('Creating room with data:', roomForm);
+      
+      const newRoom = await messengerService.createRoom(roomForm, sessionToken);
+      
+      console.log('Room created successfully:', newRoom);
+      
+      toast({
+        title: 'موفق',
+        description: `اتاق "${newRoom.name}" ایجاد شد`,
+      });
+      
+      setRoomForm({
+        name: '',
+        type: 'public_group',
+        description: '',
+        is_boundless_only: false
+      });
+      
+      await fetchMessengerData();
+    } catch (error: any) {
+      console.error('Error creating room:', error);
+      toast({
+        title: 'خطا در ایجاد اتاق',
+        description: error.message || 'خطا در ایجاد اتاق جدید',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleUpdateRoom = async (room: ChatRoom, updates: Partial<ChatRoom>) => {
+    if (!sessionToken) return;
+
+    try {
+      console.log('Updating room:', room.id, updates);
+      
+      const updatedRoom = await messengerService.updateRoom(room.id, updates, sessionToken);
+      
+      console.log('Room updated successfully:', updatedRoom);
+      
+      toast({
+        title: 'موفق',
+        description: `اتاق "${updatedRoom.name}" به‌روزرسانی شد`,
+      });
+      setEditingRoom(null);
+      await fetchMessengerData();
+    } catch (error: any) {
+      console.error('Error updating room:', error);
+      toast({
+        title: 'خطا در به‌روزرسانی',
+        description: error.message || 'خطا در به‌روزرسانی اتاق',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: number, roomName: string) => {
+    if (!sessionToken) return;
+    
+    if (!confirm(`آیا از حذف اتاق "${roomName}" اطمینان دارید؟`)) return;
+
+    setDeleteLoading(roomId);
+    try {
+      console.log('Deleting room:', roomId);
+      
+      await messengerService.deleteRoom(roomId, sessionToken);
+      
+      console.log('Room deleted successfully');
+      
+      toast({
+        title: 'موفق',
+        description: `اتاق "${roomName}" حذف شد`,
+      });
+      
+      await fetchMessengerData();
+    } catch (error: any) {
+      console.error('Error deleting room:', error);
+      toast({
+        title: 'خطا در حذف',
+        description: error.message || 'خطا در حذف اتاق',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const getRoomTypeLabel = (type: string) => {
+    switch (type) {
+      case 'public_group':
+        return 'گروه عمومی';
+      case 'boundless_group':
+        return 'گروه بدون مرز';
+      case 'announcement_channel':
+        return 'کانال اطلاعیه';
+      default:
+        return type;
+    }
+  };
+
   const getMediaTypeIcon = (type: string) => {
     switch (type) {
       case 'image': return <Image className="w-4 h-4" />;
@@ -223,6 +406,19 @@ const BorderlessHubAdmin = () => {
     }
   };
 
+  if (announcementsLoading || messagesLoading || liveLoading || rafieiMeetLoading || messengerLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+            <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پنل مدیریت...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20 admin-page">
@@ -232,10 +428,10 @@ const BorderlessHubAdmin = () => {
               <Settings className="w-8 h-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                  پنل مدیریت بدون مرز
+                  پنل مدیریت جامع بدون مرز
                 </h1>
                 <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  مدیریت اطلاعیه‌ها، چت گروهی، کاربران و پخش زنده
+                  مدیریت کامل اطلاعیه‌ها، کاربران، پیام‌رسان، پشتیبانی و پخش زنده
                 </p>
               </div>
             </div>
@@ -243,23 +439,11 @@ const BorderlessHubAdmin = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="announcements" className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                اطلاعیه‌ها
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                مدیریت چت
-              </TabsTrigger>
-              <TabsTrigger value="topics" className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                تاپیک‌ها
-              </TabsTrigger>
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                مدیریت کاربران
+                کاربران
               </TabsTrigger>
               <TabsTrigger value="support-agents" className="flex items-center gap-2">
                 <UserCog className="w-4 h-4" />
@@ -268,6 +452,22 @@ const BorderlessHubAdmin = () => {
               <TabsTrigger value="support-assignments" className="flex items-center gap-2">
                 <Shield className="w-4 h-4" />
                 اختصاص پشتیبان
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                مدیریت پیام‌ها
+              </TabsTrigger>
+              <TabsTrigger value="announcements" className="flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                اطلاعیه‌ها
+              </TabsTrigger>
+              <TabsTrigger value="rooms" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                اتاق‌های چت
+              </TabsTrigger>
+              <TabsTrigger value="topics" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                تاپیک‌ها
               </TabsTrigger>
               <TabsTrigger value="live" className="flex items-center gap-2">
                 <Play className="w-4 h-4" />
@@ -278,6 +478,22 @@ const BorderlessHubAdmin = () => {
                 رفیعی میت
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
+            </TabsContent>
+
+            <TabsContent value="support-agents" className="space-y-6">
+              <SupportAgentManagement />
+            </TabsContent>
+
+            <TabsContent value="support-assignments" className="space-y-6">
+              <SupportAgentAssignments />
+            </TabsContent>
+
+            <TabsContent value="messages" className="space-y-6">
+              <MessageManagement />
+            </TabsContent>
 
             <TabsContent value="announcements" className="space-y-6">
               <Card>
@@ -452,54 +668,124 @@ const BorderlessHubAdmin = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="chat" className="space-y-6">
+            <TabsContent value="rooms" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>مدیریت پیام‌های چت</CardTitle>
+                  <CardTitle>ایجاد اتاق جدید</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {messagesLoading ? (
-                    <p className="text-center">در حال بارگذاری پیام‌ها...</p>
+                  <form onSubmit={handleCreateRoom} className="space-y-4">
+                    <div>
+                      <Label htmlFor="room-name">نام اتاق</Label>
+                      <Input
+                        id="room-name"
+                        value={roomForm.name}
+                        onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })}
+                        placeholder="نام اتاق را وارد کنید"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="room-type">نوع اتاق</Label>
+                      <Select value={roomForm.type} onValueChange={(value) => setRoomForm({ ...roomForm, type: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب نوع اتاق" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="public_group">گروه عمومی</SelectItem>
+                          <SelectItem value="boundless_group">گروه بدون مرز</SelectItem>
+                          <SelectItem value="announcement_channel">کانال اطلاعیه</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="room-description">توضیحات</Label>
+                      <Textarea
+                        id="room-description"
+                        value={roomForm.description}
+                        onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
+                        placeholder="توضیحات اتاق"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="boundless-only"
+                        checked={roomForm.is_boundless_only}
+                        onCheckedChange={(checked) => setRoomForm({ ...roomForm, is_boundless_only: checked })}
+                      />
+                      <Label htmlFor="boundless-only">فقط برای دانش‌پذیران بدون مرز</Label>
+                    </div>
+                    <Button type="submit" disabled={createLoading}>
+                      {createLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          در حال ایجاد...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          ایجاد اتاق
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>اتاق‌های موجود ({rooms.length} اتاق)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {rooms.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">هیچ اتاقی موجود نیست</p>
+                      <Button onClick={fetchMessengerData} variant="ghost" className="mt-2">
+                        بارگذاری مجدد
+                      </Button>
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {messages.map((message) => (
-                        <Card key={message.id}>
-                          <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <CardTitle>{message.sender_name}</CardTitle>
-                              <Badge>{message.sender_role}</Badge>
+                    <div className="space-y-4">
+                      {rooms.map((room) => (
+                        <div key={room.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <h3 className="font-medium">{room.name}</h3>
+                            <p className="text-sm text-slate-500">{room.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline">{getRoomTypeLabel(room.type)}</Badge>
+                              {room.is_boundless_only && (
+                                <Badge variant="secondary">بدون مرز</Badge>
+                              )}
+                              {room.is_active ? (
+                                <Badge variant="default" className="bg-green-500">فعال</Badge>
+                              ) : (
+                                <Badge variant="destructive">غیرفعال</Badge>
+                              )}
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p>{message.message}</p>
-                            <div className="flex justify-between mt-4">
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteMessage(message.id)}
-                              >
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setEditingRoom(room)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeleteRoom(room.id, room.name)}
+                              disabled={deleteLoading === room.id}
+                            >
+                              {deleteLoading === room.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
                                 <Trash2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleToggleMessagePin(message.id, message.is_pinned || false)}
-                              >
-                                {message.is_pinned ? (
-                                  <>
-                                    <Pin className="w-4 h-4" />
-                                    برداشتن سنجاق
-                                  </>
-                                ) : (
-                                  <>
-                                    <Pin className="w-4 h-4" />
-                                    سنجاق
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -509,18 +795,6 @@ const BorderlessHubAdmin = () => {
 
             <TabsContent value="topics" className="space-y-6">
               <TopicManagement />
-            </TabsContent>
-
-            <TabsContent value="users" className="space-y-6">
-              <UserManagement />
-            </TabsContent>
-
-            <TabsContent value="support-agents" className="space-y-6">
-              <SupportAgentManagement />
-            </TabsContent>
-
-            <TabsContent value="support-assignments" className="space-y-6">
-              <SupportAgentAssignments />
             </TabsContent>
 
             <TabsContent value="live" className="space-y-6">
