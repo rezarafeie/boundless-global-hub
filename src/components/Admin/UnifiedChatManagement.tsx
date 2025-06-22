@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -142,7 +141,7 @@ const UnifiedChatManagement = () => {
 
   const filteredMessages = messages.filter(message => {
     const matchesSearch = message.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (message.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+                         (message.sender?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filterType === 'all') return matchesSearch;
     // Add more filtering logic based on message type
@@ -207,7 +206,7 @@ const UnifiedChatManagement = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-medium">
-                              {message.user?.name || 'کاربر ناشناس'}
+                              {message.sender?.name || 'کاربر ناشناس'}
                             </span>
                             <Badge variant="outline">
                               {message.room_id ? `اتاق ${message.room_id}` : 'عمومی'}
