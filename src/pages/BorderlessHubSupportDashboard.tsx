@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag } from 'lucide-react';
+import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { supportService, type SupportConversation } from '@/lib/supportService';
@@ -35,6 +34,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(true);
 
   const checkSupportAccess = async () => {
     try {
@@ -102,6 +102,12 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const handleConversationSelect = (conversation: ConversationWithUser) => {
     console.log('Selecting conversation:', conversation.id);
     setSelectedConversation(conversation);
+    setShowConversationList(false); // Hide list on mobile
+  };
+
+  const handleBackToList = () => {
+    setShowConversationList(true);
+    setSelectedConversation(null);
   };
 
   const handleConversationUpdate = (updatedConversation: ConversationWithUser) => {
@@ -196,9 +202,45 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
+      <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
+        {/* Mobile Header */}
+        <div className="md:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center justify-between">
+            {!showConversationList && selectedConversation ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={handleBackToList}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 text-center">
+                  <h3 className="font-semibold text-slate-900 dark:text-white">
+                    {selectedConversation.user?.name || 'کاربر نامشخص'}
+                  </h3>
+                </div>
+                <div></div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <Headphones className="w-6 h-6 text-blue-600" />
+                  <h1 className="text-lg font-bold text-slate-800 dark:text-white">
+                    پنل پشتیبانی
+                  </h1>
+                </div>
+                <Button 
+                  onClick={fetchConversations} 
+                  disabled={refreshing}
+                  variant="ghost"
+                  size="sm"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:block bg-white dark:bg-slate-800 shadow-sm border-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -236,171 +278,161 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
                   خوانده نشده: {conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)}
                 </span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
-                  آکادمی: {conversations.filter(c => c.thread_type?.id === 1 || !c.thread_type?.display_name?.includes('بدون مرز')).length}
-                </span>
-                <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full">
-                  بدون مرز: {conversations.filter(c => c.thread_type?.display_name?.includes('بدون مرز')).length}
-                </span>
               </div>
             )}
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-200px)]">
-            {/* Conversations List */}
-            <div className="lg:col-span-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border">
-              <div className="p-4 border-b">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="جستجو در گفتگوها..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="وضعیت" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                        <SelectItem value="open">باز</SelectItem>
-                        <SelectItem value="assigned">در حال بررسی</SelectItem>
-                        <SelectItem value="resolved">حل شده</SelectItem>
-                        <SelectItem value="closed">بسته</SelectItem>
-                      </SelectContent>
-                    </Select>
+        <div className="flex-1 flex overflow-hidden">
+          {/* Conversations List */}
+          <div className={`
+            ${showConversationList ? 'flex' : 'hidden'} 
+            md:flex flex-col w-full md:w-1/3 lg:w-1/4 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
+          `}>
+            {/* Search and Filters */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="جستجو در گفتگوها..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="وضعیت" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                      <SelectItem value="open">باز</SelectItem>
+                      <SelectItem value="assigned">در حال بررسی</SelectItem>
+                      <SelectItem value="resolved">حل شده</SelectItem>
+                      <SelectItem value="closed">بسته</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="اولویت" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">همه اولویت‌ها</SelectItem>
-                        <SelectItem value="low">کم</SelectItem>
-                        <SelectItem value="normal">عادی</SelectItem>
-                        <SelectItem value="high">بالا</SelectItem>
-                        <SelectItem value="urgent">فوری</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="اولویت" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه اولویت‌ها</SelectItem>
+                      <SelectItem value="low">کم</SelectItem>
+                      <SelectItem value="normal">عادی</SelectItem>
+                      <SelectItem value="high">بالا</SelectItem>
+                      <SelectItem value="urgent">فوری</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+            </div>
 
-              <div className="overflow-y-auto h-full">
-                {filteredConversations.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 mb-2">
-                      {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'هیچ گفتگویی با فیلترهای انتخابی یافت نشد'}
-                    </p>
-                    {conversations.length === 0 && (
-                      <p className="text-xs text-slate-400">
-                        گفتگوها زمانی ایجاد می‌شوند که کاربران پیام به پشتیبانی ارسال کنند
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  filteredConversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      onClick={() => handleConversationSelect(conversation)}
-                      className={`p-4 border-b cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                        selectedConversation?.id === conversation.id 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
-                          : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-slate-900 dark:text-white">
-                              {conversation.user?.name || 'کاربر نامشخص'}
-                            </h4>
-                            {conversation.unread_count && conversation.unread_count > 0 && (
-                              <Badge variant="destructive" className="text-xs px-2 py-0">
-                                {conversation.unread_count}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-500 mb-2">{conversation.user?.phone || 'شماره نامشخص'}</p>
-                          
-                          {/* Tags */}
-                          {conversation.tag_list && conversation.tag_list.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {conversation.tag_list.slice(0, 2).map((tag, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  <Tag className="w-2 h-2 mr-1" />
-                                  {tag}
-                                </Badge>
-                              ))}
-                              {conversation.tag_list.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{conversation.tag_list.length - 2}
-                                </Badge>
-                              )}
-                            </div>
+            {/* Conversations */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredConversations.length === 0 ? (
+                <div className="p-8 text-center">
+                  <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 mb-2">
+                    {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'هیچ گفتگویی با فیلترهای انتخابی یافت نشد'}
+                  </p>
+                </div>
+              ) : (
+                filteredConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    onClick={() => handleConversationSelect(conversation)}
+                    className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
+                      selectedConversation?.id === conversation.id 
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-slate-900 dark:text-white">
+                            {conversation.user?.name || 'کاربر نامشخص'}
+                          </h4>
+                          {conversation.unread_count && conversation.unread_count > 0 && (
+                            <Badge variant="destructive" className="text-xs px-2 py-0">
+                              {conversation.unread_count}
+                            </Badge>
                           )}
                         </div>
+                        <p className="text-sm text-slate-500 mb-2">{conversation.user?.phone || 'شماره نامشخص'}</p>
                         
-                        <div className="flex flex-col items-end gap-2">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(conversation.status || 'open')}
-                            {getStatusBadge(conversation.status || 'open')}
+                        {/* Tags */}
+                        {conversation.tag_list && conversation.tag_list.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {conversation.tag_list.slice(0, 2).map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                <Tag className="w-2 h-2 mr-1" />
+                                {tag}
+                              </Badge>
+                            ))}
                           </div>
-                          {getPriorityBadge(conversation.priority || 'normal')}
-                        </div>
+                        )}
                       </div>
                       
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
-                          {conversation.thread_type?.display_name || 'عمومی'}
-                        </span>
-                        <span>
-                          {conversation.last_message_at 
-                            ? new Date(conversation.last_message_at).toLocaleDateString('fa-IR')
-                            : ''
-                          }
-                        </span>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(conversation.status || 'open')}
+                          {getStatusBadge(conversation.status || 'open')}
+                        </div>
+                        {getPriorityBadge(conversation.priority || 'normal')}
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Chat Area */}
-            <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm border">
-              {selectedConversation ? (
-                <SupportChatView
-                  conversation={selectedConversation}
-                  currentUser={currentUser}
-                  onBack={() => setSelectedConversation(null)}
-                  onConversationUpdate={handleConversationUpdate}
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                    <p className="text-slate-500 dark:text-slate-400">
-                      یک گفتگو را انتخاب کنید
-                    </p>
-                    {conversations.length > 0 && (
-                      <p className="text-xs text-slate-400 mt-2">
-                        {conversations.length} گفتگوی پشتیبانی موجود است
-                      </p>
-                    )}
+                    
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
+                        {conversation.thread_type?.display_name || 'عمومی'}
+                      </span>
+                      <span>
+                        {conversation.last_message_at 
+                          ? new Date(conversation.last_message_at).toLocaleDateString('fa-IR')
+                          : ''
+                        }
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ))
               )}
             </div>
+          </div>
+
+          {/* Chat Area */}
+          <div className={`
+            ${!showConversationList ? 'flex' : 'hidden'} 
+            md:flex flex-col flex-1 bg-white dark:bg-slate-800
+          `}>
+            {selectedConversation ? (
+              <SupportChatView
+                conversation={selectedConversation}
+                currentUser={currentUser}
+                onBack={handleBackToList}
+                onConversationUpdate={handleConversationUpdate}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-500 dark:text-slate-400">
+                    یک گفتگو را انتخاب کنید
+                  </p>
+                  {conversations.length > 0 && (
+                    <p className="text-xs text-slate-400 mt-2">
+                      {conversations.length} گفتگوی پشتیبانی موجود است
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

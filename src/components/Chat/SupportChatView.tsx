@@ -217,16 +217,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'text-gray-600';
-      case 'normal': return 'text-blue-600';
-      case 'high': return 'text-orange-600';
-      case 'urgent': return 'text-red-600';
-      default: return 'text-blue-600';
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -238,14 +228,14 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onBack}
-              className="p-2"
+              className="p-2 md:hidden"
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -261,7 +251,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Status */}
             <div className="flex items-center gap-1">
               {getStatusIcon(selectedStatus)}
               <Select value={selectedStatus} onValueChange={handleStatusChange}>
@@ -277,7 +266,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
               </Select>
             </div>
 
-            {/* Priority */}
             <Select value={selectedPriority} onValueChange={handlePriorityChange}>
               <SelectTrigger className="w-24">
                 <SelectValue />
@@ -327,7 +315,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
               className={`mb-4 flex ${message.is_from_support ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`max-w-[70%] ${message.is_from_support ? 'order-2' : 'order-1'}`}>
-                {/* Sender info for user messages */}
                 {!message.is_from_support && (
                   <div className="flex items-center gap-2 mb-1">
                     <MessageAvatar 
@@ -340,7 +327,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                   </div>
                 )}
 
-                {/* Message bubble */}
                 <div className={`rounded-2xl px-4 py-3 ${
                   message.is_from_support
                     ? 'bg-blue-500 text-white'
@@ -373,7 +359,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       </div>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <Textarea
             value={newMessage}
