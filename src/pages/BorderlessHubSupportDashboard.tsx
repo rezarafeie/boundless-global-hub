@@ -237,7 +237,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
                       <SelectValue placeholder="فیلتر وضعیت" />
-                    </SelectTrig‌ger>
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">همه</SelectItem>
                       <SelectItem value="open">باز</SelectItem>
