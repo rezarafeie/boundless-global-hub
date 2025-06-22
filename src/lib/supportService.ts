@@ -161,23 +161,73 @@ class SupportService {
     try {
       console.log('Sending support message to conversation:', conversationId, 'from sender:', senderId);
       
-      // Get conversation details to identify the user
-      const { data: conversation } = await supabase
-        .from('support_conversations')
-        .select('user_id')
-        .eq('id', conversationId)
-        .single();
+      // First, try to get conversation details from support_conversations table
+      let conversation = null;
+      let userId = null;
       
-      if (!conversation) {
-        throw new Error('Conversation not found');
+      if (conversationId > 0) {
+        const { data: convData } = await supabase
+          .from('support_conversations')
+          .select('user_id')
+          .eq('id', conversationId)
+          .maybeSingle();
+        
+        conversation = convData;
+        userId = convData?.user_id;
       }
       
-      console.log('Conversation user_id:', conversation.user_id);
+      // If conversation doesn't exist in support_conversations table, 
+      // try to find it from existing messages with this conversation_id
+      if (!conversation) {
+        console.log('Conversation not found in support_conversations table, checking messages...');
+        
+        const { data: existingMessages } = await supabase
+          .from('messenger_messages')
+          .select('sender_id, recipient_id')
+          .eq('conversation_id', conversationId)
+          .limit(1);
+        
+        if (existingMessages && existingMessages.length > 0) {
+          const firstMessage = existingMessages[0];
+          // If sender_id is 1 (support), then recipient_id is the user
+          // If sender_id is not 1, then sender_id is the user
+          userId = firstMessage.sender_id === 1 ? firstMessage.recipient_id : firstMessage.sender_id;
+          console.log('Found user_id from existing messages:', userId);
+          
+          // Create the missing conversation record
+          if (userId) {
+            try {
+              const { data: newConv } = await supabase
+                .from('support_conversations')
+                .insert([{
+                  id: conversationId,
+                  user_id: userId,
+                  status: 'open',
+                  priority: 'normal',
+                  thread_type_id: 1,
+                  last_message_at: new Date().toISOString()
+                }])
+                .select()
+                .maybeSingle();
+              
+              console.log('Created missing conversation record:', newConv);
+            } catch (insertError) {
+              console.log('Could not create conversation record (may already exist):', insertError);
+            }
+          }
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('Could not determine user for this conversation');
+      }
+      
+      console.log('Conversation user_id:', userId);
       
       // Determine recipient based on sender
       // If support agent (sender_id = 1) is sending, recipient is the user
       // If user is sending, recipient is support (1)
-      const recipientId = senderId === 1 ? conversation.user_id : 1;
+      const recipientId = senderId === 1 ? userId : 1;
       
       console.log('Message details:', {
         conversation_id: conversationId,
