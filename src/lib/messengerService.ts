@@ -10,6 +10,7 @@ export type MessengerUser = {
   bedoun_marz_request: boolean;
   bedoun_marz: boolean;
   is_support_agent: boolean;
+  is_messenger_admin: boolean;
   role: string;
   created_at: string;
   updated_at: string;
@@ -49,6 +50,24 @@ export type UserSession = {
   is_active: boolean;
   last_activity: string;
   created_at: string;
+};
+
+export type SupportThreadType = {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+  is_boundless_only: boolean;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type SupportAgentAssignment = {
+  id: number;
+  agent_id: number;
+  thread_type_id: number;
+  assigned_at: string;
+  is_active: boolean;
 };
 
 // Enhanced session validation function
@@ -116,6 +135,7 @@ const ensureSystemSupportUser = async (): Promise<void> => {
           phone: 'system',
           is_approved: true,
           is_support_agent: true,
+          is_messenger_admin: true,
           role: 'system_support'
         }]);
       
@@ -361,34 +381,52 @@ class MessengerService {
     try {
       console.log('Getting private messages for user:', userId);
       
-      const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken);
-      console.log('Got conversation:', conversation.id);
-      
-      if (conversation.id === -1) {
-        console.log('Placeholder conversation, returning empty messages');
+      const threadTypes = await this.getSupportThreadTypes(userId);
+      if (threadTypes.length === 0) {
+        console.log('No available thread types for user');
         return [];
       }
       
-      const messages = await supportService.getConversationMessages(conversation.id);
-      console.log('Got messages:', messages.length);
+      // Get conversations for all available thread types
+      const allMessages: MessengerMessage[] = [];
       
-      return messages.map(msg => ({
-        id: msg.id,
-        sender_id: msg.sender_id || 0,
-        recipient_id: msg.recipient_id || null,
-        room_id: null,
-        message: msg.message,
-        message_type: (msg.message_type as 'text' | 'image' | 'file') || 'text',
-        media_url: msg.media_url,
-        media_content: null,
-        is_read: msg.is_read || false,
-        created_at: msg.created_at || new Date().toISOString(),
-        sender_name: msg.sender_name,
-        is_from_support: msg.is_from_support || false,
-        reply_to_message_id: null,
-        forwarded_from_message_id: null,
-        reactions: []
-      }));
+      for (const threadType of threadTypes) {
+        try {
+          const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken, threadType.id);
+          
+          if (conversation.id === -1) continue;
+          
+          const messages = await supportService.getConversationMessages(conversation.id);
+          const formattedMessages = messages.map(msg => ({
+            id: msg.id,
+            sender_id: msg.sender_id || 0,
+            recipient_id: msg.recipient_id || null,
+            room_id: null,
+            message: msg.message,
+            message_type: (msg.message_type as 'text' | 'image' | 'file') || 'text',
+            media_url: msg.media_url,
+            media_content: null,
+            is_read: msg.is_read || false,
+            created_at: msg.created_at || new Date().toISOString(),
+            sender_name: msg.sender_name,
+            is_from_support: msg.is_from_support || false,
+            reply_to_message_id: null,
+            forwarded_from_message_id: null,
+            reactions: [],
+            thread_type: threadType.display_name,
+            thread_id: threadType.id
+          }));
+          
+          allMessages.push(...formattedMessages);
+        } catch (error) {
+          console.error(`Error fetching messages for thread type ${threadType.name}:`, error);
+        }
+      }
+      
+      // Sort by creation date
+      allMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      
+      return allMessages;
     } catch (error) {
       console.error('Error fetching private messages:', error);
       if (error instanceof Error && error.message.includes('authentication')) {
@@ -558,6 +596,107 @@ class MessengerService {
     return data as MessengerUser;
   }
 
+  // Get available support thread types for a user
+  async getSupportThreadTypes(userId: number): Promise<SupportThreadType[]> {
+    try {
+      console.log('Getting support thread types for user:', userId);
+      
+      // Get user info to check boundless status
+      const { data: user, error: userError } = await supabase
+        .from('chat_users')
+        .select('bedoun_marz_approved')
+        .eq('id', userId)
+        .single();
+      
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        return [];
+      }
+      
+      // Get all active thread types
+      const { data: threadTypes, error } = await supabase
+        .from('support_thread_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('id');
+      
+      if (error) {
+        console.error('Error fetching thread types:', error);
+        return [];
+      }
+      
+      // Filter based on user's boundless status
+      const availableThreads = threadTypes.filter(thread => {
+        // Academy support is available to all users
+        if (thread.name === 'academy_support') return true;
+        
+        // Boundless support only for approved boundless users
+        if (thread.name === 'boundless_support') {
+          return user.bedoun_marz_approved === true;
+        }
+        
+        return true;
+      });
+      
+      console.log('Available thread types for user:', availableThreads);
+      return availableThreads as SupportThreadType[];
+      
+    } catch (error) {
+      console.error('Error getting support thread types:', error);
+      return [];
+    }
+  }
+
+  // Support agent assignment methods
+  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    const { error } = await supabase
+      .from('support_agent_assignments')
+      .insert([{
+        agent_id: agentId,
+        thread_type_id: threadTypeId,
+        is_active: true
+      }]);
+    
+    if (error && error.code !== '23505') { // Ignore duplicate key errors
+      throw error;
+    }
+  }
+
+  async unassignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    const { error } = await supabase
+      .from('support_agent_assignments')
+      .delete()
+      .eq('agent_id', agentId)
+      .eq('thread_type_id', threadTypeId);
+    
+    if (error) throw error;
+  }
+
+  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
+    const { data, error } = await supabase
+      .from('support_agent_assignments')
+      .select(`
+        *,
+        agent:chat_users!agent_id(name),
+        thread_type:support_thread_types!thread_type_id(display_name)
+      `)
+      .eq('is_active', true);
+    
+    if (error) throw error;
+    return (data || []) as SupportAgentAssignment[];
+  }
+
+  async getThreadTypes(): Promise<SupportThreadType[]> {
+    const { data, error } = await supabase
+      .from('support_thread_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('id');
+    
+    if (error) throw error;
+    return (data || []) as SupportThreadType[];
+  }
+
   // Support agent functions
   async getSupportConversations(supportAgentId: number, sessionToken: string): Promise<any[]> {
     console.log('Fetching support conversations for agent:', supportAgentId);
@@ -587,7 +726,10 @@ class MessengerService {
   }
 
   // Update user role (support agent status)
-  async updateUserRole(userId: number, updates: { is_support_agent: boolean }): Promise<MessengerUser> {
+  async updateUserRole(userId: number, updates: { 
+    is_support_agent?: boolean;
+    is_messenger_admin?: boolean;
+  }): Promise<MessengerUser> {
     const { data, error } = await supabase
       .from('chat_users')
       .update({
@@ -608,6 +750,34 @@ class MessengerService {
       .from('chat_users')
       .select('*')
       .eq('is_support_agent', true)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as MessengerUser[];
+  }
+
+  // Messenger admin methods
+  async updateUserMessengerAdmin(userId: number, isAdmin: boolean): Promise<MessengerUser> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .update({
+        is_messenger_admin: isAdmin,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as MessengerUser;
+  }
+
+  async getMessengerAdmins(): Promise<MessengerUser[]> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('is_messenger_admin', true)
       .eq('is_approved', true)
       .order('created_at', { ascending: false });
 

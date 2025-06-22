@@ -167,6 +167,7 @@ export type Database = {
           created_at: string | null
           id: number
           is_approved: boolean | null
+          is_messenger_admin: boolean | null
           is_support_agent: boolean | null
           last_seen: string | null
           name: string
@@ -181,6 +182,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
+          is_messenger_admin?: boolean | null
           is_support_agent?: boolean | null
           last_seen?: string | null
           name: string
@@ -195,6 +197,7 @@ export type Database = {
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
+          is_messenger_admin?: boolean | null
           is_support_agent?: boolean | null
           last_seen?: string | null
           name?: string
@@ -451,6 +454,45 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_agent_assignments: {
+        Row: {
+          agent_id: number | null
+          assigned_at: string | null
+          id: number
+          is_active: boolean | null
+          thread_type_id: number | null
+        }
+        Insert: {
+          agent_id?: number | null
+          assigned_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          thread_type_id?: number | null
+        }
+        Update: {
+          agent_id?: number | null
+          assigned_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          thread_type_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_agent_assignments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_agent_assignments_thread_type_id_fkey"
+            columns: ["thread_type_id"]
+            isOneToOne: false
+            referencedRelation: "support_thread_types"
             referencedColumns: ["id"]
           },
         ]

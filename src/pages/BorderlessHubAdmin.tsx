@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video, Image, AudioLines, Monitor } from 'lucide-react';
+import { Bell, Settings, MessageSquare, Users, Pin, Trash2, Play, PlayCircle, StopCircle, Video, Image, AudioLines, Monitor, Shield, UserCog } from 'lucide-react';
 import { useAnnouncements, useChatMessages, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { announcementsService, chatService, liveService } from '@/lib/supabase';
@@ -17,6 +17,8 @@ import { rafieiMeetService } from '@/lib/rafieiMeet';
 import { useToast } from '@/hooks/use-toast';
 import UserManagement from '@/components/Admin/UserManagement';
 import TopicManagement from '@/components/Admin/TopicManagement';
+import SupportAgentManagement from '@/components/Admin/SupportAgentManagement';
+import SupportAgentAssignments from '@/components/Admin/SupportAgentAssignments';
 import type { AnnouncementInsert } from '@/types/supabase';
 
 const BorderlessHubAdmin = () => {
@@ -242,7 +244,7 @@ const BorderlessHubAdmin = () => {
 
         <div className="container mx-auto px-4 py-8">
           <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="announcements" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 اطلاعیه‌ها
@@ -258,6 +260,14 @@ const BorderlessHubAdmin = () => {
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 مدیریت کاربران
+              </TabsTrigger>
+              <TabsTrigger value="support-agents" className="flex items-center gap-2">
+                <UserCog className="w-4 h-4" />
+                پشتیبانان
+              </TabsTrigger>
+              <TabsTrigger value="support-assignments" className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                اختصاص پشتیبان
               </TabsTrigger>
               <TabsTrigger value="live" className="flex items-center gap-2">
                 <Play className="w-4 h-4" />
@@ -503,6 +513,14 @@ const BorderlessHubAdmin = () => {
 
             <TabsContent value="users" className="space-y-6">
               <UserManagement />
+            </TabsContent>
+
+            <TabsContent value="support-agents" className="space-y-6">
+              <SupportAgentManagement />
+            </TabsContent>
+
+            <TabsContent value="support-assignments" className="space-y-6">
+              <SupportAgentAssignments />
             </TabsContent>
 
             <TabsContent value="live" className="space-y-6">
