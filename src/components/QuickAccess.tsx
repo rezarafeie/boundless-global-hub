@@ -54,9 +54,9 @@ const QuickAccess = () => {
       color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
     },
     {
-      title: "برنامه بدون مرز",
+      title: "پنل مدیریت",
       icon: <BookOpenCheck size={28} />,
-      link: "/boundless",
+      link: "/hub/admin",
       color: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400"
     }
   ];

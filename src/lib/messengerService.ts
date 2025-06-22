@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -455,16 +454,13 @@ class MessengerService {
     try {
       const { data, error } = await supabase
         .from('chat_users')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw new Error(`Failed to fetch users: ${error.message}`);
-      }
-
+      if (error) throw error;
       return data || [];
-    } catch (error: any) {
-      console.error('Error in getAllUsers:', error);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
       throw error;
     }
   }
@@ -732,6 +728,98 @@ class MessengerService {
     } catch (error: any) {
       console.error('Error in getUserIdFromSession:', error);
       return null;
+    }
+  }
+
+  async getAllMessages(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!fk_messenger_messages_sender(name, phone)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all messages:', error);
+      throw error;
+    }
+  }
+
+  async getTopics(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+      throw error;
+    }
+  }
+
+  async createTopic(topic: { title: string; description: string; is_active: boolean }): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .insert([topic])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating topic:', error);
+      throw error;
+    }
+  }
+
+  async updateTopic(topicId: number, updates: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .update(updates)
+        .eq('id', topicId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating topic:', error);
+      throw error;
+    }
+  }
+
+  async deleteTopic(topicId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .delete()
+        .eq('id', topicId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+      throw error;
+    }
+  }
+
+  async deleteMessage(messageId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('messenger_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
     }
   }
 }

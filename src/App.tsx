@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +53,8 @@ import BorderlessHubChat from "./pages/BorderlessHubChat";
 import BorderlessHubMessenger from "./pages/BorderlessHubMessenger";
 import BorderlessHubAdmin from "./pages/BorderlessHubAdmin";
 import BorderlessHubMessengerAdmin from "./pages/BorderlessHubMessengerAdmin";
+import BorderlessHubUnifiedAdmin from "./pages/BorderlessHubUnifiedAdmin";
+import BorderlessHubSupportDashboard from "./pages/BorderlessHubSupportDashboard";
 import MessengerPending from "./pages/MessengerPending";
 
 // Assessment and other pages
@@ -138,7 +141,8 @@ function App() {
                 <Route path="/hub/chat" element={<BorderlessHubChat />} />
                 <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
                 <Route path="/hub/messenger/pending" element={<MessengerPending />} />
-                <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
+                <Route path="/hub/admin" element={<BorderlessHubUnifiedAdmin />} />
+                <Route path="/hub/support" element={<BorderlessHubSupportDashboard />} />
                 <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
                 <Route path="/messenger-pending" element={<MessengerPending />} />
 

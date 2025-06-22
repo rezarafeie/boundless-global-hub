@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import MessengerChatView from '@/components/Chat/MessengerChatView';
 import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, ArrowRight } from 'lucide-react';
+import { MessageCircle, ArrowRight, Headphones } from 'lucide-react';
 
 interface ChatRoom {
   id: number;
@@ -181,6 +180,16 @@ const BorderlessHubMessenger: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            {/* Support Panel Button - only show for support agents */}
+            {currentUser?.is_support_agent && (
+              <button
+                onClick={() => navigate('/hub/support')}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2"
+              >
+                <Headphones className="w-4 h-4" />
+                🎧 پنل پشتیبانی
+              </button>
+            )}
             <span className="text-sm text-slate-600 dark:text-slate-400">
               {currentUser.name}
             </span>
@@ -222,6 +231,16 @@ const BorderlessHubMessenger: React.FC = () => {
                   <p className="text-slate-500 dark:text-slate-400">
                     یک گفتگو را انتخاب کنید
                   </p>
+                  {/* Support Panel Button for mobile/center view */}
+                  {currentUser?.is_support_agent && (
+                    <button
+                      onClick={() => navigate('/hub/support')}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 mx-auto mt-4"
+                    >
+                      <Headphones className="w-4 h-4" />
+                      🎧 ورود به پنل پشتیبانی
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -237,6 +256,18 @@ const BorderlessHubMessenger: React.FC = () => {
                 onRoomSelect={handleRoomSelect}
                 selectedRoom={selectedRoom}
               />
+              {/* Support Panel Button for mobile */}
+              {currentUser?.is_support_agent && (
+                <div className="p-4 border-t">
+                  <button
+                    onClick={() => navigate('/hub/support')}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2"
+                  >
+                    <Headphones className="w-4 h-4" />
+                    🎧 ورود به پنل پشتیبانی
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             selectedRoom && (
