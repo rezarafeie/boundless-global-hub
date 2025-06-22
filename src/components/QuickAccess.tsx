@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck } from "lucide-react";
+import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck, MessageCircle, Hub } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 
@@ -42,10 +42,22 @@ const QuickAccess = () => {
       color: "bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-400"
     },
     {
+      title: "هاب بدون مرز",
+      icon: <Hub size={28} />,
+      link: "/hub",
+      color: "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400"
+    },
+    {
+      title: "پیام‌رسان",
+      icon: <MessageCircle size={28} />,
+      link: "/hub/messenger",
+      color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
+    },
+    {
       title: "برنامه بدون مرز",
       icon: <BookOpenCheck size={28} />,
       link: "/boundless",
-      color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
+      color: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400"
     }
   ];
 
@@ -75,7 +87,7 @@ const QuickAccess = () => {
     <section className="py-10 bg-background">
       <div className="container">
         <motion.div 
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6"
+          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6"
           variants={container}
           initial="hidden"
           animate="show"

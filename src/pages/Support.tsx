@@ -1,162 +1,207 @@
-import React, { useState } from "react";
+
+import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import Hero from "@/components/Hero";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Headphones, Mail, Phone } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { MessageCircle, Phone, Mail, Clock, Headphones, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Support = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "پیام شما دریافت شد",
-        description: "کارشناسان ما در اسرع وقت با شما تماس خواهند گرفت.",
-      });
-      setName("");
-      setEmail("");
-      setMessage("");
-      setIsSubmitting(false);
-    }, 1000);
-  };
-
   return (
     <MainLayout>
-      <div className="relative py-20 bg-background overflow-hidden">
-        {/* Animated glow background */}
-        <div className="absolute inset-0 overflow-hidden hero-glow-support">
-          <div className="glow-circle glow-circle-1"></div>
-          <div className="glow-circle glow-circle-2"></div>
-          <div className="glow-circle glow-circle-3"></div>
-          <div className="glow-circle glow-circle-4"></div>
-        </div>
-        <div className="absolute inset-0 bg-background/50 backdrop-blur-[20px] z-0"></div>
-        
-        <div className="container relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">پشتیبانی</h1>
+      <Hero
+        title="مرکز پشتیبانی"
+        subtitle="ما اینجا هستیم تا به شما کمک کنیم"
+        ctaText="شروع گفتگو"
+        ctaLink="/hub/messenger"
+        backgroundType="glow"
+        glowTheme="blue"
+      />
+
+      {/* Support Options */}
+      <section className="py-16 bg-background">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight mb-4">
+              راه‌های ارتباط با پشتیبانی
+            </h2>
             <p className="text-lg text-muted-foreground">
-              ما اینجا هستیم تا به سوالات شما پاسخ دهیم و در مسیر یادگیری همراه شما باشیم. لطفاً فرم زیر را تکمیل کنید تا کارشناسان ما در اسرع وقت با شما تماس بگیرند.
+              بهترین روش برای دریافت کمک را انتخاب کنید
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="container py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            <Card className="border-border shadow-sm bg-card">
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 text-card-foreground">فرم تماس</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium mb-1">
-                      نام و نام خانوادگی
-                    </label>
-                    <Input 
-                      id="name" 
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="نام خود را وارد کنید"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-1">
-                      ایمیل یا شماره موبایل
-                    </label>
-                    <Input 
-                      id="email" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="ایمیل یا شماره موبایل خود را وارد کنید"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium mb-1">
-                      پیام
-                    </label>
-                    <Textarea 
-                      id="message" 
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="پیام خود را وارد کنید"
-                      className="min-h-[150px]"
-                      required
-                    />
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-black hover:bg-black/90 text-white"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "در حال ارسال..." : "ارسال پیام"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
           
-          <div>
-            <Card className="border-border shadow-sm mb-6 bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <Mail size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-1 text-card-foreground">ایمیل</h3>
-                    <p className="text-muted-foreground">support@rafiei.academy</p>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mb-4">
+                  <MessageCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 </div>
+                <CardTitle>پیام‌رسان هاب</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  سریع‌ترین راه برای دریافت پاسخ از تیم پشتیبانی
+                </p>
+                <Button asChild className="w-full">
+                  <Link to="/hub/messenger">
+                    شروع گفتگو
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
-            
-            <Card className="border-border shadow-sm mb-6 bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <Phone size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-1 text-card-foreground">تلفن</h3>
-                    <p className="text-muted-foreground">021-12345678</p>
-                  </div>
+
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mb-4">
+                  <Phone className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
+                <CardTitle>تماس تلفنی</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  برای مسائل فوری و پیچیده با ما تماس بگیرید
+                </p>
+                <Button variant="outline" className="w-full">
+                  ۰۲۱-۱۲۳۴۵۶۷۸
+                </Button>
               </CardContent>
             </Card>
-            
-            <Card className="border-border shadow-sm bg-card">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <Headphones size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-1 text-card-foreground">ساعات پاسخگویی</h3>
-                    <p className="text-muted-foreground">شنبه تا چهارشنبه: 9 صبح تا 5 بعدازظهر</p>
-                  </div>
+
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mb-4">
+                  <Mail className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                 </div>
+                <CardTitle>ایمیل</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  برای سوالات تفصیلی ایمیل ارسال کنید
+                </p>
+                <Button variant="outline" className="w-full">
+                  support@rafiei.co
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Support Hours */}
+      <section className="py-16 bg-muted/50">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight mb-4">
+                ساعات کاری پشتیبانی
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
+                  <span>شنبه تا چهارشنبه: ۹:۰۰ تا ۱۸:۰۰</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
+                  <span>پنج‌شنبه: ۹:۰۰ تا ۱۴:۰۰</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
+                  <span>جمعه: تعطیل</span>
+                </div>
+              </div>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Headphones className="w-5 h-5" />
+                  پشتیبانی ویژه
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  دانشجویان دوره بدون مرز از پشتیبانی ۲۴ ساعته برخوردار هستند
+                </p>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/boundless">
+                    اطلاعات بیشتر
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Preview */}
+      <section className="py-16 bg-background">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight mb-4">
+              سوالات متداول
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              شاید پاسخ سوال شما اینجا باشد
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>چگونه می‌توانم دوره‌ای را خریداری کنم؟</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  برای خرید دوره، ابتدا وارد صفحه دوره مورد نظر شوید و روی دکمه "ثبت نام" کلیک کنید.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>آیا امکان استرداد وجه وجود دارد؟</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  بله، تا ۷۲ ساعت پس از خرید امکان استرداد وجه با شرایط خاص وجود دارد.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>چگونه به دوره‌های خریداری شده دسترسی پیدا کنم؟</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  پس از خرید، لینک دسترسی به دوره از طریق ایمیل و پیامک برای شما ارسال می‌شود.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>آیا گواهی برای دوره‌ها صادر می‌شود؟</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  بله، پس از تکمیل موفقیت‌آمیز دوره، گواهی معتبر برای شما صادر می‌شود.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button asChild variant="outline" size="lg">
+              <Link to="/hub/messenger">
+                <Users className="w-4 h-4 mr-2" />
+                سوال خاص دارید؟ با ما صحبت کنید
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </MainLayout>
   );
 };

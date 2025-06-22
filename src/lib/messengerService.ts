@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -271,36 +270,7 @@ class MessengerService {
         .from('messenger_messages')
         .select(`
           *,
-          sender:sender_id (
-            id,
-            name,
-            phone,
-            role,
-            created_at,
-            updated_at,
-            is_approved,
-            bedoun_marz,
-            bedoun_marz_approved,
-            bedoun_marz_request,
-            is_messenger_admin,
-            is_support_agent,
-            last_seen
-          ),
-          recipient:recipient_id (
-            id,
-            name,
-            phone,
-            role,
-            created_at,
-            updated_at,
-            is_approved,
-            bedoun_marz,
-            bedoun_marz_approved,
-            bedoun_marz_request,
-            is_messenger_admin,
-            is_support_agent,
-            last_seen
-          )
+          sender:chat_users!sender_id (*)
         `)
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
@@ -336,36 +306,7 @@ class MessengerService {
         .from('messenger_messages')
         .select(`
           *,
-          sender:sender_id (
-            id,
-            name,
-            phone,
-            role,
-            created_at,
-            updated_at,
-            is_approved,
-            bedoun_marz,
-            bedoun_marz_approved,
-            bedoun_marz_request,
-            is_messenger_admin,
-            is_support_agent,
-            last_seen
-          ),
-          recipient:recipient_id (
-            id,
-            name,
-            phone,
-            role,
-            created_at,
-            updated_at,
-            is_approved,
-            bedoun_marz,
-            bedoun_marz_approved,
-            bedoun_marz_request,
-            is_messenger_admin,
-            is_support_agent,
-            last_seen
-          )
+          sender:chat_users!sender_id (*)
         `)
         .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
         .is('room_id', null)
