@@ -16,9 +16,6 @@ interface ChatRoom {
   type: string;
   description: string;
   is_boundless_only: boolean;
-  created_at: string;
-  is_active: boolean;
-  updated_at: string;
   last_message?: string;
   last_message_time?: string;
   unread_count?: number;

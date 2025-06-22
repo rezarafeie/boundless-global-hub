@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck, MessageCircle, Network, Shield } from "lucide-react";
+import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck, MessageCircle, Network } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 
@@ -57,12 +58,6 @@ const QuickAccess = () => {
       icon: <BookOpenCheck size={28} />,
       link: "/boundless",
       color: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400"
-    },
-    {
-      title: "پنل مدیریت یکپارچه",
-      icon: <Shield size={28} />,
-      link: "/hub/admin",
-      color: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"
     }
   ];
 
