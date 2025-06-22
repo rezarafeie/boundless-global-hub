@@ -1,788 +1,488 @@
 import { supabase } from '@/integrations/supabase/client';
-import { supportService } from './supportService';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type MessengerUser = {
-  id: number;
-  name: string;
-  phone: string;
-  is_approved: boolean;
-  bedoun_marz_approved: boolean;
-  bedoun_marz_request: boolean;
-  bedoun_marz: boolean;
-  is_support_agent: boolean;
-  is_messenger_admin: boolean;
-  role: string;
-  created_at: string;
-  updated_at: string;
-  last_seen: string;
-};
+export type MessengerUser = Tables<'chat_users'>;
+export type ChatRoom = Tables<'chat_rooms'>;
+export type MessengerMessage = Tables<'messenger_messages'>;
+export type SupportConversation = Tables<'support_conversations'>;
+export type MessageReaction = Tables<'message_reactions'>;
 
-export type ChatRoom = {
-  id: number;
-  name: string;
-  type: string;
-  description: string;
-  is_boundless_only: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-};
+export interface MessengerMessageWithUser extends MessengerMessage {
+  sender?: MessengerUser;
+  recipient?: MessengerUser;
+  reactions?: MessageReaction[];
+}
 
-export type MessengerMessage = {
-  id: number;
-  room_id: number | null;
-  sender_id: number;
-  recipient_id: number | null;
-  message: string;
-  message_type: string;
-  media_url: string | null;
-  media_content: string | null;
-  is_read: boolean;
-  created_at: string;
-  reply_to_message_id?: number | null;
-  forwarded_from_message_id?: number | null;
-};
-
-export type UserSession = {
-  id: string;
+interface RoomMembership {
   user_id: number;
-  session_token: string;
-  is_active: boolean;
-  last_activity: string;
-  created_at: string;
-};
+  room_id: number;
+  joined_at: string;
+  last_read_at: string;
+}
 
-export type SupportThreadType = {
-  id: number;
-  name: string;
-  display_name: string;
-  description: string;
-  is_boundless_only: boolean;
-  is_active: boolean;
-  created_at: string;
-};
+const DEFAULT_AVATAR_COLORS = [
+  '#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51',
+  '#d62828', '#457b9d', '#1d3557', '#f72585', '#b5179e',
+  '#7209b7', '#560bad', '#480ca8', '#3a0ca3', '#f77f00'
+];
 
-export type SupportAgentAssignment = {
-  id: number;
-  agent_id: number;
-  thread_type_id: number;
-  assigned_at: string;
-  is_active: boolean;
-};
-
-// Enhanced session validation function
-const validateSessionToken = async (sessionToken: string): Promise<boolean> => {
-  try {
-    console.log('Validating session token:', sessionToken.substring(0, 8) + '...');
-    
-    const { data, error } = await supabase.rpc('is_session_valid', {
-      session_token_param: sessionToken
-    });
-    
-    if (error) {
-      console.error('Session validation error:', error);
-      return false;
-    }
-    
-    console.log('Session validation result:', data);
-    return data === true;
-  } catch (error) {
-    console.error('Failed to validate session:', error);
-    return false;
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-};
+  return hash;
+}
 
-// Simplified session context function - no longer critical
-const setSessionContextOptional = async (sessionToken: string): Promise<void> => {
-  try {
-    console.log('Setting optional session context');
-    
-    const { error } = await supabase.rpc('set_session_context', { 
-      session_token: sessionToken 
-    });
-    
-    if (error) {
-      console.warn('Optional session context failed (non-critical):', error);
-    } else {
-      console.log('Optional session context set successfully');
-    }
-  } catch (error) {
-    console.warn('Optional session context error (non-critical):', error);
-  }
-};
-
-// Ensure system support user exists
-const ensureSystemSupportUser = async (): Promise<void> => {
-  try {
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('chat_users')
-      .select('id')
-      .eq('id', 1)
-      .maybeSingle();
-    
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error checking system support user:', fetchError);
-      return;
-    }
-    
-    if (!existingUser) {
-      console.log('Creating system support user...');
-      const { error: insertError } = await supabase
-        .from('chat_users')
-        .insert([{
-          id: 1,
-          name: 'پشتیبانی سیستم',
-          phone: 'system',
-          is_approved: true,
-          is_support_agent: true,
-          is_messenger_admin: true,
-          role: 'system_support'
-        }]);
-      
-      if (insertError) {
-        console.error('Error creating system support user:', insertError);
-      } else {
-        console.log('System support user created successfully');
-      }
-    }
-  } catch (error) {
-    console.error('Error ensuring system support user:', error);
-  }
-};
+function getColorForUsername(username: string): string {
+  const index = Math.abs(hashCode(username)) % DEFAULT_AVATAR_COLORS.length;
+  return DEFAULT_AVATAR_COLORS[index];
+}
 
 class MessengerService {
-  constructor() {
-    // Ensure system support user exists on service initialization
-    ensureSystemSupportUser();
-  }
-
-  // User authentication and session management
-  async register(name: string, phone: string, isBoundlessStudent: boolean = false): Promise<MessengerUser> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .insert([{ 
-        name, 
-        phone, 
-        bedoun_marz_request: isBoundlessStudent,
-        bedoun_marz: isBoundlessStudent,
-        is_approved: false,
-        bedoun_marz_approved: false
-      }])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as MessengerUser;
-  }
-
-  async getApprovedUsers(): Promise<MessengerUser[]> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .select('*')
-      .eq('is_approved', true);
-    
-    if (error) throw error;
-    return (data || []) as MessengerUser[];
-  }
-
-  async createSession(userId: number): Promise<UserSession> {
-    const sessionToken = crypto.randomUUID();
-    const { data, error } = await supabase
-      .from('user_sessions')
-      .insert([{ user_id: userId, session_token: sessionToken }])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data as UserSession;
-  }
-
-  async validateSession(sessionToken: string): Promise<{ user: MessengerUser; session: UserSession } | null> {
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      console.error('Session validation failed');
-      return null;
-    }
-    
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('user_sessions')
-      .select(`
-        *,
-        chat_users(*)
-      `)
-      .eq('session_token', sessionToken)
-      .eq('is_active', true)
-      .single();
-    
-    if (sessionError || !sessionData) {
-      console.error('Session data fetch failed:', sessionError);
-      return null;
-    }
-    
-    // Update last activity
-    await supabase
-      .from('user_sessions')
-      .update({ last_activity: new Date().toISOString() })
-      .eq('session_token', sessionToken);
-    
-    return {
-      user: sessionData.chat_users as MessengerUser,
-      session: sessionData as UserSession
-    };
-  }
-
-  async deactivateSession(sessionToken: string): Promise<void> {
-    const { error } = await supabase
-      .from('user_sessions')
-      .update({ is_active: false })
-      .eq('session_token', sessionToken);
-    
-    if (error) throw error;
-  }
-
-  // Chat rooms management - simplified without session context
   async getRooms(sessionToken: string): Promise<ChatRoom[]> {
-    console.log('Fetching rooms with session token:', sessionToken.substring(0, 8) + '...');
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching rooms:', error);
+        throw new Error(`Failed to fetch rooms: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error: any) {
+      console.error('Error in getRooms:', error);
+      throw error;
     }
-    
-    const { data, error } = await supabase
-      .from('chat_rooms')
-      .select('*')
-      .eq('is_active', true)
-      .order('id', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching rooms:', error);
-      throw new Error(`Failed to fetch rooms: ${error.message}`);
-    }
-    
-    console.log('Successfully fetched rooms:', data?.length || 0);
-    return (data || []) as ChatRoom[];
   }
 
-  async createRoom(roomData: {
-    name: string;
-    type: string;
-    description: string;
-    is_boundless_only?: boolean;
-  }, sessionToken: string): Promise<ChatRoom> {
-    console.log('Creating room:', roomData);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
+  async getRoom(roomId: number, sessionToken: string): Promise<ChatRoom | null> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching room:', error);
+        return null;
+      }
+
+      return data || null;
+    } catch (error: any) {
+      console.error('Error in getRoom:', error);
+      return null;
     }
-    
-    const { data, error } = await supabase
-      .from('chat_rooms')
-      .insert([{
-        name: roomData.name,
-        type: roomData.type,
-        description: roomData.description,
-        is_boundless_only: roomData.is_boundless_only || false,
-        is_active: true
-      }])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating room:', error);
-      throw new Error(`Failed to create room: ${error.message}`);
+  }
+
+  async createRoom(room: Omit<ChatRoom, 'id' | 'created_at' | 'updated_at'>, sessionToken: string): Promise<ChatRoom> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .insert(room)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating room:', error);
+        throw new Error(`Failed to create room: ${error.message}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error in createRoom:', error);
+      throw error;
     }
-    
-    console.log('Room created successfully:', data);
-    return data as ChatRoom;
   }
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>, sessionToken: string): Promise<ChatRoom> {
-    console.log('Updating room:', roomId, updates);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .update(updates)
+        .eq('id', roomId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating room:', error);
+        throw new Error(`Failed to update room: ${error.message}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error in updateRoom:', error);
+      throw error;
     }
-    
-    const { data, error } = await supabase
-      .from('chat_rooms')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', roomId)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error updating room:', error);
-      throw new Error(`Failed to update room: ${error.message}`);
-    }
-    
-    console.log('Room updated successfully:', data);
-    return data as ChatRoom;
   }
 
   async deleteRoom(roomId: number, sessionToken: string): Promise<void> {
-    console.log('Deleting room:', roomId);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
-    }
-    
-    const { error } = await supabase
-      .from('chat_rooms')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq('id', roomId);
-    
-    if (error) {
-      console.error('Error deleting room:', error);
-      throw new Error(`Failed to delete room: ${error.message}`);
-    }
-    
-    console.log('Room deleted successfully');
-  }
-
-  async getRoomMessages(roomId: number, sessionToken: string): Promise<MessengerMessage[]> {
-    console.log('Fetching messages for room:', roomId);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
-    }
-    
-    const { data, error } = await supabase
-      .from('messenger_messages')
-      .select(`
-        *,
-        sender:chat_users!fk_messenger_messages_sender(name),
-        reactions:message_reactions(*)
-      `)
-      .eq('room_id', roomId)
-      .order('created_at', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching room messages:', error);
-      throw new Error(`Failed to fetch messages: ${error.message}`);
-    }
-    
-    console.log('Successfully fetched messages:', data?.length || 0);
-    return (data || []).map(msg => ({
-      ...msg,
-      sender_name: msg.sender?.name || 'کاربر',
-      reactions: msg.reactions || []
-    })) as MessengerMessage[];
-  }
-
-  async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
     try {
-      console.log('Getting private messages for user:', userId);
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
       
-      const threadTypes = await this.getSupportThreadTypes(userId);
-      if (threadTypes.length === 0) {
-        console.log('No available thread types for user');
-        return [];
+      const { error } = await supabase
+        .from('chat_rooms')
+        .delete()
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error deleting room:', error);
+        throw new Error(`Failed to delete room: ${error.message}`);
       }
-      
-      // Get conversations for all available thread types
-      const allMessages: MessengerMessage[] = [];
-      
-      for (const threadType of threadTypes) {
-        try {
-          const conversation = await supportService.getOrCreateUserConversation(userId, sessionToken, threadType.id);
-          
-          if (conversation.id === -1) continue;
-          
-          const messages = await supportService.getConversationMessages(conversation.id);
-          const formattedMessages = messages.map(msg => ({
-            id: msg.id,
-            sender_id: msg.sender_id || 0,
-            recipient_id: msg.recipient_id || null,
-            room_id: null,
-            message: msg.message,
-            message_type: (msg.message_type as 'text' | 'image' | 'file') || 'text',
-            media_url: msg.media_url,
-            media_content: null,
-            is_read: msg.is_read || false,
-            created_at: msg.created_at || new Date().toISOString(),
-            sender_name: msg.sender_name,
-            is_from_support: msg.is_from_support || false,
-            reply_to_message_id: null,
-            forwarded_from_message_id: null,
-            reactions: [],
-            thread_type: threadType.display_name,
-            thread_id: threadType.id
-          }));
-          
-          allMessages.push(...formattedMessages);
-        } catch (error) {
-          console.error(`Error fetching messages for thread type ${threadType.name}:`, error);
-        }
-      }
-      
-      // Sort by creation date
-      allMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      
-      return allMessages;
-    } catch (error) {
-      console.error('Error fetching private messages:', error);
-      if (error instanceof Error && error.message.includes('authentication')) {
-        throw new Error('Session expired. Please log in again.');
-      }
+    } catch (error: any) {
+      console.error('Error in deleteRoom:', error);
       throw error;
     }
   }
 
-  // Enhanced sendMessage method with reply and forward support
-  async sendMessage(messageData: {
-    room_id?: number;
-    sender_id: number;
-    recipient_id?: number;
-    message: string;
-    message_type?: string;
-    reply_to_message_id?: number;
-    forwarded_from_message_id?: number;
-  }, sessionToken: string): Promise<MessengerMessage> {
-    console.log('Sending message:', messageData);
-    
-    // Validate session first
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
-    }
-    
+  async getMessages(roomId: number, sessionToken: string): Promise<MessengerMessageWithUser[]> {
     try {
-      // Ensure system support user exists before sending support messages
-      if (messageData.recipient_id === 1 && !messageData.room_id) {
-        console.log('Support message detected - ensuring system support user exists');
-        await ensureSystemSupportUser();
-        await setSessionContextOptional(sessionToken);
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data: messages, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:sender_id (
+            id,
+            name,
+            phone,
+            role,
+            created_at,
+            updated_at
+          ),
+          recipient:recipient_id (
+            id,
+            name,
+            phone,
+            role,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw new Error(`Failed to fetch messages: ${error.message}`);
       }
+
+      const messagesWithReactions = await Promise.all(
+        messages.map(async (message) => {
+          const reactions = await this.getMessageReactions(message.id, sessionToken);
+          return { ...message, reactions };
+        })
+      );
+
+      return messagesWithReactions as MessengerMessageWithUser[];
+    } catch (error: any) {
+      console.error('Error in getMessages:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(message: TablesInsert<'messenger_messages'>, sessionToken: string): Promise<MessengerMessage> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
       
       const { data, error } = await supabase
         .from('messenger_messages')
-        .insert([{
-          room_id: messageData.room_id || null,
-          sender_id: messageData.sender_id,
-          recipient_id: messageData.recipient_id || null,
-          message: messageData.message,
-          message_type: messageData.message_type || 'text',
-          reply_to_message_id: messageData.reply_to_message_id || null,
-          forwarded_from_message_id: messageData.forwarded_from_message_id || null
-        }])
+        .insert(message)
         .select()
         .single();
-      
+
       if (error) {
-        console.error('Message send error:', error);
+        console.error('Error sending message:', error);
         throw new Error(`Failed to send message: ${error.message}`);
       }
-      
-      console.log('Message sent successfully:', data);
-      return data as MessengerMessage;
-      
-    } catch (error) {
-      console.error('Message send error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      if (errorMessage.includes('permission denied') || errorMessage.includes('row-level security')) {
-        throw new Error('Permission denied. Please refresh the page and try again.');
-      }
-      if (errorMessage.includes('violates foreign key constraint')) {
-        throw new Error('Invalid recipient or room. Please refresh the page.');
-      }
-      
-      throw new Error(`Failed to send message: ${errorMessage}`);
-    }
-  }
 
-  // Add reaction to message
-  async addReaction(messageId: number, reaction: string, sessionToken: string): Promise<void> {
-    console.log('Adding reaction:', reaction, 'to message:', messageId);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
-    }
-
-    // Get user ID from session
-    const { data: sessionData } = await supabase
-      .from('user_sessions')
-      .select('user_id')
-      .eq('session_token', sessionToken)
-      .eq('is_active', true)
-      .single();
-
-    if (!sessionData?.user_id) {
-      throw new Error('User not found in session');
-    }
-
-    // Set session context for RLS
-    await setSessionContextOptional(sessionToken);
-
-    const { error } = await supabase
-      .from('message_reactions')
-      .insert([{
-        message_id: messageId,
-        user_id: sessionData.user_id,
-        reaction: reaction
-      }]);
-
-    if (error) {
-      // If it's a duplicate, try to remove it instead
-      if (error.code === '23505') {
-        await this.removeReaction(messageId, reaction, sessionToken);
-      } else {
-        console.error('Error adding reaction:', error);
-        throw new Error(`Failed to add reaction: ${error.message}`);
-      }
-    }
-  }
-
-  // Remove reaction from message
-  async removeReaction(messageId: number, reaction: string, sessionToken: string): Promise<void> {
-    console.log('Removing reaction:', reaction, 'from message:', messageId);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
-    }
-
-    // Get user ID from session
-    const { data: sessionData } = await supabase
-      .from('user_sessions')
-      .select('user_id')
-      .eq('session_token', sessionToken)
-      .eq('is_active', true)
-      .single();
-
-    if (!sessionData?.user_id) {
-      throw new Error('User not found in session');
-    }
-
-    // Set session context for RLS
-    await setSessionContextOptional(sessionToken);
-
-    const { error } = await supabase
-      .from('message_reactions')
-      .delete()
-      .eq('message_id', messageId)
-      .eq('user_id', sessionData.user_id)
-      .eq('reaction', reaction);
-
-    if (error) {
-      console.error('Error removing reaction:', error);
-      throw new Error(`Failed to remove reaction: ${error.message}`);
-    }
-  }
-
-  // Add method for updating user boundless status
-  async updateUserBoundlessStatus(userId: number, isBoundless: boolean): Promise<MessengerUser> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .update({
-        bedoun_marz: isBoundless,
-        bedoun_marz_approved: isBoundless,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data as MessengerUser;
-  }
-
-  // Get available support thread types for a user
-  async getSupportThreadTypes(userId: number): Promise<SupportThreadType[]> {
-    try {
-      console.log('Getting support thread types for user:', userId);
-      
-      // Get user info to check boundless status
-      const { data: user, error: userError } = await supabase
-        .from('chat_users')
-        .select('bedoun_marz_approved')
-        .eq('id', userId)
-        .single();
-      
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        return [];
-      }
-      
-      // Get all active thread types
-      const { data: threadTypes, error } = await supabase
-        .from('support_thread_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('id');
-      
-      if (error) {
-        console.error('Error fetching thread types:', error);
-        return [];
-      }
-      
-      // Filter based on user's boundless status
-      const availableThreads = threadTypes.filter(thread => {
-        // Academy support is available to all users
-        if (thread.name === 'academy_support') return true;
-        
-        // Boundless support only for approved boundless users
-        if (thread.name === 'boundless_support') {
-          return user.bedoun_marz_approved === true;
-        }
-        
-        return true;
-      });
-      
-      console.log('Available thread types for user:', availableThreads);
-      return availableThreads as SupportThreadType[];
-      
-    } catch (error) {
-      console.error('Error getting support thread types:', error);
-      return [];
-    }
-  }
-
-  // Support agent assignment methods
-  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
-    const { error } = await supabase
-      .from('support_agent_assignments')
-      .insert([{
-        agent_id: agentId,
-        thread_type_id: threadTypeId,
-        is_active: true
-      }]);
-    
-    if (error && error.code !== '23505') { // Ignore duplicate key errors
+      return data;
+    } catch (error: any) {
+      console.error('Error in sendMessage:', error);
       throw error;
     }
   }
 
-  async unassignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
-    const { error } = await supabase
-      .from('support_agent_assignments')
-      .delete()
-      .eq('agent_id', agentId)
-      .eq('thread_type_id', threadTypeId);
-    
-    if (error) throw error;
-  }
+  async updateMessage(messageId: number, updates: TablesUpdate<'messenger_messages'>, sessionToken: string): Promise<MessengerMessage> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .update(updates)
+        .eq('id', messageId)
+        .select()
+        .single();
 
-  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
-    const { data, error } = await supabase
-      .from('support_agent_assignments')
-      .select(`
-        *,
-        agent:chat_users!agent_id(name),
-        thread_type:support_thread_types!thread_type_id(display_name)
-      `)
-      .eq('is_active', true);
-    
-    if (error) throw error;
-    return (data || []) as SupportAgentAssignment[];
-  }
+      if (error) {
+        console.error('Error updating message:', error);
+        throw new Error(`Failed to update message: ${error.message}`);
+      }
 
-  async getThreadTypes(): Promise<SupportThreadType[]> {
-    const { data, error } = await supabase
-      .from('support_thread_types')
-      .select('*')
-      .eq('is_active', true)
-      .order('id');
-    
-    if (error) throw error;
-    return (data || []) as SupportThreadType[];
-  }
-
-  // Support agent functions
-  async getSupportConversations(supportAgentId: number, sessionToken: string): Promise<any[]> {
-    console.log('Fetching support conversations for agent:', supportAgentId);
-    
-    const isValid = await validateSessionToken(sessionToken);
-    if (!isValid) {
-      throw new Error('Invalid session. Please log in again.');
+      return data;
+    } catch (error: any) {
+      console.error('Error in updateMessage:', error);
+      throw error;
     }
-    
-    const { data, error } = await supabase
-      .from('messenger_messages')
-      .select(`
-        *,
-        sender:chat_users!fk_messenger_messages_sender(name),
-        recipient:chat_users!fk_messenger_messages_recipient(name)
-      `)
-      .or(`sender_id.eq.${supportAgentId},recipient_id.eq.${supportAgentId}`)
-      .is('room_id', null)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching support conversations:', error);
-      throw new Error(`Failed to fetch support conversations: ${error.message}`);
+  }
+
+  async deleteMessage(messageId: number, sessionToken: string): Promise<void> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { error } = await supabase
+        .from('messenger_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        throw new Error(`Failed to delete message: ${error.message}`);
+      }
+    } catch (error: any) {
+      console.error('Error in deleteMessage:', error);
+      throw error;
     }
-    
-    return data || [];
   }
 
-  // Update user role (support agent status)
-  async updateUserRole(userId: number, updates: { 
-    is_support_agent?: boolean;
-    is_messenger_admin?: boolean;
-  }): Promise<MessengerUser> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single();
+  async getApprovedUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('is_approved', true);
 
-    if (error) throw error;
-    return data as MessengerUser;
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw new Error(`Failed to fetch users: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error: any) {
+      console.error('Error in getApprovedUsers:', error);
+      throw error;
+    }
   }
 
-  // Get support agents
-  async getSupportAgents(): Promise<MessengerUser[]> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .select('*')
-      .eq('is_support_agent', true)
-      .eq('is_approved', true)
-      .order('created_at', { ascending: false });
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
 
-    if (error) throw error;
-    return (data || []) as MessengerUser[];
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw new Error(`Failed to fetch users: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error: any) {
+      console.error('Error in getAllUsers:', error);
+      throw error;
+    }
   }
 
-  // Messenger admin methods
-  async updateUserMessengerAdmin(userId: number, isAdmin: boolean): Promise<MessengerUser> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .update({
-        is_messenger_admin: isAdmin,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single();
+  async getUser(userId: number): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) throw error;
-    return data as MessengerUser;
+      if (error) {
+        console.error('Error fetching user:', error);
+        return null;
+      }
+
+      return data || null;
+    } catch (error: any) {
+      console.error('Error in getUser:', error);
+      return null;
+    }
   }
 
-  async getMessengerAdmins(): Promise<MessengerUser[]> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .select('*')
-      .eq('is_messenger_admin', true)
-      .eq('is_approved', true)
-      .order('created_at', { ascending: false });
+  async updateUser(userId: number, updates: TablesUpdate<'chat_users'>): Promise<MessengerUser> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return (data || []) as MessengerUser[];
+      if (error) {
+        console.error('Error updating user:', error);
+        throw new Error(`Failed to update user: ${error.message}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error in updateUser:', error);
+      throw error;
+    }
+  }
+
+  async getRoomMemberships(roomId: number, sessionToken: string): Promise<RoomMembership[]> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('room_memberships')
+        .select('*')
+        .eq('room_id', roomId);
+
+      if (error) {
+        console.error('Error fetching room memberships:', error);
+        throw new Error(`Failed to fetch room memberships: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error: any) {
+      console.error('Error in getRoomMemberships:', error);
+      throw error;
+    }
+  }
+
+  async addMessageReaction(messageId: number, reaction: string, sessionToken: string): Promise<MessageReaction> {
+    try {
+      console.log('Adding reaction:', { messageId, reaction });
+      
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      // Get current user ID from session
+      const userId = await this.getUserIdFromSession(sessionToken);
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check if user already has this reaction on this message
+      const { data: existingReaction } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .eq('message_id', messageId)
+        .eq('user_id', userId)
+        .eq('reaction', reaction)
+        .single();
+
+      if (existingReaction) {
+        // Remove the existing reaction (toggle off)
+        const { error: deleteError } = await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existingReaction.id);
+
+        if (deleteError) {
+          console.error('Error removing reaction:', deleteError);
+          throw new Error(`Failed to remove reaction: ${deleteError.message}`);
+        }
+
+        console.log('Reaction removed successfully');
+        return existingReaction;
+      } else {
+        // Add new reaction
+        const { data, error } = await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: userId,
+            reaction: reaction
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error adding reaction:', error);
+          throw new Error(`Failed to add reaction: ${error.message}`);
+        }
+
+        console.log('Reaction added successfully:', data);
+        return data;
+      }
+    } catch (error: any) {
+      console.error('Error in addMessageReaction:', error);
+      throw error;
+    }
+  }
+
+  async getMessageReactions(messageId: number, sessionToken: string): Promise<MessageReaction[]> {
+    try {
+      // Set session context for RLS
+      await this.setSessionContext(sessionToken);
+      
+      const { data, error } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .eq('message_id', messageId);
+
+      if (error) {
+        console.error('Error fetching reactions:', error);
+        throw new Error(`Failed to fetch reactions: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error: any) {
+      console.error('Error in getMessageReactions:', error);
+      throw error;
+    }
+  }
+
+  private async setSessionContext(sessionToken: string): Promise<void> {
+    try {
+      const { error } = await supabase.rpc('set_session_context', {
+        session_token: sessionToken
+      });
+
+      if (error) {
+        console.error('Error setting session context:', error);
+        throw new Error(`Failed to set session context: ${error.message}`);
+      }
+    } catch (error: any) {
+      console.error('Error in setSessionContext:', error);
+      throw error;
+    }
+  }
+
+  private async getUserIdFromSession(sessionToken: string): Promise<number | null> {
+    try {
+      const { data, error } = await supabase.rpc('get_user_from_session', {
+        session_token_param: sessionToken
+      });
+
+      if (error) {
+        console.error('Error getting user from session:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error in getUserIdFromSession:', error);
+      return null;
+    }
   }
 }
 
