@@ -22,8 +22,8 @@ interface EnhancedMessage extends MessengerMessage {
   sender_name?: string;
   is_from_support?: boolean;
   reactions?: any[];
-  reply_to_message_id?: number;
-  forwarded_from_message_id?: number;
+  reply_to_message_id?: number | null;
+  forwarded_from_message_id?: number | null;
 }
 
 interface ReplyingTo {
@@ -81,7 +81,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       if (room.type === 'academy_support' || room.type === 'boundless_support') {
         fetchedMessages = await messengerService.getPrivateMessages(currentUser.id, sessionToken) as EnhancedMessage[];
       } else {
-        fetchedMessages = await messengerService.getRoomMessages(room.id, sessionToken) as EnhancedMessage[];
+        fetchedMessages = await messengerService.getMessages(room.id, sessionToken) as EnhancedMessage[];
       }
       
       setMessages(fetchedMessages);
@@ -228,7 +228,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       console.log('Sending message with data:', messageData);
       
       const sentMessage = await messengerService.sendMessage(messageData, sessionToken);
-      setMessages((prevMessages) => [...prevMessages,  sentMessage as EnhancedMessage]);
+      setMessages((prevMessages) => [...prevMessages, sentMessage as EnhancedMessage]);
       
       toast({
         title: 'پیام ارسال شد',
