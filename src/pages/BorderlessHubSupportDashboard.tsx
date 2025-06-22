@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Headphones, Search, MessageCircle, Send, User, Clock, AlertCircle, CheckCircle, Archive, RefreshCw } from 'lucide-react';
+import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
-import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
+import { supportService, type SupportConversation } from '@/lib/supportService';
+import SupportChatView from '@/components/Chat/SupportChatView';
 
 interface ConversationWithUser extends SupportConversation {
   user?: {
@@ -21,7 +22,6 @@ interface ConversationWithUser extends SupportConversation {
     id: number;
     display_name: string;
   };
-  last_message?: string;
   unread_count?: number;
 }
 
@@ -30,12 +30,10 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [conversations, setConversations] = useState<ConversationWithUser[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ConversationWithUser | null>(null);
-  const [messages, setMessages] = useState<SupportMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const checkSupportAccess = async () => {
@@ -69,7 +67,6 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       console.log('Fetching conversations...');
       const conversationsData = await supportService.getAllConversations();
       console.log('Conversations loaded:', conversationsData.length);
-      console.log('Conversations data:', conversationsData);
       setConversations(conversationsData);
       
       if (conversationsData.length > 0) {
@@ -90,23 +87,6 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     }
   };
 
-  const fetchMessages = async (conversationId: number) => {
-    try {
-      console.log('Fetching messages for conversation:', conversationId);
-      const messagesData = await supportService.getConversationMessages(conversationId);
-      console.log('Messages loaded:', messagesData.length);
-      console.log('Messages data:', messagesData);
-      setMessages(messagesData);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
-        variant: 'destructive',
-      });
-    }
-  };
-
   useEffect(() => {
     const initialize = async () => {
       const hasAccess = await checkSupportAccess();
@@ -119,48 +99,24 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     initialize();
   }, []);
 
-  const handleConversationSelect = async (conversation: ConversationWithUser) => {
+  const handleConversationSelect = (conversation: ConversationWithUser) => {
     console.log('Selecting conversation:', conversation.id);
     setSelectedConversation(conversation);
-    await fetchMessages(conversation.id);
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation || !currentUser) return;
-
-    setSending(true);
-    try {
-      console.log('Sending message...');
-      const sentMessage = await supportService.sendSupportMessage(
-        selectedConversation.id,
-        newMessage,
-        currentUser.id
-      );
-      
-      setMessages(prev => [...prev, sentMessage]);
-      setNewMessage('');
-      
-      toast({
-        title: 'موفق',
-        description: 'پیام ارسال شد',
-      });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در ارسال پیام',
-        variant: 'destructive',
-      });
-    } finally {
-      setSending(false);
-    }
+  const handleConversationUpdate = (updatedConversation: ConversationWithUser) => {
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === updatedConversation.id ? { ...conv, ...updatedConversation } : conv
+      )
+    );
+    setSelectedConversation(updatedConversation);
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'open': return <AlertCircle className="w-4 h-4 text-amber-500" />;
-      case 'assigned': return <User className="w-4 h-4 text-blue-500" />;
+      case 'assigned': return <Clock className="w-4 h-4 text-blue-500" />;
       case 'resolved': return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'closed': return <Archive className="w-4 h-4 text-gray-500" />;
       default: return <MessageCircle className="w-4 h-4" />;
@@ -170,13 +126,29 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const statusMap = {
       open: { label: 'باز', variant: 'destructive' as const },
-      assigned: { label: 'اختصاص یافته', variant: 'default' as const },
+      assigned: { label: 'در حال بررسی', variant: 'default' as const },
       resolved: { label: 'حل شده', variant: 'secondary' as const },
       closed: { label: 'بسته', variant: 'outline' as const }
     };
     
     const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.open;
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const priorityMap = {
+      low: { label: 'کم', color: 'bg-gray-100 text-gray-800' },
+      normal: { label: 'عادی', color: 'bg-blue-100 text-blue-800' },
+      high: { label: 'بالا', color: 'bg-orange-100 text-orange-800' },
+      urgent: { label: 'فوری', color: 'bg-red-100 text-red-800' }
+    };
+    
+    const priorityInfo = priorityMap[priority as keyof typeof priorityMap] || priorityMap.normal;
+    return (
+      <Badge variant="outline" className={`text-xs ${priorityInfo.color}`}>
+        {priorityInfo.label}
+      </Badge>
+    );
   };
 
   const filteredConversations = conversations.filter(conv => {
@@ -186,8 +158,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       conv.id.toString().includes(searchTerm);
     
     const matchesStatus = statusFilter === 'all' || conv.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || conv.priority === priorityFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesPriority;
   });
 
   if (loading) {
@@ -223,7 +196,8 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-20">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        {/* Header */}
         <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
@@ -250,10 +224,17 @@ const BorderlessHubSupportDashboard: React.FC = () => {
               </Button>
             </div>
             
+            {/* Stats */}
             {conversations.length > 0 && (
               <div className="mt-4 flex gap-4 text-sm">
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
                   کل گفتگوها: {conversations.length}
+                </span>
+                <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full">
+                  باز: {conversations.filter(c => c.status === 'open').length}
+                </span>
+                <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
+                  خوانده نشده: {conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)}
                 </span>
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
                   آکادمی: {conversations.filter(c => c.thread_type?.id === 1 || !c.thread_type?.display_name?.includes('بدون مرز')).length}
@@ -266,7 +247,8 @@ const BorderlessHubSupportDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-200px)]">
             {/* Conversations List */}
             <div className="lg:col-span-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border">
@@ -282,18 +264,33 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                     />
                   </div>
                   
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="فیلتر وضعیت" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه</SelectItem>
-                      <SelectItem value="open">باز</SelectItem>
-                      <SelectItem value="assigned">اختصاص یافته</SelectItem>
-                      <SelectItem value="resolved">حل شده</SelectItem>
-                      <SelectItem value="closed">بسته</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="وضعیت" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                        <SelectItem value="open">باز</SelectItem>
+                        <SelectItem value="assigned">در حال بررسی</SelectItem>
+                        <SelectItem value="resolved">حل شده</SelectItem>
+                        <SelectItem value="closed">بسته</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="اولویت" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">همه اولویت‌ها</SelectItem>
+                        <SelectItem value="low">کم</SelectItem>
+                        <SelectItem value="normal">عادی</SelectItem>
+                        <SelectItem value="high">بالا</SelectItem>
+                        <SelectItem value="urgent">فوری</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -302,7 +299,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   <div className="p-8 text-center">
                     <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                     <p className="text-slate-500 mb-2">
-                      {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'هیچ گفتگویی با این فیلتر یافت نشد'}
+                      {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'هیچ گفتگویی با فیلترهای انتخابی یافت نشد'}
                     </p>
                     {conversations.length === 0 && (
                       <p className="text-xs text-slate-400">
@@ -322,15 +319,43 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="font-medium text-slate-900 dark:text-white">
-                            {conversation.user?.name || 'کاربر نامشخص'}
-                          </h4>
-                          <p className="text-sm text-slate-500">{conversation.user?.phone || 'شماره نامشخص'}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-slate-900 dark:text-white">
+                              {conversation.user?.name || 'کاربر نامشخص'}
+                            </h4>
+                            {conversation.unread_count && conversation.unread_count > 0 && (
+                              <Badge variant="destructive" className="text-xs px-2 py-0">
+                                {conversation.unread_count}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-500 mb-2">{conversation.user?.phone || 'شماره نامشخص'}</p>
+                          
+                          {/* Tags */}
+                          {conversation.tag_list && conversation.tag_list.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {conversation.tag_list.slice(0, 2).map((tag, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  <Tag className="w-2 h-2 mr-1" />
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {conversation.tag_list.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{conversation.tag_list.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(conversation.status || 'open')}
-                          {getStatusBadge(conversation.status || 'open')}
+                        
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(conversation.status || 'open')}
+                            {getStatusBadge(conversation.status || 'open')}
+                          </div>
+                          {getPriorityBadge(conversation.priority || 'normal')}
                         </div>
                       </div>
                       
@@ -352,101 +377,16 @@ const BorderlessHubSupportDashboard: React.FC = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm border flex flex-col">
+            <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-lg shadow-sm border">
               {selectedConversation ? (
-                <>
-                  {/* Chat Header */}
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-slate-900 dark:text-white">
-                        {selectedConversation.user?.name || 'کاربر نامشخص'} - گفتگو #{selectedConversation.id}
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        {selectedConversation.thread_type?.display_name || 'عمومی'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        value={selectedConversation.status || 'open'}
-                        onValueChange={(status) => {
-                          setSelectedConversation({
-                            ...selectedConversation,
-                            status: status as any
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">باز</SelectItem>
-                          <SelectItem value="assigned">اختصاص یافته</SelectItem>
-                          <SelectItem value="resolved">حل شده</SelectItem>
-                          <SelectItem value="closed">بسته</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {messages.length === 0 ? (
-                      <div className="text-center py-8">
-                        <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                        <p className="text-slate-500 dark:text-slate-400">
-                          هنوز پیامی در این گفتگو نیست
-                        </p>
-                      </div>
-                    ) : (
-                      messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.is_from_support ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                              message.is_from_support
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
-                            }`}
-                          >
-                            <p className="text-sm">{message.message}</p>
-                            <div className="flex items-center justify-between text-xs opacity-70 mt-1">
-                              <span>{message.sender_name}</span>
-                              <span>
-                                {new Date(message.created_at || '').toLocaleTimeString('fa-IR')}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Message Input */}
-                  <div className="p-4 border-t">
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                      <Textarea
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="پیام خود را بنویسید..."
-                        className="flex-1 min-h-[44px] max-h-32"
-                        disabled={sending}
-                      />
-                      <Button 
-                        type="submit" 
-                        disabled={!newMessage.trim() || sending}
-                        className="self-end"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </form>
-                  </div>
-                </>
+                <SupportChatView
+                  conversation={selectedConversation}
+                  currentUser={currentUser}
+                  onBack={() => setSelectedConversation(null)}
+                  onConversationUpdate={handleConversationUpdate}
+                />
               ) : (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex items-center justify-center h-full">
                   <div className="text-center">
                     <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                     <p className="text-slate-500 dark:text-slate-400">

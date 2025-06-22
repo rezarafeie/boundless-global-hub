@@ -288,6 +288,7 @@ export type Database = {
           reply_to_message_id: number | null
           room_id: number | null
           sender_id: number | null
+          unread_by_support: boolean | null
         }
         Insert: {
           conversation_id?: number | null
@@ -303,6 +304,7 @@ export type Database = {
           reply_to_message_id?: number | null
           room_id?: number | null
           sender_id?: number | null
+          unread_by_support?: boolean | null
         }
         Update: {
           conversation_id?: number | null
@@ -318,6 +320,7 @@ export type Database = {
           reply_to_message_id?: number | null
           room_id?: number | null
           sender_id?: number | null
+          unread_by_support?: boolean | null
         }
         Relationships: [
           {
@@ -532,33 +535,45 @@ export type Database = {
       support_conversations: {
         Row: {
           agent_id: number | null
+          assigned_agent_name: string | null
           created_at: string | null
           id: number
+          internal_notes: string | null
           last_message_at: string | null
           priority: string | null
           status: string | null
+          tag_list: Database["public"]["Enums"]["support_tag"][] | null
+          tags: string[] | null
           thread_type_id: number | null
           updated_at: string | null
           user_id: number | null
         }
         Insert: {
           agent_id?: number | null
+          assigned_agent_name?: string | null
           created_at?: string | null
           id?: number
+          internal_notes?: string | null
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          tag_list?: Database["public"]["Enums"]["support_tag"][] | null
+          tags?: string[] | null
           thread_type_id?: number | null
           updated_at?: string | null
           user_id?: number | null
         }
         Update: {
           agent_id?: number | null
+          assigned_agent_name?: string | null
           created_at?: string | null
           id?: number
+          internal_notes?: string | null
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          tag_list?: Database["public"]["Enums"]["support_tag"][] | null
+          tags?: string[] | null
           thread_type_id?: number | null
           updated_at?: string | null
           user_id?: number | null
@@ -709,6 +724,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_support_unread_count: {
+        Args: { conv_id: number }
+        Returns: number
+      }
       get_user_avatar_color: {
         Args: { user_name: string }
         Returns: string
@@ -738,7 +757,15 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      support_tag:
+        | "technical"
+        | "billing"
+        | "general"
+        | "account"
+        | "bug_report"
+        | "feature_request"
+        | "urgent"
+        | "follow_up"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -853,6 +880,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      support_tag: [
+        "technical",
+        "billing",
+        "general",
+        "account",
+        "bug_report",
+        "feature_request",
+        "urgent",
+        "follow_up",
+      ],
+    },
   },
 } as const

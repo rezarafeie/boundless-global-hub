@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw, AlertCircle, GraduationCap } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { supportService } from '@/lib/supportService';
 import { Button } from '@/components/ui/button';
 
 interface ChatRoom {
@@ -31,6 +33,34 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [supportUnreadCounts, setSupportUnreadCounts] = useState<{[key: string]: number}>({});
+
+  const fetchSupportUnreadCounts = async () => {
+    try {
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) return;
+
+      // Get user's support conversations and their unread counts
+      const conversations = await supportService.getAllConversations();
+      const userConversations = conversations.filter(conv => conv.user_id === currentUser.id);
+      
+      const unreadCounts: {[key: string]: number} = {};
+      
+      for (const conv of userConversations) {
+        if (conv.thread_type_id === 1) {
+          // Academy support
+          unreadCounts['academy_support'] = (unreadCounts['academy_support'] || 0) + (conv.unread_count || 0);
+        } else if (conv.thread_type_id === 2) {
+          // Boundless support  
+          unreadCounts['boundless_support'] = (unreadCounts['boundless_support'] || 0) + (conv.unread_count || 0);
+        }
+      }
+      
+      setSupportUnreadCounts(unreadCounts);
+    } catch (error) {
+      console.error('Error fetching support unread counts:', error);
+    }
+  };
 
   const fetchRooms = async () => {
     try {
@@ -51,7 +81,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           type: 'academy_support',
           description: 'پشتیبانی عمومی آکادمی رفیعی',
           is_boundless_only: false,
-          thread_type_id: 1
+          thread_type_id: 1,
+          unread_count: supportUnreadCounts['academy_support'] || 0
         }
       ];
 
@@ -63,7 +94,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           type: 'boundless_support',
           description: 'پشتیبانی ویژه اعضای بدون مرز', 
           is_boundless_only: true,
-          thread_type_id: 2
+          thread_type_id: 2,
+          unread_count: supportUnreadCounts['boundless_support'] || 0
         });
       }
 
@@ -83,7 +115,17 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   };
 
   useEffect(() => {
-    fetchRooms();
+    const initializeInbox = async () => {
+      await fetchSupportUnreadCounts();
+      await fetchRooms();
+    };
+    
+    initializeInbox();
+    
+    // Set up periodic refresh for unread counts
+    const intervalId = setInterval(fetchSupportUnreadCounts, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(intervalId);
   }, [currentUser.id]);
 
   const handleRetry = () => {
@@ -175,7 +217,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               {rooms.length} گفتگو موجود
             </p>
           </div>
-          <Button onClick={handleRetry} variant="ghost" size="sm">
+          <Button onClick={handleRetry}variant="ghost" size="sm">
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -198,6 +240,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           rooms.map((room) => {
             const Icon = getRoomIcon(room.type);
             const isSelected = selectedRoom?.id === room.id;
+            const totalUnreadCount = (room.unread_count || 0);
             
             return (
               <div
@@ -231,19 +274,20 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       <h3 className="font-medium text-slate-900 dark:text-white truncate">
                         {room.name}
                       </h3>
-                      {getRoomBadge(room)}
+                      <div className="flex items-center gap-2">
+                        {getRoomBadge(room)}
+                        {totalUnreadCount > 0 && (
+                          <Badge variant="destructive" className="text-xs px-2 py-0">
+                            {totalUnreadCount}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     
                     <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
                       {room.description}
                     </p>
                   </div>
-
-                  {room.unread_count && room.unread_count > 0 && (
-                    <Badge variant="destructive" className="text-xs">
-                      {room.unread_count}
-                    </Badge>
-                  )}
                 </div>
               </div>
             );

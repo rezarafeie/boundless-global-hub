@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupportMessage {
@@ -12,6 +11,7 @@ export interface SupportMessage {
   created_at: string | null;
   sender_name?: string;
   is_from_support?: boolean;
+  unread_by_support?: boolean;
 }
 
 export interface SupportConversation {
@@ -24,7 +24,14 @@ export interface SupportConversation {
   created_at: string | null;
   updated_at: string | null;
   last_message_at: string | null;
+  tags?: string[];
+  tag_list?: string[];
+  internal_notes?: string;
+  assigned_agent_name?: string;
+  unread_count?: number;
 }
+
+export type SupportTag = 'technical' | 'billing' | 'general' | 'account' | 'bug_report' | 'feature_request' | 'urgent' | 'follow_up';
 
 class SupportService {
   async getOrCreateUserConversation(userId: number, sessionToken: string, threadTypeId: number = 1): Promise<SupportConversation> {
@@ -136,7 +143,8 @@ class SupportService {
         is_read: msg.is_read,
         created_at: msg.created_at,
         sender_name: senderMap.get(msg.sender_id) || 'کاربر',
-        is_from_support: msg.sender_id === 1
+        is_from_support: msg.sender_id === 1,
+        unread_by_support: msg.unread_by_support
       }));
       
       console.log('Processed messages:', messages.length);
@@ -160,7 +168,8 @@ class SupportService {
           sender_id: senderId,
           recipient_id: senderId === 1 ? null : 1, // If support agent, send to user, otherwise send to support
           message_type: 'text',
-          is_read: false
+          is_read: false,
+          unread_by_support: senderId !== 1 // Mark as unread by support if not from support
         }])
         .select()
         .single();
@@ -196,11 +205,82 @@ class SupportService {
         is_read: data.is_read,
         created_at: data.created_at,
         sender_name: sender?.name || 'کاربر',
-        is_from_support: data.sender_id === 1
+        is_from_support: data.sender_id === 1,
+        unread_by_support: data.unread_by_support
       };
       
     } catch (error) {
       console.error('Error sending support message:', error);
+      throw error;
+    }
+  }
+
+  async markMessagesAsRead(conversationId: number): Promise<void> {
+    try {
+      console.log('Marking messages as read for conversation:', conversationId);
+      
+      await supabase
+        .from('messenger_messages')
+        .update({ unread_by_support: false })
+        .eq('conversation_id', conversationId)
+        .eq('unread_by_support', true)
+        .neq('sender_id', 1); // Don't mark support messages as read
+      
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  }
+
+  async updateConversationStatus(conversationId: number, status: string): Promise<void> {
+    try {
+      console.log('Updating conversation status:', conversationId, status);
+      
+      await supabase
+        .from('support_conversations')
+        .update({ 
+          status: status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+      
+    } catch (error) {
+      console.error('Error updating conversation status:', error);
+      throw error;
+    }
+  }
+
+  async updateConversationTags(conversationId: number, tags: SupportTag[]): Promise<void> {
+    try {
+      console.log('Updating conversation tags:', conversationId, tags);
+      
+      await supabase
+        .from('support_conversations')
+        .update({ 
+          tag_list: tags,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+      
+    } catch (error) {
+      console.error('Error updating conversation tags:', error);
+      throw error;
+    }
+  }
+
+  async updateConversationPriority(conversationId: number, priority: string): Promise<void> {
+    try {
+      console.log('Updating conversation priority:', conversationId, priority);
+      
+      await supabase
+        .from('support_conversations')
+        .update({ 
+          priority: priority,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+      
+    } catch (error) {
+      console.error('Error updating conversation priority:', error);
       throw error;
     }
   }
@@ -233,10 +313,13 @@ class SupportService {
       const conversationIds = [...new Set(supportMessages.map(msg => msg.conversation_id))];
       console.log('Unique conversation IDs:', conversationIds);
       
-      // Get conversations data
+      // Get conversations data with unread counts
       const { data: conversations, error: convError } = await supabase
         .from('support_conversations')
-        .select('*')
+        .select(`
+          *,
+          get_support_unread_count(id) as unread_count
+        `)
         .in('id', conversationIds)
         .order('last_message_at', { ascending: false });
       
@@ -245,6 +328,12 @@ class SupportService {
         // If conversations table is empty, create conversations from messages
         const conversationsFromMessages = conversationIds.map(convId => {
           const firstMessage = supportMessages.find(msg => msg.conversation_id === convId);
+          const unreadCount = supportMessages.filter(msg => 
+            msg.conversation_id === convId && 
+            msg.unread_by_support === true && 
+            msg.sender_id !== 1
+          ).length;
+          
           return {
             id: convId,
             user_id: firstMessage?.sender_id,
@@ -254,7 +343,8 @@ class SupportService {
             thread_type_id: 1, // Default to academy support
             created_at: firstMessage?.created_at,
             updated_at: firstMessage?.created_at,
-            last_message_at: firstMessage?.created_at
+            last_message_at: firstMessage?.created_at,
+            unread_count: unreadCount
           };
         });
         console.log('Created conversations from messages:', conversationsFromMessages.length);
@@ -268,6 +358,12 @@ class SupportService {
         // Create conversations from messages if they don't exist in the table
         const conversationsFromMessages = conversationIds.map(convId => {
           const firstMessage = supportMessages.find(msg => msg.conversation_id === convId);
+          const unreadCount = supportMessages.filter(msg => 
+            msg.conversation_id === convId && 
+            msg.unread_by_support === true && 
+            msg.sender_id !== 1
+          ).length;
+          
           return {
             id: convId,
             user_id: firstMessage?.sender_id,
@@ -277,7 +373,8 @@ class SupportService {
             thread_type_id: 1, // Default to academy support
             created_at: firstMessage?.created_at,
             updated_at: firstMessage?.created_at,
-            last_message_at: firstMessage?.created_at
+            last_message_at: firstMessage?.created_at,
+            unread_count: unreadCount
           };
         });
         return await this.enrichConversationsWithUserData(conversationsFromMessages);
