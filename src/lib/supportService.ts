@@ -111,14 +111,20 @@ class SupportService {
         throw error;
       }
       
+      console.log('Raw messages data:', data);
+      
       // Get sender names separately to avoid complex joins
       const senderIds = [...new Set(data?.map(msg => msg.sender_id).filter(id => id) || [])];
-      const { data: senders } = await supabase
-        .from('chat_users')
-        .select('id, name')
-        .in('id', senderIds);
+      let senderMap = new Map();
       
-      const senderMap = new Map(senders?.map(s => [s.id, s.name]) || []);
+      if (senderIds.length > 0) {
+        const { data: senders } = await supabase
+          .from('chat_users')
+          .select('id, name')
+          .in('id', senderIds);
+        
+        senderMap = new Map(senders?.map(s => [s.id, s.name]) || []);
+      }
       
       const messages = (data || []).map(msg => ({
         id: msg.id,
@@ -130,10 +136,10 @@ class SupportService {
         is_read: msg.is_read,
         created_at: msg.created_at,
         sender_name: senderMap.get(msg.sender_id) || 'کاربر',
-        is_from_support: msg.sender_id === 1 || msg.recipient_id !== 1
+        is_from_support: msg.sender_id === 1
       }));
       
-      console.log('Fetched messages:', messages.length);
+      console.log('Processed messages:', messages.length);
       return messages;
       
     } catch (error) {
@@ -178,7 +184,7 @@ class SupportService {
         .from('chat_users')
         .select('name')
         .eq('id', senderId)
-        .single();
+        .maybeSingle();
       
       return {
         id: data.id,
@@ -203,53 +209,144 @@ class SupportService {
     try {
       console.log('Fetching all support conversations...');
       
-      // Get conversations
-      const { data: conversations, error } = await supabase
-        .from('support_conversations')
+      // First, get all messages sent to support (recipient_id = 1) to find active conversations
+      const { data: supportMessages, error: messagesError } = await supabase
+        .from('messenger_messages')
         .select('*')
-        .order('last_message_at', { ascending: false });
+        .eq('recipient_id', 1)
+        .not('conversation_id', 'is', null)
+        .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Error fetching conversations:', error);
-        throw error;
+      if (messagesError) {
+        console.error('Error fetching support messages:', messagesError);
+        throw messagesError;
       }
       
-      if (!conversations || conversations.length === 0) {
-        console.log('No conversations found');
+      console.log('Found support messages:', supportMessages?.length || 0);
+      
+      if (!supportMessages || supportMessages.length === 0) {
+        console.log('No support messages found');
         return [];
       }
       
-      // Get user details separately
-      const userIds = conversations.map(c => c.user_id).filter(id => id);
-      const { data: users } = await supabase
-        .from('chat_users')
-        .select('id, name, phone')
-        .in('id', userIds);
+      // Get unique conversation IDs
+      const conversationIds = [...new Set(supportMessages.map(msg => msg.conversation_id))];
+      console.log('Unique conversation IDs:', conversationIds);
       
-      const userMap = new Map(users?.map(u => [u.id, u]) || []);
+      // Get conversations data
+      const { data: conversations, error: convError } = await supabase
+        .from('support_conversations')
+        .select('*')
+        .in('id', conversationIds)
+        .order('last_message_at', { ascending: false });
       
-      // Get thread types separately
-      const threadTypeIds = conversations.map(c => c.thread_type_id).filter(id => id);
-      const { data: threadTypes } = await supabase
-        .from('support_thread_types')
-        .select('id, display_name')
-        .in('id', threadTypeIds);
+      if (convError) {
+        console.error('Error fetching conversations:', convError);
+        // If conversations table is empty, create conversations from messages
+        const conversationsFromMessages = conversationIds.map(convId => {
+          const firstMessage = supportMessages.find(msg => msg.conversation_id === convId);
+          return {
+            id: convId,
+            user_id: firstMessage?.sender_id,
+            agent_id: null,
+            status: 'open',
+            priority: 'normal',
+            thread_type_id: 1, // Default to academy support
+            created_at: firstMessage?.created_at,
+            updated_at: firstMessage?.created_at,
+            last_message_at: firstMessage?.created_at
+          };
+        });
+        console.log('Created conversations from messages:', conversationsFromMessages.length);
+        return await this.enrichConversationsWithUserData(conversationsFromMessages);
+      }
       
-      const threadTypeMap = new Map(threadTypes?.map(t => [t.id, t]) || []);
+      console.log('Found conversations:', conversations?.length || 0);
       
-      // Combine data
-      const enrichedConversations = conversations.map(conv => ({
-        ...conv,
-        user: userMap.get(conv.user_id),
-        thread_type: threadTypeMap.get(conv.thread_type_id)
-      }));
+      if (!conversations || conversations.length === 0) {
+        console.log('No conversations found in table, but messages exist');
+        // Create conversations from messages if they don't exist in the table
+        const conversationsFromMessages = conversationIds.map(convId => {
+          const firstMessage = supportMessages.find(msg => msg.conversation_id === convId);
+          return {
+            id: convId,
+            user_id: firstMessage?.sender_id,
+            agent_id: null,
+            status: 'open',
+            priority: 'normal',
+            thread_type_id: 1, // Default to academy support
+            created_at: firstMessage?.created_at,
+            updated_at: firstMessage?.created_at,
+            last_message_at: firstMessage?.created_at
+          };
+        });
+        return await this.enrichConversationsWithUserData(conversationsFromMessages);
+      }
       
-      console.log('Fetched conversations with details:', enrichedConversations.length);
-      return enrichedConversations;
+      return await this.enrichConversationsWithUserData(conversations);
       
     } catch (error) {
       console.error('Error fetching conversations:', error);
       return [];
+    }
+  }
+
+  async enrichConversationsWithUserData(conversations: any[]): Promise<any[]> {
+    try {
+      // Get user details separately
+      const userIds = conversations.map(c => c.user_id).filter(id => id);
+      let userMap = new Map();
+      
+      if (userIds.length > 0) {
+        const { data: users } = await supabase
+          .from('chat_users')
+          .select('id, name, phone, bedoun_marz')
+          .in('id', userIds);
+        
+        userMap = new Map(users?.map(u => [u.id, u]) || []);
+      }
+      
+      // Get thread types separately
+      const threadTypeIds = conversations.map(c => c.thread_type_id).filter(id => id);
+      let threadTypeMap = new Map();
+      
+      if (threadTypeIds.length > 0) {
+        const { data: threadTypes } = await supabase
+          .from('support_thread_types')
+          .select('id, display_name')
+          .in('id', threadTypeIds);
+        
+        threadTypeMap = new Map(threadTypes?.map(t => [t.id, t]) || []);
+      }
+      
+      // Combine data
+      const enrichedConversations = conversations.map(conv => {
+        const user = userMap.get(conv.user_id);
+        const threadType = threadTypeMap.get(conv.thread_type_id);
+        
+        return {
+          ...conv,
+          user: user ? {
+            id: user.id,
+            name: user.name,
+            phone: user.phone
+          } : null,
+          thread_type: threadType ? {
+            id: threadType.id,
+            display_name: threadType.display_name
+          } : {
+            id: 1,
+            display_name: user?.bedoun_marz ? 'پشتیبانی بدون مرز' : 'پشتیبانی آکادمی'
+          }
+        };
+      });
+      
+      console.log('Enriched conversations:', enrichedConversations.length);
+      return enrichedConversations;
+      
+    } catch (error) {
+      console.error('Error enriching conversations:', error);
+      return conversations;
     }
   }
 }

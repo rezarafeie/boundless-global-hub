@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Headphones, Search, MessageCircle, Send, User, Clock, AlertCircle, CheckCircle, Archive } from 'lucide-react';
+import { Headphones, Search, MessageCircle, Send, User, Clock, AlertCircle, CheckCircle, Archive, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
@@ -36,6 +36,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const checkSupportAccess = async () => {
     try {
@@ -64,10 +65,19 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
   const fetchConversations = async () => {
     try {
+      setRefreshing(true);
       console.log('Fetching conversations...');
       const conversationsData = await supportService.getAllConversations();
       console.log('Conversations loaded:', conversationsData.length);
+      console.log('Conversations data:', conversationsData);
       setConversations(conversationsData);
+      
+      if (conversationsData.length > 0) {
+        toast({
+          title: 'موفق',
+          description: `${conversationsData.length} گفتگوی پشتیبانی یافت شد`,
+        });
+      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
       toast({
@@ -75,6 +85,8 @@ const BorderlessHubSupportDashboard: React.FC = () => {
         description: 'خطا در بارگذاری گفتگوها',
         variant: 'destructive',
       });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -83,6 +95,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       console.log('Fetching messages for conversation:', conversationId);
       const messagesData = await supportService.getConversationMessages(conversationId);
       console.log('Messages loaded:', messagesData.length);
+      console.log('Messages data:', messagesData);
       setMessages(messagesData);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -213,17 +226,43 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-20">
         <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
           <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-3">
-              <Headphones className="w-8 h-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                  پنل پشتیبانی
-                </h1>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  مدیریت درخواست‌های پشتیبانی و پاسخگویی به کاربران
-                </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Headphones className="w-8 h-8 text-blue-600" />
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+                    پنل پشتیبانی
+                  </h1>
+                  <p className="text-slate-600 dark:text-slate-300 text-sm">
+                    مدیریت درخواست‌های پشتیبانی و پاسخگویی به کاربران
+                  </p>
+                </div>
               </div>
+              
+              <Button 
+                onClick={fetchConversations} 
+                disabled={refreshing}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'در حال بروزرسانی...' : 'بروزرسانی'}
+              </Button>
             </div>
+            
+            {conversations.length > 0 && (
+              <div className="mt-4 flex gap-4 text-sm">
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                  کل گفتگوها: {conversations.length}
+                </span>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                  آکادمی: {conversations.filter(c => c.thread_type?.id === 1 || !c.thread_type?.display_name?.includes('بدون مرز')).length}
+                </span>
+                <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full">
+                  بدون مرز: {conversations.filter(c => c.thread_type?.display_name?.includes('بدون مرز')).length}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -262,7 +301,14 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 {filteredConversations.length === 0 ? (
                   <div className="p-8 text-center">
                     <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">هیچ گفتگویی یافت نشد</p>
+                    <p className="text-slate-500 mb-2">
+                      {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'هیچ گفتگویی با این فیلتر یافت نشد'}
+                    </p>
+                    {conversations.length === 0 && (
+                      <p className="text-xs text-slate-400">
+                        گفتگوها زمانی ایجاد می‌شوند که کاربران پیام به پشتیبانی ارسال کنند
+                      </p>
+                    )}
                   </div>
                 ) : (
                   filteredConversations.map((conversation) => (
@@ -289,7 +335,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                       </div>
                       
                       <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>{conversation.thread_type?.display_name || 'عمومی'}</span>
+                        <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
+                          {conversation.thread_type?.display_name || 'عمومی'}
+                        </span>
                         <span>
                           {conversation.last_message_at 
                             ? new Date(conversation.last_message_at).toLocaleDateString('fa-IR')
@@ -311,7 +359,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   <div className="p-4 border-b flex items-center justify-between">
                     <div>
                       <h3 className="font-medium text-slate-900 dark:text-white">
-                        {selectedConversation.user?.name || 'کاربر نامشخص'}
+                        {selectedConversation.user?.name || 'کاربر نامشخص'} - گفتگو #{selectedConversation.id}
                       </h3>
                       <p className="text-sm text-slate-500">
                         {selectedConversation.thread_type?.display_name || 'عمومی'}
@@ -365,9 +413,12 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                             }`}
                           >
                             <p className="text-sm">{message.message}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {new Date(message.created_at || '').toLocaleTimeString('fa-IR')}
-                            </p>
+                            <div className="flex items-center justify-between text-xs opacity-70 mt-1">
+                              <span>{message.sender_name}</span>
+                              <span>
+                                {new Date(message.created_at || '').toLocaleTimeString('fa-IR')}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ))
@@ -401,6 +452,11 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                     <p className="text-slate-500 dark:text-slate-400">
                       یک گفتگو را انتخاب کنید
                     </p>
+                    {conversations.length > 0 && (
+                      <p className="text-xs text-slate-400 mt-2">
+                        {conversations.length} گفتگوی پشتیبانی موجود است
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
