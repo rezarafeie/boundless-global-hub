@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupportMessage {
@@ -160,7 +159,32 @@ class SupportService {
 
   async sendSupportMessage(conversationId: number, message: string, senderId: number): Promise<SupportMessage> {
     try {
-      console.log('Sending support message to conversation:', conversationId);
+      console.log('Sending support message to conversation:', conversationId, 'from sender:', senderId);
+      
+      // Get conversation details to identify the user
+      const { data: conversation } = await supabase
+        .from('support_conversations')
+        .select('user_id')
+        .eq('id', conversationId)
+        .single();
+      
+      if (!conversation) {
+        throw new Error('Conversation not found');
+      }
+      
+      console.log('Conversation user_id:', conversation.user_id);
+      
+      // Determine recipient based on sender
+      // If support agent (sender_id = 1) is sending, recipient is the user
+      // If user is sending, recipient is support (1)
+      const recipientId = senderId === 1 ? conversation.user_id : 1;
+      
+      console.log('Message details:', {
+        conversation_id: conversationId,
+        sender_id: senderId,
+        recipient_id: recipientId,
+        is_from_support: senderId === 1
+      });
       
       const { data, error } = await supabase
         .from('messenger_messages')
@@ -168,7 +192,7 @@ class SupportService {
           conversation_id: conversationId,
           message: message,
           sender_id: senderId,
-          recipient_id: senderId === 1 ? null : 1, // If support agent, send to user, otherwise send to support
+          recipient_id: recipientId,
           message_type: 'text',
           is_read: false,
           unread_by_support: senderId !== 1 // Mark as unread by support if not from support
@@ -180,6 +204,8 @@ class SupportService {
         console.error('Error sending support message:', error);
         throw error;
       }
+      
+      console.log('Message sent successfully:', data);
       
       // Update conversation last_message_at
       await supabase
@@ -206,7 +232,7 @@ class SupportService {
         recipient_id: data.recipient_id,
         is_read: data.is_read,
         created_at: data.created_at,
-        sender_name: sender?.name || 'کاربر',
+        sender_name: sender?.name || (senderId === 1 ? 'پشتیبانی' : 'کاربر'),
         is_from_support: data.sender_id === 1,
         unread_by_support: data.unread_by_support
       };
@@ -446,6 +472,61 @@ class SupportService {
     } catch (error) {
       console.error('Error enriching conversations:', error);
       return conversations;
+    }
+  }
+
+  async getUserSupportMessages(userId: number): Promise<SupportMessage[]> {
+    try {
+      console.log('Getting support messages for user:', userId);
+      
+      // Get all messages where user is either sender or recipient and the other party is support (id=1)
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.1),and(sender_id.eq.1,recipient_id.eq.${userId})`)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching user support messages:', error);
+        throw error;
+      }
+      
+      console.log('Found support messages for user:', data?.length || 0);
+      
+      // Get sender names
+      const senderIds = [...new Set(data?.map(msg => msg.sender_id).filter(id => id) || [])];
+      let senderMap = new Map();
+      
+      if (senderIds.length > 0) {
+        const { data: senders } = await supabase
+          .from('chat_users')
+          .select('id, name')
+          .in('id', senderIds);
+        
+        senderMap = new Map(senders?.map(s => [s.id, s.name]) || []);
+      }
+      
+      const messages = (data || []).map(msg => ({
+        id: msg.id,
+        message: msg.message,
+        message_type: msg.message_type,
+        media_url: msg.media_url,
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        is_read: msg.is_read,
+        created_at: msg.created_at,
+        conversation_id: msg.conversation_id,
+        sender_name: msg.sender_id === 1 ? 'پشتیبانی' : (senderMap.get(msg.sender_id) || 'کاربر'),
+        is_from_support: msg.sender_id === 1,
+        unread_by_support: msg.unread_by_support
+      }));
+      
+      console.log('Processed user support messages:', messages.length);
+      return messages;
+      
+    } catch (error) {
+      console.error('Error fetching user support messages:', error);
+      return [];
     }
   }
 }

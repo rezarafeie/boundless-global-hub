@@ -120,11 +120,25 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               try {
                 console.log('New message received:', payload);
                 const newMessage = payload.new as EnhancedMessage;
+                
+                // For support rooms, check if message is for current user
                 if (room.type === 'academy_support' || room.type === 'boundless_support') {
-                  if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
-                    setMessages((prevMessages) => [...prevMessages, newMessage]);
+                  const isRelevantMessage = (
+                    (newMessage.sender_id === currentUser.id && newMessage.recipient_id === 1) ||
+                    (newMessage.sender_id === 1 && newMessage.recipient_id === currentUser.id)
+                  );
+                  
+                  if (isRelevantMessage) {
+                    console.log('Adding support message to chat:', newMessage);
+                    // Add sender name for display
+                    const messageWithName = {
+                      ...newMessage,
+                      sender_name: newMessage.sender_id === 1 ? 'پشتیبانی' : currentUser.name
+                    };
+                    setMessages((prevMessages) => [...prevMessages, messageWithName]);
                   }
                 } else {
+                  // Regular room message
                   if (newMessage.room_id === room.id) {
                     setMessages((prevMessages) => [...prevMessages, newMessage]);
                   }
@@ -181,7 +195,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               console.error('Channel subscription error');
               toast({
                 title: 'خطا در اتصال',
-                description: 'خطا در اتصال به‌روزرسانی زنده. پیام‌های جدید ممکن است با تاخیر نمایش داده شوند.',
+                description: 'خطا در اتصال به‌روزرسانی زنده.',
                 variant: 'destructive',
               });
             }

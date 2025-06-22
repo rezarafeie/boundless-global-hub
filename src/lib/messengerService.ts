@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -314,76 +313,181 @@ class MessengerService {
     }
   }
 
-  async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessageWithUser[]> {
+  async getPrivateMessages(userId: number, sessionToken: string): Promise<MessengerMessage[]> {
     try {
-      await this.setSessionContext(sessionToken);
+      console.log('Getting private messages for user:', userId);
       
-      // Use explicit foreign key syntax to avoid ambiguous relationship error
-      const { data: messages, error } = await supabase
+      // Validate session first
+      const isValid = await this.validateSession(sessionToken);
+      if (!isValid) {
+        throw new Error('Invalid session');
+      }
+
+      // Get all support messages for this user
+      const { data, error } = await supabase
         .from('messenger_messages')
-        .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey (
-            id,
-            name,
-            phone,
-            role,
-            is_approved,
-            is_support_agent,
-            is_messenger_admin,
-            bedoun_marz,
-            bedoun_marz_approved,
-            bedoun_marz_request,
-            created_at,
-            updated_at,
-            last_seen
-          )
-        `)
-        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-        .is('room_id', null)
+        .select('*')
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.1),and(sender_id.eq.1,recipient_id.eq.${userId})`)
         .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching private messages:', error);
-        throw new Error(`Failed to fetch private messages: ${error.message}`);
+        throw error;
       }
 
-      const messagesWithReactions = await Promise.all(
-        (messages || []).map(async (message) => {
-          const reactions = await this.getMessageReactions(message.id, sessionToken);
-          return { 
-            ...message, 
-            reactions,
-            sender_name: message.sender?.name || 'کاربر',
-            is_from_support: message.sender_id === 1
-          } as MessengerMessageWithUser;
-        })
-      );
+      console.log('Found private messages:', data?.length || 0);
 
-      return messagesWithReactions;
-    } catch (error: any) {
+      // Get sender names
+      const senderIds = [...new Set(data?.map(msg => msg.sender_id).filter(id => id) || [])];
+      let senderMap = new Map();
+      
+      if (senderIds.length > 0) {
+        const { data: senders } = await supabase
+          .from('chat_users')
+          .select('id, name')
+          .in('id', senderIds);
+        
+        senderMap = new Map(senders?.map(s => [s.id, s.name]) || []);
+      }
+
+      const messages = (data || []).map(msg => ({
+        id: msg.id,
+        room_id: null, // Private messages don't have room_id
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        message: msg.message,
+        message_type: msg.message_type || 'text',
+        media_url: msg.media_url,
+        media_content: msg.media_content,
+        is_read: msg.is_read || false,
+        created_at: msg.created_at,
+        reply_to_message_id: msg.reply_to_message_id,
+        forwarded_from_message_id: msg.forwarded_from_message_id,
+        conversation_id: msg.conversation_id,
+        sender_name: msg.sender_id === 1 ? 'پشتیبانی' : (senderMap.get(msg.sender_id) || 'کاربر'),
+        reactions: []
+      }));
+
+      return messages;
+    } catch (error) {
       console.error('Error in getPrivateMessages:', error);
       throw error;
     }
   }
 
-  async sendMessage(message: TablesInsert<'messenger_messages'>, sessionToken: string): Promise<MessengerMessage> {
+  async sendMessage(messageData: {
+    room_id?: number;
+    sender_id: number;
+    recipient_id?: number;
+    message: string;
+    message_type?: string;
+    reply_to_message_id?: number;
+    media_url?: string;
+    media_content?: string;
+  }, sessionToken: string): Promise<MessengerMessage> {
     try {
-      await this.setSessionContext(sessionToken);
+      console.log('Sending message:', messageData);
       
+      // Validate session
+      const isValid = await this.validateSession(sessionToken);
+      if (!isValid) {
+        throw new Error('Invalid session');
+      }
+
+      // For support messages (when recipient_id is 1), we need to handle conversation creation
+      let conversationId = null;
+      if (messageData.recipient_id === 1) {
+        console.log('This is a support message, checking for existing conversation...');
+        
+        // Check for existing conversation
+        const { data: existingConv } = await supabase
+          .from('support_conversations')
+          .select('id')
+          .eq('user_id', messageData.sender_id)
+          .eq('status', 'open')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingConv) {
+          conversationId = existingConv.id;
+          console.log('Found existing conversation:', conversationId);
+        } else {
+          // Create new conversation
+          const { data: newConv, error: convError } = await supabase
+            .from('support_conversations')
+            .insert([{
+              user_id: messageData.sender_id,
+              status: 'open',
+              priority: 'normal',
+              thread_type_id: 1, // Default to academy support
+              last_message_at: new Date().toISOString()
+            }])
+            .select('id')
+            .single();
+          
+          if (convError) {
+            console.error('Error creating conversation:', convError);
+          } else {
+            conversationId = newConv.id;
+            console.log('Created new conversation:', conversationId);
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from('messenger_messages')
-        .insert(message)
+        .insert([{
+          ...messageData,
+          conversation_id: conversationId,
+          unread_by_support: messageData.recipient_id === 1 // Mark as unread by support if sent to support
+        }])
         .select()
         .single();
 
       if (error) {
         console.error('Error sending message:', error);
-        throw new Error(`Failed to send message: ${error.message}`);
+        throw error;
       }
 
-      return data;
-    } catch (error: any) {
+      console.log('Message sent successfully:', data);
+
+      // Update conversation if it exists
+      if (conversationId) {
+        await supabase
+          .from('support_conversations')
+          .update({ 
+            last_message_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversationId);
+      }
+
+      // Get sender name
+      const { data: sender } = await supabase
+        .from('chat_users')
+        .select('name')
+        .eq('id', messageData.sender_id)
+        .maybeSingle();
+
+      return {
+        id: data.id,
+        room_id: data.room_id,
+        sender_id: data.sender_id,
+        recipient_id: data.recipient_id,
+        message: data.message,
+        message_type: data.message_type || 'text',
+        media_url: data.media_url,
+        media_content: data.media_content,
+        is_read: data.is_read || false,
+        created_at: data.created_at,
+        reply_to_message_id: data.reply_to_message_id,
+        forwarded_from_message_id: data.forwarded_from_message_id,
+        conversation_id: data.conversation_id,
+        sender_name: sender?.name || 'کاربر',
+        reactions: []
+      };
+    } catch (error) {
       console.error('Error in sendMessage:', error);
       throw error;
     }
@@ -812,3 +916,4 @@ class MessengerService {
 }
 
 export const messengerService = new MessengerService();
+export type { MessengerUser, MessengerMessage, MessengerRoom };
