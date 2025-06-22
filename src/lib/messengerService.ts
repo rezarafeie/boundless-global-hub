@@ -596,7 +596,7 @@ class MessengerService {
     return data as MessengerUser;
   }
 
-  // Get available support thread types for a user - FIXED for boundless visibility
+  // Get available support thread types for a user
   async getSupportThreadTypes(userId: number): Promise<SupportThreadType[]> {
     try {
       console.log('Getting support thread types for user:', userId);
@@ -604,7 +604,7 @@ class MessengerService {
       // Get user info to check boundless status
       const { data: user, error: userError } = await supabase
         .from('chat_users')
-        .select('bedoun_marz_approved, bedoun_marz')
+        .select('bedoun_marz_approved')
         .eq('id', userId)
         .single();
       
@@ -612,11 +612,6 @@ class MessengerService {
         console.error('Error fetching user:', userError);
         return [];
       }
-      
-      console.log('User boundless status:', { 
-        bedoun_marz_approved: user.bedoun_marz_approved, 
-        bedoun_marz: user.bedoun_marz 
-      });
       
       // Get all active thread types
       const { data: threadTypes, error } = await supabase
@@ -630,14 +625,14 @@ class MessengerService {
         return [];
       }
       
-      // Filter based on user's boundless status - FIXED LOGIC
+      // Filter based on user's boundless status
       const availableThreads = threadTypes.filter(thread => {
         // Academy support is available to all users
         if (thread.name === 'academy_support') return true;
         
-        // Boundless support for users with bedoun_marz = true OR bedoun_marz_approved = true
+        // Boundless support only for approved boundless users
         if (thread.name === 'boundless_support') {
-          return user.bedoun_marz === true || user.bedoun_marz_approved === true;
+          return user.bedoun_marz_approved === true;
         }
         
         return true;
