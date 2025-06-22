@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck, MessageCircle, Hub } from "lucide-react";
+import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck, MessageCircle, Network } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 
@@ -43,7 +43,7 @@ const QuickAccess = () => {
     },
     {
       title: "هاب بدون مرز",
-      icon: <Hub size={28} />,
+      icon: <Network size={28} />,
       link: "/hub",
       color: "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400"
     },

@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Hub, MessageCircle, Bell, Video } from 'lucide-react';
+import { Network, MessageCircle, Bell, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const HubBanner = () => {
@@ -21,7 +21,7 @@ const HubBanner = () => {
                 <div className="flex-1 text-center lg:text-right">
                   <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
                     <div className="p-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                      <Hub className="w-6 h-6" />
+                      <Network className="w-6 h-6" />
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                       🌟 هاب بدون مرز
@@ -50,7 +50,7 @@ const HubBanner = () => {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                     <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                       <Link to="/hub">
-                        <Hub className="w-4 h-4 mr-2" />
+                        <Network className="w-4 h-4 mr-2" />
                         ورود به هاب
                       </Link>
                     </Button>
@@ -75,7 +75,7 @@ const HubBanner = () => {
                       <Video className="w-8 h-8 text-pink-600 dark:text-pink-400" />
                     </div>
                     <div className="w-20 h-20 bg-gradient-to-br from-cyan-100 to-cyan-200 dark:from-cyan-900/50 dark:to-cyan-800/50 rounded-2xl flex items-center justify-center">
-                      <Hub className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
+                      <Network className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
                     </div>
                   </div>
                 </div>

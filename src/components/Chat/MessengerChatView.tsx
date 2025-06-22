@@ -22,8 +22,6 @@ interface EnhancedMessage extends MessengerMessage {
   sender_name?: string;
   is_from_support?: boolean;
   reactions?: any[];
-  reply_to_message_id?: number | null;
-  forwarded_from_message_id?: number | null;
 }
 
 interface ReplyingTo {
