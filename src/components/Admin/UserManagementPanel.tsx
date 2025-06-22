@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -298,7 +297,6 @@ const UserManagementPanel = () => {
                               <Switch
                                 checked={user.is_support_agent}
                                 onCheckedChange={() => handleToggleRole(user.id, 'is_support_agent', user.is_support_agent)}
-                                size="sm"
                               />
                               <span className="text-sm">پشتیبان</span>
                             </div>
@@ -306,7 +304,6 @@ const UserManagementPanel = () => {
                               <Switch
                                 checked={user.bedoun_marz_approved}
                                 onCheckedChange={() => handleToggleRole(user.id, 'bedoun_marz_approved', user.bedoun_marz_approved)}
-                                size="sm"
                               />
                               <span className="text-sm">بدون مرز</span>
                             </div>
@@ -314,7 +311,6 @@ const UserManagementPanel = () => {
                               <Switch
                                 checked={user.is_messenger_admin}
                                 onCheckedChange={() => handleToggleRole(user.id, 'is_messenger_admin', user.is_messenger_admin)}
-                                size="sm"
                               />
                               <span className="text-sm">مدیر</span>
                             </div>
