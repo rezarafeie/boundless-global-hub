@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -21,26 +22,9 @@ import {
   Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type ChatRoom as MessengerChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { supportService } from '@/lib/supportService';
-
-interface ChatRoom {
-  id: number;
-  name: string;
-  description: string;
-  type: 'general' | 'boundless_only' | 'topic';
-  is_active: boolean;
-  is_boundless_only: boolean;
-  created_at: string;
-  updated_at: string;
-  member_count?: number;
-  last_message?: {
-    text: string;
-    time: string;
-    sender: string;
-  };
-}
 
 interface SupportRoom {
   id: string;
@@ -55,10 +39,10 @@ const BorderlessHubMessenger: React.FC = () => {
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [sessionToken, setSessionToken] = useState<string>('');
-  const [selectedChatRoom, setSelectedChatRoom] = useState<ChatRoom | null>(null);
+  const [selectedChatRoom, setSelectedChatRoom] = useState<MessengerChatRoom | null>(null);
   const [selectedSupportRoom, setSelectedSupportRoom] = useState<SupportRoom | null>(null);
   const [selectedPrivateChat, setSelectedPrivateChat] = useState<PrivateConversation | null>(null);
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [chatRooms, setChatRooms] = useState<MessengerChatRoom[]>([]);
   const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -102,8 +86,8 @@ const BorderlessHubMessenger: React.FC = () => {
       // Set session context for Supabase RLS
       await supabase.rpc('set_session_context', { session_token: token });
 
-      // Fetch chat rooms using the correct method name
-      const rooms = await messengerService.getRooms(user);
+      // Fetch chat rooms using the correct method signature
+      const rooms = await messengerService.getRooms(token);
       console.log('Fetched chat rooms:', rooms);
       setChatRooms(rooms);
 
@@ -146,7 +130,7 @@ const BorderlessHubMessenger: React.FC = () => {
     checkExistingSession();
   }, []);
 
-  const handleChatRoomSelect = (room: ChatRoom) => {
+  const handleChatRoomSelect = (room: MessengerChatRoom) => {
     console.log('Selecting chat room:', room.name);
     setSelectedChatRoom(room);
     setSelectedSupportRoom(null);
@@ -185,7 +169,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const filteredRooms = chatRooms.filter(room =>
     room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    room.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (room.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredConversations = privateConversations.filter(conv =>
@@ -375,7 +359,7 @@ const BorderlessHubMessenger: React.FC = () => {
                         <h3 className="font-medium text-slate-900 dark:text-white truncate">
                           {conversation.other_user_name}
                         </h3>
-                        {conversation.unread_count > 0 && (
+                        {conversation.unread_count && conversation.unread_count > 0 && (
                           <Badge variant="destructive" className="text-xs">
                             {conversation.unread_count}
                           </Badge>
@@ -423,13 +407,10 @@ const BorderlessHubMessenger: React.FC = () => {
                               بدون مرز
                             </Badge>
                           )}
-                          {room.member_count && (
-                            <span className="text-xs text-slate-500">{room.member_count}</span>
-                          )}
                         </div>
                       </div>
                       <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
-                        {room.description}
+                        {room.description || ''}
                       </p>
                     </div>
                   </div>
