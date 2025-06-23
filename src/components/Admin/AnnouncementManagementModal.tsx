@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,8 @@ const AnnouncementManagementModal: React.FC<AnnouncementManagementModalProps> = 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnnouncements(data || []);
+      // Type assertion to cast the data to our expected Announcement type
+      setAnnouncements((data || []) as Announcement[]);
     } catch (error: any) {
       console.error('Error fetching announcements:', error);
       toast({
