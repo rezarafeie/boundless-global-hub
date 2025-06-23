@@ -11,8 +11,17 @@ import { supportService, type SupportConversation, type SupportMessage } from '@
 import { supportRoomService, type SupportRoom } from '@/lib/supportRoomService';
 import { type MessengerUser } from '@/lib/messengerService';
 
+interface MessengerSupportRoom {
+  id: string;
+  name: string;
+  description: string;
+  type: 'academy_support' | 'boundless_support';
+  icon: React.ReactNode;
+  isPermanent: true;
+}
+
 interface SupportChatViewProps {
-  supportRoom?: SupportRoom;
+  supportRoom?: SupportRoom | MessengerSupportRoom;
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
@@ -39,7 +48,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       // Get thread type ID based on support room or user type
       let threadTypeId = 1; // Default to academy support
       if (supportRoom) {
-        threadTypeId = supportRoom.thread_type_id || 1;
+        // Handle both SupportRoom and MessengerSupportRoom types
+        if ('thread_type_id' in supportRoom) {
+          threadTypeId = supportRoom.thread_type_id || 1;
+        } else if ('type' in supportRoom) {
+          threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
+        }
       } else {
         threadTypeId = currentUser.bedoun_marz ? 2 : 1;
       }
@@ -52,10 +66,10 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       );
       
       // Update conversation with support room if provided
-      if (supportRoom && conv.id > 0) {
+      if (supportRoom && conv.id > 0 && 'thread_type_id' in supportRoom) {
         await supabase
           .from('support_conversations')
-          .update({ support_room_id: supportRoom.id })
+          .update({ support_room_id: (supportRoom as SupportRoom).id })
           .eq('id', conv.id);
       }
       
@@ -164,8 +178,13 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     }
   };
 
-  const getIconComponent = (iconName: string) => {
-    switch (iconName) {
+  const getIconComponent = (iconName: string | React.ReactNode) => {
+    if (React.isValidElement(iconName)) {
+      return iconName;
+    }
+    
+    const iconStr = iconName as string;
+    switch (iconStr) {
       case 'crown': return <Crown className="w-5 h-5" />;
       case 'phone': return <Phone className="w-5 h-5" />;
       case 'message-circle': return <MessageCircle className="w-5 h-5" />;
@@ -173,6 +192,23 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       case 'users': return <Users className="w-5 h-5" />;
       default: return <Headphones className="w-5 h-5" />;
     }
+  };
+
+  const getRoomColor = (room: SupportRoom | MessengerSupportRoom) => {
+    if ('color' in room) {
+      return room.color;
+    }
+    // Default colors for messenger support rooms
+    return room.type === 'boundless_support' ? '#8B5CF6' : '#3B82F6';
+  };
+
+  const getRoomIcon = (room: SupportRoom | MessengerSupportRoom) => {
+    if ('icon' in room && typeof room.icon === 'string') {
+      return getIconComponent(room.icon);
+    } else if ('icon' in room) {
+      return room.icon;
+    }
+    return <Headphones className="w-5 h-5" />;
   };
 
   if (loading) {
@@ -205,9 +241,9 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
               {supportRoom && (
                 <div 
                   className="p-2 rounded-lg"
-                  style={{ backgroundColor: `${supportRoom.color}20` }}
+                  style={{ backgroundColor: `${getRoomColor(supportRoom)}20` }}
                 >
-                  {getIconComponent(supportRoom.icon)}
+                  {getRoomIcon(supportRoom)}
                 </div>
               )}
               <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
@@ -220,8 +256,8 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             <Badge 
               variant="outline"
               style={{ 
-                borderColor: supportRoom.color,
-                color: supportRoom.color 
+                borderColor: getRoomColor(supportRoom),
+                color: getRoomColor(supportRoom)
               }}
             >
               {supportRoom.description}
