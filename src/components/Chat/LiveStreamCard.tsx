@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Maximize2, Eye, Wifi, WifiOff } from 'lucide-react';
+import { Play, Maximize2, Users, Radio, RadioIcon } from 'lucide-react';
 
 interface LiveStreamCardProps {
   isActive: boolean;
@@ -13,9 +13,9 @@ interface LiveStreamCardProps {
 
 const LiveStreamCard: React.FC<LiveStreamCardProps> = ({ 
   isActive, 
-  streamCode, 
-  title = "پخش زنده بدون مرز",
-  viewers = 0 
+  streamCode,
+  title = "پخش زنده",
+  viewers = 0
 }) => {
   const handleFullscreen = () => {
     const iframe = document.querySelector('.live-stream-iframe') as HTMLIFrameElement;
@@ -26,23 +26,23 @@ const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
 
   if (!isActive) {
     return (
-      <Card className="relative overflow-hidden bg-slate-900 border-slate-700 opacity-50">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
-          <div className="text-center text-slate-400">
-            <WifiOff className="w-12 h-12 mx-auto mb-2" />
-            <p className="text-lg font-medium">در حال حاضر غیرفعال است</p>
+      <Card className="relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 opacity-60">
+        <div className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
+          <div className="text-center text-slate-600 dark:text-slate-400">
+            <RadioIcon className="w-12 h-12 mx-auto mb-2" />
+            <p className="text-lg font-medium">فعلاً غیرفعال است</p>
           </div>
         </div>
-        <CardHeader className="border-b border-slate-700 bg-slate-800/50">
-          <CardTitle className="flex items-center gap-3 text-slate-300">
+        <CardHeader className="border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+          <CardTitle className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
             <Play className="w-6 h-6" />
             📺 پخش زنده
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="aspect-video bg-slate-800 flex items-center justify-center">
-            <div className="text-slate-500">
-              <Wifi className="w-16 h-16 mx-auto mb-2 opacity-30" />
+          <div className="aspect-video bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <div className="text-slate-400 dark:text-slate-500">
+              <Play className="w-16 h-16 mx-auto mb-2 opacity-30" />
             </div>
           </div>
         </CardContent>
@@ -56,19 +56,15 @@ const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
         <CardTitle className="flex items-center gap-3 text-white">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Play className="w-6 h-6 text-red-500" />
+              <Radio className="w-6 h-6 text-red-400" />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
             </div>
             <span>📺 {title}</span>
           </div>
           <div className="flex items-center gap-2 mr-auto text-sm text-slate-300">
-            <div className="flex items-center gap-1">
-              <Eye className="w-4 h-4" />
-              {viewers} بیننده
-            </div>
             <div className="flex items-center gap-1 text-red-400">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              زنده
+              <Users className="w-4 h-4" />
+              {viewers} بیننده
             </div>
           </div>
         </CardTitle>
@@ -77,15 +73,18 @@ const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
       <CardContent className="p-0 relative">
         <div className="aspect-video bg-black">
           {streamCode ? (
-            <div 
+            <iframe
               className="live-stream-iframe w-full h-full"
-              dangerouslySetInnerHTML={{ __html: streamCode }}
+              src={`https://www.aparat.com/video/video/embed/videohash/${streamCode}/vt/frame`}
+              title="پخش زنده"
+              allowFullScreen
+              style={{ border: 'none', borderRadius: '0' }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-400">
               <div className="text-center">
-                <Play className="w-16 h-16 mx-auto mb-2" />
-                <p>در انتظار پخش...</p>
+                <Radio className="w-16 h-16 mx-auto mb-4 animate-pulse" />
+                <p>در انتظار شروع پخش...</p>
               </div>
             </div>
           )}
@@ -96,7 +95,7 @@ const LiveStreamCard: React.FC<LiveStreamCardProps> = ({
             variant="secondary"
             size="sm"
             onClick={handleFullscreen}
-            className="bg-black/60 hover:bg-black/80 text-white border-none backdrop-blur-sm"
+            className="bg-black/70 hover:bg-black/90 text-white border-none backdrop-blur-sm"
           >
             <Maximize2 className="w-4 h-4 mr-1" />
             نمایش تمام صفحه

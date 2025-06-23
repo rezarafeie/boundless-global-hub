@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MessageCircle, User, Phone, AtSign, AlertCircle, Check } from 'lucide-react';
+import { MessageCircle, User, Phone, AtSign, Check } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
@@ -174,7 +174,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                placeholder="شماره تلفن خود را وارد کنید"
                 required
                 dir="ltr"
               />
@@ -200,8 +200,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                     <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
                   ) : usernameAvailable === true ? (
                     <Check className="w-4 h-4 text-green-500" />
-                  ) : usernameAvailable === false ? (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
                   ) : null}
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Setti
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { Link } from 'react-router-dom';
-import AnnouncementMedia from '@/components/Chat/AnnouncementMedia';
+import AnnouncementModal from '@/components/Chat/AnnouncementModal';
 import { motion } from 'framer-motion';
 
 const BorderlessHub = () => {
@@ -16,6 +16,8 @@ const BorderlessHub = () => {
   const { liveSettings } = useLiveSettings();
   const { settings: rafieiMeetSettings } = useRafieiMeet();
   const [sessionToken, setSessionToken] = useState<string>('');
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('messenger_session_token');
@@ -52,6 +54,16 @@ const BorderlessHub = () => {
     }
   ];
 
+  const openAnnouncementModal = (announcement: any) => {
+    setSelectedAnnouncement(announcement);
+    setIsModalOpen(true);
+  };
+
+  const getSummary = (text: string) => {
+    if (text.length <= 150) return text;
+    return text.substring(0, 150) + '...';
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 pt-20">
@@ -80,7 +92,7 @@ const BorderlessHub = () => {
             </div>
           </motion.div>
 
-          {/* Live Sections - Full Width When Active */}
+          {/* Live Sections - Only Show at Top When Active */}
           {hasActiveLiveContent && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -157,7 +169,7 @@ const BorderlessHub = () => {
             </motion.div>
           )}
 
-          {/* Notices Section - Inline Display */}
+          {/* Notices Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -209,22 +221,22 @@ const BorderlessHub = () => {
                       </h3>
                       
                       <div className="text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-                        {announcement.full_text}
+                        {getSummary(announcement.full_text)}
                       </div>
 
-                      {announcement.media_type !== 'none' && announcement.media_url && (
-                        <div className="mt-4">
-                          <AnnouncementMedia 
-                            title={announcement.title}
-                            mediaType={announcement.media_type} 
-                            mediaUrl={announcement.media_url} 
-                            mediaContent={announcement.media_content} 
-                          />
-                        </div>
+                      {announcement.full_text.length > 150 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openAnnouncementModal(announcement)}
+                          className="mb-4"
+                        >
+                          ادامه مطلب
+                        </Button>
                       )}
 
                       {announcement.views !== undefined && (
-                        <div className="mt-4 text-xs text-slate-400">
+                        <div className="text-xs text-slate-400">
                           👁️ {announcement.views} بازدید
                         </div>
                       )}
@@ -278,11 +290,59 @@ const BorderlessHub = () => {
             </Link>
           </motion.div>
 
+          {/* Live Cards - Show Below When Inactive */}
+          {!hasActiveLiveContent && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mb-12"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Inactive Rafiei Meet Card */}
+                <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                      <Video className="w-6 h-6" />
+                      🎥 جلسه تصویری رفیعی
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-slate-500 dark:text-slate-500 mb-4">
+                      در حال حاضر غیرفعال است
+                    </p>
+                    <Button disabled className="w-full bg-slate-300 dark:bg-slate-700 text-slate-500">
+                      فعلاً غیرفعال است
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Inactive Live Stream Card */}
+                <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                      <Play className="w-6 h-6" />
+                      📺 پخش زنده
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-slate-500 dark:text-slate-500 mb-4">
+                      در حال حاضر غیرفعال است
+                    </p>
+                    <Button disabled className="w-full bg-slate-300 dark:bg-slate-700 text-slate-500">
+                      فعلاً غیرفعال است
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          )}
+
           {/* Quick Access Cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
             className="mb-12"
           >
             <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-8">
@@ -314,7 +374,7 @@ const BorderlessHub = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
               className="text-center"
             >
               <Link to="/hub/admin">
@@ -327,6 +387,13 @@ const BorderlessHub = () => {
           )}
         </div>
       </div>
+
+      {/* Announcement Modal */}
+      <AnnouncementModal
+        announcement={selectedAnnouncement}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </MainLayout>
   );
 };
