@@ -58,12 +58,28 @@ class SupportRoomService {
 
   async getUserSupportRooms(userId: number): Promise<SupportRoom[]> {
     try {
-      const { data, error } = await supabase.rpc('get_user_support_rooms', {
+      // Get the basic room data that the function returns
+      const { data: roomData, error: roomError } = await supabase.rpc('get_user_support_rooms', {
         user_id_param: userId
       });
 
-      if (error) throw error;
-      return data || [];
+      if (roomError) throw roomError;
+
+      if (!roomData || roomData.length === 0) {
+        return [];
+      }
+
+      // Get the complete room data with all fields
+      const roomIds = roomData.map(room => room.id);
+      const { data: completeRooms, error: completeError } = await supabase
+        .from('support_rooms')
+        .select('*')
+        .in('id', roomIds)
+        .eq('is_active', true)
+        .order('id');
+
+      if (completeError) throw completeError;
+      return completeRooms || [];
     } catch (error) {
       console.error('Error fetching user support rooms:', error);
       throw error;

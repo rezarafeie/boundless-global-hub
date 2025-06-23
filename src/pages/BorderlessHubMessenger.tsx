@@ -26,6 +26,15 @@ interface SupportRoom {
   isPermanent: true;
 }
 
+interface MessengerSupportRoom {
+  id: string;
+  name: string;
+  description: string;
+  type: 'academy_support' | 'boundless_support';
+  icon: React.ReactNode;
+  isPermanent: true;
+}
+
 interface UnifiedChatItem {
   id: string;
   type: 'private' | 'room' | 'support';
@@ -36,7 +45,7 @@ interface UnifiedChatItem {
   lastMessageTime?: string;
   unreadCount?: number;
   isPermanent?: boolean;
-  data: PrivateConversation | ChatRoom | SupportRoom;
+  data: PrivateConversation | ChatRoom | MessengerSupportRoom;
 }
 
 type ViewType = 'inbox' | 'room-chat' | 'private-chat' | 'support-chat';
@@ -48,7 +57,7 @@ const BorderlessHubMessenger: React.FC = () => {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<PrivateConversation | null>(null);
-  const [selectedSupportRoom, setSelectedSupportRoom] = useState<SupportRoom | null>(null);
+  const [selectedSupportRoom, setSelectedSupportRoom] = useState<MessengerSupportRoom | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('inbox');
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [showExactSearchModal, setShowExactSearchModal] = useState(false);
@@ -59,8 +68,8 @@ const BorderlessHubMessenger: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Support rooms based on user access - always show these
-  const getSupportRooms = (): SupportRoom[] => {
-    const supportRooms: SupportRoom[] = [
+  const getSupportRooms = (): MessengerSupportRoom[] => {
+    const supportRooms: MessengerSupportRoom[] = [
       {
         id: 'academy_support',
         name: '🛎️ پشتیبانی آکادمی رفیعی',
@@ -229,7 +238,7 @@ const BorderlessHubMessenger: React.FC = () => {
       setSelectedSupportRoom(null);
       setCurrentView('private-chat');
     } else if (chat.type === 'support') {
-      setSelectedSupportRoom(chat.data as SupportRoom);
+      setSelectedSupportRoom(chat.data as MessengerSupportRoom);
       setSelectedRoom(null);
       setSelectedConversation(null);
       setCurrentView('support-chat');
@@ -327,7 +336,7 @@ const BorderlessHubMessenger: React.FC = () => {
     if (chat.type === 'private') {
       return <User className="w-4 h-4 text-blue-500" />;
     } else if (chat.type === 'support') {
-      const supportRoom = chat.data as SupportRoom;
+      const supportRoom = chat.data as MessengerSupportRoom;
       return supportRoom.icon;
     } else {
       const room = chat.data as ChatRoom;
