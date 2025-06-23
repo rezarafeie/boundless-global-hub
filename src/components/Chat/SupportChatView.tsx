@@ -4,24 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Send, Clock, CheckCircle, Archive, AlertCircle, Tag, FileText } from 'lucide-react';
+import { ArrowLeft, Send, FileText, Crown, Headphones, Phone, MessageCircle, Shield, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
+import { supportRoomService, type SupportRoom } from '@/lib/supportRoomService';
 import { type MessengerUser } from '@/lib/messengerService';
 
-interface SupportRoom {
-  id: string;
-  name: string;
-  description: string;
-  type: 'academy_support' | 'boundless_support';
-  icon: React.ReactNode;
-  isPermanent: true;
-}
-
 interface SupportChatViewProps {
-  supportRoom: SupportRoom;
+  supportRoom?: SupportRoom;
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
@@ -45,8 +36,13 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     try {
       setLoading(true);
       
-      // Get thread type ID based on support room type
-      const threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
+      // Get thread type ID based on support room or user type
+      let threadTypeId = 1; // Default to academy support
+      if (supportRoom) {
+        threadTypeId = supportRoom.thread_type_id || 1;
+      } else {
+        threadTypeId = currentUser.bedoun_marz ? 2 : 1;
+      }
       
       // Get or create conversation
       const conv = await supportService.getOrCreateUserConversation(
@@ -54,10 +50,18 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         sessionToken, 
         threadTypeId
       );
+      
+      // Update conversation with support room if provided
+      if (supportRoom && conv.id > 0) {
+        await supabase
+          .from('support_conversations')
+          .update({ support_room_id: supportRoom.id })
+          .eq('id', conv.id);
+      }
+      
       setConversation(conv);
       
-      // Get messages for this conversation using messenger_messages table
-      // Since support messages are stored in messenger_messages with conversation_id
+      // Get messages for this conversation
       const { data: fetchedMessages, error } = await supabase
         .from('messenger_messages')
         .select('*')
@@ -85,7 +89,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
   useEffect(() => {
     fetchConversationAndMessages();
-  }, [supportRoom.type, currentUser.id]);
+  }, [supportRoom?.id, currentUser.id]);
 
   useEffect(() => {
     if (!conversation) return;
@@ -120,14 +124,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
     setSending(true);
     try {
-      // Send message to support using messenger_messages table
-      // recipient_id = 1 indicates message to support
       const { data: sentMessage, error } = await supabase
         .from('messenger_messages')
         .insert([{
           message: newMessage,
           sender_id: currentUser.id,
-          recipient_id: 1, // Support recipient
+          recipient_id: 1,
           conversation_id: conversation.id,
           message_type: 'text',
           created_at: new Date().toISOString()
@@ -162,6 +164,17 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     }
   };
 
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'crown': return <Crown className="w-5 h-5" />;
+      case 'phone': return <Phone className="w-5 h-5" />;
+      case 'message-circle': return <MessageCircle className="w-5 h-5" />;
+      case 'shield': return <Shield className="w-5 h-5" />;
+      case 'users': return <Users className="w-5 h-5" />;
+      default: return <Headphones className="w-5 h-5" />;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -188,10 +201,32 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
               <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </Button>
             
-            <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
-              {supportRoom.name}
-            </h2>
+            <div className="flex items-center gap-2">
+              {supportRoom && (
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: `${supportRoom.color}20` }}
+                >
+                  {getIconComponent(supportRoom.icon)}
+                </div>
+              )}
+              <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
+                {supportRoom?.name || 'پشتیبانی'}
+              </h2>
+            </div>
           </div>
+          
+          {supportRoom && (
+            <Badge 
+              variant="outline"
+              style={{ 
+                borderColor: supportRoom.color,
+                color: supportRoom.color 
+              }}
+            >
+              {supportRoom.description}
+            </Badge>
+          )}
         </div>
       </div>
 

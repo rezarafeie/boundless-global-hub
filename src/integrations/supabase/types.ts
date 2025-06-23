@@ -679,6 +679,7 @@ export type Database = {
           last_message_at: string | null
           priority: string | null
           status: string | null
+          support_room_id: number | null
           tag_list: Database["public"]["Enums"]["support_tag"][] | null
           tags: string[] | null
           thread_type_id: number | null
@@ -694,6 +695,7 @@ export type Database = {
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          support_room_id?: number | null
           tag_list?: Database["public"]["Enums"]["support_tag"][] | null
           tags?: string[] | null
           thread_type_id?: number | null
@@ -709,6 +711,7 @@ export type Database = {
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          support_room_id?: number | null
           tag_list?: Database["public"]["Enums"]["support_tag"][] | null
           tags?: string[] | null
           thread_type_id?: number | null
@@ -721,6 +724,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_conversations_support_room_id_fkey"
+            columns: ["support_room_id"]
+            isOneToOne: false
+            referencedRelation: "support_rooms"
             referencedColumns: ["id"]
           },
           {
@@ -784,6 +794,144 @@ export type Database = {
           },
         ]
       }
+      support_room_agents: {
+        Row: {
+          agent_id: number | null
+          assigned_at: string | null
+          assigned_by: number | null
+          id: number
+          is_active: boolean | null
+          support_room_id: number | null
+        }
+        Insert: {
+          agent_id?: number | null
+          assigned_at?: string | null
+          assigned_by?: number | null
+          id?: number
+          is_active?: boolean | null
+          support_room_id?: number | null
+        }
+        Update: {
+          agent_id?: number | null
+          assigned_at?: string | null
+          assigned_by?: number | null
+          id?: number
+          is_active?: boolean | null
+          support_room_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_room_agents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_room_agents_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_room_agents_support_room_id_fkey"
+            columns: ["support_room_id"]
+            isOneToOne: false
+            referencedRelation: "support_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_room_permissions: {
+        Row: {
+          can_access: boolean | null
+          created_at: string | null
+          id: number
+          support_room_id: number | null
+          user_role: string
+        }
+        Insert: {
+          can_access?: boolean | null
+          created_at?: string | null
+          id?: number
+          support_room_id?: number | null
+          user_role: string
+        }
+        Update: {
+          can_access?: boolean | null
+          created_at?: string | null
+          id?: number
+          support_room_id?: number | null
+          user_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_room_permissions_support_room_id_fkey"
+            columns: ["support_room_id"]
+            isOneToOne: false
+            referencedRelation: "support_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_rooms: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          created_by: number | null
+          description: string | null
+          icon: string | null
+          id: number
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          thread_type_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          created_by?: number | null
+          description?: string | null
+          icon?: string | null
+          id?: number
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          thread_type_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          created_by?: number | null
+          description?: string | null
+          icon?: string | null
+          id?: number
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          thread_type_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_rooms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_rooms_thread_type_id_fkey"
+            columns: ["thread_type_id"]
+            isOneToOne: false
+            referencedRelation: "support_thread_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_thread_types: {
         Row: {
           created_at: string | null
@@ -813,6 +961,48 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      user_roles: {
+        Row: {
+          granted_at: string | null
+          granted_by: number | null
+          id: number
+          is_active: boolean | null
+          role_name: string
+          user_id: number | null
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by?: number | null
+          id?: number
+          is_active?: boolean | null
+          role_name: string
+          user_id?: number | null
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: number | null
+          id?: number
+          is_active?: boolean | null
+          role_name?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_sessions: {
         Row: {
@@ -865,6 +1055,16 @@ export type Database = {
         Args: { p_user1_id: number; p_user2_id: number }
         Returns: number
       }
+      get_support_room_agents: {
+        Args: { room_id_param: number }
+        Returns: {
+          agent_id: number
+          agent_name: string
+          agent_phone: string
+          is_active: boolean
+          conversation_count: number
+        }[]
+      }
       get_support_unread_count: {
         Args: { conv_id: number }
         Returns: number
@@ -876,6 +1076,17 @@ export type Database = {
       get_user_from_session: {
         Args: { session_token_param: string }
         Returns: number
+      }
+      get_user_support_rooms: {
+        Args: { user_id_param: number }
+        Returns: {
+          id: number
+          name: string
+          description: string
+          icon: string
+          color: string
+          thread_type_id: number
+        }[]
       }
       increment_views: {
         Args: { announcement_id: number }

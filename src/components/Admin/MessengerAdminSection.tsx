@@ -1,50 +1,64 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare, Users, Settings, Headphones } from 'lucide-react';
+import ChatManagementTab from './ChatManagementTab';
 import UserManagementTab from './UserManagementTab';
 import TopicManagementTab from './TopicManagementTab';
-import SupportManagementTab from './SupportManagementTab';
-import AdminSettingsPanel from './AdminSettingsPanel';
-import { Users, MessageSquare, Headphones, Settings } from 'lucide-react';
+import EnhancedSupportManagement from './EnhancedSupportManagement';
 
 const MessengerAdminSection = () => {
   return (
-    <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="users" className="flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          <span className="hidden sm:inline">کاربران</span>
-        </TabsTrigger>
-        <TabsTrigger value="topics" className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4" />
-          <span className="hidden sm:inline">موضوعات</span>
-        </TabsTrigger>
-        <TabsTrigger value="support" className="flex items-center gap-2">
-          <Headphones className="w-4 h-4" />
-          <span className="hidden sm:inline">پشتیبانی</span>
-        </TabsTrigger>
-        <TabsTrigger value="settings" className="flex items-center gap-2">
-          <Settings className="w-4 h-4" />
-          <span className="hidden sm:inline">تنظیمات</span>
-        </TabsTrigger>
-      </TabsList>
+    <div className="space-y-6">
+      <Tabs defaultValue="chat-management" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsTrigger 
+            value="chat-management" 
+            className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>مدیریت چت</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="user-management" 
+            className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+          >
+            <Users className="w-5 h-5" />
+            <span>مدیریت کاربران</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="topic-management" 
+            className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+          >
+            <Settings className="w-5 h-5" />
+            <span>مدیریت موضوعات</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="support-management" 
+            className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+          >
+            <Headphones className="w-5 h-5" />
+            <span>مدیریت پشتیبانی</span>
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="users" className="mt-6">
-        <UserManagementTab />
-      </TabsContent>
+        <TabsContent value="chat-management" className="space-y-6">
+          <ChatManagementTab />
+        </TabsContent>
 
-      <TabsContent value="topics" className="mt-6">
-        <TopicManagementTab />
-      </TabsContent>
+        <TabsContent value="user-management" className="space-y-6">
+          <UserManagementTab />
+        </TabsContent>
 
-      <TabsContent value="support" className="mt-6">
-        <SupportManagementTab />
-      </TabsContent>
+        <TabsContent value="topic-management" className="space-y-6">
+          <TopicManagementTab />
+        </TabsContent>
 
-      <TabsContent value="settings" className="mt-6">
-        <AdminSettingsPanel />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="support-management" className="space-y-6">
+          <EnhancedSupportManagement />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
