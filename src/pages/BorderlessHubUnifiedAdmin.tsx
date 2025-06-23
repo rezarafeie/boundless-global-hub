@@ -1,101 +1,155 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, MessageSquare, Settings, UserCheck, UserX, Edit3, Trash2, Plus, Shield } from 'lucide-react';
+import { 
+  Shield, 
+  Users, 
+  MessageSquare, 
+  Settings, 
+  UserCheck, 
+  UserX, 
+  Search, 
+  Edit,
+  Calendar,
+  Phone,
+  Clock,
+  Star
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import UserEditModal from '@/components/Admin/UserEditModal';
-
-interface ChatTopic {
-  id: number;
-  title: string;
-  description: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface MessengerMessage {
-  id: number;
-  message: string;
-  sender_id: number;
-  room_id?: number;
-  created_at: string;
-  sender?: {
-    name: string;
-    phone: string;
-  };
-}
+import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
 
 const BorderlessHubUnifiedAdmin: React.FC = () => {
   const { toast } = useToast();
-  const [users, setUsers] = useState<MessengerUser[]>([]);
-  const [messages, setMessages] = useState<MessengerMessage[]>([]);
-  const [topics, setTopics] = useState<ChatTopic[]>([]);
+  const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<number | null>(null);
-  const [manualApprovalEnabled, setManualApprovalEnabled] = useState(false);
-
-  // User edit modal state
+  
+  // User Management States
+  const [allUsers, setAllUsers] = useState<MessengerUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<MessengerUser[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  // Topic form state
-  const [topicForm, setTopicForm] = useState({
-    title: '',
-    description: '',
-    is_active: true
-  });
-  const [editingTopic, setEditingTopic] = useState<number | null>(null);
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
 
-  const fetchData = async () => {
+  const checkAdminAccess = async () => {
     try {
-      setLoading(true);
-      const [usersData, messagesData, topicsData, settingsData] = await Promise.all([
-        messengerService.getAllUsers(),
-        messengerService.getAllMessages(),
-        messengerService.getTopics(),
-        messengerService.getAdminSettings()
-      ]);
-      
-      setUsers(usersData);
-      setMessages(messagesData);
-      setTopics(topicsData);
-      setManualApprovalEnabled(settingsData.manual_approval_enabled);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('لطفاً ابتدا وارد شوید');
+      }
+
+      const result = await messengerService.validateSession(sessionToken);
+      if (!result || !result.user.is_messenger_admin) {
+        throw new Error('شما دسترسی به پنل مدیریت ندارید');
+      }
+
+      setCurrentUser(result.user);
+      await fetchUsers();
+    } catch (error: any) {
+      console.error('Admin access error:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری اطلاعات',
+        description: error.message,
         variant: 'destructive',
       });
+      window.location.href = '/hub';
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleToggleManualApproval = async (enabled: boolean) => {
+  const fetchUsers = async () => {
     try {
-      await messengerService.updateAdminSettings({ manual_approval_enabled: enabled });
-      setManualApprovalEnabled(enabled);
+      const users = await messengerService.getAllUsers();
+      setAllUsers(users);
+      setFilteredUsers(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در بارگذاری کاربران',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = allUsers.filter(user => 
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.phone.includes(searchTerm) ||
+        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    } else {
+      setFilteredUsers(allUsers);
+    }
+  }, [allUsers, searchTerm]);
+
+  const handleApproveUser = async (userId: number) => {
+    try {
+      await messengerService.updateUserRole(userId, { is_approved: true });
       toast({
         title: 'موفق',
-        description: enabled ? 'تایید دستی فعال شد' : 'تایید دستی غیرفعال شد',
+        description: 'کاربر تایید شد',
       });
+      fetchUsers();
     } catch (error) {
       toast({
         title: 'خطا',
-        description: 'خطا در تغییر تنظیمات',
+        description: 'خطا در تایید کاربر',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleToggleRole = async (userId: number, role: 'is_messenger_admin' | 'bedoun_marz_approved', currentValue: boolean) => {
+    try {
+      await messengerService.updateUserRole(userId, { [role]: !currentValue });
+      
+      const roleNames = {
+        is_messenger_admin: 'مدیر',
+        bedoun_marz_approved: 'بدون مرز'
+      };
+      
+      toast({
+        title: 'موفق',
+        description: `نقش ${roleNames[role]} ${!currentValue ? 'اضافه' : 'حذف'} شد`,
+      });
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در تغییر نقش کاربر',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRejectUser = async (userId: number) => {
+    try {
+      await messengerService.updateUserRole(userId, { is_approved: false });
+      toast({
+        title: 'موفق',
+        description: 'کاربر رد شد',
+      });
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در رد کاربر',
         variant: 'destructive',
       });
     }
@@ -103,155 +157,90 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
 
   const handleEditUser = (user: MessengerUser) => {
     setEditingUser(user);
-    setIsEditModalOpen(true);
+    setShowEditModal(true);
   };
 
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
+  const handleEditModalClose = () => {
+    setShowEditModal(false);
     setEditingUser(null);
   };
 
-  const handleUserUpdated = () => {
-    fetchData();
+  const handleUserUpdate = () => {
+    fetchUsers();
   };
 
-  const handleToggleUserApproval = async (userId: number, isApproved: boolean) => {
-    setUpdating(userId);
-    try {
-      await messengerService.updateUserRole(userId, { is_approved: !isApproved });
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, is_approved: !isApproved } : user
-      ));
-      toast({
-        title: 'موفق',
-        description: isApproved ? 'کاربر رد شد' : 'کاربر تایید شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی وضعیت کاربر',
-        variant: 'destructive',
-      });
-    } finally {
-      setUpdating(null);
+  const getStatusBadges = (user: MessengerUser) => {
+    const badges = [];
+    
+    if (!user.is_approved) {
+      badges.push(<Badge key="pending" variant="destructive">در انتظار تایید</Badge>);
+    } else {
+      badges.push(<Badge key="approved" variant="secondary">تایید شده</Badge>);
     }
+    
+    if (user.is_messenger_admin) {
+      badges.push(<Badge key="admin" variant="default">مدیر</Badge>);
+    }
+    
+    if (user.bedoun_marz_approved) {
+      badges.push(<Badge key="boundless" className="bg-blue-100 text-blue-800">بدون مرز</Badge>);
+    }
+    
+    return badges;
   };
 
-  const handleToggleBoundless = async (userId: number, isBoundless: boolean) => {
-    setUpdating(userId);
-    try {
-      await messengerService.updateUserRole(userId, { bedoun_marz_approved: !isBoundless });
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, bedoun_marz_approved: !isBoundless } : user
-      ));
-      toast({
-        title: 'موفق',
-        description: isBoundless ? 'از بدون مرز حذف شد' : 'به بدون مرز اضافه شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی وضعیت بدون مرز',
-        variant: 'destructive',
-      });
-    } finally {
-      setUpdating(null);
-    }
-  };
+  const getStatsCards = () => {
+    const stats = {
+      total: allUsers.length,
+      pending: allUsers.filter(u => !u.is_approved).length,
+      approved: allUsers.filter(u => u.is_approved).length,
+      boundless: allUsers.filter(u => u.bedoun_marz_approved).length,
+      admins: allUsers.filter(u => u.is_messenger_admin).length
+    };
 
-  const handleToggleSupportAgent = async (userId: number, isSupportAgent: boolean) => {
-    setUpdating(userId);
-    try {
-      await messengerService.updateUserRole(userId, { is_support_agent: !isSupportAgent });
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, is_support_agent: !isSupportAgent } : user
-      ));
-      toast({
-        title: 'موفق',
-        description: isSupportAgent ? 'از تیم پشتیبانی حذف شد' : 'به تیم پشتیبانی اضافه شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی نقش پشتیبان',
-        variant: 'destructive',
-      });
-    } finally {
-      setUpdating(null);
-    }
-  };
-
-  const handleDeleteMessage = async (messageId: number) => {
-    try {
-      await messengerService.deleteMessage(messageId);
-      setMessages(messages.filter(msg => msg.id !== messageId));
-      toast({
-        title: 'موفق',
-        description: 'پیام حذف شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در حذف پیام',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleCreateTopic = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const newTopic = await messengerService.createTopic(topicForm);
-      setTopics([...topics, newTopic]);
-      setTopicForm({ title: '', description: '', is_active: true });
-      toast({
-        title: 'موفق',
-        description: 'تاپیک جدید ایجاد شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در ایجاد تاپیک',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleUpdateTopic = async (topicId: number, updates: Partial<ChatTopic>) => {
-    try {
-      await messengerService.updateTopic(topicId, updates);
-      setTopics(topics.map(topic => 
-        topic.id === topicId ? { ...topic, ...updates } : topic
-      ));
-      setEditingTopic(null);
-      toast({
-        title: 'موفق',
-        description: 'تاپیک به‌روزرسانی شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی تاپیک',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteTopic = async (topicId: number) => {
-    try {
-      await messengerService.deleteTopic(topicId);
-      setTopics(topics.filter(topic => topic.id !== topicId));
-      toast({
-        title: 'موفق',
-        description: 'تاپیک حذف شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در حذف تاپیک',
-        variant: 'destructive',
-      });
-    }
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+            <p className="text-2xl font-bold">{stats.total}</p>
+            <p className="text-sm text-slate-600">کل کاربران</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Clock className="w-6 h-6 mx-auto mb-2 text-amber-600" />
+            <p className="text-2xl font-bold">{stats.pending}</p>
+            <p className="text-sm text-slate-600">در انتظار</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <UserCheck className="w-6 h-6 mx-auto mb-2 text-green-600" />
+            <p className="text-2xl font-bold">{stats.approved}</p>
+            <p className="text-sm text-slate-600">تایید شده</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Star className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+            <p className="text-2xl font-bold">{stats.boundless}</p>
+            <p className="text-sm text-slate-600">بدون مرز</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Shield className="w-6 h-6 mx-auto mb-2 text-red-600" />
+            <p className="text-2xl font-bold">{stats.admins}</p>
+            <p className="text-sm text-slate-600">مدیر</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   if (loading) {
@@ -259,7 +248,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
       <MainLayout>
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
           <div className="text-center">
-            <Settings className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+            <Shield className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
             <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پنل مدیریت...</p>
           </div>
         </div>
@@ -267,299 +256,204 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
     );
   }
 
-  const approvedUsers = users.filter(user => user.is_approved);
-  const pendingUsers = users.filter(user => !user.is_approved);
-  const boundlessUsers = users.filter(user => user.bedoun_marz_approved);
-  const supportAgents = users.filter(user => user.is_support_agent);
+  if (!currentUser || !currentUser.is_messenger_admin) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+          <Card className="w-full max-w-md p-6 text-center">
+            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              دسترسی غیرمجاز
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              شما دسترسی به پنل مدیریت ندارید.
+            </p>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-20">
-        <div className="bg-white dark:bg-slate-800 shadow-sm border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-3">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4 py-6">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
               <Shield className="w-8 h-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                  پنل مدیریت یکپارچه
-                </h1>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  مدیریت کاربران، پشتیبانان، پیام‌ها و تاپیک‌ها
-                </p>
-              </div>
+              <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
+                پنل مدیریت یکپارچه
+              </h1>
             </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-8">
-          {/* Settings Card */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>تنظیمات سیستم</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Switch
-                  checked={manualApprovalEnabled}
-                  onCheckedChange={handleToggleManualApproval}
-                />
-                <div>
-                  <p className="font-medium">تایید دستی کاربران</p>
-                  <p className="text-sm text-gray-500">
-                    {manualApprovalEnabled 
-                      ? 'کاربران جدید نیاز به تایید مدیر دارند' 
-                      : 'کاربران جدید به صورت خودکار تایید می‌شوند'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">کل کاربران</CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{users.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  {approvedUsers.length} تایید شده، {pendingUsers.length} در انتظار
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">اعضای بدون مرز</CardTitle>
-                <UserCheck className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{boundlessUsers.length}</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">پشتیبانان</CardTitle>
-                <Shield className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-600">{supportAgents.length}</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">کل پیام‌ها</CardTitle>
-                <MessageSquare className="h-4 w-4 text-slate-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{messages.length}</div>
-              </CardContent>
-            </Card>
+            <p className="text-slate-600 dark:text-slate-300">
+              مدیریت کامل سیستم پیام‌رسان و کاربران
+            </p>
           </div>
 
-          <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="users" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                کاربران و نقش‌ها
+          {/* Main Content */}
+          <Tabs defaultValue="users" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 h-auto">
+              <TabsTrigger 
+                value="users" 
+                className="flex flex-col items-center gap-2 py-4"
+              >
+                <Users className="w-5 h-5" />
+                <span>مدیریت کاربران</span>
               </TabsTrigger>
-              <TabsTrigger value="chats" className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                چت‌ها و تاپیک‌ها
+              <TabsTrigger 
+                value="messenger" 
+                className="flex flex-col items-center gap-2 py-4"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>مدیریت پیام‌رسان</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="users" className="space-y-6">
+              {getStatsCards()}
+              
+              {/* Search */}
               <Card>
-                <CardHeader>
-                  <CardTitle>مدیریت کاربران و نقش‌ها</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>نام</TableHead>
-                        <TableHead>شماره تلفن</TableHead>
-                        <TableHead>وضعیت</TableHead>
-                        <TableHead>بدون مرز</TableHead>
-                        <TableHead>پشتیبان</TableHead>
-                        <TableHead>عملیات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.phone}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={user.is_approved}
-                                onCheckedChange={() => handleToggleUserApproval(user.id, user.is_approved)}
-                                disabled={updating === user.id}
-                              />
-                              {user.is_approved ? (
-                                <Badge className="bg-green-100 text-green-800">تایید شده</Badge>
-                              ) : (
-                                <Badge variant="outline">در انتظار</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={user.bedoun_marz_approved}
-                                onCheckedChange={() => handleToggleBoundless(user.id, user.bedoun_marz_approved)}
-                                disabled={updating === user.id}
-                              />
-                              {user.bedoun_marz_approved && (
-                                <Badge className="bg-blue-100 text-blue-800">بدون مرز</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={user.is_support_agent}
-                                onCheckedChange={() => handleToggleSupportAgent(user.id, user.is_support_agent)}
-                                disabled={updating === user.id}
-                              />
-                              {user.is_support_agent && (
-                                <Badge className="bg-purple-100 text-purple-800">پشتیبان</Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="chats" className="space-y-6">
-              {/* Topic Management */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>مدیریت تاپیک‌ها</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleCreateTopic} className="flex gap-2">
+                <CardContent className="p-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="عنوان تاپیک"
-                      value={topicForm.title}
-                      onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })}
-                      required
+                      placeholder="جستجو بر اساس نام، شماره تلفن یا نام کاربری..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
                     />
-                    <Input
-                      placeholder="توضیحات"
-                      value={topicForm.description}
-                      onChange={(e) => setTopicForm({ ...topicForm, description: e.target.value })}
-                    />
-                    <Button type="submit">
-                      <Plus className="w-4 h-4 mr-2" />
-                      ایجاد
-                    </Button>
-                  </form>
-                  
-                  <div className="grid gap-2">
-                    {topics.map((topic) => (
-                      <div key={topic.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{topic.title}</h4>
-                          <p className="text-sm text-gray-500">{topic.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={topic.is_active}
-                            onCheckedChange={(checked) => handleUpdateTopic(topic.id, { is_active: checked })}
-                          />
-                          <Button
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDeleteTopic(topic.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Messages Management */}
+              {/* Users Table */}
               <Card>
                 <CardHeader>
-                  <CardTitle>مدیریت پیام‌ها</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    مدیریت کاربران ({filteredUsers.length})
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>فرستنده</TableHead>
-                        <TableHead>پیام</TableHead>
-                        <TableHead>تاریخ</TableHead>
-                        <TableHead>عملیات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {messages.slice(0, 50).map((message) => (
-                        <TableRow key={message.id}>
-                          <TableCell>
-                            {message.sender?.name || 'نامشخص'}
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {message.message}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(message.created_at).toLocaleDateString('fa-IR')}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Edit3 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteMessage(message.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>کاربر</TableHead>
+                          <TableHead>وضعیت</TableHead>
+                          <TableHead>نقش‌ها</TableHead>
+                          <TableHead>تاریخ عضویت</TableHead>
+                          <TableHead>عملیات</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{user.name}</p>
+                                <p className="text-sm text-slate-500 flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {user.phone}
+                                </p>
+                                {user.username && (
+                                  <p className="text-xs text-blue-600">@{user.username}</p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {getStatusBadges(user)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={user.bedoun_marz_approved}
+                                    onCheckedChange={() => handleToggleRole(user.id, 'bedoun_marz_approved', user.bedoun_marz_approved)}
+                                  />
+                                  <span className="text-sm">بدون مرز</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={user.is_messenger_admin}
+                                    onCheckedChange={() => handleToggleRole(user.id, 'is_messenger_admin', user.is_messenger_admin)}
+                                  />
+                                  <span className="text-sm">مدیر</span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-slate-500">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(user.created_at).toLocaleDateString('fa-IR')}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditUser(user)}
+                                  className="p-2"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                {!user.is_approved ? (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleApproveUser(user.id)}
+                                      className="bg-green-600 hover:bg-green-700 p-2"
+                                    >
+                                      <UserCheck className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleRejectUser(user.id)}
+                                      className="p-2"
+                                    >
+                                      <UserX className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleRejectUser(user.id)}
+                                    className="p-2"
+                                  >
+                                    <UserX className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
-        </div>
 
-        {/* User Edit Modal */}
-        <UserEditModal
-          user={editingUser}
-          isOpen={isEditModalOpen}
-          onClose={handleCloseEditModal}
-          onUserUpdated={handleUserUpdated}
-        />
+            <TabsContent value="messenger" className="space-y-6">
+              <MessengerAdminSection />
+            </TabsContent>
+          </Tabs>
+
+          {/* Edit User Modal */}
+          <UserEditModal
+            user={editingUser}
+            isOpen={showEditModal}
+            onClose={handleEditModalClose}
+            onUserUpdate={handleUserUpdate}
+          />
+        </div>
       </div>
     </MainLayout>
   );

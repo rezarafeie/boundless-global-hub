@@ -72,12 +72,11 @@ const UserManagementTab = () => {
     }
   };
 
-  const handleToggleRole = async (userId: number, role: 'is_support_agent' | 'is_messenger_admin' | 'bedoun_marz_approved', currentValue: boolean) => {
+  const handleToggleRole = async (userId: number, role: 'is_messenger_admin' | 'bedoun_marz_approved', currentValue: boolean) => {
     try {
       await messengerService.updateUserRole(userId, { [role]: !currentValue });
       
       const roleNames = {
-        is_support_agent: 'پشتیبان',
         is_messenger_admin: 'مدیر',
         bedoun_marz_approved: 'بدون مرز'
       };
@@ -123,7 +122,7 @@ const UserManagementTab = () => {
     setEditingUser(null);
   };
 
-  const handleUserUpdated = () => {
+  const handleUserUpdate = () => {
     fetchUsers();
   };
 
@@ -140,10 +139,6 @@ const UserManagementTab = () => {
       badges.push(<Badge key="admin" variant="default">مدیر</Badge>);
     }
     
-    if (user.is_support_agent) {
-      badges.push(<Badge key="support" className="bg-purple-100 text-purple-800">پشتیبان</Badge>);
-    }
-    
     if (user.bedoun_marz_approved) {
       badges.push(<Badge key="boundless" className="bg-blue-100 text-blue-800">بدون مرز</Badge>);
     }
@@ -156,13 +151,12 @@ const UserManagementTab = () => {
       total: allUsers.length,
       pending: allUsers.filter(u => !u.is_approved).length,
       approved: allUsers.filter(u => u.is_approved).length,
-      supportAgents: allUsers.filter(u => u.is_support_agent).length,
       boundless: allUsers.filter(u => u.bedoun_marz_approved).length,
       admins: allUsers.filter(u => u.is_messenger_admin).length
     };
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
@@ -184,14 +178,6 @@ const UserManagementTab = () => {
             <UserCheck className="w-6 h-6 mx-auto mb-2 text-green-600" />
             <p className="text-2xl font-bold">{stats.approved}</p>
             <p className="text-sm text-slate-600">تایید شده</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Shield className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-2xl font-bold">{stats.supportAgents}</p>
-            <p className="text-sm text-slate-600">پشتیبان</p>
           </CardContent>
         </Card>
         
@@ -287,13 +273,6 @@ const UserManagementTab = () => {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Switch
-                            checked={user.is_support_agent}
-                            onCheckedChange={() => handleToggleRole(user.id, 'is_support_agent', user.is_support_agent)}
-                          />
-                          <span className="text-sm">پشتیبان</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
                             checked={user.bedoun_marz_approved}
                             onCheckedChange={() => handleToggleRole(user.id, 'bedoun_marz_approved', user.bedoun_marz_approved)}
                           />
@@ -367,7 +346,7 @@ const UserManagementTab = () => {
         user={editingUser}
         isOpen={showEditModal}
         onClose={handleEditModalClose}
-        onUserUpdated={handleUserUpdated}
+        onUserUpdate={handleUserUpdate}
       />
     </div>
   );

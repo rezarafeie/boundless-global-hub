@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card } from '@/components/ui/card';
@@ -5,13 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft, Menu } from 'lucide-react';
+import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
-import { supportService, type SupportConversation } from '@/lib/supportService';
 import SupportChatView from '@/components/Chat/SupportChatView';
 
-interface ConversationWithUser extends SupportConversation {
+interface ConversationWithUser {
+  id: number;
+  status: string;
+  priority: string;
+  last_message_at: string;
+  thread_type_id: number;
+  tag_list: string[];
+  unread_count: number;
   user?: {
     id: number;
     name: string;
@@ -21,7 +28,6 @@ interface ConversationWithUser extends SupportConversation {
     id: number;
     display_name: string;
   };
-  unread_count?: number;
 }
 
 const BorderlessHubSupportDashboard: React.FC = () => {
@@ -65,7 +71,11 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     try {
       setRefreshing(true);
       console.log('Fetching conversations...');
-      const conversationsData = await supportService.getAllConversations();
+      
+      // For now, return empty array since we removed the support service
+      // This can be replaced with actual conversation fetching logic later
+      const conversationsData: ConversationWithUser[] = [];
+      
       console.log('Conversations loaded:', conversationsData.length);
       setConversations(conversationsData);
       
@@ -335,74 +345,15 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
             {/* Conversations */}
             <div className="flex-1 overflow-y-auto">
-              {filteredConversations.length === 0 ? (
-                <div className="p-8 text-center">
-                  <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500 mb-2">
-                    {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'هیچ گفتگویی با فیلترهای انتخابی یافت نشد'}
-                  </p>
-                </div>
-              ) : (
-                filteredConversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    onClick={() => handleConversationSelect(conversation)}
-                    className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                      selectedConversation?.id === conversation.id 
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
-                        : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-slate-900 dark:text-white">
-                            {conversation.user?.name || 'کاربر نامشخص'}
-                          </h4>
-                          {conversation.unread_count && conversation.unread_count > 0 && (
-                            <Badge variant="destructive" className="text-xs px-2 py-0">
-                              {conversation.unread_count}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-slate-500 mb-2">{conversation.user?.phone || 'شماره نامشخص'}</p>
-                        
-                        {/* Tags */}
-                        {conversation.tag_list && conversation.tag_list.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {conversation.tag_list.slice(0, 2).map((tag, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                <Tag className="w-2 h-2 mr-1" />
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(conversation.status || 'open')}
-                          {getStatusBadge(conversation.status || 'open')}
-                        </div>
-                        {getPriorityBadge(conversation.priority || 'normal')}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-xs">
-                        {conversation.thread_type?.display_name || 'عمومی'}
-                      </span>
-                      <span>
-                        {conversation.last_message_at 
-                          ? new Date(conversation.last_message_at).toLocaleDateString('fa-IR')
-                          : ''
-                        }
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
+              <div className="p-8 text-center">
+                <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500 mb-2">
+                  هیچ گفتگوی پشتیبانی یافت نشد
+                </p>
+                <p className="text-sm text-slate-400">
+                  این بخش در حال توسعه است
+                </p>
+              </div>
             </div>
           </div>
 
@@ -432,11 +383,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   <p className="text-slate-500 dark:text-slate-400">
                     یک گفتگو را انتخاب کنید
                   </p>
-                  {conversations.length > 0 && (
-                    <p className="text-xs text-slate-400 mt-2">
-                      {conversations.length} گفتگوی پشتیبانی موجود است
-                    </p>
-                  )}
+                  <p className="text-xs text-slate-400 mt-2">
+                    این بخش در حال توسعه است
+                  </p>
                 </div>
               </div>
             )}
