@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -12,21 +11,10 @@ import PrivateChatView from '@/components/Chat/PrivateChatView';
 import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
 import ExactSearchModal from '@/components/Chat/ExactSearchModal';
 import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, ArrowRight, Headphones, Plus, Users, User, MessageSquare } from 'lucide-react';
-
-interface ChatRoom {
-  id: number;
-  name: string;
-  type: string;
-  description: string;
-  is_boundless_only: boolean;
-  last_message?: string;
-  last_message_time?: string;
-  unread_count?: number;
-}
 
 interface SupportRoom {
   id: string;

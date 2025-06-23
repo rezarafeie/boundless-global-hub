@@ -1,22 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw, AlertCircle, GraduationCap } from 'lucide-react';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { supportService } from '@/lib/supportService';
 import { Button } from '@/components/ui/button';
-
-interface ChatRoom {
-  id: number;
-  name: string;
-  type: string;
-  description: string;
-  is_boundless_only: boolean;
-  last_message?: string;
-  last_message_time?: string;
-  unread_count?: number;
-  thread_type_id?: number;
-}
 
 interface MessengerInboxProps {
   currentUser: MessengerUser;
@@ -81,6 +68,9 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           type: 'academy_support',
           description: 'پشتیبانی عمومی آکادمی رفیعی',
           is_boundless_only: false,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
           thread_type_id: 1,
           unread_count: supportUnreadCounts['academy_support'] || 0
         }
@@ -92,8 +82,11 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           id: -2, // Boundless support
           name: '🟦 پشتیبانی بدون مرز',
           type: 'boundless_support',
-          description: 'پشتیبانی ویژه اعضای بدون مرز', 
+          description: 'پشتیبانی ویژه اعضای بدون مرز',
           is_boundless_only: true,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
           thread_type_id: 2,
           unread_count: supportUnreadCounts['boundless_support'] || 0
         });

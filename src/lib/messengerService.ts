@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -22,12 +21,16 @@ export interface MessengerUser {
 export interface ChatRoom {
   id: number;
   name: string;
-  description?: string;
+  description: string;
   type: string;
   is_active: boolean;
   is_boundless_only: boolean;
   created_at: string;
   updated_at: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count?: number;
+  thread_type_id?: number;
 }
 
 export interface MessengerMessage {
@@ -307,7 +310,13 @@ class MessengerService {
         throw new Error(`Failed to fetch rooms: ${error.message}`);
       }
 
-      return data || [];
+      // Ensure description is always provided
+      const rooms = (data || []).map(room => ({
+        ...room,
+        description: room.description || ''
+      }));
+
+      return rooms;
     } catch (error: any) {
       console.error('Error in getRooms:', error);
       throw error;
@@ -329,7 +338,7 @@ class MessengerService {
         return null;
       }
 
-      return data || null;
+      return data ? { ...data, description: data.description || '' } : null;
     } catch (error: any) {
       console.error('Error in getRoom:', error);
       return null;
@@ -344,7 +353,8 @@ class MessengerService {
         .from('chat_rooms')
         .insert({
           ...room,
-          is_active: true
+          is_active: true,
+          description: room.description || ''
         })
         .select()
         .single();
@@ -354,7 +364,7 @@ class MessengerService {
         throw new Error(`Failed to create room: ${error.message}`);
       }
 
-      return data;
+      return { ...data, description: data.description || '' };
     } catch (error: any) {
       console.error('Error in createRoom:', error);
       throw error;
@@ -377,7 +387,7 @@ class MessengerService {
         throw new Error(`Failed to update room: ${error.message}`);
       }
 
-      return data;
+      return { ...data, description: data.description || '' };
     } catch (error: any) {
       console.error('Error in updateRoom:', error);
       throw error;
