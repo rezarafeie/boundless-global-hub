@@ -27,7 +27,7 @@ interface SupportRoom {
 }
 
 interface MessengerSupportRoom {
-  id: string;
+  id: number;  // Changed from string to number
   name: string;
   description: string;
   type: 'academy_support' | 'boundless_support';
@@ -71,7 +71,7 @@ const BorderlessHubMessenger: React.FC = () => {
   const getSupportRooms = (): MessengerSupportRoom[] => {
     const supportRooms: MessengerSupportRoom[] = [
       {
-        id: 'academy_support',
+        id: 1,  // Changed from string to number
         name: '🛎️ پشتیبانی آکادمی رفیعی',
         description: 'پشتیبانی عمومی برای همه کاربران',
         type: 'academy_support',
@@ -83,7 +83,7 @@ const BorderlessHubMessenger: React.FC = () => {
     // Add boundless support only for boundless users
     if (currentUser?.bedoun_marz) {
       supportRooms.push({
-        id: 'boundless_support',
+        id: 2,  // Changed from string to number
         name: '🌐 پشتیبانی بدون مرز',
         description: 'پشتیبانی ویژه اعضای بدون مرز',
         type: 'boundless_support',

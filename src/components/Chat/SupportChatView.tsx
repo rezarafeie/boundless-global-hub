@@ -19,7 +19,7 @@ interface SupportRoom {
 }
 
 interface MessengerSupportRoom {
-  id: number;
+  id: number;  // Changed from string to number
   name: string;
   description?: string;
   icon?: string;

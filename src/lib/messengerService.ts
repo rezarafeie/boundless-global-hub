@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -110,7 +109,7 @@ class MessengerService {
           is_read,
           created_at,
           media_url,
-          sender:sender_id!inner(
+          sender:chat_users!sender_id(
             id,
             name,
             phone,
@@ -128,7 +127,7 @@ class MessengerService {
         .limit(1000);
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as MessengerMessage[];
     } catch (error) {
       console.error('Error fetching all messages:', error);
       throw error;
@@ -150,7 +149,7 @@ class MessengerService {
           is_read,
           created_at,
           media_url,
-          sender:sender_id!inner(
+          sender:chat_users!sender_id(
             id,
             name,
             phone,
@@ -168,7 +167,7 @@ class MessengerService {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as MessengerMessage[];
     } catch (error) {
       console.error('Error fetching messages:', error);
       throw error;
@@ -528,9 +527,14 @@ class MessengerService {
 
   async updateTopic(topicId: number, updates: Partial<ChatTopic>): Promise<void> {
     try {
+      const updateData: any = {};
+      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+      
       const { error } = await supabase
         .from('chat_topics')
-        .update(updates)
+        .update(updateData)
         .eq('id', topicId);
 
       if (error) throw error;
@@ -580,9 +584,16 @@ class MessengerService {
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
     try {
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.type !== undefined) updateData.type = updates.type;
+      if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+      if (updates.is_boundless_only !== undefined) updateData.is_boundless_only = updates.is_boundless_only;
+      
       const { error } = await supabase
         .from('chat_rooms')
-        .update(updates)
+        .update(updateData)
         .eq('id', roomId);
 
       if (error) throw error;
@@ -615,7 +626,10 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as ChatRoom[];
+      return (data || []).map(room => ({
+        ...room,
+        type: room.type as 'general' | 'academy_support' | 'boundless_support'
+      })) as ChatRoom[];
     } catch (error) {
       console.error('Error fetching rooms:', error);
       throw error;
