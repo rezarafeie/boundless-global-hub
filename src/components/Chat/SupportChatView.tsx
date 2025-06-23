@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -19,10 +20,10 @@ interface SupportRoom {
 }
 
 interface MessengerSupportRoom {
-  id: number;  // Changed from string to number
+  id: number;
   name: string;
   description?: string;
-  icon?: string;
+  icon?: string; // Changed from React.ReactNode to string
   color?: string;
   thread_type_id?: number;
 }

@@ -27,11 +27,11 @@ interface SupportRoom {
 }
 
 interface MessengerSupportRoom {
-  id: number;  // Changed from string to number
+  id: number;
   name: string;
   description: string;
   type: 'academy_support' | 'boundless_support';
-  icon: React.ReactNode;
+  icon: string;
   isPermanent: true;
 }
 
@@ -71,11 +71,11 @@ const BorderlessHubMessenger: React.FC = () => {
   const getSupportRooms = (): MessengerSupportRoom[] => {
     const supportRooms: MessengerSupportRoom[] = [
       {
-        id: 1,  // Changed from string to number
+        id: 1,
         name: '🛎️ پشتیبانی آکادمی رفیعی',
         description: 'پشتیبانی عمومی برای همه کاربران',
         type: 'academy_support',
-        icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
+        icon: 'message-square',
         isPermanent: true
       }
     ];
@@ -83,11 +83,11 @@ const BorderlessHubMessenger: React.FC = () => {
     // Add boundless support only for boundless users
     if (currentUser?.bedoun_marz) {
       supportRooms.push({
-        id: 2,  // Changed from string to number
+        id: 2,
         name: '🌐 پشتیبانی بدون مرز',
         description: 'پشتیبانی ویژه اعضای بدون مرز',
         type: 'boundless_support',
-        icon: <Headphones className="w-4 h-4 text-purple-500" />,
+        icon: 'headphones',
         isPermanent: true
       });
     }
@@ -337,7 +337,13 @@ const BorderlessHubMessenger: React.FC = () => {
       return <User className="w-4 h-4 text-blue-500" />;
     } else if (chat.type === 'support') {
       const supportRoom = chat.data as MessengerSupportRoom;
-      return supportRoom.icon;
+      // Convert string icon to React component
+      if (supportRoom.icon === 'message-square') {
+        return <MessageSquare className="w-4 h-4 text-blue-500" />;
+      } else if (supportRoom.icon === 'headphones') {
+        return <Headphones className="w-4 h-4 text-purple-500" />;
+      }
+      return <MessageSquare className="w-4 h-4 text-blue-500" />;
     } else {
       const room = chat.data as ChatRoom;
       if (room.type === 'academy_support') {
