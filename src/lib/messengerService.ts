@@ -533,8 +533,17 @@ class MessengerService {
     const { data, error } = await supabase
       .from('messenger_messages')
       .select(`
-        *,
-        sender:chat_users!sender_id(name, phone)
+        id,
+        message,
+        sender_id,
+        recipient_id,
+        room_id,
+        conversation_id,
+        created_at,
+        is_read,
+        message_type,
+        reply_to_message_id,
+        chat_users!messenger_messages_sender_id_fkey(name, phone)
       `)
       .order('created_at', { ascending: false });
 
@@ -542,7 +551,7 @@ class MessengerService {
     
     return (data || []).map(message => ({
       ...message,
-      sender: message.sender || { name: 'Unknown', phone: '' }
+      sender: message.chat_users || { name: 'Unknown', phone: '' }
     }));
   }
 

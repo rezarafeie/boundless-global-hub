@@ -62,6 +62,12 @@ const Header = () => {
           <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Support" : "پشتیبانی"}
           </Link>
+          <Link to="/hub/messenger" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+            {language === "en" ? "Messenger" : "پیام‌رسان"}
+          </Link>
+          <Link to="/hub" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+            {language === "en" ? "Hub" : "هاب"}
+          </Link>
         </nav>
         
         <div className="flex items-center gap-3">
@@ -167,6 +173,20 @@ const Header = () => {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {language === "en" ? "Support" : "پشتیبانی"}
+                  </Link>
+                  <Link 
+                    to="/hub/messenger" 
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {language === "en" ? "Messenger" : "پیام‌رسان"}
+                  </Link>
+                  <Link 
+                    to="/hub" 
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {language === "en" ? "Hub" : "هاب"}
                   </Link>
                 </nav>
 

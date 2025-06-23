@@ -1,11 +1,13 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import AdminDashboard from "@/components/Dashboard/AdminDashboard";
+import IframeModal from "@/components/IframeModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Dashboard = () => {
   const { translations } = useLanguage();
+  const [showIframe, setShowIframe] = useState(true);
 
   return (
     <MainLayout>
@@ -14,6 +16,14 @@ const Dashboard = () => {
           <AdminDashboard />
         </div>
       </div>
+      
+      <IframeModal
+        isOpen={showIframe}
+        onClose={() => setShowIframe(false)}
+        title="Dashboard"
+        url="https://auth.rafiei.co"
+        showCloseButton={true}
+      />
     </MainLayout>
   );
 };

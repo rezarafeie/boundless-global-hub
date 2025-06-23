@@ -68,77 +68,79 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="space-y-1 p-2">
-        {rooms.length === 0 ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <MessageCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">هیچ اتاق چتی یافت نشد</p>
-            </div>
-          </div>
-        ) : (
-          rooms.map((room) => (
-            <div
-              key={room.id}
-              onClick={() => onRoomSelect(room)}
-              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                selectedRoom?.id === room.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-              }`}
-            >
-              <div className="relative">
-                <Avatar className="w-10 h-10">
-                  <AvatarFallback 
-                    style={{ backgroundColor: getAvatarColor(room.name) }}
-                    className="text-white font-medium"
-                  >
-                    {room.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
-                  {getRoomIcon(room)}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium text-sm truncate">
-                    {room.name}
-                  </div>
-                  {room.unread_count! > 0 && (
-                    <Badge variant="destructive" className="text-xs">
-                      {room.unread_count}
-                    </Badge>
-                  )}
-                  {room.is_support_room && (
-                    <Badge variant="outline" className="text-xs">
-                      پشتیبانی
-                    </Badge>
-                  )}
-                </div>
-                {room.description && (
-                  <div className="text-xs text-slate-500 truncate">
-                    {room.description}
-                  </div>
-                )}
-                {room.last_message && (
-                  <div className="text-xs text-slate-500 truncate">
-                    {room.last_message}
-                  </div>
-                )}
-                {room.last_message_time && room.id > 0 && (
-                  <div className="text-xs text-slate-400">
-                    {new Date(room.last_message_time).toLocaleTimeString('fa-IR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                )}
+    <div className="h-full flex flex-col">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="space-y-1 p-2">
+          {rooms.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <MessageCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">هیچ اتاق چتی یافت نشد</p>
               </div>
             </div>
-          ))
-        )}
-      </div>
-    </ScrollArea>
+          ) : (
+            rooms.map((room) => (
+              <div
+                key={room.id}
+                onClick={() => onRoomSelect(room)}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                  selectedRoom?.id === room.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                }`}
+              >
+                <div className="relative">
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback 
+                      style={{ backgroundColor: getAvatarColor(room.name) }}
+                      className="text-white font-medium"
+                    >
+                      {room.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                    {getRoomIcon(room)}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm truncate">
+                      {room.name}
+                    </div>
+                    {room.unread_count! > 0 && (
+                      <Badge variant="destructive" className="text-xs">
+                        {room.unread_count}
+                      </Badge>
+                    )}
+                    {room.is_support_room && (
+                      <Badge variant="outline" className="text-xs">
+                        پشتیبانی
+                      </Badge>
+                    )}
+                  </div>
+                  {room.description && (
+                    <div className="text-xs text-slate-500 truncate">
+                      {room.description}
+                    </div>
+                  )}
+                  {room.last_message && (
+                    <div className="text-xs text-slate-500 truncate">
+                      {room.last_message}
+                    </div>
+                  )}
+                  {room.last_message_time && room.id > 0 && (
+                    <div className="text-xs text-slate-400">
+                      {new Date(room.last_message_time).toLocaleTimeString('fa-IR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 };
 
