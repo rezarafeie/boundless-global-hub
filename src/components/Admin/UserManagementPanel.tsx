@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Users, UserCheck, UserX, Search, Shield, Star, Clock, Phone, Calendar } from 'lucide-react';
+import { Users, UserCheck, UserX, Search, Shield, Star, Clock, Phone, Calendar, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import UserEditModal from './UserEditModal';
 
 const UserManagementPanel = () => {
   const { toast } = useToast();
@@ -17,6 +18,8 @@ const UserManagementPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTab, setFilterTab] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -218,6 +221,20 @@ const UserManagementPanel = () => {
     );
   };
 
+  const handleOpenEditModal = (user: MessengerUser) => {
+    setEditingUser(user);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingUser(null);
+    setEditModalOpen(false);
+  };
+
+  const handleUserUpdated = () => {
+    fetchUsers();
+  };
+
   if (loading) {
     return (
       <Card>
@@ -284,6 +301,9 @@ const UserManagementPanel = () => {
                               <Phone className="w-3 h-3" />
                               {user.phone}
                             </p>
+                            {user.username && (
+                              <p className="text-xs text-blue-600">@{user.username}</p>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -361,6 +381,13 @@ const UserManagementPanel = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <UserEditModal
+        user={editingUser}
+        isOpen={editModalOpen}
+        onClose={handleCloseEditModal}
+        onUserUpdated={handleUserUpdated}
+      />
     </div>
   );
 };

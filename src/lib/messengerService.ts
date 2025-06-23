@@ -114,6 +114,17 @@ interface RoomMembership {
   last_read_at: string;
 }
 
+// Simple hash function for demo purposes (in production, use proper server-side hashing)
+function simpleHash(password: string): string {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString();
+}
+
 const DEFAULT_AVATAR_COLORS = [
   '#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51',
   '#d62828', '#457b9d', '#1d3557', '#f72585', '#b5179e',
@@ -168,13 +179,16 @@ class MessengerService {
     isBoundlessStudent: boolean = false
   ): Promise<MessengerUser> {
     try {
+      // Hash the password before storing
+      const hashedPassword = simpleHash(password);
+      
       const { data, error } = await supabase
         .from('chat_users')
         .insert([{
           name: name.trim(),
           phone: phone.trim(),
           username: username.toLowerCase().trim(),
-          password_hash: password, // In real app, this should be hashed
+          password_hash: hashedPassword,
           bedoun_marz: isBoundlessStudent,
           bedoun_marz_request: isBoundlessStudent,
           is_approved: false // All users start as pending
@@ -203,11 +217,14 @@ class MessengerService {
 
   async authenticateUser(phone: string, password: string): Promise<{ session_token: string } | null> {
     try {
+      // Hash the password to compare with stored hash
+      const hashedPassword = simpleHash(password);
+      
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
         .eq('phone', phone)
-        .eq('password_hash', password) // In real app, compare hashed passwords
+        .eq('password_hash', hashedPassword)
         .single();
 
       if (error || !data) {
@@ -727,6 +744,11 @@ class MessengerService {
 
   async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<MessengerUser> {
     try {
+      // If password is being updated, hash it
+      if (updates.password_hash) {
+        updates.password_hash = simpleHash(updates.password_hash);
+      }
+
       const { data, error } = await supabase
         .from('chat_users')
         .update(updates)
@@ -742,6 +764,46 @@ class MessengerService {
       return data as MessengerUser;
     } catch (error: any) {
       console.error('Error in updateUser:', error);
+      throw error;
+    }
+  }
+
+  async updateUserDetails(userId: number, details: {
+    name?: string;
+    phone?: string;
+    username?: string;
+    password?: string;
+  }): Promise<MessengerUser> {
+    try {
+      const updates: any = {};
+      
+      if (details.name) updates.name = details.name.trim();
+      if (details.phone) updates.phone = details.phone.trim();
+      if (details.username) updates.username = details.username.toLowerCase().trim();
+      if (details.password) updates.password_hash = simpleHash(details.password);
+
+      const { data, error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating user details:', error);
+        if (error.code === '23505') {
+          if (error.message.includes('phone')) {
+            throw new Error('این شماره تلفن قبلاً ثبت شده است');
+          } else if (error.message.includes('username')) {
+            throw new Error('این نام کاربری قبلاً انتخاب شده است');
+          }
+        }
+        throw error;
+      }
+
+      return data as MessengerUser;
+    } catch (error: any) {
+      console.error('Error in updateUserDetails:', error);
       throw error;
     }
   }
