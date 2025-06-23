@@ -145,9 +145,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
           <CardDescription>
             برای ورود به پیام‌رسان بدون مرز، اطلاعات خود را وارد کنید
           </CardDescription>
-        </Car
-
-dHeader>
+        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
