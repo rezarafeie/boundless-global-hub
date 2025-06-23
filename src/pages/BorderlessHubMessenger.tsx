@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -504,7 +505,7 @@ const BorderlessHubMessenger: React.FC = () => {
                             className="text-white font-medium"
                           >
                             {chat.type === 'support' ? (
-                              chat.data.type === 'academy_support' ? '🎓' : '🌐'
+                              (chat.data as MessengerSupportRoom).type === 'academy_support' ? '🎓' : '🌐'
                             ) : (
                               chat.name.charAt(0)
                             )}
@@ -630,7 +631,7 @@ const BorderlessHubMessenger: React.FC = () => {
                               className="text-white font-medium"
                             >
                               {chat.type === 'support' ? (
-                                chat.data.type === 'academy_support' ? '🎓' : '🌐'
+                                (chat.data as MessengerSupportRoom).type === 'academy_support' ? '🎓' : '🌐'
                               ) : (
                                 chat.name.charAt(0)
                               )}
