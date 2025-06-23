@@ -11,20 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Announcement {
-  id: number;
-  title: string;
-  summary: string;
-  full_text: string;
-  type: 'general' | 'urgent';
-  is_pinned: boolean;
-  media_type: 'none' | 'image' | 'video' | 'audio' | 'iframe';
-  media_url?: string;
-  media_content?: string;
-  views: number;
-  created_at: string;
-}
+import { Announcement } from '@/types/supabase';
 
 interface AnnouncementManagementModalProps {
   isOpen: boolean;
@@ -45,7 +32,7 @@ const AnnouncementManagementModal: React.FC<AnnouncementManagementModalProps> = 
     title: '',
     summary: '',
     full_text: '',
-    type: 'general' as 'general' | 'urgent',
+    type: 'general' as 'general' | 'urgent' | 'technical' | 'educational',
     is_pinned: false,
     media_type: 'none' as 'none' | 'image' | 'video' | 'audio' | 'iframe',
     media_url: '',
@@ -152,6 +139,19 @@ const AnnouncementManagementModal: React.FC<AnnouncementManagementModalProps> = 
     }
   };
 
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case 'urgent':
+        return <Badge variant="destructive">🚨 فوری</Badge>;
+      case 'technical':
+        return <Badge variant="secondary">🔧 فنی</Badge>;
+      case 'educational':
+        return <Badge variant="outline">📚 آموزشی</Badge>;
+      default:
+        return <Badge variant="secondary">📝 عمومی</Badge>;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -180,13 +180,15 @@ const AnnouncementManagementModal: React.FC<AnnouncementManagementModalProps> = 
                 </div>
                 <div>
                   <label className="text-sm font-medium">نوع</label>
-                  <Select value={newAnnouncement.type} onValueChange={(value: 'general' | 'urgent') => setNewAnnouncement({ ...newAnnouncement, type: value })}>
+                  <Select value={newAnnouncement.type} onValueChange={(value: 'general' | 'urgent' | 'technical' | 'educational') => setNewAnnouncement({ ...newAnnouncement, type: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="general">عمومی</SelectItem>
                       <SelectItem value="urgent">فوری</SelectItem>
+                      <SelectItem value="technical">فنی</SelectItem>
+                      <SelectItem value="educational">آموزشی</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -267,9 +269,7 @@ const AnnouncementManagementModal: React.FC<AnnouncementManagementModalProps> = 
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={announcement.type === 'urgent' ? 'destructive' : 'secondary'}>
-                            {announcement.type === 'urgent' ? '🚨 فوری' : '📝 عمومی'}
-                          </Badge>
+                          {getTypeBadge(announcement.type)}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
