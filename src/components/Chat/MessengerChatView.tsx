@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -10,16 +9,23 @@ import { messengerService, type ChatRoom, type MessengerUser, type MessengerMess
 interface MessengerChatViewProps {
   selectedRoom?: ChatRoom | null;
   selectedUser?: MessengerUser | null;
+  room?: ChatRoom | null;
   currentUser: MessengerUser;
   sessionToken: string;
+  onBack?: () => void;
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   selectedRoom,
   selectedUser,
+  room,
   currentUser,
-  sessionToken
+  sessionToken,
+  onBack
 }) => {
+  // Use room prop if provided, otherwise use selectedRoom
+  const activeRoom = room || selectedRoom;
+  
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,14 +33,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (selectedRoom) {
-      loadRoomMessages(selectedRoom.id);
+    if (activeRoom) {
+      loadRoomMessages(activeRoom.id);
     } else if (selectedUser) {
       loadPrivateMessages(selectedUser.id);
     } else {
       setMessages([]);
     }
-  }, [selectedRoom, selectedUser]);
+  }, [activeRoom, selectedUser]);
 
   useEffect(() => {
     scrollToBottom();
@@ -76,8 +82,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     try {
       let sentMessage: MessengerMessage;
 
-      if (selectedRoom) {
-        sentMessage = await messengerService.sendMessage(selectedRoom.id, currentUser.id, newMessage.trim());
+      if (activeRoom) {
+        sentMessage = await messengerService.sendMessage(activeRoom.id, currentUser.id, newMessage.trim());
       } else if (selectedUser) {
         sentMessage = await messengerService.sendPrivateMessage(currentUser.id, selectedUser.id, newMessage.trim());
       } else {
@@ -107,8 +113,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const getChatTitle = () => {
-    if (selectedRoom) {
-      return selectedRoom.name;
+    if (activeRoom) {
+      return activeRoom.name;
     } else if (selectedUser) {
       return selectedUser.name;
     }
@@ -116,8 +122,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const getChatDescription = () => {
-    if (selectedRoom) {
-      return selectedRoom.description;
+    if (activeRoom) {
+      return activeRoom.description;
     } else if (selectedUser) {
       if (selectedUser.phone === '1') return 'پشتیبانی آکادمی رفیعی';
       if (selectedUser.phone === '2') return 'پشتیبانی بدون مرز';
@@ -126,7 +132,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     return '';
   };
 
-  if (!selectedRoom && !selectedUser) {
+  if (!activeRoom && !selectedUser) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
