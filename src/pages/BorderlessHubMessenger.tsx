@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -59,12 +58,12 @@ const BorderlessHubMessenger: React.FC = () => {
   const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Support rooms based on user access
+  // Support rooms based on user access - always show these
   const getSupportRooms = (): SupportRoom[] => {
     const supportRooms: SupportRoom[] = [
       {
         id: 'academy_support',
-        name: '💬 پشتیبانی آکادمی رفیعی',
+        name: '🛎️ پشتیبانی آکادمی رفیعی',
         description: 'پشتیبانی عمومی برای همه کاربران',
         type: 'academy_support',
         icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
@@ -76,7 +75,7 @@ const BorderlessHubMessenger: React.FC = () => {
     if (currentUser?.bedoun_marz) {
       supportRooms.push({
         id: 'boundless_support',
-        name: '🔒 پشتیبانی بدون مرز',
+        name: '🌐 پشتیبانی بدون مرز',
         description: 'پشتیبانی ویژه اعضای بدون مرز',
         type: 'boundless_support',
         icon: <Headphones className="w-4 h-4 text-purple-500" />,
@@ -104,12 +103,12 @@ const BorderlessHubMessenger: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    // Get support rooms
+    // Get support rooms - always show these at the top
     const supportRooms = getSupportRooms();
     
-    // Combine and sort all chats
+    // Combine and sort all chats with support rooms always at top
     const combined: UnifiedChatItem[] = [
-      // Support rooms first (permanent)
+      // Support rooms first (permanent and always at top)
       ...supportRooms.map(room => ({
         id: `support-${room.id}`,
         type: 'support' as const,
@@ -144,14 +143,20 @@ const BorderlessHubMessenger: React.FC = () => {
       }))
     ];
 
-    // Sort: permanent first, then by unread, then by last message time
+    // Sort: support rooms first (permanent), then by unread, then by last message time
     combined.sort((a, b) => {
+      // Support rooms always first
       if (a.isPermanent && !b.isPermanent) return -1;
       if (!a.isPermanent && b.isPermanent) return 1;
       
+      // If both are permanent (support rooms), maintain original order
+      if (a.isPermanent && b.isPermanent) return 0;
+      
+      // For non-permanent items, sort by unread first
       if (a.unreadCount && !b.unreadCount) return -1;
       if (!a.unreadCount && b.unreadCount) return 1;
       
+      // Then by last message time
       const timeA = new Date(a.lastMessageTime || 0).getTime();
       const timeB = new Date(b.lastMessageTime || 0).getTime();
       
@@ -632,7 +637,7 @@ const BorderlessHubMessenger: React.FC = () => {
                               {chat.description}
                             </div>
                           )}
-                          {chat.lastMessage && (
+                          {chat.lastMessage && !chat.isPermanent && (
                             <div className="text-xs text-slate-500 truncate">
                               {chat.lastMessage}
                             </div>
@@ -688,16 +693,19 @@ const BorderlessHubMessenger: React.FC = () => {
         </div>
       </div>
 
-      {/* Single Floating Action Button */}
-      <div className="fixed bottom-6 left-6 z-50">
-        <Button
-          onClick={() => setShowExactSearchModal(true)}
-          size="lg"
-          className="rounded-full w-14 h-14 bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </div>
+      {/* Fixed Floating Action Button - Only show on main chat list */}
+      {!showMobileChat && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={() => setShowExactSearchModal(true)}
+            size="lg"
+            className="rounded-full w-12 h-12 bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 p-0"
+            title="شروع گفتگوی جدید"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
 
       {/* Modals */}
       <ExactSearchModal

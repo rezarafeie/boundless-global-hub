@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,28 +14,22 @@ interface UnifiedMessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
 }
 
-type AuthStep = 'phone' | 'login' | 'signup' | 'pending';
+type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated }) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    username: '',
-    password: '',
-    isBoundlessStudent: false
-  });
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [isBoundlessStudent, setIsBoundlessStudent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameError, setUsernameError] = useState('');
   const [existingUser, setExistingUser] = useState<MessengerUser | null>(null);
-
-  const validatePhone = (phone: string) => {
-    const phoneRegex = /^09\d{9}$/;
-    return phoneRegex.test(phone);
-  };
+  const [isLogin, setIsLogin] = useState(false);
 
   const validateUsername = (value: string) => {
     const regex = /^[a-z0-9_]{3,20}$/;
@@ -77,7 +72,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
   const handleUsernameChange = (value: string) => {
     const lowerValue = value.toLowerCase();
-    setFormData(prev => ({ ...prev, username: lowerValue }));
+    setUsername(lowerValue);
     setUsernameAvailable(null);
     setUsernameError('');
 
@@ -92,10 +87,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validatePhone(phoneNumber)) {
+    if (!phoneNumber.trim()) {
       toast({
         title: 'خطا',
-        description: 'شماره تلفن معتبر نیست. باید با ۰۹ شروع شده و ۱۱ رقم باشد',
+        description: 'شماره تلفن را وارد کنید',
         variant: 'destructive'
       });
       return;
@@ -107,70 +102,90 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       const user = await messengerService.getUserByPhone(phoneNumber);
       if (user) {
         setExistingUser(user);
-        setCurrentStep('login');
+        setIsLogin(true);
+        setCurrentStep('password');
       } else {
-        setCurrentStep('signup');
+        setIsLogin(false);
+        setCurrentStep('password');
       }
     } catch (error) {
       console.error('Error checking phone:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بررسی شماره تلفن',
-        variant: 'destructive'
-      });
+      // If error, assume new user
+      setIsLogin(false);
+      setCurrentStep('password');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.password.trim()) {
+    if (!password.trim()) {
       toast({
         title: 'خطا',
-        description: 'لطفاً رمز عبور را وارد کنید',
+        description: 'رمز عبور را وارد کنید',
         variant: 'destructive'
       });
       return;
     }
 
-    setLoading(true);
-    try {
-      // Authenticate user
-      const result = await messengerService.authenticateUser(phoneNumber, formData.password);
-      if (result && existingUser) {
-        if (!existingUser.is_approved) {
-          setCurrentStep('pending');
-          return;
+    if (isLogin) {
+      // Login flow
+      setLoading(true);
+      try {
+        const result = await messengerService.authenticateUser(phoneNumber, password);
+        if (result && existingUser) {
+          if (!existingUser.is_approved) {
+            setCurrentStep('pending');
+            return;
+          }
+          onAuthenticated(result.session_token, existingUser.name, existingUser);
+        } else {
+          toast({
+            title: 'خطا',
+            description: 'رمز عبور اشتباه است',
+            variant: 'destructive'
+          });
         }
-        onAuthenticated(result.session_token, existingUser.name, existingUser);
-      } else {
+      } catch (error: any) {
+        console.error('Login error:', error);
         toast({
-          title: 'خطا',
-          description: 'رمز عبور اشتباه است',
+          title: 'خطا در ورود',
+          description: error.message || 'رمز عبور اشتباه است',
           variant: 'destructive'
         });
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast({
-        title: 'خطا در ورود',
-        description: error.message || 'رمز عبور اشتباه است',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
+    } else {
+      // Continue to name step for registration
+      setCurrentStep('name');
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.username.trim() || !formData.password.trim()) {
+    if (!name.trim()) {
       toast({
         title: 'خطا',
-        description: 'لطفاً تمام فیلدها را پر کنید',
+        description: 'نام را وارد کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setCurrentStep('username');
+  };
+
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!username.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'نام کاربری را وارد کنید',
         variant: 'destructive'
       });
       return;
@@ -187,13 +202,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
-      // Register user with password
+      // Register user
       const result = await messengerService.registerWithPassword({
-        name: formData.name.trim(),
+        name: name.trim(),
         phone: phoneNumber,
-        username: formData.username,
-        password: formData.password,
-        isBoundlessStudent: formData.isBoundlessStudent
+        username: username,
+        password: password,
+        isBoundlessStudent: isBoundlessStudent
       });
 
       // Check if user needs approval
@@ -236,6 +251,26 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 'phone': return 'ورود به پیام‌رسان';
+      case 'password': return isLogin ? 'ورود' : 'ایجاد رمز عبور';
+      case 'name': return 'نام شما';
+      case 'username': return 'انتخاب نام کاربری';
+      case 'pending': return 'در انتظار تایید';
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (currentStep) {
+      case 'phone': return 'شماره تلفن خود را وارد کنید';
+      case 'password': return isLogin ? 'رمز عبور خود را وارد کنید' : 'رمز عبور خود را انتخاب کنید';
+      case 'name': return 'نام کامل خود را وارد کنید';
+      case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
+      case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
+    }
+  };
+
   if (currentStep === 'pending') {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
@@ -246,10 +281,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
-            <CardTitle>در انتظار تایید</CardTitle>
-            <CardDescription>
-              حساب شما ثبت شد و در انتظار تایید مدیریت است
-            </CardDescription>
+            <CardTitle>{getStepTitle()}</CardTitle>
+            <CardDescription>{getStepDescription()}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button 
@@ -286,16 +319,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           <div className="flex justify-center mb-4">
             <MessageCircle className="w-12 h-12 text-blue-500" />
           </div>
-          <CardTitle className="text-2xl">
-            {currentStep === 'phone' && 'ورود به پیام‌رسان'}
-            {currentStep === 'login' && 'ورود'}
-            {currentStep === 'signup' && 'ثبت نام'}
-          </CardTitle>
-          <CardDescription>
-            {currentStep === 'phone' && 'شماره تلفن خود را وارد کنید'}
-            {currentStep === 'login' && 'رمز عبور خود را وارد کنید'}
-            {currentStep === 'signup' && 'اطلاعات خود را تکمیل کنید'}
-          </CardDescription>
+          <CardTitle className="text-2xl">{getStepTitle()}</CardTitle>
+          <CardDescription>{getStepDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
           {currentStep === 'phone' && (
@@ -328,14 +353,16 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             </form>
           )}
 
-          {currentStep === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="text-center mb-4">
-                <p className="text-sm text-muted-foreground">
-                  ورود برای: <span className="font-medium">{existingUser?.name}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">{phoneNumber}</p>
-              </div>
+          {currentStep === 'password' && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              {isLogin && existingUser && (
+                <div className="text-center mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    ورود برای: <span className="font-medium">{existingUser.name}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">{phoneNumber}</p>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="password" className="flex items-center gap-2">
@@ -345,9 +372,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 <Input
                   id="password"
                   type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="رمز عبور خود را وارد کنید"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isLogin ? "رمز عبور خود را وارد کنید" : "رمز عبور خود را انتخاب کنید"}
                   required
                 />
               </div>
@@ -357,10 +384,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      در حال ورود...
+                      {isLogin ? 'در حال ورود...' : 'ادامه'}
                     </>
                   ) : (
-                    'ورود'
+                    isLogin ? 'ورود' : 'ادامه'
                   )}
                 </Button>
                 <Button 
@@ -374,12 +401,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             </form>
           )}
 
-          {currentStep === 'signup' && (
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="text-center mb-4">
-                <p className="text-xs text-muted-foreground">{phoneNumber}</p>
-              </div>
-
+          {currentStep === 'name' && (
+            <form onSubmit={handleNameSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -388,24 +411,50 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 <Input
                   id="name"
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="نام کامل خود را وارد کنید"
                   required
                   dir="rtl"
                 />
               </div>
+              
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  id="boundless"
+                  checked={isBoundlessStudent}
+                  onCheckedChange={(checked) => setIsBoundlessStudent(checked as boolean)}
+                />
+                <Label htmlFor="boundless" className="text-sm">
+                  من دانشجوی دوره بدون مرز هستم
+                </Label>
+              </div>
 
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1">ادامه</Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setCurrentStep('password')}
+                >
+                  برگشت
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {currentStep === 'username' && (
+            <form onSubmit={handleUsernameSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username" className="flex items-center gap-2">
                   <AtSign className="w-4 h-4" />
-                  نام کاربری
+                  نام کاربری منحصر به فرد
                 </Label>
                 <div className="relative">
                   <Input
                     id="username"
                     type="text"
-                    value={formData.username}
+                    value={username}
                     onChange={(e) => handleUsernameChange(e.target.value)}
                     placeholder="username"
                     className="pl-8"
@@ -425,34 +474,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 {usernameError && (
                   <p className="text-sm text-red-500">{usernameError}</p>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signup-password" className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  رمز عبور
-                </Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="رمز عبور خود را وارد کنید"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox
-                  id="boundless"
-                  checked={formData.isBoundlessStudent}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ ...prev, isBoundlessStudent: checked as boolean }))
-                  }
-                />
-                <Label htmlFor="boundless" className="text-sm">
-                  من دانشجوی دوره بدون مرز هستم
-                </Label>
+                <p className="text-xs text-muted-foreground">
+                  دیگران می‌توانند با نام کاربری شما پیدا کنند
+                </p>
               </div>
 
               <div className="flex gap-2">
@@ -467,13 +491,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                       در حال ثبت نام...
                     </>
                   ) : (
-                    'ثبت نام'
+                    'تکمیل ثبت نام'
                   )}
                 </Button>
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => setCurrentStep('phone')}
+                  onClick={() => setCurrentStep('name')}
                 >
                   برگشت
                 </Button>

@@ -56,9 +56,20 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       );
       setConversation(conv);
       
-      // Get messages for this conversation
-      const fetchedMessages = await supportService.getConversationMessages(conv.id);
-      setMessages(fetchedMessages);
+      // Get messages for this conversation using messenger_messages table
+      // Since support messages are stored in messenger_messages with conversation_id
+      const { data: fetchedMessages, error } = await supabase
+        .from('messenger_messages')
+        .select('*')
+        .eq('conversation_id', conv.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+
+      setMessages(fetchedMessages || []);
       
     } catch (error) {
       console.error('Error fetching conversation and messages:', error);
@@ -109,12 +120,30 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
     setSending(true);
     try {
-      const sentMessage = await supportService.sendSupportMessage(
-        conversation.id,
-        newMessage,
-        currentUser.id
-      );
-      setMessages((prevMessages) => [...prevMessages, sentMessage]);
+      // Send message to support using messenger_messages table
+      // recipient_id = 1 indicates message to support
+      const { data: sentMessage, error } = await supabase
+        .from('messenger_messages')
+        .insert([{
+          message: newMessage,
+          sender_id: currentUser.id,
+          recipient_id: 1, // Support recipient
+          conversation_id: conversation.id,
+          message_type: 'text',
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+
+      if (sentMessage) {
+        setMessages((prevMessages) => [...prevMessages, sentMessage]);
+      }
+      
       setNewMessage('');
 
       toast({
@@ -212,6 +241,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             placeholder="پیام خود را وارد کنید..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             rows={1}
             className="resize-none flex-1"
           />
