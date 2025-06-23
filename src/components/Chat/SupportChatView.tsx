@@ -2,8 +2,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Send, FileText } from 'lucide-react';
+import { ArrowLeft, Send, Clock, CheckCircle, Archive, AlertCircle, Tag, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
 import { type MessengerUser } from '@/lib/messengerService';
@@ -41,10 +44,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const fetchConversationAndMessages = async () => {
     try {
       setLoading(true);
-      console.log('Fetching conversation for user:', currentUser.id, 'support type:', supportRoom.type);
-      
-      // Set session context for RLS policies
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
       
       // Get thread type ID based on support room type
       const threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
@@ -55,16 +54,22 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         sessionToken, 
         threadTypeId
       );
-      
-      console.log('Got conversation:', conv);
       setConversation(conv);
       
-      if (conv.id > 0) {
-        // Get messages for this conversation
-        const fetchedMessages = await supportService.getConversationMessages(conv.id);
-        console.log('Fetched messages:', fetchedMessages);
-        setMessages(fetchedMessages);
+      // Get messages for this conversation using messenger_messages table
+      // Since support messages are stored in messenger_messages with conversation_id
+      const { data: fetchedMessages, error } = await supabase
+        .from('messenger_messages')
+        .select('*')
+        .eq('conversation_id', conv.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
       }
+
+      setMessages(fetchedMessages || []);
       
     } catch (error) {
       console.error('Error fetching conversation and messages:', error);
@@ -80,33 +85,26 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
   useEffect(() => {
     fetchConversationAndMessages();
-  }, [supportRoom.type, currentUser.id, sessionToken]);
+  }, [supportRoom.type, currentUser.id]);
 
   useEffect(() => {
-    if (!conversation || conversation.id <= 0) return;
+    if (!conversation) return;
 
-    console.log('Setting up realtime subscription for conversation:', conversation.id);
-    
     const channel = supabase
       .channel(`support_conversation_${conversation.id}`)
       .on(
         'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messenger_messages',
-          filter: `conversation_id=eq.${conversation.id}`
-        },
+        { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
         (payload) => {
-          console.log('New message received:', payload.new);
           const newMessage = payload.new as SupportMessage;
-          setMessages((prevMessages) => [...prevMessages, newMessage]);
+          if (newMessage.conversation_id === conversation.id) {
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
+          }
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [conversation?.id]);
@@ -118,23 +116,19 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() || sending || !conversation) return;
 
     setSending(true);
     try {
-      console.log('Sending message:', newMessage, 'from user:', currentUser.id);
-      
-      // Set session context before sending
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
       // Send message to support using messenger_messages table
-      // The trigger will handle conversation creation/assignment
+      // recipient_id = 1 indicates message to support
       const { data: sentMessage, error } = await supabase
         .from('messenger_messages')
         .insert([{
           message: newMessage,
           sender_id: currentUser.id,
           recipient_id: 1, // Support recipient
+          conversation_id: conversation.id,
           message_type: 'text',
           created_at: new Date().toISOString()
         }])
@@ -146,17 +140,10 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         throw error;
       }
 
-      console.log('Message sent successfully:', sentMessage);
+      if (sentMessage) {
+        setMessages((prevMessages) => [...prevMessages, sentMessage]);
+      }
       
-      // Add message to local state immediately for better UX
-      const messageWithSenderName = {
-        ...sentMessage,
-        sender_name: currentUser.name,
-        is_from_support: false,
-        unread_by_support: true
-      };
-      
-      setMessages((prevMessages) => [...prevMessages, messageWithSenderName]);
       setNewMessage('');
 
       toast({
@@ -231,18 +218,13 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                   ? 'bg-blue-500 text-white'
                   : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
                   <p className="text-sm leading-relaxed">{message.message}</p>
-                  <div className={`text-xs mt-2 flex items-center justify-between ${message.sender_id === currentUser.id 
+                  <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
                     ? 'text-blue-100' 
                     : 'text-slate-500 dark:text-slate-400'}`}>
-                    <span>
-                      {message.sender_id === 1 ? 'پشتیبانی' : (message.sender_name || 'شما')}
-                    </span>
-                    <span>
-                      {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
+                    {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </div>
                 </div>
               </div>
@@ -268,7 +250,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             rows={1}
             className="resize-none flex-1"
           />
-          <Button onClick={handleSendMessage} disabled={sending || !newMessage.trim()}>
+          <Button onClick={handleSendMessage} disabled={sending}>
             <Send className="w-4 h-4" />
             ارسال
           </Button>

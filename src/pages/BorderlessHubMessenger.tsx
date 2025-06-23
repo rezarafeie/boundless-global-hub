@@ -1,30 +1,21 @@
-
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import MainLayout from '@/components/Layout/MainLayout';
-import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
-import MessengerChatView from '@/components/Chat/MessengerChatView';
-import SupportChatView from '@/components/Chat/SupportChatView';
-import PrivateChatView from '@/components/Chat/PrivateChatView';
-import StartChatModal from '@/components/Chat/StartChatModal';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { 
-  MessageCircle, 
-  Users, 
-  Search, 
-  Settings, 
-  Plus,
-  Headphones,
-  User,
-  Clock
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser, type ChatRoom as MessengerChatRoom } from '@/lib/messengerService';
+import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
+import MessengerInbox from '@/components/Chat/MessengerInbox';
+import MessengerChatView from '@/components/Chat/MessengerChatView';
+import PrivateChatView from '@/components/Chat/PrivateChatView';
+import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
+import ExactSearchModal from '@/components/Chat/ExactSearchModal';
+import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
+import SupportChatView from '@/components/Chat/SupportChatView';
+import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
-import { supportService } from '@/lib/supportService';
+import { useToast } from '@/hooks/use-toast';
+import { MessageCircle, ArrowRight, Headphones, Plus, Users, User, MessageSquare } from 'lucide-react';
 
 interface SupportRoom {
   id: string;
@@ -35,470 +26,705 @@ interface SupportRoom {
   isPermanent: true;
 }
 
+interface UnifiedChatItem {
+  id: string;
+  type: 'private' | 'room' | 'support';
+  name: string;
+  description?: string;
+  avatar?: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+  isPermanent?: boolean;
+  data: PrivateConversation | ChatRoom | SupportRoom;
+}
+
+type ViewType = 'inbox' | 'room-chat' | 'private-chat' | 'support-chat';
+
 const BorderlessHubMessenger: React.FC = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
-  const [sessionToken, setSessionToken] = useState<string>('');
-  const [selectedChatRoom, setSelectedChatRoom] = useState<MessengerChatRoom | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<PrivateConversation | null>(null);
   const [selectedSupportRoom, setSelectedSupportRoom] = useState<SupportRoom | null>(null);
-  const [selectedPrivateChat, setSelectedPrivateChat] = useState<PrivateConversation | null>(null);
-  const [chatRooms, setChatRooms] = useState<MessengerChatRoom[]>([]);
+  const [currentView, setCurrentView] = useState<ViewType>('inbox');
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showExactSearchModal, setShowExactSearchModal] = useState(false);
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
   const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showChatList, setShowChatList] = useState(true);
-  const [showStartChatModal, setShowStartChatModal] = useState(false);
 
-  // Always available support rooms
-  const supportRooms: SupportRoom[] = [
-    {
-      id: 'academy_support',
-      name: 'پشتیبانی آکادمی',
-      description: 'پشتیبانی عمومی آکادمی',
-      type: 'academy_support',
-      icon: <Headphones className="w-5 h-5" />,
-      isPermanent: true
-    },
-    ...(currentUser?.bedoun_marz ? [{
-      id: 'boundless_support',
-      name: 'پشتیبانی بدون مرز',
-      description: 'پشتیبانی ویژه اعضای بدون مرز',
-      type: 'boundless_support' as const,
-      icon: <Headphones className="w-5 h-5" />,
-      isPermanent: true as const
-    }] : [])
-  ];
-
-  const handleAuthenticated = (token: string, userName: string, user: MessengerUser) => {
-    console.log('User authenticated:', { token: token.substring(0, 10) + '...', userName, userId: user.id });
-    setSessionToken(token);
-    setCurrentUser(user);
-    localStorage.setItem('messenger_session_token', token);
-    localStorage.setItem('messenger_user_name', userName);
-    fetchUserData(user, token);
-  };
-
-  const fetchUserData = async (user: MessengerUser, token: string) => {
-    try {
-      setLoading(true);
-      console.log('Fetching user data for:', user.id);
-
-      // Set session context for Supabase RLS
-      await supabase.rpc('set_session_context', { session_token: token });
-
-      // Fetch chat rooms using the correct method signature
-      const rooms = await messengerService.getRooms(token);
-      console.log('Fetched chat rooms:', rooms);
-      setChatRooms(rooms);
-
-      // Fetch private conversations
-      const conversations = await privateMessageService.getUserConversations(user.id, token);
-      console.log('Fetched private conversations:', conversations);
-      setPrivateConversations(conversations);
-
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری اطلاعات',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkExistingSession = async () => {
-    const storedToken = localStorage.getItem('messenger_session_token');
-    const storedUserName = localStorage.getItem('messenger_user_name');
-    
-    if (storedToken && storedUserName) {
-      try {
-        const result = await messengerService.validateSession(storedToken);
-        if (result) {
-          handleAuthenticated(storedToken, storedUserName, result.user);
-          return;
-        }
-      } catch (error) {
-        console.error('Session validation failed:', error);
+  // Support rooms based on user access - always show these
+  const getSupportRooms = (): SupportRoom[] => {
+    const supportRooms: SupportRoom[] = [
+      {
+        id: 'academy_support',
+        name: '🛎️ پشتیبانی آکادمی رفیعی',
+        description: 'پشتیبانی عمومی برای همه کاربران',
+        type: 'academy_support',
+        icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
+        isPermanent: true
       }
+    ];
+
+    // Add boundless support only for boundless users
+    if (currentUser?.bedoun_marz) {
+      supportRooms.push({
+        id: 'boundless_support',
+        name: '🌐 پشتیبانی بدون مرز',
+        description: 'پشتیبانی ویژه اعضای بدون مرز',
+        type: 'boundless_support',
+        icon: <Headphones className="w-4 h-4 text-purple-500" />,
+        isPermanent: true
+      });
     }
-    setLoading(false);
+
+    return supportRooms;
   };
 
   useEffect(() => {
     checkExistingSession();
   }, []);
 
-  const handleChatRoomSelect = (room: MessengerChatRoom) => {
-    console.log('Selecting chat room:', room.name);
-    setSelectedChatRoom(room);
+  useEffect(() => {
+    if (currentUser && sessionToken) {
+      loadAllChats();
+      
+      if (!currentUser.username) {
+        setShowUsernameSetup(true);
+      }
+    }
+  }, [currentUser, sessionToken]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Get support rooms - always show these at the top
+    const supportRooms = getSupportRooms();
+    
+    // Combine and sort all chats with support rooms always at top
+    const combined: UnifiedChatItem[] = [
+      // Support rooms first (permanent and always at top)
+      ...supportRooms.map(room => ({
+        id: `support-${room.id}`,
+        type: 'support' as const,
+        name: room.name,
+        description: room.description,
+        lastMessage: '',
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
+        isPermanent: true,
+        data: room
+      })),
+      // Private conversations
+      ...privateConversations.map(conv => ({
+        id: `private-${conv.id}`,
+        type: 'private' as const,
+        name: conv.other_user?.name || 'کاربر',
+        lastMessage: conv.last_message,
+        lastMessageTime: conv.last_message_at,
+        unreadCount: conv.unread_count,
+        data: conv
+      })),
+      // Regular rooms
+      ...rooms.map(room => ({
+        id: `room-${room.id}`,
+        type: 'room' as const,
+        name: room.name,
+        description: room.description,
+        lastMessage: room.last_message,
+        lastMessageTime: room.last_message_time,
+        unreadCount: room.unread_count,
+        data: room
+      }))
+    ];
+
+    // Sort: support rooms first (permanent), then by unread, then by last message time
+    combined.sort((a, b) => {
+      // Support rooms always first
+      if (a.isPermanent && !b.isPermanent) return -1;
+      if (!a.isPermanent && b.isPermanent) return 1;
+      
+      // If both are permanent (support rooms), maintain original order
+      if (a.isPermanent && b.isPermanent) return 0;
+      
+      // For non-permanent items, sort by unread first
+      if (a.unreadCount && !b.unreadCount) return -1;
+      if (!a.unreadCount && b.unreadCount) return 1;
+      
+      // Then by last message time
+      const timeA = new Date(a.lastMessageTime || 0).getTime();
+      const timeB = new Date(b.lastMessageTime || 0).getTime();
+      
+      return timeB - timeA;
+    });
+
+    setUnifiedChats(combined);
+  }, [privateConversations, rooms, currentUser]);
+
+  const checkExistingSession = async () => {
+    const token = localStorage.getItem('messenger_session_token');
+    if (token) {
+      try {
+        const result = await messengerService.validateSession(token);
+        if (result) {
+          setCurrentUser(result.user);
+          setSessionToken(token);
+          
+          if (!result.user.is_approved) {
+            navigate('/hub/messenger/pending', { replace: true });
+            return;
+          }
+        } else {
+          localStorage.removeItem('messenger_session_token');
+        }
+      } catch (error) {
+        localStorage.removeItem('messenger_session_token');
+        console.error('Session validation error:', error);
+      }
+    }
+    setLoading(false);
+  };
+
+  const loadAllChats = async () => {
+    if (!currentUser || !sessionToken) return;
+    
+    try {
+      const [conversations, chatRooms] = await Promise.all([
+        privateMessageService.getUserConversations(currentUser.id, sessionToken),
+        messengerService.getRooms(sessionToken)
+      ]);
+      
+      setPrivateConversations(conversations);
+      setRooms(chatRooms);
+    } catch (error) {
+      console.error('Error loading chats:', error);
+    }
+  };
+
+  const handleAuthenticated = (token: string, userName: string, user: MessengerUser) => {
+    setSessionToken(token);
+    setCurrentUser(user);
+    localStorage.setItem('messenger_session_token', token);
+    
+    if (!user.is_approved) {
+      navigate('/hub/messenger/pending', { replace: true });
+      return;
+    }
+    
+    toast({
+      title: 'خوش آمدید!',
+      description: `${userName} عزیز، به پیام‌رسان بدون مرز خوش آمدید.`,
+    });
+  };
+
+  const handleChatSelect = (chat: UnifiedChatItem) => {
+    if (chat.type === 'private') {
+      setSelectedConversation(chat.data as PrivateConversation);
+      setSelectedRoom(null);
+      setSelectedSupportRoom(null);
+      setCurrentView('private-chat');
+    } else if (chat.type === 'support') {
+      setSelectedSupportRoom(chat.data as SupportRoom);
+      setSelectedRoom(null);
+      setSelectedConversation(null);
+      setCurrentView('support-chat');
+    } else {
+      setSelectedRoom(chat.data as ChatRoom);
+      setSelectedConversation(null);
+      setSelectedSupportRoom(null);
+      setCurrentView('room-chat');
+    }
+    setShowMobileChat(true);
+  };
+
+  const handleStartChatWithUser = async (user: MessengerUser) => {
+    if (!currentUser || !sessionToken) return;
+    
+    try {
+      const conversationId = await privateMessageService.getOrCreateConversation(
+        currentUser.id,
+        user.id,
+        sessionToken
+      );
+      
+      const conversation: PrivateConversation = {
+        id: conversationId,
+        user1_id: Math.min(currentUser.id, user.id),
+        user2_id: Math.max(currentUser.id, user.id),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString(),
+        other_user: user
+      };
+      
+      setSelectedConversation(conversation);
+      setSelectedRoom(null);
+      setSelectedSupportRoom(null);
+      setCurrentView('private-chat');
+      setShowMobileChat(true);
+      await loadAllChats();
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast({
+        title: 'خطا',
+        description: 'امکان شروع گفتگو وجود ندارد',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleBackToInbox = () => {
+    setShowMobileChat(false);
+    setSelectedRoom(null);
+    setSelectedConversation(null);
     setSelectedSupportRoom(null);
-    setSelectedPrivateChat(null);
-    setShowChatList(false);
+    setCurrentView('inbox');
   };
 
-  const handleSupportRoomSelect = (room: SupportRoom) => {
-    console.log('Selecting support room:', room.name);
-    setSelectedSupportRoom(room);
-    setSelectedChatRoom(null);
-    setSelectedPrivateChat(null);
-    setShowChatList(false);
+  const handleBackToHub = () => {
+    navigate('/hub');
   };
 
-  const handlePrivateChatSelect = (conversation: PrivateConversation) => {
-    console.log('Selecting private chat:', conversation.id);
-    setSelectedPrivateChat(conversation);
-    setSelectedChatRoom(null);
+  const handleLogout = () => {
+    if (sessionToken) {
+      messengerService.deactivateSession(sessionToken);
+    }
+    localStorage.removeItem('messenger_session_token');
+    setCurrentUser(null);
+    setSessionToken(null);
+    setSelectedRoom(null);
+    setSelectedConversation(null);
     setSelectedSupportRoom(null);
-    setShowChatList(false);
+    setShowMobileChat(false);
+    toast({
+      title: 'خروج موفق',
+      description: 'از پیام‌رسان خارج شدید.',
+    });
   };
 
-  const handleBackToList = () => {
-    setShowChatList(true);
-    setSelectedChatRoom(null);
-    setSelectedSupportRoom(null);
-    setSelectedPrivateChat(null);
+  const handleUsernameSet = async (username: string) => {
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, username });
+      toast({
+        title: 'موفق',
+        description: 'نام کاربری شما تنظیم شد',
+      });
+    }
   };
 
-  const handleNewPrivateConversation = (conversation: PrivateConversation) => {
-    setPrivateConversations(prev => [conversation, ...prev]);
-    handlePrivateChatSelect(conversation);
-    setShowStartChatModal(false);
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   };
 
-  const filteredRooms = chatRooms.filter(room =>
-    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (room.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredConversations = privateConversations.filter(conv =>
-    conv.other_user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.other_user_username?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredSupportRooms = supportRooms.filter(room =>
-    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    room.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getChatIcon = (chat: UnifiedChatItem) => {
+    if (chat.type === 'private') {
+      return <User className="w-4 h-4 text-blue-500" />;
+    } else if (chat.type === 'support') {
+      const supportRoom = chat.data as SupportRoom;
+      return supportRoom.icon;
+    } else {
+      const room = chat.data as ChatRoom;
+      if (room.type === 'academy_support') {
+        return <span className="text-lg">🎓</span>;
+      } else if (room.type === 'boundless_support') {
+        return <Headphones className="w-4 h-4 text-blue-500" />;
+      } else {
+        return <Users className="w-4 h-4 text-green-500" />;
+      }
+    }
+  };
 
   if (loading) {
     return (
-      <MainLayout>
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-          <div className="text-center">
-            <MessageCircle className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
-            <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پیام‌رسان...</p>
-          </div>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری...</p>
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
   if (!currentUser) {
+    return <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />;
+  }
+
+  if (!currentUser.is_approved) {
     return (
-      <MainLayout>
-        <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />
-      </MainLayout>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-6 text-center">
+          <MessageCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+            در انتظار تایید
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">
+            حساب شما هنوز توسط مدیریت تایید نشده است. لطفاً منتظر باشید.
+          </p>
+          <button
+            onClick={handleLogout}
+            className="text-blue-500 hover:text-blue-600 text-sm"
+          >
+            خروج از حساب
+          </button>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Mobile Header */}
-        <div className="md:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center justify-between">
-            {!showChatList ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={handleBackToList}>
-                  <MessageCircle className="w-5 h-5" />
-                </Button>
-                <div className="flex-1 text-center">
-                  <h3 className="font-semibold text-slate-900 dark:text-white">
-                    {selectedChatRoom?.name || selectedSupportRoom?.name || selectedPrivateChat?.other_user_name || 'گفتگو'}
-                  </h3>
-                </div>
-                <div></div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="w-6 h-6 text-blue-600" />
-                  <h1 className="text-lg font-bold text-slate-800 dark:text-white">
-                    پیام‌رسان
-                  </h1>
-                </div>
-                <Button 
-                  onClick={() => setShowStartChatModal(true)}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Mobile Header */}
+      {showMobileChat ? (
+        <div className="md:hidden">
+          <MobileMessengerHeader
+            onBack={handleBackToInbox}
+            onLogout={handleLogout}
+          />
+        </div>
+      ) : (
+        <div className="md:hidden">
+          <MobileMessengerHeader
+            onBack={handleBackToHub}
+            onLogout={handleLogout}
+          />
+        </div>
+      )}
+
+      {/* Desktop Header */}
+      <div className="hidden md:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBackToHub}
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            >
+              <ArrowRight className="w-5 h-5" />
+              <span>برگشت به هاب</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <MessageCircle className="w-6 h-6 text-blue-500" />
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              پیام‌رسان بدون مرز
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            {currentUser?.is_support_agent && (
+              <button
+                onClick={() => navigate('/hub/support')}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2"
+              >
+                <Headphones className="w-4 h-4" />
+                🎧 پنل پشتیبانی
+              </button>
             )}
+            <div className="flex items-center gap-2">
+              <Avatar className="w-6 h-6">
+                <AvatarFallback 
+                  style={{ backgroundColor: getAvatarColor(currentUser.name) }}
+                  className="text-white font-medium text-xs"
+                >
+                  {currentUser.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                {currentUser.name}
+                {currentUser.username && (
+                  <span className="text-xs text-blue-600 block">@{currentUser.username}</span>
+                )}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-red-500 hover:text-red-600"
+            >
+              خروج
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Desktop Header */}
-        <div className="hidden md:block bg-white dark:bg-slate-800 shadow-sm border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MessageCircle className="w-8 h-8 text-blue-600" />
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                    پیام‌رسان بدون مرز
-                  </h1>
-                  <p className="text-slate-600 dark:text-slate-300 text-sm">
-                    خوش آمدید، {currentUser.name}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <Button 
-                  onClick={() => setShowStartChatModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  گفتگوی جدید
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex gap-4 text-sm">
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                اتاق‌ها: {filteredRooms.length}
-              </span>
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
-                گفتگوهای خصوصی: {filteredConversations.length}
-              </span>
-              <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full">
-                پشتیبانی: {filteredSupportRooms.length}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Chat List */}
-          <div className={`
-            ${showChatList ? 'flex' : 'hidden'} 
-            md:flex flex-col w-full md:w-1/3 lg:w-1/4 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
-          `}>
-            {/* Search */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="جستجو در گفتگوها..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto h-[calc(100vh-80px)] flex">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex w-full">
+          {/* Left Panel - Unified Chat List */}
+          <div className="w-1/3 border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b">
+              <h2 className="font-semibold">همه گفتگوها</h2>
             </div>
 
-            {/* Chat Items */}
-            <div className="flex-1 overflow-y-auto">
-              {/* Support Rooms - Always at top */}
-              {filteredSupportRooms.map((room) => (
-                <div
-                  key={room.id}
-                  onClick={() => handleSupportRoomSelect(room)}
-                  className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                    selectedSupportRoom?.id === room.id 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                      {room.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                          {room.name}
-                        </h3>
-                        <Badge variant="secondary" className="text-xs">
-                          پشتیبانی
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
-                        {room.description}
-                      </p>
-                    </div>
+            {/* Unified Chat List */}
+            <div className="flex-1 overflow-hidden">
+              {unifiedChats.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">هنوز گفتگویی ندارید</p>
+                    <p className="text-xs text-slate-400 mt-1">از دکمه + برای شروع گفتگو استفاده کنید</p>
                   </div>
                 </div>
-              ))}
-
-              {/* Private Conversations */}
-              {filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  onClick={() => handlePrivateChatSelect(conversation)}
-                  className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                    selectedPrivateChat?.id === conversation.id 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                          {conversation.other_user_name}
-                        </h3>
-                        {conversation.unread_count && conversation.unread_count > 0 && (
-                          <Badge variant="destructive" className="text-xs">
-                            {conversation.unread_count}
-                          </Badge>
-                        )}
+              ) : (
+                <div className="space-y-1 p-2">
+                  {unifiedChats.map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => handleChatSelect(chat)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                        (selectedConversation && chat.id === `private-${selectedConversation.id}`) ||
+                        (selectedRoom && chat.id === `room-${selectedRoom.id}`) ||
+                        (selectedSupportRoom && chat.id === `support-${selectedSupportRoom.id}`)
+                          ? 'bg-blue-50 dark:bg-blue-900/20' 
+                          : ''
+                      }`}
+                    >
+                      <div className="relative">
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback 
+                            style={{ backgroundColor: getAvatarColor(chat.name) }}
+                            className="text-white font-medium"
+                          >
+                            {chat.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                          {getChatIcon(chat)}
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                          @{conversation.other_user_username}
-                        </p>
-                        {conversation.last_message_at && (
-                          <span className="text-xs text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Chat Rooms */}
-              {filteredRooms.map((room) => (
-                <div
-                  key={room.id}
-                  onClick={() => handleChatRoomSelect(room)}
-                  className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                    selectedChatRoom?.id === room.id 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <Users className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                          {room.name}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          {room.is_boundless_only && (
-                            <Badge variant="outline" className="text-xs">
-                              بدون مرز
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-sm truncate">
+                            {chat.name}
+                          </div>
+                          {chat.unreadCount! > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {chat.unreadCount}
                             </Badge>
                           )}
                         </div>
+                        {chat.description && (
+                          <div className="text-xs text-slate-500 truncate">
+                            {chat.description}
+                          </div>
+                        )}
+                        {chat.lastMessage && (
+                          <div className="text-xs text-slate-500 truncate">
+                            {chat.lastMessage}
+                          </div>
+                        )}
+                        {chat.lastMessageTime && !chat.isPermanent && (
+                          <div className="text-xs text-slate-400">
+                            {new Date(chat.lastMessageTime).toLocaleTimeString('fa-IR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
-                        {room.description || ''}
-                      </p>
                     </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* No Results */}
-              {searchTerm && filteredRooms.length === 0 && filteredConversations.length === 0 && filteredSupportRooms.length === 0 && (
-                <div className="p-8 text-center">
-                  <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500 mb-2">نتیجه‌ای یافت نشد</p>
-                  <p className="text-sm text-slate-400">
-                    برای "{searchTerm}" چیزی پیدا نکردیم
-                  </p>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!searchTerm && chatRooms.length === 0 && privateConversations.length === 0 && (
-                <div className="p-8 text-center">
-                  <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500 mb-2">هنوز گفتگویی ندارید</p>
-                  <p className="text-sm text-slate-400">
-                    با دکمه "گفتگوی جدید" شروع کنید
-                  </p>
+                  ))}
                 </div>
               )}
             </div>
           </div>
-
-          {/* Chat Area */}
-          <div className={`
-            ${!showChatList ? 'flex' : 'hidden'} 
-            md:flex flex-col flex-1 bg-white dark:bg-slate-800
-          `}>
-            {selectedChatRoom ? (
+          
+          {/* Right Panel - Chat View */}
+          <div className="flex-1 bg-slate-50 dark:bg-slate-900">
+            {currentView === 'room-chat' && selectedRoom ? (
               <MessengerChatView
-                room={selectedChatRoom}
+                room={selectedRoom}
                 currentUser={currentUser}
-                sessionToken={sessionToken}
-                onBack={handleBackToList}
+                sessionToken={sessionToken!}
+                onBack={handleBackToInbox}
               />
-            ) : selectedSupportRoom ? (
+            ) : currentView === 'private-chat' && selectedConversation ? (
+              <PrivateChatView
+                conversation={selectedConversation}
+                currentUser={currentUser}
+                sessionToken={sessionToken!}
+                onBack={handleBackToInbox}
+              />
+            ) : currentView === 'support-chat' && selectedSupportRoom ? (
               <SupportChatView
                 supportRoom={selectedSupportRoom}
                 currentUser={currentUser}
-                sessionToken={sessionToken}
-                onBack={handleBackToList}
-              />
-            ) : selectedPrivateChat ? (
-              <PrivateChatView
-                conversation={selectedPrivateChat}
-                currentUser={currentUser}
-                sessionToken={sessionToken}
-                onBack={handleBackToList}
+                sessionToken={sessionToken!}
+                onBack={handleBackToInbox}
               />
             ) : (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="h-full flex items-center justify-center">
                 <div className="text-center">
                   <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                   <p className="text-slate-500 dark:text-slate-400">
                     یک گفتگو را انتخاب کنید
                   </p>
-                  <p className="text-xs text-slate-400 mt-2">
-                    یا گفتگوی جدیدی شروع کنید
-                  </p>
+                  {currentUser?.is_support_agent && (
+                    <button
+                      onClick={() => navigate('/hub/support')}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 mx-auto mt-4"
+                    >
+                      <Headphones className="w-4 h-4" />
+                      🎧 ورود به پنل پشتیبانی
+                    </button>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Start Chat Modal */}
-        {showStartChatModal && (
-          <StartChatModal
-            isOpen={showStartChatModal}
-            currentUser={currentUser}
-            sessionToken={sessionToken}
-            onClose={() => setShowStartChatModal(false)}
-            onUserSelect={(user) => {
-              // Handle user selection for starting new chat
-              console.log('User selected for new chat:', user);
-              setShowStartChatModal(false);
-            }}
-          />
-        )}
+        {/* Mobile Layout */}
+        <div className="md:hidden w-full">
+          {!showMobileChat ? (
+            <div className="bg-white dark:bg-slate-800 h-full flex flex-col">
+              {/* Mobile Header */}
+              <div className="p-4 border-b">
+                <h2 className="font-semibold">همه گفتگوها</h2>
+              </div>
+
+              {/* Mobile Unified Chat List */}
+              <div className="flex-1 overflow-hidden">
+                {unifiedChats.length === 0 ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">هنوز گفتگویی ندارید</p>
+                      <p className="text-xs text-slate-400 mt-1">از دکمه + برای شروع گفتگو استفاده کنید</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1 p-2">
+                    {unifiedChats.map((chat) => (
+                      <div
+                        key={chat.id}
+                        onClick={() => handleChatSelect(chat)}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
+                      >
+                        <div className="relative">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback 
+                              style={{ backgroundColor: getAvatarColor(chat.name) }}
+                              className="text-white font-medium"
+                            >
+                              {chat.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                            {getChatIcon(chat)}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm truncate">
+                              {chat.name}
+                            </div>
+                            {chat.unreadCount! > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                {chat.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
+                          {chat.description && (
+                            <div className="text-xs text-slate-500 truncate">
+                              {chat.description}
+                            </div>
+                          )}
+                          {chat.lastMessage && !chat.isPermanent && (
+                            <div className="text-xs text-slate-500 truncate">
+                              {chat.lastMessage}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Support Panel Button for mobile */}
+              {currentUser?.is_support_agent && (
+                <div className="p-4 border-t">
+                  <button
+                    onClick={() => navigate('/hub/support')}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm flex items-center justify-center gap-2"
+                  >
+                    <Headphones className="w-4 h-4" />
+                    🎧 ورود به پنل پشتیبانی
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {currentView === 'room-chat' && selectedRoom && (
+                <MessengerChatView
+                  room={selectedRoom}
+                  currentUser={currentUser}
+                  sessionToken={sessionToken!}
+                  onBack={handleBackToInbox}
+                />
+              )}
+              {currentView === 'private-chat' && selectedConversation && (
+                <PrivateChatView
+                  conversation={selectedConversation}
+                  currentUser={currentUser}
+                  sessionToken={sessionToken!}
+                  onBack={handleBackToInbox}
+                />
+              )}
+              {currentView === 'support-chat' && selectedSupportRoom && (
+                <SupportChatView
+                  supportRoom={selectedSupportRoom}
+                  currentUser={currentUser}
+                  sessionToken={sessionToken!}
+                  onBack={handleBackToInbox}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </MainLayout>
+
+      {/* Fixed Floating Action Button - Only show on main chat list */}
+      {!showMobileChat && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={() => setShowExactSearchModal(true)}
+            size="lg"
+            className="rounded-full w-12 h-12 bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 p-0"
+            title="شروع گفتگوی جدید"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Modals */}
+      <ExactSearchModal
+        isOpen={showExactSearchModal}
+        onClose={() => setShowExactSearchModal(false)}
+        onUserSelect={handleStartChatWithUser}
+        sessionToken={sessionToken!}
+        currentUser={currentUser}
+      />
+
+      <UsernameSetupModal
+        isOpen={showUsernameSetup}
+        onClose={() => setShowUsernameSetup(false)}
+        onUsernameSet={handleUsernameSet}
+        sessionToken={sessionToken!}
+        userId={currentUser.id}
+        currentUsername={currentUser.username}
+      />
+    </div>
   );
 };
 
