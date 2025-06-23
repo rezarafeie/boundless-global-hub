@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -105,9 +104,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Check if user exists
-      const users = await messengerService.getUserByPhone(phoneNumber);
-      if (users && users.length > 0) {
-        setExistingUser(users[0]);
+      const user = await messengerService.getUserByPhone(phoneNumber);
+      if (user) {
+        setExistingUser(user);
         setCurrentStep('login');
       } else {
         setCurrentStep('signup');
@@ -139,13 +138,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Authenticate user
-      const session = await messengerService.authenticateUser(phoneNumber, formData.password);
-      if (session && existingUser) {
+      const result = await messengerService.authenticateUser(phoneNumber, formData.password);
+      if (result && existingUser) {
         if (!existingUser.is_approved) {
           setCurrentStep('pending');
           return;
         }
-        onAuthenticated(session.session_token, existingUser.name, existingUser);
+        onAuthenticated(result.token, existingUser.name, existingUser);
       } else {
         toast({
           title: 'خطا',
@@ -189,16 +188,22 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Register user with password
-      const user = await messengerService.registerWithPassword(
-        formData.name.trim(),
-        phoneNumber,
-        formData.username,
-        formData.password,
-        formData.isBoundlessStudent
-      );
+      const result = await messengerService.registerWithPassword({
+        name: formData.name.trim(),
+        phone: phoneNumber,
+        username: formData.username,
+        password: formData.password,
+        isBoundlessStudent: formData.isBoundlessStudent
+      });
 
-      // User is pending approval
-      setCurrentStep('pending');
+      // Check if user needs approval
+      if (!result.user.is_approved) {
+        setCurrentStep('pending');
+        return;
+      }
+
+      // User is auto-approved, proceed to login
+      onAuthenticated(result.token, result.user.name, result.user);
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
@@ -214,10 +219,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const checkApprovalStatus = async () => {
     setLoading(true);
     try {
-      const users = await messengerService.getUserByPhone(phoneNumber);
-      if (users && users.length > 0 && users[0].is_approved) {
-        const session = await messengerService.createSession(users[0].id);
-        onAuthenticated(session.session_token, users[0].name, users[0]);
+      const user = await messengerService.getUserByPhone(phoneNumber);
+      if (user && user.is_approved) {
+        const session = await messengerService.createSession(user.id);
+        onAuthenticated(session.session_token, user.name, user);
       } else {
         toast({
           title: 'هنوز تایید نشده',
