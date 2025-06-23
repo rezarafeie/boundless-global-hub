@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Simple, clean type definitions to avoid circular references
 export interface MessengerUser {
   id: number;
   name: string;
@@ -152,7 +153,7 @@ class MessengerService {
         throw new Error(`Failed to register user: ${error.message}`);
       }
 
-      return data;
+      return data as MessengerUser;
     } catch (error: any) {
       console.error('Error in register:', error);
       throw error;
@@ -193,7 +194,7 @@ class MessengerService {
         throw error;
       }
 
-      return data;
+      return data as MessengerUser;
     } catch (error) {
       console.error('Error in registerWithPassword:', error);
       throw error;
@@ -241,7 +242,7 @@ class MessengerService {
         throw new Error(`Failed to create session: ${error.message}`);
       }
 
-      return data;
+      return data as UserSession;
     } catch (error: any) {
       console.error('Error in createSession:', error);
       throw error;
@@ -271,7 +272,10 @@ class MessengerService {
         return null;
       }
 
-      return { user: userData, session: sessionData };
+      return { 
+        user: userData as MessengerUser, 
+        session: sessionData as UserSession 
+      };
     } catch (error: any) {
       console.error('Error in validateSession:', error);
       return null;
@@ -314,7 +318,7 @@ class MessengerService {
       const rooms = (data || []).map(room => ({
         ...room,
         description: room.description || ''
-      }));
+      })) as ChatRoom[];
 
       return rooms;
     } catch (error: any) {
@@ -338,7 +342,7 @@ class MessengerService {
         return null;
       }
 
-      return data ? { ...data, description: data.description || '' } : null;
+      return data ? { ...data, description: data.description || '' } as ChatRoom : null;
     } catch (error: any) {
       console.error('Error in getRoom:', error);
       return null;
@@ -364,7 +368,7 @@ class MessengerService {
         throw new Error(`Failed to create room: ${error.message}`);
       }
 
-      return { ...data, description: data.description || '' };
+      return { ...data, description: data.description || '' } as ChatRoom;
     } catch (error: any) {
       console.error('Error in createRoom:', error);
       throw error;
@@ -387,7 +391,7 @@ class MessengerService {
         throw new Error(`Failed to update room: ${error.message}`);
       }
 
-      return { ...data, description: data.description || '' };
+      return { ...data, description: data.description || '' } as ChatRoom;
     } catch (error: any) {
       console.error('Error in updateRoom:', error);
       throw error;
@@ -505,7 +509,7 @@ class MessengerService {
         forwarded_from_message_id: msg.forwarded_from_message_id,
         conversation_id: msg.conversation_id,
         unread_by_support: msg.unread_by_support || false
-      }));
+      })) as MessengerMessage[];
 
       return messages;
     } catch (error) {
@@ -617,7 +621,7 @@ class MessengerService {
         forwarded_from_message_id: data.forwarded_from_message_id,
         conversation_id: data.conversation_id,
         unread_by_support: data.unread_by_support || false
-      };
+      } as MessengerMessage;
     } catch (error) {
       console.error('Error in sendMessage:', error);
       throw error;
@@ -640,7 +644,7 @@ class MessengerService {
         throw new Error(`Failed to update message: ${error.message}`);
       }
 
-      return data;
+      return data as MessengerMessage;
     } catch (error: any) {
       console.error('Error in updateMessage:', error);
       throw error;
@@ -660,7 +664,7 @@ class MessengerService {
         throw new Error(`Failed to fetch users: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as MessengerUser[];
     } catch (error: any) {
       console.error('Error in getApprovedUsers:', error);
       throw error;
@@ -675,7 +679,7 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as MessengerUser[];
     } catch (error) {
       console.error('Error fetching all users:', error);
       throw error;
@@ -695,7 +699,7 @@ class MessengerService {
         return null;
       }
 
-      return data || null;
+      return (data || null) as MessengerUser | null;
     } catch (error: any) {
       console.error('Error in getUser:', error);
       return null;
@@ -714,7 +718,7 @@ class MessengerService {
         throw error;
       }
 
-      return data || [];
+      return (data || []) as MessengerUser[];
     } catch (error) {
       console.error('Error in getUserByPhone:', error);
       throw error;
@@ -735,7 +739,7 @@ class MessengerService {
         throw new Error(`Failed to update user: ${error.message}`);
       }
 
-      return data;
+      return data as MessengerUser;
     } catch (error: any) {
       console.error('Error in updateUser:', error);
       throw error;
@@ -764,7 +768,7 @@ class MessengerService {
         throw new Error(`Failed to fetch thread types: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as SupportThreadType[];
     } catch (error: any) {
       console.error('Error in getThreadTypes:', error);
       throw error;
@@ -783,7 +787,7 @@ class MessengerService {
         throw new Error(`Failed to fetch agent assignments: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as SupportAgentAssignment[];
     } catch (error: any) {
       console.error('Error in getSupportAgentAssignments:', error);
       throw error;
@@ -807,7 +811,7 @@ class MessengerService {
         throw new Error(`Failed to assign support agent: ${error.message}`);
       }
 
-      return data;
+      return data as SupportAgentAssignment;
     } catch (error: any) {
       console.error('Error in assignSupportAgent:', error);
       throw error;
@@ -847,7 +851,7 @@ class MessengerService {
         throw new Error(`Failed to fetch room memberships: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as RoomMembership[];
     } catch (error: any) {
       console.error('Error in getRoomMemberships:', error);
       throw error;
@@ -886,7 +890,7 @@ class MessengerService {
         }
 
         console.log('Reaction removed successfully');
-        return existingReaction;
+        return existingReaction as MessageReaction;
       } else {
         const { data, error } = await supabase
           .from('message_reactions')
@@ -904,7 +908,7 @@ class MessengerService {
         }
 
         console.log('Reaction added successfully:', data);
-        return data;
+        return data as MessageReaction;
       }
     } catch (error: any) {
       console.error('Error in addMessageReaction:', error);
@@ -930,7 +934,7 @@ class MessengerService {
         throw new Error(`Failed to fetch reactions: ${error.message}`);
       }
 
-      return data || [];
+      return (data || []) as MessageReaction[];
     } catch (error: any) {
       console.error('Error in getMessageReactions:', error);
       throw error;
@@ -961,11 +965,11 @@ class MessengerService {
       });
 
       if (error) {
-        console.error('Error getting user from session:', error);
+        console.error('Error getting user from session:',error);
         return null;
       }
 
-      return data;
+      return data as number;
     } catch (error: any) {
       console.error('Error in getUserIdFromSession:', error);
       return null;
