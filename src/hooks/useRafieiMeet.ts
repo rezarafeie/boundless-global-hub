@@ -79,14 +79,19 @@ export const useRafieiMeet = () => {
       setUpdating(true);
       console.log('Updating settings with:', updates);
       
+      const updatedData = {
+        id: 1,
+        title: settings.title,
+        description: settings.description,
+        meet_url: settings.meet_url,
+        is_active: settings.is_active,
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('rafiei_meet_settings')
-        .upsert({
-          id: 1,
-          ...settings,
-          ...updates,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
+        .upsert(updatedData, { onConflict: 'id' })
         .select()
         .single();
 
@@ -125,6 +130,9 @@ export const useRafieiMeet = () => {
       const newActiveState = !settings.is_active;
       console.log('Toggling active state to:', newActiveState);
       
+      // Optimistically update the UI
+      setSettings(prev => prev ? { ...prev, is_active: newActiveState } : null);
+      
       const updatedSettings = await updateSettings({ is_active: newActiveState });
       
       toast({
@@ -135,6 +143,12 @@ export const useRafieiMeet = () => {
       return updatedSettings;
     } catch (error) {
       console.error('Error toggling Rafiei Meet:', error);
+      // Revert optimistic update on error
+      if (settings) {
+        setSettings(prev => prev ? { ...prev, is_active: !settings.is_active } : null);
+      }
+    } finally {
+      setUpdating(false);
     }
   };
 

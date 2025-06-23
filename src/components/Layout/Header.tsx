@@ -2,13 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, MessageCircle, Wifi } from 'lucide-react';
+import { Menu, X, MessageCircle, Wifi, LayoutDashboard } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { toggleLanguage, language } = useLanguage();
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -31,7 +33,7 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-2 rtl:space-x-reverse">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center">
               <img 
-                src={theme === 'dark' ? '/smallw.png' : '/small.png'} 
+                src={theme === 'dark' ? '/lovable-uploads/d75e09d0-ed93-423b-a3ea-99dc74efc0e0.png' : '/lovable-uploads/590100d7-41ca-49fb-a3b6-dfecad4325bb.png'} 
                 alt="آکادمی رفیعی" 
                 className="w-8 h-8 object-contain"
               />
@@ -60,16 +62,43 @@ const Header = () => {
             })}
           </nav>
 
-          {/* Theme Toggle & Mobile Menu Button */}
+          {/* Header Actions */}
           <div className="flex items-center gap-2">
+            {/* Language Switcher */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="hidden md:flex items-center gap-1"
+              title={language === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
+            >
+              🌍
+              <span className="text-xs">{language === 'fa' ? 'EN' : 'فا'}</span>
+            </Button>
+
+            {/* Theme Toggle */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="hidden md:flex"
+              title={theme === 'dark' ? 'حالت روز' : 'حالت شب'}
             >
               {theme === 'dark' ? '🌞' : '🌙'}
             </Button>
+
+            {/* Dashboard Link */}
+            <Link to="/dashboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden md:flex items-center gap-2"
+                title="داشبورد"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden lg:inline">داشبورد</span>
+              </Button>
+            </Link>
             
             <Button
               variant="ghost"
@@ -103,7 +132,17 @@ const Header = () => {
                   </Link>
                 );
               })}
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+              
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleLanguage}
+                  className="w-full justify-start px-4"
+                >
+                  🌍 {language === 'fa' ? 'English' : 'فارسی'}
+                </Button>
+                
                 <Button
                   variant="ghost"
                   size="sm"
@@ -112,6 +151,17 @@ const Header = () => {
                 >
                   {theme === 'dark' ? '🌞 حالت روز' : '🌙 حالت شب'}
                 </Button>
+
+                <Link to="/dashboard">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start px-4"
+                  >
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    داشبورد
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>

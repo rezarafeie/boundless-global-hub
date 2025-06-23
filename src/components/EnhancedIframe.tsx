@@ -36,9 +36,11 @@ const EnhancedIframe: React.FC<EnhancedIframeProps> = ({
 
   // Initial loading effect
   useEffect(() => {
-    setIsLoading(true);
-    setHasError(false);
-  }, []);
+    if (src) {
+      setIsLoading(true);
+      setHasError(false);
+    }
+  }, [src]);
 
   const handleIframeLoad = () => {
     console.log(`EnhancedIframe: Iframe loaded for ${src}`);
@@ -48,14 +50,34 @@ const EnhancedIframe: React.FC<EnhancedIframeProps> = ({
       if (onLoad) {
         onLoad();
       }
-    }, 800);
+    }, 1000);
   };
 
   const handleIframeError = () => {
     console.error(`EnhancedIframe: Failed to load ${src}`);
-    setIsLoading(false);
-    setHasError(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setHasError(true);
+    }, 2000);
   };
+
+  if (!src) {
+    return (
+      <div className="flex items-center justify-center h-full bg-slate-100 dark:bg-slate-800 rounded-lg">
+        <div className="text-center p-8">
+          <div className="text-slate-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">لینک موجود نیست</h3>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">
+            در حال حاضر محتوایی برای نمایش وجود ندارد
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (hasError) {
     return (
@@ -91,7 +113,9 @@ const EnhancedIframe: React.FC<EnhancedIframeProps> = ({
     <div className="relative w-full h-full">
       {/* Purple Loading Animation */}
       {isLoading && (
-        <PurpleLoader className="absolute inset-0 z-50" />
+        <div className="absolute inset-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+          <PurpleLoader className="absolute inset-0" />
+        </div>
       )}
 
       {/* Enhanced Iframe with Smooth Transition */}
@@ -106,7 +130,8 @@ const EnhancedIframe: React.FC<EnhancedIframeProps> = ({
         onLoad={handleIframeLoad}
         onError={handleIframeError}
         allow={allow}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-modals"
+        loading="eager"
       />
     </div>
   );
