@@ -549,10 +549,10 @@ const BorderlessHubMessenger: React.FC = () => {
           <div className="flex-1 bg-slate-50 dark:bg-slate-900">
             {currentView === 'room-chat' && selectedRoom ? (
               <MessengerChatView
-                room={selectedRoom}
+                selectedRoom={selectedRoom}
+                selectedUser={null}
                 currentUser={currentUser}
                 sessionToken={sessionToken!}
-                onBack={handleBackToInbox}
               />
             ) : currentView === 'private-chat' && selectedConversation ? (
               <PrivateChatView
@@ -675,10 +675,10 @@ const BorderlessHubMessenger: React.FC = () => {
             <>
               {currentView === 'room-chat' && selectedRoom && (
                 <MessengerChatView
-                  room={selectedRoom}
+                  selectedRoom={selectedRoom}
+                  selectedUser={null}
                   currentUser={currentUser}
                   sessionToken={sessionToken!}
-                  onBack={handleBackToInbox}
                 />
               )}
               {currentView === 'private-chat' && selectedConversation && (
