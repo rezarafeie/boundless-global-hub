@@ -2,9 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Send, FileText, Crown, Headphones, Phone, MessageCircle, Shield, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
@@ -78,7 +77,16 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       // Get messages for this conversation
       const { data: fetchedMessages, error } = await supabase
         .from('messenger_messages')
-        .select('*')
+        .select(`
+          id,
+          message,
+          sender_id,
+          recipient_id,
+          conversation_id,
+          message_type,
+          is_read,
+          created_at
+        `)
         .eq('conversation_id', conv.id)
         .order('created_at', { ascending: true });
 
@@ -213,17 +221,18 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
+      <div className="flex flex-col items-center justify-center h-full bg-white dark:bg-slate-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پیام‌ها...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">در حال بارگذاری پیام‌ها...</p>
+          <p className="text-slate-500 dark:text-slate-500 text-sm mt-2">لطفا کمی صبر کنید</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-800">
       {/* Chat Header */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -289,13 +298,20 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                   ? 'bg-blue-500 text-white'
                   : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
                   <p className="text-sm leading-relaxed">{message.message}</p>
-                  <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
-                    ? 'text-blue-100' 
+                  <div className={`text-xs mt-2 flex items-center gap-1 ${message.sender_id === currentUser.id 
+                    ? 'text-blue-100 justify-end' 
                     : 'text-slate-500 dark:text-slate-400'}`}>
-                    {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    <span>
+                      {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {message.sender_id === currentUser.id && message.is_read && (
+                      <div className="flex">
+                        <div className="w-3 h-3 text-blue-200">✓✓</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -320,10 +336,15 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             }}
             rows={1}
             className="resize-none flex-1"
+            disabled={sending}
           />
-          <Button onClick={handleSendMessage} disabled={sending}>
-            <Send className="w-4 h-4" />
-            ارسال
+          <Button onClick={handleSendMessage} disabled={sending || !newMessage.trim()}>
+            {sending ? (
+              <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            {!sending && 'ارسال'}
           </Button>
         </div>
       </div>
