@@ -21,6 +21,8 @@ export const useRafieiMeet = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
+      console.log('Fetching Rafiei Meet settings...');
+      
       const { data, error } = await supabase
         .from('rafiei_meet_settings')
         .select('*')
@@ -32,8 +34,10 @@ export const useRafieiMeet = () => {
       }
 
       if (data) {
+        console.log('Found existing settings:', data);
         setSettings(data);
       } else {
+        console.log('No settings found, creating default...');
         // Create default settings if none exist
         const defaultSettings = {
           id: 1,
@@ -45,11 +49,12 @@ export const useRafieiMeet = () => {
         
         const { data: newData, error: insertError } = await supabase
           .from('rafiei_meet_settings')
-          .upsert(defaultSettings)
+          .upsert(defaultSettings, { onConflict: 'id' })
           .select()
           .single();
 
         if (insertError) throw insertError;
+        console.log('Created default settings:', newData);
         setSettings(newData);
       }
     } catch (error) {
@@ -65,22 +70,29 @@ export const useRafieiMeet = () => {
   };
 
   const updateSettings = async (updates: Partial<RafieiMeetSettings>) => {
-    if (!settings) return;
+    if (!settings) {
+      console.error('No settings available to update');
+      return;
+    }
 
     try {
       setUpdating(true);
+      console.log('Updating settings with:', updates);
+      
       const { data, error } = await supabase
         .from('rafiei_meet_settings')
-        .update({
+        .upsert({
+          id: 1,
+          ...settings,
           ...updates,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', 1)
+        }, { onConflict: 'id' })
         .select()
         .single();
 
       if (error) throw error;
 
+      console.log('Settings updated successfully:', data);
       setSettings(data);
       
       toast({
@@ -103,11 +115,15 @@ export const useRafieiMeet = () => {
   };
 
   const toggleActive = async () => {
-    if (!settings) return;
+    if (!settings) {
+      console.error('No settings available to toggle');
+      return;
+    }
 
     try {
       setUpdating(true);
       const newActiveState = !settings.is_active;
+      console.log('Toggling active state to:', newActiveState);
       
       const updatedSettings = await updateSettings({ is_active: newActiveState });
       

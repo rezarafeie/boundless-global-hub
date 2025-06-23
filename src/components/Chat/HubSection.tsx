@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import LiveStreamCard from './LiveStreamCard';
 import RafieiMeetCard from './RafieiMeetCard';
+import EnhancedIframe from '@/components/EnhancedIframe';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HubSectionProps {
@@ -101,12 +102,11 @@ const HubSection: React.FC<HubSectionProps> = ({
                     </Badge>
                   </div>
                   <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    <iframe
+                    <EnhancedIframe
                       src={`https://www.aparat.com/video/videohash/${liveSettings.stream_code}?startTime=0&autoPlay=true`}
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
                       title="پخش زنده"
+                      className="w-full h-full"
+                      allow="fullscreen; autoplay"
                     />
                   </div>
                 </div>
@@ -127,12 +127,10 @@ const HubSection: React.FC<HubSectionProps> = ({
                     </Badge>
                   </div>
                   <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    <iframe
+                    <EnhancedIframe
                       src={rafieiMeetSettings.meet_url}
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
                       title="جلسه تصویری رفیعی"
+                      className="w-full h-full"
                       allow="camera; microphone; fullscreen; speaker; display-capture"
                     />
                   </div>
@@ -198,7 +196,7 @@ const HubSection: React.FC<HubSectionProps> = ({
               <p className="text-gray-400 mb-4">
                 به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید
               </p>
-              <Link to="/hub">
+              <Link to="/hub/messenger">
                 <Button className="w-full bg-green-700 hover:bg-green-600">
                   ورود به چت
                 </Button>

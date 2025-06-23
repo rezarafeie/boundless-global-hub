@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -327,9 +326,10 @@ class MessengerService {
           is_approved: false
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('خطا در ثبت نام کاربر');
 
       // Create session
       const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
