@@ -28,6 +28,18 @@ interface ChatRoom {
   unread_count?: number;
 }
 
+interface UnifiedChatItem {
+  id: string;
+  type: 'private' | 'room';
+  name: string;
+  description?: string;
+  avatar?: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+  data: PrivateConversation | ChatRoom;
+}
+
 type ViewType = 'inbox' | 'room-chat' | 'private-chat';
 
 const BorderlessHubMessenger: React.FC = () => {
@@ -42,7 +54,8 @@ const BorderlessHubMessenger: React.FC = () => {
   const [showStartChatModal, setShowStartChatModal] = useState(false);
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
   const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
-  const [showPrivateChats, setShowPrivateChats] = useState(true);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,14 +64,51 @@ const BorderlessHubMessenger: React.FC = () => {
 
   useEffect(() => {
     if (currentUser && sessionToken) {
-      loadPrivateConversations();
+      loadAllChats();
       
-      // Check if user needs to set username
       if (!currentUser.username) {
         setShowUsernameSetup(true);
       }
     }
   }, [currentUser, sessionToken]);
+
+  useEffect(() => {
+    // Combine and sort all chats
+    const combined: UnifiedChatItem[] = [
+      ...privateConversations.map(conv => ({
+        id: `private-${conv.id}`,
+        type: 'private' as const,
+        name: conv.other_user?.name || 'کاربر',
+        lastMessage: conv.last_message,
+        lastMessageTime: conv.last_message_at,
+        unreadCount: conv.unread_count,
+        data: conv
+      })),
+      ...rooms.map(room => ({
+        id: `room-${room.id}`,
+        type: 'room' as const,
+        name: room.name,
+        description: room.description,
+        lastMessage: room.last_message,
+        lastMessageTime: room.last_message_time,
+        unreadCount: room.unread_count,
+        data: room
+      }))
+    ];
+
+    // Sort by unread first, then by last message time
+    combined.sort((a, b) => {
+      if (a.unreadCount && !b.unreadCount) return -1;
+      if (!a.unreadCount && b.unreadCount) return 1;
+      
+      const timeA = new Date(a.lastMessageTime || 0).getTime();
+      const timeB = new Date(b.lastMessageTime || 0).getTime();
+      
+      return timeB - timeA;
+    });
+
+    setUnifiedChats(combined);
+  }, [privateConversations, rooms]);
 
   const checkExistingSession = async () => {
     const token = localStorage.getItem('messenger_session_token');
@@ -84,14 +134,19 @@ const BorderlessHubMessenger: React.FC = () => {
     setLoading(false);
   };
 
-  const loadPrivateConversations = async () => {
+  const loadAllChats = async () => {
     if (!currentUser || !sessionToken) return;
     
     try {
-      const conversations = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
+      const [conversations, chatRooms] = await Promise.all([
+        privateMessageService.getUserConversations(currentUser.id, sessionToken),
+        messengerService.getRooms(sessionToken)
+      ]);
+      
       setPrivateConversations(conversations);
+      setRooms(chatRooms);
     } catch (error) {
-      console.error('Error loading private conversations:', error);
+      console.error('Error loading chats:', error);
     }
   };
 
@@ -111,17 +166,16 @@ const BorderlessHubMessenger: React.FC = () => {
     });
   };
 
-  const handleRoomSelect = (room: ChatRoom) => {
-    setSelectedRoom(room);
-    setSelectedConversation(null);
-    setCurrentView('room-chat');
-    setShowMobileChat(true);
-  };
-
-  const handlePrivateConversationSelect = (conversation: PrivateConversation) => {
-    setSelectedConversation(conversation);
-    setSelectedRoom(null);
-    setCurrentView('private-chat');
+  const handleChatSelect = (chat: UnifiedChatItem) => {
+    if (chat.type === 'private') {
+      setSelectedConversation(chat.data as PrivateConversation);
+      setSelectedRoom(null);
+      setCurrentView('private-chat');
+    } else {
+      setSelectedRoom(chat.data as ChatRoom);
+      setSelectedConversation(null);
+      setCurrentView('room-chat');
+    }
     setShowMobileChat(true);
   };
 
@@ -135,7 +189,6 @@ const BorderlessHubMessenger: React.FC = () => {
         sessionToken
       );
       
-      // Create conversation object
       const conversation: PrivateConversation = {
         id: conversationId,
         user1_id: Math.min(currentUser.id, user.id),
@@ -146,8 +199,11 @@ const BorderlessHubMessenger: React.FC = () => {
         other_user: user
       };
       
-      handlePrivateConversationSelect(conversation);
-      await loadPrivateConversations(); // Refresh the list
+      setSelectedConversation(conversation);
+      setSelectedRoom(null);
+      setCurrentView('private-chat');
+      setShowMobileChat(true);
+      await loadAllChats();
     } catch (error) {
       console.error('Error starting chat:', error);
       toast({
@@ -201,6 +257,21 @@ const BorderlessHubMessenger: React.FC = () => {
     return colors[index];
   };
 
+  const getChatIcon = (chat: UnifiedChatItem) => {
+    if (chat.type === 'private') {
+      return <User className="w-4 h-4 text-blue-500" />;
+    } else {
+      const room = chat.data as ChatRoom;
+      if (room.type === 'academy_support') {
+        return <span className="text-lg">🎓</span>;
+      } else if (room.type === 'boundless_support') {
+        return <Headphones className="w-4 h-4 text-blue-500" />;
+      } else {
+        return <Users className="w-4 h-4 text-green-500" />;
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
@@ -216,7 +287,6 @@ const BorderlessHubMessenger: React.FC = () => {
     return <MessengerAuth onAuthenticated={handleAuthenticated} />;
   }
 
-  // This check is now redundant since we redirect to pending, but keep as fallback
   if (!currentUser.is_approved) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
@@ -316,12 +386,12 @@ const BorderlessHubMessenger: React.FC = () => {
       <div className="max-w-7xl mx-auto h-[calc(100vh-80px)] flex">
         {/* Desktop Layout */}
         <div className="hidden md:flex w-full">
-          {/* Left Panel - Inbox */}
+          {/* Left Panel - Unified Chat List */}
           <div className="w-1/3 border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
-            {/* Inbox Header with Tabs */}
+            {/* Header */}
             <div className="p-4 border-b">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold">پیام‌ها</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold">گفتگوها</h2>
                 <Button
                   size="sm"
                   onClick={() => setShowStartChatModal(true)}
@@ -330,95 +400,76 @@ const BorderlessHubMessenger: React.FC = () => {
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={showPrivateChats ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setShowPrivateChats(true)}
-                  className="flex-1"
-                >
-                  <User className="w-4 h-4 ml-1" />
-                  خصوصی
-                </Button>
-                <Button
-                  variant={!showPrivateChats ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setShowPrivateChats(false)}
-                  className="flex-1"
-                >
-                  <Users className="w-4 h-4 ml-1" />
-                  گروهی
-                </Button>
-              </div>
             </div>
 
-            {/* Chat List */}
+            {/* Unified Chat List */}
             <div className="flex-1 overflow-hidden">
-              {showPrivateChats ? (
-                <div className="h-full">
-                  {privateConversations.length === 0 ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-center">
-                        <User className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-                        <p className="text-sm text-slate-500">هنوز گفتگوی خصوصی ندارید</p>
-                        <Button
-                          size="sm"
-                          onClick={() => setShowStartChatModal(true)}
-                          className="mt-2"
-                        >
-                          شروع گفتگو
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 p-2">
-                      {privateConversations.map((conversation) => (
-                        <div
-                          key={conversation.id}
-                          onClick={() => handlePrivateConversationSelect(conversation)}
-                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                            selectedConversation?.id === conversation.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                          }`}
-                        >
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback 
-                              style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || '') }}
-                              className="text-white font-medium"
-                            >
-                              {conversation.other_user?.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <div className="font-medium text-sm truncate">
-                                {conversation.other_user?.name}
-                              </div>
-                              {conversation.unread_count! > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {conversation.unread_count}
-                                </Badge>
-                              )}
-                            </div>
-                            {conversation.other_user?.username && (
-                              <div className="text-xs text-slate-500">@{conversation.other_user.username}</div>
-                            )}
-                            {conversation.last_message && (
-                              <div className="text-xs text-slate-500 truncate">
-                                {conversation.last_message}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {unifiedChats.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">هنوز گفتگویی ندارید</p>
+                  </div>
                 </div>
               ) : (
-                <MessengerInbox
-                  currentUser={currentUser}
-                  onRoomSelect={handleRoomSelect}
-                  selectedRoom={selectedRoom}
-                />
+                <div className="space-y-1 p-2">
+                  {unifiedChats.map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => handleChatSelect(chat)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                        (selectedConversation && chat.id === `private-${selectedConversation.id}`) ||
+                        (selectedRoom && chat.id === `room-${selectedRoom.id}`) 
+                          ? 'bg-blue-50 dark:bg-blue-900/20' 
+                          : ''
+                      }`}
+                    >
+                      <div className="relative">
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback 
+                            style={{ backgroundColor: getAvatarColor(chat.name) }}
+                            className="text-white font-medium"
+                          >
+                            {chat.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                          {getChatIcon(chat)}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-sm truncate">
+                            {chat.name}
+                          </div>
+                          {chat.unreadCount! > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {chat.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                        {chat.description && (
+                          <div className="text-xs text-slate-500 truncate">
+                            {chat.description}
+                          </div>
+                        )}
+                        {chat.lastMessage && (
+                          <div className="text-xs text-slate-500 truncate">
+                            {chat.lastMessage}
+                          </div>
+                        )}
+                        {chat.lastMessageTime && (
+                          <div className="text-xs text-slate-400">
+                            {new Date(chat.lastMessageTime).toLocaleTimeString('fa-IR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -464,105 +515,66 @@ const BorderlessHubMessenger: React.FC = () => {
         <div className="md:hidden w-full">
           {!showMobileChat ? (
             <div className="bg-white dark:bg-slate-800 h-full flex flex-col">
-              {/* Mobile Tabs */}
+              {/* Mobile Header */}
               <div className="p-4 border-b">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-semibold">پیام‌ها</h2>
-                  <Button
-                    size="sm"
-                    onClick={() => setShowStartChatModal(true)}
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={showPrivateChats ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setShowPrivateChats(true)}
-                    className="flex-1"
-                  >
-                    <User className="w-4 h-4 ml-1" />
-                    خصوصی
-                  </Button>
-                  <Button
-                    variant={!showPrivateChats ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setShowPrivateChats(false)}
-                    className="flex-1"
-                  >
-                    <Users className="w-4 h-4 ml-1" />
-                    گروهی
-                  </Button>
-                </div>
+                <h2 className="font-semibold">گفتگوها</h2>
               </div>
 
-              {/* Mobile Chat List */}
+              {/* Mobile Unified Chat List */}
               <div className="flex-1 overflow-hidden">
-                {showPrivateChats ? (
-                  <div className="h-full">
-                    {privateConversations.length === 0 ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-center">
-                          <User className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-                          <p className="text-sm text-slate-500">هنوز گفتگوی خصوصی ندارید</p>
-                          <Button
-                            size="sm"
-                            onClick={() => setShowStartChatModal(true)}
-                            className="mt-2"
-                          >
-                            شروع گفتگو
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-1 p-2">
-                        {privateConversations.map((conversation) => (
-                          <div
-                            key={conversation.id}
-                            onClick={() => handlePrivateConversationSelect(conversation)}
-                            className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            <Avatar className="w-10 h-10">
-                              <AvatarFallback 
-                                style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || '') }}
-                                className="text-white font-medium"
-                              >
-                                {conversation.other_user?.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium text-sm truncate">
-                                  {conversation.other_user?.name}
-                                </div>
-                                {conversation.unread_count! > 0 && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    {conversation.unread_count}
-                                  </Badge>
-                                )}
-                              </div>
-                              {conversation.other_user?.username && (
-                                <div className="text-xs text-slate-500">@{conversation.other_user.username}</div>
-                              )}
-                              {conversation.last_message && (
-                                <div className="text-xs text-slate-500 truncate">
-                                  {conversation.last_message}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                {unifiedChats.length === 0 ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">هنوز گفتگویی ندارید</p>
+                    </div>
                   </div>
                 ) : (
-                  <MessengerInbox
-                    currentUser={currentUser}
-                    onRoomSelect={handleRoomSelect}
-                    selectedRoom={selectedRoom}
-                  />
+                  <div className="space-y-1 p-2">
+                    {unifiedChats.map((chat) => (
+                      <div
+                        key={chat.id}
+                        onClick={() => handleChatSelect(chat)}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
+                      >
+                        <div className="relative">
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback 
+                              style={{ backgroundColor: getAvatarColor(chat.name) }}
+                              className="text-white font-medium"
+                            >
+                              {chat.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                            {getChatIcon(chat)}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm truncate">
+                              {chat.name}
+                            </div>
+                            {chat.unreadCount! > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                {chat.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
+                          {chat.description && (
+                            <div className="text-xs text-slate-500 truncate">
+                              {chat.description}
+                            </div>
+                          )}
+                          {chat.lastMessage && (
+                            <div className="text-xs text-slate-500 truncate">
+                              {chat.lastMessage}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -601,7 +613,7 @@ const BorderlessHubMessenger: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Action Button - Mobile */}
+      {/* Single Floating Action Button - Mobile */}
       <div className="md:hidden fixed bottom-6 left-6 z-50">
         <Button
           onClick={() => setShowStartChatModal(true)}

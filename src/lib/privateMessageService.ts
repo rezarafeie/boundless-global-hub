@@ -36,7 +36,7 @@ class PrivateMessageService {
         .from('chat_users')
         .select('*')
         .eq('is_approved', true)
-        .or(`username.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
+        .or(`username.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
         .order('name');
 
       if (error) {

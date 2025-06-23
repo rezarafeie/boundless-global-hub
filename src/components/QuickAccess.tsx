@@ -52,12 +52,6 @@ const QuickAccess = () => {
       icon: <MessageCircle size={28} />,
       link: "/hub/messenger",
       color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
-    },
-    {
-      title: "پنل مدیریت",
-      icon: <BookOpenCheck size={28} />,
-      link: "/hub/admin",
-      color: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400"
     }
   ];
 
@@ -87,7 +81,7 @@ const QuickAccess = () => {
     <section className="py-10 bg-background">
       <div className="container">
         <motion.div 
-          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-6"
+          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 md:gap-6"
           variants={container}
           initial="hidden"
           animate="show"
