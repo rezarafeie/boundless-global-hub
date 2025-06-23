@@ -594,7 +594,7 @@ class MessengerService {
     }
   }
 
-  async getRooms(): Promise<ChatRoom[]> {
+  async getRooms(sessionToken?: string): Promise<ChatRoom[]> {
     try {
       const { data, error } = await supabase
         .from('chat_rooms')
