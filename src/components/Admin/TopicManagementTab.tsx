@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,8 +105,7 @@ const TopicManagementTab = () => {
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token') || '';
-      await messengerService.createRoom(roomForm, sessionToken);
+      await messengerService.createRoom(roomForm);
       toast({
         title: 'موفق',
         description: 'اتاق جدید ایجاد شد',
@@ -149,8 +147,7 @@ const TopicManagementTab = () => {
 
   const handleUpdateRoom = async (id: number, updates: Partial<Room>) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token') || '';
-      await messengerService.updateRoom(id, updates, sessionToken);
+      await messengerService.updateRoom(id, updates);
       toast({
         title: 'موفق',
         description: 'اتاق به‌روزرسانی شد',
@@ -184,8 +181,7 @@ const TopicManagementTab = () => {
 
   const handleDeleteRoom = async (id: number) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token') || '';
-      await messengerService.deleteRoom(id, sessionToken);
+      await messengerService.deleteRoom(id);
       toast({
         title: 'موفق',
         description: 'اتاق حذف شد',

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
@@ -126,10 +127,6 @@ const BorderlessHubMessengerAdmin = () => {
 
   const handleUpdateUserRole = async (userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean }) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found');
-      }
       await messengerService.updateUserRole(userId, updates);
       fetchUsers();
       toast({
@@ -150,11 +147,6 @@ const BorderlessHubMessengerAdmin = () => {
     if (!newRoom.name.trim()) return;
     
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found');
-      }
-
       const roomData = {
         name: newRoom.name,
         type: newRoom.type,
@@ -163,7 +155,7 @@ const BorderlessHubMessengerAdmin = () => {
         is_active: true
       };
 
-      await messengerService.createRoom(roomData, sessionToken);
+      await messengerService.createRoom(roomData);
       setNewRoom({ name: '', type: 'general', description: '', is_boundless_only: false });
       fetchRooms();
       
@@ -183,11 +175,7 @@ const BorderlessHubMessengerAdmin = () => {
 
   const handleDeleteRoom = async (roomId: number) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found');
-      }
-      await messengerService.deleteRoom(roomId, sessionToken);
+      await messengerService.deleteRoom(roomId);
       fetchRooms();
       toast({
         title: 'Success',

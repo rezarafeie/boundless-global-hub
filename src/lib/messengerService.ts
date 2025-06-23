@@ -112,7 +112,7 @@ class MessengerService {
     phone: string;
     username?: string;
     password: string;
-  }): Promise<{ token: string; user: MessengerUser }> {
+  }): Promise<{ session_token: string; user: MessengerUser }> {
     // Check admin settings for approval requirement
     const settings = await this.getAdminSettings();
     
@@ -133,17 +133,17 @@ class MessengerService {
 
     if (error) throw error;
 
-    const token = this.generateToken();
+    const session_token = this.generateToken();
     
     await supabase
       .from('user_sessions')
       .insert({
         user_id: user.id,
-        session_token: token,
+        session_token: session_token,
         is_active: true
       });
 
-    return { token, user };
+    return { session_token, user };
   }
 
   async registerWithPassword(userData: {
@@ -152,7 +152,7 @@ class MessengerService {
     username?: string;
     password: string;
     isBoundlessStudent?: boolean;
-  }): Promise<{ token: string; user: MessengerUser }> {
+  }): Promise<{ session_token: string; user: MessengerUser }> {
     const settings = await this.getAdminSettings();
     
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -173,17 +173,17 @@ class MessengerService {
 
     if (error) throw error;
 
-    const token = this.generateToken();
+    const session_token = this.generateToken();
     
     await supabase
       .from('user_sessions')
       .insert({
         user_id: user.id,
-        session_token: token,
+        session_token: session_token,
         is_active: true
       });
 
-    return { token, user };
+    return { session_token, user };
   }
 
   async getUserByPhone(phone: string): Promise<MessengerUser | null> {
@@ -197,7 +197,7 @@ class MessengerService {
     return data || null;
   }
 
-  async authenticateUser(phone: string, password: string): Promise<{ token: string; user: MessengerUser }> {
+  async authenticateUser(phone: string, password: string): Promise<{ session_token: string; user: MessengerUser }> {
     const { data: user, error } = await supabase
       .from('chat_users')
       .select('*')
@@ -217,39 +217,39 @@ class MessengerService {
       throw new Error('رمز عبور اشتباه است');
     }
 
-    const token = this.generateToken();
+    const session_token = this.generateToken();
     
     await supabase
       .from('user_sessions')
       .insert({
         user_id: user.id,
-        session_token: token,
+        session_token: session_token,
         is_active: true
       });
 
-    return { token, user };
+    return { session_token, user };
   }
 
   async createSession(userId: number): Promise<{ session_token: string }> {
-    const token = this.generateToken();
+    const session_token = this.generateToken();
     
     const { error } = await supabase
       .from('user_sessions')
       .insert({
         user_id: userId,
-        session_token: token,
+        session_token: session_token,
         is_active: true
       });
 
     if (error) throw error;
 
-    return { session_token: token };
+    return { session_token };
   }
 
   async login(loginData: {
     identifier: string;
     password: string;
-  }): Promise<{ token: string; user: MessengerUser }> {
+  }): Promise<{ session_token: string; user: MessengerUser }> {
     const { data: user, error } = await supabase
       .from('chat_users')
       .select('*')
@@ -269,17 +269,17 @@ class MessengerService {
       throw new Error('رمز عبور اشتباه است');
     }
 
-    const token = this.generateToken();
+    const session_token = this.generateToken();
     
     await supabase
       .from('user_sessions')
       .insert({
-        user_id: user.id,
-        session_token: token,
+        user_id: userId,
+        session_token: session_token,
         is_active: true
       });
 
-    return { token, user };
+    return { session_token, user };
   }
 
   async validateSession(token: string): Promise<{ user: MessengerUser; valid: boolean } | null> {
@@ -336,7 +336,7 @@ class MessengerService {
     const rooms = data.map(room => ({
       id: room.id,
       name: room.name,
-      description: room.description,
+      description: room.description || '',
       type: room.type,
       is_active: room.is_active,
       is_boundless_only: room.is_boundless_only,
@@ -364,23 +364,37 @@ class MessengerService {
   async getMessages(roomId: number): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
       .from('messenger_messages')
-      .select(`*, sender:chat_users(name, phone)`)
+      .select(`
+        *,
+        sender:chat_users!sender_id(name, phone)
+      `)
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map(message => ({
+      ...message,
+      sender: message.sender || { name: 'Unknown', phone: '' }
+    }));
   }
 
   async getPrivateMessages(conversationId: number): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
       .from('private_messages')
-      .select(`*, sender:chat_users(name, phone)`)
+      .select(`
+        *,
+        sender:chat_users!sender_id(name, phone)
+      `)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map(message => ({
+      ...message,
+      sender: message.sender || { name: 'Unknown', phone: '' }
+    }));
   }
 
   async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
@@ -391,11 +405,18 @@ class MessengerService {
         sender_id: senderId,
         message: message
       })
-      .select(`*, sender:chat_users(name, phone)`)
+      .select(`
+        *,
+        sender:chat_users!sender_id(name, phone)
+      `)
       .single();
 
     if (error) throw error;
-    return data;
+    
+    return {
+      ...data,
+      sender: data.sender || { name: 'Unknown', phone: '' }
+    };
   }
 
   async updateUserDetails(userId: number, updates: {
@@ -459,11 +480,18 @@ class MessengerService {
   async getAllMessages(): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
       .from('messenger_messages')
-      .select(`*, sender:chat_users(name, phone)`)
+      .select(`
+        *,
+        sender:chat_users!sender_id(name, phone)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map(message => ({
+      ...message,
+      sender: message.sender || { name: 'Unknown', phone: '' }
+    }));
   }
 
   async deleteMessage(messageId: number): Promise<void> {
