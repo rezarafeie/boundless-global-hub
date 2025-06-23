@@ -165,13 +165,13 @@ class MessengerService {
         }
       }
 
-      // Create new user
+      // Create new user - store password as plain text for now (in production should be hashed)
       const { data: userData, error: userError } = await supabase
         .from('chat_users')
         .insert({
           name: name.trim(),
           phone: phone.trim(),
-          password_hash: password, // In production, this should be hashed
+          password_hash: password, // Store as plain text for now
           username: username?.toLowerCase().trim(),
           is_approved: true // Auto-approve for now
         })
@@ -195,29 +195,34 @@ class MessengerService {
 
   async authenticateUser(phone: string, password: string): Promise<AuthResult | null> {
     try {
-      const { data: userData, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('phone', phone)
-        .eq('password_hash', password)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (!userData) {
+      console.log('Authenticating user with phone:', phone);
+      
+      // First get the user
+      const user = await this.getUserByPhone(phone);
+      if (!user) {
+        console.log('User not found');
         return null;
       }
 
-      if (!userData.is_approved) {
+      console.log('User found:', user.name);
+      console.log('Stored password hash:', user.password_hash);
+      console.log('Provided password:', password);
+
+      // Check password (plain text comparison for now)
+      if (user.password_hash !== password) {
+        console.log('Password mismatch');
+        return null;
+      }
+
+      if (!user.is_approved) {
         throw new Error('حساب شما هنوز تایید نشده است');
       }
 
-      const sessionResult = await this.createSession(userData.id);
+      console.log('Authentication successful');
+      const sessionResult = await this.createSession(user.id);
       
       return {
-        user: userData,
+        user: user,
         session_token: sessionResult.session_token
       };
     } catch (error: any) {
