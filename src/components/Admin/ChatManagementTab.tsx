@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Trash2, RefreshCw, MessageSquare, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerMessage } from '@/lib/messengerService';
-import MessageLoadingSpinner from '@/components/Chat/MessageLoadingSpinner';
 
 const ChatManagementTab = () => {
   const { toast } = useToast();
@@ -83,7 +82,10 @@ const ChatManagementTab = () => {
           <CardTitle>مدیریت پیام‌ها</CardTitle>
         </CardHeader>
         <CardContent>
-          <MessageLoadingSpinner text="در حال بارگذاری پیام‌ها..." size="md" />
+          <div className="flex items-center justify-center py-8">
+            <RefreshCw className="w-6 h-6 animate-spin text-blue-500 mr-2" />
+            <span>در حال بارگذاری پیام‌ها...</span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -134,7 +136,6 @@ const ChatManagementTab = () => {
                 <TableHead>فرستنده</TableHead>
                 <TableHead>پیام</TableHead>
                 <TableHead>نوع</TableHead>
-                <TableHead>وضعیت</TableHead>
                 <TableHead>تاریخ</TableHead>
                 <TableHead>عملیات</TableHead>
               </TableRow>
@@ -169,19 +170,6 @@ const ChatManagementTab = () => {
                     <Badge variant={message.message_type === 'text' ? 'default' : 'secondary'}>
                       {message.message_type || 'text'}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      {message.is_read ? (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          ✓✓ خوانده شده
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          خوانده نشده
-                        </Badge>
-                      )}
-                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-slate-600">

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bell, MessageCircle, Video, Wifi } from 'lucide-react';
@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import LiveStreamCard from './LiveStreamCard';
 import RafieiMeetCard from './RafieiMeetCard';
-import { supabase } from '@/integrations/supabase/client';
 
 interface HubSectionProps {
   liveSettings?: {
@@ -26,46 +25,10 @@ interface HubSectionProps {
 }
 
 const HubSection: React.FC<HubSectionProps> = ({ 
-  liveSettings: propLiveSettings, 
-  rafieiMeetSettings: propRafieiMeetSettings, 
+  liveSettings, 
+  rafieiMeetSettings, 
   showFullChat = false 
 }) => {
-  const [liveSettings, setLiveSettings] = useState(propLiveSettings);
-  const [rafieiMeetSettings, setRafieiMeetSettings] = useState(propRafieiMeetSettings);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        // Fetch live settings
-        const { data: liveData } = await supabase
-          .from('live_settings')
-          .select('*')
-          .single();
-
-        if (liveData) {
-          setLiveSettings(liveData);
-        }
-
-        // Fetch Rafiei Meet settings
-        const { data: meetData } = await supabase
-          .from('rafiei_meet_settings')
-          .select('*')
-          .eq('id', 1)
-          .single();
-
-        if (meetData) {
-          setRafieiMeetSettings(meetData);
-        }
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-      }
-    };
-
-    if (!propLiveSettings || !propRafieiMeetSettings) {
-      fetchSettings();
-    }
-  }, [propLiveSettings, propRafieiMeetSettings]);
-
   const isLiveActive = liveSettings?.is_live || false;
   const isMeetActive = rafieiMeetSettings?.is_active || false;
 
@@ -83,64 +46,6 @@ const HubSection: React.FC<HubSectionProps> = ({
             اطلاعیه‌ها، گفتگوی زنده، جلسات تصویری و پخش مستقیم - همه در یک مکان
           </p>
         </div>
-
-        {/* Active Live Content */}
-        {(isLiveActive || isMeetActive) && (
-          <div className="mb-12">
-            <h3 className="text-2xl font-bold text-white mb-6 text-center">🔴 محتوای زنده</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Live Stream Iframe */}
-              {isLiveActive && liveSettings?.stream_code && (
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-4">
-                    <h4 className="text-white font-bold text-lg mb-2">
-                      📺 {liveSettings.title || 'پخش زنده'}
-                    </h4>
-                    <Badge variant="destructive" className="mb-3">
-                      🔴 در حال پخش
-                    </Badge>
-                  </div>
-                  <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    <iframe
-                      src={`https://www.aparat.com/video/videohash/${liveSettings.stream_code}?startTime=0&autoPlay=true`}
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
-                      title="پخش زنده"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Rafiei Meet Iframe */}
-              {isMeetActive && rafieiMeetSettings?.meet_url && (
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
-                    <h4 className="text-white font-bold text-lg mb-2">
-                      🎥 {rafieiMeetSettings.title || 'جلسه تصویری رفیعی'}
-                    </h4>
-                    <p className="text-green-100 text-sm mb-2">
-                      {rafieiMeetSettings.description}
-                    </p>
-                    <Badge variant="default" className="bg-green-500">
-                      🟢 فعال
-                    </Badge>
-                  </div>
-                  <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    <iframe
-                      src={rafieiMeetSettings.meet_url}
-                      className="w-full h-full"
-                      frameBorder="0"
-                      allowFullScreen
-                      title="جلسه تصویری رفیعی"
-                      allow="camera; microphone; fullscreen; speaker; display-capture"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Dynamic Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">

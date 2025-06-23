@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -202,12 +203,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Register user
-      const result = await messengerService.registerWithPassword(
-        name.trim(),
-        phoneNumber,
-        password,
-        username
-      );
+      const result = await messengerService.registerWithPassword({
+        name: name.trim(),
+        phone: phoneNumber,
+        username: username,
+        password: password,
+        isBoundlessStudent: isBoundlessStudent
+      });
 
       // Check if user needs approval
       if (!result.user.is_approved) {

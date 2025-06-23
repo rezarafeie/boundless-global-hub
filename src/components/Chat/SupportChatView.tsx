@@ -4,40 +4,30 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Send, Clock, CheckCircle, Archive, AlertCircle, Tag, FileText } from 'lucide-react';
+import { ArrowLeft, Send, FileText, Crown, Headphones, Phone, MessageCircle, Shield, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser, type SupportMessage } from '@/lib/messengerService';
-
-interface SupportRoom {
-  id: number;
-  name: string;
-  description?: string;
-  icon?: string;
-  color?: string;
-  thread_type_id?: number;
-}
+import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
+import { supportRoomService, type SupportRoom } from '@/lib/supportRoomService';
+import { type MessengerUser } from '@/lib/messengerService';
 
 interface MessengerSupportRoom {
-  id: number;
+  id: string;
   name: string;
-  description?: string;
-  icon?: string; // Changed from React.ReactNode to string
-  color?: string;
-  thread_type_id?: number;
+  description: string;
+  type: 'academy_support' | 'boundless_support';
+  icon: React.ReactNode;
+  isPermanent: true;
 }
 
 interface SupportChatViewProps {
-  room?: SupportRoom;
-  supportRoom?: MessengerSupportRoom;
+  supportRoom?: SupportRoom | MessengerSupportRoom;
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
 }
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
-  room,
   supportRoom,
   currentUser,
   sessionToken,
@@ -48,67 +38,62 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [conversation, setConversation] = useState<SupportConversation | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Use either room or supportRoom
-  const activeRoom = room || supportRoom;
-
-  const fetchMessages = async () => {
+  const fetchConversationAndMessages = async () => {
     try {
       setLoading(true);
       
-      // Fetch messages to support (recipient_id = 1) for this conversation
-      const { data, error } = await supabase
+      // Get thread type ID based on support room or user type
+      let threadTypeId = 1; // Default to academy support
+      if (supportRoom) {
+        // Handle both SupportRoom and MessengerSupportRoom types
+        if ('thread_type_id' in supportRoom) {
+          threadTypeId = supportRoom.thread_type_id || 1;
+        } else if ('type' in supportRoom) {
+          threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
+        }
+      } else {
+        threadTypeId = currentUser.bedoun_marz ? 2 : 1;
+      }
+      
+      // Get or create conversation
+      const conv = await supportService.getOrCreateUserConversation(
+        currentUser.id, 
+        sessionToken, 
+        threadTypeId
+      );
+      
+      // Update conversation with support room if provided
+      if (supportRoom && conv.id > 0 && 'thread_type_id' in supportRoom) {
+        await supabase
+          .from('support_conversations')
+          .update({ support_room_id: (supportRoom as SupportRoom).id })
+          .eq('id', conv.id);
+      }
+      
+      setConversation(conv);
+      
+      // Get messages for this conversation
+      const { data: fetchedMessages, error } = await supabase
         .from('messenger_messages')
-        .select(`
-          id,
-          message,
-          sender_id,
-          recipient_id,
-          conversation_id,
-          message_type,
-          is_read,
-          created_at,
-          media_url,
-          sender:chat_users!sender_id(
-            id,
-            name,
-            phone,
-            username,
-            is_approved,
-            bedoun_marz,
-            bedoun_marz_approved,
-            is_messenger_admin,
-            is_support_agent,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('recipient_id', 1)
+        .select('*')
+        .eq('conversation_id', conv.id)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+
+      setMessages(fetchedMessages || []);
       
-      // Transform the data to match SupportMessage interface
-      const supportMessages: SupportMessage[] = (data || []).map(msg => ({
-        id: msg.id,
-        message: msg.message,
-        sender_id: msg.sender_id,
-        recipient_id: msg.recipient_id || 1,
-        conversation_id: msg.conversation_id || 0,
-        message_type: msg.message_type,
-        is_read: msg.is_read,
-        created_at: msg.created_at,
-        media_url: msg.media_url || undefined,
-        sender: msg.sender
-      }));
-      
-      setMessages(supportMessages);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error fetching conversation and messages:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
+        description: 'خطا در بارگذاری گفتگو',
         variant: 'destructive',
       });
     } finally {
@@ -117,8 +102,30 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, [activeRoom?.id]);
+    fetchConversationAndMessages();
+  }, [supportRoom?.id, currentUser.id]);
+
+  useEffect(() => {
+    if (!conversation) return;
+
+    const channel = supabase
+      .channel(`support_conversation_${conversation.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
+        (payload) => {
+          const newMessage = payload.new as SupportMessage;
+          if (newMessage.conversation_id === conversation.id) {
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation?.id]);
 
   useEffect(() => {
     if (chatBottomRef.current) {
@@ -127,44 +134,37 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() || sending || !conversation) return;
 
     setSending(true);
     try {
-      const { data, error } = await supabase
+      const { data: sentMessage, error } = await supabase
         .from('messenger_messages')
-        .insert({
-          sender_id: currentUser.id,
-          recipient_id: 1, // Support recipient
+        .insert([{
           message: newMessage,
+          sender_id: currentUser.id,
+          recipient_id: 1,
+          conversation_id: conversation.id,
           message_type: 'text',
-          is_read: false
-        })
+          created_at: new Date().toISOString()
+        }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
 
-      // Transform to SupportMessage format
-      const supportMessage: SupportMessage = {
-        id: data.id,
-        message: data.message,
-        sender_id: data.sender_id,
-        recipient_id: data.recipient_id || 1,
-        conversation_id: data.conversation_id || 0,
-        message_type: data.message_type,
-        is_read: data.is_read,
-        created_at: data.created_at,
-        media_url: data.media_url,
-        sender: currentUser
-      };
-
-      setMessages((prevMessages) => [...prevMessages, supportMessage]);
+      if (sentMessage) {
+        setMessages((prevMessages) => [...prevMessages, sentMessage]);
+      }
+      
       setNewMessage('');
 
       toast({
         title: 'پیام ارسال شد',
-        description: 'پیام شما به تیم پشتیبانی ارسال شد.',
+        description: 'پیام شما با موفقیت ارسال شد.',
       });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -176,6 +176,39 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     } finally {
       setSending(false);
     }
+  };
+
+  const getIconComponent = (iconName: string | React.ReactNode) => {
+    if (React.isValidElement(iconName)) {
+      return iconName;
+    }
+    
+    const iconStr = iconName as string;
+    switch (iconStr) {
+      case 'crown': return <Crown className="w-5 h-5" />;
+      case 'phone': return <Phone className="w-5 h-5" />;
+      case 'message-circle': return <MessageCircle className="w-5 h-5" />;
+      case 'shield': return <Shield className="w-5 h-5" />;
+      case 'users': return <Users className="w-5 h-5" />;
+      default: return <Headphones className="w-5 h-5" />;
+    }
+  };
+
+  const getRoomColor = (room: SupportRoom | MessengerSupportRoom) => {
+    if ('color' in room) {
+      return room.color;
+    }
+    // Default colors for messenger support rooms
+    return room.type === 'boundless_support' ? '#8B5CF6' : '#3B82F6';
+  };
+
+  const getRoomIcon = (room: SupportRoom | MessengerSupportRoom) => {
+    if ('icon' in room && typeof room.icon === 'string') {
+      return getIconComponent(room.icon);
+    } else if ('icon' in room) {
+      return room.icon;
+    }
+    return <Headphones className="w-5 h-5" />;
   };
 
   if (loading) {
@@ -204,16 +237,32 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
               <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </Button>
             
-            <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
-              {activeRoom?.name}
-            </h2>
-            
-            {activeRoom?.description && (
-              <Badge variant="outline" className="text-xs">
-                {activeRoom.description}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {supportRoom && (
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: `${getRoomColor(supportRoom)}20` }}
+                >
+                  {getRoomIcon(supportRoom)}
+                </div>
+              )}
+              <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
+                {supportRoom?.name || 'پشتیبانی'}
+              </h2>
+            </div>
           </div>
+          
+          {supportRoom && (
+            <Badge 
+              variant="outline"
+              style={{ 
+                borderColor: getRoomColor(supportRoom),
+                color: getRoomColor(supportRoom)
+              }}
+            >
+              {supportRoom.description}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -226,7 +275,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                 <FileText className="w-8 h-8" />
               </div>
               <p className="text-lg font-medium mb-2">هنوز پیامی ارسال نشده</p>
-              <p className="text-sm">اولین پیام خود را به تیم پشتیبانی ارسال کنید!</p>
+              <p className="text-sm">اولین پیام را ارسال کنید!</p>
             </div>
           </div>
         ) : (
@@ -240,18 +289,13 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                   ? 'bg-blue-500 text-white'
                   : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
                   <p className="text-sm leading-relaxed">{message.message}</p>
-                  <div className={`text-xs mt-2 flex items-center justify-between ${message.sender_id === currentUser.id 
+                  <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
                     ? 'text-blue-100' 
                     : 'text-slate-500 dark:text-slate-400'}`}>
-                    <span>
-                      {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                    {message.is_read && message.sender_id === currentUser.id && (
-                      <CheckCircle className="w-3 h-3" />
-                    )}
+                    {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </div>
                 </div>
               </div>
