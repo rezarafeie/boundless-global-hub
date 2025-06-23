@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,7 @@ interface Topic {
 interface Room {
   id: number;
   name: string;
-  description?: string;
+  description: string;
   type: string;
   is_active: boolean;
   is_boundless_only: boolean;
@@ -62,9 +61,10 @@ const TopicRoomManagementPanel = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const sessionToken = localStorage.getItem('messenger_session_token') || '';
       const [topicsData, roomsData] = await Promise.all([
         messengerService.getTopics(),
-        messengerService.getRooms(localStorage.getItem('messenger_session_token') || '')
+        messengerService.getRooms(sessionToken)
       ]);
       
       setTopics(topicsData);
@@ -108,8 +108,7 @@ const TopicRoomManagementPanel = () => {
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token') || '';
-      await messengerService.createRoom(roomForm, sessionToken);
+      await messengerService.createRoom(roomForm);
       toast({
         title: 'موفق',
         description: 'اتاق جدید ایجاد شد',
@@ -151,8 +150,7 @@ const TopicRoomManagementPanel = () => {
 
   const handleUpdateRoom = async (id: number, updates: Partial<Room>) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token') || '';
-      await messengerService.updateRoom(id, updates, sessionToken);
+      await messengerService.updateRoom(id, updates);
       toast({
         title: 'موفق',
         description: 'اتاق به‌روزرسانی شد',
@@ -186,8 +184,7 @@ const TopicRoomManagementPanel = () => {
 
   const handleDeleteRoom = async (id: number) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token') || '';
-      await messengerService.deleteRoom(id, sessionToken);
+      await messengerService.deleteRoom(id);
       toast({
         title: 'موفق',
         description: 'اتاق حذف شد',
