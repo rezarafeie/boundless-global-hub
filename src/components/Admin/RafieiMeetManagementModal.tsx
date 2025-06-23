@@ -47,7 +47,7 @@ const RafieiMeetManagementModal: React.FC<RafieiMeetManagementModalProps> = ({
       const { data, error } = await supabase
         .from('rafiei_meet_settings')
         .select('*')
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
 
