@@ -4,34 +4,37 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageSkeleton } from '@/components/ui/skeleton';
+import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Users, Loader2 } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
+import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 
 interface MessengerChatViewProps {
-  room: ChatRoom;
+  selectedRoom: ChatRoom | null;
+  selectedUser: MessengerUser | null;
   currentUser: MessengerUser;
   sessionToken: string;
-  onBack: () => void;
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
-  room,
+  selectedRoom,
+  selectedUser,
   currentUser,
-  sessionToken,
-  onBack
+  sessionToken
 }) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    loadMessages();
-  }, [room.id]);
+    if (selectedRoom || selectedUser) {
+      loadMessages();
+    }
+  }, [selectedRoom?.id, selectedUser?.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -40,7 +43,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const roomMessages = await messengerService.getRoomMessages(room.id, sessionToken);
+      let roomMessages: MessengerMessage[] = [];
+      
+      if (selectedRoom) {
+        roomMessages = await messengerService.getMessages(selectedRoom.id);
+      } else if (selectedUser) {
+        const conversationId = await privateMessageService.getOrCreateConversation(
+          currentUser.id,
+          selectedUser.id,
+          sessionToken
+        );
+        roomMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
+      }
+      
       setMessages(roomMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -63,12 +78,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
     try {
       setSending(true);
-      await messengerService.sendMessage({
-        message: newMessage,
-        room_id: room.id,
-        sender_id: currentUser.id,
-        message_type: 'text'
-      }, sessionToken);
+      
+      if (selectedRoom) {
+        await messengerService.sendMessage(selectedRoom.id, currentUser.id, newMessage);
+      } else if (selectedUser) {
+        await privateMessageService.sendMessage(currentUser.id, selectedUser.id, newMessage, sessionToken);
+      }
 
       setNewMessage('');
       await loadMessages();
@@ -97,34 +112,49 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     return colors[index];
   };
 
+  const chatTitle = selectedRoom ? selectedRoom.name : selectedUser?.name || '';
+  const chatDescription = selectedRoom ? selectedRoom.description : selectedUser?.phone || '';
+
+  if (!selectedRoom && !selectedUser) {
+    return (
+      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400 mb-2">
+            یک گفتگو انتخاب کنید
+          </p>
+          <p className="text-sm text-slate-400">
+            از لیست سمت چپ یک گفتگو یا گروه انتخاب کنید
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        
         <Avatar className="w-10 h-10">
           <AvatarFallback 
-            style={{ backgroundColor: getAvatarColor(room.name) }}
+            style={{ backgroundColor: getAvatarColor(chatTitle) }}
             className="text-white font-medium"
           >
-            {room.name.charAt(0)}
+            {chatTitle.charAt(0)}
           </AvatarFallback>
         </Avatar>
         
         <div className="flex-1">
-          <h3 className="font-semibold text-slate-900 dark:text-white">{room.name}</h3>
-          {room.description && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">{room.description}</p>
+          <h3 className="font-semibold text-slate-900 dark:text-white">{chatTitle}</h3>
+          {chatDescription && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
           )}
         </div>
         
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="w-3 h-3" />
-            گروه
+            {selectedRoom ? 'گروه' : 'شخصی'}
           </Badge>
         </div>
       </div>
@@ -142,7 +172,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             <div className="text-center">
               <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
               <p className="text-slate-500 dark:text-slate-400 mb-2">
-                هنوز پیامی در این گروه نیست
+                هنوز پیامی در این گفتگو نیست
               </p>
               <p className="text-sm text-slate-400">
                 اولین نفری باشید که پیام می‌فرستد!
@@ -154,7 +184,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             <div key={message.id} className="flex items-start gap-3">
               <Avatar className="w-8 h-8">
                 <AvatarFallback 
-                  style={{ backgroundColor: getAvatarColor(message.sender?.name || '') }}
+                  style={{ backgroundColor: getAvatarColor(message.sender?.name || 'U') }}
                   className="text-white font-medium text-xs"
                 >
                   {message.sender?.name?.charAt(0) || 'U'}
@@ -172,7 +202,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                       minute: '2-digit'
                     })}
                   </span>
-                  {message.sender?.id === currentUser.id && (
+                  {message.sender_id === currentUser.id && (
                     <Badge variant="outline" className="text-xs">شما</Badge>
                   )}
                 </div>

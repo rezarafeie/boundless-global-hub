@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
     setHasSearched(true);
 
     try {
-      const results = await messengerService.searchUsers(searchTerm, sessionToken);
+      const results = await messengerService.searchUsers(searchTerm);
       
       // Filter out current user
       const filteredResults = results.filter(user => user.id !== currentUser.id);

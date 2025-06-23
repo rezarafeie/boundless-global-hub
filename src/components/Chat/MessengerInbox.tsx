@@ -421,8 +421,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         user={currentUser}
-        sessionToken={sessionToken}
-        onUserUpdate={onUserUpdate}
+        onStartChat={handleStartChatWithUser}
+        currentUserId={currentUser.id}
       />
     </div>
   );
