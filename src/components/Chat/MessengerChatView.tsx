@@ -68,18 +68,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const fetchMessages = async () => {
     try {
       setError(null);
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found. Please log in again.');
-      }
-
       console.log(`Fetching messages for room: ${room.name} (${room.type})`);
 
       let fetchedMessages: EnhancedMessage[] = [];
       if (room.type === 'academy_support' || room.type === 'boundless_support') {
-        fetchedMessages = await messengerService.getPrivateMessages(currentUser.id, sessionToken) as EnhancedMessage[];
+        fetchedMessages = await messengerService.getPrivateMessages(currentUser.id) as EnhancedMessage[];
       } else {
-        fetchedMessages = await messengerService.getMessages(room.id, sessionToken) as EnhancedMessage[];
+        fetchedMessages = await messengerService.getMessages(room.id) as EnhancedMessage[];
       }
       
       setMessages(fetchedMessages);
@@ -223,11 +218,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     
     setSendingMessage(true);
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found. Please log in again.');
-      }
-
       const messageData = {
         room_id: (room.type === 'academy_support' || room.type === 'boundless_support') ? undefined : room.id,
         sender_id: currentUser.id,
@@ -239,7 +229,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       console.log('Sending message with data:', messageData);
       
-      const sentMessage = await messengerService.sendMessage(messageData, sessionToken);
+      const sentMessage = await messengerService.sendMessage(messageData);
       setMessages((prevMessages) => [...prevMessages, sentMessage as EnhancedMessage]);
       
       toast({
@@ -266,12 +256,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   const handleReaction = async (messageId: number, reaction: string) => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found. Please log in again.');
-      }
-
-      await messengerService.addReaction(messageId, reaction, sessionToken);
+      await messengerService.addReaction(messageId, currentUser.id, reaction);
       console.log('Reaction added successfully');
     } catch (error: any) {
       console.error('Error adding reaction:', error);
