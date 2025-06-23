@@ -29,10 +29,14 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">ب</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <img 
+                src={theme === 'dark' ? '/smallw.png' : '/small.png'} 
+                alt="آکادمی رفیعی" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
-            <span className="font-bold text-xl text-slate-800 dark:text-white">بدون مرز</span>
+            <span className="font-bold text-xl text-slate-800 dark:text-white">آکادمی رفیعی</span>
           </Link>
 
           {/* Desktop Navigation */}

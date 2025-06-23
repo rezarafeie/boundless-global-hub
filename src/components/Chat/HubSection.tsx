@@ -41,7 +41,7 @@ const HubSection: React.FC<HubSectionProps> = ({
         const { data: liveData } = await supabase
           .from('live_settings')
           .select('*')
-          .single();
+          .maybeSingle();
 
         if (liveData) {
           setLiveSettings(liveData);
@@ -52,7 +52,7 @@ const HubSection: React.FC<HubSectionProps> = ({
           .from('rafiei_meet_settings')
           .select('*')
           .eq('id', 1)
-          .single();
+          .maybeSingle();
 
         if (meetData) {
           setRafieiMeetSettings(meetData);
@@ -78,7 +78,7 @@ const HubSection: React.FC<HubSectionProps> = ({
             <MessageCircle className="w-12 h-12 text-white" />
           </div>
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            مرکز ارتباط بدون مرز
+            مرکز ارتباط آکادمی رفیعی
           </h2>
           <p className="text-xl text-gray-400 mb-10 max-w-4xl mx-auto">
             اطلاعیه‌ها، گفتگوی زنده، جلسات تصویری و پخش مستقیم - همه در یک مکان
@@ -171,7 +171,7 @@ const HubSection: React.FC<HubSectionProps> = ({
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">
-                آخرین اخبار و اطلاعیه‌های مهم از تیم بدون مرز
+                آخرین اخبار و اطلاعیه‌های مهم از تیم آکادمی رفیعی
               </p>
               <Link to="/hub">
                 <Button className="w-full bg-blue-700 hover:bg-blue-600">
@@ -194,7 +194,7 @@ const HubSection: React.FC<HubSectionProps> = ({
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">
-                به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید
+                به گفتگوی زنده اعضای جامعه آکادمی رفیعی بپیوندید
               </p>
               <Link to="/hub/messenger">
                 <Button className="w-full bg-green-700 hover:bg-green-600">
