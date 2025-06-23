@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -84,9 +85,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     setSending(true);
     try {
       const sentMessage = await messengerService.sendMessage(
-        newMessage,
+        room.id,
         currentUser.id,
-        room.id
+        newMessage
       );
       setMessages((prevMessages) => [...prevMessages, sentMessage]);
       setNewMessage('');

@@ -21,8 +21,6 @@ export const useRafieiMeet = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      console.log('Fetching Rafiei Meet settings...');
-      
       const { data, error } = await supabase
         .from('rafiei_meet_settings')
         .select('*')
@@ -34,10 +32,8 @@ export const useRafieiMeet = () => {
       }
 
       if (data) {
-        console.log('Found existing settings:', data);
         setSettings(data);
       } else {
-        console.log('No settings found, creating default...');
         // Create default settings if none exist
         const defaultSettings = {
           id: 1,
@@ -49,12 +45,11 @@ export const useRafieiMeet = () => {
         
         const { data: newData, error: insertError } = await supabase
           .from('rafiei_meet_settings')
-          .upsert(defaultSettings, { onConflict: 'id' })
+          .upsert(defaultSettings)
           .select()
           .single();
 
         if (insertError) throw insertError;
-        console.log('Created default settings:', newData);
         setSettings(newData);
       }
     } catch (error) {
@@ -70,34 +65,22 @@ export const useRafieiMeet = () => {
   };
 
   const updateSettings = async (updates: Partial<RafieiMeetSettings>) => {
-    if (!settings) {
-      console.error('No settings available to update');
-      return;
-    }
+    if (!settings) return;
 
     try {
       setUpdating(true);
-      console.log('Updating settings with:', updates);
-      
-      const updatedData = {
-        id: 1,
-        title: settings.title,
-        description: settings.description,
-        meet_url: settings.meet_url,
-        is_active: settings.is_active,
-        ...updates,
-        updated_at: new Date().toISOString()
-      };
-
       const { data, error } = await supabase
         .from('rafiei_meet_settings')
-        .upsert(updatedData, { onConflict: 'id' })
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1)
         .select()
         .single();
 
       if (error) throw error;
 
-      console.log('Settings updated successfully:', data);
       setSettings(data);
       
       toast({
@@ -120,18 +103,11 @@ export const useRafieiMeet = () => {
   };
 
   const toggleActive = async () => {
-    if (!settings) {
-      console.error('No settings available to toggle');
-      return;
-    }
+    if (!settings) return;
 
     try {
       setUpdating(true);
       const newActiveState = !settings.is_active;
-      console.log('Toggling active state to:', newActiveState);
-      
-      // Optimistically update the UI
-      setSettings(prev => prev ? { ...prev, is_active: newActiveState } : null);
       
       const updatedSettings = await updateSettings({ is_active: newActiveState });
       
@@ -143,12 +119,6 @@ export const useRafieiMeet = () => {
       return updatedSettings;
     } catch (error) {
       console.error('Error toggling Rafiei Meet:', error);
-      // Revert optimistic update on error
-      if (settings) {
-        setSettings(prev => prev ? { ...prev, is_active: !settings.is_active } : null);
-      }
-    } finally {
-      setUpdating(false);
     }
   };
 

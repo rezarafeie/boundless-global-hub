@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import LiveStreamCard from './LiveStreamCard';
 import RafieiMeetCard from './RafieiMeetCard';
-import EnhancedIframe from '@/components/EnhancedIframe';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HubSectionProps {
@@ -41,7 +40,7 @@ const HubSection: React.FC<HubSectionProps> = ({
         const { data: liveData } = await supabase
           .from('live_settings')
           .select('*')
-          .maybeSingle();
+          .single();
 
         if (liveData) {
           setLiveSettings(liveData);
@@ -52,7 +51,7 @@ const HubSection: React.FC<HubSectionProps> = ({
           .from('rafiei_meet_settings')
           .select('*')
           .eq('id', 1)
-          .maybeSingle();
+          .single();
 
         if (meetData) {
           setRafieiMeetSettings(meetData);
@@ -78,7 +77,7 @@ const HubSection: React.FC<HubSectionProps> = ({
             <MessageCircle className="w-12 h-12 text-white" />
           </div>
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            مرکز ارتباط آکادمی رفیعی
+            مرکز ارتباط بدون مرز
           </h2>
           <p className="text-xl text-gray-400 mb-10 max-w-4xl mx-auto">
             اطلاعیه‌ها، گفتگوی زنده، جلسات تصویری و پخش مستقیم - همه در یک مکان
@@ -102,11 +101,12 @@ const HubSection: React.FC<HubSectionProps> = ({
                     </Badge>
                   </div>
                   <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    <EnhancedIframe
+                    <iframe
                       src={`https://www.aparat.com/video/videohash/${liveSettings.stream_code}?startTime=0&autoPlay=true`}
-                      title="پخش زنده"
                       className="w-full h-full"
-                      allow="fullscreen; autoplay"
+                      frameBorder="0"
+                      allowFullScreen
+                      title="پخش زنده"
                     />
                   </div>
                 </div>
@@ -127,10 +127,12 @@ const HubSection: React.FC<HubSectionProps> = ({
                     </Badge>
                   </div>
                   <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-                    <EnhancedIframe
+                    <iframe
                       src={rafieiMeetSettings.meet_url}
-                      title="جلسه تصویری رفیعی"
                       className="w-full h-full"
+                      frameBorder="0"
+                      allowFullScreen
+                      title="جلسه تصویری رفیعی"
                       allow="camera; microphone; fullscreen; speaker; display-capture"
                     />
                   </div>
@@ -171,7 +173,7 @@ const HubSection: React.FC<HubSectionProps> = ({
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">
-                آخرین اخبار و اطلاعیه‌های مهم از تیم آکادمی رفیعی
+                آخرین اخبار و اطلاعیه‌های مهم از تیم بدون مرز
               </p>
               <Link to="/hub">
                 <Button className="w-full bg-blue-700 hover:bg-blue-600">
@@ -194,9 +196,9 @@ const HubSection: React.FC<HubSectionProps> = ({
             </CardHeader>
             <CardContent>
               <p className="text-gray-400 mb-4">
-                به گفتگوی زنده اعضای جامعه آکادمی رفیعی بپیوندید
+                به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید
               </p>
-              <Link to="/hub/messenger">
+              <Link to="/hub">
                 <Button className="w-full bg-green-700 hover:bg-green-600">
                   ورود به چت
                 </Button>

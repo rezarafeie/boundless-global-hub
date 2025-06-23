@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Radio, Megaphone, Video } from 'lucide-react';
+import { Wifi, Radio, Megaphone, Video, Settings } from 'lucide-react';
 
 interface HubManagementQuickActionsProps {
   onOpenModal: (modalType: string) => void;
@@ -10,42 +10,64 @@ interface HubManagementQuickActionsProps {
 
 const HubManagementQuickActions: React.FC<HubManagementQuickActionsProps> = ({ onOpenModal }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-red-200 hover:border-red-400">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg text-red-700">
-            <Radio className="w-5 h-5" />
-            پخش زنده
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Wifi className="w-4 h-4 text-blue-500" />
+            تنظیمات Hub
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-600 mb-4">
-            کنترل پخش زنده آپارات و تنظیمات استریم
+          <p className="text-xs text-slate-600 mb-3">
+            مدیریت عمومی Hub و ترتیب نمایش
           </p>
-          <Button 
-            onClick={() => onOpenModal('live')}
-            className="w-full bg-red-500 hover:bg-red-600 text-white"
-          >
-            <Radio className="w-4 h-4 mr-2" />
-            مدیریت پخش زنده
+          <Button variant="outline" size="sm" className="w-full">
+            <Settings className="w-4 h-4 mr-2" />
+            مدیریت
           </Button>
         </CardContent>
       </Card>
 
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-green-200 hover:border-green-400">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg text-green-700">
-            <Video className="w-5 h-5" />
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Radio className="w-4 h-4 text-red-500" />
+            پخش زنده
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-slate-600 mb-3">
+            کنترل پخش زنده آپارات
+          </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={() => onOpenModal('live')}
+          >
+            <Radio className="w-4 h-4 mr-2" />
+            مدیریت پخش
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Video className="w-4 h-4 text-green-500" />
             Rafiei Meet
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-600 mb-4">
-            مدیریت جلسات تصویری و تنظیمات ویدیو کنفرانس
+          <p className="text-xs text-slate-600 mb-3">
+            مدیریت جلسات تصویری
           </p>
           <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
             onClick={() => onOpenModal('meet')}
-            className="w-full bg-green-500 hover:bg-green-600 text-white"
           >
             <Video className="w-4 h-4 mr-2" />
             تنظیمات جلسه
@@ -53,20 +75,22 @@ const HubManagementQuickActions: React.FC<HubManagementQuickActionsProps> = ({ o
         </CardContent>
       </Card>
 
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-purple-200 hover:border-purple-400">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg text-purple-700">
-            <Megaphone className="w-5 h-5" />
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Megaphone className="w-4 h-4 text-purple-500" />
             اعلانات
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-600 mb-4">
-            مدیریت اعلانات، اطلاعیه‌ها و پیام‌های عمومی
+          <p className="text-xs text-slate-600 mb-3">
+            مدیریت اعلانات و اطلاعیه‌ها
           </p>
           <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
             onClick={() => onOpenModal('announcements')}
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
           >
             <Megaphone className="w-4 h-4 mr-2" />
             مدیریت اعلانات

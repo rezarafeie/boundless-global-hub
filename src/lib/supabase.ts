@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Announcement, ChatMessage, LiveSettings, AnnouncementInsert, ChatMessageInsert, ChatTopic, ChatTopicInsert } from '@/types/supabase';
 
@@ -248,7 +247,7 @@ export const chatUserService = {
       .select('*, chat_users(*)')
       .eq('session_token', sessionToken)
       .eq('is_active', true)
-      .maybeSingle();
+      .single();
     
     if (sessionError || !sessionData) return null;
     
@@ -280,7 +279,7 @@ export const liveService = {
       .from('live_settings')
       .select('*')
       .eq('id', 1)
-      .maybeSingle();
+      .single();
     
     if (error && error.code !== 'PGRST116') throw error;
     return data as LiveSettings | null;

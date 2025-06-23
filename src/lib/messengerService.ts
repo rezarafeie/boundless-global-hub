@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -5,17 +6,28 @@ export interface MessengerUser {
   name: string;
   phone: string;
   username?: string;
-  role?: string;
   is_approved: boolean;
-  is_support_agent?: boolean;
-  is_messenger_admin?: boolean;
-  bedoun_marz_approved?: boolean;
-  bedoun_marz?: boolean;
-  password_hash?: string;
+  bedoun_marz: boolean;
+  bedoun_marz_approved: boolean;
+  is_messenger_admin: boolean;
+  is_support_agent: boolean;
+  role?: string;
   created_at: string;
   updated_at: string;
-  last_seen?: string;
-  user?: MessengerUser; // For nested user references
+}
+
+export interface ChatRoom {
+  id: number;
+  name: string;
+  description?: string;
+  type: 'general' | 'academy_support' | 'boundless_support';
+  is_active: boolean;
+  is_boundless_only: boolean;
+  created_at: string;
+  updated_at: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count?: number;
 }
 
 export interface MessengerMessage {
@@ -25,9 +37,10 @@ export interface MessengerMessage {
   recipient_id?: number;
   room_id?: number;
   conversation_id?: number;
-  message_type?: string;
+  message_type: string;
   is_read: boolean;
   created_at: string;
+  media_url?: string;
   sender?: MessengerUser;
 }
 
@@ -35,39 +48,18 @@ export interface SupportMessage {
   id: number;
   message: string;
   sender_id: number;
-  recipient_id?: number;
-  user_id?: number;
-  conversation_id?: number;
-  message_type?: string;
-  is_read?: boolean;
-  is_from_support?: boolean;
+  recipient_id: number;
+  conversation_id: number;
+  message_type: string;
+  is_read: boolean;
   created_at: string;
-  read_at?: string;
   media_url?: string;
   sender?: MessengerUser;
 }
 
-export interface ChatTopic {
-  id: number;
-  title: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
+export interface AdminSettings {
+  manual_approval_enabled: boolean;
   updated_at: string;
-}
-
-export interface ChatRoom {
-  id: number;
-  name: string;
-  description?: string;
-  type: string;
-  is_active: boolean;
-  is_boundless_only: boolean;
-  created_at: string;
-  updated_at: string;
-  last_message?: string;
-  last_message_time?: string;
-  unread_count?: number;
 }
 
 export interface SupportThreadType {
@@ -88,8 +80,12 @@ export interface SupportAgentAssignment {
   assigned_at: string;
 }
 
-export interface AdminSettings {
-  manual_approval_enabled: boolean;
+export interface ChatTopic {
+  id: number;
+  title: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
   updated_at: string;
 }
 
@@ -98,303 +94,105 @@ export interface AuthResult {
   session_token: string;
 }
 
-export interface SessionData {
-  id: string;
-  user_id: string;
-  session_token: string;
-  expires_at: string;
-  created_at: string;
-}
-
 class MessengerService {
-  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('phone', phone)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error getting user by phone:', error);
-      throw error;
-    }
-  }
-
-  async getUserByUsername(username: string): Promise<MessengerUser | null> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('username', username)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error getting user by username:', error);
-      throw error;
-    }
-  }
-
-  async registerWithPassword(
-    name: string,
-    phone: string,
-    password: string,
-    username?: string
-  ): Promise<AuthResult> {
-    try {
-      // Check if user already exists
-      const existingUser = await this.getUserByPhone(phone);
-      if (existingUser) {
-        throw new Error('کاربری با این شماره تلفن قبلاً ثبت نام کرده است');
-      }
-
-      // Check username availability if provided
-      if (username) {
-        const existingUsername = await this.getUserByUsername(username);
-        if (existingUsername) {
-          throw new Error('این نام کاربری قبلاً انتخاب شده است');
-        }
-      }
-
-      // Create new user - store password as plain text for now (in production should be hashed)
-      const { data: userData, error: userError } = await supabase
-        .from('chat_users')
-        .insert({
-          name: name.trim(),
-          phone: phone.trim(),
-          password_hash: password, // Store as plain text for now
-          username: username?.toLowerCase().trim(),
-          is_approved: true // Auto-approve for now
-        })
-        .select()
-        .single();
-
-      if (userError) throw userError;
-
-      // Create session
-      const sessionResult = await this.createSession(userData.id);
-      
-      return {
-        user: userData,
-        session_token: sessionResult.session_token
-      };
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      throw new Error(error.message || 'خطا در ثبت نام');
-    }
-  }
-
-  async authenticateUser(phone: string, password: string): Promise<AuthResult | null> {
-    try {
-      console.log('Authenticating user with phone:', phone);
-      
-      // First get the user
-      const user = await this.getUserByPhone(phone);
-      if (!user) {
-        console.log('User not found');
-        return null;
-      }
-
-      console.log('User found:', user.name);
-      console.log('Stored password hash:', user.password_hash);
-      console.log('Provided password:', password);
-
-      // Check password (plain text comparison for now)
-      if (user.password_hash !== password) {
-        console.log('Password mismatch');
-        return null;
-      }
-
-      if (!user.is_approved) {
-        throw new Error('حساب شما هنوز تایید نشده است');
-      }
-
-      console.log('Authentication successful');
-      const sessionResult = await this.createSession(user.id);
-      
-      return {
-        user: user,
-        session_token: sessionResult.session_token
-      };
-    } catch (error: any) {
-      console.error('Authentication error:', error);
-      throw error;
-    }
-  }
-
-  async createSession(userId: number): Promise<SessionData> {
-    try {
-      const sessionToken = this.generateSessionToken();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
-
-      const { data, error } = await supabase
-        .from('user_sessions')
-        .insert({
-          user_id: userId,
-          session_token: sessionToken,
-          last_activity: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return {
-        id: data.id,
-        user_id: data.user_id.toString(),
-        session_token: data.session_token,
-        expires_at: expiresAt.toISOString(),
-        created_at: data.created_at
-      };
-    } catch (error) {
-      console.error('Error creating session:', error);
-      throw error;
-    }
-  }
-
-  async validateSession(sessionToken: string): Promise<MessengerUser | null> {
-    try {
-      const { data, error } = await supabase
-        .from('user_sessions')
-        .select(`
-          *,
-          chat_users (*)
-        `)
-        .eq('session_token', sessionToken)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (!data || !data.chat_users) {
-        return null;
-      }
-
-      return data.chat_users as MessengerUser;
-    } catch (error) {
-      console.error('Error validating session:', error);
-      return null;
-    }
-  }
-
-  async logout(sessionToken: string): Promise<void> {
-    try {
-      await supabase
-        .from('user_sessions')
-        .update({ is_active: false })
-        .eq('session_token', sessionToken);
-    } catch (error) {
-      console.error('Error logging out:', error);
-      throw error;
-    }
-  }
-
-  async deactivateSession(sessionToken: string): Promise<void> {
-    return this.logout(sessionToken);
-  }
-
-  // Admin Methods
-  async getAllUsers(): Promise<MessengerUser[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting all users:', error);
-      throw error;
-    }
-  }
-
-  async getApprovedUsers(): Promise<MessengerUser[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('is_approved', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting approved users:', error);
-      throw error;
-    }
-  }
-
   async getAllMessages(): Promise<MessengerMessage[]> {
     try {
       const { data, error } = await supabase
         .from('messenger_messages')
         .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey(*)
+          id,
+          message,
+          sender_id,
+          recipient_id,
+          room_id,
+          conversation_id,
+          message_type,
+          is_read,
+          created_at,
+          media_url,
+          sender:chat_users!sender_id(
+            id,
+            name,
+            phone,
+            username,
+            is_approved,
+            bedoun_marz,
+            bedoun_marz_approved,
+            is_messenger_admin,
+            is_support_agent,
+            created_at,
+            updated_at
+          )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: msg.sender || undefined
+      })) as MessengerMessage[];
     } catch (error) {
-      console.error('Error getting all messages:', error);
+      console.error('Error fetching all messages:', error);
       throw error;
     }
   }
 
-  async getMessages(roomId?: number): Promise<MessengerMessage[]> {
+  async getMessages(roomId: number): Promise<MessengerMessage[]> {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('messenger_messages')
         .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey(*)
+          id,
+          message,
+          sender_id,
+          recipient_id,
+          room_id,
+          conversation_id,
+          message_type,
+          is_read,
+          created_at,
+          media_url,
+          sender:chat_users!sender_id(
+            id,
+            name,
+            phone,
+            username,
+            is_approved,
+            bedoun_marz,
+            bedoun_marz_approved,
+            is_messenger_admin,
+            is_support_agent,
+            created_at,
+            updated_at
+          )
         `)
-        .order('created_at', { ascending: false });
-
-      if (roomId) {
-        query = query.eq('room_id', roomId);
-      }
-
-      const { data, error } = await query;
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: msg.sender || undefined
+      })) as MessengerMessage[];
     } catch (error) {
-      console.error('Error getting messages:', error);
+      console.error('Error fetching messages:', error);
       throw error;
     }
   }
 
-  async sendMessage(message: string, senderId: number, roomId?: number, recipientId?: number): Promise<MessengerMessage> {
+  async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
     try {
       const { data, error } = await supabase
         .from('messenger_messages')
         .insert({
-          message,
-          sender_id: senderId,
           room_id: roomId,
-          recipient_id: recipientId,
-          message_type: 'text'
+          sender_id: senderId,
+          message: message,
+          message_type: 'text',
+          is_read: false
         })
-        .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey(*)
-        `)
+        .select()
         .single();
 
       if (error) throw error;
@@ -405,14 +203,14 @@ class MessengerService {
     }
   }
 
-  async addReaction(messageId: number, userId: number, reaction: string): Promise<void> {
+  async addReaction(messageId: number, userId: number, emoji: string): Promise<void> {
     try {
       const { error } = await supabase
         .from('message_reactions')
         .insert({
           message_id: messageId,
           user_id: userId,
-          reaction: reaction
+          reaction: emoji
         });
 
       if (error) throw error;
@@ -436,64 +234,54 @@ class MessengerService {
     }
   }
 
-  async getAdminSettings(): Promise<AdminSettings> {
+  async getAllUsers(): Promise<MessengerUser[]> {
     try {
       const { data, error } = await supabase
-        .from('admin_settings')
+        .from('chat_users')
         .select('*')
-        .eq('id', 1)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (!data) {
-        // Create default settings
-        const defaultSettings = {
-          id: 1,
-          manual_approval_enabled: false
-        };
-
-        const { data: newData, error: insertError } = await supabase
-          .from('admin_settings')
-          .upsert(defaultSettings, { onConflict: 'id' })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        return newData;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error getting admin settings:', error);
-      throw error;
-    }
-  }
-
-  async updateAdminSettings(updates: Partial<AdminSettings>): Promise<AdminSettings> {
-    try {
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .upsert({ id: 1, ...updates }, { onConflict: 'id' })
-        .select()
-        .single();
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
     } catch (error) {
-      console.error('Error updating admin settings:', error);
+      console.error('Error fetching users:', error);
       throw error;
     }
   }
 
-  async updateUserRole(userId: number, updates: { 
-    is_support_agent?: boolean; 
-    is_messenger_admin?: boolean;
-    is_approved?: boolean;
-    bedoun_marz_approved?: boolean;
-  }): Promise<void> {
+  async getApprovedUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching approved users:', error);
+      throw error;
+    }
+  }
+
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
+    } catch (error) {
+      console.error('Error fetching user by phone:', error);
+      throw error;
+    }
+  }
+
+  async updateUserRole(userId: number, updates: Partial<MessengerUser>): Promise<void> {
     try {
       const { error } = await supabase
         .from('chat_users')
@@ -507,7 +295,7 @@ class MessengerService {
     }
   }
 
-  async updateUserDetails(userId: number, updates: any): Promise<void> {
+  async updateUserDetails(userId: number, updates: Partial<MessengerUser>): Promise<void> {
     try {
       const { error } = await supabase
         .from('chat_users')
@@ -521,18 +309,150 @@ class MessengerService {
     }
   }
 
+  async registerWithPassword(name: string, phone: string, password: string, username?: string): Promise<AuthResult> {
+    try {
+      // Check if user already exists
+      const existingUser = await this.getUserByPhone(phone);
+      if (existingUser) {
+        throw new Error('کاربری با این شماره تلفن قبلاً ثبت شده است');
+      }
+
+      const { data, error } = await supabase
+        .from('chat_users')
+        .insert({
+          name,
+          phone,
+          username: username || null,
+          password_hash: password, // In production, this should be hashed
+          is_approved: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create session
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error: sessionError } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: data.id,
+          session_token: sessionToken,
+          is_active: true
+        });
+
+      if (sessionError) throw sessionError;
+
+      return {
+        user: data,
+        session_token: sessionToken
+      };
+    } catch (error) {
+      console.error('Error registering user:', error);
+      throw error;
+    }
+  }
+
+  async authenticateUser(phone: string, password: string): Promise<AuthResult> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .eq('password_hash', password)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('شماره تلفن یا رمز عبور اشتباه است');
+
+      // Create session
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error: sessionError } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: data.id,
+          session_token: sessionToken,
+          is_active: true
+        });
+
+      if (sessionError) throw sessionError;
+
+      return {
+        user: data,
+        session_token: sessionToken
+      };
+    } catch (error) {
+      console.error('Error authenticating user:', error);
+      throw error;
+    }
+  }
+
+  async createSession(userId: number): Promise<{ session_token: string }> {
+    try {
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: userId,
+          session_token: sessionToken,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      return { session_token: sessionToken };
+    } catch (error) {
+      console.error('Error creating session:', error);
+      throw error;
+    }
+  }
+
+  async getAdminSettings(): Promise<AdminSettings> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data || { manual_approval_enabled: false, updated_at: new Date().toISOString() };
+    } catch (error) {
+      console.error('Error fetching admin settings:', error);
+      return { manual_approval_enabled: false, updated_at: new Date().toISOString() };
+    }
+  }
+
+  async updateAdminSettings(updates: Partial<AdminSettings>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .upsert({
+          id: 1,
+          ...updates,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating admin settings:', error);
+      throw error;
+    }
+  }
+
   async getThreadTypes(): Promise<SupportThreadType[]> {
     try {
       const { data, error } = await supabase
         .from('support_thread_types')
         .select('*')
-        .eq('is_active', true)
-        .order('id');
+        .eq('is_active', true);
 
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error getting thread types:', error);
+      console.error('Error fetching thread types:', error);
       throw error;
     }
   }
@@ -542,13 +462,12 @@ class MessengerService {
       const { data, error } = await supabase
         .from('support_agent_assignments')
         .select('*')
-        .eq('is_active', true)
-        .order('assigned_at', { ascending: false });
+        .eq('is_active', true);
 
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error getting support agent assignments:', error);
+      console.error('Error fetching support agent assignments:', error);
       throw error;
     }
   }
@@ -593,24 +512,12 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map(topic => ({
+        ...topic,
+        description: topic.description || ''
+      }));
     } catch (error) {
-      console.error('Error getting topics:', error);
-      throw error;
-    }
-  }
-
-  async getRooms(sessionToken?: string): Promise<ChatRoom[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting rooms:', error);
+      console.error('Error fetching topics:', error);
       throw error;
     }
   }
@@ -619,58 +526,40 @@ class MessengerService {
     try {
       const { data, error } = await supabase
         .from('chat_topics')
-        .insert(topic)
+        .insert({
+          title: topic.title,
+          description: topic.description || '',
+          is_active: topic.is_active ?? true
+        })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        description: data.description || ''
+      };
     } catch (error) {
       console.error('Error creating topic:', error);
       throw error;
     }
   }
 
-  async createRoom(room: { name: string; description?: string; type: string; is_boundless_only?: boolean }): Promise<ChatRoom> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .insert(room)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error creating room:', error);
-      throw error;
-    }
-  }
-
   async updateTopic(topicId: number, updates: Partial<ChatTopic>): Promise<void> {
     try {
+      const updateData: any = {};
+      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+      
       const { error } = await supabase
         .from('chat_topics')
-        .update(updates)
+        .update(updateData)
         .eq('id', topicId);
 
       if (error) throw error;
     } catch (error) {
       console.error('Error updating topic:', error);
-      throw error;
-    }
-  }
-
-  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('chat_rooms')
-        .update(updates)
-        .eq('id', roomId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating room:', error);
       throw error;
     }
   }
@@ -689,6 +578,54 @@ class MessengerService {
     }
   }
 
+  async createRoom(room: { name: string; description?: string; type?: string; is_active?: boolean; is_boundless_only?: boolean }): Promise<ChatRoom> {
+    try {
+      const roomType = (room.type as 'general' | 'academy_support' | 'boundless_support') || 'general';
+      
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .insert({
+          name: room.name,
+          description: room.description || '',
+          type: roomType,
+          is_active: room.is_active ?? true,
+          is_boundless_only: room.is_boundless_only ?? false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return {
+        ...data,
+        type: data.type as 'general' | 'academy_support' | 'boundless_support'
+      } as ChatRoom;
+    } catch (error) {
+      console.error('Error creating room:', error);
+      throw error;
+    }
+  }
+
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
+    try {
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.type !== undefined) updateData.type = updates.type;
+      if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+      if (updates.is_boundless_only !== undefined) updateData.is_boundless_only = updates.is_boundless_only;
+      
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update(updateData)
+        .eq('id', roomId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating room:', error);
+      throw error;
+    }
+  }
+
   async deleteRoom(roomId: number): Promise<void> {
     try {
       const { error } = await supabase
@@ -703,10 +640,77 @@ class MessengerService {
     }
   }
 
-  private generateSessionToken(): string {
-    return Math.random().toString(36).substring(2) + 
-           Math.random().toString(36).substring(2) + 
-           Date.now().toString(36);
+  async getRooms(sessionToken: string): Promise<ChatRoom[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(room => ({
+        ...room,
+        type: room.type as 'general' | 'academy_support' | 'boundless_support'
+      })) as ChatRoom[];
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+      throw error;
+    }
+  }
+
+  async validateSession(sessionToken: string): Promise<{ user: MessengerUser } | null> {
+    try {
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .select(`
+          user_id,
+          is_active,
+          last_activity,
+          chat_users!user_id(
+            id,
+            name,
+            phone,
+            username,
+            is_approved,
+            bedoun_marz,
+            bedoun_marz_approved,
+            is_messenger_admin,
+            is_support_agent,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('session_token', sessionToken)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error || !data) return null;
+
+      const lastActivity = new Date(data.last_activity);
+      const now = new Date();
+      const hoursDiff = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
+
+      if (hoursDiff > 24) return null;
+
+      return {
+        user: data.chat_users as MessengerUser
+      };
+    } catch (error) {
+      console.error('Error validating session:', error);
+      return null;
+    }
+  }
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    try {
+      await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('session_token', sessionToken);
+    } catch (error) {
+      console.error('Error deactivating session:', error);
+    }
   }
 }
 

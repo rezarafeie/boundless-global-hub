@@ -46,7 +46,7 @@ const LiveStreamManagementModal: React.FC<LiveStreamManagementModalProps> = ({
       const { data, error } = await supabase
         .from('live_settings')
         .select('*')
-        .maybeSingle();
+        .single();
 
       if (error && error.code !== 'PGRST116') throw error;
 
