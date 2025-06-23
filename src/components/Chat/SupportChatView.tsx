@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -95,9 +94,11 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         message: msg.message,
         sender_id: msg.sender_id,
         recipient_id: msg.recipient_id || 1,
+        user_id: msg.sender_id, // Map sender_id to user_id
         conversation_id: msg.conversation_id || 0,
         message_type: msg.message_type,
         is_read: msg.is_read,
+        is_from_support: msg.sender_id === 1, // Support messages are from sender_id = 1
         created_at: msg.created_at,
         media_url: msg.media_url || undefined,
         sender: msg.sender
@@ -151,9 +152,11 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         message: data.message,
         sender_id: data.sender_id,
         recipient_id: data.recipient_id || 1,
+        user_id: data.sender_id,
         conversation_id: data.conversation_id || 0,
         message_type: data.message_type,
         is_read: data.is_read,
+        is_from_support: data.sender_id === 1,
         created_at: data.created_at,
         media_url: data.media_url,
         sender: currentUser

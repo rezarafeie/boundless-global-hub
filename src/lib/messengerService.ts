@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -35,10 +34,16 @@ export interface SupportMessage {
   id: number;
   message: string;
   sender_id: number;
-  user_id: number;
-  is_from_support: boolean;
+  recipient_id?: number;
+  user_id?: number;
+  conversation_id?: number;
+  message_type?: string;
+  is_read?: boolean;
+  is_from_support?: boolean;
   created_at: string;
   read_at?: string;
+  media_url?: string;
+  sender?: MessengerUser;
 }
 
 export interface ChatTopic {
