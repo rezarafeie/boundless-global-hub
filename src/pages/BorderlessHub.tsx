@@ -4,13 +4,11 @@ import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings } from 'lucide-react';
+import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings, Maximize } from 'lucide-react';
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
 import { Link } from 'react-router-dom';
 import AnnouncementMedia from '@/components/Chat/AnnouncementMedia';
-import EnhancedLiveStreamCard from '@/components/Chat/EnhancedLiveStreamCard';
-import EnhancedRafieiMeetCard from '@/components/Chat/EnhancedRafieiMeetCard';
 import { motion } from 'framer-motion';
 
 const BorderlessHub = () => {
@@ -26,9 +24,9 @@ const BorderlessHub = () => {
     }
   }, []);
 
-  const handleGoHome = () => {
-    window.location.href = '/';
-  };
+  const isLiveActive = liveSettings?.is_live || false;
+  const isMeetActive = rafieiMeetSettings?.is_active || false;
+  const hasActiveLiveContent = isLiveActive || isMeetActive;
 
   const quickAccessItems = [
     {
@@ -56,8 +54,7 @@ const BorderlessHub = () => {
 
   return (
     <MainLayout>
-      {/* Hero Section with Glows */}
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 pt-20 overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 pt-20">
         {/* Background Glows */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl"></div>
@@ -83,154 +80,209 @@ const BorderlessHub = () => {
             </div>
           </motion.div>
 
-          {/* Main Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Messenger Card */}
+          {/* Live Sections - Full Width When Active */}
+          {hasActiveLiveContent && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
+              className="mb-12"
             >
-              <Link to="/hub/messenger">
-                <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 h-full">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                        <MessageCircle className="w-6 h-6" />
+              {/* Rafiei Meet Active */}
+              {isMeetActive && rafieiMeetSettings && (
+                <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-2xl mb-6">
+                  <CardContent className="p-8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+                          <h2 className="text-2xl font-bold">🎥 Live Now: {rafieiMeetSettings.title}</h2>
+                        </div>
+                        <p className="text-red-100 mb-6">{rafieiMeetSettings.description}</p>
+                        <div className="flex gap-4">
+                          <Button 
+                            asChild
+                            className="bg-white text-red-600 hover:bg-red-50"
+                          >
+                            <a href={rafieiMeetSettings.meet_url} target="_blank" rel="noopener noreferrer">
+                              <Video className="w-5 h-5 mr-2" />
+                              ورود به جلسه
+                            </a>
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="border-white text-white hover:bg-white/10"
+                          >
+                            <Maximize className="w-5 h-5 mr-2" />
+                            تمام صفحه
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
-                          💬 پیام‌رسان
-                        </CardTitle>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          گفتگو و ارتباط با دیگران
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-slate-600 dark:text-slate-300 mb-4">
-                      به گفتگوهای گروهی بپیوندید، با پشتیبانی در ارتباط باشید و با سایر اعضای جامعه بدون مرز تعامل کنید.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">گفتگوی زنده</Badge>
-                      <Badge variant="outline">پشتیبانی</Badge>
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
-            </motion.div>
+              )}
 
-            {/* Announcements Card */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 h-full">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white">
-                      <Bell className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">📢 اطلاعیه‌ها</CardTitle>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        آخرین اخبار و اطلاعیه‌ها
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {announcementsLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2].map((i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
-                          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+              {/* Aparat Live Active */}
+              {isLiveActive && liveSettings && (
+                <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-2xl">
+                  <CardContent className="p-8">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+                          <h2 className="text-2xl font-bold">📺 Live Stream: {liveSettings.title}</h2>
                         </div>
-                      ))}
+                        <p className="text-purple-100 mb-6">پخش زنده در حال انجام - {liveSettings.viewers} بیننده</p>
+                        <div className="flex gap-4">
+                          <Button 
+                            className="bg-white text-purple-600 hover:bg-purple-50"
+                          >
+                            <Play className="w-5 h-5 mr-2" />
+                            مشاهده پخش زنده
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="border-white text-white hover:bg-white/10"
+                          >
+                            <Maximize className="w-5 h-5 mr-2" />
+                            تمام صفحه
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  ) : announcements.length > 0 ? (
-                    <div className="space-y-4 max-h-64 overflow-y-auto">
-                      {announcements.slice(0, 3).map((announcement) => (
-                        <div key={announcement.id} className="p-3 bg-slate-50/50 dark:bg-slate-700/50 rounded-lg border border-slate-200/50 dark:border-slate-600/50">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={announcement.type === 'urgent' ? 'destructive' : 'secondary'}>
-                              {announcement.type === 'urgent' ? '🚨 فوری' : '📝 عمومی'}
-                            </Badge>
-                            {announcement.is_pinned && (
-                              <Badge variant="outline">📌 سنجاق</Badge>
-                            )}
-                          </div>
-                          <h4 className="font-medium text-slate-800 dark:text-slate-200 mb-1">
-                            {announcement.title}
-                          </h4>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                            {announcement.summary}
-                          </p>
-                          {announcement.media_type !== 'none' && (
-                            <div className="mt-2">
-                              <AnnouncementMedia 
-                                title={announcement.title}
-                                mediaType={announcement.media_type} 
-                                mediaUrl={announcement.media_url} 
-                                mediaContent={announcement.media_content} 
-                              />
-                            </div>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
+          )}
+
+          {/* Notices Section - Inline Display */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-12"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-4 flex items-center justify-center gap-3">
+                <Bell className="w-8 h-8 text-green-500" />
+                📢 اطلاعیه‌ها
+              </h2>
+            </div>
+
+            {announcementsLoading ? (
+              <div className="space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20">
+                    <CardContent className="p-6">
+                      <div className="animate-pulse">
+                        <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-4"></div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-2"></div>
+                        <div className="h-20 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : announcements.length > 0 ? (
+              <div className="space-y-6">
+                {announcements.map((announcement) => (
+                  <Card key={announcement.id} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-6" dir="rtl">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Badge variant={announcement.type === 'urgent' ? 'destructive' : 'secondary'} className="text-sm">
+                            {announcement.type === 'urgent' ? '🚨 فوری' : '📝 عمومی'}
+                          </Badge>
+                          {announcement.is_pinned && (
+                            <Badge variant="outline">📌 سنجاق شده</Badge>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <Bell className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-                      <p className="text-slate-500 dark:text-slate-400">
-                        اطلاعیه‌ای موجود نیست
-                      </p>
-                    </div>
-                  )}
+                        <div className="text-sm text-slate-500">
+                          {new Date(announcement.created_at).toLocaleDateString('fa-IR')}
+                        </div>
+                      </div>
+                      
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">
+                        {announcement.title}
+                      </h3>
+                      
+                      <div className="text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+                        {announcement.full_text}
+                      </div>
+
+                      {announcement.media_type !== 'none' && announcement.media_url && (
+                        <div className="mt-4">
+                          <AnnouncementMedia 
+                            title={announcement.title}
+                            mediaType={announcement.media_type} 
+                            mediaUrl={announcement.media_url} 
+                            mediaContent={announcement.media_content} 
+                          />
+                        </div>
+                      )}
+
+                      {announcement.views !== undefined && (
+                        <div className="mt-4 text-xs text-slate-400">
+                          👁️ {announcement.views} بازدید
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20">
+                <CardContent className="p-12 text-center">
+                  <Bell className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                    اطلاعیه‌ای موجود نیست
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-500">
+                    هنوز اطلاعیه‌ای منتشر نشده است. لطفاً بعداً مراجعه کنید.
+                  </p>
                 </CardContent>
               </Card>
-            </motion.div>
-          </div>
+            )}
+          </motion.div>
 
-          {/* Live Stream & Rafiei Meet Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Live Stream Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              {liveSettings && (
-                <EnhancedLiveStreamCard 
-                  {...liveSettings} 
-                  isActive={liveSettings.is_live}
-                />
-              )}
-            </motion.div>
-
-            {/* Rafiei Meet Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              {rafieiMeetSettings && (
-                <EnhancedRafieiMeetCard 
-                  {...rafieiMeetSettings} 
-                  isActive={rafieiMeetSettings.is_active}
-                />
-              )}
-            </motion.div>
-          </div>
+          {/* Messenger Access Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-12"
+          >
+            <Link to="/hub/messenger">
+              <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 cursor-pointer">
+                <CardContent className="p-8 text-center">
+                  <div className="mb-6">
+                    <div className="inline-flex p-4 rounded-full bg-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                      <MessageCircle className="w-12 h-12" />
+                    </div>
+                  </div>
+                  <h2 className="text-3xl font-bold mb-4">✉️ پیام‌رسان بدون مرز</h2>
+                  <p className="text-blue-100 text-lg mb-6">
+                    وارد گفتگوها شوید و با دانشجوها و پشتیبان در ارتباط باشید
+                  </p>
+                  <Button 
+                    size="lg"
+                    className="bg-white text-blue-600 hover:bg-blue-50 transform group-hover:scale-105 transition-all duration-200"
+                  >
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    ورود به پیام‌رسان
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+          </motion.div>
 
           {/* Quick Access Cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
             className="mb-12"
           >
             <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-8">
@@ -262,7 +314,7 @@ const BorderlessHub = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
               className="text-center"
             >
               <Link to="/hub/admin">

@@ -33,7 +33,7 @@ const HubSection: React.FC<HubSectionProps> = ({
   const isMeetActive = rafieiMeetSettings?.is_active || false;
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-b from-gray-800/90 to-black/90 backdrop-blur-sm border-t border-red-800/30">
+    <section className="force-dark py-20 px-4 bg-gradient-to-b from-gray-800/90 to-black/90 backdrop-blur-sm border-t border-red-800/30">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-700 to-indigo-700 rounded-full mb-8 shadow-2xl">
@@ -69,7 +69,7 @@ const HubSection: React.FC<HubSectionProps> = ({
         {/* Quick Access Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Announcements Card */}
-          <Card className="bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
+          <Card className="force-dark-card bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-blue-500/50 transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-white">
                 <Bell className="w-6 h-6 text-blue-400" />
@@ -89,7 +89,7 @@ const HubSection: React.FC<HubSectionProps> = ({
           </Card>
 
           {/* Chat Card */}
-          <Card className="bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-green-500/50 transition-all duration-300">
+          <Card className="force-dark-card bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-green-500/50 transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-white">
                 <div className="relative">
@@ -112,7 +112,7 @@ const HubSection: React.FC<HubSectionProps> = ({
           </Card>
 
           {/* Hub Access Card */}
-          <Card className="bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
+          <Card className="force-dark-card bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-white">
                 <Wifi className="w-6 h-6 text-purple-400" />

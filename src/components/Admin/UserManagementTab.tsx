@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { Users, UserCheck, UserX, Search, Shield, Star, Clock, Phone, Calendar } from 'lucide-react';
+import { Users, UserCheck, UserX, Search, Shield, Star, Clock, Phone, Calendar, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import UserEditModal from './UserEditModal';
 
 const UserManagementTab = () => {
   const { toast } = useToast();
@@ -16,6 +17,8 @@ const UserManagementTab = () => {
   const [filteredUsers, setFilteredUsers] = useState<MessengerUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -43,7 +46,8 @@ const UserManagementTab = () => {
     if (searchTerm) {
       const filtered = allUsers.filter(user => 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone.includes(searchTerm)
+        user.phone.includes(searchTerm) ||
+        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredUsers(filtered);
     } else {
@@ -107,6 +111,20 @@ const UserManagementTab = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleEditUser = (user: MessengerUser) => {
+    setEditingUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleEditModalClose = () => {
+    setShowEditModal(false);
+    setEditingUser(null);
+  };
+
+  const handleUserUpdated = () => {
+    fetchUsers();
   };
 
   const getStatusBadges = (user: MessengerUser) => {
@@ -216,7 +234,7 @@ const UserManagementTab = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="جستجو بر اساس نام یا شماره تلفن..."
+              placeholder="جستجو بر اساس نام، شماره تلفن یا نام کاربری..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -255,6 +273,9 @@ const UserManagementTab = () => {
                           <Phone className="w-3 h-3" />
                           {user.phone}
                         </p>
+                        {user.username && (
+                          <p className="text-xs text-blue-600">@{user.username}</p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -295,12 +316,20 @@ const UserManagementTab = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditUser(user)}
+                          className="p-2"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                         {!user.is_approved ? (
                           <>
                             <Button
                               size="sm"
                               onClick={() => handleApproveUser(user.id)}
-                              className="bg-green-600 hover:bg-green-700"
+                              className="bg-green-600 hover:bg-green-700 p-2"
                             >
                               <UserCheck className="w-4 h-4" />
                             </Button>
@@ -308,6 +337,7 @@ const UserManagementTab = () => {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleRejectUser(user.id)}
+                              className="p-2"
                             >
                               <UserX className="w-4 h-4" />
                             </Button>
@@ -317,6 +347,7 @@ const UserManagementTab = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleRejectUser(user.id)}
+                            className="p-2"
                           >
                             <UserX className="w-4 h-4" />
                           </Button>
@@ -330,6 +361,14 @@ const UserManagementTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Modal */}
+      <UserEditModal
+        user={editingUser}
+        isOpen={showEditModal}
+        onClose={handleEditModalClose}
+        onUserUpdated={handleUserUpdated}
+      />
     </div>
   );
 };
