@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
 
@@ -22,7 +21,7 @@ export interface MessengerUser {
 export interface ChatRoom {
   id: number;
   name: string;
-  description?: string;
+  description: string;
   type: string;
   is_active: boolean;
   is_boundless_only: boolean;
@@ -274,7 +273,7 @@ class MessengerService {
     await supabase
       .from('user_sessions')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         session_token: session_token,
         is_active: true
       });
@@ -358,7 +357,11 @@ class MessengerService {
       .single();
 
     if (error) throw error;
-    return data || null;
+    
+    return data ? {
+      ...data,
+      description: data.description || ''
+    } : null;
   }
 
   async getMessages(roomId: number): Promise<MessengerMessage[]> {
@@ -545,12 +548,18 @@ class MessengerService {
   async createRoom(roomData: { name: string; description?: string; type: string; is_boundless_only?: boolean }): Promise<ChatRoom> {
     const { data, error } = await supabase
       .from('chat_rooms')
-      .insert(roomData)
+      .insert({
+        ...roomData,
+        description: roomData.description || ''
+      })
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      description: data.description || ''
+    };
   }
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {

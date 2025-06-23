@@ -116,11 +116,11 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
       // Update username if provided and different
       if (formData.username && result.user.username !== formData.username) {
-        await privateMessageService.updateUsername(result.user.id, formData.username, result.token);
+        await privateMessageService.updateUsername(result.user.id, formData.username, result.session_token);
         result.user.username = formData.username;
       }
 
-      onAuthenticated(result.token, result.user.name, result.user);
+      onAuthenticated(result.session_token, result.user.name, result.user);
       
     } catch (error: any) {
       console.error('Registration error:', error);

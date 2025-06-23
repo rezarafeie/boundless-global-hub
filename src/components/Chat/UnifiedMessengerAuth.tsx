@@ -144,7 +144,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           setCurrentStep('pending');
           return;
         }
-        onAuthenticated(result.token, existingUser.name, existingUser);
+        onAuthenticated(result.session_token, existingUser.name, existingUser);
       } else {
         toast({
           title: 'خطا',
@@ -203,7 +203,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }
 
       // User is auto-approved, proceed to login
-      onAuthenticated(result.token, result.user.name, result.user);
+      onAuthenticated(result.session_token, result.user.name, result.user);
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
