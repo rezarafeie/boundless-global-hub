@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Trash2, RefreshCw, MessageSquare, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerMessage } from '@/lib/messengerService';
@@ -21,6 +22,18 @@ const ChatManagementTab = () => {
       setError(null);
       console.log('Fetching all messages...');
       
+      // Check if session token exists
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('لطفاً ابتدا وارد شوید');
+      }
+
+      // Validate session
+      const sessionResult = await messengerService.validateSession(sessionToken);
+      if (!sessionResult || !sessionResult.user.is_messenger_admin) {
+        throw new Error('شما دسترسی به این بخش ندارید');
+      }
+      
       const allMessages = await messengerService.getAllMessages();
       console.log('Fetched messages:', allMessages.length);
       
@@ -30,7 +43,7 @@ const ChatManagementTab = () => {
       setError(error.message || 'خطا در بارگذاری پیام‌ها');
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
+        description: error.message || 'خطا در بارگذاری پیام‌ها',
         variant: 'destructive',
       });
     } finally {
@@ -82,9 +95,23 @@ const ChatManagementTab = () => {
           <CardTitle>مدیریت پیام‌ها</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <RefreshCw className="w-6 h-6 animate-spin text-blue-500 mr-2" />
-            <span>در حال بارگذاری پیام‌ها...</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-center py-4">
+              <RefreshCw className="w-6 h-6 animate-spin text-blue-500 mr-2" />
+              <span>در حال بارگذاری پیام‌ها...</span>
+            </div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
