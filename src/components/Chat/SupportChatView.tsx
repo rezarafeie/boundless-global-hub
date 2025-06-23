@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -19,8 +18,18 @@ interface SupportRoom {
   thread_type_id?: number;
 }
 
+interface MessengerSupportRoom {
+  id: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  thread_type_id?: number;
+}
+
 interface SupportChatViewProps {
-  room: SupportRoom;
+  room?: SupportRoom;
+  supportRoom?: MessengerSupportRoom;
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
@@ -28,6 +37,7 @@ interface SupportChatViewProps {
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
   room,
+  supportRoom,
   currentUser,
   sessionToken,
   onBack
@@ -38,6 +48,9 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Use either room or supportRoom
+  const activeRoom = room || supportRoom;
 
   const fetchMessages = async () => {
     try {
@@ -85,7 +98,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         message_type: msg.message_type,
         is_read: msg.is_read,
         created_at: msg.created_at,
-        media_url: msg.media_url,
+        media_url: msg.media_url || undefined,
         sender: msg.sender
       }));
       
@@ -104,7 +117,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
   useEffect(() => {
     fetchMessages();
-  }, [room.id]);
+  }, [activeRoom?.id]);
 
   useEffect(() => {
     if (chatBottomRef.current) {
@@ -191,12 +204,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             </Button>
             
             <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
-              {room.name}
+              {activeRoom?.name}
             </h2>
             
-            {room.description && (
+            {activeRoom?.description && (
               <Badge variant="outline" className="text-xs">
-                {room.description}
+                {activeRoom.description}
               </Badge>
             )}
           </div>

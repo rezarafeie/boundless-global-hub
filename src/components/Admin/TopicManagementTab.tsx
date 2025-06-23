@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tag, Plus, Edit, Trash2, Users, Hash, Calendar, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { messengerService } from '@/lib/messengerService';
+import { messengerService, type ChatTopic, type ChatRoom } from '@/lib/messengerService';
 
 interface Topic {
   id: number;
@@ -34,8 +34,8 @@ interface Room {
 
 const TopicManagementTab = () => {
   const { toast } = useToast();
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [topics, setTopics] = useState<ChatTopic[]>([]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateTopicOpen, setIsCreateTopicOpen] = useState(false);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
@@ -51,7 +51,7 @@ const TopicManagementTab = () => {
   const [roomForm, setRoomForm] = useState({
     name: '',
     description: '',
-    type: 'public',
+    type: 'general' as 'general' | 'academy_support' | 'boundless_support',
     is_active: true,
     is_boundless_only: false
   });
@@ -114,7 +114,7 @@ const TopicManagementTab = () => {
       setRoomForm({ 
         name: '', 
         description: '', 
-        type: 'public', 
+        type: 'general', 
         is_active: true, 
         is_boundless_only: false 
       });
@@ -128,7 +128,7 @@ const TopicManagementTab = () => {
     }
   };
 
-  const handleUpdateTopic = async (id: number, updates: Partial<Topic>) => {
+  const handleUpdateTopic = async (id: number, updates: Partial<ChatTopic>) => {
     try {
       await messengerService.updateTopic(id, updates);
       toast({
@@ -145,7 +145,7 @@ const TopicManagementTab = () => {
     }
   };
 
-  const handleUpdateRoom = async (id: number, updates: Partial<Room>) => {
+  const handleUpdateRoom = async (id: number, updates: Partial<ChatRoom>) => {
     try {
       await messengerService.updateRoom(id, updates);
       toast({

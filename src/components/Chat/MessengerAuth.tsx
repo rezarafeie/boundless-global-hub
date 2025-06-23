@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,13 +105,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     
     try {
       // Register user with password
-      const result = await messengerService.registerWithPassword({
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
-        username: formData.username || undefined,
-        password: formData.password,
-        isBoundlessStudent: formData.isBoundlessStudent
-      });
+      const result = await messengerService.registerWithPassword(
+        formData.name.trim(),
+        formData.phone.trim(),
+        formData.password,
+        formData.username || undefined
+      );
 
       // Update username if provided and different
       if (formData.username && result.user.username !== formData.username) {

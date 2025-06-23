@@ -89,6 +89,11 @@ export interface ChatTopic {
   updated_at: string;
 }
 
+export interface AuthResult {
+  user: MessengerUser;
+  session_token: string;
+}
+
 class MessengerService {
   async getAllMessages(): Promise<MessengerMessage[]> {
     try {
@@ -105,7 +110,7 @@ class MessengerService {
           is_read,
           created_at,
           media_url,
-          sender:chat_users!sender_id(
+          sender:sender_id!inner(
             id,
             name,
             phone,
@@ -145,7 +150,7 @@ class MessengerService {
           is_read,
           created_at,
           media_url,
-          sender:chat_users!sender_id(
+          sender:sender_id!inner(
             id,
             name,
             phone,
@@ -254,6 +259,22 @@ class MessengerService {
     }
   }
 
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
+    } catch (error) {
+      console.error('Error fetching user by phone:', error);
+      throw error;
+    }
+  }
+
   async updateUserRole(userId: number, updates: Partial<MessengerUser>): Promise<void> {
     try {
       const { error } = await supabase
@@ -282,7 +303,7 @@ class MessengerService {
     }
   }
 
-  async registerWithPassword(name: string, phone: string, password: string, username?: string): Promise<MessengerUser> {
+  async registerWithPassword(name: string, phone: string, password: string, username?: string): Promise<AuthResult> {
     try {
       const { data, error } = await supabase
         .from('chat_users')
@@ -297,9 +318,81 @@ class MessengerService {
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Create session
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error: sessionError } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: data.id,
+          session_token: sessionToken,
+          is_active: true
+        });
+
+      if (sessionError) throw sessionError;
+
+      return {
+        user: data,
+        session_token: sessionToken
+      };
     } catch (error) {
       console.error('Error registering user:', error);
+      throw error;
+    }
+  }
+
+  async authenticateUser(phone: string, password: string): Promise<AuthResult> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .eq('password_hash', password)
+        .single();
+
+      if (error) throw error;
+
+      // Create session
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error: sessionError } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: data.id,
+          session_token: sessionToken,
+          is_active: true
+        });
+
+      if (sessionError) throw sessionError;
+
+      return {
+        user: data,
+        session_token: sessionToken
+      };
+    } catch (error) {
+      console.error('Error authenticating user:', error);
+      throw error;
+    }
+  }
+
+  async createSession(userId: number): Promise<{ session_token: string }> {
+    try {
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: userId,
+          session_token: sessionToken,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      return { session_token: sessionToken };
+    } catch (error) {
+      console.error('Error creating session:', error);
       throw error;
     }
   }
@@ -413,11 +506,15 @@ class MessengerService {
     }
   }
 
-  async createTopic(topic: Partial<ChatTopic>): Promise<ChatTopic> {
+  async createTopic(topic: { title: string; description?: string; is_active?: boolean }): Promise<ChatTopic> {
     try {
       const { data, error } = await supabase
         .from('chat_topics')
-        .insert(topic)
+        .insert({
+          title: topic.title,
+          description: topic.description || '',
+          is_active: topic.is_active ?? true
+        })
         .select()
         .single();
 
@@ -457,16 +554,24 @@ class MessengerService {
     }
   }
 
-  async createRoom(room: Partial<ChatRoom>): Promise<ChatRoom> {
+  async createRoom(room: { name: string; description?: string; type?: string; is_active?: boolean; is_boundless_only?: boolean }): Promise<ChatRoom> {
     try {
+      const roomType = (room.type as 'general' | 'academy_support' | 'boundless_support') || 'general';
+      
       const { data, error } = await supabase
         .from('chat_rooms')
-        .insert(room)
+        .insert({
+          name: room.name,
+          description: room.description || '',
+          type: roomType,
+          is_active: room.is_active ?? true,
+          is_boundless_only: room.is_boundless_only ?? false
+        })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as ChatRoom;
     } catch (error) {
       console.error('Error creating room:', error);
       throw error;
@@ -510,7 +615,7 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as ChatRoom[];
     } catch (error) {
       console.error('Error fetching rooms:', error);
       throw error;
