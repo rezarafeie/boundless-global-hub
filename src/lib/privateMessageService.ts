@@ -32,9 +32,12 @@ export interface PrivateMessage {
 class PrivateMessageService {
   async searchUsers(searchTerm: string, sessionToken: string): Promise<MessengerUser[]> {
     try {
-      const { data, error } = await supabase.rpc('search_users', {
-        search_term: searchTerm
-      });
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('is_approved', true)
+        .or(`username.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
+        .order('name');
 
       if (error) {
         console.error('Error searching users:', error);

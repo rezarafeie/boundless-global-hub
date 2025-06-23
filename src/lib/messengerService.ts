@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -266,7 +267,7 @@ class MessengerService {
     try {
       await this.setSessionContext(sessionToken);
       
-      // Use explicit foreign key syntax to avoid ambiguous relationship error
+      // Use explicit foreign key syntax to avoid ambiguous relationship error and include username
       const { data: messages, error } = await supabase
         .from('messenger_messages')
         .select(`
@@ -275,6 +276,7 @@ class MessengerService {
             id,
             name,
             phone,
+            username,
             role,
             is_approved,
             is_support_agent,
