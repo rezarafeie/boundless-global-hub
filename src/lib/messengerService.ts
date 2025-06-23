@@ -50,6 +50,23 @@ export interface MessengerMessage {
   };
 }
 
+export interface SupportThreadType {
+  id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  is_active: boolean;
+  is_boundless_only: boolean;
+}
+
+export interface SupportAgentAssignment {
+  id: number;
+  agent_id: number;
+  thread_type_id: number;
+  is_active: boolean;
+  assigned_at: string;
+}
+
 export interface AdminSettings {
   manual_approval_enabled: boolean;
   updated_at: string;
@@ -346,7 +363,7 @@ class MessengerService {
 
   async getMessages(roomId: number): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
-      .from('chat_messages')
+      .from('messenger_messages')
       .select(`*, sender:chat_users(name, phone)`)
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
@@ -355,9 +372,20 @@ class MessengerService {
     return data || [];
   }
 
+  async getPrivateMessages(conversationId: number): Promise<MessengerMessage[]> {
+    const { data, error } = await supabase
+      .from('private_messages')
+      .select(`*, sender:chat_users(name, phone)`)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  }
+
   async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
     const { data, error } = await supabase
-      .from('chat_messages')
+      .from('messenger_messages')
       .insert({
         room_id: roomId,
         sender_id: senderId,
@@ -430,7 +458,7 @@ class MessengerService {
 
   async getAllMessages(): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
-      .from('chat_messages')
+      .from('messenger_messages')
       .select(`*, sender:chat_users(name, phone)`)
       .order('created_at', { ascending: false });
 
@@ -440,7 +468,7 @@ class MessengerService {
 
   async deleteMessage(messageId: number): Promise<void> {
     const { error } = await supabase
-      .from('chat_messages')
+      .from('messenger_messages')
       .delete()
       .eq('id', messageId);
 
@@ -511,6 +539,60 @@ class MessengerService {
       .from('chat_rooms')
       .delete()
       .eq('id', roomId);
+
+    if (error) throw error;
+  }
+
+  async getThreadTypes(): Promise<SupportThreadType[]> {
+    const { data, error } = await supabase
+      .from('support_thread_types')
+      .select('*')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
+    const { data, error } = await supabase
+      .from('support_agent_assignments')
+      .select('*')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    const { error } = await supabase
+      .from('support_agent_assignments')
+      .insert({
+        agent_id: agentId,
+        thread_type_id: threadTypeId,
+        is_active: true
+      });
+
+    if (error) throw error;
+  }
+
+  async unassignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    const { error } = await supabase
+      .from('support_agent_assignments')
+      .update({ is_active: false })
+      .eq('agent_id', agentId)
+      .eq('thread_type_id', threadTypeId);
+
+    if (error) throw error;
+  }
+
+  async addReaction(messageId: number, userId: number, reaction: string): Promise<void> {
+    const { error } = await supabase
+      .from('message_reactions')
+      .insert({
+        message_id: messageId,
+        user_id: userId,
+        reaction: reaction
+      });
 
     if (error) throw error;
   }
