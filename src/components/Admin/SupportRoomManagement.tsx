@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Settings, Users, Shield, Edit, Trash2 } from 'lucide-react';
+import { Plus, Settings, Users, Shield, Edit, Trash2, Crown, Headphones, Phone, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supportRoomService, type SupportRoom, type SupportRoomAgent } from '@/lib/supportRoomService';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
