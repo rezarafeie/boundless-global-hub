@@ -1,287 +1,254 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Send, Clock, CheckCircle, Archive, AlertCircle, Tag, FileText, Smile } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser, type MessengerMessage, type ChatRoom } from '@/lib/messengerService';
-import { supportService } from '@/lib/supportService';
-import EmojiPicker from './EmojiPicker';
-import SupportChatView from './SupportChatView';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Send, MessageCircle, Headphones } from 'lucide-react';
+import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 
 interface MessengerChatViewProps {
-  room: ChatRoom;
+  selectedRoom?: ChatRoom | null;
+  selectedUser?: MessengerUser | null;
   currentUser: MessengerUser;
   sessionToken: string;
-  onBack: () => void;
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
-  room,
+  selectedRoom,
+  selectedUser,
   currentUser,
-  sessionToken,
-  onBack
+  sessionToken
 }) => {
-  // If it's a support room, use SupportChatView
-  if (room.is_support_room && room.support_room_id) {
-    const supportRoom = {
-      id: room.support_room_id,
-      name: room.name,
-      description: room.description,
-      icon: 'headphones',
-      color: '#8B5CF6',
-      is_active: true,
-      is_default: false,
-      thread_type_id: room.is_boundless_only ? 2 : 1,
-      created_at: room.created_at,
-      updated_at: room.updated_at,
-      created_by: null
-    };
-
-    return (
-      <SupportChatView
-        supportRoom={supportRoom}
-        currentUser={currentUser}
-        sessionToken={sessionToken}
-        onBack={onBack}
-      />
-    );
-  }
-
-  const { toast } = useToast();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchMessages = async () => {
+  useEffect(() => {
+    if (selectedRoom) {
+      loadRoomMessages(selectedRoom.id);
+    } else if (selectedUser) {
+      loadPrivateMessages(selectedUser.id);
+    } else {
+      setMessages([]);
+    }
+  }, [selectedRoom, selectedUser]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const loadRoomMessages = async (roomId: number) => {
     try {
       setLoading(true);
-      const fetchedMessages = await messengerService.getMessages(room.id);
-      setMessages(fetchedMessages);
+      const messagesData = await messengerService.getMessages(roomId);
+      setMessages(messagesData);
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
-        variant: 'destructive',
-      });
+      console.error('Error loading room messages:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchMessages();
-  }, [room.id]);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel(`messenger_room_${room.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
-        (payload) => {
-          const newMessage = payload.new as MessengerMessage;
-          if (newMessage.room_id === room.id) {
-            setMessages((prevMessages) => [...prevMessages, newMessage]);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [room.id]);
-
-  useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+  const loadPrivateMessages = async (userId: number) => {
+    try {
+      setLoading(true);
+      const conversationId = await messengerService.getOrCreatePrivateConversation(currentUser.id, userId);
+      const messagesData = await messengerService.getPrivateMessages(conversationId);
+      setMessages(messagesData);
+    } catch (error) {
+      console.error('Error loading private messages:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [messages]);
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
     try {
-      const sentMessage = await messengerService.sendMessage(
-        room.id,
-        currentUser.id,
-        newMessage
-      );
-      setMessages((prevMessages) => [...prevMessages, sentMessage]);
-      setNewMessage('');
+      let sentMessage: MessengerMessage;
 
-      toast({
-        title: 'پیام ارسال شد',
-        description: 'پیام شما با موفقیت ارسال شد.',
-      });
+      if (selectedRoom) {
+        sentMessage = await messengerService.sendMessage(selectedRoom.id, currentUser.id, newMessage.trim());
+      } else if (selectedUser) {
+        sentMessage = await messengerService.sendPrivateMessage(currentUser.id, selectedUser.id, newMessage.trim());
+      } else {
+        return;
+      }
+
+      setMessages([...messages, sentMessage]);
+      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({
-        title: 'خطا در ارسال پیام',
-        description: 'خطا در ارسال پیام',
-        variant: 'destructive',
-      });
     } finally {
       setSending(false);
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setNewMessage(prev => prev + emoji);
-    setShowEmojiPicker(false);
-  };
-
-  const handleAddReaction = async (messageId: number, emoji: string) => {
-    try {
-      await messengerService.addReaction(messageId, currentUser.id, emoji);
-      toast({
-        title: 'واکنش اضافه شد',
-        description: `واکنش ${emoji} به پیام اضافه شد`,
-      });
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در اضافه کردن واکنش',
-        variant: 'destructive',
-      });
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
-  if (loading) {
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  const getChatTitle = () => {
+    if (selectedRoom) {
+      return selectedRoom.name;
+    } else if (selectedUser) {
+      return selectedUser.name;
+    }
+    return '';
+  };
+
+  const getChatDescription = () => {
+    if (selectedRoom) {
+      return selectedRoom.description;
+    } else if (selectedUser) {
+      if (selectedUser.phone === '1') return 'پشتیبانی آکادمی رفیعی';
+      if (selectedUser.phone === '2') return 'پشتیبانی بدون مرز';
+      return selectedUser.username ? `@${selectedUser.username}` : selectedUser.phone;
+    }
+    return '';
+  };
+
+  if (!selectedRoom && !selectedUser) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
+      <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پیام‌ها...</p>
+          <MessageCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-600 mb-2">چت انتخاب کنید</h3>
+          <p className="text-slate-500">برای شروع گفتگو، یک چت را انتخاب کنید</p>
         </div>
       </div>
     );
   }
-  
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="h-full flex flex-col">
       {/* Chat Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onBack}
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700"
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-10 h-10">
+            <AvatarFallback 
+              style={{ 
+                backgroundColor: selectedUser?.phone === '1' || selectedUser?.phone === '2' 
+                  ? '#3B82F6' 
+                  : getAvatarColor(getChatTitle()) 
+              }}
+              className="text-white font-medium"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </Button>
-            
-            <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
-              {room.name}
-            </h2>
-            
-            {room.description && (
-              <Badge variant="outline" className="text-xs">
-                {room.description}
-              </Badge>
-            )}
+              {selectedUser?.phone === '1' || selectedUser?.phone === '2' ? (
+                <Headphones className="w-5 h-5" />
+              ) : (
+                getChatTitle().charAt(0)
+              )}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="font-semibold">{getChatTitle()}</h2>
+            <p className="text-sm text-slate-500">{getChatDescription()}</p>
           </div>
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-slate-500">
-              <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8" />
-              </div>
-              <p className="text-lg font-medium mb-2">هنوز پیامی ارسال نشده</p>
-              <p className="text-sm">اولین پیام را ارسال کنید!</p>
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 p-4">
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <MessageCircle className="w-8 h-8 text-slate-300 mx-auto mb-2 animate-pulse" />
+              <p className="text-sm text-slate-500">در حال بارگذاری پیام‌ها...</p>
             </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`mb-4 flex ${message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[70%] ${message.sender_id === currentUser.id ? 'order-2' : 'order-1'}`}>
-                <div className={`rounded-2xl px-4 py-3 ${message.sender_id === currentUser.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'}`}>
-                  <p className="text-sm leading-relaxed">{message.message}</p>
-                  <div className={`text-xs mt-2 flex items-center justify-between ${message.sender_id === currentUser.id 
-                    ? 'text-blue-100' 
-                    : 'text-slate-500 dark:text-slate-400'}`}>
-                    <span>
-                      {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
+          <div className="space-y-4">
+            {messages.map((message) => {
+              const isCurrentUser = message.sender_id === currentUser.id;
+              return (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  {!isCurrentUser && (
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback 
+                        style={{ backgroundColor: getAvatarColor(message.sender?.name || 'Unknown') }}
+                        className="text-white text-sm"
+                      >
+                        {(message.sender?.name || 'U').charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className={`max-w-xs lg:max-w-md ${isCurrentUser ? 'order-1' : ''}`}>
+                    {!isCurrentUser && (
+                      <p className="text-xs text-slate-600 mb-1">{message.sender?.name}</p>
+                    )}
+                    <div
+                      className={`rounded-lg p-3 ${
+                        isCurrentUser
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600'
+                      }`}
+                    >
+                      <p className="text-sm">{message.message}</p>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {new Date(message.created_at).toLocaleTimeString('fa-IR', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
-                    </span>
-                    {message.sender_id !== currentUser.id && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAddReaction(message.id, '👍')}
-                        className="p-1 h-6 w-6"
-                      >
-                        <span>👍</span>
-                      </Button>
-                    )}
+                    </p>
                   </div>
+                  {isCurrentUser && (
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback 
+                        style={{ backgroundColor: getAvatarColor(currentUser.name) }}
+                        className="text-white text-sm"
+                      >
+                        {currentUser.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
-              </div>
-            </div>
-          ))
-        )}
-        <div ref={chatBottomRef} />
-      </div>
-
-      {/* Chat Input */}
-      <div className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-2"
-            >
-              <Smile className="w-4 h-4" />
-            </Button>
-            {showEmojiPicker && (
-              <div className="absolute bottom-12 left-0 z-50">
-                <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-              </div>
-            )}
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
+        )}
+      </ScrollArea>
+
+      {/* Message Input */}
+      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="flex gap-2">
           <Textarea
-            placeholder="پیام خود را وارد کنید..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
+            onKeyPress={handleKeyPress}
+            placeholder="پیام خود را بنویسید..."
+            className="flex-1 min-h-[40px] max-h-32 resize-none"
             rows={1}
-            className="resize-none flex-1"
           />
-          <Button onClick={handleSendMessage} disabled={sending}>
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={!newMessage.trim() || sending}
+            size="icon"
+          >
             <Send className="w-4 h-4" />
-            ارسال
           </Button>
         </div>
       </div>

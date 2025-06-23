@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
 
@@ -16,6 +17,7 @@ export interface MessengerUser {
   created_at: string;
   updated_at: string;
   last_seen: string;
+  bio?: string;
 }
 
 export interface ChatRoom {
@@ -30,8 +32,6 @@ export interface ChatRoom {
   last_message?: string;
   last_message_time?: string;
   unread_count?: number;
-  is_support_room?: boolean;
-  support_room_id?: number;
 }
 
 export interface MessengerMessage {
@@ -49,23 +49,6 @@ export interface MessengerMessage {
     name: string;
     phone: string;
   };
-}
-
-export interface SupportThreadType {
-  id: number;
-  name: string;
-  display_name: string;
-  description?: string;
-  is_active: boolean;
-  is_boundless_only: boolean;
-}
-
-export interface SupportAgentAssignment {
-  id: number;
-  agent_id: number;
-  thread_type_id: number;
-  is_active: boolean;
-  assigned_at: string;
 }
 
 export interface AdminSettings {
@@ -114,7 +97,6 @@ class MessengerService {
     username?: string;
     password: string;
   }): Promise<{ session_token: string; user: MessengerUser }> {
-    // Check admin settings for approval requirement
     const settings = await this.getAdminSettings();
     
     const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -126,7 +108,7 @@ class MessengerService {
         phone: userData.phone,
         username: userData.username,
         password_hash: hashedPassword,
-        is_approved: !settings.manual_approval_enabled, // Auto-approve if manual approval is disabled
+        is_approved: !settings.manual_approval_enabled,
         role: 'user'
       })
       .select()
@@ -321,14 +303,12 @@ class MessengerService {
     if (!session) {
       throw new Error('Session not found');
     }
-  
-    const userId = session.user_id;
 
     // Get user details to check permissions
     const { data: user } = await supabase
       .from('chat_users')
       .select('*')
-      .eq('id', userId)
+      .eq('id', session.user_id)
       .single();
 
     if (!user) {
@@ -346,16 +326,6 @@ class MessengerService {
       throw chatError;
     }
 
-    // Get support rooms directly from support_rooms table
-    const { data: supportRooms, error: supportError } = await supabase
-      .from('support_rooms')
-      .select('*')
-      .eq('is_active', true);
-
-    if (supportError) {
-      console.error('Error fetching support rooms:', supportError);
-    }
-  
     const rooms: ChatRoom[] = [];
 
     // Add regular chat rooms
@@ -372,39 +342,8 @@ class MessengerService {
         last_message: null,
         last_message_time: null,
         unread_count: 0,
-        is_support_room: false,
       })));
     }
-
-    // Add support rooms as chat rooms
-    if (supportRooms) {
-      supportRooms.forEach(supportRoom => {
-        // Check if user has access to this support room
-        const hasAccess = supportRoom.thread_type_id === 1 || // Academy support (all users)
-                         (supportRoom.thread_type_id === 2 && user.bedoun_marz); // Boundless support (only boundless users)
-        
-        if (hasAccess) {
-          rooms.push({
-            id: -supportRoom.id, // Use negative ID to distinguish from regular rooms
-            name: supportRoom.name,
-            description: supportRoom.description || '',
-            type: 'support',
-            is_active: true,
-            is_boundless_only: supportRoom.thread_type_id === 2, // Boundless support
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            last_message: null,
-            last_message_time: null,
-            unread_count: 0,
-            is_support_room: true,
-            support_room_id: supportRoom.id,
-          });
-        }
-      });
-    }
-
-    console.log('All rooms loaded:', rooms); // Debug log
-    console.log('Support rooms found:', supportRooms); // Debug log
   
     return rooms;
   }
@@ -482,17 +421,73 @@ class MessengerService {
     };
   }
 
+  async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<MessengerMessage> {
+    // Get or create conversation
+    const conversationId = await this.getOrCreatePrivateConversation(senderId, recipientId);
+    
+    const { data, error } = await supabase
+      .from('private_messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_id: senderId,
+        message: message
+      })
+      .select(`
+        *,
+        sender:chat_users!sender_id(name, phone)
+      `)
+      .single();
+
+    if (error) throw error;
+    
+    return {
+      ...data,
+      sender: data.sender || { name: 'Unknown', phone: '' }
+    };
+  }
+
+  async getOrCreatePrivateConversation(user1Id: number, user2Id: number): Promise<number> {
+    const { data } = await supabase
+      .rpc('get_or_create_private_conversation', {
+        p_user1_id: user1Id,
+        p_user2_id: user2Id
+      });
+
+    return data;
+  }
+
+  async getPrivateConversations(userId: number): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('private_conversations')
+      .select(`
+        *,
+        user1:chat_users!user1_id(id, name, phone, username),
+        user2:chat_users!user2_id(id, name, phone, username)
+      `)
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .order('last_message_at', { ascending: false });
+
+    if (error) throw error;
+    
+    return (data || []).map(conv => ({
+      ...conv,
+      otherUser: conv.user1_id === userId ? conv.user2 : conv.user1
+    }));
+  }
+
   async updateUserDetails(userId: number, updates: {
     name?: string;
     phone?: string;
     username?: string;
     password?: string;
+    bio?: string;
   }): Promise<void> {
     const updateData: any = {};
     
     if (updates.name) updateData.name = updates.name;
     if (updates.phone) updateData.phone = updates.phone;
     if (updates.username) updateData.username = updates.username;
+    if (updates.bio !== undefined) updateData.bio = updates.bio;
     if (updates.password) {
       updateData.password_hash = await bcrypt.hash(updates.password, 10);
     }
@@ -503,6 +498,23 @@ class MessengerService {
       .eq('id', userId);
 
     if (error) throw error;
+  }
+
+  async checkUsernameAvailability(username: string, currentUserId?: number): Promise<boolean> {
+    let query = supabase
+      .from('chat_users')
+      .select('id')
+      .eq('username', username);
+
+    if (currentUserId) {
+      query = query.neq('id', currentUserId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    
+    return !data || data.length === 0;
   }
 
   async updateUserRole(userId: number, roleUpdates: {
@@ -649,46 +661,64 @@ class MessengerService {
     if (error) throw error;
   }
 
-  async getThreadTypes(): Promise<SupportThreadType[]> {
-    const { data, error } = await supabase
-      .from('support_thread_types')
+  async searchUsers(searchTerm: string): Promise<MessengerUser[]> {
+    // Only return users if:
+    // 1. Exact phone number match
+    // 2. Exact username match (with @ prefix)
+    
+    let query = supabase
+      .from('chat_users')
       .select('*')
-      .eq('is_active', true);
+      .eq('is_approved', true);
+
+    // Check if it's a phone number (all digits)
+    if (/^\d+$/.test(searchTerm)) {
+      query = query.eq('phone', searchTerm);
+    } 
+    // Check if it's a username (starts with @)
+    else if (searchTerm.startsWith('@')) {
+      const username = searchTerm.substring(1);
+      query = query.eq('username', username);
+    }
+    // If neither, return empty array
+    else {
+      return [];
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data || [];
   }
 
-  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
-    const { data, error } = await supabase
-      .from('support_agent_assignments')
+  async getSupportUsers(currentUser: MessengerUser): Promise<MessengerUser[]> {
+    const supportUsers: MessengerUser[] = [];
+    
+    // Academy Support - visible to all users
+    const { data: academySupport } = await supabase
+      .from('chat_users')
       .select('*')
-      .eq('is_active', true);
+      .eq('phone', '1')
+      .single();
+    
+    if (academySupport) {
+      supportUsers.push(academySupport);
+    }
 
-    if (error) throw error;
-    return data || [];
-  }
+    // Boundless Support - only visible to boundless users
+    if (currentUser.bedoun_marz) {
+      const { data: boundlessSupport } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', '2')
+        .single();
+      
+      if (boundlessSupport) {
+        supportUsers.push(boundlessSupport);
+      }
+    }
 
-  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
-    const { error } = await supabase
-      .from('support_agent_assignments')
-      .insert({
-        agent_id: agentId,
-        thread_type_id: threadTypeId,
-        is_active: true
-      });
-
-    if (error) throw error;
-  }
-
-  async unassignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
-    const { error } = await supabase
-      .from('support_agent_assignments')
-      .update({ is_active: false })
-      .eq('agent_id', agentId)
-      .eq('thread_type_id', threadTypeId);
-
-    if (error) throw error;
+    return supportUsers;
   }
 
   async addReaction(messageId: number, userId: number, reaction: string): Promise<void> {
