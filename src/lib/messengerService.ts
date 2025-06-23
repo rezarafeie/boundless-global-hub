@@ -1,13 +1,92 @@
-import { supabase } from '@/integrations/supabase/client';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type MessengerUser = Tables<'chat_users'>;
-export type ChatRoom = Tables<'chat_rooms'>;
-export type MessengerMessage = Tables<'messenger_messages'>;
-export type SupportConversation = Tables<'support_conversations'>;
-export type MessageReaction = Tables<'message_reactions'>;
-export type SupportThreadType = Tables<'support_thread_types'>;
-export type SupportAgentAssignment = Tables<'support_agent_assignments'>;
+import { supabase } from '@/integrations/supabase/client';
+
+export interface MessengerUser {
+  id: number;
+  name: string;
+  phone: string;
+  username?: string;
+  role?: string;
+  is_approved: boolean;
+  is_support_agent: boolean;
+  is_messenger_admin: boolean;
+  bedoun_marz: boolean;
+  bedoun_marz_approved: boolean;
+  bedoun_marz_request: boolean;
+  created_at: string;
+  updated_at: string;
+  last_seen?: string;
+  password_hash?: string;
+}
+
+export interface ChatRoom {
+  id: number;
+  name: string;
+  description?: string;
+  type: string;
+  is_active: boolean;
+  is_boundless_only: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MessengerMessage {
+  id: number;
+  room_id?: number;
+  sender_id: number;
+  recipient_id?: number;
+  message: string;
+  message_type: string;
+  media_url?: string;
+  media_content?: string;
+  is_read: boolean;
+  created_at: string;
+  reply_to_message_id?: number;
+  forwarded_from_message_id?: number;
+  conversation_id?: number;
+  unread_by_support: boolean;
+}
+
+export interface SupportConversation {
+  id: number;
+  user_id: number;
+  agent_id?: number;
+  status: string;
+  priority: string;
+  thread_type_id: number;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  internal_notes?: string;
+  tags?: string[];
+  assigned_agent_name?: string;
+}
+
+export interface MessageReaction {
+  id: string;
+  message_id: number;
+  user_id: number;
+  reaction: string;
+  created_at: string;
+}
+
+export interface SupportThreadType {
+  id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  is_active: boolean;
+  is_boundless_only: boolean;
+  created_at: string;
+}
+
+export interface SupportAgentAssignment {
+  id: number;
+  agent_id: number;
+  thread_type_id: number;
+  is_active: boolean;
+  assigned_at: string;
+}
 
 export interface MessengerMessageWithUser extends MessengerMessage {
   sender?: MessengerUser;
@@ -535,7 +614,7 @@ class MessengerService {
     }
   }
 
-  async updateMessage(messageId: number, updates: TablesUpdate<'messenger_messages'>, sessionToken: string): Promise<MessengerMessage> {
+  async updateMessage(messageId: number, updates: Partial<MessengerMessage>, sessionToken: string): Promise<MessengerMessage> {
     try {
       await this.setSessionContext(sessionToken);
       
@@ -632,7 +711,7 @@ class MessengerService {
     }
   }
 
-  async updateUser(userId: number, updates: TablesUpdate<'chat_users'>): Promise<MessengerUser> {
+  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<MessengerUser> {
     try {
       const { data, error } = await supabase
         .from('chat_users')
