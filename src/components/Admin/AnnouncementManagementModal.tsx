@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,15 @@ const AnnouncementManagementModal: React.FC<AnnouncementManagementModalProps> = 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnnouncements(data || []);
+      
+      // Type assertion to ensure the data matches our Announcement interface
+      const typedAnnouncements = (data || []).map(item => ({
+        ...item,
+        type: item.type as 'urgent' | 'general' | 'technical' | 'educational',
+        media_type: item.media_type as 'none' | 'image' | 'audio' | 'video' | 'iframe'
+      })) as Announcement[];
+      
+      setAnnouncements(typedAnnouncements);
     } catch (error: any) {
       console.error('Error fetching announcements:', error);
       toast({
