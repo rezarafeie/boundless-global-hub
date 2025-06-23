@@ -174,6 +174,7 @@ export type Database = {
           phone: string
           role: string | null
           updated_at: string | null
+          username: string | null
         }
         Insert: {
           bedoun_marz?: boolean | null
@@ -189,6 +190,7 @@ export type Database = {
           phone: string
           role?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Update: {
           bedoun_marz?: boolean | null
@@ -204,6 +206,7 @@ export type Database = {
           phone?: string
           role?: string | null
           updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -388,6 +391,119 @@ export type Database = {
           },
           {
             foreignKeyName: "messenger_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      private_conversations: {
+        Row: {
+          created_at: string | null
+          id: number
+          last_message_at: string | null
+          updated_at: string | null
+          user1_id: number
+          user2_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          last_message_at?: string | null
+          updated_at?: string | null
+          user1_id: number
+          user2_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          last_message_at?: string | null
+          updated_at?: string | null
+          user1_id?: number
+          user2_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_conversations_user1_id_fkey"
+            columns: ["user1_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_conversations_user2_id_fkey"
+            columns: ["user2_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      private_messages: {
+        Row: {
+          conversation_id: number
+          created_at: string | null
+          forwarded_from_message_id: number | null
+          id: number
+          is_read: boolean | null
+          media_content: string | null
+          media_url: string | null
+          message: string
+          message_type: string | null
+          reply_to_message_id: number | null
+          sender_id: number
+        }
+        Insert: {
+          conversation_id: number
+          created_at?: string | null
+          forwarded_from_message_id?: number | null
+          id?: number
+          is_read?: boolean | null
+          media_content?: string | null
+          media_url?: string | null
+          message: string
+          message_type?: string | null
+          reply_to_message_id?: number | null
+          sender_id: number
+        }
+        Update: {
+          conversation_id?: number
+          created_at?: string | null
+          forwarded_from_message_id?: number | null
+          id?: number
+          is_read?: boolean | null
+          media_content?: string | null
+          media_url?: string | null
+          message?: string
+          message_type?: string | null
+          reply_to_message_id?: number | null
+          sender_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "private_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_messages_forwarded_from_message_id_fkey"
+            columns: ["forwarded_from_message_id"]
+            isOneToOne: false
+            referencedRelation: "private_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "private_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
@@ -724,6 +840,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_or_create_private_conversation: {
+        Args: { p_user1_id: number; p_user2_id: number }
+        Returns: number
+      }
       get_support_unread_count: {
         Args: { conv_id: number }
         Returns: number
@@ -743,6 +863,16 @@ export type Database = {
       is_session_valid: {
         Args: { session_token_param: string }
         Returns: boolean
+      }
+      search_users: {
+        Args: { search_term: string }
+        Returns: {
+          id: number
+          name: string
+          username: string
+          phone: string
+          is_approved: boolean
+        }[]
       }
       set_session_context: {
         Args: { session_token: string }

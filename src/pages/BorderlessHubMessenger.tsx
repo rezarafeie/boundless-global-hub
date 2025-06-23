@@ -1,13 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import MessengerAuth from '@/components/Chat/MessengerAuth';
 import MessengerInbox from '@/components/Chat/MessengerInbox';
 import MessengerChatView from '@/components/Chat/MessengerChatView';
+import PrivateChatView from '@/components/Chat/PrivateChatView';
 import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
+import StartChatModal from '@/components/Chat/StartChatModal';
+import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, ArrowRight, Headphones } from 'lucide-react';
+import { MessageCircle, ArrowRight, Headphones, Plus, Users, User } from 'lucide-react';
 
 interface ChatRoom {
   id: number;
@@ -20,18 +28,37 @@ interface ChatRoom {
   unread_count?: number;
 }
 
+type ViewType = 'inbox' | 'room-chat' | 'private-chat';
+
 const BorderlessHubMessenger: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<PrivateConversation | null>(null);
+  const [currentView, setCurrentView] = useState<ViewType>('inbox');
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showStartChatModal, setShowStartChatModal] = useState(false);
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+  const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
+  const [showPrivateChats, setShowPrivateChats] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkExistingSession();
   }, []);
+
+  useEffect(() => {
+    if (currentUser && sessionToken) {
+      loadPrivateConversations();
+      
+      // Check if user needs to set username
+      if (!currentUser.username) {
+        setShowUsernameSetup(true);
+      }
+    }
+  }, [currentUser, sessionToken]);
 
   const checkExistingSession = async () => {
     const token = localStorage.getItem('messenger_session_token');
@@ -42,7 +69,6 @@ const BorderlessHubMessenger: React.FC = () => {
           setCurrentUser(result.user);
           setSessionToken(token);
           
-          // Check if user is approved, if not redirect to pending page
           if (!result.user.is_approved) {
             navigate('/hub/messenger/pending', { replace: true });
             return;
@@ -58,12 +84,22 @@ const BorderlessHubMessenger: React.FC = () => {
     setLoading(false);
   };
 
+  const loadPrivateConversations = async () => {
+    if (!currentUser || !sessionToken) return;
+    
+    try {
+      const conversations = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
+      setPrivateConversations(conversations);
+    } catch (error) {
+      console.error('Error loading private conversations:', error);
+    }
+  };
+
   const handleAuthenticated = (token: string, userName: string, user: MessengerUser) => {
     setSessionToken(token);
     setCurrentUser(user);
     localStorage.setItem('messenger_session_token', token);
     
-    // Check if user needs approval
     if (!user.is_approved) {
       navigate('/hub/messenger/pending', { replace: true });
       return;
@@ -77,12 +113,56 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const handleRoomSelect = (room: ChatRoom) => {
     setSelectedRoom(room);
+    setSelectedConversation(null);
+    setCurrentView('room-chat');
     setShowMobileChat(true);
+  };
+
+  const handlePrivateConversationSelect = (conversation: PrivateConversation) => {
+    setSelectedConversation(conversation);
+    setSelectedRoom(null);
+    setCurrentView('private-chat');
+    setShowMobileChat(true);
+  };
+
+  const handleStartChatWithUser = async (user: MessengerUser) => {
+    if (!currentUser || !sessionToken) return;
+    
+    try {
+      const conversationId = await privateMessageService.getOrCreateConversation(
+        currentUser.id,
+        user.id,
+        sessionToken
+      );
+      
+      // Create conversation object
+      const conversation: PrivateConversation = {
+        id: conversationId,
+        user1_id: Math.min(currentUser.id, user.id),
+        user2_id: Math.max(currentUser.id, user.id),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_message_at: new Date().toISOString(),
+        other_user: user
+      };
+      
+      handlePrivateConversationSelect(conversation);
+      await loadPrivateConversations(); // Refresh the list
+    } catch (error) {
+      console.error('Error starting chat:', error);
+      toast({
+        title: 'خطا',
+        description: 'امکان شروع گفتگو وجود ندارد',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleBackToInbox = () => {
     setShowMobileChat(false);
     setSelectedRoom(null);
+    setSelectedConversation(null);
+    setCurrentView('inbox');
   };
 
   const handleBackToHub = () => {
@@ -97,11 +177,28 @@ const BorderlessHubMessenger: React.FC = () => {
     setCurrentUser(null);
     setSessionToken(null);
     setSelectedRoom(null);
+    setSelectedConversation(null);
     setShowMobileChat(false);
     toast({
       title: 'خروج موفق',
       description: 'از پیام‌رسان خارج شدید.',
     });
+  };
+
+  const handleUsernameSet = async (username: string) => {
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, username });
+      toast({
+        title: 'موفق',
+        description: 'نام کاربری شما تنظیم شد',
+      });
+    }
+  };
+
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   };
 
   if (loading) {
@@ -180,7 +277,6 @@ const BorderlessHubMessenger: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            {/* Support Panel Button - only show for support agents */}
             {currentUser?.is_support_agent && (
               <button
                 onClick={() => navigate('/hub/support')}
@@ -190,9 +286,22 @@ const BorderlessHubMessenger: React.FC = () => {
                 🎧 پنل پشتیبانی
               </button>
             )}
-            <span className="text-sm text-slate-600 dark:text-slate-400">
-              {currentUser.name}
-            </span>
+            <div className="flex items-center gap-2">
+              <Avatar className="w-6 h-6">
+                <AvatarFallback 
+                  style={{ backgroundColor: getAvatarColor(currentUser.name) }}
+                  className="text-white font-medium text-xs"
+                >
+                  {currentUser.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                {currentUser.name}
+                {currentUser.username && (
+                  <span className="text-xs text-slate-500 block">@{currentUser.username}</span>
+                )}
+              </span>
+            </div>
             <button
               onClick={handleLogout}
               className="text-sm text-red-500 hover:text-red-600"
@@ -208,20 +317,125 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Desktop Layout */}
         <div className="hidden md:flex w-full">
           {/* Left Panel - Inbox */}
-          <div className="w-1/3 border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <MessengerInbox
-              currentUser={currentUser}
-              onRoomSelect={handleRoomSelect}
-              selectedRoom={selectedRoom}
-            />
+          <div className="w-1/3 border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
+            {/* Inbox Header with Tabs */}
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold">پیام‌ها</h2>
+                <Button
+                  size="sm"
+                  onClick={() => setShowStartChatModal(true)}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={showPrivateChats ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setShowPrivateChats(true)}
+                  className="flex-1"
+                >
+                  <User className="w-4 h-4 ml-1" />
+                  خصوصی
+                </Button>
+                <Button
+                  variant={!showPrivateChats ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setShowPrivateChats(false)}
+                  className="flex-1"
+                >
+                  <Users className="w-4 h-4 ml-1" />
+                  گروهی
+                </Button>
+              </div>
+            </div>
+
+            {/* Chat List */}
+            <div className="flex-1 overflow-hidden">
+              {showPrivateChats ? (
+                <div className="h-full">
+                  {privateConversations.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <User className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500">هنوز گفتگوی خصوصی ندارید</p>
+                        <Button
+                          size="sm"
+                          onClick={() => setShowStartChatModal(true)}
+                          className="mt-2"
+                        >
+                          شروع گفتگو
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1 p-2">
+                      {privateConversations.map((conversation) => (
+                        <div
+                          key={conversation.id}
+                          onClick={() => handlePrivateConversationSelect(conversation)}
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                            selectedConversation?.id === conversation.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          }`}
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback 
+                              style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || '') }}
+                              className="text-white font-medium"
+                            >
+                              {conversation.other_user?.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium text-sm truncate">
+                                {conversation.other_user?.name}
+                              </div>
+                              {conversation.unread_count! > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {conversation.unread_count}
+                                </Badge>
+                              )}
+                            </div>
+                            {conversation.other_user?.username && (
+                              <div className="text-xs text-slate-500">@{conversation.other_user.username}</div>
+                            )}
+                            {conversation.last_message && (
+                              <div className="text-xs text-slate-500 truncate">
+                                {conversation.last_message}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <MessengerInbox
+                  currentUser={currentUser}
+                  onRoomSelect={handleRoomSelect}
+                  selectedRoom={selectedRoom}
+                />
+              )}
+            </div>
           </div>
           
           {/* Right Panel - Chat View */}
           <div className="flex-1 bg-slate-50 dark:bg-slate-900">
-            {selectedRoom ? (
+            {currentView === 'room-chat' && selectedRoom ? (
               <MessengerChatView
                 room={selectedRoom}
                 currentUser={currentUser}
+                onBack={handleBackToInbox}
+              />
+            ) : currentView === 'private-chat' && selectedConversation ? (
+              <PrivateChatView
+                conversation={selectedConversation}
+                currentUser={currentUser}
+                sessionToken={sessionToken!}
                 onBack={handleBackToInbox}
               />
             ) : (
@@ -231,7 +445,6 @@ const BorderlessHubMessenger: React.FC = () => {
                   <p className="text-slate-500 dark:text-slate-400">
                     یک گفتگو را انتخاب کنید
                   </p>
-                  {/* Support Panel Button for mobile/center view */}
                   {currentUser?.is_support_agent && (
                     <button
                       onClick={() => navigate('/hub/support')}
@@ -250,12 +463,109 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Mobile Layout */}
         <div className="md:hidden w-full">
           {!showMobileChat ? (
-            <div className="bg-white dark:bg-slate-800 h-full">
-              <MessengerInbox
-                currentUser={currentUser}
-                onRoomSelect={handleRoomSelect}
-                selectedRoom={selectedRoom}
-              />
+            <div className="bg-white dark:bg-slate-800 h-full flex flex-col">
+              {/* Mobile Tabs */}
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold">پیام‌ها</h2>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowStartChatModal(true)}
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant={showPrivateChats ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowPrivateChats(true)}
+                    className="flex-1"
+                  >
+                    <User className="w-4 h-4 ml-1" />
+                    خصوصی
+                  </Button>
+                  <Button
+                    variant={!showPrivateChats ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowPrivateChats(false)}
+                    className="flex-1"
+                  >
+                    <Users className="w-4 h-4 ml-1" />
+                    گروهی
+                  </Button>
+                </div>
+              </div>
+
+              {/* Mobile Chat List */}
+              <div className="flex-1 overflow-hidden">
+                {showPrivateChats ? (
+                  <div className="h-full">
+                    {privateConversations.length === 0 ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-center">
+                          <User className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                          <p className="text-sm text-slate-500">هنوز گفتگوی خصوصی ندارید</p>
+                          <Button
+                            size="sm"
+                            onClick={() => setShowStartChatModal(true)}
+                            className="mt-2"
+                          >
+                            شروع گفتگو
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1 p-2">
+                        {privateConversations.map((conversation) => (
+                          <div
+                            key={conversation.id}
+                            onClick={() => handlePrivateConversationSelect(conversation)}
+                            className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
+                          >
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback 
+                                style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || '') }}
+                                className="text-white font-medium"
+                              >
+                                {conversation.other_user?.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-sm truncate">
+                                  {conversation.other_user?.name}
+                                </div>
+                                {conversation.unread_count! > 0 && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    {conversation.unread_count}
+                                  </Badge>
+                                )}
+                              </div>
+                              {conversation.other_user?.username && (
+                                <div className="text-xs text-slate-500">@{conversation.other_user.username}</div>
+                              )}
+                              {conversation.last_message && (
+                                <div className="text-xs text-slate-500 truncate">
+                                  {conversation.last_message}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <MessengerInbox
+                    currentUser={currentUser}
+                    onRoomSelect={handleRoomSelect}
+                    selectedRoom={selectedRoom}
+                  />
+                )}
+              </div>
+
               {/* Support Panel Button for mobile */}
               {currentUser?.is_support_agent && (
                 <div className="p-4 border-t">
@@ -270,16 +580,55 @@ const BorderlessHubMessenger: React.FC = () => {
               )}
             </div>
           ) : (
-            selectedRoom && (
-              <MessengerChatView
-                room={selectedRoom}
-                currentUser={currentUser}
-                onBack={handleBackToInbox}
-              />
-            )
+            <>
+              {currentView === 'room-chat' && selectedRoom && (
+                <MessengerChatView
+                  room={selectedRoom}
+                  currentUser={currentUser}
+                  onBack={handleBackToInbox}
+                />
+              )}
+              {currentView === 'private-chat' && selectedConversation && (
+                <PrivateChatView
+                  conversation={selectedConversation}
+                  currentUser={currentUser}
+                  sessionToken={sessionToken!}
+                  onBack={handleBackToInbox}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {/* Floating Action Button - Mobile */}
+      <div className="md:hidden fixed bottom-6 left-6 z-50">
+        <Button
+          onClick={() => setShowStartChatModal(true)}
+          size="lg"
+          className="rounded-full w-14 h-14 bg-blue-500 hover:bg-blue-600 shadow-lg"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      </div>
+
+      {/* Modals */}
+      <StartChatModal
+        isOpen={showStartChatModal}
+        onClose={() => setShowStartChatModal(false)}
+        onUserSelect={handleStartChatWithUser}
+        sessionToken={sessionToken!}
+        currentUser={currentUser}
+      />
+
+      <UsernameSetupModal
+        isOpen={showUsernameSetup}
+        onClose={() => setShowUsernameSetup(false)}
+        onUsernameSet={handleUsernameSet}
+        sessionToken={sessionToken!}
+        userId={currentUser.id}
+        currentUsername={currentUser.username}
+      />
     </div>
   );
 };
