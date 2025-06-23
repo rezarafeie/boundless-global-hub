@@ -6,6 +6,7 @@ export interface MessengerUser {
   name: string;
   phone: string;
   username?: string;
+  role?: string;
   is_approved: boolean;
   is_support_agent?: boolean;
   is_messenger_admin?: boolean;
@@ -13,6 +14,8 @@ export interface MessengerUser {
   bedoun_marz?: boolean;
   created_at: string;
   updated_at: string;
+  last_seen?: string;
+  user?: MessengerUser; // For nested user references
 }
 
 export interface MessengerMessage {
@@ -26,6 +29,16 @@ export interface MessengerMessage {
   is_read: boolean;
   created_at: string;
   sender?: MessengerUser;
+}
+
+export interface SupportMessage {
+  id: number;
+  message: string;
+  sender_id: number;
+  user_id: number;
+  is_from_support: boolean;
+  created_at: string;
+  read_at?: string;
 }
 
 export interface ChatTopic {
@@ -46,6 +59,9 @@ export interface ChatRoom {
   is_boundless_only: boolean;
   created_at: string;
   updated_at: string;
+  last_message?: string;
+  last_message_time?: string;
+  unread_count?: number;
 }
 
 export interface SupportThreadType {
@@ -275,6 +291,10 @@ class MessengerService {
     }
   }
 
+  async deactivateSession(sessionToken: string): Promise<void> {
+    return this.logout(sessionToken);
+  }
+
   // Admin Methods
   async getAllUsers(): Promise<MessengerUser[]> {
     try {
@@ -321,6 +341,72 @@ class MessengerService {
       return data || [];
     } catch (error) {
       console.error('Error getting all messages:', error);
+      throw error;
+    }
+  }
+
+  async getMessages(roomId?: number): Promise<MessengerMessage[]> {
+    try {
+      let query = supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (roomId) {
+        query = query.eq('room_id', roomId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting messages:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(message: string, senderId: number, roomId?: number, recipientId?: number): Promise<MessengerMessage> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .insert({
+          message,
+          sender_id: senderId,
+          room_id: roomId,
+          recipient_id: recipientId,
+          message_type: 'text'
+        })
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  }
+
+  async addReaction(messageId: number, userId: number, reaction: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('message_reactions')
+        .insert({
+          message_id: messageId,
+          user_id: userId,
+          reaction: reaction
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error adding reaction:', error);
       throw error;
     }
   }
@@ -391,7 +477,12 @@ class MessengerService {
     }
   }
 
-  async updateUserRole(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean }): Promise<void> {
+  async updateUserRole(userId: number, updates: { 
+    is_support_agent?: boolean; 
+    is_messenger_admin?: boolean;
+    is_approved?: boolean;
+    bedoun_marz_approved?: boolean;
+  }): Promise<void> {
     try {
       const { error } = await supabase
         .from('chat_users')
@@ -401,6 +492,20 @@ class MessengerService {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating user role:', error);
+      throw error;
+    }
+  }
+
+  async updateUserDetails(userId: number, updates: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating user details:', error);
       throw error;
     }
   }
