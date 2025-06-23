@@ -11,6 +11,7 @@ export interface MessengerUser {
   is_messenger_admin?: boolean;
   bedoun_marz_approved?: boolean;
   bedoun_marz?: boolean;
+  password_hash?: string;
   created_at: string;
   updated_at: string;
   last_seen?: string;
