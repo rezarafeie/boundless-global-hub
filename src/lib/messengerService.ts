@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -75,6 +74,69 @@ class MessengerService {
     } catch (error: any) {
       console.error('Error in register:', error);
       throw error;
+    }
+  }
+
+  async registerWithPassword(
+    name: string, 
+    phone: string, 
+    username: string, 
+    password: string, 
+    isBoundlessStudent: boolean = false
+  ): Promise<MessengerUser> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .insert([{
+          name: name.trim(),
+          phone: phone.trim(),
+          username: username.toLowerCase().trim(),
+          password_hash: password, // In real app, this should be hashed
+          bedoun_marz: isBoundlessStudent,
+          bedoun_marz_request: isBoundlessStudent,
+          is_approved: false // All users start as pending
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error registering user with password:', error);
+        if (error.code === '23505') {
+          if (error.message.includes('phone')) {
+            throw new Error('این شماره تلفن قبلاً ثبت شده است');
+          } else if (error.message.includes('username')) {
+            throw new Error('این نام کاربری قبلاً انتخاب شده است');
+          }
+        }
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in registerWithPassword:', error);
+      throw error;
+    }
+  }
+
+  async authenticateUser(phone: string, password: string): Promise<{ session_token: string } | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .eq('password_hash', password) // In real app, compare hashed passwords
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Create session for authenticated user
+      const session = await this.createSession(data.id);
+      return session;
+    } catch (error) {
+      console.error('Error in authenticateUser:', error);
+      return null;
     }
   }
 
@@ -548,6 +610,25 @@ class MessengerService {
     } catch (error: any) {
       console.error('Error in getUser:', error);
       return null;
+    }
+  }
+
+  async getUserByPhone(phone: string): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone);
+
+      if (error) {
+        console.error('Error getting user by phone:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getUserByPhone:', error);
+      throw error;
     }
   }
 

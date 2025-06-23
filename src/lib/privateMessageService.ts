@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from '@/lib/messengerService';
 
@@ -47,6 +46,36 @@ class PrivateMessageService {
       return data || [];
     } catch (error) {
       console.error('Error in searchUsers:', error);
+      throw error;
+    }
+  }
+
+  async exactSearch(searchTerm: string, sessionToken: string): Promise<MessengerUser[]> {
+    try {
+      let query = supabase
+        .from('chat_users')
+        .select('*')
+        .eq('is_approved', true);
+
+      // Check if it's a phone number (exact match)
+      if (/^09\d{9}$/.test(searchTerm)) {
+        query = query.eq('phone', searchTerm);
+      } 
+      // Check if it's a username (exact match)
+      else {
+        query = query.eq('username', searchTerm.toLowerCase());
+      }
+
+      const { data, error } = await query.limit(1);
+
+      if (error) {
+        console.error('Error in exact search:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in exactSearch:', error);
       throw error;
     }
   }

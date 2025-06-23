@@ -5,17 +5,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import MessengerAuth from '@/components/Chat/MessengerAuth';
+import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import MessengerInbox from '@/components/Chat/MessengerInbox';
 import MessengerChatView from '@/components/Chat/MessengerChatView';
 import PrivateChatView from '@/components/Chat/PrivateChatView';
 import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
-import StartChatModal from '@/components/Chat/StartChatModal';
+import ExactSearchModal from '@/components/Chat/ExactSearchModal';
 import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, ArrowRight, Headphones, Plus, Users, User } from 'lucide-react';
+import { MessageCircle, ArrowRight, Headphones, Plus, Users, User, MessageSquare } from 'lucide-react';
 
 interface ChatRoom {
   id: number;
@@ -28,19 +28,29 @@ interface ChatRoom {
   unread_count?: number;
 }
 
+interface SupportRoom {
+  id: string;
+  name: string;
+  description: string;
+  type: 'academy_support' | 'boundless_support';
+  icon: React.ReactNode;
+  isPermanent: true;
+}
+
 interface UnifiedChatItem {
   id: string;
-  type: 'private' | 'room';
+  type: 'private' | 'room' | 'support';
   name: string;
   description?: string;
   avatar?: string;
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount?: number;
-  data: PrivateConversation | ChatRoom;
+  isPermanent?: boolean;
+  data: PrivateConversation | ChatRoom | SupportRoom;
 }
 
-type ViewType = 'inbox' | 'room-chat' | 'private-chat';
+type ViewType = 'inbox' | 'room-chat' | 'private-chat' | 'support-chat';
 
 const BorderlessHubMessenger: React.FC = () => {
   const navigate = useNavigate();
@@ -49,14 +59,43 @@ const BorderlessHubMessenger: React.FC = () => {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<PrivateConversation | null>(null);
+  const [selectedSupportRoom, setSelectedSupportRoom] = useState<SupportRoom | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('inbox');
   const [showMobileChat, setShowMobileChat] = useState(false);
-  const [showStartChatModal, setShowStartChatModal] = useState(false);
+  const [showExactSearchModal, setShowExactSearchModal] = useState(false);
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
   const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Support rooms based on user access
+  const getSupportRooms = (): SupportRoom[] => {
+    const supportRooms: SupportRoom[] = [
+      {
+        id: 'academy_support',
+        name: '💬 پشتیبانی آکادمی رفیعی',
+        description: 'پشتیبانی عمومی برای همه کاربران',
+        type: 'academy_support',
+        icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
+        isPermanent: true
+      }
+    ];
+
+    // Add boundless support only for boundless users
+    if (currentUser?.bedoun_marz) {
+      supportRooms.push({
+        id: 'boundless_support',
+        name: '🔒 پشتیبانی بدون مرز',
+        description: 'پشتیبانی ویژه اعضای بدون مرز',
+        type: 'boundless_support',
+        icon: <Headphones className="w-4 h-4 text-purple-500" />,
+        isPermanent: true
+      });
+    }
+
+    return supportRooms;
+  };
 
   useEffect(() => {
     checkExistingSession();
@@ -73,8 +112,26 @@ const BorderlessHubMessenger: React.FC = () => {
   }, [currentUser, sessionToken]);
 
   useEffect(() => {
+    if (!currentUser) return;
+
+    // Get support rooms
+    const supportRooms = getSupportRooms();
+    
     // Combine and sort all chats
     const combined: UnifiedChatItem[] = [
+      // Support rooms first (permanent)
+      ...supportRooms.map(room => ({
+        id: `support-${room.id}`,
+        type: 'support' as const,
+        name: room.name,
+        description: room.description,
+        lastMessage: '',
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
+        isPermanent: true,
+        data: room
+      })),
+      // Private conversations
       ...privateConversations.map(conv => ({
         id: `private-${conv.id}`,
         type: 'private' as const,
@@ -84,6 +141,7 @@ const BorderlessHubMessenger: React.FC = () => {
         unreadCount: conv.unread_count,
         data: conv
       })),
+      // Regular rooms
       ...rooms.map(room => ({
         id: `room-${room.id}`,
         type: 'room' as const,
@@ -96,8 +154,11 @@ const BorderlessHubMessenger: React.FC = () => {
       }))
     ];
 
-    // Sort by unread first, then by last message time
+    // Sort: permanent first, then by unread, then by last message time
     combined.sort((a, b) => {
+      if (a.isPermanent && !b.isPermanent) return -1;
+      if (!a.isPermanent && b.isPermanent) return 1;
+      
       if (a.unreadCount && !b.unreadCount) return -1;
       if (!a.unreadCount && b.unreadCount) return 1;
       
@@ -108,7 +169,7 @@ const BorderlessHubMessenger: React.FC = () => {
     });
 
     setUnifiedChats(combined);
-  }, [privateConversations, rooms]);
+  }, [privateConversations, rooms, currentUser]);
 
   const checkExistingSession = async () => {
     const token = localStorage.getItem('messenger_session_token');
@@ -170,10 +231,17 @@ const BorderlessHubMessenger: React.FC = () => {
     if (chat.type === 'private') {
       setSelectedConversation(chat.data as PrivateConversation);
       setSelectedRoom(null);
+      setSelectedSupportRoom(null);
       setCurrentView('private-chat');
+    } else if (chat.type === 'support') {
+      setSelectedSupportRoom(chat.data as SupportRoom);
+      setSelectedRoom(null);
+      setSelectedConversation(null);
+      setCurrentView('support-chat');
     } else {
       setSelectedRoom(chat.data as ChatRoom);
       setSelectedConversation(null);
+      setSelectedSupportRoom(null);
       setCurrentView('room-chat');
     }
     setShowMobileChat(true);
@@ -201,6 +269,7 @@ const BorderlessHubMessenger: React.FC = () => {
       
       setSelectedConversation(conversation);
       setSelectedRoom(null);
+      setSelectedSupportRoom(null);
       setCurrentView('private-chat');
       setShowMobileChat(true);
       await loadAllChats();
@@ -218,6 +287,7 @@ const BorderlessHubMessenger: React.FC = () => {
     setShowMobileChat(false);
     setSelectedRoom(null);
     setSelectedConversation(null);
+    setSelectedSupportRoom(null);
     setCurrentView('inbox');
   };
 
@@ -234,6 +304,7 @@ const BorderlessHubMessenger: React.FC = () => {
     setSessionToken(null);
     setSelectedRoom(null);
     setSelectedConversation(null);
+    setSelectedSupportRoom(null);
     setShowMobileChat(false);
     toast({
       title: 'خروج موفق',
@@ -260,6 +331,9 @@ const BorderlessHubMessenger: React.FC = () => {
   const getChatIcon = (chat: UnifiedChatItem) => {
     if (chat.type === 'private') {
       return <User className="w-4 h-4 text-blue-500" />;
+    } else if (chat.type === 'support') {
+      const supportRoom = chat.data as SupportRoom;
+      return supportRoom.icon;
     } else {
       const room = chat.data as ChatRoom;
       if (room.type === 'academy_support') {
@@ -284,7 +358,7 @@ const BorderlessHubMessenger: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <MessengerAuth onAuthenticated={handleAuthenticated} />;
+    return <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />;
   }
 
   if (!currentUser.is_approved) {
@@ -368,7 +442,7 @@ const BorderlessHubMessenger: React.FC = () => {
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 {currentUser.name}
                 {currentUser.username && (
-                  <span className="text-xs text-slate-500 block">@{currentUser.username}</span>
+                  <span className="text-xs text-blue-600 block">@{currentUser.username}</span>
                 )}
               </span>
             </div>
@@ -390,16 +464,7 @@ const BorderlessHubMessenger: React.FC = () => {
           <div className="w-1/3 border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
             {/* Header */}
             <div className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold">گفتگوها</h2>
-                <Button
-                  size="sm"
-                  onClick={() => setShowStartChatModal(true)}
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              <h2 className="font-semibold">همه گفتگوها</h2>
             </div>
 
             {/* Unified Chat List */}
@@ -409,6 +474,7 @@ const BorderlessHubMessenger: React.FC = () => {
                   <div className="text-center">
                     <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
                     <p className="text-sm text-slate-500">هنوز گفتگویی ندارید</p>
+                    <p className="text-xs text-slate-400 mt-1">از دکمه + برای شروع گفتگو استفاده کنید</p>
                   </div>
                 </div>
               ) : (
@@ -419,7 +485,8 @@ const BorderlessHubMessenger: React.FC = () => {
                       onClick={() => handleChatSelect(chat)}
                       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
                         (selectedConversation && chat.id === `private-${selectedConversation.id}`) ||
-                        (selectedRoom && chat.id === `room-${selectedRoom.id}`) 
+                        (selectedRoom && chat.id === `room-${selectedRoom.id}`) ||
+                        (selectedSupportRoom && chat.id === `support-${selectedSupportRoom.id}`)
                           ? 'bg-blue-50 dark:bg-blue-900/20' 
                           : ''
                       }`}
@@ -458,7 +525,7 @@ const BorderlessHubMessenger: React.FC = () => {
                             {chat.lastMessage}
                           </div>
                         )}
-                        {chat.lastMessageTime && (
+                        {chat.lastMessageTime && !chat.isPermanent && (
                           <div className="text-xs text-slate-400">
                             {new Date(chat.lastMessageTime).toLocaleTimeString('fa-IR', {
                               hour: '2-digit',
@@ -489,6 +556,17 @@ const BorderlessHubMessenger: React.FC = () => {
                 sessionToken={sessionToken!}
                 onBack={handleBackToInbox}
               />
+            ) : currentView === 'support-chat' && selectedSupportRoom ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    {selectedSupportRoom.icon}
+                  </div>
+                  <p className="text-lg font-medium mb-2">{selectedSupportRoom.name}</p>
+                  <p className="text-sm text-slate-500 mb-4">{selectedSupportRoom.description}</p>
+                  <p className="text-xs text-slate-400">به زودی راه‌اندازی می‌شود</p>
+                </div>
+              </div>
             ) : (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center">
@@ -517,7 +595,7 @@ const BorderlessHubMessenger: React.FC = () => {
             <div className="bg-white dark:bg-slate-800 h-full flex flex-col">
               {/* Mobile Header */}
               <div className="p-4 border-b">
-                <h2 className="font-semibold">گفتگوها</h2>
+                <h2 className="font-semibold">همه گفتگوها</h2>
               </div>
 
               {/* Mobile Unified Chat List */}
@@ -527,6 +605,7 @@ const BorderlessHubMessenger: React.FC = () => {
                     <div className="text-center">
                       <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-2" />
                       <p className="text-sm text-slate-500">هنوز گفتگویی ندارید</p>
+                      <p className="text-xs text-slate-400 mt-1">از دکمه + برای شروع گفتگو استفاده کنید</p>
                     </div>
                   </div>
                 ) : (
@@ -608,26 +687,38 @@ const BorderlessHubMessenger: React.FC = () => {
                   onBack={handleBackToInbox}
                 />
               )}
+              {currentView === 'support-chat' && selectedSupportRoom && (
+                <div className="h-full flex items-center justify-center p-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      {selectedSupportRoom.icon}
+                    </div>
+                    <p className="text-lg font-medium mb-2">{selectedSupportRoom.name}</p>
+                    <p className="text-sm text-slate-500 mb-4">{selectedSupportRoom.description}</p>
+                    <p className="text-xs text-slate-400">به زودی راه‌اندازی می‌شود</p>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
-      {/* Single Floating Action Button - Mobile */}
-      <div className="md:hidden fixed bottom-6 left-6 z-50">
+      {/* Single Floating Action Button */}
+      <div className="fixed bottom-6 left-6 z-50">
         <Button
-          onClick={() => setShowStartChatModal(true)}
+          onClick={() => setShowExactSearchModal(true)}
           size="lg"
-          className="rounded-full w-14 h-14 bg-blue-500 hover:bg-blue-600 shadow-lg"
+          className="rounded-full w-14 h-14 bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         >
           <Plus className="w-6 h-6" />
         </Button>
       </div>
 
       {/* Modals */}
-      <StartChatModal
-        isOpen={showStartChatModal}
-        onClose={() => setShowStartChatModal(false)}
+      <ExactSearchModal
+        isOpen={showExactSearchModal}
+        onClose={() => setShowExactSearchModal(false)}
         onUserSelect={handleStartChatWithUser}
         sessionToken={sessionToken!}
         currentUser={currentUser}
