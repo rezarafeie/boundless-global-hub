@@ -8,11 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Send, Clock, CheckCircle, Archive, AlertCircle, Tag, FileText, Smile } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser, type MessengerMessage, type MessengerRoom } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type MessengerMessage, type ChatRoom } from '@/lib/messengerService';
 import EmojiPicker from './EmojiPicker';
 
 interface MessengerChatViewProps {
-  room: MessengerRoom;
+  room: ChatRoom;
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
@@ -35,7 +35,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const fetchedMessages = await messengerService.getRoomMessages(room.id, sessionToken);
+      const fetchedMessages = await messengerService.getMessages(room.id);
       setMessages(fetchedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -86,8 +86,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     try {
       const sentMessage = await messengerService.sendMessage(
         room.id,
-        newMessage,
-        sessionToken
+        currentUser.id,
+        newMessage
       );
       setMessages((prevMessages) => [...prevMessages, sentMessage]);
       setNewMessage('');
@@ -115,7 +115,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   const handleAddReaction = async (messageId: number, emoji: string) => {
     try {
-      await messengerService.addReaction(messageId, emoji, sessionToken);
+      await messengerService.addReaction(messageId, currentUser.id, emoji);
       toast({
         title: 'واکنش اضافه شد',
         description: `واکنش ${emoji} به پیام اضافه شد`,

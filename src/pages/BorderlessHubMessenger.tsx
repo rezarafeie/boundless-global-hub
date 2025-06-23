@@ -537,6 +537,7 @@ const BorderlessHubMessenger: React.FC = () => {
               <MessengerChatView
                 room={selectedRoom}
                 currentUser={currentUser}
+                sessionToken={sessionToken!}
                 onBack={handleBackToInbox}
               />
             ) : currentView === 'private-chat' && selectedConversation ? (
@@ -662,6 +663,7 @@ const BorderlessHubMessenger: React.FC = () => {
                 <MessengerChatView
                   room={selectedRoom}
                   currentUser={currentUser}
+                  sessionToken={sessionToken!}
                   onBack={handleBackToInbox}
                 />
               )}
