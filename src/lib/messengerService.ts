@@ -30,6 +30,8 @@ export interface ChatRoom {
   last_message?: string;
   last_message_time?: string;
   unread_count?: number;
+  is_support_room?: boolean;
+  support_room_id?: number;
 }
 
 export interface MessengerMessage {
@@ -321,30 +323,77 @@ class MessengerService {
     }
   
     const userId = session.user_id;
+
+    // Get user details to check permissions
+    const { data: user } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
   
-    const { data, error } = await supabase
+    // Get regular chat rooms
+    const { data: chatRooms, error: chatError } = await supabase
       .from('chat_rooms')
       .select(`*`)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
   
-    if (error) {
-      throw error;
+    if (chatError) {
+      throw chatError;
+    }
+
+    // Get support rooms that user has access to
+    const { data: supportRooms, error: supportError } = await supabase
+      .rpc('get_user_support_rooms', { user_id_param: userId });
+
+    if (supportError) {
+      console.error('Error fetching support rooms:', supportError);
     }
   
-    const rooms = data.map(room => ({
-      id: room.id,
-      name: room.name,
-      description: room.description || '',
-      type: room.type,
-      is_active: room.is_active,
-      is_boundless_only: room.is_boundless_only,
-      created_at: room.created_at,
-      updated_at: room.updated_at,
-      last_message: null,
-      last_message_time: null,
-      unread_count: 0,
-    }));
+    const rooms: ChatRoom[] = [];
+
+    // Add regular chat rooms
+    if (chatRooms) {
+      rooms.push(...chatRooms.map(room => ({
+        id: room.id,
+        name: room.name,
+        description: room.description || '',
+        type: room.type,
+        is_active: room.is_active,
+        is_boundless_only: room.is_boundless_only,
+        created_at: room.created_at,
+        updated_at: room.updated_at,
+        last_message: null,
+        last_message_time: null,
+        unread_count: 0,
+        is_support_room: false,
+      })));
+    }
+
+    // Add support rooms as chat rooms
+    if (supportRooms) {
+      supportRooms.forEach(supportRoom => {
+        rooms.push({
+          id: -supportRoom.id, // Use negative ID to distinguish from regular rooms
+          name: supportRoom.name,
+          description: supportRoom.description || '',
+          type: 'support',
+          is_active: true,
+          is_boundless_only: supportRoom.thread_type_id === 2, // Boundless support
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          last_message: null,
+          last_message_time: null,
+          unread_count: 0,
+          is_support_room: true,
+          support_room_id: supportRoom.id,
+        });
+      });
+    }
   
     return rooms;
   }

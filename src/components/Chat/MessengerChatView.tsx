@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Send, Clock, CheckCircle, Archive, AlertCircle, Tag, FileText, Smile } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser, type MessengerMessage, type ChatRoom } from '@/lib/messengerService';
+import { supportService } from '@/lib/supportService';
 import EmojiPicker from './EmojiPicker';
+import SupportChatView from './SupportChatView';
 
 interface MessengerChatViewProps {
   room: ChatRoom;
@@ -24,6 +26,32 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   sessionToken,
   onBack
 }) => {
+  // If it's a support room, use SupportChatView
+  if (room.is_support_room && room.support_room_id) {
+    const supportRoom = {
+      id: room.support_room_id,
+      name: room.name,
+      description: room.description,
+      icon: 'headphones',
+      color: '#8B5CF6',
+      is_active: true,
+      is_default: false,
+      thread_type_id: room.is_boundless_only ? 2 : 1,
+      created_at: room.created_at,
+      updated_at: room.updated_at,
+      created_by: null
+    };
+
+    return (
+      <SupportChatView
+        supportRoom={supportRoom}
+        currentUser={currentUser}
+        sessionToken={sessionToken}
+        onBack={onBack}
+      />
+    );
+  }
+
   const { toast } = useToast();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');

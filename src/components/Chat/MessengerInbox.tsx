@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MessageCircle, Users, Headphones, MessageSquare } from 'lucide-react';
+import { MessageCircle, Users, Headphones, MessageSquare, Crown } from 'lucide-react';
 import { messengerService, type ChatRoom } from '@/lib/messengerService';
 
 interface MessengerInboxProps {
@@ -30,44 +30,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     try {
       setLoading(true);
       const roomsData = await messengerService.getRooms(sessionToken);
-      
-      // Add support rooms based on user access
-      const supportRooms: ChatRoom[] = [
-        {
-          id: -1, // Use negative ID to distinguish from regular rooms
-          name: '💬 پشتیبانی آکادمی رفیعی',
-          description: 'پشتیبانی عمومی برای همه کاربران',
-          type: 'academy_support',
-          is_active: true,
-          is_boundless_only: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_message: '',
-          last_message_time: new Date().toISOString(),
-          unread_count: 0
-        }
-      ];
-
-      // Add boundless support for boundless users
-      if (currentUser?.bedoun_marz) {
-        supportRooms.push({
-          id: -2,
-          name: '🔒 پشتیبانی بدون مرز',
-          description: 'پشتیبانی ویژه اعضای بدون مرز',
-          type: 'boundless_support',
-          is_active: true,
-          is_boundless_only: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_message: '',
-          last_message_time: new Date().toISOString(),
-          unread_count: 0
-        });
-      }
-
-      // Combine support rooms with regular rooms
-      const allRooms = [...supportRooms, ...roomsData];
-      setRooms(allRooms);
+      setRooms(roomsData);
     } catch (error) {
       console.error('Error loading rooms:', error);
     } finally {
@@ -82,10 +45,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   };
 
   const getRoomIcon = (room: ChatRoom) => {
-    if (room.type === 'academy_support') {
-      return <MessageSquare className="w-4 h-4 text-blue-500" />;
-    } else if (room.type === 'boundless_support') {
+    if (room.is_support_room) {
       return <Headphones className="w-4 h-4 text-purple-500" />;
+    } else if (room.type === 'support') {
+      return <MessageSquare className="w-4 h-4 text-blue-500" />;
+    } else if (room.is_boundless_only) {
+      return <Crown className="w-4 h-4 text-yellow-500" />;
     } else {
       return <Users className="w-4 h-4 text-green-500" />;
     }
@@ -142,6 +107,11 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                   {room.unread_count! > 0 && (
                     <Badge variant="destructive" className="text-xs">
                       {room.unread_count}
+                    </Badge>
+                  )}
+                  {room.is_support_room && (
+                    <Badge variant="outline" className="text-xs">
+                      پشتیبانی
                     </Badge>
                   )}
                 </div>
