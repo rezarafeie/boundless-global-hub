@@ -662,30 +662,34 @@ class MessengerService {
   }
 
   async searchUsers(searchTerm: string): Promise<MessengerUser[]> {
-    // Only return users if:
-    // 1. Exact phone number match
-    // 2. Exact username match (with @ prefix)
+    // Clean the search term
+    const cleanTerm = searchTerm.trim();
     
+    // If empty, return empty array
+    if (!cleanTerm) {
+      return [];
+    }
+
     let query = supabase
       .from('chat_users')
       .select('*')
       .eq('is_approved', true);
 
     // Check if it's a phone number (all digits)
-    if (/^\d+$/.test(searchTerm)) {
-      query = query.eq('phone', searchTerm);
+    if (/^\d+$/.test(cleanTerm)) {
+      query = query.eq('phone', cleanTerm);
     } 
     // Check if it's a username (starts with @)
-    else if (searchTerm.startsWith('@')) {
-      const username = searchTerm.substring(1);
+    else if (cleanTerm.startsWith('@')) {
+      const username = cleanTerm.substring(1);
       query = query.eq('username', username);
     }
-    // If neither, return empty array
+    // For other searches, search in name and username
     else {
-      return [];
+      query = query.or(`name.ilike.%${cleanTerm}%,username.ilike.%${cleanTerm}%`);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.limit(10);
 
     if (error) throw error;
     return data || [];
@@ -697,11 +701,11 @@ class MessengerService {
     const supportUsers: MessengerUser[] = [];
     
     try {
-      // Academy Support - visible to all users
+      // Academy Support - visible to all users (ID: 999997)
       const { data: academySupport, error: academyError } = await supabase
         .from('chat_users')
         .select('*')
-        .eq('phone', '1')
+        .eq('id', 999997)
         .maybeSingle();
       
       if (academyError) {
@@ -709,16 +713,14 @@ class MessengerService {
       } else if (academySupport) {
         console.log('Found academy support:', academySupport);
         supportUsers.push(academySupport);
-      } else {
-        console.log('No academy support user found');
       }
 
-      // Boundless Support - only visible to boundless users
+      // Boundless Support - only visible to boundless users (ID: 999998)
       if (currentUser.bedoun_marz || currentUser.bedoun_marz_approved) {
         const { data: boundlessSupport, error: boundlessError } = await supabase
           .from('chat_users')
           .select('*')
-          .eq('phone', '2')
+          .eq('id', 999998)
           .maybeSingle();
         
         if (boundlessError) {
@@ -726,8 +728,6 @@ class MessengerService {
         } else if (boundlessSupport) {
           console.log('Found boundless support:', boundlessSupport);
           supportUsers.push(boundlessSupport);
-        } else {
-          console.log('No boundless support user found');
         }
       }
     } catch (error) {

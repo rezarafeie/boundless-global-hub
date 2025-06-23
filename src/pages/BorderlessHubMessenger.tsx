@@ -69,10 +69,12 @@ const BorderlessHubMessenger: React.FC = () => {
 
   // Support rooms based on user access - always show these
   const getSupportRooms = (): MessengerSupportRoom[] => {
+    if (!currentUser) return [];
+    
     const supportRooms: MessengerSupportRoom[] = [
       {
         id: 'academy_support',
-        name: '🛎️ پشتیبانی آکادمی رفیعی',
+        name: '🎓 پشتیبانی آکادمی رفیعی',
         description: 'پشتیبانی عمومی برای همه کاربران',
         type: 'academy_support',
         icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
@@ -81,7 +83,7 @@ const BorderlessHubMessenger: React.FC = () => {
     ];
 
     // Add boundless support only for boundless users
-    if (currentUser?.bedoun_marz) {
+    if (currentUser?.bedoun_marz || currentUser?.bedoun_marz_approved) {
       supportRooms.push({
         id: 'boundless_support',
         name: '🌐 پشتیبانی بدون مرز',
@@ -501,7 +503,11 @@ const BorderlessHubMessenger: React.FC = () => {
                             style={{ backgroundColor: getAvatarColor(chat.name) }}
                             className="text-white font-medium"
                           >
-                            {chat.name.charAt(0)}
+                            {chat.type === 'support' ? (
+                              chat.data.type === 'academy_support' ? '🎓' : '🌐'
+                            ) : (
+                              chat.name.charAt(0)
+                            )}
                           </AvatarFallback>
                         </Avatar>
                         <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
@@ -623,7 +629,11 @@ const BorderlessHubMessenger: React.FC = () => {
                               style={{ backgroundColor: getAvatarColor(chat.name) }}
                               className="text-white font-medium"
                             >
-                              {chat.name.charAt(0)}
+                              {chat.type === 'support' ? (
+                                chat.data.type === 'academy_support' ? '🎓' : '🌐'
+                              ) : (
+                                chat.name.charAt(0)
+                              )}
                             </AvatarFallback>
                           </Avatar>
                           <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">

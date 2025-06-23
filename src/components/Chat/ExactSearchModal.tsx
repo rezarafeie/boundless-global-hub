@@ -1,11 +1,11 @@
+
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, User, Users, Loader2, MessageSquare, Headphones } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,95 +27,68 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<MessengerUser[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [searchError, setSearchError] = useState('');
+  const [supportUsers, setSupportUsers] = useState<MessengerUser[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
-  const validateSearchTerm = (term: string): { isValid: boolean; message: string } => {
-    if (!term.trim()) {
-      return { isValid: false, message: 'لطفاً نام کاربری یا شماره تلفن وارد کنید' };
+  React.useEffect(() => {
+    if (isOpen && currentUser) {
+      loadSupportUsers();
     }
+  }, [isOpen, currentUser]);
 
-    // Check if it's a phone number (starts with 09 and is 11 digits)
-    const phoneRegex = /^09\d{9}$/;
-    if (phoneRegex.test(term)) {
-      return { isValid: true, message: '' };
+  const loadSupportUsers = async () => {
+    try {
+      const users = await messengerService.getSupportUsers(currentUser);
+      setSupportUsers(users);
+    } catch (error) {
+      console.error('Error loading support users:', error);
     }
-
-    // Check if it's a valid username (at least 3 characters, alphanumeric and underscore)
-    const usernameRegex = /^[a-zA-Z0-9_]{3,}$/;
-    if (term.startsWith('@')) {
-      const username = term.slice(1);
-      if (usernameRegex.test(username)) {
-        return { isValid: true, message: '' };
-      }
-    } else if (usernameRegex.test(term)) {
-      return { isValid: true, message: '' };
-    }
-
-    return { 
-      isValid: false, 
-      message: 'نام کاربری باید حداقل ۳ کاراکتر باشد یا شماره تلفن معتبر وارد کنید (مثل: 09123456789)' 
-    };
   };
 
   const handleSearch = async () => {
-    const validation = validateSearchTerm(searchTerm);
+    const cleanTerm = searchTerm.trim();
     
-    if (!validation.isValid) {
-      setSearchError(validation.message);
+    if (!cleanTerm) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً چیزی برای جستجو وارد کنید',
+        variant: 'destructive'
+      });
       return;
     }
 
-    setLoading(true);
-    setSearchError('');
-    setHasSearched(true);
-
-    try {
-      const results = await messengerService.searchUsers(searchTerm);
-      
-      // Filter out current user
-      const filteredResults = results.filter(user => user.id !== currentUser.id);
-      
-      setSearchResults(filteredResults);
-      
-      if (filteredResults.length === 0) {
-        setSearchError('کاربری با این مشخصات یافت نشد');
-      }
-    } catch (error: any) {
-      console.error('Search error:', error);
-      setSearchError('خطا در جستجو. دوباره تلاش کنید.');
+    if (cleanTerm.length < 2) {
       toast({
         title: 'خطا',
-        description: 'خطا در جستجوی کاربر',
-        variant: 'destructive',
+        description: 'حداقل ۲ کاراکتر وارد کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const results = await messengerService.searchUsers(cleanTerm);
+      setSearchResults(results);
+      setShowResults(true);
+      
+      if (results.length === 0) {
+        toast({
+          title: 'نتیجه‌ای یافت نشد',
+          description: 'کاربری با این مشخصات پیدا نشد. برای جستجو دقیق از شماره تلفن یا نام کاربری (@username) استفاده کنید.',
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در جستجو. لطفاً دوباره تلاش کنید.',
+        variant: 'destructive'
       });
     } finally {
-      setLoading(false);
+      setSearching(false);
     }
-  };
-
-  const handleUserSelect = (user: MessengerUser) => {
-    onUserSelect(user);
-    onClose();
-    setSearchTerm('');
-    setSearchResults([]);
-    setHasSearched(false);
-    setSearchError('');
-  };
-
-  const handleClose = () => {
-    onClose();
-    setSearchTerm('');
-    setSearchResults([]);
-    setHasSearched(false);
-    setSearchError('');
-  };
-
-  const getAvatarColor = (name: string) => {
-    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -124,37 +97,76 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
     }
   };
 
+  const handleUserSelect = (user: MessengerUser) => {
+    if (user.id === currentUser.id) {
+      toast({
+        title: 'خطا',
+        description: 'نمی‌توانید با خودتان گفتگو کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    onUserSelect(user);
+    onClose();
+    
+    // Reset state
+    setSearchTerm('');
+    setSearchResults([]);
+    setShowResults(false);
+  };
+
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  const getSupportUserIcon = (user: MessengerUser) => {
+    if (user.id === 999997) {
+      return <MessageSquare className="w-4 h-4 text-blue-500" />;
+    } else if (user.id === 999998) {
+      return <Headphones className="w-4 h-4 text-purple-500" />;
+    }
+    return <User className="w-4 h-4 text-green-500" />;
+  };
+
+  const getSupportUserBadge = (user: MessengerUser) => {
+    if (user.id === 999997) {
+      return <Badge className="bg-blue-100 text-blue-800 text-xs">پشتیبانی عمومی</Badge>;
+    } else if (user.id === 999998) {
+      return <Badge className="bg-purple-100 text-purple-800 text-xs">پشتیبانی بدون مرز</Badge>;
+    }
+    return <Badge variant="secondary" className="text-xs">پشتیبانی</Badge>;
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            جستجوی کاربر
+            <Users className="w-5 h-5" />
+            شروع گفتگوی جدید
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="search">نام کاربری یا شماره تلفن</Label>
-            <div className="flex gap-2 mt-1">
+          {/* Search Section */}
+          <div className="space-y-3">
+            <div className="flex gap-2">
               <Input
-                id="search"
-                placeholder="@username یا 09123456789"
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setSearchError('');
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={handleKeyPress}
+                placeholder="جستجو با نام، شماره تلفن یا @نام‌کاربری"
                 className="flex-1"
+                disabled={searching}
               />
               <Button 
-                onClick={handleSearch} 
-                disabled={loading}
-                size="sm"
+                onClick={handleSearch}
+                disabled={searching || !searchTerm.trim()}
               >
-                {loading ? (
+                {searching ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Search className="w-4 h-4" />
@@ -162,81 +174,104 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
               </Button>
             </div>
             
-            {/* Search Hints */}
-            <div className="mt-2 text-xs text-slate-500 space-y-1">
-              <p>• نام کاربری: @username یا username</p>
-              <p>• شماره تلفن: 09123456789</p>
-              <p>• جستجو دقیق: نام کاربری یا شماره تلفن کامل وارد کنید</p>
+            <div className="text-xs text-slate-500 space-y-1">
+              <p>💡 برای جستجوی دقیق:</p>
+              <ul className="space-y-1 mr-4">
+                <li>• شماره تلفن: ۰۹۱۲۱۲۳۴۵۶۷</li>
+                <li>• نام کاربری: @username</li>
+                <li>• نام: جستجوی عمومی در نام‌ها</li>
+              </ul>
             </div>
-            
-            {searchError && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{searchError}</span>
-              </div>
-            )}
           </div>
 
-          {/* Search Results */}
-          {loading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-                <p className="text-sm text-slate-500">در حال جستجو...</p>
+          {/* Support Users Section */}
+          {supportUsers.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                <Headphones className="w-4 h-4" />
+                پشتیبانی
               </div>
-            </div>
-          )}
-
-          {!loading && hasSearched && searchResults.length > 0 && (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                <CheckCircle className="w-4 h-4" />
-                <span>{searchResults.length} کاربر یافت شد</span>
-              </div>
-              
-              {searchResults.map((user) => (
-                <div
-                  key={user.id}
-                  onClick={() => handleUserSelect(user)}
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Avatar className="w-10 h-10">
-                    <AvatarFallback 
-                      style={{ backgroundColor: getAvatarColor(user.name) }}
-                      className="text-white font-medium"
-                    >
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{user.name}</span>
-                      {user.bedoun_marz_approved && (
-                        <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
-                          بدون مرز
-                        </Badge>
-                      )}
+              <div className="space-y-2">
+                {supportUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => handleUserSelect(user)}
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
+                    <div className="relative">
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback 
+                          style={{ backgroundColor: getAvatarColor(user.name) }}
+                          className="text-white font-medium"
+                        >
+                          {user.id === 999997 ? '🎓' : '🌐'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                        {getSupportUserIcon(user)}
+                      </div>
                     </div>
-                    <div className="text-sm text-slate-500">
-                      {user.phone}
-                      {user.username && ` • @${user.username}`}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">{user.name}</span>
+                        {getSupportUserBadge(user)}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {user.id === 999997 ? 'پشتیبانی عمومی برای همه کاربران' : 'پشتیبانی ویژه اعضای بدون مرز'}
+                      </div>
                     </div>
                   </div>
-                  
-                  <User className="w-4 h-4 text-slate-400" />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
-          {!loading && hasSearched && searchResults.length === 0 && !searchError && (
-            <div className="text-center py-8">
-              <Search className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-500 mb-2">کاربری یافت نشد</p>
-              <p className="text-xs text-slate-400">
-                نام کاربری یا شماره تلفن دقیق وارد کنید
-              </p>
+          {/* Search Results */}
+          {showResults && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                <Search className="w-4 h-4" />
+                نتایج جستجو ({searchResults.length})
+              </div>
+              
+              {searchResults.length > 0 ? (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {searchResults.map((user) => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleUserSelect(user)}
+                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback 
+                          style={{ backgroundColor: getAvatarColor(user.name) }}
+                          className="text-white font-medium"
+                        >
+                          {user.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{user.name}</span>
+                          {user.username && (
+                            <span className="text-xs text-blue-600">@{user.username}</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {user.phone}
+                        </div>
+                      </div>
+                      <User className="w-4 h-4 text-slate-400" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <Search className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <p className="text-sm">کاربری پیدا نشد</p>
+                  <p className="text-xs mt-1">جستجوی خود را دقیق‌تر کنید</p>
+                </div>
+              )}
             </div>
           )}
         </div>
