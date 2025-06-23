@@ -5,8 +5,8 @@ export interface MessengerUser {
   id: number;
   name: string;
   phone: string;
-  username?: string;
-  role?: string;
+  username?: string | null;
+  role?: string | null;
   is_approved: boolean;
   is_support_agent: boolean;
   is_messenger_admin: boolean;
@@ -15,8 +15,8 @@ export interface MessengerUser {
   bedoun_marz_request: boolean;
   created_at: string;
   updated_at: string;
-  last_seen?: string;
-  password_hash?: string;
+  last_seen?: string | null;
+  password_hash?: string | null;
 }
 
 export interface ChatRoom {
@@ -28,42 +28,42 @@ export interface ChatRoom {
   is_boundless_only: boolean;
   created_at: string;
   updated_at: string;
-  last_message?: string;
-  last_message_time?: string;
-  unread_count?: number;
-  thread_type_id?: number;
+  last_message?: string | null;
+  last_message_time?: string | null;
+  unread_count?: number | null;
+  thread_type_id?: number | null;
 }
 
 export interface MessengerMessage {
   id: number;
-  room_id?: number;
+  room_id?: number | null;
   sender_id: number;
-  recipient_id?: number;
+  recipient_id?: number | null;
   message: string;
   message_type: string;
-  media_url?: string;
-  media_content?: string;
+  media_url?: string | null;
+  media_content?: string | null;
   is_read: boolean;
   created_at: string;
-  reply_to_message_id?: number;
-  forwarded_from_message_id?: number;
-  conversation_id?: number;
+  reply_to_message_id?: number | null;
+  forwarded_from_message_id?: number | null;
+  conversation_id?: number | null;
   unread_by_support: boolean;
 }
 
 export interface SupportConversation {
   id: number;
   user_id: number;
-  agent_id?: number;
+  agent_id?: number | null;
   status: string;
   priority: string;
   thread_type_id: number;
   created_at: string;
   updated_at: string;
   last_message_at: string;
-  internal_notes?: string;
-  tags?: string[];
-  assigned_agent_name?: string;
+  internal_notes?: string | null;
+  tags?: string[] | null;
+  assigned_agent_name?: string | null;
 }
 
 export interface MessageReaction {
@@ -78,7 +78,7 @@ export interface SupportThreadType {
   id: number;
   name: string;
   display_name: string;
-  description?: string;
+  description?: string | null;
   is_active: boolean;
   is_boundless_only: boolean;
   created_at: string;
@@ -93,9 +93,9 @@ export interface SupportAgentAssignment {
 }
 
 export interface MessengerMessageWithUser extends MessengerMessage {
-  sender?: MessengerUser;
-  recipient?: MessengerUser;
-  reactions?: MessageReaction[];
+  sender?: MessengerUser | null;
+  recipient?: MessengerUser | null;
+  reactions?: MessageReaction[] | null;
 }
 
 export interface UserSession {
@@ -164,8 +164,7 @@ class MessengerService {
         throw new Error(`Failed to register user: ${error.message}`);
       }
 
-      // Simple type assertion without complex casting
-      return data;
+      return data as MessengerUser;
     } catch (error: any) {
       console.error('Error in register:', error);
       throw error;
@@ -209,7 +208,7 @@ class MessengerService {
         throw error;
       }
 
-      return data;
+      return data as MessengerUser;
     } catch (error) {
       console.error('Error in registerWithPassword:', error);
       throw error;
@@ -260,7 +259,7 @@ class MessengerService {
         throw new Error(`Failed to create session: ${error.message}`);
       }
 
-      return data;
+      return data as UserSession;
     } catch (error: any) {
       console.error('Error in createSession:', error);
       throw error;
@@ -291,8 +290,8 @@ class MessengerService {
       }
 
       return { 
-        user: userData, 
-        session: sessionData 
+        user: userData as MessengerUser, 
+        session: sessionData as UserSession 
       };
     } catch (error: any) {
       console.error('Error in validateSession:', error);
@@ -332,13 +331,12 @@ class MessengerService {
         throw new Error(`Failed to fetch rooms: ${error.message}`);
       }
 
-      // Ensure description is always provided
       const rooms = (data || []).map(room => ({
         ...room,
         description: room.description || ''
-      })) as ChatRoom[];
+      }));
 
-      return rooms;
+      return rooms as ChatRoom[];
     } catch (error: any) {
       console.error('Error in getRooms:', error);
       throw error;
@@ -477,11 +475,11 @@ class MessengerService {
             ...message, 
             reactions,
             sender_name: message.sender?.name || 'کاربر'
-          } as MessengerMessageWithUser;
+          };
         })
       );
 
-      return messagesWithReactions;
+      return messagesWithReactions as MessengerMessageWithUser[];
     } catch (error: any) {
       console.error('Error in getMessages:', error);
       throw error;
@@ -492,13 +490,11 @@ class MessengerService {
     try {
       console.log('Getting private messages for user:', userId);
       
-      // Validate session first
       const isValid = await this.validateSession(sessionToken);
       if (!isValid) {
         throw new Error('Invalid session');
       }
 
-      // Get all support messages for this user
       const { data, error } = await supabase
         .from('messenger_messages')
         .select('*')
@@ -512,7 +508,7 @@ class MessengerService {
 
       console.log('Found private messages:', data?.length || 0);
 
-      const messages = (data || []).map(msg => ({
+      return (data || []).map(msg => ({
         id: msg.id,
         room_id: msg.room_id,
         sender_id: msg.sender_id,
@@ -528,8 +524,6 @@ class MessengerService {
         conversation_id: msg.conversation_id,
         unread_by_support: msg.unread_by_support || false
       })) as MessengerMessage[];
-
-      return messages;
     } catch (error) {
       console.error('Error in getPrivateMessages:', error);
       throw error;
@@ -549,18 +543,15 @@ class MessengerService {
     try {
       console.log('Sending message:', messageData);
       
-      // Validate session
       const isValid = await this.validateSession(sessionToken);
       if (!isValid) {
         throw new Error('Invalid session');
       }
 
-      // For support messages (when recipient_id is 1), we need to handle conversation creation
       let conversationId = null;
       if (messageData.recipient_id === 1) {
         console.log('This is a support message, checking for existing conversation...');
         
-        // Check for existing conversation
         const { data: existingConv } = await supabase
           .from('support_conversations')
           .select('id')
@@ -574,7 +565,6 @@ class MessengerService {
           conversationId = existingConv.id;
           console.log('Found existing conversation:', conversationId);
         } else {
-          // Create new conversation
           const { data: newConv, error: convError } = await supabase
             .from('support_conversations')
             .insert([{
@@ -601,7 +591,7 @@ class MessengerService {
         .insert([{
           ...messageData,
           conversation_id: conversationId,
-          unread_by_support: messageData.recipient_id === 1 // Mark as unread by support if sent to support
+          unread_by_support: messageData.recipient_id === 1
         }])
         .select()
         .single();
@@ -613,7 +603,6 @@ class MessengerService {
 
       console.log('Message sent successfully:', data);
 
-      // Update conversation if it exists
       if (conversationId) {
         await supabase
           .from('support_conversations')
@@ -697,7 +686,7 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as MessengerUser[];
     } catch (error) {
       console.error('Error fetching all users:', error);
       throw error;
@@ -717,7 +706,7 @@ class MessengerService {
         return null;
       }
 
-      return (data || null) as MessengerUser | null;
+      return data as MessengerUser;
     } catch (error: any) {
       console.error('Error in getUser:', error);
       return null;
@@ -1028,7 +1017,7 @@ class MessengerService {
       });
 
       if (error) {
-        console.error('Error getting user from session:',error);
+        console.error('Error getting user from session:', error);
         return null;
       }
 
