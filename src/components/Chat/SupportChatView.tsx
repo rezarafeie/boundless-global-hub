@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,51 +11,60 @@ import { useToast } from '@/hooks/use-toast';
 import { supportService, type SupportConversation, type SupportMessage } from '@/lib/supportService';
 import { type MessengerUser } from '@/lib/messengerService';
 
-interface ConversationWithUser extends SupportConversation {
-  user?: {
-    id: number;
-    name: string;
-    phone: string;
-  };
-  thread_type?: {
-    id: number;
-    display_name: string;
-  };
-  unread_count?: number;
+interface SupportRoom {
+  id: string;
+  name: string;
+  description: string;
+  type: 'academy_support' | 'boundless_support';
+  icon: React.ReactNode;
+  isPermanent: true;
 }
 
 interface SupportChatViewProps {
-  conversation: ConversationWithUser;
+  supportRoom: SupportRoom;
   currentUser: MessengerUser;
+  sessionToken: string;
   onBack: () => void;
-  onConversationUpdate: (updatedConversation: ConversationWithUser) => void;
 }
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
-  conversation,
+  supportRoom,
   currentUser,
-  onBack,
-  onConversationUpdate
+  sessionToken,
+  onBack
 }) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState(conversation.status || 'open');
-  const [priority, setPriority] = useState(conversation.priority || 'normal');
+  const [conversation, setConversation] = useState<SupportConversation | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  const fetchMessages = async () => {
+  const fetchConversationAndMessages = async () => {
     try {
       setLoading(true);
-      const fetchedMessages = await supportService.getConversationMessages(conversation.id);
+      
+      // Get thread type ID based on support room type
+      const threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
+      
+      // Get or create conversation
+      const conv = await supportService.getOrCreateUserConversation(
+        currentUser.id, 
+        sessionToken, 
+        threadTypeId
+      );
+      setConversation(conv);
+      
+      // Get messages for this conversation
+      const fetchedMessages = await supportService.getConversationMessages(conv.id);
       setMessages(fetchedMessages);
+      
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error fetching conversation and messages:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
+        description: 'خطا در بارگذاری گفتگو',
         variant: 'destructive',
       });
     } finally {
@@ -63,13 +73,17 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   };
 
   useEffect(() => {
-    fetchMessages();
+    fetchConversationAndMessages();
+  }, [supportRoom.type, currentUser.id]);
+
+  useEffect(() => {
+    if (!conversation) return;
 
     const channel = supabase
       .channel(`support_conversation_${conversation.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'support_messages' },
+        { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
         (payload) => {
           const newMessage = payload.new as SupportMessage;
           if (newMessage.conversation_id === conversation.id) {
@@ -82,7 +96,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversation.id]);
+  }, [conversation?.id]);
 
   useEffect(() => {
     if (chatBottomRef.current) {
@@ -91,16 +105,17 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() || sending || !conversation) return;
 
     setSending(true);
     try {
-      const sentMessage = await supportService.addConversationMessage(conversation.id, newMessage);
+      const sentMessage = await supportService.sendSupportMessage(
+        conversation.id,
+        newMessage,
+        currentUser.id
+      );
       setMessages((prevMessages) => [...prevMessages, sentMessage]);
       setNewMessage('');
-
-      // Optimistically update unread count to 0 after sending a message
-      onConversationUpdate({ ...conversation, unread_count: 0 });
 
       toast({
         title: 'پیام ارسال شد',
@@ -116,72 +131,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     } finally {
       setSending(false);
     }
-  };
-
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      await supportService.updateConversationStatus(conversation.id, newStatus);
-      setStatus(newStatus);
-      onConversationUpdate({ ...conversation, status: newStatus });
-      toast({
-        title: 'وضعیت بروزرسانی شد',
-        description: `وضعیت به ${newStatus} تغییر یافت.`,
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: 'خطا در بروزرسانی وضعیت',
-        description: 'خطا در بروزرسانی وضعیت',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handlePriorityChange = async (newPriority: string) => {
-    try {
-      await supportService.updateConversationPriority(conversation.id, newPriority);
-      setPriority(newPriority);
-      onConversationUpdate({ ...conversation, priority: newPriority });
-      toast({
-        title: 'اولویت بروزرسانی شد',
-        description: `اولویت به ${newPriority} تغییر یافت.`,
-      });
-    } catch (error) {
-      console.error('Error updating priority:', error);
-      toast({
-        title: 'خطا در بروزرسانی اولویت',
-        description: 'خطا در بروزرسانی اولویت',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      open: { label: 'باز', variant: 'destructive' as const },
-      assigned: { label: 'در حال بررسی', variant: 'default' as const },
-      resolved: { label: 'حل شده', variant: 'secondary' as const },
-      closed: { label: 'بسته', variant: 'outline' as const }
-    };
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.open;
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    const priorityMap = {
-      low: { label: 'کم', color: 'bg-gray-100 text-gray-800' },
-      normal: { label: 'عادی', color: 'bg-blue-100 text-blue-800' },
-      high: { label: 'بالا', color: 'bg-orange-100 text-orange-800' },
-      urgent: { label: 'فوری', color: 'bg-red-100 text-red-800' }
-    };
-    
-    const priorityInfo = priorityMap[priority as keyof typeof priorityMap] || priorityMap.normal;
-    return (
-      <Badge variant="outline" className={`text-xs ${priorityInfo.color}`}>
-        {priorityInfo.label}
-      </Badge>
-    );
   };
 
   if (loading) {
@@ -211,13 +160,8 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             </Button>
             
             <h2 className="font-semibold text-slate-900 dark:text-white text-lg">
-              {conversation.user?.name || 'کاربر نامشخص'}
+              {supportRoom.name}
             </h2>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {getStatusBadge(status)}
-            {getPriorityBadge(priority)}
           </div>
         </div>
       </div>
@@ -248,7 +192,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                   <div className={`text-xs mt-2 ${message.sender_id === currentUser.id 
                     ? 'text-blue-100' 
                     : 'text-slate-500 dark:text-slate-400'}`}>
-                    {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                    {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
@@ -275,35 +219,6 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             <Send className="w-4 h-4" />
             ارسال
           </Button>
-        </div>
-      </div>
-
-      {/* Status and Priority Selectors */}
-      <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4">
-        <div className="flex items-center justify-between gap-4">
-          <Select value={status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="وضعیت" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">باز</SelectItem>
-              <SelectItem value="assigned">در حال بررسی</SelectItem>
-              <SelectItem value="resolved">حل شده</SelectItem>
-              <SelectItem value="closed">بسته</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={priority} onValueChange={handlePriorityChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="اولویت" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">کم</SelectItem>
-              <SelectItem value="normal">عادی</SelectItem>
-              <SelectItem value="high">بالا</SelectItem>
-              <SelectItem value="urgent">فوری</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
     </div>
