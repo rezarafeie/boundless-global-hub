@@ -164,7 +164,8 @@ class MessengerService {
         throw new Error(`Failed to register user: ${error.message}`);
       }
 
-      return data as MessengerUser;
+      // Simple type assertion without complex casting
+      return data;
     } catch (error: any) {
       console.error('Error in register:', error);
       throw error;
@@ -208,7 +209,7 @@ class MessengerService {
         throw error;
       }
 
-      return data as MessengerUser;
+      return data;
     } catch (error) {
       console.error('Error in registerWithPassword:', error);
       throw error;
@@ -259,7 +260,7 @@ class MessengerService {
         throw new Error(`Failed to create session: ${error.message}`);
       }
 
-      return data as UserSession;
+      return data;
     } catch (error: any) {
       console.error('Error in createSession:', error);
       throw error;
@@ -290,8 +291,8 @@ class MessengerService {
       }
 
       return { 
-        user: userData as MessengerUser, 
-        session: sessionData as UserSession 
+        user: userData, 
+        session: sessionData 
       };
     } catch (error: any) {
       console.error('Error in validateSession:', error);
@@ -696,7 +697,7 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as MessengerUser[];
+      return data || [];
     } catch (error) {
       console.error('Error fetching all users:', error);
       throw error;
