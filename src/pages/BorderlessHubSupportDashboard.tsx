@@ -414,12 +414,11 @@ const BorderlessHubSupportDashboard: React.FC = () => {
             {selectedConversation ? (
               <SupportChatView
                 supportRoom={{
-                  id: selectedConversation.thread_type_id?.toString() || '1',
+                  id: selectedConversation.thread_type_id || 1,
                   name: selectedConversation.thread_type?.display_name || 'پشتیبانی',
                   description: 'گفتگوی پشتیبانی',
-                  type: selectedConversation.thread_type_id === 2 ? 'boundless_support' : 'academy_support',
-                  icon: <MessageCircle className="w-4 h-4" />,
-                  isPermanent: true
+                  icon: 'message-square',
+                  thread_type_id: selectedConversation.thread_type_id
                 }}
                 currentUser={currentUser}
                 sessionToken={localStorage.getItem('messenger_session_token') || ''}
