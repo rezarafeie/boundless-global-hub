@@ -127,10 +127,7 @@ class MessengerService {
         .limit(1000);
 
       if (error) throw error;
-      return (data || []).map(msg => ({
-        ...msg,
-        sender: msg.sender || undefined
-      })) as MessengerMessage[];
+      return (data || []) as MessengerMessage[];
     } catch (error) {
       console.error('Error fetching all messages:', error);
       throw error;
@@ -170,10 +167,7 @@ class MessengerService {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []).map(msg => ({
-        ...msg,
-        sender: msg.sender || undefined
-      })) as MessengerMessage[];
+      return (data || []) as MessengerMessage[];
     } catch (error) {
       console.error('Error fetching messages:', error);
       throw error;
@@ -504,10 +498,7 @@ class MessengerService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map(topic => ({
-        ...topic,
-        description: topic.description || ''
-      }));
+      return data || [];
     } catch (error) {
       console.error('Error fetching topics:', error);
       throw error;
@@ -527,10 +518,7 @@ class MessengerService {
         .single();
 
       if (error) throw error;
-      return {
-        ...data,
-        description: data.description || ''
-      };
+      return data;
     } catch (error) {
       console.error('Error creating topic:', error);
       throw error;
@@ -587,10 +575,7 @@ class MessengerService {
         .single();
 
       if (error) throw error;
-      return {
-        ...data,
-        type: data.type as 'general' | 'academy_support' | 'boundless_support'
-      } as ChatRoom;
+      return data as ChatRoom;
     } catch (error) {
       console.error('Error creating room:', error);
       throw error;
