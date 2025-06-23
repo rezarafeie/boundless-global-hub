@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,16 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, MessageSquare, Settings, UserCheck, UserX, Edit3, Trash2, Plus, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type ChatTopic } from '@/lib/messengerService';
 import UserEditModal from '@/components/Admin/UserEditModal';
-
-interface ChatTopic {
-  id: number;
-  title: string;
-  description: string;
-  is_active: boolean;
-  created_at: string;
-}
 
 interface MessengerMessage {
   id: number;
@@ -435,10 +428,11 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button 
-                              variant="outline" 
+                            <Button
                               size="sm"
+                              variant="outline"
                               onClick={() => handleEditUser(user)}
+                              disabled={updating === user.id}
                             >
                               <Edit3 className="w-4 h-4" />
                             </Button>
@@ -457,48 +451,74 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                 <CardHeader>
                   <CardTitle>مدیریت تاپیک‌ها</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleCreateTopic} className="flex gap-2">
-                    <Input
-                      placeholder="عنوان تاپیک"
-                      value={topicForm.title}
-                      onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })}
-                      required
-                    />
-                    <Input
-                      placeholder="توضیحات"
-                      value={topicForm.description}
-                      onChange={(e) => setTopicForm({ ...topicForm, description: e.target.value })}
-                    />
-                    <Button type="submit">
-                      <Plus className="w-4 h-4 mr-2" />
-                      ایجاد
-                    </Button>
+                <CardContent>
+                  {/* Create Topic Form */}
+                  <form onSubmit={handleCreateTopic} className="mb-6 p-4 border rounded-lg">
+                    <h3 className="text-lg font-medium mb-4">ایجاد تاپیک جدید</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Input
+                        placeholder="عنوان تاپیک"
+                        value={topicForm.title}
+                        onChange={(e) => setTopicForm({ ...topicForm, title: e.target.value })}
+                        required
+                      />
+                      <Input
+                        placeholder="توضیحات"
+                        value={topicForm.description}
+                        onChange={(e) => setTopicForm({ ...topicForm, description: e.target.value })}
+                      />
+                      <Button type="submit">
+                        <Plus className="w-4 h-4 mr-2" />
+                        ایجاد تاپیک
+                      </Button>
+                    </div>
                   </form>
-                  
-                  <div className="grid gap-2">
-                    {topics.map((topic) => (
-                      <div key={topic.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{topic.title}</h4>
-                          <p className="text-sm text-gray-500">{topic.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={topic.is_active}
-                            onCheckedChange={(checked) => handleUpdateTopic(topic.id, { is_active: checked })}
-                          />
-                          <Button
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDeleteTopic(topic.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>عنوان</TableHead>
+                        <TableHead>توضیحات</TableHead>
+                        <TableHead>وضعیت</TableHead>
+                        <TableHead>تاریخ ایجاد</TableHead>
+                        <TableHead>عملیات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {topics.map((topic) => (
+                        <TableRow key={topic.id}>
+                          <TableCell className="font-medium">{topic.title}</TableCell>
+                          <TableCell>{topic.description}</TableCell>
+                          <TableCell>
+                            <Badge variant={topic.is_active ? "default" : "secondary"}>
+                              {topic.is_active ? 'فعال' : 'غیرفعال'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(topic.created_at).toLocaleDateString('fa-IR')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateTopic(topic.id, { is_active: !topic.is_active })}
+                              >
+                                <Settings className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteTopic(topic.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
 
@@ -511,8 +531,8 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>فرستنده</TableHead>
                         <TableHead>پیام</TableHead>
+                        <TableHead>فرستنده</TableHead>
                         <TableHead>تاریخ</TableHead>
                         <TableHead>عملیات</TableHead>
                       </TableRow>
@@ -520,28 +540,28 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                     <TableBody>
                       {messages.slice(0, 50).map((message) => (
                         <TableRow key={message.id}>
+                          <TableCell className="max-w-md truncate">{message.message}</TableCell>
                           <TableCell>
-                            {message.sender?.name || 'نامشخص'}
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {message.message}
+                            {message.sender ? (
+                              <div>
+                                <p className="font-medium">{message.sender.name}</p>
+                                <p className="text-sm text-gray-500">{message.sender.phone}</p>
+                              </div>
+                            ) : (
+                              'نامشخص'
+                            )}
                           </TableCell>
                           <TableCell>
                             {new Date(message.created_at).toLocaleDateString('fa-IR')}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Edit3 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteMessage(message.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteMessage(message.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
