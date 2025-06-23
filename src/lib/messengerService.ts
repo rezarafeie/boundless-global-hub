@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -270,7 +271,7 @@ class MessengerService {
         .from('chat_users')
         .select('*')
         .eq('phone', phone)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       return data || null;
@@ -310,12 +311,18 @@ class MessengerService {
 
   async registerWithPassword(name: string, phone: string, password: string, username?: string): Promise<AuthResult> {
     try {
+      // Check if user already exists
+      const existingUser = await this.getUserByPhone(phone);
+      if (existingUser) {
+        throw new Error('کاربری با این شماره تلفن قبلاً ثبت شده است');
+      }
+
       const { data, error } = await supabase
         .from('chat_users')
         .insert({
           name,
           phone,
-          username,
+          username: username || null,
           password_hash: password, // In production, this should be hashed
           is_approved: false
         })
@@ -354,9 +361,10 @@ class MessengerService {
         .select('*')
         .eq('phone', phone)
         .eq('password_hash', password)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('شماره تلفن یا رمز عبور اشتباه است');
 
       // Create session
       const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -407,7 +415,7 @@ class MessengerService {
       const { data, error } = await supabase
         .from('admin_settings')
         .select('*')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data || { manual_approval_enabled: false, updated_at: new Date().toISOString() };
@@ -675,7 +683,7 @@ class MessengerService {
         `)
         .eq('session_token', sessionToken)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (error || !data) return null;
 
