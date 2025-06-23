@@ -171,6 +171,7 @@ export type Database = {
           is_support_agent: boolean | null
           last_seen: string | null
           name: string
+          password_hash: string | null
           phone: string
           role: string | null
           updated_at: string | null
@@ -187,6 +188,7 @@ export type Database = {
           is_support_agent?: boolean | null
           last_seen?: string | null
           name: string
+          password_hash?: string | null
           phone: string
           role?: string | null
           updated_at?: string | null
@@ -203,6 +205,7 @@ export type Database = {
           is_support_agent?: boolean | null
           last_seen?: string | null
           name?: string
+          password_hash?: string | null
           phone?: string
           role?: string | null
           updated_at?: string | null

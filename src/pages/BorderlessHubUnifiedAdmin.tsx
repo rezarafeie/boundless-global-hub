@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, MessageSquare, Settings, UserCheck, UserX, Edit3, Trash2, Plus, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import UserEditModal from '@/components/Admin/UserEditModal';
 
 interface ChatTopic {
   id: number;
@@ -41,6 +41,10 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   const [topics, setTopics] = useState<ChatTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
+
+  // User edit modal state
+  const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Topic form state
   const [topicForm, setTopicForm] = useState({
@@ -77,6 +81,20 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleEditUser = (user: MessengerUser) => {
+    setEditingUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleUserUpdated = () => {
+    fetchData(); // Refresh the data after user update
+  };
 
   const handleToggleUserApproval = async (userId: number, isApproved: boolean) => {
     setUpdating(userId);
@@ -374,7 +392,11 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                            >
                               <Edit3 className="w-4 h-4" />
                             </Button>
                           </TableCell>
@@ -487,6 +509,14 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* User Edit Modal */}
+        <UserEditModal
+          user={editingUser}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onUserUpdated={handleUserUpdated}
+        />
       </div>
     </MainLayout>
   );
