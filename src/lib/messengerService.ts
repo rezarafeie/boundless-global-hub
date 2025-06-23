@@ -346,9 +346,11 @@ class MessengerService {
       throw chatError;
     }
 
-    // Get support rooms that user has access to
+    // Get support rooms directly from support_rooms table
     const { data: supportRooms, error: supportError } = await supabase
-      .rpc('get_user_support_rooms', { user_id_param: userId });
+      .from('support_rooms')
+      .select('*')
+      .eq('is_active', true);
 
     if (supportError) {
       console.error('Error fetching support rooms:', supportError);
@@ -377,23 +379,32 @@ class MessengerService {
     // Add support rooms as chat rooms
     if (supportRooms) {
       supportRooms.forEach(supportRoom => {
-        rooms.push({
-          id: -supportRoom.id, // Use negative ID to distinguish from regular rooms
-          name: supportRoom.name,
-          description: supportRoom.description || '',
-          type: 'support',
-          is_active: true,
-          is_boundless_only: supportRoom.thread_type_id === 2, // Boundless support
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_message: null,
-          last_message_time: null,
-          unread_count: 0,
-          is_support_room: true,
-          support_room_id: supportRoom.id,
-        });
+        // Check if user has access to this support room
+        const hasAccess = supportRoom.thread_type_id === 1 || // Academy support (all users)
+                         (supportRoom.thread_type_id === 2 && user.bedoun_marz); // Boundless support (only boundless users)
+        
+        if (hasAccess) {
+          rooms.push({
+            id: -supportRoom.id, // Use negative ID to distinguish from regular rooms
+            name: supportRoom.name,
+            description: supportRoom.description || '',
+            type: 'support',
+            is_active: true,
+            is_boundless_only: supportRoom.thread_type_id === 2, // Boundless support
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            last_message: null,
+            last_message_time: null,
+            unread_count: 0,
+            is_support_room: true,
+            support_room_id: supportRoom.id,
+          });
+        }
       });
     }
+
+    console.log('All rooms loaded:', rooms); // Debug log
+    console.log('Support rooms found:', supportRooms); // Debug log
   
     return rooms;
   }
