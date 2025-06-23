@@ -8,8 +8,10 @@ export interface MessengerUser {
   username?: string;
   is_approved: boolean;
   bedoun_marz: boolean;
+  bedoun_marz_approved: boolean;
   is_messenger_admin: boolean;
   is_support_agent: boolean;
+  role?: string;
   created_at: string;
   updated_at: string;
 }
@@ -38,13 +40,58 @@ export interface MessengerMessage {
   message_type: string;
   is_read: boolean;
   created_at: string;
+  media_url?: string;
   sender?: MessengerUser;
+}
+
+export interface SupportMessage {
+  id: number;
+  message: string;
+  sender_id: number;
+  recipient_id: number;
+  conversation_id: number;
+  message_type: string;
+  is_read: boolean;
+  created_at: string;
+  media_url?: string;
+  sender?: MessengerUser;
+}
+
+export interface AdminSettings {
+  manual_approval_enabled: boolean;
+  updated_at: string;
+}
+
+export interface SupportThreadType {
+  id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  is_boundless_only: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SupportAgentAssignment {
+  id: number;
+  agent_id: number;
+  thread_type_id: number;
+  is_active: boolean;
+  assigned_at: string;
+}
+
+export interface ChatTopic {
+  id: number;
+  title: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 class MessengerService {
   async getAllMessages(): Promise<MessengerMessage[]> {
     try {
-      // Use explicit join to avoid relationship ambiguity
       const { data, error } = await supabase
         .from('messenger_messages')
         .select(`
@@ -57,6 +104,7 @@ class MessengerService {
           message_type,
           is_read,
           created_at,
+          media_url,
           sender:chat_users!sender_id(
             id,
             name,
@@ -64,6 +112,7 @@ class MessengerService {
             username,
             is_approved,
             bedoun_marz,
+            bedoun_marz_approved,
             is_messenger_admin,
             is_support_agent,
             created_at,
@@ -81,6 +130,85 @@ class MessengerService {
     }
   }
 
+  async getMessages(roomId: number): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          id,
+          message,
+          sender_id,
+          recipient_id,
+          room_id,
+          conversation_id,
+          message_type,
+          is_read,
+          created_at,
+          media_url,
+          sender:chat_users!sender_id(
+            id,
+            name,
+            phone,
+            username,
+            is_approved,
+            bedoun_marz,
+            bedoun_marz_approved,
+            is_messenger_admin,
+            is_support_agent,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .insert({
+          room_id: roomId,
+          sender_id: senderId,
+          message: message,
+          message_type: 'text',
+          is_read: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  }
+
+  async addReaction(messageId: number, userId: number, emoji: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('message_reactions')
+        .insert({
+          message_id: messageId,
+          user_id: userId,
+          reaction: emoji
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      throw error;
+    }
+  }
+
   async deleteMessage(messageId: number): Promise<void> {
     try {
       const { error } = await supabase
@@ -91,6 +219,284 @@ class MessengerService {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting message:', error);
+      throw error;
+    }
+  }
+
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  async getApprovedUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching approved users:', error);
+      throw error;
+    }
+  }
+
+  async updateUserRole(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      throw error;
+    }
+  }
+
+  async updateUserDetails(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating user details:', error);
+      throw error;
+    }
+  }
+
+  async registerWithPassword(name: string, phone: string, password: string, username?: string): Promise<MessengerUser> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .insert({
+          name,
+          phone,
+          username,
+          password_hash: password, // In production, this should be hashed
+          is_approved: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error registering user:', error);
+      throw error;
+    }
+  }
+
+  async getAdminSettings(): Promise<AdminSettings> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data || { manual_approval_enabled: false, updated_at: new Date().toISOString() };
+    } catch (error) {
+      console.error('Error fetching admin settings:', error);
+      return { manual_approval_enabled: false, updated_at: new Date().toISOString() };
+    }
+  }
+
+  async updateAdminSettings(updates: Partial<AdminSettings>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .upsert({
+          id: 1,
+          ...updates,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating admin settings:', error);
+      throw error;
+    }
+  }
+
+  async getThreadTypes(): Promise<SupportThreadType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('support_thread_types')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching thread types:', error);
+      throw error;
+    }
+  }
+
+  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
+    try {
+      const { data, error } = await supabase
+        .from('support_agent_assignments')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching support agent assignments:', error);
+      throw error;
+    }
+  }
+
+  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('support_agent_assignments')
+        .insert({
+          agent_id: agentId,
+          thread_type_id: threadTypeId,
+          is_active: true
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error assigning support agent:', error);
+      throw error;
+    }
+  }
+
+  async unassignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('support_agent_assignments')
+        .delete()
+        .eq('agent_id', agentId)
+        .eq('thread_type_id', threadTypeId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error unassigning support agent:', error);
+      throw error;
+    }
+  }
+
+  async getTopics(): Promise<ChatTopic[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+      throw error;
+    }
+  }
+
+  async createTopic(topic: Partial<ChatTopic>): Promise<ChatTopic> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .insert(topic)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating topic:', error);
+      throw error;
+    }
+  }
+
+  async updateTopic(topicId: number, updates: Partial<ChatTopic>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .update(updates)
+        .eq('id', topicId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating topic:', error);
+      throw error;
+    }
+  }
+
+  async deleteTopic(topicId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .delete()
+        .eq('id', topicId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+      throw error;
+    }
+  }
+
+  async createRoom(room: Partial<ChatRoom>): Promise<ChatRoom> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .insert(room)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating room:', error);
+      throw error;
+    }
+  }
+
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update(updates)
+        .eq('id', roomId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating room:', error);
+      throw error;
+    }
+  }
+
+  async deleteRoom(roomId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .delete()
+        .eq('id', roomId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting room:', error);
       throw error;
     }
   }
@@ -126,6 +532,7 @@ class MessengerService {
             username,
             is_approved,
             bedoun_marz,
+            bedoun_marz_approved,
             is_messenger_admin,
             is_support_agent,
             created_at,
@@ -138,7 +545,6 @@ class MessengerService {
 
       if (error || !data) return null;
 
-      // Check if session is still valid (within 24 hours)
       const lastActivity = new Date(data.last_activity);
       const now = new Date();
       const hoursDiff = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
