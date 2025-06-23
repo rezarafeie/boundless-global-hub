@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
 
@@ -30,6 +31,40 @@ export interface ChatRoom {
   last_message?: string;
   last_message_time?: string;
   unread_count?: number;
+}
+
+export interface MessengerMessage {
+  id: number;
+  message: string;
+  sender_id: number;
+  recipient_id?: number;
+  room_id?: number;
+  conversation_id?: number;
+  created_at: string;
+  is_read: boolean;
+  message_type?: string;
+  reply_to_message_id?: number;
+  sender?: {
+    name: string;
+    phone: string;
+  };
+}
+
+export interface SupportThreadType {
+  id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  is_active: boolean;
+  is_boundless_only: boolean;
+}
+
+export interface SupportAgentAssignment {
+  id: number;
+  agent_id: number;
+  thread_type_id: number;
+  is_active: boolean;
+  assigned_at: string;
 }
 
 export interface AdminSettings {
@@ -109,6 +144,106 @@ class MessengerService {
       });
 
     return { token, user };
+  }
+
+  async registerWithPassword(userData: {
+    name: string;
+    phone: string;
+    username?: string;
+    password: string;
+    isBoundlessStudent?: boolean;
+  }): Promise<{ token: string; user: MessengerUser }> {
+    const settings = await this.getAdminSettings();
+    
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const { data: user, error } = await supabase
+      .from('chat_users')
+      .insert({
+        name: userData.name,
+        phone: userData.phone,
+        username: userData.username,
+        password_hash: hashedPassword,
+        is_approved: !settings.manual_approval_enabled,
+        bedoun_marz: userData.isBoundlessStudent || false,
+        role: 'user'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const token = this.generateToken();
+    
+    await supabase
+      .from('user_sessions')
+      .insert({
+        user_id: user.id,
+        session_token: token,
+        is_active: true
+      });
+
+    return { token, user };
+  }
+
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data || null;
+  }
+
+  async authenticateUser(phone: string, password: string): Promise<{ token: string; user: MessengerUser }> {
+    const { data: user, error } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+
+    if (error || !user) {
+      throw new Error('کاربر یافت نشد');
+    }
+
+    if (!user.password_hash) {
+      throw new Error('رمز عبور تنظیم نشده است');
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      throw new Error('رمز عبور اشتباه است');
+    }
+
+    const token = this.generateToken();
+    
+    await supabase
+      .from('user_sessions')
+      .insert({
+        user_id: user.id,
+        session_token: token,
+        is_active: true
+      });
+
+    return { token, user };
+  }
+
+  async createSession(userId: number): Promise<{ session_token: string }> {
+    const token = this.generateToken();
+    
+    const { error } = await supabase
+      .from('user_sessions')
+      .insert({
+        user_id: userId,
+        session_token: token,
+        is_active: true
+      });
+
+    if (error) throw error;
+
+    return { session_token: token };
   }
 
   async login(loginData: {
@@ -232,7 +367,7 @@ class MessengerService {
     return data || null;
   }
 
-  async getMessages(roomId: number): Promise<any[]> {
+  async getMessages(roomId: number): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
       .from('chat_messages')
       .select(`*, sender:chat_users(name, phone)`)
@@ -243,7 +378,18 @@ class MessengerService {
     return data || [];
   }
 
-  async sendMessage(roomId: number, senderId: number, message: string): Promise<any> {
+  async getPrivateMessages(conversationId: number): Promise<MessengerMessage[]> {
+    const { data, error } = await supabase
+      .from('private_messages')
+      .select(`*, sender:chat_users(name, phone)`)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
     const { data, error } = await supabase
       .from('chat_messages')
       .insert({
@@ -305,11 +451,22 @@ class MessengerService {
     return data || [];
   }
 
-  async getAllMessages(): Promise<any[]> {
+  async getApprovedUsers(): Promise<MessengerUser[]> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getAllMessages(): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
       .from('chat_messages')
       .select(`*, sender:chat_users(name, phone)`)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
@@ -359,6 +516,88 @@ class MessengerService {
       .from('chat_topics')
       .delete()
       .eq('id', topicId);
+
+    if (error) throw error;
+  }
+
+  async createRoom(roomData: { name: string; description?: string; type: string; is_boundless_only?: boolean }): Promise<ChatRoom> {
+    const { data, error } = await supabase
+      .from('chat_rooms')
+      .insert(roomData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
+    const { error } = await supabase
+      .from('chat_rooms')
+      .update(updates)
+      .eq('id', roomId);
+
+    if (error) throw error;
+  }
+
+  async deleteRoom(roomId: number): Promise<void> {
+    const { error } = await supabase
+      .from('chat_rooms')
+      .delete()
+      .eq('id', roomId);
+
+    if (error) throw error;
+  }
+
+  async getThreadTypes(): Promise<SupportThreadType[]> {
+    const { data, error } = await supabase
+      .from('support_thread_types')
+      .select('*')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
+    const { data, error } = await supabase
+      .from('support_agent_assignments')
+      .select('*')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
+    const { error } = await supabase
+      .from('support_agent_assignments')
+      .insert({
+        agent_id: agentId,
+        thread_type_id: threadTypeId,
+        is_active: true
+      });
+
+    if (error) throw error;
+  }
+
+  async unassignSupportAgent(assignmentId: number): Promise<void> {
+    const { error } = await supabase
+      .from('support_agent_assignments')
+      .update({ is_active: false })
+      .eq('id', assignmentId);
+
+    if (error) throw error;
+  }
+
+  async addReaction(messageId: number, userId: number, reaction: string): Promise<void> {
+    const { error } = await supabase
+      .from('message_reactions')
+      .insert({
+        message_id: messageId,
+        user_id: userId,
+        reaction: reaction
+      });
 
     if (error) throw error;
   }

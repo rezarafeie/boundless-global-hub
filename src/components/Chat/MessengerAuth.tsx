@@ -20,6 +20,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     name: '',
     phone: '',
     username: '',
+    password: 'defaultpassword123',
     isBoundlessStudent: false
   });
   const [loading, setLoading] = useState(false);
@@ -104,23 +105,22 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      // Register user
-      const user = await messengerService.register(
-        formData.name.trim(),
-        formData.phone.trim(),
-        formData.isBoundlessStudent
-      );
+      // Register user with password
+      const result = await messengerService.registerWithPassword({
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        username: formData.username || undefined,
+        password: formData.password,
+        isBoundlessStudent: formData.isBoundlessStudent
+      });
 
-      // Update username if provided
-      if (formData.username && user.id) {
-        await privateMessageService.updateUsername(user.id, formData.username, '');
-        user.username = formData.username;
+      // Update username if provided and different
+      if (formData.username && result.user.username !== formData.username) {
+        await privateMessageService.updateUsername(result.user.id, formData.username, result.token);
+        result.user.username = formData.username;
       }
 
-      // Create session
-      const session = await messengerService.createSession(user.id);
-      
-      onAuthenticated(session.session_token, user.name, user);
+      onAuthenticated(result.token, result.user.name, result.user);
       
     } catch (error: any) {
       console.error('Registration error:', error);

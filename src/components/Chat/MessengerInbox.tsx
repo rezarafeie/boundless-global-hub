@@ -1,293 +1,174 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Users, Megaphone, HeadphonesIcon, RefreshCw, AlertCircle, GraduationCap } from 'lucide-react';
-import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
-import { supportService } from '@/lib/supportService';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MessageCircle, Users, Headphones, MessageSquare } from 'lucide-react';
+import { messengerService, type ChatRoom } from '@/lib/messengerService';
 
 interface MessengerInboxProps {
-  currentUser: MessengerUser;
+  sessionToken: string;
   onRoomSelect: (room: ChatRoom) => void;
-  selectedRoom: ChatRoom | null;
+  selectedRoom?: ChatRoom | null;
+  currentUser: any;
 }
 
 const MessengerInbox: React.FC<MessengerInboxProps> = ({
-  currentUser,
+  sessionToken,
   onRoomSelect,
-  selectedRoom
+  selectedRoom,
+  currentUser
 }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [supportUnreadCounts, setSupportUnreadCounts] = useState<{[key: string]: number}>({});
 
-  const fetchSupportUnreadCounts = async () => {
+  useEffect(() => {
+    loadRooms();
+  }, [sessionToken]);
+
+  const loadRooms = async () => {
     try {
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) return;
-
-      // Get user's support conversations and their unread counts
-      const conversations = await supportService.getAllConversations();
-      const userConversations = conversations.filter(conv => conv.user_id === currentUser.id);
-      
-      const unreadCounts: {[key: string]: number} = {};
-      
-      for (const conv of userConversations) {
-        if (conv.thread_type_id === 1) {
-          // Academy support
-          unreadCounts['academy_support'] = (unreadCounts['academy_support'] || 0) + (conv.unread_count || 0);
-        } else if (conv.thread_type_id === 2) {
-          // Boundless support  
-          unreadCounts['boundless_support'] = (unreadCounts['boundless_support'] || 0) + (conv.unread_count || 0);
-        }
-      }
-      
-      setSupportUnreadCounts(unreadCounts);
-    } catch (error) {
-      console.error('Error fetching support unread counts:', error);
-    }
-  };
-
-  const fetchRooms = async () => {
-    try {
-      setError(null);
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('No session token found. Please log in again.');
-      }
-
-      console.log('Fetching rooms for user:', currentUser.name);
+      setLoading(true);
       const roomsData = await messengerService.getRooms(sessionToken);
       
-      // Add support chat rooms for all users
+      // Add support rooms based on user access
       const supportRooms: ChatRoom[] = [
         {
-          id: -1, // Academy support
-          name: '🎓 پشتیبانی آکادمی رفیعی',
+          id: -1, // Use negative ID to distinguish from regular rooms
+          name: '💬 پشتیبانی آکادمی رفیعی',
+          description: 'پشتیبانی عمومی برای همه کاربران',
           type: 'academy_support',
-          description: 'پشتیبانی عمومی آکادمی رفیعی',
-          is_boundless_only: false,
           is_active: true,
+          is_boundless_only: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          thread_type_id: 1,
-          unread_count: supportUnreadCounts['academy_support'] || 0
+          last_message: '',
+          last_message_time: new Date().toISOString(),
+          unread_count: 0
         }
       ];
 
-      // Add Boundless support only for boundless users
-      if (currentUser.bedoun_marz_approved) {
+      // Add boundless support for boundless users
+      if (currentUser?.bedoun_marz) {
         supportRooms.push({
-          id: -2, // Boundless support
-          name: '🟦 پشتیبانی بدون مرز',
-          type: 'boundless_support',
+          id: -2,
+          name: '🔒 پشتیبانی بدون مرز',
           description: 'پشتیبانی ویژه اعضای بدون مرز',
-          is_boundless_only: true,
+          type: 'boundless_support',
           is_active: true,
+          is_boundless_only: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          thread_type_id: 2,
-          unread_count: supportUnreadCounts['boundless_support'] || 0
+          last_message: '',
+          last_message_time: new Date().toISOString(),
+          unread_count: 0
         });
       }
 
-      const allRooms = [...roomsData, ...supportRooms];
+      // Combine support rooms with regular rooms
+      const allRooms = [...supportRooms, ...roomsData];
       setRooms(allRooms);
-      
-      console.log('Successfully loaded rooms:', allRooms.length);
-      setRetryCount(0);
-    } catch (error: any) {
-      console.error('Error fetching rooms:', error);
-      const errorMessage = error.message || 'خطا در بارگذاری گفتگوها. لطفاً دوباره تلاش کنید.';
-      setError(errorMessage);
-      setRooms([]);
+    } catch (error) {
+      console.error('Error loading rooms:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const initializeInbox = async () => {
-      await fetchSupportUnreadCounts();
-      await fetchRooms();
-    };
-    
-    initializeInbox();
-    
-    // Set up periodic refresh for unread counts
-    const intervalId = setInterval(fetchSupportUnreadCounts, 30000); // Refresh every 30 seconds
-    
-    return () => clearInterval(intervalId);
-  }, [currentUser.id]);
-
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-    setLoading(true);
-    fetchRooms();
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   };
 
-  const getRoomIcon = (type: string) => {
-    switch (type) {
-      case 'public_group':
-        return Users;
-      case 'boundless_group':
-        return MessageCircle;
-      case 'announcement_channel':
-        return Megaphone;
-      case 'academy_support':
-        return GraduationCap;
-      case 'boundless_support':
-        return HeadphonesIcon;
-      case 'support_chat':
-        return HeadphonesIcon;
-      default:
-        return MessageCircle;
-    }
-  };
-
-  const getRoomBadge = (room: ChatRoom) => {
-    if (room.type === 'boundless_group') {
-      return <Badge variant="secondary" className="text-xs">بدون مرز</Badge>;
-    }
-    if (room.type === 'announcement_channel') {
-      return <Badge variant="outline" className="text-xs">کانال</Badge>;
-    }
+  const getRoomIcon = (room: ChatRoom) => {
     if (room.type === 'academy_support') {
-      return <Badge variant="default" className="text-xs bg-amber-500">آکادمی</Badge>;
+      return <MessageSquare className="w-4 h-4 text-blue-500" />;
+    } else if (room.type === 'boundless_support') {
+      return <Headphones className="w-4 h-4 text-purple-500" />;
+    } else {
+      return <Users className="w-4 h-4 text-green-500" />;
     }
-    if (room.type === 'boundless_support') {
-      return <Badge variant="default" className="text-xs bg-blue-500">بدون مرز</Badge>;
-    }
-    if (room.type === 'support_chat') {
-      return <Badge variant="default" className="text-xs bg-green-500">پشتیبانی</Badge>;
-    }
-    return null;
   };
 
   if (loading) {
     return (
-      <div className="p-4">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 text-center">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <p className="text-red-500 mb-4">{error}</p>
-        <div className="space-y-2">
-          <Button onClick={handleRetry} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            تلاش مجدد
-          </Button>
-          {retryCount > 2 && (
-            <p className="text-xs text-slate-500 mt-2">
-              اگر مشکل ادامه دارد، لطفاً از حساب خود خارج شده و دوباره وارد شوید
-            </p>
-          )}
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <MessageCircle className="w-8 h-8 text-slate-300 mx-auto mb-2 animate-pulse" />
+          <p className="text-sm text-slate-500">در حال بارگذاری...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              گفتگوها
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {rooms.length} گفتگو موجود
-            </p>
-          </div>
-          <Button onClick={handleRetry}variant="ghost" size="sm">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Rooms List */}
-      <div className="flex-1 overflow-y-auto">
+    <ScrollArea className="h-full">
+      <div className="space-y-1 p-2">
         {rooms.length === 0 ? (
-          <div className="p-8 text-center">
-            <MessageCircle className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-500 dark:text-slate-400 mb-4">
-              هیچ گفتگویی موجود نیست
-            </p>
-            <Button onClick={handleRetry} variant="ghost" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              بارگذاری مجدد
-            </Button>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <MessageCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500">هیچ اتاق چتی یافت نشد</p>
+            </div>
           </div>
         ) : (
-          rooms.map((room) => {
-            const Icon = getRoomIcon(room.type);
-            const isSelected = selectedRoom?.id === room.id;
-            const totalUnreadCount = (room.unread_count || 0);
-            
-            return (
-              <div
-                key={room.id}
-                onClick={() => onRoomSelect(room)}
-                className={`p-4 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                  isSelected ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    room.type === 'boundless_group' ? 'bg-indigo-100 dark:bg-indigo-900' :
-                    room.type === 'academy_support' ? 'bg-amber-100 dark:bg-amber-900' :
-                    room.type === 'boundless_support' ? 'bg-blue-100 dark:bg-blue-900' :
-                    room.type === 'support_chat' ? 'bg-green-100 dark:bg-green-900' :
-                    room.type === 'announcement_channel' ? 'bg-amber-100 dark:bg-amber-900' :
-                    'bg-blue-100 dark:bg-blue-900'
-                  }`}>
-                    <Icon className={`w-6 h-6 ${
-                      room.type === 'boundless_group' ? 'text-indigo-600 dark:text-indigo-400' :
-                      room.type === 'academy_support' ? 'text-amber-600 dark:text-amber-400' :
-                      room.type === 'boundless_support' ? 'text-blue-600 dark:text-blue-400' :
-                      room.type === 'support_chat' ? 'text-green-600 dark:text-green-400' :
-                      room.type === 'announcement_channel' ? 'text-amber-600 dark:text-amber-400' :
-                      'text-blue-600 dark:text-blue-400'
-                    }`} />
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                        {room.name}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        {getRoomBadge(room)}
-                        {totalUnreadCount > 0 && (
-                          <Badge variant="destructive" className="text-xs px-2 py-0">
-                            {totalUnreadCount}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
-                      {room.description}
-                    </p>
-                  </div>
+          rooms.map((room) => (
+            <div
+              key={room.id}
+              onClick={() => onRoomSelect(room)}
+              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                selectedRoom?.id === room.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+              }`}
+            >
+              <div className="relative">
+                <Avatar className="w-10 h-10">
+                  <AvatarFallback 
+                    style={{ backgroundColor: getAvatarColor(room.name) }}
+                    className="text-white font-medium"
+                  >
+                    {room.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
+                  {getRoomIcon(room)}
                 </div>
               </div>
-            );
-          })
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-sm truncate">
+                    {room.name}
+                  </div>
+                  {room.unread_count! > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {room.unread_count}
+                    </Badge>
+                  )}
+                </div>
+                {room.description && (
+                  <div className="text-xs text-slate-500 truncate">
+                    {room.description}
+                  </div>
+                )}
+                {room.last_message && (
+                  <div className="text-xs text-slate-500 truncate">
+                    {room.last_message}
+                  </div>
+                )}
+                {room.last_message_time && room.id > 0 && (
+                  <div className="text-xs text-slate-400">
+                    {new Date(room.last_message_time).toLocaleTimeString('fa-IR', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
         )}
       </div>
-    </div>
+    </ScrollArea>
   );
 };
 
