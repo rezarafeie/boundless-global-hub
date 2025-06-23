@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -33,6 +32,8 @@ interface ChatRoom {
   type: 'general' | 'boundless_only' | 'topic';
   is_active: boolean;
   is_boundless_only: boolean;
+  created_at: string;
+  updated_at: string;
   member_count?: number;
   last_message?: {
     text: string;
@@ -101,8 +102,8 @@ const BorderlessHubMessenger: React.FC = () => {
       // Set session context for Supabase RLS
       await supabase.rpc('set_session_context', { session_token: token });
 
-      // Fetch chat rooms
-      const rooms = await messengerService.getChatRooms(user);
+      // Fetch chat rooms using the correct method name
+      const rooms = await messengerService.getRooms(user);
       console.log('Fetched chat rooms:', rooms);
       setChatRooms(rooms);
 
@@ -504,10 +505,15 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Start Chat Modal */}
         {showStartChatModal && (
           <StartChatModal
+            isOpen={showStartChatModal}
             currentUser={currentUser}
             sessionToken={sessionToken}
             onClose={() => setShowStartChatModal(false)}
-            onConversationCreated={handleNewPrivateConversation}
+            onUserSelect={(user) => {
+              // Handle user selection for starting new chat
+              console.log('User selected for new chat:', user);
+              setShowStartChatModal(false);
+            }}
           />
         )}
       </div>

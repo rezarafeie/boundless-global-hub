@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from '@/lib/messengerService';
 
@@ -9,6 +10,8 @@ export interface PrivateConversation {
   updated_at: string;
   last_message_at: string;
   other_user?: MessengerUser;
+  other_user_name?: string;
+  other_user_username?: string;
   last_message?: string;
   unread_count?: number;
 }
