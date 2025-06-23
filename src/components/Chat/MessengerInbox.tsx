@@ -47,11 +47,17 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('Loading data for current user:', currentUser);
+      
       const [roomsData, supportUsersData, conversationsData] = await Promise.all([
         messengerService.getRooms(sessionToken),
         messengerService.getSupportUsers(currentUser),
         messengerService.getPrivateConversations(currentUser.id)
       ]);
+      
+      console.log('Loaded support users:', supportUsersData);
+      console.log('Loaded rooms:', roomsData);
+      console.log('Loaded conversations:', conversationsData);
       
       setRooms(roomsData);
       setSupportUsers(supportUsersData);
@@ -208,7 +214,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
           {/* Support Users - Always at top */}
-          {supportUsers.map((user) => (
+          {supportUsers.length > 0 && supportUsers.map((user) => (
             <div
               key={`support-${user.id}`}
               onClick={() => onUserSelect(user)}

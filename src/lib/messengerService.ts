@@ -692,32 +692,49 @@ class MessengerService {
   }
 
   async getSupportUsers(currentUser: MessengerUser): Promise<MessengerUser[]> {
+    console.log('Getting support users for:', currentUser);
+    
     const supportUsers: MessengerUser[] = [];
     
-    // Academy Support - visible to all users
-    const { data: academySupport } = await supabase
-      .from('chat_users')
-      .select('*')
-      .eq('phone', '1')
-      .single();
-    
-    if (academySupport) {
-      supportUsers.push(academySupport);
-    }
-
-    // Boundless Support - only visible to boundless users
-    if (currentUser.bedoun_marz) {
-      const { data: boundlessSupport } = await supabase
+    try {
+      // Academy Support - visible to all users
+      const { data: academySupport, error: academyError } = await supabase
         .from('chat_users')
         .select('*')
-        .eq('phone', '2')
-        .single();
+        .eq('phone', '1')
+        .maybeSingle();
       
-      if (boundlessSupport) {
-        supportUsers.push(boundlessSupport);
+      if (academyError) {
+        console.error('Error fetching academy support:', academyError);
+      } else if (academySupport) {
+        console.log('Found academy support:', academySupport);
+        supportUsers.push(academySupport);
+      } else {
+        console.log('No academy support user found');
       }
+
+      // Boundless Support - only visible to boundless users
+      if (currentUser.bedoun_marz || currentUser.bedoun_marz_approved) {
+        const { data: boundlessSupport, error: boundlessError } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('phone', '2')
+          .maybeSingle();
+        
+        if (boundlessError) {
+          console.error('Error fetching boundless support:', boundlessError);
+        } else if (boundlessSupport) {
+          console.log('Found boundless support:', boundlessSupport);
+          supportUsers.push(boundlessSupport);
+        } else {
+          console.log('No boundless support user found');
+        }
+      }
+    } catch (error) {
+      console.error('Error in getSupportUsers:', error);
     }
 
+    console.log('Returning support users:', supportUsers);
     return supportUsers;
   }
 
