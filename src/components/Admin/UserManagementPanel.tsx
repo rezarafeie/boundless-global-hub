@@ -1,392 +1,228 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Users, UserCheck, UserX, Search, Shield, Star, Clock, Phone, Calendar, Edit } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Search, Edit, Users, UserCheck, Shield } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import UserEditModal from './UserEditModal';
 
 const UserManagementPanel = () => {
-  const { toast } = useToast();
-  const [allUsers, setAllUsers] = useState<MessengerUser[]>([]);
+  const [users, setUsers] = useState<MessengerUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<MessengerUser[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterTab, setFilterTab] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<MessengerUser | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const fetchUsers = async () => {
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = users.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.phone.includes(searchTerm) ||
+        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    } else {
+      setFilteredUsers(users);
+    }
+  }, [searchTerm, users]);
+
+  const loadUsers = async () => {
     try {
       setLoading(true);
-      const users = await messengerService.getAllUsers();
-      setAllUsers(users);
-      setFilteredUsers(users);
+      const allUsers = await messengerService.getAllUsers();
+      setUsers(allUsers);
+      setFilteredUsers(allUsers);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری کاربران',
-        variant: 'destructive',
-      });
+      console.error('Error loading users:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    let filtered = allUsers;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone.includes(searchTerm)
-      );
-    }
-
-    // Filter by tab
-    switch (filterTab) {
-      case 'pending':
-        filtered = filtered.filter(user => !user.is_approved);
-        break;
-      case 'approved':
-        filtered = filtered.filter(user => user.is_approved);
-        break;
-      case 'support-agents':
-        filtered = filtered.filter(user => user.is_support_agent);
-        break;
-      case 'boundless':
-        filtered = filtered.filter(user => user.bedoun_marz || user.bedoun_marz_approved);
-        break;
-      case 'admins':
-        filtered = filtered.filter(user => user.is_messenger_admin);
-        break;
-    }
-
-    setFilteredUsers(filtered);
-  }, [allUsers, searchTerm, filterTab]);
-
-  const handleApproveUser = async (userId: number) => {
-    try {
-      await messengerService.updateUserRole(userId, { is_approved: true });
-      toast({
-        title: 'موفق',
-        description: 'کاربر تایید شد',
-      });
-      fetchUsers();
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در تایید کاربر',
-        variant: 'destructive',
-      });
-    }
+  const handleEditUser = (user: MessengerUser) => {
+    setSelectedUser(user);
+    setShowEditModal(true);
   };
 
-  const handleToggleRole = async (userId: number, role: 'is_support_agent' | 'is_messenger_admin' | 'bedoun_marz_approved', currentValue: boolean) => {
-    try {
-      await messengerService.updateUserRole(userId, { [role]: !currentValue });
-      
-      const roleNames = {
-        is_support_agent: 'پشتیبان',
-        is_messenger_admin: 'مدیر',
-        bedoun_marz_approved: 'بدون مرز'
-      };
-      
-      toast({
-        title: 'موفق',
-        description: `نقش ${roleNames[role]} ${!currentValue ? 'اضافه' : 'حذف'} شد`,
-      });
-      fetchUsers();
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در تغییر نقش کاربر',
-        variant: 'destructive',
-      });
-    }
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   };
 
-  const handleRejectUser = async (userId: number) => {
-    try {
-      await messengerService.updateUserRole(userId, { is_approved: false });
-      toast({
-        title: 'موفق',
-        description: 'کاربر رد شد',
-      });
-      fetchUsers();
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در رد کاربر',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const getStatusBadges = (user: MessengerUser) => {
+  const getUserBadges = (user: MessengerUser) => {
     const badges = [];
     
     if (!user.is_approved) {
-      badges.push(<Badge key="pending" variant="destructive">در انتظار تایید</Badge>);
-    } else {
-      badges.push(<Badge key="approved" variant="secondary">تایید شده</Badge>);
+      badges.push(<Badge key="pending" variant="secondary">در انتظار تایید</Badge>);
     }
     
     if (user.is_messenger_admin) {
-      badges.push(<Badge key="admin" variant="default">مدیر</Badge>);
-    }
-    
-    if (user.is_support_agent) {
-      badges.push(<Badge key="support" className="bg-purple-100 text-purple-800">پشتیبان</Badge>);
+      badges.push(<Badge key="admin" variant="default" className="bg-red-500"><Shield className="w-3 h-3 mr-1" />مدیر</Badge>);
     }
     
     if (user.bedoun_marz_approved) {
-      badges.push(<Badge key="boundless" className="bg-blue-100 text-blue-800">بدون مرز</Badge>);
+      badges.push(<Badge key="boundless" variant="default" className="bg-purple-500">بدون مرز</Badge>);
+    } else if (user.bedoun_marz_request) {
+      badges.push(<Badge key="boundless-pending" variant="outline" className="border-purple-500 text-purple-500">درخواست بدون مرز</Badge>);
     }
     
     return badges;
   };
 
-  const getStatsCards = () => {
-    const stats = {
-      total: allUsers.length,
-      pending: allUsers.filter(u => !u.is_approved).length,
-      approved: allUsers.filter(u => u.is_approved).length,
-      supportAgents: allUsers.filter(u => u.is_support_agent).length,
-      boundless: allUsers.filter(u => u.bedoun_marz_approved).length,
-      admins: allUsers.filter(u => u.is_messenger_admin).length
-    };
-
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-            <p className="text-2xl font-bold">{stats.total}</p>
-            <p className="text-sm text-slate-600">کل کاربران</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Clock className="w-6 h-6 mx-auto mb-2 text-amber-600" />
-            <p className="text-2xl font-bold">{stats.pending}</p>
-            <p className="text-sm text-slate-600">در انتظار</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <UserCheck className="w-6 h-6 mx-auto mb-2 text-green-600" />
-            <p className="text-2xl font-bold">{stats.approved}</p>
-            <p className="text-sm text-slate-600">تایید شده</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Shield className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-2xl font-bold">{stats.supportAgents}</p>
-            <p className="text-sm text-slate-600">پشتیبان</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Star className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-            <p className="text-2xl font-bold">{stats.boundless}</p>
-            <p className="text-sm text-slate-600">بدون مرز</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <UserCheck className="w-6 h-6 mx-auto mb-2 text-red-600" />
-            <p className="text-2xl font-bold">{stats.admins}</p>
-            <p className="text-sm text-slate-600">مدیر</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
-  const handleOpenEditModal = (user: MessengerUser) => {
-    setEditingUser(user);
-    setEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setEditingUser(null);
-    setEditModalOpen(false);
-  };
-
-  const handleUserUpdated = () => {
-    fetchUsers();
+  const stats = {
+    total: users.length,
+    approved: users.filter(u => u.is_approved).length,
+    pending: users.filter(u => !u.is_approved).length,
+    boundless: users.filter(u => u.bedoun_marz_approved).length,
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p>در حال بارگذاری کاربران...</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <Users className="w-8 h-8 text-slate-300 mx-auto mb-2 animate-pulse" />
+          <p className="text-sm text-slate-500">در حال بارگذاری کاربران...</p>
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {getStatsCards()}
-      
-      {/* Search and Filter */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">کل کاربران</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+              <Users className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">تایید شده</p>
+                <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+              </div>
+              <UserCheck className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">در انتظار</p>
+                <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
+              </div>
+              <Users className="w-8 h-8 text-amber-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600">بدون مرز</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.boundless}</p>
+              </div>
+              <Shield className="w-8 h-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <CardHeader>
+          <CardTitle>مدیریت کاربران</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
-                placeholder="جستجو بر اساس نام یا شماره تلفن..."
+                placeholder="جستجو بر اساس نام، شماره تلفن یا نام کاربری..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pr-10"
               />
             </div>
+          </div>
+
+          {/* Users List */}
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback 
+                      style={{ backgroundColor: getAvatarColor(user.name) }}
+                      className="text-white font-medium"
+                    >
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div>
+                    <div className="font-medium">{user.name}</div>
+                    <div className="text-sm text-slate-500">
+                      {user.phone}
+                      {user.username && ` • @${user.username}`}
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      {getUserBadges(user)}
+                    </div>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditUser(user)}
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  ویرایش
+                </Button>
+              </div>
+            ))}
+            
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                <p className="text-slate-500">کاربری یافت نشد</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* User Management Tabs */}
-      <Tabs value={filterTab} onValueChange={setFilterTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
-          <TabsTrigger value="all">همه ({allUsers.length})</TabsTrigger>
-          <TabsTrigger value="pending">در انتظار ({allUsers.filter(u => !u.is_approved).length})</TabsTrigger>
-          <TabsTrigger value="approved">تایید شده ({allUsers.filter(u => u.is_approved).length})</TabsTrigger>
-          <TabsTrigger value="support-agents">پشتیبان ({allUsers.filter(u => u.is_support_agent).length})</TabsTrigger>
-          <TabsTrigger value="boundless">بدون مرز ({allUsers.filter(u => u.bedoun_marz_approved).length})</TabsTrigger>
-          <TabsTrigger value="admins">مدیر ({allUsers.filter(u => u.is_messenger_admin).length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={filterTab} className="mt-6">
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>کاربر</TableHead>
-                      <TableHead>وضعیت</TableHead>
-                      <TableHead>نقش‌ها</TableHead>
-                      <TableHead>تاریخ عضویت</TableHead>
-                      <TableHead>عملیات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-slate-500 flex items-center gap-1">
-                              <Phone className="w-3 h-3" />
-                              {user.phone}
-                            </p>
-                            {user.username && (
-                              <p className="text-xs text-blue-600">@{user.username}</p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {getStatusBadges(user)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={user.is_support_agent}
-                                onCheckedChange={() => handleToggleRole(user.id, 'is_support_agent', user.is_support_agent)}
-                              />
-                              <span className="text-sm">پشتیبان</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={user.bedoun_marz_approved}
-                                onCheckedChange={() => handleToggleRole(user.id, 'bedoun_marz_approved', user.bedoun_marz_approved)}
-                              />
-                              <span className="text-sm">بدون مرز</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={user.is_messenger_admin}
-                                onCheckedChange={() => handleToggleRole(user.id, 'is_messenger_admin', user.is_messenger_admin)}
-                              />
-                              <span className="text-sm">مدیر</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-slate-500">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(user.created_at).toLocaleDateString('fa-IR')}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {!user.is_approved ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleApproveUser(user.id)}
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  <UserCheck className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleRejectUser(user.id)}
-                                >
-                                  <UserX className="w-4 h-4" />
-                                </Button>
-                              </>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRejectUser(user.id)}
-                              >
-                                <UserX className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
+      {/* Edit Modal */}
       <UserEditModal
-        user={editingUser}
-        isOpen={editModalOpen}
-        onClose={handleCloseEditModal}
-        onUserUpdated={handleUserUpdated}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        user={selectedUser}
+        onUserUpdate={loadUsers}
       />
     </div>
   );

@@ -182,6 +182,7 @@ export type Database = {
           bedoun_marz: boolean | null
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
+          bio: string | null
           created_at: string | null
           id: number
           is_approved: boolean | null
@@ -199,6 +200,7 @@ export type Database = {
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
+          bio?: string | null
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
@@ -216,6 +218,7 @@ export type Database = {
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
+          bio?: string | null
           created_at?: string | null
           id?: number
           is_approved?: boolean | null
