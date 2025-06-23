@@ -50,23 +50,6 @@ export interface MessengerMessage {
   };
 }
 
-export interface SupportThreadType {
-  id: number;
-  name: string;
-  display_name: string;
-  description?: string;
-  is_active: boolean;
-  is_boundless_only: boolean;
-}
-
-export interface SupportAgentAssignment {
-  id: number;
-  agent_id: number;
-  thread_type_id: number;
-  is_active: boolean;
-  assigned_at: string;
-}
-
 export interface AdminSettings {
   manual_approval_enabled: boolean;
   updated_at: string;
@@ -325,10 +308,7 @@ class MessengerService {
   
     const { data, error } = await supabase
       .from('chat_rooms')
-      .select(`*,
-        chat_messages(count),
-        last_message:chat_messages(created_at, message, sender_id)
-      `)
+      .select(`*`)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
   
@@ -336,22 +316,19 @@ class MessengerService {
       throw error;
     }
   
-    const rooms = data.map(room => {
-      const lastMessage = room.last_message && room.last_message.length > 0 ? room.last_message[0] : null;
-      return {
-        id: room.id,
-        name: room.name,
-        description: room.description,
-        type: room.type,
-        is_active: room.is_active,
-        is_boundless_only: room.is_boundless_only,
-        created_at: room.created_at,
-        updated_at: room.updated_at,
-        last_message: lastMessage ? lastMessage.message : null,
-        last_message_time: lastMessage ? lastMessage.created_at : null,
-        unread_count: 0,
-      };
-    });
+    const rooms = data.map(room => ({
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      type: room.type,
+      is_active: room.is_active,
+      is_boundless_only: room.is_boundless_only,
+      created_at: room.created_at,
+      updated_at: room.updated_at,
+      last_message: null,
+      last_message_time: null,
+      unread_count: 0,
+    }));
   
     return rooms;
   }
@@ -372,17 +349,6 @@ class MessengerService {
       .from('chat_messages')
       .select(`*, sender:chat_users(name, phone)`)
       .eq('room_id', roomId)
-      .order('created_at', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  async getPrivateMessages(conversationId: number): Promise<MessengerMessage[]> {
-    const { data, error } = await supabase
-      .from('private_messages')
-      .select(`*, sender:chat_users(name, phone)`)
-      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
@@ -545,59 +511,6 @@ class MessengerService {
       .from('chat_rooms')
       .delete()
       .eq('id', roomId);
-
-    if (error) throw error;
-  }
-
-  async getThreadTypes(): Promise<SupportThreadType[]> {
-    const { data, error } = await supabase
-      .from('support_thread_types')
-      .select('*')
-      .eq('is_active', true);
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  async getSupportAgentAssignments(): Promise<SupportAgentAssignment[]> {
-    const { data, error } = await supabase
-      .from('support_agent_assignments')
-      .select('*')
-      .eq('is_active', true);
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  async assignSupportAgent(agentId: number, threadTypeId: number): Promise<void> {
-    const { error } = await supabase
-      .from('support_agent_assignments')
-      .insert({
-        agent_id: agentId,
-        thread_type_id: threadTypeId,
-        is_active: true
-      });
-
-    if (error) throw error;
-  }
-
-  async unassignSupportAgent(assignmentId: number): Promise<void> {
-    const { error } = await supabase
-      .from('support_agent_assignments')
-      .update({ is_active: false })
-      .eq('id', assignmentId);
-
-    if (error) throw error;
-  }
-
-  async addReaction(messageId: number, userId: number, reaction: string): Promise<void> {
-    const { error } = await supabase
-      .from('message_reactions')
-      .insert({
-        message_id: messageId,
-        user_id: userId,
-        reaction: reaction
-      });
 
     if (error) throw error;
   }
