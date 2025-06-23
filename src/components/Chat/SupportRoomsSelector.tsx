@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Headphones, Phone, MessageCircle, Shield, Users } from 'lucide-react';
+import { Crown, Headphones, Phone, MessageCircle, Shield, Users, AlertCircle } from 'lucide-react';
 import { supportRoomService, type SupportRoom } from '@/lib/supportRoomService';
 import { type MessengerUser } from '@/lib/messengerService';
+import { useToast } from '@/hooks/use-toast';
 
 interface SupportRoomsSelectorProps {
   currentUser: MessengerUser;
@@ -17,22 +18,45 @@ const SupportRoomsSelector: React.FC<SupportRoomsSelectorProps> = ({
 }) => {
   const [supportRooms, setSupportRooms] = useState<SupportRoom[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchSupportRooms = async () => {
       try {
         setLoading(true);
+        setError(null);
+        console.log('Fetching support rooms for user:', currentUser.id);
+        
         const rooms = await supportRoomService.getUserSupportRooms(currentUser.id);
+        console.log('Fetched support rooms:', rooms);
+        
         setSupportRooms(rooms);
-      } catch (error) {
+        
+        if (rooms.length === 0) {
+          console.log('No support rooms found for user. User roles:', {
+            is_approved: currentUser.is_approved,
+            bedoun_marz: currentUser.bedoun_marz,
+            is_messenger_admin: currentUser.is_messenger_admin
+          });
+        }
+      } catch (error: any) {
         console.error('Error fetching support rooms:', error);
+        setError(error.message || 'خطا در بارگذاری اتاق‌های پشتیبانی');
+        toast({
+          title: 'خطا',
+          description: 'خطا در بارگذاری اتاق‌های پشتیبانی',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSupportRooms();
-  }, [currentUser.id]);
+    if (currentUser?.id) {
+      fetchSupportRooms();
+    }
+  }, [currentUser.id, toast]);
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
@@ -48,6 +72,9 @@ const SupportRoomsSelector: React.FC<SupportRoomsSelectorProps> = ({
   if (loading) {
     return (
       <div className="space-y-3">
+        <h3 className="font-medium text-slate-900 dark:text-white">
+          اتاق‌های پشتیبانی
+        </h3>
         {[1, 2].map((i) => (
           <div key={i} className="animate-pulse">
             <div className="h-20 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
@@ -57,12 +84,33 @@ const SupportRoomsSelector: React.FC<SupportRoomsSelectorProps> = ({
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 mb-2">خطا در بارگذاری</p>
+          <p className="text-sm text-slate-500">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 text-blue-600 hover:underline text-sm"
+          >
+            تلاش مجدد
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (supportRooms.length === 0) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
           <Headphones className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500">هیچ اتاق پشتیبانی در دسترس نیست</p>
+          <p className="text-slate-500 mb-2">هیچ اتاق پشتیبانی در دسترس نیست</p>
+          <p className="text-xs text-slate-400">
+            ممکن است نیاز به تایید حساب کاربری یا دسترسی خاص داشته باشید
+          </p>
         </CardContent>
       </Card>
     );
@@ -71,7 +119,7 @@ const SupportRoomsSelector: React.FC<SupportRoomsSelectorProps> = ({
   return (
     <div className="space-y-3">
       <h3 className="font-medium text-slate-900 dark:text-white">
-        اتاق‌های پشتیبانی
+        اتاق‌های پشتیبانی ({supportRooms.length})
       </h3>
       
       {supportRooms.map((room) => (

@@ -1,7 +1,7 @@
 
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
-import EnhancedIframe from "@/components/EnhancedIframe";
+import AdminDashboard from "@/components/Dashboard/AdminDashboard";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Dashboard = () => {
@@ -9,15 +9,10 @@ const Dashboard = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen">
-        <EnhancedIframe
-          src="https://auth.rafiei.co"
-          title={translations.myAccount}
-          style={{
-            height: 'calc(100vh - 80px)',
-            minHeight: '600px'
-          }}
-        />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20">
+        <div className="container mx-auto px-4 py-6">
+          <AdminDashboard />
+        </div>
       </div>
     </MainLayout>
   );
