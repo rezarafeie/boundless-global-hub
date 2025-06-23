@@ -1,387 +1,205 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Send, Tag, AlertCircle, CheckCircle, Clock, Archive } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supportService, type SupportConversation, type SupportMessage, type SupportTag } from '@/lib/supportService';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
-import MessageAvatar from './MessageAvatar';
 
-interface EnhancedConversation extends SupportConversation {
-  user?: {
-    id: number;
-    name: string;
-    phone: string;
-  };
-  thread_type?: {
-    id: number;
-    display_name: string;
-  };
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ArrowRight, Send, Headphones, MessageSquare } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import type { MessengerUser } from '@/lib/messengerService';
+
+interface SupportRoom {
+  id: string;
+  name: string;
+  description: string;
+  type: 'academy_support' | 'boundless_support';
+  icon: React.ReactNode;
+  isPermanent: true;
+}
+
+interface SupportMessage {
+  id: number;
+  message: string;
+  sender_name: string;
+  sender_id: number;
+  created_at: string;
+  is_from_support: boolean;
 }
 
 interface SupportChatViewProps {
-  conversation: EnhancedConversation;
+  supportRoom: SupportRoom;
   currentUser: MessengerUser;
+  sessionToken: string;
   onBack: () => void;
-  onConversationUpdate?: (conversation: EnhancedConversation) => void;
 }
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
-  conversation,
+  supportRoom,
   currentUser,
-  onBack,
-  onConversationUpdate
+  sessionToken,
+  onBack
 }) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<SupportTag[]>((conversation.tag_list as SupportTag[]) || []);
-  const [selectedStatus, setSelectedStatus] = useState(conversation.status || 'open');
-  const [selectedPriority, setSelectedPriority] = useState(conversation.priority || 'normal');
-  const chatBottomRef = useRef<HTMLDivElement>(null);
-  const channelRef = useRef<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  const availableTags: { value: SupportTag; label: string; color: string }[] = [
-    { value: 'technical', label: 'فنی', color: 'bg-blue-100 text-blue-800' },
-    { value: 'billing', label: 'مالی', color: 'bg-green-100 text-green-800' },
-    { value: 'general', label: 'عمومی', color: 'bg-gray-100 text-gray-800' },
-    { value: 'account', label: 'حساب کاربری', color: 'bg-purple-100 text-purple-800' },
-    { value: 'bug_report', label: 'گزارش باگ', color: 'bg-red-100 text-red-800' },
-    { value: 'feature_request', label: 'درخواست ویژگی', color: 'bg-orange-100 text-orange-800' },
-    { value: 'urgent', label: 'فوری', color: 'bg-red-100 text-red-800' },
-    { value: 'follow_up', label: 'پیگیری', color: 'bg-yellow-100 text-yellow-800' }
-  ];
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
 
-  const fetchMessages = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const messagesData = await supportService.getConversationMessages(conversation.id);
-      setMessages(messagesData);
-      
-      // Mark messages as read when viewing
-      if (currentUser.is_support_agent) {
-        await supportService.markMessagesAsRead(conversation.id);
-      }
+      // Simulate sending message to support
+      const message: SupportMessage = {
+        id: Date.now(),
+        message: newMessage,
+        sender_name: currentUser.name,
+        sender_id: currentUser.id,
+        created_at: new Date().toISOString(),
+        is_from_support: false
+      };
+
+      setMessages(prev => [...prev, message]);
+      setNewMessage('');
+
+      toast({
+        title: 'پیام ارسال شد',
+        description: 'پیام شما به تیم پشتیبانی ارسال شد',
+      });
+
+      // Simulate support auto-reply after 2 seconds
+      setTimeout(() => {
+        const autoReply: SupportMessage = {
+          id: Date.now() + 1,
+          message: 'پیام شما دریافت شد. به زودی پاسخ خواهیم داد.',
+          sender_name: 'تیم پشتیبانی',
+          sender_id: 1,
+          created_at: new Date().toISOString(),
+          is_from_support: true
+        };
+        setMessages(prev => [...prev, autoReply]);
+      }, 2000);
+
     } catch (error) {
-      console.error('Error fetching messages:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
-        variant: 'destructive',
+        description: 'خطا در ارسال پیام',
+        variant: 'destructive'
       });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchMessages();
-
-    // Set up real-time subscription
-    const channelName = `support_chat_${conversation.id}_${Date.now()}`;
-    channelRef.current = supabase.channel(channelName);
-    
-    channelRef.current
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messenger_messages' },
-        (payload) => {
-          const newMessage = payload.new as SupportMessage;
-          if (newMessage.conversation_id === conversation.id) {
-            setMessages(prev => [...prev, newMessage]);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-    };
-  }, [conversation.id]);
-
-  useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || sending) return;
-
-    setSending(true);
-    try {
-      const sentMessage = await supportService.sendSupportMessage(
-        conversation.id,
-        newMessage,
-        currentUser.id
-      );
-      
-      setMessages(prev => [...prev, sentMessage]);
-      setNewMessage('');
-      
-      toast({
-        title: 'موفق',
-        description: 'پیام ارسال شد',
-      });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در ارسال پیام',
-        variant: 'destructive',
-      });
-    } finally {
-      setSending(false);
-    }
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
   };
-
-  const handleStatusChange = async (status: string) => {
-    try {
-      await supportService.updateConversationStatus(conversation.id, status);
-      setSelectedStatus(status);
-      onConversationUpdate?.({ ...conversation, status });
-      
-      toast({
-        title: 'موفق',
-        description: 'وضعیت گفتگو به‌روزرسانی شد',
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی وضعیت',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handlePriorityChange = async (priority: string) => {
-    try {
-      await supportService.updateConversationPriority(conversation.id, priority);
-      setSelectedPriority(priority);
-      onConversationUpdate?.({ ...conversation, priority });
-      
-      toast({
-        title: 'موفق',
-        description: 'اولویت گفتگو به‌روزرسانی شد',
-      });
-    } catch (error) {
-      console.error('Error updating priority:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی اولویت',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const toggleTag = async (tag: SupportTag) => {
-    const newTags = selectedTags.includes(tag) 
-      ? selectedTags.filter(t => t !== tag)
-      : [...selectedTags, tag];
-    
-    try {
-      await supportService.updateConversationTags(conversation.id, newTags);
-      setSelectedTags(newTags);
-      onConversationUpdate?.({ ...conversation, tag_list: newTags });
-      
-      toast({
-        title: 'موفق',
-        description: 'برچسب‌های گفتگو به‌روزرسانی شد',
-      });
-    } catch (error) {
-      console.error('Error updating tags:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی برچسب‌ها',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'open': return <AlertCircle className="w-4 h-4 text-amber-500" />;
-      case 'assigned': return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'resolved': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'closed': return <Archive className="w-4 h-4 text-gray-500" />;
-      default: return <AlertCircle className="w-4 h-4" />;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onBack}
-              className="p-2 md:hidden"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white">
-                {conversation.user?.name || 'کاربر نامشخص'} - #{conversation.id}
-              </h3>
-              <p className="text-sm text-slate-500">
-                {conversation.thread_type?.display_name || 'عمومی'} • {conversation.user?.phone}
-              </p>
-            </div>
+    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="md:hidden"
+        >
+          <ArrowRight className="w-4 h-4" />
+        </Button>
+        
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+            {supportRoom.type === 'academy_support' ? (
+              <MessageSquare className="w-5 h-5 text-blue-500" />
+            ) : (
+              <Headphones className="w-5 h-5 text-purple-500" />
+            )}
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              {getStatusIcon(selectedStatus)}
-              <Select value={selectedStatus} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">باز</SelectItem>
-                  <SelectItem value="assigned">اختصاص یافته</SelectItem>
-                  <SelectItem value="resolved">حل شده</SelectItem>
-                  <SelectItem value="closed">بسته</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Select value={selectedPriority} onValueChange={handlePriorityChange}>
-              <SelectTrigger className="w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">کم</SelectItem>
-                <SelectItem value="normal">عادی</SelectItem>
-                <SelectItem value="high">زیاد</SelectItem>
-                <SelectItem value="urgent">فوری</SelectItem>
-              </SelectContent>
-            </Select>
+          <div>
+            <h3 className="font-medium">{supportRoom.name}</h3>
+            <p className="text-sm text-slate-500">{supportRoom.description}</p>
           </div>
-        </div>
-
-        {/* Tags */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {availableTags.map(tag => (
-            <Badge
-              key={tag.value}
-              variant={selectedTags.includes(tag.value) ? 'default' : 'outline'}
-              className={`cursor-pointer text-xs ${selectedTags.includes(tag.value) ? tag.color : ''}`}
-              onClick={() => toggleTag(tag.value)}
-            >
-              <Tag className="w-3 h-3 mr-1" />
-              {tag.label}
-            </Badge>
-          ))}
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-slate-500">
-              <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">💬</span>
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                {supportRoom.icon}
               </div>
-              <p className="text-lg font-medium mb-2">هنوز پیامی ارسال نشده</p>
-              <p className="text-sm">اولین پیام را ارسال کنید!</p>
+              <p className="text-slate-500 mb-2">به {supportRoom.name} خوش آمدید</p>
+              <p className="text-sm text-slate-400">پیام خود را بنویسید تا تیم پشتیبانی پاسخ دهد</p>
             </div>
-          </div>
-        ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`mb-4 flex ${message.is_from_support ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[70%] ${message.is_from_support ? 'order-2' : 'order-1'}`}>
-                {!message.is_from_support && (
+          ) : (
+            messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.is_from_support ? '' : '!flex-row-reverse'}`}
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback 
+                    style={{ backgroundColor: getAvatarColor(message.sender_name) }}
+                    className="text-white font-medium text-sm"
+                  >
+                    {message.sender_name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`flex-1 ${message.is_from_support ? '' : 'text-right'}`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <MessageAvatar 
-                      name={message.sender_name || 'کاربر'} 
-                      userId={message.sender_id} 
-                    />
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      {message.sender_name || 'کاربر'}
-                    </span>
-                  </div>
-                )}
-
-                <div className={`rounded-2xl px-4 py-3 ${
-                  message.is_from_support
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600'
-                }`}>
-                  <p className="text-sm leading-relaxed">{message.message}</p>
-                  <div className={`text-xs mt-2 flex items-center justify-between ${
-                    message.is_from_support 
-                      ? 'text-blue-100' 
-                      : 'text-slate-500 dark:text-slate-400'
-                  }`}>
-                    <span>
-                      {new Date(message.created_at || '').toLocaleTimeString('fa-IR', {
+                    <span className="text-sm font-medium">{message.sender_name}</span>
+                    <span className="text-xs text-slate-400">
+                      {new Date(message.created_at).toLocaleTimeString('fa-IR', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </span>
-                    {message.unread_by_support && !message.is_from_support && (
-                      <Badge variant="destructive" className="text-xs px-1 py-0">
-                        جدید
-                      </Badge>
-                    )}
+                  </div>
+                  <div
+                    className={`inline-block p-3 rounded-lg max-w-xs ${
+                      message.is_from_support
+                        ? 'bg-slate-100 dark:bg-slate-700'
+                        : 'bg-blue-500 text-white'
+                    }`}
+                  >
+                    {message.message}
                   </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-        <div ref={chatBottomRef} />
-      </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-        <form onSubmit={handleSendMessage} className="flex gap-2">
-          <Textarea
+      <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+        <div className="flex gap-2">
+          <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="پیام خود را بنویسید..."
-            className="flex-1 min-h-[44px] max-h-32 resize-none"
-            disabled={sending}
-            onKeyDown={(e) => {
+            className="flex-1"
+            dir="rtl"
+            onKeyPress={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage(e);
+                handleSendMessage();
               }
             }}
           />
-          <Button 
-            type="submit" 
-            disabled={!newMessage.trim() || sending}
-            className="self-end"
+          <Button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim() || loading}
+            size="sm"
           >
             <Send className="w-4 h-4" />
           </Button>
-        </form>
+        </div>
       </div>
     </div>
   );

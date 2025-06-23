@@ -11,6 +11,7 @@ import PrivateChatView from '@/components/Chat/PrivateChatView';
 import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
 import ExactSearchModal from '@/components/Chat/ExactSearchModal';
 import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
+import SupportChatView from '@/components/Chat/SupportChatView';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
@@ -545,16 +546,12 @@ const BorderlessHubMessenger: React.FC = () => {
                 onBack={handleBackToInbox}
               />
             ) : currentView === 'support-chat' && selectedSupportRoom ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {selectedSupportRoom.icon}
-                  </div>
-                  <p className="text-lg font-medium mb-2">{selectedSupportRoom.name}</p>
-                  <p className="text-sm text-slate-500 mb-4">{selectedSupportRoom.description}</p>
-                  <p className="text-xs text-slate-400">به زودی راه‌اندازی می‌شود</p>
-                </div>
-              </div>
+              <SupportChatView
+                supportRoom={selectedSupportRoom}
+                currentUser={currentUser}
+                sessionToken={sessionToken!}
+                onBack={handleBackToInbox}
+              />
             ) : (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center">
@@ -676,16 +673,12 @@ const BorderlessHubMessenger: React.FC = () => {
                 />
               )}
               {currentView === 'support-chat' && selectedSupportRoom && (
-                <div className="h-full flex items-center justify-center p-4">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      {selectedSupportRoom.icon}
-                    </div>
-                    <p className="text-lg font-medium mb-2">{selectedSupportRoom.name}</p>
-                    <p className="text-sm text-slate-500 mb-4">{selectedSupportRoom.description}</p>
-                    <p className="text-xs text-slate-400">به زودی راه‌اندازی می‌شود</p>
-                  </div>
-                </div>
+                <SupportChatView
+                  supportRoom={selectedSupportRoom}
+                  currentUser={currentUser}
+                  sessionToken={sessionToken!}
+                  onBack={handleBackToInbox}
+                />
               )}
             </>
           )}

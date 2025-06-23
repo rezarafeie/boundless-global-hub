@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, MessageSquare, Settings, UserCheck, UserX, Edit3, Trash2, Plus, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +40,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   const [topics, setTopics] = useState<ChatTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
+  const [manualApprovalEnabled, setManualApprovalEnabled] = useState(false);
 
   // User edit modal state
   const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
@@ -57,15 +57,17 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersData, messagesData, topicsData] = await Promise.all([
+      const [usersData, messagesData, topicsData, settingsData] = await Promise.all([
         messengerService.getAllUsers(),
         messengerService.getAllMessages(),
-        messengerService.getTopics()
+        messengerService.getTopics(),
+        messengerService.getAdminSettings()
       ]);
       
       setUsers(usersData);
       setMessages(messagesData);
       setTopics(topicsData);
+      setManualApprovalEnabled(settingsData.manual_approval_enabled);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -82,6 +84,23 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
     fetchData();
   }, []);
 
+  const handleToggleManualApproval = async (enabled: boolean) => {
+    try {
+      await messengerService.updateAdminSettings({ manual_approval_enabled: enabled });
+      setManualApprovalEnabled(enabled);
+      toast({
+        title: 'موفق',
+        description: enabled ? 'تایید دستی فعال شد' : 'تایید دستی غیرفعال شد',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در تغییر تنظیمات',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleEditUser = (user: MessengerUser) => {
     setEditingUser(user);
     setIsEditModalOpen(true);
@@ -93,7 +112,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   };
 
   const handleUserUpdated = () => {
-    fetchData(); // Refresh the data after user update
+    fetchData();
   };
 
   const handleToggleUserApproval = async (userId: number, isApproved: boolean) => {
@@ -273,6 +292,30 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          {/* Settings Card */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>تنظیمات سیستم</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Switch
+                  checked={manualApprovalEnabled}
+                  onCheckedChange={handleToggleManualApproval}
+                />
+                <div>
+                  <p className="font-medium">تایید دستی کاربران</p>
+                  <p className="text-sm text-gray-500">
+                    {manualApprovalEnabled 
+                      ? 'کاربران جدید نیاز به تایید مدیر دارند' 
+                      : 'کاربران جدید به صورت خودکار تایید می‌شوند'
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card>
