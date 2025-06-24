@@ -4,10 +4,9 @@ import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings, Maximize, WifiOff } from 'lucide-react';
+import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings, Maximize } from 'lucide-react';
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
-import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { Link } from 'react-router-dom';
 import AnnouncementModal from '@/components/Chat/AnnouncementModal';
 import { motion } from 'framer-motion';
@@ -16,7 +15,6 @@ const BorderlessHub = () => {
   const { announcements, loading: announcementsLoading } = useAnnouncements();
   const { liveSettings } = useLiveSettings();
   const { settings: rafieiMeetSettings } = useRafieiMeet();
-  const { isOnline } = useOfflineDetection();
   const [sessionToken, setSessionToken] = useState<string>('');
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,26 +75,6 @@ const BorderlessHub = () => {
         </div>
 
         <div className="relative z-10 container mx-auto px-4 py-8">
-          {/* Offline Banner */}
-          {!isOnline && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <Card className="bg-red-500 text-white border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <WifiOff className="w-5 h-5" />
-                    <span className="font-medium">
-                      حالت آفلاین - اتصال با سرور برقرار نیست
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
           {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
