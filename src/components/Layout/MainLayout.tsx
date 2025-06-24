@@ -24,7 +24,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   if (hideHeaderFooterRoutes) {
     return (
       <div className={`min-h-screen flex flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
-        <main className="flex-1">{children}</main>
+        <LiveWarModeBanner />
+        <main className="flex-1 pt-12">{children}</main>
       </div>
     );
   }
