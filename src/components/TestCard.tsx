@@ -24,11 +24,11 @@ const TestCard: React.FC<TestCardProps> = ({
 }) => {
   // Get icon based on test category
   const getTestIcon = () => {
-    if (category.includes("شخصیت") || category.includes("Personality")) {
+    if (category?.includes("شخصیت") || category?.includes("Personality")) {
       return <Brain size={28} className="text-primary" />;
-    } else if (category.includes("هوش") || category.includes("Intelligence")) {
+    } else if (category?.includes("هوش") || category?.includes("Intelligence")) {
       return <BookOpen size={28} className="text-primary" />;
-    } else if (category.includes("شغل") || category.includes("Career")) {
+    } else if (category?.includes("شغل") || category?.includes("Career")) {
       return <Briefcase size={28} className="text-primary" />;
     } else {
       return <Heart size={28} className="text-primary" />;
@@ -76,7 +76,7 @@ const TestCard: React.FC<TestCardProps> = ({
     </Card>
   );
 
-  // Link to test landing page for details first, not directly to iframe
+  // Always link to test landing page, never directly to iframe
   if (slug) {
     return (
       <Link to={`/assessment/${slug}`} className="block h-full">

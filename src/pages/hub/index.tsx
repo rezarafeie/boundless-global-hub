@@ -113,30 +113,11 @@ const HubIndex = () => {
         <Route 
           path="/messenger/*" 
           element={
-            !isOnline ? (
-              <div className="h-[calc(100vh-80px)] flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-                <Card className="max-w-md mx-auto">
-                  <CardContent className="p-8 text-center">
-                    <WifiOff className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-                    <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
-                      پیام‌رسان در حالت آفلاین
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 mb-6">
-                      برای استفاده از پیام‌رسان به اتصال اینترنت نیاز دارید.
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
-                      <MessageCircle className="w-4 h-4" />
-                      <span>منتظر اتصال مجدد...</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <MessengerPage 
-                currentUser={currentUser} 
-                onUserUpdate={handleUserUpdate}
-              />
-            )
+            <MessengerPage 
+              currentUser={currentUser} 
+              onUserUpdate={handleUserUpdate}
+              isOffline={!isOnline}
+            />
           } 
         />
         <Route path="*" element={<Navigate to="/hub" replace />} />
