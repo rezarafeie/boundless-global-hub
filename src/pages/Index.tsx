@@ -124,7 +124,10 @@ const Index = () => {
         </section>
 
         {/* Live Enrollment Counter */}
-        <LiveEnrollmentCounter />
+        <LiveEnrollmentCounter 
+          initialCount={2847}
+          courseName={language === "en" ? "All Courses" : "همه دوره‌ها"}
+        />
 
         {/* Assessment Tests Section */}
         <section className="py-16 bg-gray-50 dark:bg-gray-800">
@@ -146,7 +149,6 @@ const Index = () => {
                   description={language === "en" ? "Discover your personality type and traits" : "نوع شخصیت و ویژگی‌های خود را کشف کنید"}
                   duration={language === "en" ? "15 minutes" : "۱۵ دقیقه"}
                   questions={45}
-                  difficulty={language === "en" ? "Beginner" : "مبتدی"}
                   href="/assessment"
                 />
               </motion.div>
@@ -158,11 +160,10 @@ const Index = () => {
                 viewport={{ once: true }}
               >
                 <TestCard
-                  title={language === "en" ? "Career Guidance" : "راहنمایی شغلی"}
+                  title={language === "en" ? "Career Guidance" : "راهنمایی شغلی"}
                   description={language === "en" ? "Find the perfect career path for you" : "مسیر شغلی مناسب خود را پیدا کنید"}
                   duration={language === "en" ? "20 minutes" : "۲۰ دقیقه"}
                   questions={60}
-                  difficulty={language === "en" ? "Intermediate" : "متوسط"}
                   href="/assessment"
                 />
               </motion.div>
@@ -178,7 +179,6 @@ const Index = () => {
                   description={language === "en" ? "Evaluate your professional skills" : "مهارت‌های حرفه‌ای خود را ارزیابی کنید"}
                   duration={language === "en" ? "25 minutes" : "۲۵ دقیقه"}
                   questions={75}
-                  difficulty={language === "en" ? "Advanced" : "پیشرفته"}
                   href="/assessment"
                 />
               </motion.div>
@@ -190,7 +190,11 @@ const Index = () => {
         <RandomHeadlineGenerator />
         
         {/* Mobile Sticky Button */}
-        <MobileStickyButton />
+        <MobileStickyButton 
+          onClick={() => window.location.href = '/assessment'}
+        >
+          {language === "en" ? "Start Assessment" : "شروع ارزیابی"}
+        </MobileStickyButton>
       </div>
     </MainLayout>
   );

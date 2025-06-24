@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from './messengerService';
 
@@ -194,18 +195,35 @@ export const privateMessageService = {
           user2_id,
           last_message_at,
           updated_at,
-          created_at,
-          user1:user1_id(id, name, username, phone),
-          user2:user2_id(id, name, username, phone)
+          created_at
         `)
         .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;
 
+      // Get user info separately to avoid relation issues
+      const userIds = new Set<number>();
+      (data || []).forEach(conv => {
+        userIds.add(conv.user1_id);
+        userIds.add(conv.user2_id);
+      });
+
+      const { data: usersData } = await supabase
+        .from('chat_users')
+        .select('id, name, username, phone')
+        .in('id', Array.from(userIds));
+
+      const usersMap = new Map();
+      (usersData || []).forEach(user => {
+        usersMap.set(user.id, user);
+      });
+
       // Format conversations
       const conversations: PrivateConversation[] = (data || []).map(conv => {
-        const otherUser = conv.user1_id === currentUserId ? conv.user2 : conv.user1;
+        const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
+        const otherUserData = usersMap.get(otherUserId);
+        
         return {
           id: conv.id,
           user1_id: conv.user1_id,
@@ -213,7 +231,23 @@ export const privateMessageService = {
           created_at: conv.created_at,
           updated_at: conv.updated_at,
           last_message_at: conv.last_message_at,
-          other_user: otherUser as MessengerUser,
+          other_user: otherUserData ? {
+            id: otherUserData.id,
+            name: otherUserData.name,
+            username: otherUserData.username,
+            phone: otherUserData.phone,
+            is_approved: true,
+            is_messenger_admin: false,
+            is_support_agent: false,
+            bedoun_marz: false,
+            bedoun_marz_approved: false,
+            bedoun_marz_request: false,
+            role: 'user',
+            bio: '',
+            created_at: '',
+            updated_at: '',
+            last_seen: null
+          } : undefined,
           unread_count: 0
         };
       });
@@ -242,15 +276,46 @@ export const privateMessageService = {
           sender_id,
           conversation_id,
           created_at,
-          is_read,
-          sender:sender_id(id, name, username)
+          is_read
         `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
         .limit(100);
 
       if (error) throw error;
-      return data || [];
+
+      // Get sender info separately
+      const senderIds = [...new Set((data || []).map(msg => msg.sender_id))];
+      const { data: sendersData } = await supabase
+        .from('chat_users')
+        .select('id, name, username, phone')
+        .in('id', senderIds);
+
+      const sendersMap = new Map();
+      (sendersData || []).forEach(sender => {
+        sendersMap.set(sender.id, {
+          id: sender.id,
+          name: sender.name,
+          username: sender.username,
+          phone: sender.phone,
+          is_approved: true,
+          is_messenger_admin: false,
+          is_support_agent: false,
+          bedoun_marz: false,
+          bedoun_marz_approved: false,
+          bedoun_marz_request: false,
+          role: 'user',
+          bio: '',
+          created_at: '',
+          updated_at: '',
+          last_seen: null
+        });
+      });
+
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: sendersMap.get(msg.sender_id)
+      }));
     } catch (error) {
       console.error('Error getting messages:', error);
       throw error;
@@ -303,13 +368,39 @@ export const privateMessageService = {
           sender_id,
           conversation_id,
           created_at,
-          is_read,
-          sender:sender_id(id, name, username)
+          is_read
         `)
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Get sender info
+      const { data: senderData } = await supabase
+        .from('chat_users')
+        .select('id, name, username, phone')
+        .eq('id', senderId)
+        .single();
+
+      return {
+        ...data,
+        sender: senderData ? {
+          id: senderData.id,
+          name: senderData.name,
+          username: senderData.username,
+          phone: senderData.phone,
+          is_approved: true,
+          is_messenger_admin: false,
+          is_support_agent: false,
+          bedoun_marz: false,
+          bedoun_marz_approved: false,
+          bedoun_marz_request: false,
+          role: 'user',
+          bio: '',
+          created_at: '',
+          updated_at: '',
+          last_seen: null
+        } : undefined
+      };
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;

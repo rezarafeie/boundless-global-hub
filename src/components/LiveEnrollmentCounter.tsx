@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 import { Users } from "lucide-react";
 
 interface LiveEnrollmentCounterProps {
-  initialCount: number;
-  courseName: string;
+  initialCount?: number;
+  courseName?: string;
   className?: string;
 }
 
 const LiveEnrollmentCounter: React.FC<LiveEnrollmentCounterProps> = ({ 
-  initialCount, 
-  courseName,
+  initialCount = 2500, 
+  courseName = "همه دوره‌ها",
   className = "" 
 }) => {
   const [count, setCount] = useState(initialCount);
@@ -36,33 +36,37 @@ const LiveEnrollmentCounter: React.FC<LiveEnrollmentCounterProps> = ({
   }, []);
 
   return (
-    <motion.div 
-      className={`bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-800 rounded-xl p-4 ${className}`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="flex items-center justify-center space-x-3 rtl:space-x-reverse">
-        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-          <Users className="w-5 h-5 text-white" />
-        </div>
-        <div className="text-center">
-          <motion.div 
-            className="text-2xl font-bold text-green-700 dark:text-green-400"
-            animate={{ 
-              scale: isIncrementing ? [1, 1.1, 1] : 1,
-              color: isIncrementing ? "#10b981" : undefined
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            {count.toLocaleString('fa-IR')}
-          </motion.div>
-          <div className="text-sm text-green-600 dark:text-green-300 font-medium">
-            دانشجوی فعال
+    <section className="py-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+      <div className="container mx-auto px-4">
+        <motion.div 
+          className={`bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 rounded-xl p-6 max-w-md mx-auto ${className}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="flex items-center justify-center space-x-3 rtl:space-x-reverse">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div className="text-center">
+              <motion.div 
+                className="text-3xl font-bold text-green-700 dark:text-green-400"
+                animate={{ 
+                  scale: isIncrementing ? [1, 1.1, 1] : 1,
+                  color: isIncrementing ? "#10b981" : undefined
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                {count.toLocaleString('fa-IR')}
+              </motion.div>
+              <div className="text-sm text-green-600 dark:text-green-300 font-medium">
+                دانشجوی فعال در {courseName}
+              </div>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </motion.div>
+    </section>
   );
 };
 
