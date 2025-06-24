@@ -36,6 +36,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<MessengerUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Pinned support users
   const getSupportUsers = (): SupportUser[] => {
@@ -64,23 +65,41 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   };
 
   useEffect(() => {
-    // Only search if it's a complete phone number or @username
-    const isValidPhoneSearch = /^09\d{9}$/.test(searchTerm.trim());
-    const isValidUsernameSearch = searchTerm.trim().startsWith('@') && searchTerm.trim().length > 1;
-    const isValidExactUsername = !searchTerm.includes('@') && searchTerm.trim().length >= 3;
-    
-    if (isValidPhoneSearch || isValidUsernameSearch || isValidExactUsername) {
-      searchUsers();
-    } else {
-      setSearchResults([]);
-    }
+    const searchDelayTimer = setTimeout(() => {
+      // Only search if it's a complete phone number or @username
+      const isValidPhoneSearch = /^09\d{9}$/.test(searchTerm.trim());
+      const isValidUsernameSearch = searchTerm.trim().startsWith('@') && searchTerm.trim().length > 1;
+      const isValidExactUsername = !searchTerm.includes('@') && searchTerm.trim().length >= 3;
+      
+      if (isValidPhoneSearch || isValidUsernameSearch || isValidExactUsername) {
+        searchUsers();
+      } else if (searchTerm.length > 0) {
+        setSearchResults([]);
+        setHasSearched(true);
+      } else {
+        setSearchResults([]);
+        setHasSearched(false);
+      }
+    }, 500); // Add debounce delay
+
+    return () => clearTimeout(searchDelayTimer);
   }, [searchTerm]);
 
   const searchUsers = async () => {
+    if (!sessionToken) {
+      console.error('No session token available');
+      return;
+    }
+
     setLoading(true);
+    setHasSearched(true);
+    
     try {
+      console.log('Searching for:', searchTerm.trim());
       // Only search by exact phone number or exact username
       const results = await privateMessageService.exactSearch(searchTerm.trim(), sessionToken);
+      console.log('Search results:', results);
+      
       // Filter out current user
       const filteredResults = results.filter(user => user.id !== currentUser.id);
       setSearchResults(filteredResults);
@@ -97,6 +116,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
     onClose();
     setSearchTerm('');
     setSearchResults([]);
+    setHasSearched(false);
   };
 
   const handleSupportUserSelect = async (supportUser: SupportUser) => {
@@ -137,8 +157,15 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
            (!trimmed.includes('@') && trimmed.length >= 3);
   };
 
+  const handleClose = () => {
+    onClose();
+    setSearchTerm('');
+    setSearchResults([]);
+    setHasSearched(false);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -192,7 +219,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
           <div className="relative">
             <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="جستجو دقیق: 09xxxxxxxxx یا @نام‌کاربری"
+              placeholder="جستجو دقیق: 09xxxxxxxxx یا @نام‌کاربری یا نام‌کاربری"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pr-10"
@@ -208,14 +235,14 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
             ) : !isValidSearch() && searchTerm.length > 0 ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground text-center">
-                  لطفاً شماره موبایل کامل (09xxxxxxxxx) یا نام کاربری دقیق (@username) وارد کنید
+                  لطفاً شماره موبایل کامل (09xxxxxxxxx) یا نام کاربری دقیق (@username یا username) وارد کنید
                 </div>
               </div>
-            ) : searchResults.length === 0 && isValidSearch() ? (
+            ) : hasSearched && searchResults.length === 0 && isValidSearch() ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground">کاربری یافت نشد</div>
               </div>
-            ) : (
+            ) : searchResults.length > 0 ? (
               <div className="space-y-2">
                 {searchResults.map((user) => (
                   <div
@@ -242,11 +269,11 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
                   </div>
                 ))}
               </div>
-            )}
+            ) : null}
           </ScrollArea>
 
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               لغو
             </Button>
           </div>

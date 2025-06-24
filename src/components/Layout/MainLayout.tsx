@@ -22,8 +22,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   // Routes where both header and footer should be hidden (access pages and redirect pages)
   const hideHeaderFooterRoutes = location.pathname.startsWith('/access') || location.pathname.startsWith('/redirect');
   
-  // Routes that require online connection
-  const requiresConnectionRoutes = ['/hub', '/hub/messenger'];
+  // Routes that require online connection - only messenger now
+  const requiresConnectionRoutes = ['/hub/messenger'];
   const requiresConnection = requiresConnectionRoutes.some(route => location.pathname.startsWith(route));
   
   if (hideHeaderFooterRoutes) {
