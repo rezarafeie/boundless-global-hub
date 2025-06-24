@@ -1,7 +1,7 @@
-
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
+import LiveWarModeBanner from "@/components/LiveWarModeBanner";
 import QuickAccess from "@/components/QuickAccess";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
@@ -50,6 +50,7 @@ const Index = () => {
   return (
     <MainLayout>
       <Hero />
+      <LiveWarModeBanner />
       <QuickAccess />
       <HubBanner />
 
