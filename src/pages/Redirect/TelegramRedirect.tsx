@@ -16,20 +16,30 @@ const TelegramRedirect = () => {
 
   // Generate Telegram message
   const generateTelegramMessage = () => {
-    const baseMessage =mba
-firstname: ${name}
-lastname: ${lastname}
-phone: ${phone}
-email: ${email}`;
+    const baseMessage = `درود وقت بخیر
+برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
+
+نام: ${name}
+نام خانوادگی: ${lastname}
+شماره همراه: ${phone}
+ایمیل: ${email}`;
     
     return baseMessage;
   };
 
-  const handleTelegramClick = () => {
+  const handleTelegramClick = async () => {
     const message = generateTelegramMessage();
-    // Use the correct Telegram format: https://t.me/{username}?text={message}
-    const telegramUrl = `https://t.me/rafieiacademy?text=${encodeURIComponent(message)}`;
     
+    // Copy message to clipboard
+    try {
+      await navigator.clipboard.writeText(message);
+      console.log('Message copied to clipboard');
+    } catch (err) {
+      console.log('Failed to copy message to clipboard');
+    }
+    
+    // Open Telegram chat directly (without pre-filled message to avoid encoding issues)
+    const telegramUrl = 'https://t.me/rafieiacademy';
     window.open(telegramUrl, '_blank');
   };
 
@@ -85,7 +95,7 @@ email: ${email}`;
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. فعالسازی پشتیبانی و دسترسی به آموزش‌ها و هدایا به صورت خودکار انجام خواهد شد. موفق باشید
+                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. پیام شما به کلیپ‌بورد کپی شده و آماده ارسال است. موفق باشید
               </p>
             </div>
           </div>
