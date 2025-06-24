@@ -136,7 +136,7 @@ function App() {
                 <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
 
                 {/* Hub pages */}
-                <Route path="/hub" element={<BorderlessHub />} />
+                <Route path="/hub/*" element={<BorderlessHub />} />
                 <Route path="/hub/chat" element={<BorderlessHubChat />} />
                 <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
                 <Route path="/hub/messenger/pending" element={<MessengerPending />} />
@@ -147,7 +147,7 @@ function App() {
 
                 {/* Assessment */}
                 <Route path="/assessment" element={<AssessmentCenter />} />
-                <Route path="/assessment/test-landing" element={<TestLanding />} />
+                <Route path="/assessment/:slug" element={<TestLanding />} />
 
                 {/* Other pages */}
                 <Route path="/dashboard" element={<Dashboard />} />
