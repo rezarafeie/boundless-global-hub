@@ -33,7 +33,7 @@ mba
     const telegramUrl = `https://t.me/rafieiacademy`;
         
     // For better compatibility, we'll use the bot API format
-    const botUrl = `https://t.me/rafieiacademy&text=${encodeURIComponent(message)}`;
+    const botUrl = `tg://msg_url?url=https://t.me/rafieiacademy&text=${encodeURIComponent(message)}`;
     
     // Try the bot URL first, fallback to regular telegram link
     try {
