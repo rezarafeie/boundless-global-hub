@@ -2,11 +2,9 @@ const enTranslations = {
   // Navigation and Header
   home: "Home",
   courses: "Courses",
-  coursesDesc: "Access comprehensive training materials and resources",
   freeCourses: "Free Courses",
   paidCourses: "Paid Courses",
   assessmentCenter: "Assessment Center",
-  assessmentCenterDesc: "Discover your strengths and find your path with scientific tests",
   blog: "Blog",
   about: "About",
   contact: "Contact",
@@ -18,11 +16,6 @@ const enTranslations = {
   websiteName: "Rafiei Academy",
   slogan: "Transform Your Life with AI",
   tagline: "Comprehensive training and tools for better living with artificial intelligence",
-  
-  // Quick Access
-  quickAccess: "Quick Access",
-  quickAccessDesc: "Access the most important features quickly and easily",
-  getStarted: "Get Started",
   
   // Hero Section
   hero: {
@@ -182,6 +175,7 @@ const enTranslations = {
   
   // Assessment Center
   assessmentCenterTitle: "Assessment Center",
+  assessmentCenterDesc: "Discover your strengths and find your path with scientific tests",
   personalityTests: "Personality Tests",
   intelligenceTests: "Intelligence Tests",
   careerTests: "Career Tests",

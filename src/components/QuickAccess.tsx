@@ -1,73 +1,119 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { BookOpen, ClipboardCheck, MessageCircle, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { BookOpen, Award, MessageSquare, BookOpenCheck, Headphones, BookCheck, MessageCircle, Network } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { motion } from "framer-motion";
 
 const QuickAccess = () => {
-  const { translations } = useLanguage();
-
-  const quickAccessItems = [
+  const { translations, direction } = useLanguage();
+  
+  const quickLinks = [
     {
-      icon: BookOpen,
-      title: translations.courses,
-      description: translations.coursesDesc,
-      href: "/courses",
-      color: "from-blue-500 to-blue-600",
+      title: "مرکز آموزش",
+      icon: <BookOpen size={28} />,
+      link: "/courses",
+      color: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
     },
     {
-      icon: ClipboardCheck,
-      title: translations.assessmentCenter,
-      description: translations.assessmentCenterDesc,
-      href: "/assessment",
-      color: "from-purple-500 to-purple-600",
+      title: "مرکز سنجش",
+      icon: <Award size={28} />,
+      link: "/assessment-center",
+      color: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400"
     },
     {
-      icon: MessageCircle,
-      title: "پیام‌رسان بدون مرز",
-      description: "ارتباط مستقیم با مشاوران و سایر کاربران",
-      href: "/hub/messenger",
-      color: "from-green-500 to-green-600",
+      title: "مجله",
+      icon: <BookCheck size={28} />,
+      link: "/mag",
+      color: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
     },
+    {
+      title: "پشتیبانی",
+      icon: <Headphones size={28} />,
+      link: "/support",
+      color: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+    },
+    {
+      title: "دستیار هوشمند",
+      icon: <MessageSquare size={28} />,
+      link: "https://ai.rafiei.co/",
+      external: true,
+      color: "bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-400"
+    },
+    {
+      title: "هاب بدون مرز",
+      icon: <Network size={28} />,
+      link: "/hub",
+      color: "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400"
+    },
+    {
+      title: "پیام‌رسان",
+      icon: <MessageCircle size={28} />,
+      link: "/hub/messenger",
+      color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
+    }
   ];
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    show: { 
+      y: 0, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100
+      }
+    }
+  };
+
   return (
-    <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/30">
+    <section className="py-10 bg-background">
       <div className="container">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {translations.quickAccess}
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {translations.quickAccessDesc}
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {quickAccessItems.map((item, index) => (
-            <Card key={index} className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20">
-              <CardContent className="p-8 text-center">
-                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${item.color} mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  <item.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  {item.description}
-                </p>
-                <Button asChild className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 group-hover:scale-105 transition-all duration-200">
-                  <Link to={item.href}>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {translations.getStarted}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+        <motion.div 
+          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 md:gap-6"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          {quickLinks.map((quickLink, index) => (
+            <motion.div key={index} variants={itemVariants}>
+              {quickLink.external ? (
+                <a href={quickLink.link} target="_blank" rel="noopener noreferrer" className="block group h-full">
+                  <Card className="h-full border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 overflow-hidden bg-card">
+                    <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${quickLink.color}`}>
+                      <div className="mb-3 p-3 rounded-full bg-background/80 backdrop-blur">
+                        {quickLink.icon}
+                      </div>
+                      <p className="font-medium text-sm md:text-base">{quickLink.title}</p>
+                    </CardContent>
+                  </Card>
+                </a>
+              ) : (
+                <Link to={quickLink.link} className="block group h-full">
+                  <Card className="h-full border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-md hover:-translate-y-1 overflow-hidden bg-card">
+                    <CardContent className={`p-4 flex flex-col items-center justify-center text-center h-full ${quickLink.color}`}>
+                      <div className="mb-3 p-3 rounded-full bg-background/80 backdrop-blur">
+                        {quickLink.icon}
+                      </div>
+                      <p className="font-medium text-sm md:text-base">{quickLink.title}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

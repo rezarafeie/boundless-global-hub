@@ -8,29 +8,27 @@ import { Link } from "react-router-dom";
 interface TestCardProps {
   title: string;
   description: string;
-  category?: string;
+  category: string;
   duration?: string;
   questions?: number;
   slug?: string;
-  href?: string;
 }
 
 const TestCard: React.FC<TestCardProps> = ({ 
   title, 
   description, 
-  category = "", 
+  category, 
   duration, 
   questions, 
-  slug,
-  href
+  slug 
 }) => {
   // Get icon based on test category
   const getTestIcon = () => {
-    if (category?.includes("شخصیت") || category?.includes("Personality")) {
+    if (category.includes("شخصیت") || category.includes("Personality")) {
       return <Brain size={28} className="text-primary" />;
-    } else if (category?.includes("هوش") || category?.includes("Intelligence")) {
+    } else if (category.includes("هوش") || category.includes("Intelligence")) {
       return <BookOpen size={28} className="text-primary" />;
-    } else if (category?.includes("شغل") || category?.includes("Career")) {
+    } else if (category.includes("شغل") || category.includes("Career")) {
       return <Briefcase size={28} className="text-primary" />;
     } else {
       return <Heart size={28} className="text-primary" />;
@@ -40,7 +38,7 @@ const TestCard: React.FC<TestCardProps> = ({
   const { direction } = useLanguage();
 
   const cardContent = (
-    <Card className={`overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-card rounded-xl ${(slug || href) ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
+    <Card className={`overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-card rounded-xl ${slug ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
       <CardContent className="p-6">
         <div className="flex flex-row items-start gap-3 mb-3">
           <div className="w-10 h-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -67,7 +65,7 @@ const TestCard: React.FC<TestCardProps> = ({
           </div>
         )}
         
-        {(slug || href) && (
+        {slug && (
           <div className="mt-auto">
             <div className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md group-hover:bg-primary/90 transition-colors text-sm font-medium text-center">
               مشاهده جزئیات
@@ -78,14 +76,8 @@ const TestCard: React.FC<TestCardProps> = ({
     </Card>
   );
 
-  // Use href if provided, otherwise use slug to build assessment path
-  if (href) {
-    return (
-      <Link to={href} className="block h-full">
-        {cardContent}
-      </Link>
-    );
-  } else if (slug) {
+  // Link to test landing page instead of direct iframe
+  if (slug) {
     return (
       <Link to={`/assessment/${slug}`} className="block h-full">
         {cardContent}
