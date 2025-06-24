@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle } from 'lucide-react';
 
 const TelegramRedirect = () => {
   const [searchParams] = useSearchParams();
@@ -90,7 +88,7 @@ mba
           </div>
 
           {/* Large Static Telegram Button - Main Focus */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-4">
             <Button
               onClick={handleTelegramClick}
               className="w-full max-w-2xl h-24 bg-gradient-to-r from-[#0088cc] via-[#00a1e6] to-[#0077b3] hover:from-[#0077b3] hover:via-[#0088cc] hover:to-[#005a94] text-white py-8 px-12 rounded-3xl text-2xl md:text-3xl font-black transition-all duration-300 shadow-2xl border-0"
@@ -104,20 +102,14 @@ mba
             </Button>
           </div>
 
-          {/* Enhanced Fallback Button */}
+          {/* Small Text Link Fallback Button */}
           <div className="text-center mb-8">
-            <Button
+            <button
               onClick={handleMessengerFallback}
-              className="w-full max-w-2xl h-20 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-6 px-8 rounded-2xl text-xl font-bold transition-all duration-300 shadow-xl border-0"
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm underline underline-offset-2 hover:underline-offset-4 transition-all duration-200"
             >
-              <div className="flex items-center justify-center gap-4">
-                <MessageCircle className="w-8 h-8" />
-                <div className="text-right">
-                  <div className="font-bold text-xl mb-1">پیام‌رسان بدون مرز</div>
-                  <div className="text-sm opacity-90">اگر تلگرام ندارید</div>
-                </div>
-              </div>
-            </Button>
+              بدون تلگرام ادامه دهید
+            </button>
           </div>
             
           {/* Static Text */}
