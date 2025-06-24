@@ -64,7 +64,12 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   };
 
   useEffect(() => {
-    if (searchTerm.trim() && searchTerm.length >= 2) {
+    // Only search if it's a complete phone number or @username
+    const isValidPhoneSearch = /^09\d{9}$/.test(searchTerm.trim());
+    const isValidUsernameSearch = searchTerm.trim().startsWith('@') && searchTerm.trim().length > 1;
+    const isValidExactUsername = !searchTerm.includes('@') && searchTerm.trim().length >= 3;
+    
+    if (isValidPhoneSearch || isValidUsernameSearch || isValidExactUsername) {
       searchUsers();
     } else {
       setSearchResults([]);
@@ -97,7 +102,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   const handleSupportUserSelect = async (supportUser: SupportUser) => {
     // Create a mock MessengerUser for support
     const supportMessengerUser: MessengerUser = {
-      id: supportUser.type === 'academy_support' ? 1 : 2, // Use specific IDs for support
+      id: supportUser.type === 'academy_support' ? 999997 : 999998,
       name: supportUser.name,
       phone: supportUser.type === 'academy_support' ? '02128427131' : '02128427132',
       username: supportUser.type === 'academy_support' ? 'support' : 'boundless_support',
@@ -124,6 +129,13 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   };
 
   const supportUsers = getSupportUsers();
+
+  const isValidSearch = () => {
+    const trimmed = searchTerm.trim();
+    return /^09\d{9}$/.test(trimmed) || 
+           (trimmed.startsWith('@') && trimmed.length > 1) ||
+           (!trimmed.includes('@') && trimmed.length >= 3);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -180,7 +192,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
           <div className="relative">
             <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="جستجو دقیق با شماره موبایل یا @نام‌کاربری..."
+              placeholder="جستجو دقیق: 09xxxxxxxxx یا @نام‌کاربری"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pr-10"
@@ -193,13 +205,15 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground">در حال جستجو...</div>
               </div>
-            ) : searchResults.length === 0 && searchTerm.length >= 2 ? (
+            ) : !isValidSearch() && searchTerm.length > 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground text-center">
+                  لطفاً شماره موبایل کامل (09xxxxxxxxx) یا نام کاربری دقیق (@username) وارد کنید
+                </div>
+              </div>
+            ) : searchResults.length === 0 && isValidSearch() ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground">کاربری یافت نشد</div>
-              </div>
-            ) : searchTerm.length > 0 && searchTerm.length < 2 ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground">حداقل ۲ کاراکتر وارد کنید</div>
               </div>
             ) : (
               <div className="space-y-2">

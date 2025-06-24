@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import Header from "@/components/Layout/Header";
 import Footer from "@/components/Layout/Footer";
 import LiveWarModeBanner from "@/components/LiveWarModeBanner";
+import OfflineDetector from "@/components/OfflineDetector";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MainLayoutProps {
@@ -21,6 +22,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   // Routes where both header and footer should be hidden (access pages and redirect pages)
   const hideHeaderFooterRoutes = location.pathname.startsWith('/access') || location.pathname.startsWith('/redirect');
   
+  // Routes that require online connection
+  const requiresConnectionRoutes = ['/hub', '/hub/messenger'];
+  const requiresConnection = requiresConnectionRoutes.some(route => location.pathname.startsWith(route));
+  
   if (hideHeaderFooterRoutes) {
     return (
       <div className={`min-h-screen flex flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
@@ -34,7 +39,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
       <LiveWarModeBanner />
-      <main className="flex-1 pt-28">{children}</main>
+      <OfflineDetector requiresConnection={requiresConnection}>
+        <main className="flex-1 pt-28" style={{ paddingTop: '100px' }}>{children}</main>
+      </OfflineDetector>
       {!shouldHideFooter && <Footer />}
     </div>
   );

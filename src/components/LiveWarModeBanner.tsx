@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 
 const LiveWarModeBanner = () => {
   return (
-    <Link to="/hub" className="block">
+    <Link to="/solidarity" className="block">
       <div className="fixed top-16 left-0 right-0 z-[9999] bg-red-600 dark:bg-red-700 border-b border-red-500 cursor-pointer hover:bg-red-700 dark:hover:bg-red-800 transition-colors">
         <div className="container py-2">
           <motion.div

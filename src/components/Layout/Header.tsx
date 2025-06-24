@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
+import OnlineStatusIndicator from "@/components/OnlineStatusIndicator";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
@@ -53,7 +54,7 @@ const Header = () => {
           <Link to="/courses" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Training Center" : "مرکز آموزش"}
           </Link>
-          <Link to="/assessment-center" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+          <Link to="/assessment" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {translations.assessmentCenter}
           </Link>
           <Link to="/mag" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
@@ -71,6 +72,9 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center gap-3">
+          {/* Online Status Indicator */}
+          <OnlineStatusIndicator />
+          
           {/* Dark Mode Toggle */}
           <Button
             variant="ghost"
@@ -154,7 +158,7 @@ const Header = () => {
                     {language === "en" ? "Training Center" : "مرکز آموزش"}
                   </Link>
                   <Link 
-                    to="/assessment-center" 
+                    to="/assessment" 
                     className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >

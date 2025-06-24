@@ -3,9 +3,11 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 
 const TelegramRedirect = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   // Extract query parameters
   const name = searchParams.get('name') || '';
@@ -31,6 +33,27 @@ mba
 
   const handleTelegramClick = () => {
     window.open(telegramUrl, '_blank');
+  };
+
+  const handleMessengerFallback = () => {
+    // Store the message data in sessionStorage to pre-fill the messenger
+    const messageData = {
+      name,
+      lastname,
+      phone,
+      email,
+      course,
+      message: `درود وقت بخیر
+برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
+mba
+نام : ${name}
+نام خانوادگی : ${lastname}
+شماره همراه : ${phone}
+ایمیل : ${email}`
+    };
+    
+    sessionStorage.setItem('supportMessage', JSON.stringify(messageData));
+    navigate('/hub/messenger?support=academy');
   };
 
   return (
@@ -66,7 +89,7 @@ mba
           </div>
 
           {/* Large Static Telegram Button - Main Focus */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <Button
               onClick={handleTelegramClick}
               className="w-full max-w-2xl h-24 bg-gradient-to-r from-[#0088cc] via-[#00a1e6] to-[#0077b3] hover:from-[#0077b3] hover:via-[#0088cc] hover:to-[#005a94] text-white py-8 px-12 rounded-3xl text-2xl md:text-3xl font-black transition-all duration-300 shadow-2xl border-0"
@@ -78,16 +101,27 @@ mba
                 </div>
               </div>
             </Button>
+          </div>
+
+          {/* Fallback CTA */}
+          <div className="text-center mb-8">
+            <Button
+              onClick={handleMessengerFallback}
+              variant="outline"
+              className="w-full max-w-2xl h-16 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-4 px-8 rounded-2xl text-lg font-semibold transition-all duration-300"
+            >
+              اگر به تلگرام دسترسی ندارید، از طریق پیام‌رسان بدون مرز پیام دهید
+            </Button>
+          </div>
             
-            {/* Static Text */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. فعالسازی پشتیبانی و دسترسی به آموزش‌ها و هدایا به صورت خودکار انجام خواهد شد. موفق باشید
-              </p>
-            </div>
+          {/* Static Text */}
+          <div className="text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. فعالسازی پشتیبانی و دسترسی به آموزش‌ها و هدایا به صورت خودکار انجام خواهد شد. موفق باشید
+            </p>
           </div>
         </CardContent>
       </Card>
