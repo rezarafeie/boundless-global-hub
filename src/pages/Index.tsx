@@ -147,9 +147,10 @@ const Index = () => {
                 <TestCard
                   title={language === "en" ? "Personality Assessment" : "ارزیابی شخصیت"}
                   description={language === "en" ? "Discover your personality type and traits" : "نوع شخصیت و ویژگی‌های خود را کشف کنید"}
+                  category={language === "en" ? "Personality" : "شخصیت"}
                   duration={language === "en" ? "15 minutes" : "۱۵ دقیقه"}
                   questions={45}
-                  href="/assessment"
+                  slug="personality"
                 />
               </motion.div>
 
@@ -162,9 +163,10 @@ const Index = () => {
                 <TestCard
                   title={language === "en" ? "Career Guidance" : "راهنمایی شغلی"}
                   description={language === "en" ? "Find the perfect career path for you" : "مسیر شغلی مناسب خود را پیدا کنید"}
+                  category={language === "en" ? "Career" : "شغل"}
                   duration={language === "en" ? "20 minutes" : "۲۰ دقیقه"}
                   questions={60}
-                  href="/assessment"
+                  slug="career"
                 />
               </motion.div>
 
@@ -177,9 +179,10 @@ const Index = () => {
                 <TestCard
                   title={language === "en" ? "Skills Assessment" : "ارزیابی مهارت‌ها"}
                   description={language === "en" ? "Evaluate your professional skills" : "مهارت‌های حرفه‌ای خود را ارزیابی کنید"}
+                  category={language === "en" ? "Skills" : "مهارت"}
                   duration={language === "en" ? "25 minutes" : "۲۵ دقیقه"}
                   questions={75}
-                  href="/assessment"
+                  slug="skills"
                 />
               </motion.div>
             </div>

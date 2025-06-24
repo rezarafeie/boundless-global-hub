@@ -108,7 +108,27 @@ export const privateMessageService = {
       }
 
       console.log('Search results:', data);
-      return data || [];
+      
+      // Map to MessengerUser format with all required fields
+      const users: MessengerUser[] = (data || []).map(user => ({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        phone: user.phone,
+        is_approved: user.is_approved,
+        is_messenger_admin: user.is_messenger_admin || false,
+        is_support_agent: user.is_support_agent || false,
+        bedoun_marz: user.bedoun_marz || false,
+        bedoun_marz_approved: user.bedoun_marz_approved || false,
+        bedoun_marz_request: user.bedoun_marz_request || false,
+        role: user.role || 'user',
+        bio: user.bio || '',
+        created_at: user.created_at || '',
+        updated_at: user.updated_at || '',
+        last_seen: user.last_seen
+      }));
+
+      return users;
     } catch (error) {
       console.error('Error searching users:', error);
       return [];

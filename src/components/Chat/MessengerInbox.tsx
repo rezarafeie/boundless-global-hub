@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -263,11 +262,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                     </Badge>
                   )}
                 </div>
-                {conversation.last_message && (
-                  <div className="text-xs text-slate-500 truncate">
-                    {conversation.last_message}
-                  </div>
-                )}
                 {conversation.last_message_at && (
                   <div className="text-xs text-slate-400">
                     {new Date(conversation.last_message_at).toLocaleTimeString('fa-IR', {
