@@ -31,11 +31,12 @@ export interface PrivateMessage {
 class PrivateMessageService {
   async searchUsers(searchTerm: string, sessionToken: string): Promise<MessengerUser[]> {
     try {
+      // Basic search for display purposes - not used for exact search
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
         .eq('is_approved', true)
-        .or(`username.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        .or(`username.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
         .order('name');
 
       if (error) {
@@ -62,6 +63,9 @@ class PrivateMessageService {
         query = query.eq('phone', searchTerm);
       } 
       // Check if it's a username (exact match)
+      else if (searchTerm.startsWith('@')) {
+        query = query.eq('username', searchTerm.substring(1).toLowerCase());
+      }
       else {
         query = query.eq('username', searchTerm.toLowerCase());
       }

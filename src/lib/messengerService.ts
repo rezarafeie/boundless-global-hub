@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
 
@@ -266,7 +265,7 @@ class MessengerService {
   }
 
   async validateSession(token: string): Promise<{ user: MessengerUser; valid: boolean } | null> {
-    const { data: session, error } = await supabase
+    const { data: session } = await supabase
       .from('user_sessions')
       .select(`
         user_id,
@@ -626,21 +625,30 @@ class MessengerService {
     if (error) throw error;
   }
 
-  async createRoom(roomData: { name: string; description?: string; type: string; is_boundless_only?: boolean }): Promise<ChatRoom> {
-    const { data, error } = await supabase
-      .from('chat_rooms')
-      .insert({
-        ...roomData,
-        description: roomData.description || ''
-      })
-      .select()
-      .single();
+  async createRoom(roomData: {
+    name: string;
+    type: string;
+    description?: string;
+    is_boundless_only?: boolean;
+    is_active?: boolean;
+  }): Promise<ChatRoom> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .insert([roomData])
+        .select()
+        .single();
 
-    if (error) throw error;
-    return {
-      ...data,
-      description: data.description || ''
-    };
+      if (error) {
+        console.error('Error creating room:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in createRoom:', error);
+      throw error;
+    }
   }
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
@@ -750,9 +758,76 @@ class MessengerService {
     if (error) throw error;
   }
 
+  async updateUserProfile(userId: number, profileData: {
+    name?: string;
+    username?: string | null;
+    bio?: string | null;
+  }, sessionToken: string): Promise<MessengerUser> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .update(profileData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating user profile:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateUserProfile:', error);
+      throw error;
+    }
+  }
+
+  async searchUsersByUsername(username: string): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('username', username.toLowerCase())
+        .eq('is_approved', true);
+
+      if (error) {
+        console.error('Error searching users by username:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in searchUsersByUsername:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(userId: number, userData: any): Promise<MessengerUser> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .update(userData)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating user:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in updateUser:', error);
+      throw error;
+    }
+  }
+
   private generateToken(): string {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 }
 
-export const messengerService = MessengerService.getInstance();
+export const messengerService = new MessengerService();
+export type { MessengerUser, ChatRoom, Message };

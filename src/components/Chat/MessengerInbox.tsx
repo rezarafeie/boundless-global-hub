@@ -11,17 +11,12 @@ import {
   Plus, 
   Users, 
   MessageCircle, 
-  Headphones, 
-  MessageSquare,
   User,
-  Settings,
-  Star,
-  Shield
+  Settings
 } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
-import SupportRoomsSelector from './SupportRoomsSelector';
 import ExactSearchModal from './ExactSearchModal';
 import UserProfileModal from './UserProfileModal';
 
@@ -33,15 +28,6 @@ interface MessengerInboxProps {
   selectedUser: MessengerUser | null;
   currentUser: MessengerUser;
   onUserUpdate: (user: MessengerUser) => void;
-}
-
-interface SupportRoom {
-  id: string;
-  name: string;
-  description: string;
-  type: string;
-  icon: React.ReactNode;
-  isPermanent: boolean;
 }
 
 const MessengerInbox: React.FC<MessengerInboxProps> = ({
@@ -87,32 +73,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     }
   };
 
-  const getSupportRooms = (): SupportRoom[] => {
-    const supportRooms: SupportRoom[] = [
-      {
-        id: 'academy_support',
-        name: '🛎️ پشتیبانی آکادمی رفیعی',
-        description: 'پشتیبانی عمومی برای همه کاربران',
-        type: 'academy_support',
-        icon: <MessageSquare className="w-4 h-4 text-blue-500" />,
-        isPermanent: true
-      }
-    ];
-
-    if (currentUser?.bedoun_marz_approved) {
-      supportRooms.push({
-        id: 'boundless_support',
-        name: '🌐 پشتیبانی بدون مرز',
-        description: 'پشتیبانی ویژه اعضای بدون مرز',
-        type: 'boundless_support',
-        icon: <Headphones className="w-4 h-4 text-purple-500" />,
-        isPermanent: true
-      });
-    }
-
-    return supportRooms;
-  };
-
   const getAvatarColor = (name: string) => {
     const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
     const index = name.charCodeAt(0) % colors.length;
@@ -149,6 +109,23 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     }
   };
 
+  const handleChatSelect = async (conversation: PrivateConversation) => {
+    // Clear unread count immediately for better UX
+    const updatedConversations = privateConversations.map(conv => 
+      conv.id === conversation.id ? { ...conv, unread_count: 0 } : conv
+    );
+    setPrivateConversations(updatedConversations);
+    
+    // Mark messages as read in background
+    try {
+      await privateMessageService.markMessagesAsRead(conversation.id, currentUser.id, sessionToken);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+    
+    onUserSelect(conversation.other_user!);
+  };
+
   // Filter items based on search
   const filteredRooms = rooms.filter(room => 
     room.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -156,8 +133,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const filteredConversations = privateConversations.filter(conv => 
     conv.other_user?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const supportRooms = getSupportRooms();
 
   if (loading) {
     return (
@@ -210,7 +185,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-slate-900 dark:text-white">پیام‌ها</h2>
           <div className="flex items-center gap-2">
-            {/* Profile Button - More Prominent */}
+            {/* Profile Button */}
             <Button 
               variant="ghost" 
               size="sm"
@@ -255,44 +230,11 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-1 p-2">
-          {/* Support Rooms - Always at Top with Prominent Styling */}
-          {supportRooms.map((room) => (
-            <div
-              key={room.id}
-              className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-800/30 dark:hover:to-purple-800/30"
-            >
-              <div className="relative">
-                <Avatar className="w-10 h-10 border-2 border-blue-300 dark:border-blue-700">
-                  <AvatarFallback className="bg-blue-500 text-white font-medium">
-                    🛎️
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
-                  {room.icon}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="font-medium text-sm text-blue-700 dark:text-blue-300">
-                    {room.name}
-                  </div>
-                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    <Star className="w-3 h-3 mr-1" />
-                    پشتیبانی
-                  </Badge>
-                </div>
-                <div className="text-xs text-blue-600 dark:text-blue-400">
-                  {room.description}
-                </div>
-              </div>
-            </div>
-          ))}
-
           {/* Private Conversations */}
           {filteredConversations.map((conversation) => (
             <div
               key={`private-${conversation.id}`}
-              onClick={() => onUserSelect(conversation.other_user!)}
+              onClick={() => handleChatSelect(conversation)}
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
                 selectedUser?.id === conversation.other_user?.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
               }`}
@@ -423,6 +365,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         user={currentUser}
         onStartChat={handleStartChatWithUser}
         currentUserId={currentUser.id}
+        sessionToken={sessionToken}
+        onUserUpdate={onUserUpdate}
       />
     </div>
   );
