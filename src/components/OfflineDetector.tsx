@@ -16,6 +16,7 @@ const OfflineDetector: React.FC<OfflineDetectorProps> = ({
 }) => {
   const { isOnline, isChecking, checkConnection } = useOfflineDetection();
 
+  // Only show offline screen for messenger, not for hub
   if (requiresConnection && !isOnline) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4" dir="rtl">
