@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,27 +18,25 @@ const TelegramRedirect = () => {
     const baseMessage = `درود وقت بخیر
 برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
 
-نام: ${name}
-نام خانوادگی: ${lastname}
-شماره همراه: ${phone}
-ایمیل: ${email}`;
+mba
+
+نام : ${name}
+نام خانوادگی : ${lastname}
+شماره همراه : ${phone}
+ایمیل : ${email}`;
     
     return baseMessage;
   };
 
-  const handleTelegramClick = async () => {
+  const handleTelegramClick = () => {
     const message = generateTelegramMessage();
     
-    // Copy message to clipboard
-    try {
-      await navigator.clipboard.writeText(message);
-      console.log('Message copied to clipboard');
-    } catch (err) {
-      console.log('Failed to copy message to clipboard');
-    }
+    // Use encodeURIComponent() to properly encode the full message
+    const encodedMessage = encodeURIComponent(message);
     
-    // Open Telegram chat directly (without pre-filled message to avoid encoding issues)
-    const telegramUrl = 'https://t.me/rafieiacademy';
+    // Construct the full Telegram URL with the encoded message
+    const telegramUrl = `https://t.me/rafieiacademy?text=${encodedMessage}`;
+    
     window.open(telegramUrl, '_blank');
   };
 
@@ -95,7 +92,7 @@ const TelegramRedirect = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. پیام شما به کلیپ‌بورد کپی شده و آماده ارسال است. موفق باشید
+                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. پیام شما به صورت خودکار پر خواهد شد. موفق باشید
               </p>
             </div>
           </div>
