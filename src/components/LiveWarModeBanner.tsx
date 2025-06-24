@@ -6,55 +6,56 @@ import { Link } from 'react-router-dom';
 
 const LiveWarModeBanner = () => {
   return (
-    <section className="py-4 bg-red-900 dark:bg-red-950 border-y border-red-800">
-      <div className="container">
+    <div className="fixed top-16 left-0 right-0 z-[9999] bg-red-600 dark:bg-red-700 border-b border-red-500">
+      <div className="container py-2">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex items-center justify-center gap-4 text-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex items-center justify-center gap-2 md:gap-4 text-center"
         >
           {/* Blinking Red Dot */}
-          <div className="flex items-center gap-2">
-            <motion.div
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [1, 0.7, 1]
-              }}
-              transition={{ 
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"
-            />
-            <span className="text-red-100 font-bold text-lg md:text-xl">
-              🚨 حالت اضطراری جنگ فعال شد
-            </span>
-          </div>
-          
-          {/* Alert Icon */}
           <motion.div
-            animate={{ rotate: [0, 5, -5, 0] }}
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [1, 0.6, 1]
+            }}
             transition={{ 
-              duration: 2,
+              duration: 1.2,
               repeat: Infinity,
               ease: "easeInOut"
             }}
+            className="w-2 h-2 md:w-3 md:h-3 bg-red-200 rounded-full shadow-sm"
+          />
+          
+          {/* Emergency Text */}
+          <span className="text-white font-semibold text-sm md:text-base">
+            🚨 حالت اضطراری جنگ فعال شد
+          </span>
+          
+          {/* Alert Icon - Hidden on mobile */}
+          <motion.div
+            animate={{ rotate: [0, 8, -8, 0] }}
+            transition={{ 
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="hidden md:block"
           >
-            <AlertTriangle className="w-6 h-6 text-yellow-400" />
+            <AlertTriangle className="w-4 h-4 text-yellow-300" />
           </motion.div>
           
-          {/* Link to Solidarity Page */}
+          {/* Link */}
           <Link 
             to="/solidarity"
-            className="text-red-100 hover:text-white underline underline-offset-2 transition-colors duration-200 font-medium"
+            className="text-red-100 hover:text-white underline underline-offset-2 transition-colors duration-200 font-medium text-sm md:text-base"
           >
             مشاهده صفحه همبستگی
           </Link>
         </motion.div>
       </div>
-    </section>
+    </div>
   );
 };
 
