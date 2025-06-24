@@ -4,7 +4,7 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Phone, Mail, Clock, Headphones, Users } from "lucide-react";
+import { MessageCircle, Phone, Mail, Clock, Headphones, Users, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Support = () => {
@@ -31,7 +31,7 @@ const Support = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="text-center hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mb-4">
@@ -62,8 +62,10 @@ const Support = () => {
                 <p className="text-muted-foreground mb-4">
                   برای مسائل فوری و پیچیده با ما تماس بگیرید
                 </p>
-                <Button variant="outline" className="w-full">
-                  ۰۲۱-۱۲۳۴۵۶۷۸
+                <Button asChild variant="outline" className="w-full">
+                  <a href="tel:02128427131">
+                    ۰۲۱-۲۸۴۲۷۱۳۱
+                  </a>
                 </Button>
               </CardContent>
             </Card>
@@ -79,8 +81,29 @@ const Support = () => {
                 <p className="text-muted-foreground mb-4">
                   برای سوالات تفصیلی ایمیل ارسال کنید
                 </p>
-                <Button variant="outline" className="w-full">
-                  support@rafiei.co
+                <Button asChild variant="outline" className="w-full">
+                  <a href="mailto:academyrafeie@gmail.com">
+                    academyrafeie@gmail.com
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-sky-100 dark:bg-sky-900/20 rounded-lg flex items-center justify-center mb-4">
+                  <Send className="w-8 h-8 text-sky-600 dark:text-sky-400" />
+                </div>
+                <CardTitle>تلگرام</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  پشتیبانی سریع از طریق تلگرام
+                </p>
+                <Button asChild variant="outline" className="w-full">
+                  <a href="https://t.me/rafieiacademy" target="_blank" rel="noopener noreferrer">
+                    t.me/rafieiacademy
+                  </a>
                 </Button>
               </CardContent>
             </Card>

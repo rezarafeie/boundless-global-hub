@@ -23,24 +23,24 @@ import { Link } from "react-router-dom";
 const SolidarityLanding = () => {
   const freeCourses = [
     {
-      title: "شروع بدون مرز",
+      title: "مزه بدون مرز",
       description: "اگر نمی‌دونی از کجا شروع کنی، این دوره کمک می‌کنه توی این روزهای سخت مسیرت رو پیدا کنی.",
-      link: "/courses/boundless-taste"
+      link: "/course/boundless-taste"
     },
     {
       title: "درآمد غیرفعال",
       description: "حتی وقتی زندگی متوقف شده، می‌تونی راه‌هایی برای ساختن درآمد غیرفعال یاد بگیری.",
-      link: "/courses/passive-income"
+      link: "/course/passive-income"
     },
     {
-      title: "تغییر",
+      title: "پروژه تغییر",
       description: "برای روزهایی که اضطراب داریم و ذهنمون شلوغه، این دوره کمک می‌کنه آرامش و تمرکز برگرده.",
-      link: "/courses/change"
+      link: "/course/change"
     },
     {
-      title: "بیزینس آمریکایی",
+      title: "پروژه بیزینس آمریکایی",
       description: "یاد بگیر چطور حتی از ایران کسب‌وکاری جهانی راه بندازی، تا از جنگ و بحران عبور کنی.",
-      link: "/courses/american-business"
+      link: "/course/american-business"
     },
     {
       title: "مزه متاورس",
@@ -51,11 +51,6 @@ const SolidarityLanding = () => {
       title: "مزه اینستاگرام",
       description: "یاد بگیر با گوشی‌ات درآمد بسازی، از دل محتوا و رسانه حتی توی این شرایط.",
       link: "/courses/instagram"
-    },
-    {
-      title: "ثروت",
-      description: "ثروت فقط پول نیست؛ این دوره کمکت می‌کنه نگرشت رو به زندگی و موفقیت عوض کنی.",
-      link: "/courses/wealth"
     }
   ];
 
