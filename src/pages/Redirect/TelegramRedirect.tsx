@@ -16,13 +16,11 @@ const TelegramRedirect = () => {
 
   // Generate Telegram message
   const generateTelegramMessage = () => {
-    const baseMessage = `درود وقت بخیر
-برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
-mba
-نام : ${name}
-نام خانوادگی : ${lastname}
-شماره همراه : ${phone}
-ایمیل : ${email}`;
+    const baseMessage =mba
+firstname: ${name}
+lastname: ${lastname}
+phone: ${phone}
+email: ${email}`;
     
     return baseMessage;
   };
