@@ -6,17 +6,15 @@ import HubDashboard from '@/components/Hub/HubDashboard';
 import MessengerPage from './messenger';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
-import { Card, CardContent } from '@/components/ui/card';
-import { WifiOff, MessageCircle } from 'lucide-react';
 
 const HubIndex = () => {
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const { isOnline } = useOfflineDetection();
+  const { isOnline, isChecking } = useOfflineDetection();
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [isOnline]); // Re-check auth when online status changes
 
   const checkAuth = async () => {
     try {
@@ -26,8 +24,14 @@ const HubIndex = () => {
         return;
       }
 
-      // If offline, skip validation and create a mock user for offline mode
+      // Wait for offline detection to complete initial check
+      if (isChecking) {
+        return;
+      }
+
+      // If offline, create a mock user for offline mode
       if (!isOnline) {
+        console.log('Creating offline user for offline mode');
         const mockUser: MessengerUser = {
           id: 0,
           name: 'کاربر آفلاین',
@@ -64,6 +68,7 @@ const HubIndex = () => {
         window.location.href = '/login';
       } else {
         // In offline mode, continue with mock user
+        console.log('Auth failed, using offline mode');
         const mockUser: MessengerUser = {
           id: 0,
           name: 'کاربر آفلاین',
@@ -91,7 +96,8 @@ const HubIndex = () => {
     setCurrentUser(user);
   };
 
-  if (loading) {
+  // Show loading while checking connection or auth
+  if (loading || isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

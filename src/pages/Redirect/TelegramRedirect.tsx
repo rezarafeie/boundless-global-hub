@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,25 +35,9 @@ mba
     window.open(telegramUrl, '_blank');
   };
 
-  const handleMessengerFallback = () => {
-    // Store the message data in sessionStorage to pre-fill the messenger
-    const messageData = {
-      name,
-      lastname,
-      phone,
-      email,
-      course,
-      message: `درود وقت بخیر
-برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
-mba
-نام : ${name}
-نام خانوادگی : ${lastname}
-شماره همراه : ${phone}
-ایمیل : ${email}`
-    };
-    
-    sessionStorage.setItem('supportMessage', JSON.stringify(messageData));
-    navigate('/hub/messenger?support=academy');
+  const handleCourseFallback = () => {
+    // Navigate directly to boundless taste course
+    navigate('/course/boundless-taste');
   };
 
   return (
@@ -105,10 +90,10 @@ mba
           {/* Small Text Link Fallback Button */}
           <div className="text-center mb-8">
             <button
-              onClick={handleMessengerFallback}
+              onClick={handleCourseFallback}
               className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm underline underline-offset-2 hover:underline-offset-4 transition-all duration-200"
             >
-              بدون تلگرام ادامه دهید
+              دسترسی به تلگرام ندارید؟ بدون تلگرام ادامه دهید
             </button>
           </div>
             
