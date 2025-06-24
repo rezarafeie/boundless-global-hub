@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 interface TestCardProps {
   title: string;
   description: string;
-  category: string;
+  category?: string;
   duration?: string;
   questions?: number;
   slug?: string;
@@ -17,7 +17,7 @@ interface TestCardProps {
 const TestCard: React.FC<TestCardProps> = ({ 
   title, 
   description, 
-  category, 
+  category = '', 
   duration, 
   questions, 
   slug 
@@ -76,7 +76,7 @@ const TestCard: React.FC<TestCardProps> = ({
     </Card>
   );
 
-  // Link to test landing page instead of direct iframe
+  // Link to test landing page for details first, not directly to iframe
   if (slug) {
     return (
       <Link to={`/assessment/${slug}`} className="block h-full">

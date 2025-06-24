@@ -64,23 +64,48 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   };
 
   useEffect(() => {
-    // Only search if it's a complete phone number or @username
-    const isValidPhoneSearch = /^09\d{9}$/.test(searchTerm.trim());
-    const isValidUsernameSearch = searchTerm.trim().startsWith('@') && searchTerm.trim().length > 1;
-    const isValidExactUsername = !searchTerm.includes('@') && searchTerm.trim().length >= 3;
-    
-    if (isValidPhoneSearch || isValidUsernameSearch || isValidExactUsername) {
-      searchUsers();
-    } else {
+    if (searchTerm.trim().length === 0) {
       setSearchResults([]);
+      return;
     }
+
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      // Only search if it's a complete phone number or @username
+      const trimmed = searchTerm.trim();
+      const isValidPhoneSearch = /^09\d{9}$/.test(trimmed);
+      const isValidUsernameSearch = trimmed.startsWith('@') && trimmed.length > 1;
+      const isValidExactUsername = !trimmed.includes('@') && trimmed.length >= 3;
+      
+      if (isValidPhoneSearch || isValidUsernameSearch || isValidExactUsername) {
+        searchUsers();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
   const searchUsers = async () => {
+    if (!sessionToken) {
+      console.error('No session token available');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Only search by exact phone number or exact username
-      const results = await privateMessageService.exactSearch(searchTerm.trim(), sessionToken);
+      console.log('Searching for:', searchTerm.trim());
+      
+      // Prepare search term - remove @ if present for username search
+      let searchQuery = searchTerm.trim();
+      if (searchQuery.startsWith('@')) {
+        searchQuery = searchQuery.substring(1);
+      }
+      
+      const results = await privateMessageService.exactSearch(searchQuery, sessionToken);
+      console.log('Search results:', results);
+      
       // Filter out current user
       const filteredResults = results.filter(user => user.id !== currentUser.id);
       setSearchResults(filteredResults);
@@ -135,6 +160,10 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
     return /^09\d{9}$/.test(trimmed) || 
            (trimmed.startsWith('@') && trimmed.length > 1) ||
            (!trimmed.includes('@') && trimmed.length >= 3);
+  };
+
+  const getSearchPlaceholder = () => {
+    return "جستجو: 09xxxxxxxxx یا @نام‌کاربری یا نام‌کاربری";
   };
 
   return (
@@ -192,7 +221,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
           <div className="relative">
             <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="جستجو دقیق: 09xxxxxxxxx یا @نام‌کاربری"
+              placeholder={getSearchPlaceholder()}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pr-10"
@@ -205,13 +234,13 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground">در حال جستجو...</div>
               </div>
-            ) : !isValidSearch() && searchTerm.length > 0 ? (
+            ) : searchTerm.length > 0 && !isValidSearch() ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground text-center">
-                  لطفاً شماره موبایل کامل (09xxxxxxxxx) یا نام کاربری دقیق (@username) وارد کنید
+                  لطفاً شماره موبایل کامل (09xxxxxxxxx)، @نام‌کاربری یا نام کاربری وارد کنید
                 </div>
               </div>
-            ) : searchResults.length === 0 && isValidSearch() ? (
+            ) : isValidSearch() && searchResults.length === 0 && !loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-sm text-muted-foreground">کاربری یافت نشد</div>
               </div>

@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings, Maximize } from 'lucide-react';
+import { MessageCircle, Bell, Video, Play, BookOpen, ClipboardCheck, Home, Settings, Maximize, WifiOff } from 'lucide-react';
 import { useAnnouncements, useLiveSettings } from '@/hooks/useRealtime';
 import { useRafieiMeet } from '@/hooks/useRafieiMeet';
+import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { Link } from 'react-router-dom';
 import AnnouncementModal from '@/components/Chat/AnnouncementModal';
 import { motion } from 'framer-motion';
@@ -15,6 +15,7 @@ const BorderlessHub = () => {
   const { announcements, loading: announcementsLoading } = useAnnouncements();
   const { liveSettings } = useLiveSettings();
   const { settings: rafieiMeetSettings } = useRafieiMeet();
+  const { isOnline } = useOfflineDetection();
   const [sessionToken, setSessionToken] = useState<string>('');
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,6 +76,29 @@ const BorderlessHub = () => {
         </div>
 
         <div className="relative z-10 container mx-auto px-4 py-8">
+          {/* Offline Banner */}
+          {!isOnline && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+            >
+              <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-lg">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <WifiOff className="w-6 h-6" />
+                    <div className="text-center">
+                      <h3 className="font-bold">⚠️ حالت آفلاین</h3>
+                      <p className="text-sm text-orange-100">
+                        اتصال به اینترنت برقرار نیست. برخی قابلیت‌ها محدود هستند.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -92,8 +116,8 @@ const BorderlessHub = () => {
             </div>
           </motion.div>
 
-          {/* Live Sections - Only Show at Top When Active */}
-          {hasActiveLiveContent && (
+          {/* Live Sections - Only Show at Top When Active and Online */}
+          {hasActiveLiveContent && isOnline && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -183,7 +207,19 @@ const BorderlessHub = () => {
               </h2>
             </div>
 
-            {announcementsLoading ? (
+            {!isOnline ? (
+              <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20">
+                <CardContent className="p-12 text-center">
+                  <WifiOff className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                    اطلاعیه‌ها در حالت آفلاین
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-500">
+                    برای مشاهده اطلاعیه‌ها به اینترنت نیاز دارید.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : announcementsLoading ? (
               <div className="space-y-6">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20">
@@ -266,28 +302,47 @@ const BorderlessHub = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mb-12"
           >
-            <Link to="/hub/messenger">
-              <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 cursor-pointer">
+            {isOnline ? (
+              <Link to="/hub/messenger">
+                <Card className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 cursor-pointer">
+                  <CardContent className="p-8 text-center">
+                    <div className="mb-6">
+                      <div className="inline-flex p-4 rounded-full bg-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                        <MessageCircle className="w-12 h-12" />
+                      </div>
+                    </div>
+                    <h2 className="text-3xl font-bold mb-4">✉️ پیام‌رسان بدون مرز</h2>
+                    <p className="text-blue-100 text-lg mb-6">
+                      وارد گفتگوها شوید و با دانشجوها و پشتیبان در ارتباط باشید
+                    </p>
+                    <Button 
+                      size="lg"
+                      className="bg-white text-blue-600 hover:bg-blue-50 transform group-hover:scale-105 transition-all duration-200"
+                    >
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      ورود به پیام‌رسان
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/20 opacity-60">
                 <CardContent className="p-8 text-center">
                   <div className="mb-6">
-                    <div className="inline-flex p-4 rounded-full bg-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                      <MessageCircle className="w-12 h-12" />
+                    <div className="inline-flex p-4 rounded-full bg-slate-200 dark:bg-slate-700">
+                      <WifiOff className="w-12 h-12 text-slate-400" />
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold mb-4">✉️ پیام‌رسان بدون مرز</h2>
-                  <p className="text-blue-100 text-lg mb-6">
-                    وارد گفتگوها شوید و با دانشجوها و پشتیبان در ارتباط باشید
+                  <h2 className="text-3xl font-bold mb-4 text-slate-600 dark:text-slate-400">✉️ پیام‌رسان بدون مرز</h2>
+                  <p className="text-slate-500 dark:text-slate-500 text-lg mb-6">
+                    برای استفاده از پیام‌رسان به اینترنت نیاز دارید
                   </p>
-                  <Button 
-                    size="lg"
-                    className="bg-white text-blue-600 hover:bg-blue-50 transform group-hover:scale-105 transition-all duration-200"
-                  >
-                    <MessageCircle className="w-5 h-5 mr-2" />
-                    ورود به پیام‌رسان
+                  <Button disabled className="bg-slate-300 dark:bg-slate-700 text-slate-500">
+                    فعلاً غیرفعال است
                   </Button>
                 </CardContent>
               </Card>
-            </Link>
+            )}
           </motion.div>
 
           {/* Live Cards - Show Below When Inactive */}
@@ -370,7 +425,7 @@ const BorderlessHub = () => {
           </motion.div>
 
           {/* Admin Access */}
-          {sessionToken && (
+          {sessionToken && isOnline && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

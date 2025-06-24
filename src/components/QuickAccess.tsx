@@ -19,7 +19,7 @@ const QuickAccess = () => {
     {
       title: "مرکز سنجش",
       icon: <Award size={28} />,
-      link: "/assessment-center",
+      link: "/assessment",
       color: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400"
     },
     {

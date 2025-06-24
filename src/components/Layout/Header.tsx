@@ -23,7 +23,7 @@ const Header = () => {
   return (
     <header className="fixed top-0 z-[10000] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:border-border/20">
       <div className="container flex h-16 items-center justify-between py-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Link 
             to="/" 
             className="flex items-center gap-2"
@@ -44,6 +44,9 @@ const Header = () => {
               {translations.websiteName}
             </span>
           </Link>
+          
+          {/* Online Status Indicator positioned beside logo */}
+          <OnlineStatusIndicator />
         </div>
         
         {/* Desktop Navigation */}
@@ -72,9 +75,6 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center gap-3">
-          {/* Online Status Indicator */}
-          <OnlineStatusIndicator />
-          
           {/* Dark Mode Toggle */}
           <Button
             variant="ghost"
@@ -124,7 +124,7 @@ const Header = () => {
             >
               <div className="flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center gap-2 pb-6 border-b border-border dark:border-border">
+                <div className="flex items-center gap-3 pb-6 border-b border-border dark:border-border">
                   <img 
                     src={logoSrc}
                     alt="Rafiei Academy" 
@@ -139,6 +139,7 @@ const Header = () => {
                   <span className="text-lg font-bold text-foreground">
                     {translations.websiteName}
                   </span>
+                  <OnlineStatusIndicator />
                 </div>
 
                 {/* Navigation Links */}
