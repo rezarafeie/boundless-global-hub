@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from './messengerService';
 
@@ -108,27 +107,7 @@ export const privateMessageService = {
       }
 
       console.log('Search results:', data);
-      
-      // Map to MessengerUser format with all required fields
-      const users: MessengerUser[] = (data || []).map(user => ({
-        id: user.id,
-        name: user.name,
-        username: user.username,
-        phone: user.phone,
-        is_approved: user.is_approved,
-        is_messenger_admin: user.is_messenger_admin || false,
-        is_support_agent: user.is_support_agent || false,
-        bedoun_marz: user.bedoun_marz || false,
-        bedoun_marz_approved: user.bedoun_marz_approved || false,
-        bedoun_marz_request: user.bedoun_marz_request || false,
-        role: user.role || 'user',
-        bio: user.bio || '',
-        created_at: user.created_at || '',
-        updated_at: user.updated_at || '',
-        last_seen: user.last_seen
-      }));
-
-      return users;
+      return data || [];
     } catch (error) {
       console.error('Error searching users:', error);
       return [];
@@ -215,35 +194,18 @@ export const privateMessageService = {
           user2_id,
           last_message_at,
           updated_at,
-          created_at
+          created_at,
+          user1:user1_id(id, name, username, phone),
+          user2:user2_id(id, name, username, phone)
         `)
         .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;
 
-      // Get user info separately to avoid relation issues
-      const userIds = new Set<number>();
-      (data || []).forEach(conv => {
-        userIds.add(conv.user1_id);
-        userIds.add(conv.user2_id);
-      });
-
-      const { data: usersData } = await supabase
-        .from('chat_users')
-        .select('id, name, username, phone')
-        .in('id', Array.from(userIds));
-
-      const usersMap = new Map();
-      (usersData || []).forEach(user => {
-        usersMap.set(user.id, user);
-      });
-
       // Format conversations
       const conversations: PrivateConversation[] = (data || []).map(conv => {
-        const otherUserId = conv.user1_id === currentUserId ? conv.user2_id : conv.user1_id;
-        const otherUserData = usersMap.get(otherUserId);
-        
+        const otherUser = conv.user1_id === currentUserId ? conv.user2 : conv.user1;
         return {
           id: conv.id,
           user1_id: conv.user1_id,
@@ -251,23 +213,7 @@ export const privateMessageService = {
           created_at: conv.created_at,
           updated_at: conv.updated_at,
           last_message_at: conv.last_message_at,
-          other_user: otherUserData ? {
-            id: otherUserData.id,
-            name: otherUserData.name,
-            username: otherUserData.username,
-            phone: otherUserData.phone,
-            is_approved: true,
-            is_messenger_admin: false,
-            is_support_agent: false,
-            bedoun_marz: false,
-            bedoun_marz_approved: false,
-            bedoun_marz_request: false,
-            role: 'user',
-            bio: '',
-            created_at: '',
-            updated_at: '',
-            last_seen: null
-          } : undefined,
+          other_user: otherUser as MessengerUser,
           unread_count: 0
         };
       });
@@ -296,46 +242,15 @@ export const privateMessageService = {
           sender_id,
           conversation_id,
           created_at,
-          is_read
+          is_read,
+          sender:sender_id(id, name, username)
         `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
         .limit(100);
 
       if (error) throw error;
-
-      // Get sender info separately
-      const senderIds = [...new Set((data || []).map(msg => msg.sender_id))];
-      const { data: sendersData } = await supabase
-        .from('chat_users')
-        .select('id, name, username, phone')
-        .in('id', senderIds);
-
-      const sendersMap = new Map();
-      (sendersData || []).forEach(sender => {
-        sendersMap.set(sender.id, {
-          id: sender.id,
-          name: sender.name,
-          username: sender.username,
-          phone: sender.phone,
-          is_approved: true,
-          is_messenger_admin: false,
-          is_support_agent: false,
-          bedoun_marz: false,
-          bedoun_marz_approved: false,
-          bedoun_marz_request: false,
-          role: 'user',
-          bio: '',
-          created_at: '',
-          updated_at: '',
-          last_seen: null
-        });
-      });
-
-      return (data || []).map(msg => ({
-        ...msg,
-        sender: sendersMap.get(msg.sender_id)
-      }));
+      return data || [];
     } catch (error) {
       console.error('Error getting messages:', error);
       throw error;
@@ -388,39 +303,13 @@ export const privateMessageService = {
           sender_id,
           conversation_id,
           created_at,
-          is_read
+          is_read,
+          sender:sender_id(id, name, username)
         `)
         .single();
 
       if (error) throw error;
-
-      // Get sender info
-      const { data: senderData } = await supabase
-        .from('chat_users')
-        .select('id, name, username, phone')
-        .eq('id', senderId)
-        .single();
-
-      return {
-        ...data,
-        sender: senderData ? {
-          id: senderData.id,
-          name: senderData.name,
-          username: senderData.username,
-          phone: senderData.phone,
-          is_approved: true,
-          is_messenger_admin: false,
-          is_support_agent: false,
-          bedoun_marz: false,
-          bedoun_marz_approved: false,
-          bedoun_marz_request: false,
-          role: 'user',
-          bio: '',
-          created_at: '',
-          updated_at: '',
-          last_seen: null
-        } : undefined
-      };
+      return data;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;

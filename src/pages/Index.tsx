@@ -124,10 +124,7 @@ const Index = () => {
         </section>
 
         {/* Live Enrollment Counter */}
-        <LiveEnrollmentCounter 
-          initialCount={2847}
-          courseName={language === "en" ? "All Courses" : "همه دوره‌ها"}
-        />
+        <LiveEnrollmentCounter />
 
         {/* Assessment Tests Section */}
         <section className="py-16 bg-gray-50 dark:bg-gray-800">
@@ -147,10 +144,10 @@ const Index = () => {
                 <TestCard
                   title={language === "en" ? "Personality Assessment" : "ارزیابی شخصیت"}
                   description={language === "en" ? "Discover your personality type and traits" : "نوع شخصیت و ویژگی‌های خود را کشف کنید"}
-                  category={language === "en" ? "Personality" : "شخصیت"}
                   duration={language === "en" ? "15 minutes" : "۱۵ دقیقه"}
                   questions={45}
-                  slug="personality"
+                  difficulty={language === "en" ? "Beginner" : "مبتدی"}
+                  href="/assessment"
                 />
               </motion.div>
 
@@ -161,12 +158,12 @@ const Index = () => {
                 viewport={{ once: true }}
               >
                 <TestCard
-                  title={language === "en" ? "Career Guidance" : "راهنمایی شغلی"}
+                  title={language === "en" ? "Career Guidance" : "راहنمایی شغلی"}
                   description={language === "en" ? "Find the perfect career path for you" : "مسیر شغلی مناسب خود را پیدا کنید"}
-                  category={language === "en" ? "Career" : "شغل"}
                   duration={language === "en" ? "20 minutes" : "۲۰ دقیقه"}
                   questions={60}
-                  slug="career"
+                  difficulty={language === "en" ? "Intermediate" : "متوسط"}
+                  href="/assessment"
                 />
               </motion.div>
 
@@ -179,10 +176,10 @@ const Index = () => {
                 <TestCard
                   title={language === "en" ? "Skills Assessment" : "ارزیابی مهارت‌ها"}
                   description={language === "en" ? "Evaluate your professional skills" : "مهارت‌های حرفه‌ای خود را ارزیابی کنید"}
-                  category={language === "en" ? "Skills" : "مهارت"}
                   duration={language === "en" ? "25 minutes" : "۲۵ دقیقه"}
                   questions={75}
-                  slug="skills"
+                  difficulty={language === "en" ? "Advanced" : "پیشرفته"}
+                  href="/assessment"
                 />
               </motion.div>
             </div>
@@ -193,11 +190,7 @@ const Index = () => {
         <RandomHeadlineGenerator />
         
         {/* Mobile Sticky Button */}
-        <MobileStickyButton 
-          onClick={() => window.location.href = '/assessment'}
-        >
-          {language === "en" ? "Start Assessment" : "شروع ارزیابی"}
-        </MobileStickyButton>
+        <MobileStickyButton />
       </div>
     </MainLayout>
   );

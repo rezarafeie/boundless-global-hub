@@ -8,21 +8,19 @@ import { Link } from "react-router-dom";
 interface TestCardProps {
   title: string;
   description: string;
-  category?: string;
+  category: string;
   duration?: string;
   questions?: number;
   slug?: string;
-  href?: string;
 }
 
 const TestCard: React.FC<TestCardProps> = ({ 
   title, 
   description, 
-  category = '', 
+  category, 
   duration, 
   questions, 
-  slug,
-  href
+  slug 
 }) => {
   // Get icon based on test category
   const getTestIcon = () => {
@@ -39,11 +37,8 @@ const TestCard: React.FC<TestCardProps> = ({
 
   const { direction } = useLanguage();
 
-  // Determine the link to use
-  const testLink = href || (slug ? `/assessment/${slug}` : undefined);
-
   const cardContent = (
-    <Card className={`overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-card rounded-xl ${testLink ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
+    <Card className={`overflow-hidden border-border hover:border-primary/20 transition-all shadow-sm hover:shadow-lg group h-full flex flex-col bg-card rounded-xl ${slug ? 'cursor-pointer hover:scale-[1.02]' : ''}`}>
       <CardContent className="p-6">
         <div className="flex flex-row items-start gap-3 mb-3">
           <div className="w-10 h-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -70,7 +65,7 @@ const TestCard: React.FC<TestCardProps> = ({
           </div>
         )}
         
-        {testLink && (
+        {slug && (
           <div className="mt-auto">
             <div className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md group-hover:bg-primary/90 transition-colors text-sm font-medium text-center">
               مشاهده جزئیات
@@ -81,10 +76,10 @@ const TestCard: React.FC<TestCardProps> = ({
     </Card>
   );
 
-  // Link to test landing page or direct href
-  if (testLink) {
+  // Link to test landing page instead of direct iframe
+  if (slug) {
     return (
-      <Link to={testLink} className="block h-full">
+      <Link to={`/assessment/${slug}`} className="block h-full">
         {cardContent}
       </Link>
     );
