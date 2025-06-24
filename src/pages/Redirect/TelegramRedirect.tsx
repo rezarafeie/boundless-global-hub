@@ -31,10 +31,7 @@ mba
     const message = generateTelegramMessage();
     // Use Telegram's share URL format for better text handling
     const telegramUrl = `https://t.me/rafieiacademy`;
-    
-    // Try to open with pre-filled text using Telegram Web format
-    const telegramWebUrl = `https://web.telegram.org/a/#@rafieiacademy`;
-    
+        
     // For better compatibility, we'll use the bot API format
     const botUrl = `https://t.me/rafieiacademy&text=${encodeURIComponent(message)}`;
     
