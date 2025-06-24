@@ -10,8 +10,8 @@ import { useNavigate } from "react-router-dom";
 interface CourseCardProps {
   title: string;
   description: string;
-  benefits: string;
-  outcome: string;
+  benefits?: string;
+  outcome?: string;
   isPaid?: boolean;
   englishTitle?: string;
   slug?: string;
@@ -24,6 +24,9 @@ interface CourseCardProps {
   image?: string;
   cartUrl?: string;
   link?: string;
+  duration?: string;
+  students?: number;
+  href?: string;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -42,22 +45,25 @@ const CourseCard: React.FC<CourseCardProps> = ({
   category,
   image,
   cartUrl,
-  link
+  link,
+  duration,
+  students,
+  href
 }) => {
   const { translations } = useLanguage();
   const navigate = useNavigate();
 
   // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
-    if (title.includes("متاورس") || title.includes("Metaverse")) {
+    if (title?.includes("متاورس") || title?.includes("Metaverse")) {
       return <Code size={20} className="text-purple-500" />;
-    } else if (title.includes("اینستاگرام") || title.includes("Instagram")) {
+    } else if (title?.includes("اینستاگرام") || title?.includes("Instagram")) {
       return <Search size={20} className="text-pink-500" />;
-    } else if (title.includes("ثروت") || title.includes("Wealth")) {
+    } else if (title?.includes("ثروت") || title?.includes("Wealth")) {
       return <DollarSign size={20} className="text-green-500" />;
-    } else if (title.includes("بدون مرز") || title.includes("Boundless") || title.includes("شروع")) {
+    } else if (title?.includes("بدون مرز") || title?.includes("Boundless") || title?.includes("شروع")) {
       return <GraduationCap size={20} className="text-blue-500" />;
-    } else if (title.includes("غیرفعال") || title.includes("Passive")) {
+    } else if (title?.includes("غیرفعال") || title?.includes("Passive")) {
       return <Star size={20} className="text-orange-500" />;
     } else {
       return <BookOpen size={20} className="text-indigo-500" />;
@@ -66,15 +72,16 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
   // Generate course URL based on type and slug
   const getCourseUrl = () => {
+    if (href) return href;
     if (link) return link;
     if (isPaid) {
-      if (slug === "boundless" || title.includes("بدون مرز") || title.includes("Boundless") || title.includes("شروع")) {
+      if (slug === "boundless" || title?.includes("بدون مرز") || title?.includes("Boundless") || title?.includes("شروع")) {
         return "/courses/boundless";
-      } else if (slug === "instagram" || title.includes("اینستاگرام") || title.includes("Instagram")) {
+      } else if (slug === "instagram" || title?.includes("اینستاگرام") || title?.includes("Instagram")) {
         return "/courses/instagram";
-      } else if (slug === "metaverse" || title.includes("متاورس") || title.includes("Metaverse")) {
+      } else if (slug === "metaverse" || title?.includes("متاورس") || title?.includes("Metaverse")) {
         return "/courses/metaverse";
-      } else if (slug === "wealth" || slug === "servat" || title.includes("ثروت") || title.includes("Wealth")) {
+      } else if (slug === "wealth" || slug === "servat" || title?.includes("ثروت") || title?.includes("Wealth")) {
         return "/courses/servit";
       } else {
         return `/courses/${slug}`;
@@ -135,27 +142,37 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">{description}</p>
         </div>
         
-        {/* Fixed height benefits section - consistent layout */}
-        <div className="space-y-3 mb-6 flex-grow min-h-[80px]">
-          <div className="flex items-start gap-2 text-sm">
-            <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
-            <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{benefits}</span>
+        {/* Benefits and Outcome - only show if they exist */}
+        {(benefits || outcome) && (
+          <div className="space-y-3 mb-6 flex-grow min-h-[80px]">
+            {benefits && (
+              <div className="flex items-start gap-2 text-sm">
+                <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{benefits}</span>
+              </div>
+            )}
+            {outcome && (
+              <div className="flex items-start gap-2 text-sm">
+                <ArrowLeft size={14} className="text-blue-500 mt-0.5 flex-shrink-0 rtl:rotate-180" />
+                <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{outcome}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-start gap-2 text-sm">
-            <ArrowLeft size={14} className="text-blue-500 mt-0.5 flex-shrink-0 rtl:rotate-180" />
-            <span className="text-gray-700 dark:text-gray-200 line-clamp-2 leading-relaxed">{outcome}</span>
-          </div>
-        </div>
+        )}
 
         {/* Course Features - minimal design */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
             <Clock size={14} className="text-gray-500 mb-1" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">دسترسی آزاد</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {duration || "دسترسی آزاد"}
+            </span>
           </div>
           <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
             <Users size={14} className="text-gray-500 mb-1" />
-            <span className="text-xs text-gray-500 dark:text-gray-400">انجمن</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {students ? `${students} نفر` : "انجمن"}
+            </span>
           </div>
           <div className="flex flex-col items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
             <CheckCircle size={14} className="text-gray-500 mb-1" />
