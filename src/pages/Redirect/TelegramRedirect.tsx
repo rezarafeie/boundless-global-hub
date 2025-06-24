@@ -14,7 +14,7 @@ const TelegramRedirect = () => {
   const email = searchParams.get('email') || '';
   const course = searchParams.get('course') || '';
 
-  // Generate Telegram message
+  // Generate Telegram message without double encoding
   const generateTelegramMessage = () => {
     const baseMessage = `درود وقت بخیر
 برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
@@ -24,13 +24,33 @@ mba
 شماره همراه : ${phone}
 ایمیل : ${email}`;
     
-    return encodeURIComponent(baseMessage);
+    return baseMessage;
   };
 
-  const telegramUrl = `https://t.me/rafieiacademy?text=${generateTelegramMessage()}`;
-
   const handleTelegramClick = () => {
-    window.open(telegramUrl, '_blank');
+    const message = generateTelegramMessage();
+    // Use Telegram's share URL format for better text handling
+    const telegramUrl = `https://t.me/rafieiacademy`;
+    
+    // Try to open with pre-filled text using Telegram Web format
+    const telegramWebUrl = `https://web.telegram.org/a/#@rafieiacademy`;
+    
+    // For better compatibility, we'll use the bot API format
+    const botUrl = `tg://msg_url?url=https://t.me/rafieiacademy&text=${encodeURIComponent(message)}`;
+    
+    // Try the bot URL first, fallback to regular telegram link
+    try {
+      window.open(botUrl, '_blank');
+    } catch (error) {
+      // Fallback: open Telegram and copy text to clipboard
+      navigator.clipboard?.writeText(message).then(() => {
+        window.open(telegramUrl, '_blank');
+        alert('پیام در کلیپبورد کپی شد. لطفاً در تلگرام paste کنید.');
+      }).catch(() => {
+        // Final fallback
+        window.open(telegramUrl, '_blank');
+      });
+    }
   };
 
   return (
