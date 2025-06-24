@@ -265,7 +265,7 @@ class MessengerService {
   }
 
   async validateSession(token: string): Promise<{ user: MessengerUser; valid: boolean } | null> {
-    const { data: session } = await supabase
+    const { data: session, error } = await supabase
       .from('user_sessions')
       .select(`
         user_id,
@@ -683,18 +683,17 @@ class MessengerService {
       .select('*')
       .eq('is_approved', true);
 
-    // Check if it's a phone number (all digits)
-    if (/^\d+$/.test(cleanTerm)) {
+    // Check if it's a phone number (exact match)
+    if (/^09\d{9}$/.test(cleanTerm)) {
       query = query.eq('phone', cleanTerm);
     } 
-    // Check if it's a username (starts with @)
+    // Check if it's a username (exact match)
     else if (cleanTerm.startsWith('@')) {
       const username = cleanTerm.substring(1);
       query = query.eq('username', username);
     }
-    // For other searches, search in name and username
     else {
-      query = query.or(`name.ilike.%${cleanTerm}%,username.ilike.%${cleanTerm}%`);
+      query = query.eq('username', cleanTerm.toLowerCase());
     }
 
     const { data, error } = await query.limit(10);
@@ -805,9 +804,17 @@ class MessengerService {
 
   async updateUser(userId: number, userData: any): Promise<MessengerUser> {
     try {
+      // Prepare update data with password hashing if needed
+      const updateData: any = { ...userData };
+      
+      if (userData.password && userData.password.trim()) {
+        updateData.password_hash = await bcrypt.hash(userData.password, 10);
+        delete updateData.password; // Remove plain password
+      }
+
       const { data, error } = await supabase
         .from('chat_users')
-        .update(userData)
+        .update(updateData)
         .eq('id', userId)
         .select()
         .single();
@@ -830,4 +837,3 @@ class MessengerService {
 }
 
 export const messengerService = new MessengerService();
-export type { MessengerUser, ChatRoom, Message };
