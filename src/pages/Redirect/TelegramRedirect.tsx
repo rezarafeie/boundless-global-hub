@@ -16,25 +16,20 @@ const TelegramRedirect = () => {
 
   // Generate Telegram message
   const generateTelegramMessage = () => {
-    const baseMessage = `mba
-
-name: ${name}
-lastname: ${lastname}
-phone: ${phone}
-email: ${email}`;
+    const baseMessage = `درود وقت بخیر
+برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
+mba
+نام : ${name}
+نام خانوادگی : ${lastname}
+شماره همراه : ${phone}
+ایمیل : ${email}`;
     
-    return baseMessage;
+    return encodeURIComponent(baseMessage);
   };
 
+  const telegramUrl = `https://t.me/rafieiacademy?text=${generateTelegramMessage()}`;
+
   const handleTelegramClick = () => {
-    const message = generateTelegramMessage();
-    
-    // Use encodeURIComponent() to properly encode the full message
-    const encodedMessage = encodeURIComponent(message);
-    
-    // Construct the full Telegram URL with the encoded message
-    const telegramUrl = `https://t.me/rafieiacademy?text=${encodedMessage}`;
-    
     window.open(telegramUrl, '_blank');
   };
 
@@ -90,7 +85,7 @@ email: ${email}`;
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. پیام شما به صورت خودکار پر خواهد شد. موفق باشید
+                با کلیک روی دکمه شروع، به پشتیبانی تلگرام آکادمی هدایت می‌شوید. فعالسازی پشتیبانی و دسترسی به آموزش‌ها و هدایا به صورت خودکار انجام خواهد شد. موفق باشید
               </p>
             </div>
           </div>
