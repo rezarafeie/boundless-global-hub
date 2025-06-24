@@ -1,3 +1,4 @@
+
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,10 +56,10 @@ const SolidarityLanding = () => {
   ];
 
   return (
-    <div className="force-dark">
+    <div className="dark" style={{ colorScheme: 'dark' }}>
       <MainLayout>
-        {/* Emergency War Header */}
-        <section className="relative min-h-screen bg-gradient-to-br from-black via-red-950/20 to-gray-900 overflow-hidden force-dark">
+        {/* Emergency War Header - Force Dark */}
+        <section className="relative min-h-screen bg-black text-white overflow-hidden">
           {/* Dark animated background */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-red-600/10 to-orange-600/10 rounded-full blur-3xl animate-pulse"></div>
@@ -98,11 +99,11 @@ const SolidarityLanding = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white force-dark-button">
+                <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white border-0">
                   <BookOpen className="w-5 h-5 mr-2" />
                   دریافت رایگان دوره‌ها
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-red-500/30 text-red-300 hover:bg-red-600/10 force-dark-button">
+                <Button asChild size="lg" variant="outline" className="border-red-500/30 text-red-300 hover:bg-red-600/10 bg-transparent">
                   <Link to="/hub">
                     <Globe className="w-5 h-5 mr-2" />
                     اتصال به اینترنت بدون مرز
@@ -114,9 +115,9 @@ const SolidarityLanding = () => {
         </section>
 
         {/* Hub Banner */}
-        <section className="py-8 bg-gradient-to-r from-red-900/20 to-orange-900/20 border-y border-red-500/20 force-dark">
+        <section className="py-8 bg-gradient-to-r from-red-900/20 to-orange-900/20 border-y border-red-500/20 bg-black text-white">
           <div className="container">
-            <div className="bg-red-950/30 backdrop-blur-sm border border-red-500/20 rounded-lg p-6 force-dark-card">
+            <div className="bg-red-950/30 backdrop-blur-sm border border-red-500/20 rounded-lg p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Radio className="w-6 h-6 text-red-400 animate-pulse" />
                 <h3 className="text-xl font-bold text-red-300">📢 مرکز ارتباط بدون مرز فعال شد</h3>
@@ -124,7 +125,7 @@ const SolidarityLanding = () => {
               <p className="text-gray-300 mb-4">
                 برای دسترسی به اطلاعیه‌های فوری، پخش زنده، جلسات تصویری و گفتگوی گروهی با اعضای جامعه بدون مرز وارد شوید
               </p>
-              <Button asChild className="bg-red-600 hover:bg-red-700 force-dark-button">
+              <Button asChild className="bg-red-600 hover:bg-red-700 text-white border-0">
                 <Link to="/hub">
                   ورود به مرکز ارتباط بدون مرز
                 </Link>
@@ -134,7 +135,7 @@ const SolidarityLanding = () => {
         </section>
 
         {/* Free Courses Section */}
-        <section className="py-16 bg-gray-900 force-dark">
+        <section className="py-16 bg-gray-900 text-white">
           <div className="container">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-white mb-4">
@@ -147,16 +148,16 @@ const SolidarityLanding = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {freeCourses.map((course, index) => (
-                <Card key={index} className="bg-gray-800/50 border-gray-700 hover:border-red-500/30 transition-all force-dark-card">
+                <Card key={index} className="bg-gray-800/50 border-gray-700 hover:border-red-500/30 transition-all text-white">
                   <CardHeader>
                     <div className="flex items-center justify-between mb-2">
                       <CardTitle className="text-white">{course.title}</CardTitle>
-                      <Badge className="bg-red-600 text-white">رایگان</Badge>
+                      <Badge className="bg-red-600 text-white border-0">رایگان</Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-300 mb-4">{course.description}</p>
-                    <Button asChild className="w-full bg-red-600 hover:bg-red-700 force-dark-button">
+                    <Button asChild className="w-full bg-red-600 hover:bg-red-700 text-white border-0">
                       <Link to={course.link}>
                         شروع یادگیری
                       </Link>
@@ -169,7 +170,7 @@ const SolidarityLanding = () => {
         </section>
 
         {/* Communication Hub Section */}
-        <section className="py-16 bg-black force-dark">
+        <section className="py-16 bg-black text-white">
           <div className="container">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-white mb-4">
@@ -181,7 +182,7 @@ const SolidarityLanding = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gray-800/30 border-gray-700 text-center force-dark-card">
+              <Card className="bg-gray-800/30 border-gray-700 text-center text-white">
                 <CardHeader>
                   <div className="mx-auto w-12 h-12 bg-red-900/30 rounded-lg flex items-center justify-center mb-4">
                     <Radio className="w-6 h-6 text-red-400" />
@@ -190,13 +191,13 @@ const SolidarityLanding = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-400 mb-4">در حال حاضر غیرفعال است</p>
-                  <Button disabled className="w-full bg-gray-700 force-dark-button">
+                  <Button disabled className="w-full bg-gray-700 text-gray-400 border-0">
                     فعلاً غیرفعال است
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800/30 border-gray-700 text-center force-dark-card">
+              <Card className="bg-gray-800/30 border-gray-700 text-center text-white">
                 <CardHeader>
                   <div className="mx-auto w-12 h-12 bg-blue-900/30 rounded-lg flex items-center justify-center mb-4">
                     <Video className="w-6 h-6 text-blue-400" />
@@ -205,13 +206,13 @@ const SolidarityLanding = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-400 mb-4">اطلاعیه‌های مهم</p>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 force-dark-button">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0">
                     آخرین اخبار و اطلاعیه‌های مهم از تیم بدون مرز
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800/30 border-gray-700 text-center force-dark-card">
+              <Card className="bg-gray-800/30 border-gray-700 text-center text-white">
                 <CardHeader>
                   <div className="mx-auto w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center mb-4">
                     <MessageSquare className="w-6 h-6 text-green-400" />
@@ -220,7 +221,7 @@ const SolidarityLanding = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-400 mb-4">به گفتگوی زنده اعضای جامعه بدون مرز بپیوندید</p>
-                  <Button asChild className="w-full bg-green-600 hover:bg-green-700 force-dark-button">
+                  <Button asChild className="w-full bg-green-600 hover:bg-green-700 text-white border-0">
                     <Link to="/hub/chat">
                       ورود به چت
                     </Link>
@@ -228,7 +229,7 @@ const SolidarityLanding = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800/30 border-gray-700 text-center force-dark-card">
+              <Card className="bg-gray-800/30 border-gray-700 text-center text-white">
                 <CardHeader>
                   <div className="mx-auto w-12 h-12 bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
                     <Zap className="w-6 h-6 text-purple-400" />
@@ -237,7 +238,7 @@ const SolidarityLanding = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-400 mb-4">دسترسی کامل به تمام امکانات مرکز ارتباط</p>
-                  <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 force-dark-button">
+                  <Button asChild className="w-full bg-purple-600 hover:bg-purple-700 text-white border-0">
                     <Link to="/hub">
                       ورود به مرکز ارتباط
                     </Link>
@@ -249,7 +250,7 @@ const SolidarityLanding = () => {
         </section>
 
         {/* Borderless Network Section */}
-        <section className="py-16 bg-gradient-to-br from-gray-900 to-black force-dark">
+        <section className="py-16 bg-gradient-to-br from-gray-900 to-black text-white">
           <div className="container">
             <div className="max-w-4xl mx-auto text-center">
               <div className="mb-8">
@@ -264,7 +265,7 @@ const SolidarityLanding = () => {
                 </p>
               </div>
 
-              <Card className="bg-gray-800/50 border-gray-700 mb-8 force-dark-card">
+              <Card className="bg-gray-800/50 border-gray-700 mb-8 text-white">
                 <CardContent className="p-8">
                   <p className="text-gray-300 text-lg mb-6">
                     با استفاده از شبکه بدون مرز می‌توانید در هر شرایطی، حتی قطع اینترنت، به دنیای آزاد متصل بمانید
@@ -289,7 +290,7 @@ const SolidarityLanding = () => {
                     <p className="text-yellow-300 font-mono">آدرس سایت: bnets.co</p>
                   </div>
 
-                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 force-dark-button">
+                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0">
                     دریافت اتصال امن
                   </Button>
                 </CardContent>
@@ -299,7 +300,7 @@ const SolidarityLanding = () => {
         </section>
 
         {/* Freedom of Information Section */}
-        <section className="py-16 bg-red-950/20 force-dark">
+        <section className="py-16 bg-red-950/20 text-white">
           <div className="container">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-white mb-4">
@@ -313,13 +314,13 @@ const SolidarityLanding = () => {
         </section>
 
         {/* Solidarity Message */}
-        <section className="py-16 bg-black force-dark">
+        <section className="py-16 bg-black text-white">
           <div className="container">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl font-bold text-white mb-6">
                 پیام همبستگی
               </h2>
-              <div className="bg-gray-900/50 rounded-lg p-8 border border-red-500/20 force-dark-card">
+              <div className="bg-gray-900/50 rounded-lg p-8 border border-red-500/20">
                 <div className="flex items-center justify-center mb-6">
                   <Heart className="w-8 h-8 text-red-400 animate-pulse" />
                 </div>

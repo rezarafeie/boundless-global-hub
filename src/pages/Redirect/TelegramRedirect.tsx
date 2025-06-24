@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
 
 const TelegramRedirect = () => {
   const [searchParams] = useSearchParams();
@@ -103,14 +104,19 @@ mba
             </Button>
           </div>
 
-          {/* Fallback CTA */}
+          {/* Enhanced Fallback Button */}
           <div className="text-center mb-8">
             <Button
               onClick={handleMessengerFallback}
-              variant="outline"
-              className="w-full max-w-2xl h-16 border-2 border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-4 px-8 rounded-2xl text-lg font-semibold transition-all duration-300"
+              className="w-full max-w-2xl h-20 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-6 px-8 rounded-2xl text-xl font-bold transition-all duration-300 shadow-xl border-0"
             >
-              اگر به تلگرام دسترسی ندارید، از طریق پیام‌رسان بدون مرز پیام دهید
+              <div className="flex items-center justify-center gap-4">
+                <MessageCircle className="w-8 h-8" />
+                <div className="text-right">
+                  <div className="font-bold text-xl mb-1">پیام‌رسان بدون مرز</div>
+                  <div className="text-sm opacity-90">اگر تلگرام ندارید</div>
+                </div>
+              </div>
             </Button>
           </div>
             
