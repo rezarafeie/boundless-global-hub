@@ -3,6 +3,7 @@ import React, { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import Header from "@/components/Layout/Header";
 import Footer from "@/components/Layout/Footer";
+import LiveWarModeBanner from "@/components/LiveWarModeBanner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MainLayoutProps {
@@ -31,7 +32,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
-      <main className="flex-1 pt-24">{children}</main>
+      <LiveWarModeBanner />
+      <main className="flex-1 pt-28">{children}</main>
       {!shouldHideFooter && <Footer />}
     </div>
   );
