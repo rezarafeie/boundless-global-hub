@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,15 +16,12 @@ const TelegramRedirect = () => {
 
   // Generate Telegram message
   const generateTelegramMessage = () => {
-    const baseMessage = `درود وقت بخیر
-برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
+    const baseMessage = `mba
 
-mba
-
-نام : ${name}
-نام خانوادگی : ${lastname}
-شماره همراه : ${phone}
-ایمیل : ${email}`;
+name: ${name}
+lastname: ${lastname}
+phone: ${phone}
+email: ${email}`;
     
     return baseMessage;
   };
