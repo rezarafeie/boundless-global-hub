@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from './messengerService';
 
@@ -262,8 +261,6 @@ export const privateMessageService = {
     return this.getMessages(conversationId, sessionToken);
   },
 
-  async sendMessage(conversationId: number, senderId: number, message: string, sessionToken: string): Promise<PrivateMessage>;
-  async sendMessage(senderId: number, recipientId: number, message: string, sessionToken: string): Promise<PrivateMessage>;
   async sendMessage(param1: number, param2: number, param3: string, param4?: string): Promise<PrivateMessage> {
     try {
       let conversationId: number;
@@ -287,7 +284,7 @@ export const privateMessageService = {
         conversationId = param1;
         senderId = param2;
         message = param3;
-        sessionToken = param3; // This should be param4, but handling the current signature
+        sessionToken = param4 || param3; // Fixed: use param4 if available, fallback to param3
       }
 
       // Set session context
