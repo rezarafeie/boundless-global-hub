@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Play, Gift, Bot, MessageCircle, FileText, Check, Users } from "lucide-react";
+import { Play, Gift, Bot, MessageCircle, FileText, Check, Users, Save } from "lucide-react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 const TaghirAccess = () => {
   const { translations } = useLanguage();
+  const { toast } = useToast();
   const [activatedSteps, setActivatedSteps] = useState<string[]>([]);
 
   const handleStepActivation = (stepId: string) => {
@@ -18,6 +20,31 @@ const TaghirAccess = () => {
   };
 
   const isStepActivated = (stepId: string) => activatedSteps.includes(stepId);
+
+  const handleSavePageLink = () => {
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      toast({
+        title: "✅ لینک کپی شد",
+        description: "لینک صفحه در کلیپ‌بورد شما ذخیره شد",
+        duration: 3000,
+      });
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      toast({
+        title: "✅ لینک کپی شد",
+        description: "لینک صفحه کپی شد",
+        duration: 3000,
+      });
+    });
+  };
 
   const steps = [
     {
@@ -100,9 +127,19 @@ const TaghirAccess = () => {
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
               📘 پروژه تغییر
             </h1>
-            <p className="text-lg md:text-xl text-indigo-100">
+            <p className="text-lg md:text-xl text-indigo-100 mb-6">
               برنامه جامع تغییر زندگی و رشد شخصی
             </p>
+            
+            {/* Save Page Link Button */}
+            <Button
+              onClick={handleSavePageLink}
+              variant="outline"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+            >
+              <Save size={16} className="mr-2" />
+              ذخیره لینک صفحه
+            </Button>
           </motion.div>
         </div>
       </div>
