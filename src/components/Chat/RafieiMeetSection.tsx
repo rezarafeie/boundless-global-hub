@@ -16,12 +16,10 @@ const RafieiMeetSection: React.FC<RafieiMeetSectionProps> = ({ settings }) => {
       const iframe = document.querySelector('.rafiei-meet-main-iframe') as HTMLIFrameElement;
       
       if (!iframe) {
-        // Fallback: open in new window
         window.open(settings.meet_url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
         return;
       }
 
-      // Try different fullscreen methods for better browser compatibility
       if (iframe.requestFullscreen) {
         await iframe.requestFullscreen();
       } else if ((iframe as any).webkitRequestFullscreen) {
@@ -31,12 +29,10 @@ const RafieiMeetSection: React.FC<RafieiMeetSectionProps> = ({ settings }) => {
       } else if ((iframe as any).msRequestFullscreen) {
         await (iframe as any).msRequestFullscreen();
       } else {
-        // Fallback: open in new window
         window.open(settings.meet_url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
-      // Fallback: open in new window
       window.open(settings.meet_url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
     }
   };
@@ -70,7 +66,7 @@ const RafieiMeetSection: React.FC<RafieiMeetSectionProps> = ({ settings }) => {
         <div className="relative bg-black rounded-lg mx-4 mb-4 overflow-hidden">
           <iframe
             className="rafiei-meet-main-iframe"
-            src={settings.meet_url}
+            src="https://meet.jit.si/RAFIEIMEETROOM"
             allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write; geolocation"
             allowFullScreen
             style={{
@@ -80,10 +76,8 @@ const RafieiMeetSection: React.FC<RafieiMeetSectionProps> = ({ settings }) => {
               borderRadius: '8px'
             }}
             title="جلسه تصویری رفیعی"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation allow-top-navigation"
           />
           
-          {/* Overlay controls */}
           <div className="absolute top-3 right-3 flex gap-2 z-10">
             <Badge className="bg-black/70 text-white backdrop-blur-sm">
               <Users className="w-3 h-3 mr-1" />

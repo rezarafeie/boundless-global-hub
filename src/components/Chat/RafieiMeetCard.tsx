@@ -13,24 +13,21 @@ interface RafieiMeetCardProps {
 
 const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({ 
   isActive, 
-  meetUrl = "https://meet.jit.si/rafiei",
+  meetUrl = "https://meet.jit.si/RAFIEIMEETROOM",
   title = "جلسه تصویری رفیعی",
   description = "جلسه تصویری زنده برای اعضای بدون مرز"
 }) => {
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [fullscreenError, setFullscreenError] = useState('');
 
   const handleFullscreen = async () => {
     try {
-      setFullscreenError('');
       const iframe = document.querySelector('.rafiei-meet-iframe') as HTMLIFrameElement;
       
       if (!iframe) {
-        setFullscreenError('عنصر iframe یافت نشد');
+        window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
         return;
       }
 
-      // Try different fullscreen methods for better browser compatibility
       if (iframe.requestFullscreen) {
         await iframe.requestFullscreen();
       } else if ((iframe as any).webkitRequestFullscreen) {
@@ -40,13 +37,10 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
       } else if ((iframe as any).msRequestFullscreen) {
         await (iframe as any).msRequestFullscreen();
       } else {
-        // Fallback: open in new window
         window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-        return;
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
-      // Fallback: open in new window
       window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
     }
   };
@@ -108,9 +102,6 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
         {description && (
           <p className="text-amber-800 dark:text-amber-200 text-sm mt-2">{description}</p>
         )}
-        {fullscreenError && (
-          <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fullscreenError}</p>
-        )}
       </CardHeader>
       
       <CardContent className="p-0 relative">
@@ -126,7 +117,7 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
 
           <iframe
             className="rafiei-meet-iframe w-full h-full"
-            src={meetUrl}
+            src="https://meet.jit.si/RAFIEIMEETROOM"
             allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write; geolocation"
             allowFullScreen
             style={{ 
@@ -137,7 +128,6 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
             title="جلسه تصویری رفیعی"
             onLoad={handleIframeLoad}
             onError={handleIframeError}
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation allow-top-navigation"
           />
         </div>
         
