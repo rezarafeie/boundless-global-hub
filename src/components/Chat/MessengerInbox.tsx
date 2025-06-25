@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,12 +43,16 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     try {
       setLoading(true);
       const [roomsData, conversationsData] = await Promise.all([
-        messengerService.getRooms(),
+        messengerService.getRooms(sessionToken),
         privateMessageService.getUserConversations(currentUser.id, sessionToken)
       ]);
 
       // Filter out support rooms from the general chat list
-      const filteredRooms = roomsData.filter(room => !room.name.includes('پشتیبانی'));
+      const filteredRooms = roomsData.filter(room => 
+        !room.name.includes('پشتیبانی') && 
+        !room.name.includes('academy_support') && 
+        !room.name.includes('boundless_support')
+      );
       
       setRooms(filteredRooms);
       setConversations(conversationsData);
