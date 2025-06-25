@@ -36,8 +36,8 @@ mba
   };
 
   const handleCourseFallback = () => {
-    // Navigate directly to boundless taste course
-    navigate('/course/boundless-taste');
+    // Navigate directly to boundless taste access page
+    navigate('/course/access/boundless-taste');
   };
 
   return (

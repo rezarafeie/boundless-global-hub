@@ -10,11 +10,64 @@ import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 const HubIndex = () => {
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const { isOnline, isChecking } = useOfflineDetection();
 
   useEffect(() => {
-    checkAuth();
-  }, [isOnline]); // Re-check auth when online status changes
+    // Quick initial check
+    const quickCheck = async () => {
+      const token = localStorage.getItem('messenger_session_token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // If we can't connect quickly, assume offline
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 2000)
+      );
+
+      try {
+        await Promise.race([
+          messengerService.validateSession(token),
+          timeoutPromise
+        ]);
+        // If successful, continue with normal auth check
+        setInitialLoad(false);
+        checkAuth();
+      } catch (error) {
+        console.log('Quick check failed, assuming offline mode');
+        // Create offline user immediately
+        const mockUser: MessengerUser = {
+          id: 0,
+          name: 'کاربر آفلاین',
+          phone: '',
+          username: 'offline_user',
+          is_approved: false,
+          is_support_agent: false,
+          is_messenger_admin: false,
+          bedoun_marz: false,
+          bedoun_marz_approved: false,
+          bedoun_marz_request: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          last_seen: new Date().toISOString(),
+          role: 'user'
+        };
+        setCurrentUser(mockUser);
+        setLoading(false);
+        setInitialLoad(false);
+      }
+    };
+
+    quickCheck();
+  }, []);
+
+  useEffect(() => {
+    if (!initialLoad) {
+      checkAuth();
+    }
+  }, [isOnline, initialLoad]); // Re-check auth when online status changes
 
   const checkAuth = async () => {
     try {
@@ -97,7 +150,7 @@ const HubIndex = () => {
   };
 
   // Show loading while checking connection or auth
-  if (loading || isChecking) {
+  if (loading || (isChecking && initialLoad)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

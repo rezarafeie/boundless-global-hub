@@ -1,15 +1,18 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Play, Gift, Bot, MessageCircle, FileText, Check, Users } from "lucide-react";
+import { Play, Gift, Bot, MessageCircle, FileText, Check, Users, Link, Save } from "lucide-react";
 import { motion } from "framer-motion";
 import MobileStickyButton from "@/components/MobileStickyButton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 const BoundlessTasteAccess = () => {
   const { translations } = useLanguage();
+  const { toast } = useToast();
   const [activatedSteps, setActivatedSteps] = useState<string[]>([]);
   const isMobile = useIsMobile();
 
@@ -23,6 +26,31 @@ const BoundlessTasteAccess = () => {
 
   const handleMainAction = () => {
     window.open("https://academy.rafiei.co/maze/boundless/one/", "_blank");
+  };
+
+  const handleSavePageLink = () => {
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      toast({
+        title: "✅ لینک کپی شد",
+        description: "لینک صفحه در کلیپ‌بورد شما ذخیره شد",
+        duration: 3000,
+      });
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = currentUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      toast({
+        title: "✅ لینک کپی شد",
+        description: "لینک صفحه کپی شد",
+        duration: 3000,
+      });
+    });
   };
 
   const steps = [
@@ -106,9 +134,19 @@ const BoundlessTasteAccess = () => {
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
               🍽️ مزه بدون مرز
             </h1>
-            <p className="text-lg md:text-xl text-slate-200">
+            <p className="text-lg md:text-xl text-slate-200 mb-6">
               سفری جذاب در دنیای طعم‌ها و تجربه‌های غذایی
             </p>
+            
+            {/* Save Page Link Button */}
+            <Button
+              onClick={handleSavePageLink}
+              variant="outline"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+            >
+              <Save size={16} className="mr-2" />
+              ذخیره لینک صفحه
+            </Button>
           </motion.div>
         </div>
       </div>
