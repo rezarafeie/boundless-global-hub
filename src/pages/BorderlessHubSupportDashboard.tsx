@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card } from '@/components/ui/card';
@@ -6,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft } from 'lucide-react';
+import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft, Plus, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import SupportChatView from '@/components/Chat/SupportChatView';
+import SupportStartChatModal from '@/components/Chat/SupportStartChatModal';
+import ConversationTags from '@/components/Chat/ConversationTags';
 
 interface ConversationWithUser {
   id: number;
@@ -39,9 +40,11 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
+  const [showStartChatModal, setShowStartChatModal] = useState(false);
 
   const checkSupportAccess = async () => {
     try {
@@ -78,7 +81,6 @@ const BorderlessHubSupportDashboard: React.FC = () => {
         throw new Error('Session token not found');
       }
 
-      // Fetch real support conversations
       const conversationsData = await privateMessageService.getSupportConversations(sessionToken);
       
       console.log('Support conversations loaded:', conversationsData.length);
@@ -114,10 +116,59 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     initialize();
   }, []);
 
+  const handleStartNewChat = async (user: MessengerUser) => {
+    try {
+      if (!currentUser) return;
+      
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) return;
+
+      console.log('Creating new support conversation with user:', user.id);
+      
+      // Determine support user ID based on user's boundless status
+      const supportUserId = user.bedoun_marz || user.bedoun_marz_approved ? 999998 : 999997;
+      
+      // Create conversation between the selected user and appropriate support
+      const conversationId = await privateMessageService.getOrCreateConversation(
+        user.id,
+        supportUserId,
+        sessionToken
+      );
+
+      console.log('New conversation created:', conversationId);
+      
+      // Refresh conversations to show the new one
+      await fetchConversations();
+      
+      // Find and select the new conversation
+      setTimeout(() => {
+        const newConversation = conversations.find(conv => 
+          conv.user?.id === user.id
+        );
+        if (newConversation) {
+          handleConversationSelect(newConversation);
+        }
+      }, 1000);
+      
+      toast({
+        title: 'موفق',
+        description: `گفتگوی جدید با ${user.name} شروع شد`,
+      });
+      
+    } catch (error) {
+      console.error('Error starting new chat:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در شروع گفتگوی جدید',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleConversationSelect = (conversation: ConversationWithUser) => {
     console.log('Selecting conversation:', conversation.id);
     setSelectedConversation(conversation);
-    setShowConversationList(false); // Hide list on mobile
+    setShowConversationList(false);
   };
 
   const handleBackToList = () => {
@@ -125,13 +176,35 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     setSelectedConversation(null);
   };
 
-  const handleConversationUpdate = (updatedConversation: ConversationWithUser) => {
-    setConversations(prev => 
-      prev.map(conv => 
-        conv.id === updatedConversation.id ? { ...conv, ...updatedConversation } : conv
-      )
-    );
-    setSelectedConversation(updatedConversation);
+  const handleTagsChange = async (conversationId: number, newTags: string[]) => {
+    try {
+      // Update local state immediately
+      setConversations(prev => 
+        prev.map(conv => 
+          conv.id === conversationId 
+            ? { ...conv, tag_list: newTags }
+            : conv
+        )
+      );
+      
+      if (selectedConversation && selectedConversation.id === conversationId) {
+        setSelectedConversation(prev => 
+          prev ? { ...prev, tag_list: newTags } : null
+        );
+      }
+
+      // TODO: Here you would typically call an API to update tags in the database
+      // For now, we'll just update the local state
+      console.log('Tags updated for conversation', conversationId, ':', newTags);
+      
+    } catch (error) {
+      console.error('Error updating tags:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در بروزرسانی تگ‌ها',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -172,6 +245,11 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     );
   };
 
+  // Get unique tags from all conversations
+  const allTags = Array.from(
+    new Set(conversations.flatMap(conv => conv.tag_list || []))
+  );
+
   const filteredConversations = conversations.filter(conv => {
     const matchesSearch = searchTerm === '' || 
       conv.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -180,8 +258,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     
     const matchesStatus = statusFilter === 'all' || conv.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || conv.priority === priorityFilter;
+    const matchesTag = tagFilter === 'all' || (conv.tag_list && conv.tag_list.includes(tagFilter));
     
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch && matchesStatus && matchesPriority && matchesTag;
   });
 
   if (loading) {
@@ -241,14 +320,23 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                     پنل پشتیبانی
                   </h1>
                 </div>
-                <Button 
-                  onClick={fetchConversations} 
-                  disabled={refreshing}
-                  variant="ghost"
-                  size="sm"
-                >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => setShowStartChatModal(true)}
+                    size="sm"
+                    variant="default"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    onClick={fetchConversations} 
+                    disabled={refreshing}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </>
             )}
           </div>
@@ -270,15 +358,25 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 </div>
               </div>
               
-              <Button 
-                onClick={fetchConversations} 
-                disabled={refreshing}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'در حال بروزرسانی...' : 'بروزرسانی'}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setShowStartChatModal(true)}
+                  variant="default"
+                  size="sm"
+                >
+                  <UserPlus className="w-4 h-4 ml-1" />
+                  شروع گفتگوی جدید
+                </Button>
+                <Button 
+                  onClick={fetchConversations} 
+                  disabled={refreshing}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? 'در حال بروزرسانی...' : 'بروزرسانی'}
+                </Button>
+              </div>
             </div>
             
             {/* Stats */}
@@ -318,9 +416,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   />
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="وضعیت" />
                     </SelectTrigger>
                     <SelectContent>
@@ -333,7 +431,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   </Select>
 
                   <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="اولویت" />
                     </SelectTrigger>
                     <SelectContent>
@@ -342,6 +440,18 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                       <SelectItem value="normal">عادی</SelectItem>
                       <SelectItem value="high">بالا</SelectItem>
                       <SelectItem value="urgent">فوری</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="تگ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه تگ‌ها</SelectItem>
+                      {allTags.map(tag => (
+                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -396,6 +506,17 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                         </Badge>
                       </div>
                       
+                      {/* Tags */}
+                      {conversation.tag_list && conversation.tag_list.length > 0 && (
+                        <div className="mb-2">
+                          <ConversationTags 
+                            tags={conversation.tag_list}
+                            onTagsChange={(newTags) => handleTagsChange(conversation.id, newTags)}
+                            editable={false}
+                          />
+                        </div>
+                      )}
+                      
                       <div className="text-xs text-slate-500 dark:text-slate-400">
                         {conversation.user?.phone}
                       </div>
@@ -416,20 +537,59 @@ const BorderlessHubSupportDashboard: React.FC = () => {
             md:flex flex-col flex-1 bg-white dark:bg-slate-800
           `}>
             {selectedConversation ? (
-              <SupportChatView
-                supportRoom={{
-                  id: selectedConversation.thread_type_id?.toString() || '1',
-                  name: selectedConversation.thread_type?.display_name || 'پشتیبانی',
-                  description: 'گفتگوی پشتیبانی',
-                  type: selectedConversation.thread_type_id === 2 ? 'boundless_support' : 'academy_support',
-                  icon: <MessageCircle className="w-4 h-4" />,
-                  isPermanent: true
-                }}
-                currentUser={currentUser}
-                sessionToken={localStorage.getItem('messenger_session_token') || ''}
-                onBack={handleBackToList}
-                conversationId={selectedConversation.id}
-              />
+              <div className="flex flex-col h-full">
+                {/* Chat Header with Tags */}
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="md:hidden">
+                        <Button variant="ghost" size="sm" onClick={handleBackToList}>
+                          <ArrowLeft className="w-5 h-5" />
+                        </Button>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
+                          {selectedConversation.user?.name || 'کاربر نامشخص'}
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {selectedConversation.user?.phone}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(selectedConversation.status)}
+                      {getPriorityBadge(selectedConversation.priority)}
+                    </div>
+                  </div>
+                  
+                  {/* Editable Tags */}
+                  <div className="mt-3">
+                    <ConversationTags 
+                      tags={selectedConversation.tag_list || []}
+                      onTagsChange={(newTags) => handleTagsChange(selectedConversation.id, newTags)}
+                      editable={true}
+                    />
+                  </div>
+                </div>
+                
+                {/* Chat Content */}
+                <div className="flex-1">
+                  <SupportChatView
+                    supportRoom={{
+                      id: selectedConversation.thread_type_id?.toString() || '1',
+                      name: selectedConversation.thread_type?.display_name || 'پشتیبانی',
+                      description: 'گفتگوی پشتیبانی',
+                      type: selectedConversation.thread_type_id === 2 ? 'boundless_support' : 'academy_support',
+                      icon: <MessageCircle className="w-4 h-4" />,
+                      isPermanent: true
+                    }}
+                    currentUser={currentUser}
+                    sessionToken={localStorage.getItem('messenger_session_token') || ''}
+                    onBack={handleBackToList}
+                    conversationId={selectedConversation.id}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
@@ -446,6 +606,15 @@ const BorderlessHubSupportDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Start Chat Modal */}
+      <SupportStartChatModal
+        isOpen={showStartChatModal}
+        onClose={() => setShowStartChatModal(false)}
+        onUserSelect={handleStartNewChat}
+        sessionToken={localStorage.getItem('messenger_session_token') || ''}
+        currentUser={currentUser}
+      />
     </MainLayout>
   );
 };

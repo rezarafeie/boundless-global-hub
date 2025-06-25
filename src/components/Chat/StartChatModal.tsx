@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, User, Headphones, MessageSquare } from 'lucide-react';
+import { Search, MessageCircle, User, Headphones, MessageSquare, Loader2 } from 'lucide-react';
 import { privateMessageService } from '@/lib/privateMessageService';
 import type { MessengerUser } from '@/lib/messengerService';
 
@@ -69,7 +69,7 @@ const StartChatModal: React.FC<StartChatModalProps> = ({
   }
 
   useEffect(() => {
-    if (searchTerm.trim()) {
+    if (searchTerm.trim() && searchTerm.trim().length >= 2) {
       searchUsers();
     } else {
       setSearchResults([]);
@@ -81,18 +81,33 @@ const StartChatModal: React.FC<StartChatModalProps> = ({
     
     setLoading(true);
     try {
+      console.log('Searching for users with term:', searchTerm);
       const results = await privateMessageService.searchUsers(searchTerm, sessionToken);
-      // Filter out current user
-      const filteredResults = results.filter(user => user.id !== currentUser.id);
+      console.log('Raw search results:', results);
+      
+      // Filter out current user and ensure only approved users
+      const filteredResults = results.filter(user => {
+        const isNotCurrentUser = user.id !== currentUser.id;
+        const isApproved = user.is_approved === true;
+        const hasValidData = user.name && user.phone;
+        
+        console.log(`User ${user.name}: notCurrent=${isNotCurrentUser}, approved=${isApproved}, validData=${hasValidData}`);
+        
+        return isNotCurrentUser && isApproved && hasValidData;
+      });
+      
+      console.log('Filtered search results:', filteredResults);
       setSearchResults(filteredResults);
     } catch (error) {
       console.error('Error searching users:', error);
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleUserSelect = (user: MessengerUser) => {
+    console.log('User selected from StartChatModal:', user);
     onUserSelect(user);
     onClose();
     setSearchTerm('');
@@ -129,21 +144,15 @@ const StartChatModal: React.FC<StartChatModalProps> = ({
 
   // Filter support rooms based on search
   const filteredSupportRooms = supportRooms.filter(room =>
+    !searchTerm || 
     room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     room.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     room.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     room.phone.includes(searchTerm)
   );
 
-  // Filter search results to include username search
-  const filteredSearchResults = searchResults.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    user.phone.includes(searchTerm)
-  );
-
   const showSupportRooms = !searchTerm || filteredSupportRooms.length > 0;
-  const showSearchResults = searchTerm && (filteredSearchResults.length > 0 || loading);
+  const showSearchResults = searchTerm.trim().length >= 2;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -207,14 +216,15 @@ const StartChatModal: React.FC<StartChatModalProps> = ({
                 </h3>
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
-                    <div className="text-sm text-muted-foreground">در حال جستجو...</div>
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                    <span className="text-sm text-muted-foreground mr-2">در حال جستجو...</span>
                   </div>
-                ) : filteredSearchResults.length === 0 ? (
+                ) : searchResults.length === 0 ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-sm text-muted-foreground">کاربری یافت نشد</div>
                   </div>
                 ) : (
-                  filteredSearchResults.map((user) => (
+                  searchResults.map((user) => (
                     <div
                       key={user.id}
                       onClick={() => handleUserSelect(user)}
@@ -249,6 +259,9 @@ const StartChatModal: React.FC<StartChatModalProps> = ({
                   <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground mb-2">
                     برای شروع گفتگو، پشتیبانی را انتخاب کنید یا نام کاربر مورد نظر را جستجو کنید
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    حداقل ۲ حرف برای جستجو کاربران وارد کنید
                   </p>
                 </div>
               </div>
