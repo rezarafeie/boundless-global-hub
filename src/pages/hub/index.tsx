@@ -27,7 +27,7 @@ const HubIndex = () => {
 
       // Set a timeout for connection check
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 3000)
+        setTimeout(() => reject(new Error('Connection timeout')), 2000)
       );
 
       try {
@@ -35,9 +35,9 @@ const HubIndex = () => {
         const sessionData = await Promise.race([
           messengerService.validateSession(token),
           timeoutPromise
-        ]);
+        ]) as { valid: boolean; user: MessengerUser } | null;
 
-        if (!sessionData || !sessionData.valid) {
+        if (!sessionData?.valid) {
           localStorage.removeItem('messenger_session_token');
           window.location.href = '/login';
           return;
