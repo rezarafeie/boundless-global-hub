@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from '@/lib/messengerService';
 
@@ -107,6 +106,13 @@ class PrivateMessageService {
 
   async getOrCreateConversation(userId: number, otherUserId: number, sessionToken: string): Promise<number> {
     try {
+      console.log('Getting/creating conversation between:', userId, 'and', otherUserId);
+      
+      // Prevent creating conversation with self
+      if (userId === otherUserId) {
+        throw new Error('Cannot create conversation with yourself');
+      }
+      
       const { data, error } = await supabase.rpc('get_or_create_private_conversation', {
         p_user1_id: userId,
         p_user2_id: otherUserId
@@ -117,6 +123,7 @@ class PrivateMessageService {
         throw error;
       }
 
+      console.log('Conversation ID:', data);
       return data;
     } catch (error) {
       console.error('Error in getOrCreateConversation:', error);
@@ -184,6 +191,8 @@ class PrivateMessageService {
 
   async getConversationMessages(conversationId: number, sessionToken: string): Promise<PrivateMessage[]> {
     try {
+      console.log('Fetching messages for conversation:', conversationId);
+      
       const { data: messages, error } = await supabase
         .from('private_messages')
         .select(`
@@ -198,6 +207,7 @@ class PrivateMessageService {
         throw error;
       }
 
+      console.log('Fetched messages:', messages?.length || 0);
       return messages || [];
     } catch (error) {
       console.error('Error in getConversationMessages:', error);
@@ -207,6 +217,8 @@ class PrivateMessageService {
 
   async sendMessage(conversationId: number, senderId: number, message: string, sessionToken: string): Promise<PrivateMessage> {
     try {
+      console.log('Sending message:', { conversationId, senderId, messageLength: message.length });
+      
       const { data, error } = await supabase
         .from('private_messages')
         .insert([{
@@ -226,6 +238,7 @@ class PrivateMessageService {
         throw error;
       }
 
+      console.log('Message sent successfully:', data.id);
       return data;
     } catch (error) {
       console.error('Error in sendMessage:', error);

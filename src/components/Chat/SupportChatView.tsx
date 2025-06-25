@@ -23,19 +23,22 @@ interface SupportChatViewProps {
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
+  conversationId?: number; // Add conversation ID as optional prop
 }
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
   supportRoom,
   currentUser,
   sessionToken,
-  onBack
+  onBack,
+  conversationId: propConversationId
 }) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(propConversationId || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get support user ID based on room type
@@ -45,7 +48,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
   useEffect(() => {
     loadMessages();
-  }, [supportRoom.id]);
+  }, [supportRoom.id, propConversationId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -54,17 +57,29 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const loadMessages = async () => {
     try {
       setLoading(true);
+      console.log('Loading support messages for room:', supportRoom.type, 'current user:', currentUser.id);
+      
       const supportUserId = getSupportUserId();
       
       // Get or create conversation with support user
-      const conversationId = await privateMessageService.getOrCreateConversation(
-        currentUser.id,
-        supportUserId,
-        sessionToken
-      );
+      let activeConversationId = propConversationId;
+      
+      if (!activeConversationId) {
+        console.log('Creating/getting conversation between:', currentUser.id, 'and', supportUserId);
+        activeConversationId = await privateMessageService.getOrCreateConversation(
+          currentUser.id,
+          supportUserId,
+          sessionToken
+        );
+        console.log('Got conversation ID:', activeConversationId);
+      }
+      
+      setConversationId(activeConversationId);
       
       // Load messages from the conversation
-      const conversationMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
+      console.log('Loading messages for conversation:', activeConversationId);
+      const conversationMessages = await privateMessageService.getConversationMessages(activeConversationId, sessionToken);
+      console.log('Loaded messages:', conversationMessages.length);
       setMessages(conversationMessages);
     } catch (error) {
       console.error('Error loading support messages:', error);
@@ -83,15 +98,22 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() || sending || !conversationId) {
+      console.log('Cannot send message:', { 
+        hasMessage: !!newMessage.trim(), 
+        sending, 
+        conversationId 
+      });
+      return;
+    }
 
     try {
       setSending(true);
-      const supportUserId = getSupportUserId();
+      console.log('Sending message to conversation:', conversationId);
       
       await privateMessageService.sendMessage(
+        conversationId,
         currentUser.id,
-        supportUserId,
         newMessage.trim(),
         sessionToken
       );
@@ -248,11 +270,11 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
             onKeyPress={handleKeyPress}
             placeholder="پیام خود را برای پشتیبانی بنویسید..."
             className="flex-1"
-            disabled={sending}
+            disabled={sending || !conversationId}
           />
           <Button 
             onClick={sendMessage} 
-            disabled={!newMessage.trim() || sending}
+            disabled={!newMessage.trim() || sending || !conversationId}
           >
             {sending ? (
               <Loader2 className="w-4 h-4 animate-spin" />

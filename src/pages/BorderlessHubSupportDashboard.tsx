@@ -428,6 +428,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 currentUser={currentUser}
                 sessionToken={localStorage.getItem('messenger_session_token') || ''}
                 onBack={handleBackToList}
+                conversationId={selectedConversation.id}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center">
