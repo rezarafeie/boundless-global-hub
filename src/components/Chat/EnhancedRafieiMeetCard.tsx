@@ -30,24 +30,24 @@ const EnhancedRafieiMeetCard: React.FC<EnhancedRafieiMeetCardProps> = ({
         return;
       }
 
-      // Check if fullscreen API is supported
-      if (!document.fullscreenEnabled) {
-        setFullscreenError('مرورگر شما از حالت تمام صفحه پشتیبانی نمی‌کند');
-        return;
-      }
-
-      // Request fullscreen
+      // Try different fullscreen methods for better browser compatibility
       if (iframe.requestFullscreen) {
         await iframe.requestFullscreen();
+      } else if ((iframe as any).webkitRequestFullscreen) {
+        await (iframe as any).webkitRequestFullscreen();
+      } else if ((iframe as any).mozRequestFullScreen) {
+        await (iframe as any).mozRequestFullScreen();
+      } else if ((iframe as any).msRequestFullscreen) {
+        await (iframe as any).msRequestFullscreen();
       } else {
-        setFullscreenError('خطا در فعال‌سازی حالت تمام صفحه');
+        // Fallback: open in new window
+        window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        return;
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
-      setFullscreenError('خطا در فعال‌سازی حالت تمام صفحه');
-      
-      // Clear error after 3 seconds
-      setTimeout(() => setFullscreenError(''), 3000);
+      // Fallback: open in new window
+      window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
     }
   };
 
@@ -121,9 +121,8 @@ const EnhancedRafieiMeetCard: React.FC<EnhancedRafieiMeetCardProps> = ({
       
       <CardContent className="p-0 relative">
         <div className="aspect-video bg-black relative">
-          {/* Loading indicator */}
           {!iframeLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
               <div className="text-center text-white">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
                 <p className="text-sm">در حال بارگذاری جلسه...</p>
@@ -134,21 +133,26 @@ const EnhancedRafieiMeetCard: React.FC<EnhancedRafieiMeetCardProps> = ({
           <iframe
             className="rafiei-meet-iframe w-full h-full"
             src={meetUrl}
-            allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write"
+            allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write; geolocation"
             allowFullScreen
-            style={{ border: 'none', borderRadius: '0' }}
+            style={{ 
+              border: 'none', 
+              borderRadius: '0',
+              minHeight: '400px'
+            }}
             title="جلسه تصویری رفیعی"
             onLoad={handleIframeLoad}
             onError={handleIframeError}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation allow-top-navigation"
           />
         </div>
         
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 z-20">
           <Button
             variant="secondary"
             size="sm"
             onClick={handleFullscreen}
-            className="bg-black/60 hover:bg-black/80 text-white border-none backdrop-blur-sm"
+            className="bg-black/60 hover:bg-black/80 text-white border-none backdrop-blur-sm shadow-lg"
             title="نمایش در تمام صفحه"
           >
             <Maximize2 className="w-4 h-4 mr-1" />

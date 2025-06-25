@@ -30,20 +30,24 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
         return;
       }
 
-      if (!document.fullscreenEnabled) {
-        setFullscreenError('مرورگر شما از حالت تمام صفحه پشتیبانی نمی‌کند');
-        return;
-      }
-
+      // Try different fullscreen methods for better browser compatibility
       if (iframe.requestFullscreen) {
         await iframe.requestFullscreen();
+      } else if ((iframe as any).webkitRequestFullscreen) {
+        await (iframe as any).webkitRequestFullscreen();
+      } else if ((iframe as any).mozRequestFullScreen) {
+        await (iframe as any).mozRequestFullScreen();
+      } else if ((iframe as any).msRequestFullscreen) {
+        await (iframe as any).msRequestFullscreen();
       } else {
-        setFullscreenError('خطا در فعال‌سازی حالت تمام صفحه');
+        // Fallback: open in new window
+        window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        return;
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
-      setFullscreenError('خطا در فعال‌سازی حالت تمام صفحه');
-      setTimeout(() => setFullscreenError(''), 3000);
+      // Fallback: open in new window
+      window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
     }
   };
 
@@ -84,35 +88,35 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
   }
 
   return (
-    <Card className="relative overflow-hidden bg-slate-900 border-slate-700 shadow-xl">
-      <CardHeader className="border-b border-slate-700 bg-slate-800/50">
-        <CardTitle className="flex items-center gap-3 text-white">
+    <Card className="relative overflow-hidden bg-white dark:bg-slate-900 border-2 border-amber-400 dark:border-amber-600 shadow-xl">
+      <CardHeader className="border-b border-amber-200 dark:border-amber-700 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-slate-800 dark:to-slate-700">
+        <CardTitle className="flex items-center gap-3 text-slate-900 dark:text-white">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Video className="w-6 h-6 text-amber-400" />
+              <Video className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             </div>
             <span>🎥 {title}</span>
           </div>
-          <div className="flex items-center gap-2 mr-auto text-sm text-slate-300">
-            <div className="flex items-center gap-1 text-green-400">
+          <div className="flex items-center gap-2 mr-auto text-sm text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-1 text-green-500">
               <Users className="w-4 h-4" />
               فعال
             </div>
           </div>
         </CardTitle>
         {description && (
-          <p className="text-slate-400 text-sm mt-2">{description}</p>
+          <p className="text-amber-800 dark:text-amber-200 text-sm mt-2">{description}</p>
         )}
         {fullscreenError && (
-          <p className="text-red-400 text-xs mt-1">{fullscreenError}</p>
+          <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fullscreenError}</p>
         )}
       </CardHeader>
       
       <CardContent className="p-0 relative">
         <div className="aspect-video bg-black relative">
           {!iframeLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
               <div className="text-center text-white">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
                 <p className="text-sm">در حال بارگذاری جلسه...</p>
@@ -123,25 +127,30 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
           <iframe
             className="rafiei-meet-iframe w-full h-full"
             src={meetUrl}
-            allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write"
+            allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write; geolocation"
             allowFullScreen
-            style={{ border: 'none', borderRadius: '0' }}
+            style={{ 
+              border: 'none', 
+              borderRadius: '0',
+              minHeight: '400px'
+            }}
             title="جلسه تصویری رفیعی"
             onLoad={handleIframeLoad}
             onError={handleIframeError}
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-presentation allow-top-navigation"
           />
         </div>
         
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 z-20">
           <Button
             variant="secondary"
             size="sm"
             onClick={handleFullscreen}
-            className="bg-black/70 hover:bg-black/90 text-white border-none backdrop-blur-sm"
+            className="bg-black/60 hover:bg-black/80 text-white border-none backdrop-blur-sm shadow-lg"
             title="نمایش در تمام صفحه"
           >
             <Maximize2 className="w-4 h-4 mr-1" />
-            نمایش تمام صفحه
+            تمام صفحه
           </Button>
         </div>
       </CardContent>
