@@ -367,7 +367,7 @@ class MessengerService {
       .from('messenger_messages')
       .select(`
         *,
-        sender:chat_users!sender_id(name, phone)
+        chat_users!messenger_messages_sender_id_fkey(name, phone)
       `)
       .eq('room_id', roomId)
       .order('created_at', { ascending: true });
@@ -376,7 +376,7 @@ class MessengerService {
     
     return (data || []).map(message => ({
       ...message,
-      sender: message.sender || { name: 'Unknown', phone: '' }
+      sender: message.chat_users || { name: 'Unknown', phone: '' }
     }));
   }
 
@@ -385,7 +385,7 @@ class MessengerService {
       .from('private_messages')
       .select(`
         *,
-        sender:chat_users!sender_id(name, phone)
+        chat_users!private_messages_sender_id_fkey(name, phone)
       `)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
@@ -394,7 +394,7 @@ class MessengerService {
     
     return (data || []).map(message => ({
       ...message,
-      sender: message.sender || { name: 'Unknown', phone: '' }
+      sender: message.chat_users || { name: 'Unknown', phone: '' }
     }));
   }
 
@@ -408,7 +408,7 @@ class MessengerService {
       })
       .select(`
         *,
-        sender:chat_users!sender_id(name, phone)
+        chat_users!messenger_messages_sender_id_fkey(name, phone)
       `)
       .single();
 
@@ -416,12 +416,11 @@ class MessengerService {
     
     return {
       ...data,
-      sender: data.sender || { name: 'Unknown', phone: '' }
+      sender: data.chat_users || { name: 'Unknown', phone: '' }
     };
   }
 
   async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<MessengerMessage> {
-    // Get or create conversation
     const conversationId = await this.getOrCreatePrivateConversation(senderId, recipientId);
     
     const { data, error } = await supabase
@@ -433,7 +432,7 @@ class MessengerService {
       })
       .select(`
         *,
-        sender:chat_users!sender_id(name, phone)
+        chat_users!private_messages_sender_id_fkey(name, phone)
       `)
       .single();
 
@@ -441,7 +440,7 @@ class MessengerService {
     
     return {
       ...data,
-      sender: data.sender || { name: 'Unknown', phone: '' }
+      sender: data.chat_users || { name: 'Unknown', phone: '' }
     };
   }
 
@@ -670,10 +669,8 @@ class MessengerService {
   }
 
   async searchUsers(searchTerm: string): Promise<MessengerUser[]> {
-    // Clean the search term
     const cleanTerm = searchTerm.trim();
     
-    // If empty, return empty array
     if (!cleanTerm) {
       return [];
     }
@@ -683,11 +680,9 @@ class MessengerService {
       .select('*')
       .eq('is_approved', true);
 
-    // Check if it's a phone number (exact match)
     if (/^09\d{9}$/.test(cleanTerm)) {
       query = query.eq('phone', cleanTerm);
     } 
-    // Check if it's a username (exact match)
     else if (cleanTerm.startsWith('@')) {
       const username = cleanTerm.substring(1);
       query = query.eq('username', username);
@@ -708,7 +703,6 @@ class MessengerService {
     const supportUsers: MessengerUser[] = [];
     
     try {
-      // Academy Support - visible to all users (ID: 999997)
       const { data: academySupport, error: academyError } = await supabase
         .from('chat_users')
         .select('*')
@@ -722,7 +716,6 @@ class MessengerService {
         supportUsers.push(academySupport);
       }
 
-      // Boundless Support - only visible to boundless users (ID: 999998)
       if (currentUser.bedoun_marz || currentUser.bedoun_marz_approved) {
         const { data: boundlessSupport, error: boundlessError } = await supabase
           .from('chat_users')
@@ -804,12 +797,11 @@ class MessengerService {
 
   async updateUser(userId: number, userData: any): Promise<MessengerUser> {
     try {
-      // Prepare update data with password hashing if needed
       const updateData: any = { ...userData };
       
       if (userData.password && userData.password.trim()) {
         updateData.password_hash = await bcrypt.hash(userData.password, 10);
-        delete updateData.password; // Remove plain password
+        delete updateData.password;
       }
 
       const { data, error } = await supabase

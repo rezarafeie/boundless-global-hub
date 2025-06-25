@@ -47,12 +47,16 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         privateMessageService.getUserConversations(currentUser.id, sessionToken)
       ]);
 
-      // Filter out support rooms from the general chat list
-      const filteredRooms = roomsData.filter(room => 
-        !room.name.includes('پشتیبانی') && 
-        !room.name.includes('academy_support') && 
-        !room.name.includes('boundless_support')
-      );
+      // Filter out phantom support rooms - only keep actual chat rooms
+      const filteredRooms = roomsData.filter(room => {
+        // Remove rooms that have support-related names but are not actual support conversations
+        const supportNames = ['پشتیبانی', 'academy_support', 'boundless_support'];
+        const hasSupport = supportNames.some(name => 
+          room.name.includes(name) && room.id !== 4 // Keep گفتگوی عمومی (assuming it's room 4)
+        );
+        
+        return !hasSupport;
+      });
       
       setRooms(filteredRooms);
       setConversations(conversationsData);

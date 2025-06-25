@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { MessengerUser } from '@/lib/messengerService';
 
@@ -31,13 +32,33 @@ export interface PrivateMessage {
 class PrivateMessageService {
   async searchUsers(searchTerm: string, sessionToken: string): Promise<MessengerUser[]> {
     try {
-      // Basic search for display purposes - not used for exact search
-      const { data, error } = await supabase
+      const cleanTerm = searchTerm.trim();
+      
+      if (!cleanTerm) {
+        return [];
+      }
+
+      let query = supabase
         .from('chat_users')
         .select('*')
-        .eq('is_approved', true)
-        .or(`username.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
-        .order('name');
+        .eq('is_approved', true);
+
+      // Enhanced search: check if it's a phone number, username, or name
+      if (/^09\d{9}$/.test(cleanTerm)) {
+        // Exact phone number match
+        query = query.eq('phone', cleanTerm);
+      } else if (cleanTerm.startsWith('@')) {
+        // Username search with @ prefix
+        const username = cleanTerm.substring(1);
+        query = query.eq('username', username.toLowerCase());
+      } else {
+        // Search by name, username, or phone (partial matches)
+        query = query.or(`username.ilike.%${cleanTerm.toLowerCase()}%,name.ilike.%${cleanTerm}%,phone.ilike.%${cleanTerm}%`);
+      }
+
+      const { data, error } = await query
+        .order('name')
+        .limit(20);
 
       if (error) {
         console.error('Error searching users:', error);
@@ -259,6 +280,88 @@ class PrivateMessageService {
     } catch (error) {
       console.error('Error in checkUsernameAvailability:', error);
       return false;
+    }
+  }
+
+  // New method to get support conversations for the support dashboard
+  async getSupportConversations(sessionToken: string): Promise<any[]> {
+    try {
+      console.log('Fetching support conversations...');
+      
+      // Get conversations where one user is a support agent (999997 or 999998)
+      const { data: conversations, error } = await supabase
+        .from('private_conversations')
+        .select(`
+          *,
+          user1:chat_users!user1_id(*),
+          user2:chat_users!user2_id(*)
+        `)
+        .or('user1_id.eq.999997,user2_id.eq.999997,user1_id.eq.999998,user2_id.eq.999998')
+        .order('last_message_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching support conversations:', error);
+        throw error;
+      }
+
+      // Transform the data to match the expected format
+      const supportConversations = await Promise.all(
+        (conversations || []).map(async (conv) => {
+          // Determine which user is the regular user (not support)
+          const regularUser = conv.user1_id === 999997 || conv.user1_id === 999998 
+            ? conv.user2 
+            : conv.user1;
+
+          // Get the last message
+          const { data: lastMessage } = await supabase
+            .from('private_messages')
+            .select('message, created_at')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          // Get unread count (messages from regular user to support)
+          const supportUserId = conv.user1_id === 999997 || conv.user1_id === 999998 
+            ? conv.user1_id 
+            : conv.user2_id;
+
+          const { count: unreadCount } = await supabase
+            .from('private_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('is_read', false)
+            .neq('sender_id', supportUserId);
+
+          // Determine thread type based on support user ID
+          const threadTypeId = supportUserId === 999997 ? 1 : 2;
+
+          return {
+            id: conv.id,
+            status: 'open', // Default status
+            priority: 'normal',
+            last_message_at: conv.last_message_at,
+            thread_type_id: threadTypeId,
+            tag_list: [],
+            unread_count: unreadCount || 0,
+            user: {
+              id: regularUser?.id,
+              name: regularUser?.name,
+              phone: regularUser?.phone,
+            },
+            thread_type: {
+              id: threadTypeId,
+              display_name: threadTypeId === 1 ? 'پشتیبانی عمومی' : 'پشتیبانی بدون مرز'
+            }
+          };
+        })
+      );
+
+      console.log('Support conversations loaded:', supportConversations.length);
+      return supportConversations;
+    } catch (error) {
+      console.error('Error in getSupportConversations:', error);
+      throw error;
     }
   }
 }

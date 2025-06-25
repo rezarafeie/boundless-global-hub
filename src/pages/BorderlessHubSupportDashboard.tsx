@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { privateMessageService } from '@/lib/privateMessageService';
 import SupportChatView from '@/components/Chat/SupportChatView';
 
 interface ConversationWithUser {
@@ -70,13 +71,17 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const fetchConversations = async () => {
     try {
       setRefreshing(true);
-      console.log('Fetching conversations...');
+      console.log('Fetching support conversations...');
       
-      // For now, return empty array since we removed the support service
-      // This can be replaced with actual conversation fetching logic later
-      const conversationsData: ConversationWithUser[] = [];
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        throw new Error('Session token not found');
+      }
+
+      // Fetch real support conversations
+      const conversationsData = await privateMessageService.getSupportConversations(sessionToken);
       
-      console.log('Conversations loaded:', conversationsData.length);
+      console.log('Support conversations loaded:', conversationsData.length);
       setConversations(conversationsData);
       
       if (conversationsData.length > 0) {
@@ -345,15 +350,63 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
             {/* Conversations */}
             <div className="flex-1 overflow-y-auto">
-              <div className="p-8 text-center">
-                <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500 mb-2">
-                  هیچ گفتگوی پشتیبانی یافت نشد
-                </p>
-                <p className="text-sm text-slate-400">
-                  این بخش در حال توسعه است
-                </p>
-              </div>
+              {filteredConversations.length === 0 ? (
+                <div className="p-8 text-center">
+                  <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 mb-2">
+                    {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'نتیجه‌ای یافت نشد'}
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    {conversations.length === 0 ? 'هنوز هیچ درخواست پشتیبانی ارسال نشده است' : 'فیلتر جستجو را تغییر دهید'}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-2">
+                  {filteredConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      onClick={() => handleConversationSelect(conversation)}
+                      className={`p-4 mb-2 rounded-lg cursor-pointer transition-colors ${
+                        selectedConversation?.id === conversation.id
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(conversation.status)}
+                          <span className="font-medium text-sm">
+                            {conversation.user?.name || 'کاربر نامشخص'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {conversation.unread_count > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {conversation.unread_count}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        {getStatusBadge(conversation.status)}
+                        {getPriorityBadge(conversation.priority)}
+                        <Badge variant="outline" className="text-xs">
+                          {conversation.thread_type?.display_name}
+                        </Badge>
+                      </div>
+                      
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {conversation.user?.phone}
+                      </div>
+                      
+                      <div className="text-xs text-slate-400 mt-1">
+                        {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -384,7 +437,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                     یک گفتگو را انتخاب کنید
                   </p>
                   <p className="text-xs text-slate-400 mt-2">
-                    این بخش در حال توسعه است
+                    برای مشاهده پیام‌ها، یک گفتگو انتخاب کنید
                   </p>
                 </div>
               </div>
