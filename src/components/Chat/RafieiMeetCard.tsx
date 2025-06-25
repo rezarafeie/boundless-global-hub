@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Video, Maximize2, Users, VideoOff } from 'lucide-react';
+import { Video, Maximize2, Users, VideoOff, Loader2 } from 'lucide-react';
 
 interface RafieiMeetCardProps {
   isActive: boolean;
@@ -17,11 +17,44 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
   title = "جلسه تصویری رفیعی",
   description = "جلسه تصویری زنده برای اعضای بدون مرز"
 }) => {
-  const handleFullscreen = () => {
-    const iframe = document.querySelector('.rafiei-meet-iframe') as HTMLIFrameElement;
-    if (iframe && iframe.requestFullscreen) {
-      iframe.requestFullscreen();
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState('');
+
+  const handleFullscreen = async () => {
+    try {
+      setFullscreenError('');
+      const iframe = document.querySelector('.rafiei-meet-iframe') as HTMLIFrameElement;
+      
+      if (!iframe) {
+        setFullscreenError('عنصر iframe یافت نشد');
+        return;
+      }
+
+      if (!document.fullscreenEnabled) {
+        setFullscreenError('مرورگر شما از حالت تمام صفحه پشتیبانی نمی‌کند');
+        return;
+      }
+
+      if (iframe.requestFullscreen) {
+        await iframe.requestFullscreen();
+      } else {
+        setFullscreenError('خطا در فعال‌سازی حالت تمام صفحه');
+      }
+    } catch (error) {
+      console.error('Fullscreen error:', error);
+      setFullscreenError('خطا در فعال‌سازی حالت تمام صفحه');
+      setTimeout(() => setFullscreenError(''), 3000);
     }
+  };
+
+  const handleIframeLoad = () => {
+    console.log('Rafiei Meet iframe loaded successfully');
+    setIframeLoaded(true);
+  };
+
+  const handleIframeError = () => {
+    console.error('Rafiei Meet iframe failed to load');
+    setIframeLoaded(false);
   };
 
   if (!isActive) {
@@ -71,16 +104,31 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
         {description && (
           <p className="text-slate-400 text-sm mt-2">{description}</p>
         )}
+        {fullscreenError && (
+          <p className="text-red-400 text-xs mt-1">{fullscreenError}</p>
+        )}
       </CardHeader>
       
       <CardContent className="p-0 relative">
-        <div className="aspect-video bg-black">
+        <div className="aspect-video bg-black relative">
+          {!iframeLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+              <div className="text-center text-white">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                <p className="text-sm">در حال بارگذاری جلسه...</p>
+              </div>
+            </div>
+          )}
+
           <iframe
             className="rafiei-meet-iframe w-full h-full"
             src={meetUrl}
-            allow="camera; microphone; fullscreen; display-capture; autoplay"
+            allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write"
+            allowFullScreen
             style={{ border: 'none', borderRadius: '0' }}
             title="جلسه تصویری رفیعی"
+            onLoad={handleIframeLoad}
+            onError={handleIframeError}
           />
         </div>
         
@@ -90,6 +138,7 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
             size="sm"
             onClick={handleFullscreen}
             className="bg-black/70 hover:bg-black/90 text-white border-none backdrop-blur-sm"
+            title="نمایش در تمام صفحه"
           >
             <Maximize2 className="w-4 h-4 mr-1" />
             نمایش تمام صفحه

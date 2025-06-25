@@ -404,7 +404,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
             md:flex flex-col w-full md:w-1/3 lg:w-1/4 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
           `}>
             {/* Search and Filters */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
               <div className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -458,76 +458,78 @@ const BorderlessHubSupportDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Conversations */}
-            <div className="flex-1 overflow-y-auto">
-              {filteredConversations.length === 0 ? (
-                <div className="p-8 text-center">
-                  <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-500 mb-2">
-                    {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'نتیجه‌ای یافت نشد'}
-                  </p>
-                  <p className="text-sm text-slate-400">
-                    {conversations.length === 0 ? 'هنوز هیچ درخواست پشتیبانی ارسال نشده است' : 'فیلتر جستجو را تغییر دهید'}
-                  </p>
-                </div>
-              ) : (
-                <div className="p-2">
-                  {filteredConversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      onClick={() => handleConversationSelect(conversation)}
-                      className={`p-4 mb-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedConversation?.id === conversation.id
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(conversation.status)}
-                          <span className="font-medium text-sm">
-                            {conversation.user?.name || 'کاربر نامشخص'}
-                          </span>
+            {/* Conversations with Fixed Height and Scrolling */}
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto">
+                {filteredConversations.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 mb-2">
+                      {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'نتیجه‌ای یافت نشد'}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      {conversations.length === 0 ? 'هنوز هیچ درخواست پشتیبانی ارسال نشده است' : 'فیلتر جستجو را تغییر دهید'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-2">
+                    {filteredConversations.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        onClick={() => handleConversationSelect(conversation)}
+                        className={`p-4 mb-2 rounded-lg cursor-pointer transition-colors ${
+                          selectedConversation?.id === conversation.id
+                            ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(conversation.status)}
+                            <span className="font-medium text-sm">
+                              {conversation.user?.name || 'کاربر نامشخص'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {conversation.unread_count > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                {conversation.unread_count}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {conversation.unread_count > 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              {conversation.unread_count}
-                            </Badge>
-                          )}
+                        
+                        <div className="flex items-center gap-2 mb-2">
+                          {getStatusBadge(conversation.status)}
+                          {getPriorityBadge(conversation.priority)}
+                          <Badge variant="outline" className="text-xs">
+                            {conversation.thread_type?.display_name}
+                          </Badge>
+                        </div>
+                        
+                        {/* Display Tags */}
+                        {conversation.tag_list && conversation.tag_list.length > 0 && (
+                          <div className="mb-2">
+                            <ConversationTags 
+                              tags={conversation.tag_list}
+                              onTagsChange={(newTags) => handleTagsChange(conversation.id, newTags)}
+                              editable={false}
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {conversation.user?.phone}
+                        </div>
+                        
+                        <div className="text-xs text-slate-400 mt-1">
+                          {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-2 mb-2">
-                        {getStatusBadge(conversation.status)}
-                        {getPriorityBadge(conversation.priority)}
-                        <Badge variant="outline" className="text-xs">
-                          {conversation.thread_type?.display_name}
-                        </Badge>
-                      </div>
-                      
-                      {/* Tags */}
-                      {conversation.tag_list && conversation.tag_list.length > 0 && (
-                        <div className="mb-2">
-                          <ConversationTags 
-                            tags={conversation.tag_list}
-                            onTagsChange={(newTags) => handleTagsChange(conversation.id, newTags)}
-                            editable={false}
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {conversation.user?.phone}
-                      </div>
-                      
-                      <div className="text-xs text-slate-400 mt-1">
-                        {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -539,7 +541,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
             {selectedConversation ? (
               <div className="flex flex-col h-full">
                 {/* Chat Header with Tags */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className="md:hidden">
@@ -573,7 +575,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 </div>
                 
                 {/* Chat Content */}
-                <div className="flex-1">
+                <div className="flex-1 overflow-hidden">
                   <SupportChatView
                     supportRoom={{
                       id: selectedConversation.thread_type_id?.toString() || '1',
