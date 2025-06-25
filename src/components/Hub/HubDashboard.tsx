@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, User } from 'lucide-react';
+import { useRafieiMeet } from '@/hooks/useRafieiMeet';
+import RafieiMeetSection from '@/components/Chat/RafieiMeetSection';
 
 interface HubDashboardProps {
   currentUser: any;
@@ -11,6 +13,7 @@ interface HubDashboardProps {
 
 const HubDashboard: React.FC<HubDashboardProps> = ({ currentUser }) => {
   const navigate = useNavigate();
+  const { settings: rafieiMeetSettings, loading: meetLoading } = useRafieiMeet();
 
   return (
     <div className="p-6">
@@ -22,6 +25,11 @@ const HubDashboard: React.FC<HubDashboardProps> = ({ currentUser }) => {
           به هاب بدون مرز خوش آمدید
         </p>
       </div>
+
+      {/* Rafiei Meet Section */}
+      {!meetLoading && rafieiMeetSettings && (
+        <RafieiMeetSection settings={rafieiMeetSettings} />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>

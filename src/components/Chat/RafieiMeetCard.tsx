@@ -28,16 +28,20 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
         return;
       }
 
-      if (iframe.requestFullscreen) {
-        await iframe.requestFullscreen();
-      } else if ((iframe as any).webkitRequestFullscreen) {
-        await (iframe as any).webkitRequestFullscreen();
-      } else if ((iframe as any).mozRequestFullScreen) {
-        await (iframe as any).mozRequestFullScreen();
-      } else if ((iframe as any).msRequestFullscreen) {
-        await (iframe as any).msRequestFullscreen();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
       } else {
-        window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        if (iframe.requestFullscreen) {
+          await iframe.requestFullscreen();
+        } else if ((iframe as any).webkitRequestFullscreen) {
+          await (iframe as any).webkitRequestFullscreen();
+        } else if ((iframe as any).mozRequestFullScreen) {
+          await (iframe as any).mozRequestFullScreen();
+        } else if ((iframe as any).msRequestFullscreen) {
+          await (iframe as any).msRequestFullscreen();
+        } else {
+          window.open(meetUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        }
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
@@ -117,7 +121,7 @@ const RafieiMeetCard: React.FC<RafieiMeetCardProps> = ({
 
           <iframe
             className="rafiei-meet-iframe w-full h-full"
-            src="https://meet.jit.si/RAFIEIMEETROOM"
+            src={meetUrl}
             allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write; geolocation"
             allowFullScreen
             style={{ 

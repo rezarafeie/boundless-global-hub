@@ -20,16 +20,20 @@ const RafieiMeetSection: React.FC<RafieiMeetSectionProps> = ({ settings }) => {
         return;
       }
 
-      if (iframe.requestFullscreen) {
-        await iframe.requestFullscreen();
-      } else if ((iframe as any).webkitRequestFullscreen) {
-        await (iframe as any).webkitRequestFullscreen();
-      } else if ((iframe as any).mozRequestFullScreen) {
-        await (iframe as any).mozRequestFullScreen();
-      } else if ((iframe as any).msRequestFullscreen) {
-        await (iframe as any).msRequestFullscreen();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
       } else {
-        window.open(settings.meet_url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        if (iframe.requestFullscreen) {
+          await iframe.requestFullscreen();
+        } else if ((iframe as any).webkitRequestFullscreen) {
+          await (iframe as any).webkitRequestFullscreen();
+        } else if ((iframe as any).mozRequestFullScreen) {
+          await (iframe as any).mozRequestFullScreen();
+        } else if ((iframe as any).msRequestFullscreen) {
+          await (iframe as any).msRequestFullscreen();
+        } else {
+          window.open(settings.meet_url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        }
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
@@ -66,7 +70,7 @@ const RafieiMeetSection: React.FC<RafieiMeetSectionProps> = ({ settings }) => {
         <div className="relative bg-black rounded-lg mx-4 mb-4 overflow-hidden">
           <iframe
             className="rafiei-meet-main-iframe"
-            src="https://meet.jit.si/RAFIEIMEETROOM"
+            src={settings.meet_url}
             allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-read; clipboard-write; geolocation"
             allowFullScreen
             style={{
