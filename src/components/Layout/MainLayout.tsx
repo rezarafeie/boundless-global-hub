@@ -25,13 +25,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
   
   // Routes where both header and footer should be hidden (access pages and redirect pages)
+  // Dashboard should NOT be included here - it needs the header
   const hideHeaderFooterRoutes = location.pathname.startsWith('/access') || location.pathname.startsWith('/redirect');
   
   // Routes that require online connection - only messenger requires connection now
   const requiresConnectionRoutes = ['/hub/messenger'];
   const requiresConnection = requiresConnectionRoutes.some(route => location.pathname.startsWith(route));
   
-  // Calculate dynamic top padding based on notifications - use correct header height
+  // Calculate dynamic top padding based on notifications - more precise calculation
   const dynamicTopPadding = hasBannerNotifications ? `${headerHeight + totalHeight}px` : `${headerHeight}px`;
   
   if (hideHeaderFooterRoutes) {

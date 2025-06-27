@@ -17,8 +17,9 @@ export const useNotificationHeight = () => {
   // Calculate total height of active banner notifications
   const bannerNotifications = notifications.filter(n => n.notification_type === 'banner');
   
-  // Each banner notification is approximately 48px tall (12px padding * 2 + text height)
-  const bannerHeight = bannerNotifications.length * 48;
+  // Each banner notification is approximately 40px tall (more precise measurement)
+  // This accounts for padding (py-2 = 8px top + 8px bottom) + text height (~24px)
+  const bannerHeight = bannerNotifications.length * 40;
   
   return {
     totalHeight: bannerHeight,
