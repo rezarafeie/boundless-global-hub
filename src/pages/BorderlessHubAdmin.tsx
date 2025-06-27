@@ -3,9 +3,10 @@ import React from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Wifi, Users, MessageSquare, Headphones, Tag } from 'lucide-react';
+import { Settings, Wifi, Users, MessageSquare, Bell } from 'lucide-react';
 import HubManagementSection from '@/components/Admin/HubManagementSection';
 import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
+import NotificationManagementSection from '@/components/Admin/NotificationManagementSection';
 
 const BorderlessHubAdmin = () => {
   return (
@@ -34,7 +35,7 @@ const BorderlessHubAdmin = () => {
         <div className="container mx-auto px-4 py-6">
           <Tabs defaultValue="hub-management" className="w-full">
             {/* Mobile-First Tab Navigation */}
-            <TabsList className="grid w-full grid-cols-2 mb-6 h-auto">
+            <TabsList className="grid w-full grid-cols-3 mb-6 h-auto">
               <TabsTrigger 
                 value="hub-management" 
                 className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
@@ -49,6 +50,13 @@ const BorderlessHubAdmin = () => {
                 <MessageSquare className="w-5 h-5" />
                 <span>مدیریت Messenger</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="notification-management" 
+                className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+              >
+                <Bell className="w-5 h-5" />
+                <span>مدیریت اعلان‌ها</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Tab Content */}
@@ -58,6 +66,10 @@ const BorderlessHubAdmin = () => {
 
             <TabsContent value="messenger-admin" className="space-y-6">
               <MessengerAdminSection />
+            </TabsContent>
+
+            <TabsContent value="notification-management" className="space-y-6">
+              <NotificationManagementSection />
             </TabsContent>
           </Tabs>
         </div>
