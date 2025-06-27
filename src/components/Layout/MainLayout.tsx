@@ -7,6 +7,7 @@ import LiveWarModeBanner from "@/components/LiveWarModeBanner";
 import PopupNotification from "@/components/PopupNotification";
 import NotificationFloating from "@/components/NotificationFloating";
 import OfflineDetector from "@/components/OfflineDetector";
+import NotificationErrorBoundary from "@/components/NotificationErrorBoundary";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotificationHeight } from "@/hooks/useNotificationHeight";
 
@@ -36,9 +37,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   if (hideHeaderFooterRoutes) {
     return (
       <div className={`min-h-screen flex flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
-        <LiveWarModeBanner />
-        <PopupNotification />
-        <NotificationFloating />
+        <NotificationErrorBoundary>
+          <LiveWarModeBanner />
+          <PopupNotification />
+          <NotificationFloating />
+        </NotificationErrorBoundary>
         <main 
           className="flex-1 transition-all duration-300"
           style={{ paddingTop: hasBannerNotifications ? `${48 + totalHeight}px` : '48px' }}
@@ -52,9 +55,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
-      <LiveWarModeBanner />
-      <PopupNotification />
-      <NotificationFloating />
+      <NotificationErrorBoundary>
+        <LiveWarModeBanner />
+        <PopupNotification />
+        <NotificationFloating />
+      </NotificationErrorBoundary>
       <OfflineDetector requiresConnection={requiresConnection}>
         <main 
           className="flex-1 transition-all duration-300" 

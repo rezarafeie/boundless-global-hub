@@ -6,8 +6,14 @@ import { Link } from 'react-router-dom';
 import { useActiveNotifications } from '@/hooks/useNotifications';
 
 const NotificationFloating = () => {
-  const { notifications } = useActiveNotifications();
+  const { notifications, error } = useActiveNotifications();
   const [dismissedNotifications, setDismissedNotifications] = useState<number[]>([]);
+  
+  // If there's an error, don't render anything
+  if (error) {
+    console.error('Failed to load floating notifications:', error);
+    return null;
+  }
   
   // Get active floating notifications that haven't been dismissed
   const floatingNotifications = notifications

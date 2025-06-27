@@ -6,7 +6,13 @@ import { Link } from 'react-router-dom';
 import { useActiveNotifications } from '@/hooks/useNotifications';
 
 const LiveWarModeBanner = () => {
-  const { notifications } = useActiveNotifications();
+  const { notifications, error } = useActiveNotifications();
+  
+  // If there's an error, don't render anything to prevent layout issues
+  if (error) {
+    console.error('Failed to load banner notifications:', error);
+    return null;
+  }
   
   // Get active banner notifications, prioritized by priority
   const bannerNotifications = notifications

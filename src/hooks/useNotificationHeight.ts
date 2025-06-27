@@ -2,7 +2,16 @@
 import { useActiveNotifications } from '@/hooks/useNotifications';
 
 export const useNotificationHeight = () => {
-  const { notifications } = useActiveNotifications();
+  const { notifications, error } = useActiveNotifications();
+  
+  // If there's an error, return safe defaults
+  if (error) {
+    return {
+      totalHeight: 0,
+      hasBannerNotifications: false,
+      bannerCount: 0
+    };
+  }
   
   // Calculate total height of active banner notifications
   const bannerNotifications = notifications.filter(n => n.notification_type === 'banner');

@@ -6,8 +6,14 @@ import { Link } from 'react-router-dom';
 import { useActiveNotifications } from '@/hooks/useNotifications';
 
 const PopupNotification = () => {
-  const { notifications } = useActiveNotifications();
+  const { notifications, error } = useActiveNotifications();
   const [visibleNotifications, setVisibleNotifications] = useState<number[]>([]);
+  
+  // If there's an error, don't render anything
+  if (error) {
+    console.error('Failed to load popup notifications:', error);
+    return null;
+  }
   
   // Get active popup notifications
   const popupNotifications = notifications
