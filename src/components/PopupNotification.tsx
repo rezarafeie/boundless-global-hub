@@ -4,10 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useActiveNotifications } from '@/contexts/NotificationContext';
+import { cookieUtils } from '@/lib/cookieUtils';
 
 const PopupNotification = () => {
   const { notifications, error } = useActiveNotifications();
   const [visibleNotifications, setVisibleNotifications] = useState<number[]>([]);
+  const [dismissedNotifications, setDismissedNotifications] = useState<number[]>([]);
+  
+  // Load dismissed notifications from cookies on mount
+  useEffect(() => {
+    const dismissed = cookieUtils.getDismissedNotifications('popup');
+    setDismissedNotifications(dismissed);
+  }, []);
   
   // If there's an error, don't render anything
   if (error) {
@@ -15,9 +23,9 @@ const PopupNotification = () => {
     return null;
   }
   
-  // Get active popup notifications
+  // Get active popup notifications that haven't been dismissed
   const popupNotifications = notifications
-    .filter(n => n.notification_type === 'popup')
+    .filter(n => n.notification_type === 'popup' && !dismissedNotifications.includes(n.id))
     .sort((a, b) => b.priority - a.priority);
 
   useEffect(() => {
@@ -35,6 +43,11 @@ const PopupNotification = () => {
 
   const closeNotification = (id: number) => {
     setVisibleNotifications(prev => prev.filter(nId => nId !== id));
+    setDismissedNotifications(prev => {
+      const updated = [...prev, id];
+      cookieUtils.addDismissedNotification('popup', id);
+      return updated;
+    });
   };
 
   const visiblePopups = popupNotifications.filter(n => visibleNotifications.includes(n.id));

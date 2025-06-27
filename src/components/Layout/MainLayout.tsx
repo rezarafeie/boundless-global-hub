@@ -18,7 +18,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { direction } = useLanguage();
   const location = useLocation();
-  const { totalHeight, hasBannerNotifications } = useNotificationHeight();
+  const { totalHeight, hasBannerNotifications, headerHeight } = useNotificationHeight();
   
   // Routes where footer should be hidden
   const hideFooterRoutes = ['/mag', '/payreq'];
@@ -31,8 +31,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const requiresConnectionRoutes = ['/hub/messenger'];
   const requiresConnection = requiresConnectionRoutes.some(route => location.pathname.startsWith(route));
   
-  // Calculate dynamic top padding based on notifications
-  const dynamicTopPadding = hasBannerNotifications ? `${100 + totalHeight}px` : '100px';
+  // Calculate dynamic top padding based on notifications - use correct header height
+  const dynamicTopPadding = hasBannerNotifications ? `${headerHeight + totalHeight}px` : `${headerHeight}px`;
   
   if (hideHeaderFooterRoutes) {
     return (
@@ -43,8 +43,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           <NotificationFloating />
         </NotificationErrorBoundary>
         <main 
-          className="flex-1 transition-all duration-300"
-          style={{ paddingTop: hasBannerNotifications ? `${48 + totalHeight}px` : '48px' }}
+          className="flex-1 transition-all duration-300 ease-in-out"
+          style={{ paddingTop: hasBannerNotifications ? `${totalHeight}px` : '0px' }}
         >
           {children}
         </main>
@@ -62,7 +62,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       </NotificationErrorBoundary>
       <OfflineDetector requiresConnection={requiresConnection}>
         <main 
-          className="flex-1 transition-all duration-300" 
+          className="flex-1 transition-all duration-300 ease-in-out" 
           style={{ paddingTop: dynamicTopPadding }}
         >
           {children}

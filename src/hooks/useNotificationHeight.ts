@@ -9,7 +9,8 @@ export const useNotificationHeight = () => {
     return {
       totalHeight: 0,
       hasBannerNotifications: false,
-      bannerCount: 0
+      bannerCount: 0,
+      headerHeight: 64 // Correct header height
     };
   }
   
@@ -22,6 +23,7 @@ export const useNotificationHeight = () => {
   return {
     totalHeight: bannerHeight,
     hasBannerNotifications: bannerNotifications.length > 0,
-    bannerCount: bannerNotifications.length
+    bannerCount: bannerNotifications.length,
+    headerHeight: 64 // Correct header height
   };
 };

@@ -4,10 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useActiveNotifications } from '@/contexts/NotificationContext';
+import { cookieUtils } from '@/lib/cookieUtils';
 
 const NotificationFloating = () => {
   const { notifications, error } = useActiveNotifications();
   const [dismissedNotifications, setDismissedNotifications] = useState<number[]>([]);
+  
+  // Load dismissed notifications from cookies on mount
+  useEffect(() => {
+    const dismissed = cookieUtils.getDismissedNotifications('floating');
+    setDismissedNotifications(dismissed);
+  }, []);
   
   // If there's an error, don't render anything
   if (error) {
@@ -22,7 +29,11 @@ const NotificationFloating = () => {
     .slice(0, 3); // Maximum 3 floating notifications
 
   const dismissNotification = (id: number) => {
-    setDismissedNotifications(prev => [...prev, id]);
+    setDismissedNotifications(prev => {
+      const updated = [...prev, id];
+      cookieUtils.addDismissedNotification('floating', id);
+      return updated;
+    });
   };
 
   if (floatingNotifications.length === 0) {
@@ -45,7 +56,7 @@ const NotificationFloating = () => {
               stiffness: 300,
               damping: 30 
             }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 p-4 cursor-pointer hover:shadow-xl transition-shadow group"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 p-4 cursor-pointer hover:shadow-xl transition-all duration-300 group"
             style={{ borderLeftColor: notification.color }}
           >
             <div className="flex items-start gap-3">
