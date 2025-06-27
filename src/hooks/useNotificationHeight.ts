@@ -1,5 +1,5 @@
 
-import { useActiveNotifications } from '@/hooks/useNotifications';
+import { useActiveNotifications } from '@/contexts/NotificationContext';
 
 export const useNotificationHeight = () => {
   const { notifications, error } = useActiveNotifications();

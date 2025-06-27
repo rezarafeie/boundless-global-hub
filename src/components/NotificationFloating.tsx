@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useActiveNotifications } from '@/hooks/useNotifications';
+import { useActiveNotifications } from '@/contexts/NotificationContext';
 
 const NotificationFloating = () => {
   const { notifications, error } = useActiveNotifications();
