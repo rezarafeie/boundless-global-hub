@@ -43,6 +43,19 @@ const NotificationManagementSection: React.FC = () => {
     priority: 1
   });
 
+  // Reset form when modals close
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      message: '',
+      color: '#3B82F6',
+      link: '',
+      notification_type: 'banner',
+      is_active: false,
+      priority: 1
+    });
+  };
+
   const handleCreateNotification = async () => {
     try {
       await notificationService.create(formData);
@@ -51,15 +64,7 @@ const NotificationManagementSection: React.FC = () => {
         description: 'اعلان جدید ایجاد شد',
       });
       setShowCreateModal(false);
-      setFormData({
-        title: '',
-        message: '',
-        color: '#3B82F6',
-        link: '',
-        notification_type: 'banner',
-        is_active: false,
-        priority: 1
-      });
+      resetForm();
     } catch (error) {
       toast({
         title: 'خطا',
@@ -73,14 +78,27 @@ const NotificationManagementSection: React.FC = () => {
     if (!editingNotification) return;
     
     try {
-      await notificationService.update(editingNotification.id, formData);
+      // Create the update object with proper field mapping
+      const updateData: Partial<NotificationInsert> = {
+        title: formData.title,
+        message: formData.message,
+        color: formData.color,
+        link: formData.link || null,
+        notification_type: formData.notification_type,
+        is_active: formData.is_active,
+        priority: formData.priority
+      };
+
+      await notificationService.update(editingNotification.id, updateData);
       toast({
         title: 'موفق',
         description: 'اعلان ویرایش شد',
       });
       setShowEditModal(false);
       setEditingNotification(null);
+      resetForm();
     } catch (error) {
+      console.error('Error updating notification:', error);
       toast({
         title: 'خطا',
         description: 'خطا در ویرایش اعلان',
@@ -176,7 +194,10 @@ const NotificationManagementSection: React.FC = () => {
               <Bell className="w-5 h-5" />
               مدیریت اعلان‌ها ({notifications.length})
             </div>
-            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+            <Dialog open={showCreateModal} onOpenChange={(open) => {
+              setShowCreateModal(open);
+              if (!open) resetForm();
+            }}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
@@ -268,7 +289,10 @@ const NotificationManagementSection: React.FC = () => {
                     <Button onClick={handleCreateNotification} className="flex-1">
                       ایجاد اعلان
                     </Button>
-                    <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                    <Button variant="outline" onClick={() => {
+                      setShowCreateModal(false);
+                      resetForm();
+                    }}>
                       انصراف
                     </Button>
                   </div>
@@ -376,7 +400,13 @@ const NotificationManagementSection: React.FC = () => {
       </Card>
 
       {/* Edit Modal */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+      <Dialog open={showEditModal} onOpenChange={(open) => {
+        setShowEditModal(open);
+        if (!open) {
+          setEditingNotification(null);
+          resetForm();
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>ویرایش اعلان</DialogTitle>
@@ -462,7 +492,11 @@ const NotificationManagementSection: React.FC = () => {
               <Button onClick={handleEditNotification} className="flex-1">
                 ذخیره تغییرات
               </Button>
-              <Button variant="outline" onClick={() => setShowEditModal(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowEditModal(false);
+                setEditingNotification(null);
+                resetForm();
+              }}>
                 انصراف
               </Button>
             </div>
