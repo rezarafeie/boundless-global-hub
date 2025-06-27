@@ -3,11 +3,32 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useActiveNotifications } from '@/hooks/useNotifications';
 
 const LiveWarModeBanner = () => {
+  const { notifications } = useActiveNotifications();
+  
+  // Get active banner notifications, prioritized by priority
+  const bannerNotifications = notifications
+    .filter(n => n.notification_type === 'banner')
+    .sort((a, b) => b.priority - a.priority);
+
+  if (bannerNotifications.length === 0) {
+    return null;
+  }
+
+  // Show the highest priority banner notification
+  const notification = bannerNotifications[0];
+
   return (
-    <Link to="/solidarity" className="block">
-      <div className="fixed top-16 left-0 right-0 z-[9999] bg-red-600 dark:bg-red-700 border-b border-red-500 cursor-pointer hover:bg-red-700 dark:hover:bg-red-800 transition-colors">
+    <Link to={notification.link || '#'} className="block">
+      <div 
+        className="fixed top-16 left-0 right-0 z-[9999] border-b cursor-pointer hover:opacity-90 transition-opacity"
+        style={{ 
+          backgroundColor: notification.color,
+          borderBottomColor: notification.color 
+        }}
+      >
         <div className="container py-2">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -26,12 +47,12 @@ const LiveWarModeBanner = () => {
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
-              className="w-2 h-2 md:w-3 md:h-3 bg-red-200 rounded-full shadow-sm"
+              className="w-2 h-2 md:w-3 md:h-3 bg-white/70 rounded-full shadow-sm"
             />
             
-            {/* Emergency Text */}
+            {/* Notification Text */}
             <span className="text-white font-semibold text-sm md:text-base">
-              🚨 حالت اضطراری جنگ فعال شد : کلیک کنید
+              {notification.message}
             </span>
             
             {/* Alert Icon - Hidden on mobile */}
@@ -44,7 +65,7 @@ const LiveWarModeBanner = () => {
               }}
               className="hidden md:block"
             >
-              <AlertTriangle className="w-4 h-4 text-yellow-300" />
+              <AlertTriangle className="w-4 h-4 text-white/80" />
             </motion.div>
           </motion.div>
         </div>

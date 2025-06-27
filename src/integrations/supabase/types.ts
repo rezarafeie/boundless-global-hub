@@ -422,6 +422,51 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          color: string
+          created_at: string
+          end_date: string | null
+          id: number
+          is_active: boolean
+          link: string | null
+          message: string
+          notification_type: string
+          priority: number
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          end_date?: string | null
+          id?: number
+          is_active?: boolean
+          link?: string | null
+          message: string
+          notification_type?: string
+          priority?: number
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          end_date?: string | null
+          id?: number
+          is_active?: boolean
+          link?: string | null
+          message?: string
+          notification_type?: string
+          priority?: number
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       private_conversations: {
         Row: {
           created_at: string | null

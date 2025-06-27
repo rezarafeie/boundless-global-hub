@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,12 +19,14 @@ import {
   Calendar,
   Phone,
   Clock,
-  Star
+  Star,
+  Bell
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import UserEditModal from '@/components/Admin/UserEditModal';
 import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
+import NotificationManagementSection from '@/components/Admin/NotificationManagementSection';
 
 const BorderlessHubUnifiedAdmin: React.FC = () => {
   const { toast } = useToast();
@@ -293,7 +294,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
 
           {/* Main Content */}
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsList className="grid w-full grid-cols-3 h-auto">
               <TabsTrigger 
                 value="users" 
                 className="flex flex-col items-center gap-2 py-4"
@@ -307,6 +308,13 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
               >
                 <MessageSquare className="w-5 h-5" />
                 <span>مدیریت پیام‌رسان</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="notifications" 
+                className="flex flex-col items-center gap-2 py-4"
+              >
+                <Bell className="w-5 h-5" />
+                <span>مدیریت اعلان‌ها</span>
               </TabsTrigger>
             </TabsList>
 
@@ -443,6 +451,10 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
 
             <TabsContent value="messenger" className="space-y-6">
               <MessengerAdminSection />
+            </TabsContent>
+
+            <TabsContent value="notifications" className="space-y-6">
+              <NotificationManagementSection />
             </TabsContent>
           </Tabs>
 
