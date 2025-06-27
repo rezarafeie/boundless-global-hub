@@ -4,8 +4,11 @@ import { useLocation } from "react-router-dom";
 import Header from "@/components/Layout/Header";
 import Footer from "@/components/Layout/Footer";
 import LiveWarModeBanner from "@/components/LiveWarModeBanner";
+import PopupNotification from "@/components/PopupNotification";
+import NotificationFloating from "@/components/NotificationFloating";
 import OfflineDetector from "@/components/OfflineDetector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useNotificationHeight } from "@/hooks/useNotificationHeight";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,6 +17,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { direction } = useLanguage();
   const location = useLocation();
+  const notificationHeight = useNotificationHeight();
   
   // Routes where footer should be hidden
   const hideFooterRoutes = ['/mag', '/payreq'];
@@ -30,7 +34,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     return (
       <div className={`min-h-screen flex flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
         <LiveWarModeBanner />
-        <main className="flex-1 pt-12">{children}</main>
+        <PopupNotification />
+        <NotificationFloating />
+        <main className={`flex-1`} style={{ paddingTop: `${48 + notificationHeight}px` }}>
+          {children}
+        </main>
       </div>
     );
   }
@@ -39,8 +47,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
       <LiveWarModeBanner />
+      <PopupNotification />
+      <NotificationFloating />
       <OfflineDetector requiresConnection={requiresConnection}>
-        <main className="flex-1 pt-28" style={{ paddingTop: '100px' }}>{children}</main>
+        <main 
+          className="flex-1" 
+          style={{ paddingTop: `${100 + notificationHeight}px` }}
+        >
+          {children}
+        </main>
       </OfflineDetector>
       {!shouldHideFooter && <Footer />}
     </div>

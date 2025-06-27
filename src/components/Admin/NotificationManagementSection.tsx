@@ -1,129 +1,106 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { 
-  Bell, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  EyeOff,
-  Calendar,
-  Link,
-  Palette
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useNotifications } from '@/hooks/useNotifications';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { toast } from "@/hooks/use-toast";
 import { notificationService } from '@/lib/notificationService';
-import type { Notification, NotificationInsert } from '@/types/notifications';
+import { Notification } from '@/types/notifications';
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { DateRange } from "react-day-picker"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-const NotificationManagementSection: React.FC = () => {
-  const { toast } = useToast();
-  const { notifications, loading } = useNotifications();
-  const [showCreateModal, setShowCreateModal] = useState(false);
+interface NotificationForm {
+  title: string;
+  message: string;
+  color: string;
+  link: string;
+  notification_type: 'banner' | 'floating' | 'popup';
+  is_active: boolean;
+  priority: number;
+  start_date: string;
+  end_date: string;
+}
+
+const NotificationManagementSection = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-
-  const [formData, setFormData] = useState<NotificationInsert>({
+  const [formData, setFormData] = useState<NotificationForm>({
     title: '',
     message: '',
     color: '#3B82F6',
     link: '',
     notification_type: 'banner',
     is_active: false,
-    priority: 1
+    priority: 1,
+    start_date: '',
+    end_date: ''
   });
+	const [date, setDate] = React.useState<DateRange | undefined>(undefined)
 
-  const handleCreateNotification = async () => {
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
     try {
-      await notificationService.create(formData);
-      toast({
-        title: 'موفق',
-        description: 'اعلان جدید ایجاد شد',
-      });
-      setShowCreateModal(false);
-      setFormData({
-        title: '',
-        message: '',
-        color: '#3B82F6',
-        link: '',
-        notification_type: 'banner',
-        is_active: false,
-        priority: 1
-      });
+      const data = await notificationService.getAll();
+      setNotifications(data);
     } catch (error) {
+      console.error('Error fetching notifications:', error);
       toast({
-        title: 'خطا',
-        description: 'خطا در ایجاد اعلان',
-        variant: 'destructive',
+        title: "خطا",
+        description: "خطا در دریافت اعلان‌ها",
+        variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditNotification = async () => {
-    if (!editingNotification) return;
-    
-    try {
-      await notificationService.update(editingNotification.id, formData);
-      toast({
-        title: 'موفق',
-        description: 'اعلان ویرایش شد',
-      });
-      setShowEditModal(false);
-      setEditingNotification(null);
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در ویرایش اعلان',
-        variant: 'destructive',
-      });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (value: string, name: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, is_active: checked }));
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm("آیا مطمئن هستید که می‌خواهید این اعلان را حذف کنید؟")) {
+      try {
+        await notificationService.delete(id);
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        toast({
+          title: "موفق",
+          description: "اعلان با موفقیت حذف شد"
+        });
+      } catch (error) {
+        console.error('Error deleting notification:', error);
+        toast({
+          title: "خطا",
+          description: "خطا در حذف اعلان",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleDeleteNotification = async (id: number) => {
-    if (!confirm('آیا از حذف این اعلان اطمینان دارید؟')) return;
-    
-    try {
-      await notificationService.delete(id);
-      toast({
-        title: 'موفق',
-        description: 'اعلان حذف شد',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در حذف اعلان',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleToggleActive = async (notification: Notification) => {
-    try {
-      await notificationService.toggleActive(notification.id, notification.is_active);
-      toast({
-        title: 'موفق',
-        description: `اعلان ${notification.is_active ? 'غیرفعال' : 'فعال'} شد`,
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در تغییر وضعیت اعلان',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const openEditModal = (notification: Notification) => {
+  const handleEdit = (notification: Notification) => {
     setEditingNotification(notification);
     setFormData({
       title: notification.title,
@@ -132,343 +109,322 @@ const NotificationManagementSection: React.FC = () => {
       link: notification.link || '',
       notification_type: notification.notification_type,
       is_active: notification.is_active,
-      priority: notification.priority
+      priority: notification.priority,
+      start_date: notification.start_date || '',
+      end_date: notification.end_date || ''
     });
-    setShowEditModal(true);
+    setShowCreateForm(true);
   };
 
-  const getTypeLabel = (type: string) => {
-    const types = {
-      banner: 'نوار بالا',
-      floating: 'شناور',
-      popup: 'پاپ‌آپ'
-    };
-    return types[type as keyof typeof types] || type;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim() || !formData.message.trim()) {
+      toast({
+        title: "خطا",
+        description: "عنوان و پیام اجباری هستند",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (editingNotification) {
+        await notificationService.update(editingNotification.id, {
+          ...formData,
+          start_date: formData.start_date || undefined,
+          end_date: formData.end_date || undefined
+        });
+        toast({
+          title: "موفق",
+          description: "اعلان با موفقیت به‌روزرسانی شد"
+        });
+      } else {
+        await notificationService.create({
+          ...formData,
+          start_date: formData.start_date || undefined,
+          end_date: formData.end_date || undefined
+        });
+        toast({
+          title: "موفق",
+          description: "اعلان جدید ایجاد شد"
+        });
+      }
+      
+      setShowCreateForm(false);
+      setEditingNotification(null);
+      setFormData({
+        title: '',
+        message: '',
+        color: '#3B82F6',
+        link: '',
+        notification_type: 'banner',
+        is_active: false,
+        priority: 1,
+        start_date: '',
+        end_date: ''
+      });
+			setDate(undefined)
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error saving notification:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در ذخیره اعلان",
+        variant: "destructive"
+      });
+    }
   };
 
-  const getTypeBadgeColor = (type: string) => {
-    const colors = {
-      banner: 'bg-red-100 text-red-800',
-      floating: 'bg-blue-100 text-blue-800',
-      popup: 'bg-purple-100 text-purple-800'
-    };
-    return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  const handleToggleActive = async (id: number, isActive: boolean) => {
+    try {
+      await notificationService.toggleActive(id, isActive);
+      setNotifications(prev => prev.map(n =>
+        n.id === id ? { ...n, is_active: !isActive } : n
+      ));
+      toast({
+        title: "موفق",
+        description: `اعلان ${isActive ? 'غیرفعال' : 'فعال'} شد`
+      });
+    } catch (error) {
+      console.error('Error toggling active state:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در تغییر وضعیت اعلان",
+        variant: "destructive"
+      });
+    }
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <Bell className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-          <p className="text-slate-600">در حال بارگذاری اعلان‌ها...</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card>
+      <div className="flex items-center justify-between">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              مدیریت اعلان‌ها ({notifications.length})
-            </div>
-            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  اعلان جدید
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>ایجاد اعلان جدید</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">عنوان</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="عنوان اعلان"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="message">پیام</Label>
-                    <Textarea
-                      id="message"
-                      value={formData.message}
-                      onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                      placeholder="متن اعلان"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="color">رنگ</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="color"
-                        type="color"
-                        value={formData.color}
-                        onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                        className="w-16 h-10"
-                      />
-                      <Input
-                        value={formData.color}
-                        onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                        placeholder="#3B82F6"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="link">لینک (اختیاری)</Label>
-                    <Input
-                      id="link"
-                      value={formData.link}
-                      onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-                      placeholder="/path/to/page"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="type">نوع اعلان</Label>
-                    <Select value={formData.notification_type} onValueChange={(value) => setFormData(prev => ({ ...prev, notification_type: value as any }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="banner">نوار بالا</SelectItem>
-                        <SelectItem value="floating">شناور</SelectItem>
-                        <SelectItem value="popup">پاپ‌آپ</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="priority">اولویت</Label>
-                    <Input
-                      id="priority"
-                      type="number"
-                      value={formData.priority}
-                      onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) || 1 }))}
-                      min="1"
-                      max="10"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-                    />
-                    <Label>فعال</Label>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleCreateNotification} className="flex-1">
-                      ایجاد اعلان
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-                      انصراف
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardTitle>
+          <CardTitle>مدیریت اعلان‌ها</CardTitle>
+          <CardDescription>ایجاد، ویرایش و حذف اعلان‌های سیستم</CardDescription>
         </CardHeader>
-      </Card>
+        <Button onClick={() => setShowCreateForm(true)}>ایجاد اعلان جدید</Button>
+      </div>
 
-      {/* Notifications Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>عنوان</TableHead>
-                  <TableHead>نوع</TableHead>
-                  <TableHead>وضعیت</TableHead>
-                  <TableHead>اولویت</TableHead>
-                  <TableHead>تاریخ ایجاد</TableHead>
-                  <TableHead>عملیات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {notifications.map((notification) => (
-                  <TableRow key={notification.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{notification.title}</p>
-                        <p className="text-sm text-slate-500 truncate max-w-xs">
-                          {notification.message}
-                        </p>
-                        {notification.link && (
-                          <div className="flex items-center gap-1 text-xs text-blue-600 mt-1">
-                            <Link className="w-3 h-3" />
-                            {notification.link}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getTypeBadgeColor(notification.notification_type)}>
-                        {getTypeLabel(notification.notification_type)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: notification.color }}
-                        />
-                        <Badge variant={notification.is_active ? 'default' : 'secondary'}>
-                          {notification.is_active ? 'فعال' : 'غیرفعال'}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{notification.priority}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-slate-500">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(notification.created_at).toLocaleDateString('fa-IR')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleToggleActive(notification)}
-                          className="p-2"
-                          title={notification.is_active ? 'غیرفعال کردن' : 'فعال کردن'}
-                        >
-                          {notification.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEditModal(notification)}
-                          className="p-2"
-                          title="ویرایش"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteNotification(notification.id)}
-                          className="p-2 text-red-600 hover:text-red-700"
-                          title="حذف"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Edit Modal */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>ویرایش اعلان</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-title">عنوان</Label>
-              <Input
-                id="edit-title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="عنوان اعلان"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-message">پیام</Label>
-              <Textarea
-                id="edit-message"
-                value={formData.message}
-                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                placeholder="متن اعلان"
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-color">رنگ</Label>
-              <div className="flex items-center gap-2">
+      {showCreateForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingNotification ? 'ویرایش اعلان' : 'ایجاد اعلان جدید'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="title">عنوان</Label>
                 <Input
-                  id="edit-color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={formData.color}
-                  onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                  placeholder="#3B82F6"
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
                 />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="edit-link">لینک (اختیاری)</Label>
-              <Input
-                id="edit-link"
-                value={formData.link}
-                onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-                placeholder="/path/to/page"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-type">نوع اعلان</Label>
-              <Select value={formData.notification_type} onValueChange={(value) => setFormData(prev => ({ ...prev, notification_type: value as any }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="banner">نوار بالا</SelectItem>
-                  <SelectItem value="floating">شناور</SelectItem>
-                  <SelectItem value="popup">پاپ‌آپ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-priority">اولویت</Label>
-              <Input
-                id="edit-priority"
-                type="number"
-                value={formData.priority}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) || 1 }))}
-                min="1"
-                max="10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-              />
-              <Label>فعال</Label>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleEditNotification} className="flex-1">
-                ذخیره تغییرات
-              </Button>
-              <Button variant="outline" onClick={() => setShowEditModal(false)}>
-                انصراف
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+              <div>
+                <Label htmlFor="message">پیام</Label>
+                <Input
+                  type="text"
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="color">رنگ</Label>
+                <Input
+                  type="color"
+                  id="color"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="link">لینک</Label>
+                <Input
+                  type="text"
+                  id="link"
+                  name="link"
+                  value={formData.link}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="notification_type">نوع اعلان</Label>
+                <Select onValueChange={(value) => handleSelectChange(value, 'notification_type')} defaultValue={formData.notification_type}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب نوع اعلان" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="banner">بنر</SelectItem>
+                    <SelectItem value="floating">شناور</SelectItem>
+                    <SelectItem value="popup">پاپ‌آپ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="priority">اولویت</Label>
+                <Input
+                  type="number"
+                  id="priority"
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="is_active">فعال؟</Label>
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={handleSwitchChange}
+                />
+              </div>
+							<div className="grid gap-2">
+								<Label>تاریخ شروع و پایان</Label>
+								<Popover>
+									<PopoverTrigger asChild>
+										<Button
+											variant={"outline"}
+											className={cn(
+												"w-[240px] justify-start text-left font-normal",
+												!date && "text-muted-foreground"
+											)}
+										>
+											<CalendarIcon className="mr-2 h-4 w-4" />
+											{date?.from ? (
+												date.to ? (
+													`${format(date.from, "yyyy/MM/dd")} - ${format(date.to, "yyyy/MM/dd")}`
+												) : (
+													format(date.from, "yyyy/MM/dd")
+												)
+											) : (
+												<span>انتخاب تاریخ</span>
+											)}
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="center" side="bottom">
+										<Calendar
+											mode="range"
+											defaultMonth={date?.from}
+											selected={date}
+											onSelect={setDate}
+											numberOfMonths={2}
+											pagedNavigation
+										/>
+											<Button
+												type="button"
+												variant="outline"
+												onClick={() => {
+													setFormData(prev => ({
+														...prev,
+														start_date: date?.from?.toISOString() || '',
+														end_date: date?.to?.toISOString() || ''
+													}));
+												}}
+											>
+												اعمال
+											</Button>
+									</PopoverContent>
+								</Popover>
+							</div>
+              
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setEditingNotification(null);
+                    setFormData({
+                      title: '',
+                      message: '',
+                      color: '#3B82F6',
+                      link: '',
+                      notification_type: 'banner',
+                      is_active: false,
+                      priority: 1,
+                      start_date: '',
+                      end_date: ''
+                    });
+										setDate(undefined)
+                  }}
+                >
+                  لغو
+                </Button>
+                <Button type="submit">
+                  {editingNotification ? 'به‌روزرسانی' : 'ایجاد'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>لیست اعلان‌ها</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p>در حال بارگیری...</p>
+          ) : (
+						<div className="w-full">
+							<Table>
+								<TableCaption>لیست اعلان‌ها</TableCaption>
+								<TableHeader>
+									<TableRow>
+										<TableHead className="w-[100px]">عنوان</TableHead>
+										<TableHead>پیام</TableHead>
+										<TableHead>نوع</TableHead>
+										<TableHead>اولویت</TableHead>
+										<TableHead>وضعیت</TableHead>
+										<TableHead className="text-right">عملیات</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{notifications.map((notification) => (
+										<TableRow key={notification.id}>
+											<TableCell className="font-medium">{notification.title}</TableCell>
+											<TableCell>{notification.message}</TableCell>
+											<TableCell>{notification.notification_type}</TableCell>
+											<TableCell>{notification.priority}</TableCell>
+											<TableCell>
+												<Switch
+													id={`active-${notification.id}`}
+													checked={notification.is_active}
+													onCheckedChange={() => handleToggleActive(notification.id, notification.is_active)}
+												/>
+											</TableCell>
+											<TableCell className="text-right">
+												<Button
+													variant="secondary"
+													size="sm"
+													onClick={() => handleEdit(notification)}
+												>
+													ویرایش
+												</Button>
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => handleDelete(notification.id)}
+												>
+													حذف
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
