@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,8 +47,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       const roomsData = await messengerService.getRooms(sessionToken);
       setRooms(roomsData);
 
-      // Load private conversations
-      const conversationsData = await privateMessageService.getConversations(sessionToken);
+      // Load private conversations - fix method name
+      const conversationsData = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
       setConversations(conversationsData);
 
       // Load support users
