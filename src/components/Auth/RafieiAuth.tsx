@@ -1,442 +1,397 @@
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { rafieiAuth, RafieiUser } from '@/lib/rafieiAuth';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Mail, Phone, User, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
+import { rafieiAuth, type RafieiUser } from '@/lib/rafieiAuth';
 import { toast } from 'sonner';
 
 interface RafieiAuthProps {
-  onSuccess?: (user: RafieiUser, token: string) => void;
+  onSuccess: (user: RafieiUser, token: string) => void;
   onCancel?: () => void;
   enrollmentMode?: boolean;
-  redirectAfterAuth?: string;
 }
 
-type AuthFlow = 'initial' | 'login' | 'register' | 'otp';
-
-interface AuthState {
-  flow: AuthFlow;
-  identifier: string;
-  identifierType: 'email' | 'phone';
-  existingUser?: RafieiUser;
-  registrationData: {
-    email?: string;
-    phone?: string;
-    firstName: string;
-    lastName: string;
-    password: string;
-  };
-}
+type AuthStep = 'initial' | 'login' | 'register' | 'otp';
 
 const RafieiAuth: React.FC<RafieiAuthProps> = ({
   onSuccess,
   onCancel,
-  enrollmentMode = false,
-  redirectAfterAuth
+  enrollmentMode = false
 }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    flow: 'initial',
-    identifier: '',
-    identifierType: 'email',
-    registrationData: {
-      firstName: '',
-      lastName: '',
-      password: ''
-    }
-  });
-  
+  const [step, setStep] = useState<AuthStep>('initial');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [userData, setUserData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+  });
 
-  // Check initial identifier and determine flow
-  const handleInitialSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!authState.identifier.trim()) return;
-
-    setLoading(true);
-    try {
-      const result = await rafieiAuth.checkUserExists(authState.identifier);
-      
-      if (result.exists && result.user) {
-        // User exists - go to login
-        setAuthState(prev => ({
-          ...prev,
-          flow: 'login',
-          identifierType: result.type,
-          existingUser: result.user
-        }));
-      } else {
-        // New user - go to registration
-        const identifierType = rafieiAuth.detectInputType(authState.identifier);
-        setAuthState(prev => ({
-          ...prev,
-          flow: 'register',
-          identifierType,
-          registrationData: {
-            ...prev.registrationData,
-            [identifierType]: authState.identifier
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
-      toast.error('خطا در بررسی کاربر');
-    } finally {
-      setLoading(false);
-    }
+  const detectInputType = (input: string): 'email' | 'phone' => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(input) ? 'email' : 'phone';
   };
 
-  // Handle login
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password.trim()) return;
-
-    setLoading(true);
-    try {
-      const result = await rafieiAuth.loginUser(authState.identifier, password);
-      rafieiAuth.setSession(result.session_token, result.user);
-      
-      toast.success('با موفقیت وارد شدید');
-      onSuccess?.(result.user, result.session_token);
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast.error(error.message || 'خطا در ورود');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle OTP login
-  const handleOTPLogin = async () => {
-    setLoading(true);
-    try {
-      if (authState.identifierType === 'email') {
-        await rafieiAuth.sendEmailOTP(authState.identifier);
-        toast.success('لینک ورود به ایمیل شما ارسال شد');
-      } else {
-        await rafieiAuth.sendSMSOTP(authState.identifier);
-        toast.success('کد تأیید به شماره همراه شما ارسال شد');
-      }
-      
-      setAuthState(prev => ({ ...prev, flow: 'otp' }));
-    } catch (error: any) {
-      console.error('OTP error:', error);
-      toast.error(error.message || 'خطا در ارسال کد تأیید');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle registration
-  const handleRegistration = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const { registrationData } = authState;
-    if (!registrationData.firstName || !registrationData.lastName || !registrationData.password) {
-      toast.error('لطفاً تمام فیلدها را پر کنید');
+  const handleInitialSubmit = async () => {
+    if (!identifier.trim()) {
+      setError('لطفاً ایمیل یا شماره موبایل خود را وارد کنید');
       return;
     }
 
-    // Validate phone for Iranian numbers if country detection is needed
-    if (registrationData.phone) {
-      try {
-        const isIranian = await rafieiAuth.isIranianPhone(registrationData.phone);
-        if (!isIranian) {
-          const countryCode = await rafieiAuth.detectCountryCode(registrationData.phone);
-          if (countryCode !== '+98') {
-            toast.error('در حال حاضر فقط شماره‌های ایرانی پشتیبانی می‌شوند');
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Phone validation error:', error);
-      }
-    }
-
     setLoading(true);
+    setError('');
+
     try {
-      const result = await rafieiAuth.registerUser({
-        email: registrationData.email,
-        phone: registrationData.phone || authState.identifier,
-        firstName: registrationData.firstName,
-        lastName: registrationData.lastName,
-        password: registrationData.password,
-        signupSource: enrollmentMode ? 'course_enrollment' : 'website'
-      });
+      const result = await rafieiAuth.checkUserExists(identifier);
       
-      rafieiAuth.setSession(result.session_token, result.user);
-      
-      toast.success('حساب کاربری شما با موفقیت ایجاد شد');
-      onSuccess?.(result.user, result.session_token);
+      if (result.exists) {
+        setStep('login');
+      } else {
+        const inputType = detectInputType(identifier);
+        if (inputType === 'email') {
+          setUserData(prev => ({ ...prev, email: identifier }));
+        } else {
+          setUserData(prev => ({ ...prev, phone: identifier }));
+        }
+        setStep('register');
+      }
     } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'خطا در ثبت‌نام');
+      setError(error.message || 'خطا در بررسی کاربر');
     } finally {
       setLoading(false);
     }
   };
 
-  // Go back to previous step
-  const goBack = () => {
-    if (authState.flow === 'login' || authState.flow === 'register') {
-      setAuthState(prev => ({ ...prev, flow: 'initial' }));
-      setPassword('');
-    } else if (authState.flow === 'otp') {
-      setAuthState(prev => ({ ...prev, flow: 'login' }));
+  const handleLogin = async () => {
+    if (!password.trim()) {
+      setError('لطفاً رمز عبور خود را وارد کنید');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await rafieiAuth.loginUser(identifier, password);
+      toast.success('با موفقیت وارد شدید');
+      onSuccess(result.user, result.session_token);
+    } catch (error: any) {
+      setError(error.message || 'خطا در ورود');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const pageVariants = {
-    initial: { opacity: 0, x: 20 },
-    in: { opacity: 1, x: 0 },
-    out: { opacity: 0, x: -20 }
+  const handleRegister = async () => {
+    if (!userData.firstName.trim() || !userData.lastName.trim() || !password.trim()) {
+      setError('لطفاً تمام فیلدها را پر کنید');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('رمز عبور باید حداقل ۶ کاراکتر باشد');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const phone = userData.phone || identifier;
+      const email = userData.email || (detectInputType(identifier) === 'email' ? identifier : undefined);
+
+      const result = await rafieiAuth.registerUser({
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone,
+        email,
+        password,
+        signupSource: window.location.origin
+      });
+
+      toast.success('حساب کاربری با موفقیت ایجاد شد!');
+      onSuccess(result.user, result.session_token);
+    } catch (error: any) {
+      setError(error.message || 'خطا در ثبت‌نام');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 'login' || step === 'register') {
+      setStep('initial');
+      setPassword('');
+      setError('');
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            {enrollmentMode ? 'ثبت‌نام در دوره' : 'ورود به آکادمی رفیعی'}
-          </CardTitle>
-          <CardDescription>
-            {authState.flow === 'initial' && 'ایمیل یا شماره همراه خود را وارد کنید'}
-            {authState.flow === 'login' && 'رمز عبور خود را وارد کنید'}
-            {authState.flow === 'register' && 'اطلاعات خود را تکمیل کنید'}
-            {authState.flow === 'otp' && 'کد تأیید ارسال شد'}
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border-0 shadow-2xl">
+          <CardHeader className="text-center space-y-4 pb-8">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {step === 'initial' && 'خوش آمدید'}
+                {step === 'login' && 'ورود به حساب'}
+                {step === 'register' && 'ایجاد حساب جدید'}
+              </h1>
+              <CardDescription className="text-slate-600 dark:text-slate-400">
+                {step === 'initial' && 'برای ادامه، ایمیل یا شماره موبایل خود را وارد کنید'}
+                {step === 'login' && 'رمز عبور خود را وارد کنید'}
+                {step === 'register' && 'اطلاعات خود را تکمیل کنید'}
+              </CardDescription>
+            </div>
+          </CardHeader>
 
-        <CardContent>
-          <AnimatePresence mode="wait">
-            {/* Initial Entry Step */}
-            {authState.flow === 'initial' && (
-              <motion.form
-                key="initial"
-                variants={pageVariants}
-                initial="initial"
-                animate="in"
-                exit="out"
-                onSubmit={handleInitialSubmit}
-                className="space-y-4"
-              >
-                <div>
-                  <Label htmlFor="identifier">ایمیل یا شماره موبایل</Label>
-                  <Input
-                    id="identifier"
-                    type="text"
-                    placeholder="example@email.com یا 09123456789"
-                    value={authState.identifier}
-                    onChange={(e) => setAuthState(prev => ({ ...prev, identifier: e.target.value }))}
-                    required
-                    className="text-right"
-                    dir="ltr"
-                  />
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert className="border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Initial Step */}
+            {step === 'initial' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="identifier" className="text-sm font-medium">
+                    ایمیل یا شماره موبایل
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="identifier"
+                      type="text"
+                      placeholder="example@email.com یا 09123456789"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      className="pl-10 h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      dir="ltr"
+                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      {detectInputType(identifier) === 'email' ? (
+                        <Mail className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <Phone className="w-4 h-4 text-slate-400" />
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  ادامه
+
+                <Button 
+                  onClick={handleInitialSubmit}
+                  disabled={loading || !identifier.trim()}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span>ادامه</span>
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                    </>
+                  )}
                 </Button>
-                
-                {onCancel && (
-                  <Button type="button" variant="ghost" onClick={onCancel} className="w-full">
-                    انصراف
-                  </Button>
-                )}
-              </motion.form>
+              </div>
             )}
 
             {/* Login Step */}
-            {authState.flow === 'login' && (
-              <motion.div
-                key="login"
-                variants={pageVariants}
-                initial="initial"
-                animate="in"
-                exit="out"
-                className="space-y-4"
-              >
-                <div className="text-sm text-gray-600 mb-4">
-                  ورود برای: <span className="font-medium">{authState.identifier}</span>
+            {step === 'login' && (
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+                  <p className="text-sm text-slate-600 dark:text-slate-400" dir="ltr">
+                    {identifier}
+                  </p>
                 </div>
-                
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <Label htmlFor="password">رمز عبور</Label>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    رمز عبور
+                  </Label>
+                  <div className="relative">
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="رمز عبور خود را وارد کنید"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="text-right"
+                      className="pl-10 pr-10 h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
                     />
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-slate-400" />
+                      )}
+                    </Button>
                   </div>
-                  
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    ورود
-                  </Button>
-                </form>
-                
-                <div className="text-center">
-                  <Button 
-                    type="button" 
-                    variant="link" 
-                    onClick={handleOTPLogin}
-                    disabled={loading}
-                    className="text-sm"
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    className="flex-1 h-12 rounded-xl"
                   >
-                    ورود بدون رمز عبور (کد تأیید)
+                    بازگشت
+                  </Button>
+                  <Button 
+                    onClick={handleLogin}
+                    disabled={loading || !password.trim()}
+                    className="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      'ورود'
+                    )}
                   </Button>
                 </div>
-                
-                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
-                  <ArrowLeft className="w-4 h-4 ml-2" />
-                  بازگشت
-                </Button>
-              </motion.div>
+              </div>
             )}
 
-            {/* Registration Step */}
-            {authState.flow === 'register' && (
-              <motion.div
-                key="register"
-                variants={pageVariants}
-                initial="initial"
-                animate="in"
-                exit="out"
-                className="space-y-4"
-              >
-                <form onSubmit={handleRegistration} className="space-y-4">
-                  {/* Show secondary field (email if phone was entered first, vice versa) */}
-                  {authState.identifierType === 'phone' && (
-                    <div>
-                      <Label htmlFor="email">ایمیل</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="example@email.com"
-                        value={authState.registrationData.email || ''}
-                        onChange={(e) => setAuthState(prev => ({
-                          ...prev,
-                          registrationData: { ...prev.registrationData, email: e.target.value }
-                        }))}
-                        className="text-right"
-                        dir="ltr"
-                      />
-                    </div>
-                  )}
-                  
-                  {authState.identifierType === 'email' && (
-                    <div>
-                      <Label htmlFor="phone">شماره موبایل</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="09123456789"
-                        value={authState.registrationData.phone || ''}
-                        onChange={(e) => setAuthState(prev => ({
-                          ...prev,
-                          registrationData: { ...prev.registrationData, phone: e.target.value }
-                        }))}
-                        required
-                        className="text-right"
-                        dir="ltr"
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">نام</Label>
+            {/* Register Step */}
+            {step === 'register' && (
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+                  <p className="text-sm text-slate-600 dark:text-slate-400" dir="ltr">
+                    {identifier}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-sm font-medium">
+                      نام
+                    </Label>
+                    <div className="relative">
                       <Input
                         id="firstName"
                         type="text"
-                        value={authState.registrationData.firstName}
-                        onChange={(e) => setAuthState(prev => ({
-                          ...prev,
-                          registrationData: { ...prev.registrationData, firstName: e.target.value }
-                        }))}
-                        required
-                        className="text-right"
+                        placeholder="نام"
+                        value={userData.firstName}
+                        onChange={(e) => setUserData(prev => ({ ...prev, firstName: e.target.value }))}
+                        className="pl-10 h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">نام خانوادگی</Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        value={authState.registrationData.lastName}
-                        onChange={(e) => setAuthState(prev => ({
-                          ...prev,
-                          registrationData: { ...prev.registrationData, lastName: e.target.value }
-                        }))}
-                        required
-                        className="text-right"
-                      />
+                      <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="regPassword">رمز عبور</Label>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-sm font-medium">
+                      نام خانوادگی
+                    </Label>
                     <Input
-                      id="regPassword"
-                      type="password"
-                      value={authState.registrationData.password}
-                      onChange={(e) => setAuthState(prev => ({
-                        ...prev,
-                        registrationData: { ...prev.registrationData, password: e.target.value }
-                      }))}
-                      required
-                      className="text-right"
+                      id="lastName"
+                      type="text"
+                      placeholder="نام خانوادگی"
+                      value={userData.lastName}
+                      onChange={(e) => setUserData(prev => ({ ...prev, lastName: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
                     />
                   </div>
-                  
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    ثبت‌نام
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="text-sm font-medium">
+                    رمز عبور
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="رمز عبور (حداقل ۶ کاراکتر)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 h-12 rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    />
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <Eye className="w-4 h-4 text-slate-400" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    className="flex-1 h-12 rounded-xl"
+                  >
+                    بازگشت
                   </Button>
-                </form>
-                
-                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
-                  <ArrowLeft className="w-4 h-4 ml-2" />
-                  بازگشت
-                </Button>
-              </motion.div>
+                  <Button 
+                    onClick={handleRegister}
+                    disabled={loading || !userData.firstName.trim() || !userData.lastName.trim() || !password.trim()}
+                    className="flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {loading ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      'ایجاد حساب'
+                    )}
+                  </Button>
+                </div>
+              </div>
             )}
 
-            {/* OTP Verification Step */}
-            {authState.flow === 'otp' && (
-              <motion.div
-                key="otp"
-                variants={pageVariants}
-                initial="initial"
-                animate="in"
-                exit="out"
-                className="space-y-4 text-center"
-              >
-                <div className="text-sm text-gray-600">
-                  {authState.identifierType === 'email' 
-                    ? 'لینک ورود به ایمیل شما ارسال شد. لطفاً ایمیل خود را بررسی کنید.'
-                    : 'کد تأیید به شماره همراه شما ارسال شد.'
-                  }
+            {enrollmentMode && (
+              <>
+                <Separator />
+                <div className="text-center">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    برای ثبت‌نام در دوره، ابتدا باید وارد حساب کاربری خود شوید
+                  </p>
                 </div>
-                
-                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
-                  <ArrowLeft className="w-4 h-4 ml-2" />
-                  بازگشت
-                </Button>
-              </motion.div>
+              </>
             )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+
+            {onCancel && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onCancel}
+                className="w-full text-slate-600 dark:text-slate-400"
+              >
+                انصراف
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

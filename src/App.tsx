@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -161,7 +160,7 @@ const App = () => {
                     <Route path="/assessment/:slug" element={<TestLanding />} />
 
                     {/* Other pages */}
-                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/me" element={<UserHub />} />
                     <Route path="/instructor" element={<InstructorProfile />} />
                     <Route path="/ai-assistant" element={<AIAssistant />} />
                     <Route path="/solidarity" element={<SolidarityLanding />} />
@@ -174,8 +173,9 @@ const App = () => {
                     <Route path="/en/courses" element={<EnCourseArchive />} />
                     <Route path="/en/assessment" element={<EnAssessmentCenter />} />
 
-                    {/* Legacy redirect for old user-hub */}
+                    {/* Legacy redirects */}
                     <Route path="/user-hub" element={<UserHub />} />
+                    <Route path="/dashboard" element={<UserHub />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

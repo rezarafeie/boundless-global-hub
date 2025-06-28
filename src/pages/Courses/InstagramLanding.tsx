@@ -1,369 +1,96 @@
-import React, { useState } from "react";
-import MainLayout from "@/components/Layout/MainLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Check, Instagram, TrendingUp, Users, DollarSign, Star, Clock, Target } from "lucide-react";
-import CountdownTimer from "@/components/CountdownTimer";
-import { motion } from "framer-motion";
-import InstructorProfile from "@/components/InstructorProfile";
-import IframeModal from "@/components/IframeModal";
-import MobileStickyButton from "@/components/MobileStickyButton";
 
-const InstagramLanding = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Set countdown target for 7 days from now and convert to string
-  const targetDate = new Date();
-  targetDate.setDate(targetDate.getDate() + 7);
-  const endDateString = targetDate.toISOString();
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Star, Users, Clock } from 'lucide-react';
+import CourseEnrollmentSection from '@/components/Course/CourseEnrollmentSection';
 
-  const handlePurchaseCourse = () => {
-    setIsModalOpen(true);
-  };
-
+const InstagramLanding: React.FC = () => {
   return (
-    <MainLayout>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-50 to-pink-50 pt-24 pb-20 relative">
-        {/* Animated Glow Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="glow-circle glow-circle-1 animate-pulse"></div>
-          <div className="glow-circle glow-circle-2 animate-float-fast"></div>
-          <div className="glow-circle glow-circle-3 animate-pulse animation-delay-1000"></div>
-          <div className="glow-circle glow-circle-4 animate-float-slow animation-delay-2000"></div>
-          <div className="absolute inset-0 bg-white/30 backdrop-blur-[10px] z-0"></div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 dark:from-slate-900 dark:to-slate-800">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <Badge className="mb-4 bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200">
+            دوره پرطرفدار
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            دوره جامع اینستاگرام مارکتینگ
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            از صفر تا صد اینستاگرام مارکتینگ و کسب درآمد از شبکه‌های اجتماعی
+          </p>
         </div>
-        
-        <div className="container max-w-6xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="text-right">
-              <motion.h1 
-                className="text-4xl md:text-6xl font-bold mb-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                اسباب اینستاگرام
-              </motion.h1>
-              <motion.p 
-                className="text-xl text-gray-600 mb-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                Instagram Growth Masterclass
-              </motion.p>
-              <motion.p 
-                className="text-lg text-gray-600 mb-8 leading-relaxed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                راهکارهای اثبات‌شده برای رشد حساب اینستاگرام، جذب مخاطب واقعی 
-                و تبدیل فالوورها به مشتریان وفادار.
-              </motion.p>
-              
-              <motion.div 
-                className="grid grid-cols-1 gap-4 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={16} className="text-white" />
-                  </div>
-                  <p className="font-medium">رشد ارگانیک و طبیعی فالوور تا ۱۰۰ هزار نفر</p>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={16} className="text-white" />
-                  </div>
-                  <p className="font-medium">تولید محتوای ویرال و جذب تعامل بالا</p>
-                </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check size={16} className="text-white" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Course Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  درباره دوره
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
+                  در این دوره کامل، تمام اسرار اینستاگرام مارکتینگ را یاد خواهید گرفت. 
+                  از ایجاد محتوای جذاب تا فروش محصولات و خدمات از طریق اینستاگرام.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm">+۱۰۰۰ دانشجو</span>
                   </div>
-                  <p className="font-medium">کسب درآمد از طریق اینستاگرام و برند سازی</p>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-green-500" />
+                    <span className="text-sm">۳۵ ساعت ویدیو</span>
+                  </div>
                 </div>
-              </motion.div>
-            </div>
-            
-            <motion.div
-              className="bg-white rounded-xl shadow-lg p-8 border border-purple-100"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
-                  <Instagram size={32} className="text-white" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">شروع کنید الان</h2>
-                <p className="text-gray-600">دسترسی فوری به دوره کامل</p>
-              </div>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">قیمت ویژه:</span>
-                  <span className="font-bold text-lg">۱,۹۹۰,۰۰۰ تومان</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-green-600">
-                  <Clock size={16} />
-                  <span className="text-sm">دسترسی مادام‌العمر</span>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handlePurchaseCourse}
-                size="lg" 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full px-8 text-lg py-6 h-auto"
-              >
-                خرید دوره
-              </Button>
-              
-              <p className="text-xs text-center text-gray-500 mt-4">
-                ۳۰ روز ضمانت بازگشت وجه
-              </p>
-            </motion.div>
-          </div>
-          
-          <div className="mt-16">
-            <CountdownTimer endDate={endDateString} />
-          </div>
-        </div>
-      </section>
-      
-      {/* Course Content Overview */}
-      <section className="bg-white py-16">
-        <div className="container max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">محتویات دوره</h2>
-            <p className="text-lg text-gray-600">همه چیزی که برای موفقیت در اینستاگرام نیاز دارید</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center p-6">
-              <CardContent className="pt-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp size={24} className="text-white" />
-                </div>
-                <h3 className="font-bold mb-2">استراتژی رشد</h3>
-                <p className="text-sm text-gray-600">
-                  الگوریتم اینستاگرام، بهینه‌سازی پروفایل، و تکنیک‌های رشد
-                </p>
               </CardContent>
             </Card>
-            
-            <Card className="text-center p-6">
-              <CardContent className="pt-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users size={24} className="text-white" />
+
+            {/* What You'll Learn */}
+            <Card>
+              <CardHeader>
+                <CardTitle>آنچه یاد خواهید گرفت</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    'استراتژی محتوای اینستاگرام',
+                    'تولید محتوای ویروسی',
+                    'تبلیغات هدفمند اینستاگرام',
+                    'فروش و بازاریابی',
+                    'تحلیل و بهینه‌سازی',
+                    'ایجاد برند شخصی'
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-700 dark:text-gray-300">{item}</span>
+                    </div>
+                  ))}
                 </div>
-                <h3 className="font-bold mb-2">تولید محتوا</h3>
-                <p className="text-sm text-gray-600">
-                  ساخت محتوای ویرال، استوری‌های جذاب، و ریلز پربازدید
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="text-center p-6">
-              <CardContent className="pt-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign size={24} className="text-white" />
-                </div>
-                <h3 className="font-bold mb-2">کسب درآمد</h3>
-                <p className="text-sm text-gray-600">
-                  روش‌های مختلف درآمدزایی و تبدیل فالوور به مشتری
-                </p>
               </CardContent>
             </Card>
           </div>
-        </div>
-      </section>
-      
-      {/* Instructor Section */}
-      <section className="bg-gray-50 py-16">
-        <div className="container max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold mb-8 text-center">استاد دوره</h2>
-          <InstructorProfile compact={false} />
-        </div>
-      </section>
-      
-      {/* Success Stories */}
-      <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-16">
-        <div className="container max-w-6xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-12">
-            داستان‌های موفقیت
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-              <div className="flex items-center justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm mb-4">
-                "در ۳ ماه از ۵ هزار فالوور به ۵۰ هزار رسیدم. درآمدم ۱۰ برابر شد!"
-              </p>
-              <p className="font-medium">مریم احمدی</p>
-              <p className="text-xs opacity-75">@mariam_beauty</p>
-            </div>
-            
-            <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-              <div className="flex items-center justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm mb-4">
-                "الان هر ریلم میلیونی میشه. تکنیک‌هاش واقعاً کار می‌کنه."
-              </p>
-              <p className="font-medium">علی رضایی</p>
-              <p className="text-xs opacity-75">@ali_fitness</p>
-            </div>
-            
-            <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-              <div className="flex items-center justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={20} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm mb-4">
-                "برندم رو از صفر شروع کردم. الان ۱۰۰ هزار فالوور دارم."
-              </p>
-              <p className="font-medium">سارا کریمی</p>
-              <p className="text-xs opacity-75">@sara_fashion</p>
+
+          {/* Enrollment Section */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-8">
+              <CourseEnrollmentSection
+                courseId="instagram-marketing"
+                courseName="دوره جامع اینستاگرام مارکتینگ"
+                isFreeCourse={false}
+                price="۱,۹۹۰,۰۰۰ تومان"
+              />
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Mobile Sticky Button */}
-      <MobileStickyButton onClick={handlePurchaseCourse}>
-        خرید دوره اینستاگرام
-      </MobileStickyButton>
-
-      {/* Purchase Modal */}
-      <IframeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="خرید دوره اسباب اینستاگرام"
-        url="https://rafeie.com/?add-to-cart=5089"
-      />
-
-      <style>
-        {`
-        @keyframes pulse {
-          0%, 100% { 
-            opacity: 0.4;
-            transform: scale(1);
-          }
-          50% { 
-            opacity: 0.8;
-            transform: scale(1.15);
-          }
-        }
-        
-        @keyframes float-fast {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.5;
-          }
-          25% {
-            transform: translateY(-30px) translateX(15px);
-            opacity: 0.8;
-          }
-          50% {
-            transform: translateY(-5px) translateX(30px);
-            opacity: 0.6;
-          }
-          75% {
-            transform: translateY(25px) translateX(15px);
-            opacity: 0.8;
-          }
-        }
-        
-        @keyframes float-slow {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.4;
-          }
-          33% {
-            transform: translateY(-15px) translateX(25px);
-            opacity: 0.7;
-          }
-          66% {
-            transform: translateY(20px) translateX(-10px);
-            opacity: 0.5;
-          }
-        }
-        
-        .animate-pulse {
-          animation: pulse 6s infinite ease-in-out;
-        }
-        
-        .animate-float-fast {
-          animation: float-fast 12s infinite ease-in-out;
-        }
-        
-        .animate-float-slow {
-          animation: float-slow 18s infinite ease-in-out;
-        }
-        
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .glow-circle {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(30px);
-        }
-        
-        .glow-circle-1 {
-          width: 450px;
-          height: 450px;
-          background: radial-gradient(circle, rgba(147,112,219,0.45) 0%, rgba(147,112,219,0) 70%);
-          top: -150px;
-          right: 10%;
-        }
-        
-        .glow-circle-2 {
-          width: 550px;
-          height: 550px;
-          background: radial-gradient(circle, rgba(65,105,225,0.4) 0%, rgba(65,105,225,0) 70%);
-          bottom: -180px;
-          left: 10%;
-        }
-        
-        .glow-circle-3 {
-          width: 350px;
-          height: 350px;
-          background: radial-gradient(circle, rgba(123,104,238,0.4) 0%, rgba(123,104,238,0) 70%);
-          top: 30%;
-          left: 25%;
-        }
-        
-        .glow-circle-4 {
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(72,209,204,0.35) 0%, rgba(72,209,204,0) 70%);
-          top: 40%;
-          right: 20%;
-        }
-        `}
-      </style>
-    </MainLayout>
+      </div>
+    </div>
   );
 };
 

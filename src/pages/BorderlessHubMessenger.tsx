@@ -14,7 +14,6 @@ const BorderlessHubMessenger: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && user && token) {
-      // Create or get messenger user from the authenticated Rafiei user
       initializeMessengerUser();
     } else {
       setIsLoading(false);
@@ -27,15 +26,25 @@ const BorderlessHubMessenger: React.FC = () => {
       let existingUser = await messengerService.getUserByPhone(user!.phone);
       
       if (!existingUser) {
-        // Create messenger user from Rafiei user data
+        // Create messenger user from Rafiei user data with proper mapping
         const result = await messengerService.registerWithPassword({
           name: user!.full_name,
           phone: user!.phone,
-          username: user!.user_id, // Use the 11-digit ID as username
-          password: 'migrated_user', // Placeholder password for migrated users
+          username: user!.user_id,
+          password: 'migrated_rafiei_user',
           isBoundlessStudent: false
         });
         existingUser = result.user;
+      } else {
+        // Update existing user with Rafiei data if needed
+        if (existingUser.name !== user!.full_name) {
+          await messengerService.updateUser(existingUser.id, {
+            name: user!.full_name,
+            username: user!.user_id
+          });
+          existingUser.name = user!.full_name;
+          existingUser.username = user!.user_id;
+        }
       }
 
       setMessengerUser(existingUser);
@@ -49,7 +58,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-3"></div>
           <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری...</p>
@@ -58,27 +67,25 @@ const BorderlessHubMessenger: React.FC = () => {
     );
   }
 
-  // If not authenticated, show Rafiei Auth
   if (!isAuthenticated) {
     return (
-      <RafieiAuth
-        onSuccess={() => {
-          // Reload to reinitialize
-          window.location.reload();
-        }}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+        <RafieiAuth
+          onSuccess={() => {
+            window.location.reload();
+          }}
+        />
+      </div>
     );
   }
 
-  // If user is not approved for messenger, show pending state
   if (messengerUser && !messengerUser.is_approved) {
     return <Navigate to="/hub/messenger/pending" replace />;
   }
 
-  // Show messenger interface
   if (messengerUser) {
     return (
-      <div className="h-screen bg-slate-100 dark:bg-slate-900">
+      <div className="h-screen bg-white dark:bg-slate-900">
         <Messenger
           sessionToken={token!}
           currentUser={messengerUser}
@@ -89,7 +96,7 @@ const BorderlessHubMessenger: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
       <div className="text-center">
         <p className="text-slate-600 dark:text-slate-400">خطا در دسترسی به پیام‌رسان</p>
       </div>
