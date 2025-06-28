@@ -73,8 +73,7 @@ import EnPaidCourses from "./pages/en/PaidCourses";
 import EnCourseArchive from "./pages/en/CourseArchive";
 import EnAssessmentCenter from "./pages/en/AssessmentCenter";
 
-// Auth and User Hub pages
-import Auth from "./pages/Auth";
+// User Hub page
 import UserHub from "./pages/UserHub";
 
 const queryClient = new QueryClient();
@@ -104,10 +103,6 @@ const App = () => {
                     <Route path="/support" element={<Support />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/payment-request" element={<PaymentRequest />} />
-
-                    {/* Auth Routes */}
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/me" element={<UserHub />} />
 
                     {/* Course landing pages */}
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
@@ -160,7 +155,7 @@ const App = () => {
                     <Route path="/assessment/:slug" element={<TestLanding />} />
 
                     {/* Other pages */}
-                    <Route path="/me" element={<UserHub />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/instructor" element={<InstructorProfile />} />
                     <Route path="/ai-assistant" element={<AIAssistant />} />
                     <Route path="/solidarity" element={<SolidarityLanding />} />
@@ -173,9 +168,8 @@ const App = () => {
                     <Route path="/en/courses" element={<EnCourseArchive />} />
                     <Route path="/en/assessment" element={<EnAssessmentCenter />} />
 
-                    {/* Legacy redirects */}
+                    {/* User Hub Route */}
                     <Route path="/user-hub" element={<UserHub />} />
-                    <Route path="/dashboard" element={<UserHub />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

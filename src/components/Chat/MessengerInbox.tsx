@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Search, Plus, Settings, MessageCircle, Users, Phone } from 'lucide-react';
+import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
-import { useToast } from '@/hooks/use-toast';
+import StartChatModal from './StartChatModal';
 
 interface MessengerInboxProps {
   sessionToken: string;
@@ -28,12 +28,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   currentUser,
   onUserUpdate
 }) => {
-  const { toast } = useToast();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
-  const [supportUsers, setSupportUsers] = useState<MessengerUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showStartChatModal, setShowStartChatModal] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -42,242 +42,226 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
+      const [roomsData, conversationsData] = await Promise.all([
+        messengerService.getRooms(sessionToken),
+        privateMessageService.getUserConversations(currentUser.id, sessionToken)
+      ]);
+
+      // Filter out phantom support rooms - only keep actual chat rooms
+      const filteredRooms = roomsData.filter(room => {
+        // Remove rooms that have support-related names but are not actual support conversations
+        const supportNames = ['پشتیبانی', 'academy_support', 'boundless_support'];
+        const hasSupport = supportNames.some(name => 
+          room.name.includes(name) && room.id !== 4 // Keep گفتگوی عمومی (assuming it's room 4)
+        );
+        
+        return !hasSupport;
+      });
       
-      // Load rooms
-      const roomsData = await messengerService.getRooms(sessionToken);
-      setRooms(roomsData);
-
-      // Load private conversations - fix method name
-      const conversationsData = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
+      setRooms(filteredRooms);
       setConversations(conversationsData);
-
-      // Load support users
-      const supportData = await messengerService.getSupportUsers(currentUser);
-      setSupportUsers(supportData);
     } catch (error) {
-      console.error('Error loading inbox data:', error);
+      console.error('Error loading messenger data:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const filteredRooms = rooms.filter(room =>
+    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    room.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.other_user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conv.other_user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conv.other_user?.phone?.includes(searchTerm)
+  );
+
   const getAvatarColor = (name: string) => {
-    const colors = ['#0088cc', '#2ca5e0', '#8e85ee', '#ee7a00', '#fa5fa0', '#00a63f', '#e17076', '#7b9cff'];
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) {
-      return date.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
-    } else if (days === 1) {
-      return 'دیروز';
-    } else if (days < 7) {
-      return date.toLocaleDateString('fa-IR', { weekday: 'long' });
-    } else {
-      return date.toLocaleDateString('fa-IR', { month: 'short', day: 'numeric' });
-    }
+  const handleStartChat = () => {
+    setShowStartChatModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+  const handleUserSelectFromModal = (user: MessengerUser) => {
+    onUserSelect(user);
+    setShowStartChatModal(false);
+  };
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header - Telegram Style */}
+      {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             پیام‌رسان
           </h2>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="w-8 h-8 p-0 rounded-full">
-              <Plus className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="w-8 h-8 p-0 rounded-full">
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={handleStartChat}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            گفتگوی جدید
+          </Button>
         </div>
         
-        {/* Search Bar - Telegram Style */}
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            type="text"
-            placeholder="جستجو..."
+            ref={searchInputRef}
+            placeholder="جستجو در گفتگوها..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10 rounded-full border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:bg-white dark:focus:bg-slate-600"
+            className="pr-10"
+            dir="rtl"
           />
         </div>
       </div>
 
-      {/* Chat List - Telegram Style */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Support Chats */}
-        {supportUsers.length > 0 && (
-          <div className="border-b border-slate-200 dark:border-slate-700">
-            <div className="px-4 py-2">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                پشتیبانی
-              </p>
+      {/* Chat List */}
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-muted-foreground">در حال بارگذاری...</div>
             </div>
-            {supportUsers.map((user) => (
-              <div
-                key={`support-${user.id}`}
-                onClick={() => onUserSelect(user)}
-                className={`flex items-center gap-3 p-3 mx-2 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                  selectedUser?.id === user.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                }`}
-              >
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback 
-                    style={{ backgroundColor: getAvatarColor(user.name) }}
-                    className="text-white font-medium"
-                  >
-                    {user.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                      {user.name}
-                    </h3>
-                    <Badge variant="secondary" className="text-xs">
-                      پشتیبانی
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                    چت با پشتیبانی
-                  </p>
+          ) : (
+            <>
+              {/* Group Chats */}
+              {filteredRooms.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2">
+                    گروه‌ها
+                  </h3>
+                  {filteredRooms.map((room) => (
+                    <div
+                      key={room.id}
+                      onClick={() => onRoomSelect(room)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedRoom?.id === room.id
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback 
+                          style={{ backgroundColor: getAvatarColor(room.name) }}
+                          className="text-white font-medium"
+                        >
+                          {room.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium truncate">{room.name}</p>
+                        </div>
+                        {room.description && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {room.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="secondary" className="text-xs">
+                          <Users className="w-3 h-3 mr-1" />
+                          گروه
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
 
-        {/* Group Chats */}
-        {rooms.length > 0 && (
-          <div className="border-b border-slate-200 dark:border-slate-700">
-            <div className="px-4 py-2">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                گروه‌ها
-              </p>
-            </div>
-            {rooms.map((room) => (
-              <div
-                key={`room-${room.id}`}
-                onClick={() => onRoomSelect(room)}
-                className={`flex items-center gap-3 p-3 mx-2 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                  selectedRoom?.id === room.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                }`}
-              >
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback 
-                    style={{ backgroundColor: getAvatarColor(room.name) }}
-                    className="text-white font-medium"
-                  >
-                    <Users className="w-6 h-6" />
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                      {room.name}
-                    </h3>
-                    {room.last_message_time && (
-                      <span className="text-xs text-slate-400">
-                        {formatTime(room.last_message_time)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                    {room.description || room.last_message || 'گروه'}
-                  </p>
+              {/* Private Conversations */}
+              {filteredConversations.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2">
+                    گفتگوهای شخصی
+                  </h3>
+                  {filteredConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      onClick={() => onUserSelect(conversation.other_user)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedUser?.id === conversation.other_user?.id
+                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback 
+                          style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
+                          className="text-white font-medium"
+                        >
+                          {conversation.other_user?.name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium truncate">
+                            {conversation.other_user?.name || 'کاربر نامشخص'}
+                          </p>
+                          {conversation.last_message_at && (
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
+                            </span>
+                          )}
+                        </div>
+                        {conversation.other_user?.username && (
+                          <p className="text-xs text-muted-foreground">
+                            @{conversation.other_user.username}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-xs">
+                          <MessageCircle className="w-3 h-3 mr-1" />
+                          شخصی
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                
-                {room.unread_count && room.unread_count > 0 && (
-                  <Badge className="bg-blue-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center">
-                    {room.unread_count}
-                  </Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+              )}
 
-        {/* Private Conversations */}
-        {conversations.length > 0 && (
-          <div>
-            <div className="px-4 py-2">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                چت‌های خصوصی
-              </p>
-            </div>
-            {conversations.map((conv) => (
-              <div
-                key={`conv-${conv.id}`}
-                onClick={() => onUserSelect(conv.otherUser)}
-                className={`flex items-center gap-3 p-3 mx-2 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 ${
-                  selectedUser?.id === conv.otherUser.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                }`}
-              >
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback 
-                    style={{ backgroundColor: getAvatarColor(conv.otherUser.name) }}
-                    className="text-white font-medium"
-                  >
-                    {conv.otherUser.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-slate-900 dark:text-white truncate">
-                      {conv.otherUser.name}
-                    </h3>
-                    {conv.last_message_at && (
-                      <span className="text-xs text-slate-400">
-                        {formatTime(conv.last_message_at)}
-                      </span>
-                    )}
+              {/* No Results */}
+              {!loading && filteredRooms.length === 0 && filteredConversations.length === 0 && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {searchTerm ? 'نتیجه‌ای یافت نشد' : 'گفتگویی موجود نیست'}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleStartChat}
+                      className="mt-3"
+                    >
+                      شروع گفتگوی جدید
+                    </Button>
                   </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    {conv.otherUser.phone}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </>
+          )}
+        </div>
+      </ScrollArea>
 
-        {/* Empty State */}
-        {rooms.length === 0 && conversations.length === 0 && supportUsers.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-              پیامی وجود ندارد
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400">
-              هنوز هیچ گفتگویی شروع نکرده‌اید
-            </p>
-          </div>
-        )}
-      </div>
+      {/* Start Chat Modal */}
+      <StartChatModal
+        isOpen={showStartChatModal}
+        onClose={() => setShowStartChatModal(false)}
+        onUserSelect={handleUserSelectFromModal}
+        sessionToken={sessionToken}
+        currentUser={currentUser}
+      />
     </div>
   );
 };

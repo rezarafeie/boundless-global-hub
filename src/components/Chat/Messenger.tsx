@@ -25,9 +25,8 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
   };
 
   return (
-    <div className="flex h-full bg-white dark:bg-slate-900">
-      {/* Sidebar - Telegram Style */}
-      <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
+    <div className="flex h-full">
+      <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <MessengerInbox
           sessionToken={sessionToken}
           onRoomSelect={handleRoomSelect}
@@ -39,8 +38,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
         />
       </div>
       
-      {/* Chat View - Telegram Style */}
-      <div className="flex-1 bg-slate-50 dark:bg-slate-900 flex flex-col">
+      <div className="flex-1 bg-slate-50 dark:bg-slate-900">
         <MessengerChatView
           selectedRoom={selectedRoom}
           selectedUser={selectedUser}
