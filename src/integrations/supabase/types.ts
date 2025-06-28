@@ -183,17 +183,24 @@ export type Database = {
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
           bio: string | null
+          country_code: string | null
           created_at: string | null
+          email: string | null
+          first_name: string | null
+          full_name: string | null
           id: number
           is_approved: boolean | null
           is_messenger_admin: boolean | null
           is_support_agent: boolean | null
+          last_name: string | null
           last_seen: string | null
           name: string
           password_hash: string | null
           phone: string
           role: string | null
+          signup_source: string | null
           updated_at: string | null
+          user_id: string | null
           username: string | null
         }
         Insert: {
@@ -201,17 +208,24 @@ export type Database = {
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           bio?: string | null
+          country_code?: string | null
           created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          full_name?: string | null
           id?: number
           is_approved?: boolean | null
           is_messenger_admin?: boolean | null
           is_support_agent?: boolean | null
+          last_name?: string | null
           last_seen?: string | null
           name: string
           password_hash?: string | null
           phone: string
           role?: string | null
+          signup_source?: string | null
           updated_at?: string | null
+          user_id?: string | null
           username?: string | null
         }
         Update: {
@@ -219,17 +233,24 @@ export type Database = {
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           bio?: string | null
+          country_code?: string | null
           created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          full_name?: string | null
           id?: number
           is_approved?: boolean | null
           is_messenger_admin?: boolean | null
           is_support_agent?: boolean | null
+          last_name?: string | null
           last_seen?: string | null
           name?: string
           password_hash?: string | null
           phone?: string
           role?: string | null
+          signup_source?: string | null
           updated_at?: string | null
+          user_id?: string | null
           username?: string | null
         }
         Relationships: []
@@ -1099,6 +1120,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      detect_country_code_from_phone: {
+        Args: { phone_number: string }
+        Returns: string
+      }
+      generate_unique_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_or_create_private_conversation: {
         Args: { p_user1_id: number; p_user2_id: number }
         Returns: number
@@ -1139,6 +1168,10 @@ export type Database = {
       increment_views: {
         Args: { announcement_id: number }
         Returns: undefined
+      }
+      is_iranian_phone: {
+        Args: { phone_number: string }
+        Returns: boolean
       }
       is_session_valid: {
         Args: { session_token_param: string }
