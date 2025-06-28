@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -73,7 +74,8 @@ import EnPaidCourses from "./pages/en/PaidCourses";
 import EnCourseArchive from "./pages/en/CourseArchive";
 import EnAssessmentCenter from "./pages/en/AssessmentCenter";
 
-// User Hub page
+// Auth and User Hub pages
+import Auth from "./pages/Auth";
 import UserHub from "./pages/UserHub";
 
 const queryClient = new QueryClient();
@@ -103,6 +105,10 @@ const App = () => {
                     <Route path="/support" element={<Support />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/payment-request" element={<PaymentRequest />} />
+
+                    {/* Auth Routes */}
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/me" element={<UserHub />} />
 
                     {/* Course landing pages */}
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
@@ -168,7 +174,7 @@ const App = () => {
                     <Route path="/en/courses" element={<EnCourseArchive />} />
                     <Route path="/en/assessment" element={<EnAssessmentCenter />} />
 
-                    {/* User Hub Route */}
+                    {/* Legacy redirect for old user-hub */}
                     <Route path="/user-hub" element={<UserHub />} />
 
                     {/* 404 fallback */}
