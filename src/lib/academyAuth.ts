@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import bcrypt from 'bcryptjs';
 
 export interface AcademyUser {
   id: string;
@@ -8,7 +7,6 @@ export interface AcademyUser {
   last_name: string;
   email: string;
   phone: string;
-  password_hash: string;
   role: 'student' | 'admin';
   created_at: string;
   updated_at: string;
@@ -77,9 +75,6 @@ class AcademyAuthService {
     password: string;
   }): Promise<{ user: AcademyUser; error?: string }> {
     try {
-      // Hash password
-      const password_hash = await bcrypt.hash(userData.password, 10);
-
       // Create Supabase auth user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
@@ -103,8 +98,7 @@ class AcademyAuthService {
         .from('academy_users')
         .insert({
           id: authData.user.id,
-          ...userData,
-          password_hash
+          ...userData
         })
         .select()
         .single();
@@ -128,13 +122,7 @@ class AcademyAuthService {
         return { user: null as any, error: 'کاربر یافت نشد' };
       }
 
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      if (!isValidPassword) {
-        return { user: null as any, error: 'رمز عبور اشتباه است' };
-      }
-
-      // Sign in with Supabase auth
+      // Sign in with Supabase auth using email
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: password

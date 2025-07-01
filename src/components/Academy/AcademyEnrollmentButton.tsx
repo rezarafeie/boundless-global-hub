@@ -145,6 +145,7 @@ const AcademyEnrollmentButton: React.FC<AcademyEnrollmentButtonProps> = ({
         });
       }
     } catch (error) {
+      console.error('Enrollment error:', error);
       toast({
         title: 'خطا',
         description: 'خطا در ثبت‌نام',

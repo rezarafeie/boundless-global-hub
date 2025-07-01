@@ -43,7 +43,7 @@ export const Header = () => {
                 alt="Your Company"
               />
             </Link>
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden md:flex space-x-8 mr-8">
               <Link
                 to="/"
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -110,9 +110,9 @@ export const Header = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-80">
                 <SheetHeader>
-                  <SheetTitle>Menu</SheetTitle>
+                  <SheetTitle>منو</SheetTitle>
                   <SheetDescription>
-                    Navigate through our site.
+                    در سایت ما جابه‌جا شوید
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
@@ -146,6 +146,14 @@ export const Header = () => {
                   >
                     تماس با ما
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/academy/admin"
+                      className="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    >
+                      پنل مدیریت
+                    </Link>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

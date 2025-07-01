@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +58,7 @@ const AcademyAuth: React.FC<AcademyAuthProps> = ({ courseSlug, onSuccess }) => {
         }
       }
     } catch (error) {
+      console.error('Check user error:', error);
       toast({
         title: 'خطا',
         description: 'خطا در بررسی کاربر',
@@ -113,6 +114,7 @@ const AcademyAuth: React.FC<AcademyAuthProps> = ({ courseSlug, onSuccess }) => {
         });
       }
     } catch (error) {
+      console.error('Signup error:', error);
       toast({
         title: 'خطا',
         description: 'خطا در ایجاد حساب کاربری',
@@ -151,6 +153,7 @@ const AcademyAuth: React.FC<AcademyAuthProps> = ({ courseSlug, onSuccess }) => {
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: 'خطا',
         description: 'خطا در ورود',
