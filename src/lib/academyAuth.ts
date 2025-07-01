@@ -93,12 +93,15 @@ class AcademyAuthService {
         throw authError || new Error('Failed to create auth user');
       }
 
-      // Insert into academy_users with the same ID
+      // Insert into academy_users with the same ID - no password field needed
       const { data, error } = await supabase
         .from('academy_users')
         .insert({
           id: authData.user.id,
-          ...userData
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          email: userData.email,
+          phone: userData.phone
         })
         .select()
         .single();
