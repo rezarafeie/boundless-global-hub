@@ -169,7 +169,6 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
-          password_hash: string
           phone: string
           role: Database["public"]["Enums"]["academy_user_role"]
           updated_at: string
@@ -180,7 +179,6 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
-          password_hash: string
           phone: string
           role?: Database["public"]["Enums"]["academy_user_role"]
           updated_at?: string
@@ -191,7 +189,6 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
-          password_hash?: string
           phone?: string
           role?: Database["public"]["Enums"]["academy_user_role"]
           updated_at?: string

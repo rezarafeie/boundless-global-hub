@@ -102,7 +102,7 @@ class AcademyAuthService {
           last_name: userData.last_name,
           email: userData.email,
           phone: userData.phone
-        })
+        } as any) // Type assertion to bypass TypeScript until types are regenerated
         .select()
         .single();
 
