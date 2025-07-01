@@ -1,10 +1,9 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -22,24 +21,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import {
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
 import { useRafieiAuth } from "@/hooks/useRafieiAuth";
 import { useAcademyAuth } from '@/contexts/AcademyAuthContext';
 
 export const Header = () => {
-  const { t, i18n } = useTranslation();
-  const { theme } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
   const { openAuth } = useRafieiAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -63,31 +48,31 @@ export const Header = () => {
                 to="/"
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                {t("header.home")}
+                خانه
               </Link>
               <Link
                 to="/courses"
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                {t("header.courses")}
+                دوره‌ها
               </Link>
               <Link
                 to="/blog"
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                {t("header.blog")}
+                بلاگ
               </Link>
               <Link
                 to="/about"
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                {t("header.about")}
+                درباره ما
               </Link>
               <Link
                 to="/contact"
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                {t("header.contact")}
+                تماس با ما
               </Link>
               {isAdmin && (
                 <Link
@@ -135,79 +120,68 @@ export const Header = () => {
                     to="/"
                     className="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   >
-                    {t("header.home")}
+                    خانه
                   </Link>
                   <Link
                     to="/courses"
                     className="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   >
-                    {t("header.courses")}
+                    دوره‌ها
                   </Link>
                   <Link
                     to="/blog"
                     className="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   >
-                    {t("header.blog")}
+                    بلاگ
                   </Link>
                   <Link
                     to="/about"
                     className="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   >
-                    {t("header.about")}
+                    درباره ما
                   </Link>
                   <Link
                     to="/contact"
                     className="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   >
-                    {t("header.contact")}
+                    تماس با ما
                   </Link>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
 
-          {/* Theme and Auth */}
+          {/* Auth */}
           <div className="flex items-center space-x-4">
-            <ModeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative w-8 h-8 rounded-full">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback>
-                      {isAuthenticated ? user?.name?.[0] : "U"}
+                      {isAuthenticated ? user?.first_name?.[0] || user?.full_name?.[0] || "U" : "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel>
-                  {isAuthenticated ? user?.name : "Guest"}
+                  {isAuthenticated ? user?.full_name || `${user?.first_name} ${user?.last_name}` || "کاربر" : "مهمان"}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {!isAuthenticated ? (
                   <DropdownMenuItem onClick={() => openAuth()}>
-                    {t("header.login")}
+                    ورود
                   </DropdownMenuItem>
                 ) : (
                   <>
                     <DropdownMenuItem onClick={() => logout()}>
-                      {t("header.logout")}
+                      خروج
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => window.location.href = '/user-hub'}>
-                      {t("header.user_hub")}
+                      پنل کاربری
                     </DropdownMenuItem>
                   </>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>
-                  {t("header.language")}
-                </DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => i18n.changeLanguage("fa")}>
-                  فارسی
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => i18n.changeLanguage("en")}>
-                  English
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -216,3 +190,5 @@ export const Header = () => {
     </header>
   );
 };
+
+export default Header;

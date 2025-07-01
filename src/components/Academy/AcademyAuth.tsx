@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademyAuth } from '@/contexts/AcademyAuthContext';
 import { academyAuth } from '@/lib/academyAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Phone, User, Lock } from 'lucide-react';
 
 interface AcademyAuthProps {

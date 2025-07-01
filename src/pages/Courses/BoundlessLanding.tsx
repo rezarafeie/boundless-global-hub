@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { Metadata } from 'next';
 import { Link } from 'react-router-dom';
 import AcademyEnrollmentButton from '@/components/Academy/AcademyEnrollmentButton';
 

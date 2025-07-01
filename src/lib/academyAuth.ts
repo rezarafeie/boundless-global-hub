@@ -8,6 +8,7 @@ export interface AcademyUser {
   last_name: string;
   email: string;
   phone: string;
+  password_hash: string;
   role: 'student' | 'admin';
   created_at: string;
   updated_at: string;

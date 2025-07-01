@@ -47,7 +47,12 @@ const AcademyEnrollmentButton: React.FC<AcademyEnrollmentButtonProps> = ({
         .eq('slug', courseSlug)
         .single();
 
-      setCourse(courseData);
+      if (courseData) {
+        setCourse({
+          ...courseData,
+          features: Array.isArray(courseData.features) ? courseData.features : []
+        });
+      }
 
       // Load settings
       const settingsData = await academyAuth.getSettings();

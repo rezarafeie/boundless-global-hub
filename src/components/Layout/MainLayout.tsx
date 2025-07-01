@@ -1,7 +1,7 @@
 
 import React, { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import Header from "@/components/Layout/Header";
+import { Header } from "@/components/Layout/Header";
 import Footer from "@/components/Layout/Footer";
 import LiveWarModeBanner from "@/components/LiveWarModeBanner";
 import PopupNotification from "@/components/PopupNotification";
