@@ -9,192 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      academy_courses: {
-        Row: {
-          created_at: string
-          description: string | null
-          features: Json | null
-          id: string
-          price: number | null
-          redirect_after_enroll: string | null
-          slug: string
-          status: Database["public"]["Enums"]["course_status"]
-          title: string
-          type: Database["public"]["Enums"]["course_type"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          price?: number | null
-          redirect_after_enroll?: string | null
-          slug: string
-          status?: Database["public"]["Enums"]["course_status"]
-          title: string
-          type?: Database["public"]["Enums"]["course_type"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          price?: number | null
-          redirect_after_enroll?: string | null
-          slug?: string
-          status?: Database["public"]["Enums"]["course_status"]
-          title?: string
-          type?: Database["public"]["Enums"]["course_type"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      academy_enrollments: {
-        Row: {
-          completed_at: string | null
-          course_id: string
-          enrolled_at: string
-          id: string
-          status: Database["public"]["Enums"]["enrollment_status"]
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          course_id: string
-          enrolled_at?: string
-          id?: string
-          status?: Database["public"]["Enums"]["enrollment_status"]
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          course_id?: string
-          enrolled_at?: string
-          id?: string
-          status?: Database["public"]["Enums"]["enrollment_status"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "academy_enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "academy_courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "academy_enrollments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "academy_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      academy_settings: {
-        Row: {
-          enrollment_enabled: boolean
-          id: number
-          updated_at: string
-          use_old_auth_system: boolean
-        }
-        Insert: {
-          enrollment_enabled?: boolean
-          id?: number
-          updated_at?: string
-          use_old_auth_system?: boolean
-        }
-        Update: {
-          enrollment_enabled?: boolean
-          id?: number
-          updated_at?: string
-          use_old_auth_system?: boolean
-        }
-        Relationships: []
-      }
-      academy_transactions: {
-        Row: {
-          amount: number
-          course_id: string
-          created_at: string
-          gateway: string
-          gateway_transaction_id: string | null
-          id: string
-          status: Database["public"]["Enums"]["transaction_status"]
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          course_id: string
-          created_at?: string
-          gateway?: string
-          gateway_transaction_id?: string | null
-          id?: string
-          status?: Database["public"]["Enums"]["transaction_status"]
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          course_id?: string
-          created_at?: string
-          gateway?: string
-          gateway_transaction_id?: string | null
-          id?: string
-          status?: Database["public"]["Enums"]["transaction_status"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "academy_transactions_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "academy_courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "academy_transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "academy_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      academy_users: {
-        Row: {
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          last_name: string
-          phone: string
-          role: Database["public"]["Enums"]["academy_user_role"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          last_name: string
-          phone: string
-          role?: Database["public"]["Enums"]["academy_user_role"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          last_name?: string
-          phone?: string
-          role?: Database["public"]["Enums"]["academy_user_role"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       admin_settings: {
         Row: {
           id: number
@@ -1314,10 +1128,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_academy_user_role: {
-        Args: { user_uuid: string }
-        Returns: Database["public"]["Enums"]["academy_user_role"]
-      }
       get_or_create_private_conversation: {
         Args: { p_user1_id: number; p_user2_id: number }
         Returns: number
@@ -1359,10 +1169,6 @@ export type Database = {
         Args: { announcement_id: number }
         Returns: undefined
       }
-      is_academy_admin: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
       is_iranian_phone: {
         Args: { phone_number: string }
         Returns: boolean
@@ -1394,10 +1200,6 @@ export type Database = {
       }
     }
     Enums: {
-      academy_user_role: "student" | "admin"
-      course_status: "active" | "closed" | "full"
-      course_type: "free" | "paid"
-      enrollment_status: "enrolled" | "completed"
       support_tag:
         | "technical"
         | "billing"
@@ -1407,7 +1209,6 @@ export type Database = {
         | "feature_request"
         | "urgent"
         | "follow_up"
-      transaction_status: "success" | "pending" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1523,10 +1324,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      academy_user_role: ["student", "admin"],
-      course_status: ["active", "closed", "full"],
-      course_type: ["free", "paid"],
-      enrollment_status: ["enrolled", "completed"],
       support_tag: [
         "technical",
         "billing",
@@ -1537,7 +1334,6 @@ export const Constants = {
         "urgent",
         "follow_up",
       ],
-      transaction_status: ["success", "pending", "failed"],
     },
   },
 } as const

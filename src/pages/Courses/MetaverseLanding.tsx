@@ -7,7 +7,6 @@ import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
 import InstructorProfile from "@/components/InstructorProfile";
 import IframeModal from "@/components/IframeModal";
-import AcademyEnrollmentButton from '@/components/Academy/AcademyEnrollmentButton';
 
 const MetaverseLanding = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +21,7 @@ const MetaverseLanding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-100">
+    <MainLayout>
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 to-purple-50 pt-24 pb-20 relative">
         {/* Animated Glow Background */}
@@ -249,27 +248,6 @@ const MetaverseLanding = () => {
         url="https://auth.rafiei.co/?add-to-cart=145"
       />
 
-      {/* Update the enrollment button section */}
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center space-y-6">
-          <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-200">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              وارد دنیای متاورس شوید
-            </h3>
-            <p className="text-gray-600 mb-6">
-              همین الان در دوره متاورس ثبت‌نام کنید و آینده دیجیتال را کشف کنید
-            </p>
-            
-            <AcademyEnrollmentButton
-              courseSlug="metaverse"
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-            >
-              ثبت‌نام در دوره متاورس
-            </AcademyEnrollmentButton>
-          </div>
-        </div>
-      </div>
-
       <style>
         {`
         @keyframes pulse {
@@ -376,7 +354,7 @@ const MetaverseLanding = () => {
         }
         `}
       </style>
-    </div>
+    </MainLayout>
   );
 };
 
