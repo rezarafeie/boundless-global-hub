@@ -211,8 +211,11 @@ const BorderlessHubMessenger: React.FC = () => {
         messengerService.getRooms(sessionToken)
       ]);
       
+      // Show all active rooms - no filtering
+      const activeRooms = chatRooms.filter(room => room.is_active);
+      
       setPrivateConversations(conversations);
-      setRooms(chatRooms);
+      setRooms(activeRooms);
     } catch (error) {
       console.error('Error loading chats:', error);
     }

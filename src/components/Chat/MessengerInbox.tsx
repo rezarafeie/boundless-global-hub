@@ -47,18 +47,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         privateMessageService.getUserConversations(currentUser.id, sessionToken)
       ]);
 
-      // Filter out phantom support rooms - only keep actual chat rooms
-      const filteredRooms = roomsData.filter(room => {
-        // Remove rooms that have support-related names but are not actual support conversations
-        const supportNames = ['پشتیبانی', 'academy_support', 'boundless_support'];
-        const hasSupport = supportNames.some(name => 
-          room.name.includes(name) && room.id !== 4 // Keep گفتگوی عمومی (assuming it's room 4)
-        );
-        
-        return !hasSupport;
-      });
+      // Show all active rooms - no filtering
+      const activeRooms = roomsData.filter(room => room.is_active);
       
-      setRooms(filteredRooms);
+      setRooms(activeRooms);
       setConversations(conversationsData);
     } catch (error) {
       console.error('Error loading messenger data:', error);
@@ -101,14 +93,25 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             پیام‌رسان
           </h2>
-          <Button
-            size="sm"
-            onClick={handleStartChat}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            گفتگوی جدید
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={loadData}
+              className="flex items-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              به‌روزرسانی
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleStartChat}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              گفتگوی جدید
+            </Button>
+          </div>
         </div>
         
         <div className="relative">
@@ -160,6 +163,9 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium truncate">{room.name}</p>
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            📌 ثابت
+                          </Badge>
                         </div>
                         {room.description && (
                           <p className="text-xs text-muted-foreground truncate">
