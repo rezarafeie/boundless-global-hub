@@ -628,9 +628,15 @@ class MessengerService {
     is_active?: boolean;
   }): Promise<ChatRoom> {
     try {
+      // Ensure rooms are active by default
+      const roomToCreate = {
+        ...roomData,
+        is_active: roomData.is_active !== false // Default to true unless explicitly set to false
+      };
+      
       const { data, error } = await supabase
         .from('chat_rooms')
-        .insert([roomData])
+        .insert([roomToCreate])
         .select()
         .single();
 

@@ -42,10 +42,14 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('Loading messenger data...');
       const [roomsData, conversationsData] = await Promise.all([
         messengerService.getRooms(sessionToken),
         privateMessageService.getUserConversations(currentUser.id, sessionToken)
       ]);
+
+      console.log('Loaded rooms:', roomsData);
+      console.log('Loaded conversations:', conversationsData);
 
       // Show all active rooms - no filtering
       const activeRooms = roomsData.filter(room => room.is_active);
