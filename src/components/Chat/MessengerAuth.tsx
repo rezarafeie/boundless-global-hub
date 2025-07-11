@@ -174,10 +174,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="شماره تلفن خود را وارد کنید"
+                placeholder="شماره تلفن خود را وارد کنید (از همه کشورها قابل قبول)"
                 required
                 dir="ltr"
               />
+              <p className="text-xs text-muted-foreground">
+                شماره تلفن از همه کشورها پذیرفته می‌شود
+              </p>
             </div>
 
             <div className="space-y-2">

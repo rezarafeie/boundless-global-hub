@@ -96,8 +96,6 @@ class MessengerService {
     username?: string;
     password: string;
   }): Promise<{ session_token: string; user: MessengerUser }> {
-    const settings = await this.getAdminSettings();
-    
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     
     const { data: user, error } = await supabase
@@ -107,7 +105,7 @@ class MessengerService {
         phone: userData.phone,
         username: userData.username,
         password_hash: hashedPassword,
-        is_approved: !settings.manual_approval_enabled,
+        is_approved: true, // Always auto-approve
         role: 'user'
       })
       .select()
@@ -135,8 +133,6 @@ class MessengerService {
     password: string;
     isBoundlessStudent?: boolean;
   }): Promise<{ session_token: string; user: MessengerUser }> {
-    const settings = await this.getAdminSettings();
-    
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     
     const { data: user, error } = await supabase
@@ -146,7 +142,7 @@ class MessengerService {
         phone: userData.phone,
         username: userData.username,
         password_hash: hashedPassword,
-        is_approved: !settings.manual_approval_enabled,
+        is_approved: true, // Always auto-approve
         bedoun_marz: userData.isBoundlessStudent || false,
         role: 'user'
       })
