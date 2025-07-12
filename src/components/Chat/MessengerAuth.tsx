@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageCircle, User, Phone, AtSign, Check } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
+import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 
 interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -19,6 +21,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    countryCode: '+98',
     username: '',
     password: 'defaultpassword123',
     isBoundlessStudent: false
@@ -81,6 +84,14 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     }
   };
 
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      phone: value,
+      countryCode: detectCountryCode(value)
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -105,10 +116,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
+      // Format phone with country code
+      const formattedPhone = formatPhoneWithCountryCode(formData.phone, formData.countryCode);
+      
       // Register user with password
       const result = await messengerService.registerWithPassword({
         name: formData.name.trim(),
-        phone: formData.phone.trim(),
+        phone: formattedPhone,
         username: formData.username || undefined,
         password: formData.password,
         isBoundlessStudent: formData.isBoundlessStudent
@@ -169,15 +183,30 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 <Phone className="w-4 h-4" />
                 شماره تلفن
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="شماره تلفن خود را وارد کنید (از همه کشورها قابل قبول)"
-                required
-                dir="ltr"
-              />
+              <div className="flex gap-2">
+                <Select value={formData.countryCode} onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getCountryCodeOptions().map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.flag} {country.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="شماره تلفن"
+                  required
+                  dir="ltr"
+                  className="flex-1"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 شماره تلفن از همه کشورها پذیرفته می‌شود
               </p>

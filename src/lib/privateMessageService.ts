@@ -217,6 +217,38 @@ class PrivateMessageService {
 
   async sendMessage(conversationId: number, senderId: number, message: string, sessionToken: string): Promise<PrivateMessage> {
     try {
+      // Send webhook first
+      try {
+        const { webhookService } = await import('@/lib/webhookService');
+        const { data: sender } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', senderId)
+          .single();
+
+        if (sender) {
+          // Determine if this is a support conversation
+          const { data: conversation } = await supabase
+            .from('support_conversations')
+            .select('*')
+            .eq('id', conversationId)
+            .single();
+
+          const chatType = conversation ? 'support' : 'private';
+          
+          await webhookService.sendMessageWebhook({
+            messageContent: message,
+            senderName: sender.name,
+            senderPhone: sender.phone || '',
+            senderEmail: sender.email || '',
+            chatType: chatType,
+            chatName: chatType === 'support' ? 'Support Chat' : 'Private Chat',
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Error sending webhook:', error);
+      }
       console.log('Sending message:', { conversationId, senderId, messageLength: message.length });
       
       const { data, error } = await supabase

@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageCircle, Phone, User, Lock, AtSign, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
+import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 
 interface UnifiedMessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -20,6 +22,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [countryCode, setCountryCode] = useState('+98');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -84,6 +87,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
+  const handlePhoneChange = (value: string) => {
+    setPhoneNumber(value);
+    setCountryCode(detectCountryCode(value));
+  };
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -98,8 +106,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
+      // Format phone with country code
+      const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+      
       // Check if user exists
-      const user = await messengerService.getUserByPhone(phoneNumber);
+      const user = await messengerService.getUserByPhone(formattedPhone);
       if (user) {
         setExistingUser(user);
         setIsLogin(true);
@@ -134,7 +145,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       // Login flow
       setLoading(true);
       try {
-        const result = await messengerService.authenticateUser(phoneNumber, password);
+        const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+        const result = await messengerService.authenticateUser(formattedPhone, password);
         if (result && existingUser) {
           if (!existingUser.is_approved) {
             setCurrentStep('pending');
@@ -202,10 +214,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
+      // Format phone with country code
+      const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+      
       // Register user
       const result = await messengerService.registerWithPassword({
         name: name.trim(),
-        phone: phoneNumber,
+        phone: formattedPhone,
         username: username,
         password: password,
         isBoundlessStudent: isBoundlessStudent
@@ -234,7 +249,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const checkApprovalStatus = async () => {
     setLoading(true);
     try {
-      const user = await messengerService.getUserByPhone(phoneNumber);
+      const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+      const user = await messengerService.getUserByPhone(formattedPhone);
       if (user && user.is_approved) {
         const session = await messengerService.createSession(user.id);
         onAuthenticated(session.session_token, user.name, user);
@@ -330,15 +346,30 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   <Phone className="w-4 h-4" />
                   شماره تلفن
                 </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="۰۹۱۲۳۴۵۶۷۸۹"
-                  required
-                  dir="ltr"
-                />
+                <div className="flex gap-2">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getCountryCodeOptions().map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.flag} {country.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="شماره تلفن"
+                    required
+                    dir="ltr"
+                    className="flex-1"
+                  />
+                </div>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (

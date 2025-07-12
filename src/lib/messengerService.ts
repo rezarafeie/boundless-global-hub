@@ -5,6 +5,7 @@ export interface MessengerUser {
   id: number;
   name: string;
   phone: string;
+  email?: string;
   username?: string;
   role?: string;
   is_approved: boolean;
@@ -288,11 +289,11 @@ class MessengerService {
     if (error) throw error;
   }
 
-  async getRooms(token: string): Promise<ChatRoom[]> {
+  async getRooms(sessionToken: string): Promise<ChatRoom[]> {
     const { data: session } = await supabase
       .from('user_sessions')
       .select('user_id')
-      .eq('session_token', token)
+      .eq('session_token', sessionToken)
       .single();
   
     if (!session) {
@@ -395,6 +396,27 @@ class MessengerService {
   }
 
   async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
+    // Send webhook first
+    try {
+      const { webhookService } = await import('@/lib/webhookService');
+      const sender = await this.getUserById(senderId);
+      const room = await this.getRoomById(roomId);
+      
+      if (sender) {
+        await webhookService.sendMessageWebhook({
+          messageContent: message,
+          senderName: sender.name,
+          senderPhone: sender.phone || '',
+          senderEmail: sender.email || '',
+          chatType: 'group',
+          chatName: room?.name || 'Unknown Room',
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Error sending webhook:', error);
+    }
+
     const { data, error } = await supabase
       .from('messenger_messages')
       .insert({
@@ -414,6 +436,38 @@ class MessengerService {
       ...data,
       sender: data.chat_users || { name: 'Unknown', phone: '' }
     };
+  }
+
+  async getUserById(userId: number): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      return null;
+    }
+  }
+
+  async getRoomById(roomId: number): Promise<ChatRoom | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting room by ID:', error);
+      return null;
+    }
   }
 
   async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<MessengerMessage> {

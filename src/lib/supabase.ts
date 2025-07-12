@@ -93,6 +93,36 @@ export const chatService = {
   },
 
   async sendMessage(message: ChatMessageInsert): Promise<ChatMessage> {
+    // Send webhook first  
+    try {
+      const { webhookService } = await import('@/lib/webhookService');
+      const { data: sender } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', message.user_id)
+        .single();
+
+      const { data: topic } = await supabase
+        .from('chat_topics')
+        .select('title')
+        .eq('id', message.topic_id)
+        .single();
+
+      if (sender) {
+        await webhookService.sendMessageWebhook({
+          messageContent: message.message,
+          senderName: sender.name,
+          senderPhone: sender.phone || '',
+          senderEmail: sender.email || '',
+          chatType: 'group',
+          chatName: topic?.title || 'Unknown Topic',
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Error sending webhook:', error);
+    }
+
     const { data, error } = await supabase
       .from('chat_messages')
       .insert([message])
