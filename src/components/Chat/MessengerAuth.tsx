@@ -84,13 +84,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     }
   };
 
-  const handlePhoneChange = (value: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      phone: value,
-      countryCode: detectCountryCode(value)
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +110,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     
     try {
       // Format phone with country code
-      const formattedPhone = formatPhoneWithCountryCode(formData.phone, formData.countryCode);
+      const formattedPhone = formData.countryCode + formData.phone;
       
       // Register user with password
       const result = await messengerService.registerWithPassword({
@@ -183,9 +176,9 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 <Phone className="w-4 h-4" />
                 شماره تلفن
               </Label>
-              <div className="flex gap-2">
+              <div className="flex">
                 <Select value={formData.countryCode} onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 rounded-r-none border-r-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -200,11 +193,14 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="شماره تلفن"
+                  onChange={(e) => {
+                    const cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                    setFormData(prev => ({ ...prev, phone: cleanValue }));
+                  }}
+                  placeholder="9123456789"
                   required
                   dir="ltr"
-                  className="flex-1"
+                  className="flex-1 rounded-l-none"
                 />
               </div>
               <p className="text-xs text-muted-foreground">

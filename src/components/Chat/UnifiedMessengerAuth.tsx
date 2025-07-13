@@ -87,10 +87,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
-  const handlePhoneChange = (value: string) => {
-    setPhoneNumber(value);
-    setCountryCode(detectCountryCode(value));
-  };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +103,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Format phone with country code
-      const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+      const formattedPhone = countryCode + phoneNumber;
       
       // Check if user exists
       const user = await messengerService.getUserByPhone(formattedPhone);
@@ -145,7 +141,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       // Login flow
       setLoading(true);
       try {
-        const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+        const formattedPhone = countryCode + phoneNumber;
         const result = await messengerService.authenticateUser(formattedPhone, password);
         if (result && existingUser) {
           if (!existingUser.is_approved) {
@@ -215,7 +211,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Format phone with country code
-      const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+      const formattedPhone = countryCode + phoneNumber;
       
       // Register user
       const result = await messengerService.registerWithPassword({
@@ -249,7 +245,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const checkApprovalStatus = async () => {
     setLoading(true);
     try {
-      const formattedPhone = formatPhoneWithCountryCode(phoneNumber, countryCode);
+      const formattedPhone = countryCode + phoneNumber;
       const user = await messengerService.getUserByPhone(formattedPhone);
       if (user && user.is_approved) {
         const session = await messengerService.createSession(user.id);
@@ -346,9 +342,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   <Phone className="w-4 h-4" />
                   شماره تلفن
                 </Label>
-                <div className="flex gap-2">
+                <div className="flex">
                   <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-32 rounded-r-none border-r-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -363,11 +359,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                     id="phone"
                     type="tel"
                     value={phoneNumber}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="شماره تلفن"
+                    onChange={(e) => {
+                      const cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                      setPhoneNumber(cleanValue);
+                    }}
+                    placeholder="9123456789"
                     required
                     dir="ltr"
-                    className="flex-1"
+                    className="flex-1 rounded-l-none"
                   />
                 </div>
               </div>

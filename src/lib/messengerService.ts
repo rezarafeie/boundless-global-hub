@@ -145,7 +145,8 @@ class MessengerService {
         password_hash: hashedPassword,
         is_approved: true, // Always auto-approve
         bedoun_marz: userData.isBoundlessStudent || false,
-        role: 'user'
+        role: 'user',
+        country_code: userData.phone.substring(0, userData.phone.length - 10) // Extract country code
       })
       .select()
       .single();
