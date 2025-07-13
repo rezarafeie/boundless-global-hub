@@ -8,7 +8,7 @@ interface WebhookData {
   timestamp: string;
 }
 
-const WEBHOOK_URL = 'https://rafeie.app.n8n.cloud/webhook-test/90fb3574-9e9e-41cc-8845-b93f5686b66a';
+const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk';
 
 export const webhookService = {
   async sendMessageWebhook(data: WebhookData): Promise<void> {
