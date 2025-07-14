@@ -15,24 +15,27 @@ export const webhookService = {
     try {
       console.log('Sending webhook for message:', data);
       
+      // Send data directly without wrapping in nested structure
       const payload = {
         message_content: data.messageContent,
         sender_name: data.senderName,
         sender_phone: data.senderPhone,
         sender_email: data.senderEmail,
         chat_type: data.chatType,
-        chat_name: data.chatName,
+        chat_name: data.chatName || '',
         timestamp: data.timestamp,
         triggered_from: window.location.origin
       };
 
+      // Use form data to ensure fields are sent separately
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+
       await fetch(WEBHOOK_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'no-cors',
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       console.log('Webhook sent successfully');

@@ -342,9 +342,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   <Phone className="w-4 h-4" />
                   شماره تلفن
                 </Label>
-                <div className="flex">
+                <div className="flex" dir="ltr">
                   <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-32 rounded-r-none border-r-0">
+                    <SelectTrigger className="w-32 rounded-l-none border-l-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -360,13 +360,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => {
-                      const cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                      let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                      // Remove leading zeros and plus signs
+                      cleanValue = cleanValue.replace(/^[0+]+/, '');
                       setPhoneNumber(cleanValue);
                     }}
                     placeholder="9123456789"
                     required
                     dir="ltr"
-                    className="flex-1 rounded-l-none"
+                    className="flex-1 rounded-r-none"
                   />
                 </div>
               </div>

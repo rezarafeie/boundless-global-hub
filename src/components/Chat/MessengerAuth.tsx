@@ -176,9 +176,9 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 <Phone className="w-4 h-4" />
                 شماره تلفن
               </Label>
-              <div className="flex">
+              <div className="flex" dir="ltr">
                 <Select value={formData.countryCode} onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}>
-                  <SelectTrigger className="w-32 rounded-r-none border-r-0">
+                  <SelectTrigger className="w-32 rounded-l-none border-l-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -194,13 +194,15 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => {
-                    const cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                    let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                    // Remove leading zeros and plus signs
+                    cleanValue = cleanValue.replace(/^[0+]+/, '');
                     setFormData(prev => ({ ...prev, phone: cleanValue }));
                   }}
                   placeholder="9123456789"
                   required
                   dir="ltr"
-                  className="flex-1 rounded-l-none"
+                  className="flex-1 rounded-r-none"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
