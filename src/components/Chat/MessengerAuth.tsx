@@ -142,38 +142,43 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-none bg-background">
-        <CardHeader className="text-center pb-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
-              <MessageCircle className="w-10 h-10 text-primary-foreground" />
-            </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <MessageCircle className="w-12 h-12 text-blue-500" />
           </div>
-          <CardTitle className="text-2xl font-normal text-foreground">پیام‌رسان بدون مرز</CardTitle>
-          <CardDescription className="text-muted-foreground mt-2">
-            شماره تلفن خود را وارد کنید
+          <CardTitle className="text-2xl">ورود به پیام‌رسان</CardTitle>
+          <CardDescription>
+            برای ورود به پیام‌رسان بدون مرز، اطلاعات خود را وارد کنید
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                نام و نام خانوادگی
+              </Label>
               <Input
                 id="name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="نام و نام خانوادگی"
+                placeholder="نام کامل خود را وارد کنید"
                 required
                 dir="rtl"
-                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <div className="flex border-0 border-b border-border" dir="ltr">
+              <Label htmlFor="phone" className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                شماره تلفن
+              </Label>
+              <div className="flex" dir="ltr">
                 <Select value={formData.countryCode} onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}>
-                  <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
+                  <SelectTrigger className="w-32 rounded-l-none border-l-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -197,23 +202,30 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   placeholder="9123456789"
                   required
                   dir="ltr"
-                  className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"
+                  className="flex-1 rounded-r-none"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                شماره تلفن از همه کشورها پذیرفته می‌شود
+              </p>
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="username" className="flex items-center gap-2">
+                <AtSign className="w-4 h-4" />
+                نام کاربری (اختیاری)
+              </Label>
               <div className="relative">
                 <Input
                   id="username"
                   type="text"
                   value={formData.username}
                   onChange={(e) => handleUsernameChange(e.target.value)}
-                  placeholder="نام کاربری (اختیاری)"
-                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 pl-8 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  placeholder="username"
+                  className="pl-8"
                   dir="ltr"
                 />
-                <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                <div className="absolute left-2 top-1/2 -translate-y-1/2">
                   {usernameChecking ? (
                     <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
                   ) : usernameAvailable === true ? (
@@ -222,11 +234,14 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 </div>
               </div>
               {usernameError && (
-                <p className="text-sm text-destructive">{usernameError}</p>
+                <p className="text-sm text-red-500">{usernameError}</p>
               )}
+              <p className="text-xs text-muted-foreground">
+                نام کاربری منحصر به فرد است و دیگران می‌توانند با آن شما را پیدا کنند
+              </p>
             </div>
 
-            <div className="flex items-center space-x-2 space-x-reverse pt-4">
+            <div className="flex items-center space-x-2 space-x-reverse">
               <Checkbox
                 id="boundless"
                 checked={formData.isBoundlessStudent}
@@ -234,17 +249,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   setFormData(prev => ({ ...prev, isBoundlessStudent: checked as boolean }))
                 }
               />
-              <Label htmlFor="boundless" className="text-sm text-muted-foreground">
+              <Label htmlFor="boundless" className="text-sm">
                 من دانشجوی دوره بدون مرز هستم
               </Label>
             </div>
 
             <Button 
               type="submit" 
-              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal mt-8" 
+              className="w-full" 
               disabled={loading || (formData.username && !usernameAvailable)}
             >
-              {loading ? 'در حال بررسی...' : 'ورود'}
+              {loading ? 'در حال ثبت نام...' : 'ورود به پیام‌رسان'}
             </Button>
           </form>
         </CardContent>

@@ -189,22 +189,12 @@ class MessengerService {
     }
 
     if (!user.password_hash) {
-      // User exists but no password set, update with new password
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const { error: updateError } = await supabase
-        .from('chat_users')
-        .update({ password_hash: hashedPassword })
-        .eq('id', user.id);
+      throw new Error('رمز عبور تنظیم نشده است');
+    }
 
-      if (updateError) throw updateError;
-      
-      // Update user object
-      user.password_hash = hashedPassword;
-    } else {
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      if (!isValidPassword) {
-        throw new Error('رمز عبور اشتباه است');
-      }
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      throw new Error('رمز عبور اشتباه است');
     }
 
     const session_token = this.generateToken();
