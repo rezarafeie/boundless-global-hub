@@ -285,22 +285,22 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
   if (currentStep === 'pending') {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-0 shadow-none bg-background">
+          <CardHeader className="text-center pb-8">
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-10 h-10 text-amber-500" />
               </div>
             </div>
-            <CardTitle>{getStepTitle()}</CardTitle>
-            <CardDescription>{getStepDescription()}</CardDescription>
+            <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>
+            <CardDescription className="text-muted-foreground mt-2">{getStepDescription()}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <Button 
               onClick={checkApprovalStatus}
               disabled={loading}
-              className="w-full"
+              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal"
             >
               {loading ? (
                 <>
@@ -312,9 +312,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               )}
             </Button>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               onClick={() => setCurrentStep('phone')}
-              className="w-full"
+              className="w-full h-12 rounded-full text-muted-foreground"
             >
               برگشت
             </Button>
@@ -325,26 +325,24 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <MessageCircle className="w-12 h-12 text-blue-500" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-0 shadow-none bg-background">
+        <CardHeader className="text-center pb-8">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+              <MessageCircle className="w-10 h-10 text-primary-foreground" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">{getStepTitle()}</CardTitle>
-          <CardDescription>{getStepDescription()}</CardDescription>
+          <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>
+          <CardDescription className="text-muted-foreground mt-2">{getStepDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
           {currentStep === 'phone' && (
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  شماره تلفن
-                </Label>
-                <div className="flex" dir="ltr">
+                <div className="flex border-0 border-b border-border" dir="ltr">
                   <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-32 rounded-l-none border-l-0">
+                    <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -365,14 +363,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                       cleanValue = cleanValue.replace(/^[0+]+/, '');
                       setPhoneNumber(cleanValue);
                     }}
-                    placeholder="9123456789"
+                    placeholder="شماره تلفن"
                     required
                     dir="ltr"
-                    className="flex-1 rounded-r-none"
+                    className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal mt-8" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -386,33 +384,30 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           )}
 
           {currentStep === 'password' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <form onSubmit={handlePasswordSubmit} className="space-y-6">
               {isLogin && existingUser && (
-                <div className="text-center mb-4">
+                <div className="text-center mb-6">
                   <p className="text-sm text-muted-foreground">
-                    ورود برای: <span className="font-medium">{existingUser.name}</span>
+                    ورود برای: <span className="font-medium text-foreground">{existingUser.name}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground">{phoneNumber}</p>
+                  <p className="text-xs text-muted-foreground">{countryCode}{phoneNumber}</p>
                 </div>
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  رمز عبور
-                </Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={isLogin ? "رمز عبور خود را وارد کنید" : "رمز عبور خود را انتخاب کنید"}
+                  placeholder={isLogin ? "رمز عبور" : "رمز عبور جدید"}
                   required
+                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
                 />
               </div>
               
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1" disabled={loading}>
+              <div className="flex gap-3 mt-8">
+                <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -424,8 +419,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 </Button>
                 <Button 
                   type="button" 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => setCurrentStep('phone')}
+                  className="px-4 h-12 rounded-full text-muted-foreground"
                 >
                   برگشت
                 </Button>
@@ -434,40 +430,38 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           )}
 
           {currentStep === 'name' && (
-            <form onSubmit={handleNameSubmit} className="space-y-4">
+            <form onSubmit={handleNameSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  نام و نام خانوادگی
-                </Label>
                 <Input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="نام کامل خود را وارد کنید"
+                  placeholder="نام و نام خانوادگی"
                   required
                   dir="rtl"
+                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
                 />
               </div>
               
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <div className="flex items-center space-x-2 space-x-reverse pt-4">
                 <Checkbox
                   id="boundless"
                   checked={isBoundlessStudent}
                   onCheckedChange={(checked) => setIsBoundlessStudent(checked as boolean)}
                 />
-                <Label htmlFor="boundless" className="text-sm">
+                <Label htmlFor="boundless" className="text-sm text-muted-foreground">
                   من دانشجوی دوره بدون مرز هستم
                 </Label>
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">ادامه</Button>
+              <div className="flex gap-3 mt-8">
+                <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal">ادامه</Button>
                 <Button 
                   type="button" 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => setCurrentStep('password')}
+                  className="px-4 h-12 rounded-full text-muted-foreground"
                 >
                   برگشت
                 </Button>
@@ -476,46 +470,40 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           )}
 
           {currentStep === 'username' && (
-            <form onSubmit={handleUsernameSubmit} className="space-y-4">
+            <form onSubmit={handleUsernameSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username" className="flex items-center gap-2">
-                  <AtSign className="w-4 h-4" />
-                  نام کاربری منحصر به فرد
-                </Label>
                 <div className="relative">
                   <Input
                     id="username"
                     type="text"
                     value={username}
                     onChange={(e) => handleUsernameChange(e.target.value)}
-                    placeholder="username"
-                    className="pl-8"
+                    placeholder="نام کاربری"
+                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 pl-8 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
                     dir="ltr"
                     required
                   />
-                  <div className="absolute left-2 top-1/2 -translate-y-1/2">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2">
                     {usernameChecking ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
                     ) : usernameAvailable === true ? (
                       <Check className="w-4 h-4 text-green-500" />
-                    ) : usernameAvailable === false ? (
-                      <AlertCircle className="w-4 h-4 text-red-500" />
                     ) : null}
                   </div>
                 </div>
                 {usernameError && (
-                  <p className="text-sm text-red-500">{usernameError}</p>
+                  <p className="text-sm text-destructive">{usernameError}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  دیگران می‌توانند با نام کاربری شما پیدا کنند
+                  نام کاربری منحصر به فرد است و دیگران می‌توانند با آن شما را پیدا کنند
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3 mt-8">
                 <Button 
                   type="submit" 
-                  className="flex-1" 
-                  disabled={loading || !usernameAvailable}
+                  className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                  disabled={loading || (username && !usernameAvailable)}
                 >
                   {loading ? (
                     <>
@@ -523,13 +511,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                       در حال ثبت نام...
                     </>
                   ) : (
-                    'تکمیل ثبت نام'
+                    'ثبت نام'
                   )}
                 </Button>
                 <Button 
                   type="button" 
-                  variant="outline" 
+                  variant="ghost" 
                   onClick={() => setCurrentStep('name')}
+                  className="px-4 h-12 rounded-full text-muted-foreground"
                 >
                   برگشت
                 </Button>
