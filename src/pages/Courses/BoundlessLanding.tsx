@@ -108,6 +108,10 @@ const BoundlessLanding = () => {
     { title: "دراپ‌سرویسینگ", icon: Target },
     { title: "فروش فایل و آکادمی آنلاین", icon: BookOpen },
     { title: "بازارهای مالی و زیرساخت‌های بین‌المللی", icon: Brain },
+    { title: "Lovable - ابزار توسعه هوش مصنوعی", icon: Brain },
+    { title: "Google AI Studio - استودیو هوش مصنوعی گوگل", icon: Brain },
+    { title: "Canva AI - طراحی هوشمند و خلاقانه", icon: Brain },
+    { title: "Suno AI - تولید موسیقی و صدا", icon: Brain },
     { title: "جلسه پرسش و پاسخ + مشاوره خصوصی", icon: MessageCircle },
     { title: "تست شخصیت کارآفرین برای تعیین مسیر مناسب", icon: TestTube }
   ];
@@ -181,7 +185,7 @@ const BoundlessLanding = () => {
   ];
 
   const handleEnrollClick = () => {
-    setShowIframeModal(true);
+    window.open('https://auth.rafiei.co/?add-to-cart=5311', '_blank');
   };
 
   const handleStudentLoginClick = () => {
@@ -238,7 +242,7 @@ const BoundlessLanding = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                دوره شروع، نقطه آغاز کسب‌وکار جهانی تو
+                دوره شروع بدون مرز: بنیان علمی و استراتژیک برای ورود حرفه‌ای به اقتصاد دیجیتال جهانی
               </motion.p>
 
               {/* Live Enrollment Counter - Updated to 3385 */}
@@ -268,7 +272,7 @@ const BoundlessLanding = () => {
                   <h3 className="text-lg font-bold text-foreground">ثبت‌نام فعال</h3>
                 </div>
                 <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
-                  ثبت‌نام دوره شروع بدون مرز مجدداً فعال شده است. همین الان می‌توانید در دوره ثبت‌نام کنید.
+                  فرصت استثنایی برای عضویت در دوره تخصصی شروع بدون مرز مجدداً فراهم شده است. با بهره‌گیری از این موقعیت طلایی، مسیر حرفه‌ای خود را در عرصه کسب‌وکار بین‌المللی آغاز نمایید.
                 </p>
                 
                 <Button 
@@ -312,7 +316,7 @@ const BoundlessLanding = () => {
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground">معرفی دوره شروع بدون مرز</h2>
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                در این ویدیو کوتاه، با اهداف، محتوا و روش تدریس دوره شروع بدون مرز آشنا شوید
+                در این ویدیو معرفی جامع، با اهداف استراتژیک، محتوای تخصصی و متدولوژی آموزشی دوره شروع بدون مرز به طور کامل آشنا شوید
               </p>
             </motion.div>
 
@@ -380,9 +384,9 @@ const BoundlessLanding = () => {
                     </div>
                     <h3 className="text-2xl font-bold text-foreground">کسب‌وکار بدون مرز</h3>
                   </div>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    این دوره مخصوص افرادی است که می‌خواهند کسب‌وکار آنلاین خود را راه‌اندازی کنند یا از طریق مهارت‌های دیجیتال، درآمد دلاری داشته باشند. با ترکیبی از آموزش تخصصی، پشتیبانی گام‌به‌گام، تست شخصیت، تمرین‌های عملی و مشاوره اختصاصی، این برنامه یک انتخاب کامل برای جهش به سمت جهانی شدن است.
-                  </p>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  این دوره تخصصی و جامع ویژه کارآفرینان، فریلنسرها و تمامی متخصصانی طراحی شده است که قصد دارند با بهره‌گیری از تکنولوژی‌های نوین و استراتژی‌های علمی، کسب‌وکار دیجیتال خود را در عرصه بین‌المللی راه‌اندازی نمایند. این برنامه آموزشی با ارائه محتوای تخصصی مبتنی بر تجربیات موفق، پشتیبانی حرفه‌ای، ارزیابی شخصیتی دقیق، تمرینات کاربردی و مشاورات تخصصی، بهترین مسیر را برای دستیابی به موفقیت در اقتصاد دیجیتال جهانی فراهم می‌آورد. این دوره علاوه بر آموزش ابزارهای پیشرفته هوش مصنوعی نظیر Lovable، Google AI Studio، Canva AI و Suno AI، راهکارهای عملی و استراتژیک برای کسب درآمد پایدار و قابل توجه ارائه می‌دهد.
+                </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -630,7 +634,7 @@ const BoundlessLanding = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              فرصت طلایی برای شروع کسب‌وکار بین‌المللی خود را از دست ندهید
+              این فرصت استثنایی و محدود برای ورود به عرصه کسب‌وکار بین‌المللی و کسب تخصص در تکنولوژی‌های پیشرفته را از دست ندهید
             </motion.p>
             
             <motion.div 
