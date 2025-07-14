@@ -133,20 +133,40 @@ class MessengerService {
     username?: string;
     password: string;
     isBoundlessStudent?: boolean;
+    countryCode?: string;
   }): Promise<{ session_token: string; user: MessengerUser }> {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    // Extract country code and clean phone number
+    let countryCode = userData.countryCode || '+98';
+    let cleanPhone = userData.phone;
+    
+    // If phone contains country code, extract it
+    if (cleanPhone.startsWith('+')) {
+      const match = cleanPhone.match(/^(\+\d{1,4})(.*)$/);
+      if (match) {
+        countryCode = match[1];
+        cleanPhone = match[2];
+      }
+    } else if (cleanPhone.startsWith('98') && cleanPhone.length > 10) {
+      countryCode = '+98';
+      cleanPhone = cleanPhone.substring(2);
+    }
+    
+    // Remove leading zeros
+    cleanPhone = cleanPhone.replace(/^0+/, '');
     
     const { data: user, error } = await supabase
       .from('chat_users')
       .insert({
         name: userData.name,
-        phone: userData.phone,
+        phone: cleanPhone,
+        country_code: countryCode,
         username: userData.username,
         password_hash: hashedPassword,
         is_approved: true, // Always auto-approve
         bedoun_marz: userData.isBoundlessStudent || false,
-        role: 'user',
-        country_code: userData.phone.substring(0, userData.phone.length - 10) // Extract country code
+        role: 'user'
       })
       .select()
       .single();
@@ -166,22 +186,58 @@ class MessengerService {
     return { session_token, user };
   }
 
-  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+  async getUserByPhone(phone: string, countryCode?: string): Promise<MessengerUser | null> {
+    // Extract country code and clean phone number if it contains country code
+    let cleanPhone = phone;
+    let searchCountryCode = countryCode || '+98';
+    
+    if (cleanPhone.startsWith('+')) {
+      const match = cleanPhone.match(/^(\+\d{1,4})(.*)$/);
+      if (match) {
+        searchCountryCode = match[1];
+        cleanPhone = match[2];
+      }
+    } else if (cleanPhone.startsWith('98') && cleanPhone.length > 10) {
+      searchCountryCode = '+98';
+      cleanPhone = cleanPhone.substring(2);
+    }
+    
+    cleanPhone = cleanPhone.replace(/^0+/, '');
+    
     const { data, error } = await supabase
       .from('chat_users')
       .select('*')
-      .eq('phone', phone)
+      .eq('phone', cleanPhone)
+      .eq('country_code', searchCountryCode)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
     return data || null;
   }
 
-  async authenticateUser(phone: string, password: string): Promise<{ session_token: string; user: MessengerUser }> {
+  async authenticateUser(phone: string, password: string, countryCode?: string): Promise<{ session_token: string; user: MessengerUser }> {
+    // Extract country code and clean phone number
+    let cleanPhone = phone;
+    let searchCountryCode = countryCode || '+98';
+    
+    if (cleanPhone.startsWith('+')) {
+      const match = cleanPhone.match(/^(\+\d{1,4})(.*)$/);
+      if (match) {
+        searchCountryCode = match[1];
+        cleanPhone = match[2];
+      }
+    } else if (cleanPhone.startsWith('98') && cleanPhone.length > 10) {
+      searchCountryCode = '+98';
+      cleanPhone = cleanPhone.substring(2);
+    }
+    
+    cleanPhone = cleanPhone.replace(/^0+/, '');
+
     const { data: user, error } = await supabase
       .from('chat_users')
       .select('*')
-      .eq('phone', phone)
+      .eq('phone', cleanPhone)
+      .eq('country_code', searchCountryCode)
       .single();
 
     if (error || !user) {
@@ -420,7 +476,7 @@ class MessengerService {
           senderPhone: sender.phone || '',
           senderEmail: sender.email || '',
           chatType: 'group',
-          chatName: room?.name || 'Unknown Room',
+          chatName: `chat: ${room?.name || 'Unknown Room'}`,
           timestamp: new Date().toISOString()
         });
       }

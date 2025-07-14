@@ -227,22 +227,38 @@ class PrivateMessageService {
           .single();
 
         if (sender) {
-          // Determine if this is a support conversation
-          const { data: conversation } = await supabase
-            .from('support_conversations')
+          // Get the conversation to find recipient
+          const { data: privateConversation } = await supabase
+            .from('private_conversations')
             .select('*')
             .eq('id', conversationId)
             .single();
 
-          const chatType = conversation ? 'support' : 'private';
+          let chatName = 'Private Chat';
+          if (privateConversation) {
+            // Get recipient user
+            const recipientId = privateConversation.user1_id === senderId 
+              ? privateConversation.user2_id 
+              : privateConversation.user1_id;
+            
+            const { data: recipient } = await supabase
+              .from('chat_users')
+              .select('name')
+              .eq('id', recipientId)
+              .single();
+
+            if (recipient) {
+              chatName = `chat: from ${sender.name} to ${recipient.name}`;
+            }
+          }
           
           await webhookService.sendMessageWebhook({
             messageContent: message,
             senderName: sender.name,
             senderPhone: sender.phone || '',
             senderEmail: sender.email || '',
-            chatType: chatType,
-            chatName: chatType === 'support' ? 'Support Chat' : 'Private Chat',
+            chatType: 'private',
+            chatName: chatName,
             timestamp: new Date().toISOString()
           });
         }

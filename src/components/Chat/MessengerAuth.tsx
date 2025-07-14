@@ -109,13 +109,11 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      // Format phone with country code
-      const formattedPhone = formData.countryCode + formData.phone;
-      
-      // Register user with password
+      // Register user with password - pass country code separately
       const result = await messengerService.registerWithPassword({
         name: formData.name.trim(),
-        phone: formattedPhone,
+        phone: formData.phone,
+        countryCode: formData.countryCode,
         username: formData.username || undefined,
         password: formData.password,
         isBoundlessStudent: formData.isBoundlessStudent

@@ -102,11 +102,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
-      // Format phone with country code
-      const formattedPhone = countryCode + phoneNumber;
-      
-      // Check if user exists
-      const user = await messengerService.getUserByPhone(formattedPhone);
+      // Check if user exists with separate country code and phone
+      const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
       if (user) {
         setExistingUser(user);
         setIsLogin(true);
@@ -141,8 +138,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       // Login flow
       setLoading(true);
       try {
-        const formattedPhone = countryCode + phoneNumber;
-        const result = await messengerService.authenticateUser(formattedPhone, password);
+        const result = await messengerService.authenticateUser(phoneNumber, password, countryCode);
         if (result && existingUser) {
           if (!existingUser.is_approved) {
             setCurrentStep('pending');
@@ -210,13 +206,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
-      // Format phone with country code
-      const formattedPhone = countryCode + phoneNumber;
-      
-      // Register user
+      // Register user with separate country code
       const result = await messengerService.registerWithPassword({
         name: name.trim(),
-        phone: formattedPhone,
+        phone: phoneNumber,
+        countryCode: countryCode,
         username: username,
         password: password,
         isBoundlessStudent: isBoundlessStudent
@@ -245,8 +239,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const checkApprovalStatus = async () => {
     setLoading(true);
     try {
-      const formattedPhone = countryCode + phoneNumber;
-      const user = await messengerService.getUserByPhone(formattedPhone);
+      const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
       if (user && user.is_approved) {
         const session = await messengerService.createSession(user.id);
         onAuthenticated(session.session_token, user.name, user);
