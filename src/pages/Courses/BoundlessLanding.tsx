@@ -32,6 +32,7 @@ import {
 import IframeModal from "@/components/IframeModal";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
 import LiveEnrollmentCounter from "@/components/LiveEnrollmentCounter";
+import UserCountdownTimer from "@/components/UserCountdownTimer";
 import { motion } from "framer-motion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -245,12 +246,22 @@ const BoundlessLanding = () => {
                 دوره شروع بدون مرز: بنیان علمی و استراتژیک برای ورود حرفه‌ای به اقتصاد دیجیتال جهانی
               </motion.p>
 
+              {/* User Countdown Timer */}
+              <motion.div 
+                className="mb-8 max-w-sm mx-auto"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+              >
+                <UserCountdownTimer />
+              </motion.div>
+
               {/* Live Enrollment Counter - Updated to 3385 */}
               <motion.div 
                 className="mb-12 max-w-sm mx-auto"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <LiveEnrollmentCounter 
                   initialCount={3385} 
@@ -263,7 +274,7 @@ const BoundlessLanding = () => {
                 className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200 dark:border-green-700 rounded-xl p-6 mb-12 max-w-xl mx-auto shadow-lg"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
+                transition={{ duration: 0.8, delay: 0.7 }}
               >
                 <div className="flex items-center justify-center mb-4">
                   <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center ml-3">
@@ -687,6 +698,18 @@ const BoundlessLanding = () => {
             </motion.p>
           </div>
         </section>
+      </div>
+
+      {/* Sticky Registration Button */}
+      <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-auto">
+        <Button 
+          onClick={handleEnrollClick}
+          size="lg"
+          className="w-full md:w-auto bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 text-base font-medium rounded-lg border-0 shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
+        >
+          <CheckCircle className="ml-2" size={18} />
+          ثبت‌نام در دوره
+        </Button>
       </div>
 
       {/* Purchase Modal */}
