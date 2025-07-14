@@ -352,23 +352,6 @@ const BoundlessLanding = () => {
           </div>
         </section>
 
-        {/* Enhanced Countdown Timer Section */}
-        <section className="py-16 bg-gradient-to-r from-purple-100 via-blue-100 via-pink-100 to-orange-100 dark:from-purple-950/30 dark:via-blue-950/30 dark:via-pink-950/40 dark:to-orange-950/30">
-          <div className="container max-w-4xl mx-auto px-4">
-            <motion.div 
-              className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 rounded-3xl p-8 shadow-2xl"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <EnhancedCountdownTimer 
-                endDate={countdownEndDate.toISOString()}
-                label="تا بسته شدن ثبت‌نام"
-                className="mx-auto"
-              />
-            </motion.div>
-          </div>
-        </section>
 
         {/* Course Description - Enhanced Colors */}
         <section className="py-20 bg-gradient-to-br from-teal-50/60 to-green-50/60 dark:from-teal-950/20 dark:to-green-950/20">
