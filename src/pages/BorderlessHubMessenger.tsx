@@ -18,6 +18,7 @@ import NotificationPermissionBanner from '@/components/Chat/NotificationPermissi
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useNotificationService } from '@/hooks/useNotificationService';
+import { useUserPresence } from '@/hooks/useUserPresence';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, ArrowRight, Headphones, Plus, Users, User, MessageSquare } from 'lucide-react';
 
@@ -76,6 +77,12 @@ const BorderlessHubMessenger: React.FC = () => {
   const notificationService = useNotificationService({
     currentUser,
     sessionToken
+  });
+
+  // Track user presence when logged in
+  useUserPresence({
+    userId: currentUser?.id || null,
+    enabled: !!currentUser && !!sessionToken
   });
 
   const showPermissionBanner = currentUser ? notificationService.showPermissionBanner : false;
@@ -414,6 +421,7 @@ const BorderlessHubMessenger: React.FC = () => {
         <NotificationPermissionBanner
           onRequestPermission={requestNotificationPermission}
           onDismiss={dismissPermissionBanner}
+          pushSupported={notificationService.permissionState.pushSupported}
         />
       )}
       {/* Mobile Header */}

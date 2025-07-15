@@ -1396,6 +1396,10 @@ export type Database = {
         Args: { session_token: string }
         Returns: undefined
       }
+      update_user_presence: {
+        Args: { p_user_id: number; p_is_online?: boolean }
+        Returns: undefined
+      }
       validate_user_session: {
         Args: { session_token_param: string }
         Returns: {

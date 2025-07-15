@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
+import { pushNotificationService } from '@/lib/pushNotificationService';
 
 interface NotificationPermissionState {
   granted: boolean;
   permission: NotificationPermission;
   supported: boolean;
+  pushSupported: boolean;
+  pushSubscribed: boolean;
 }
 
 interface NotificationServiceOptions {
@@ -17,7 +20,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   const [permissionState, setPermissionState] = useState<NotificationPermissionState>({
     granted: false,
     permission: 'default',
-    supported: typeof window !== 'undefined' && 'Notification' in window
+    supported: typeof window !== 'undefined' && 'Notification' in window,
+    pushSupported: pushNotificationService.isSupported(),
+    pushSubscribed: false
   });
   
   const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
@@ -33,22 +38,40 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       return;
     }
 
-    const permission = Notification.permission;
-    const granted = permission === 'granted';
-    
-    console.log('🔔 Current permission:', permission, 'Granted:', granted);
-    
-    setPermissionState({
-      granted,
-      permission,
-      supported: true
-    });
+    const initializeNotifications = async () => {
+      const permission = Notification.permission;
+      const granted = permission === 'granted';
+      
+      console.log('🔔 Current permission:', permission, 'Granted:', granted);
+      
+      // Check push subscription status
+      let pushSubscribed = false;
+      if (granted && pushNotificationService.isSupported()) {
+        try {
+          const { isSubscribed } = await pushNotificationService.getSubscriptionStatus(currentUser.id);
+          pushSubscribed = isSubscribed;
+          console.log('🔔 Push subscription status:', pushSubscribed);
+        } catch (error) {
+          console.warn('Error checking push subscription:', error);
+        }
+      }
+      
+      setPermissionState({
+        granted,
+        permission,
+        supported: true,
+        pushSupported: pushNotificationService.isSupported(),
+        pushSubscribed
+      });
 
-    // Show banner if permission not granted and not recently dismissed
-    updateBannerVisibility(permission);
+      // Show banner if permission not granted and not recently dismissed
+      updateBannerVisibility(permission);
 
-    // Load user's notification preference from localStorage and Supabase
-    loadNotificationPreference();
+      // Load user's notification preference from localStorage and Supabase
+      loadNotificationPreference();
+    };
+
+    initializeNotifications();
   }, [currentUser?.id]);
 
   // Set up real-time message listener
@@ -130,10 +153,33 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       console.log('🔔 Permission result:', permission, 'Granted:', granted);
       
+      let pushSubscribed = false;
+      
+      // If permission granted, set up push notifications
+      if (granted && currentUser && pushNotificationService.isSupported()) {
+        try {
+          console.log('🔔 Setting up push notifications...');
+          const subscription = await pushNotificationService.subscribe(currentUser.id);
+          pushSubscribed = !!subscription;
+          console.log('🔔 Push subscription result:', pushSubscribed);
+          
+          // Update user presence when online
+          await supabase.rpc('update_user_presence', { 
+            p_user_id: currentUser.id, 
+            p_is_online: true 
+          });
+          
+        } catch (error) {
+          console.error('Error setting up push notifications:', error);
+        }
+      }
+      
       setPermissionState({
         granted,
         permission,
-        supported: true
+        supported: true,
+        pushSupported: pushNotificationService.isSupported(),
+        pushSubscribed
       });
 
       // Update banner visibility based on new permission
@@ -158,10 +204,37 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     localStorage.setItem(`notification_enabled_${currentUser.id}`, enabled.toString());
 
     try {
+      // Update preference in database
       await supabase
         .from('chat_users')
         .update({ notification_enabled: enabled })
         .eq('id', currentUser.id);
+        
+      // If disabling notifications, unsubscribe from push
+      if (!enabled && permissionState.pushSubscribed) {
+        try {
+          await pushNotificationService.unsubscribe(currentUser.id);
+          setPermissionState(prev => ({
+            ...prev,
+            pushSubscribed: false
+          }));
+        } catch (error) {
+          console.error('Error unsubscribing from push notifications:', error);
+        }
+      }
+      
+      // If enabling notifications and permission granted, subscribe to push
+      if (enabled && permissionState.granted && !permissionState.pushSubscribed && pushNotificationService.isSupported()) {
+        try {
+          const subscription = await pushNotificationService.subscribe(currentUser.id);
+          setPermissionState(prev => ({
+            ...prev,
+            pushSubscribed: !!subscription
+          }));
+        } catch (error) {
+          console.error('Error subscribing to push notifications:', error);
+        }
+      }
     } catch (error) {
       console.error('Error updating notification preference:', error);
     }
