@@ -62,12 +62,16 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   const updateBannerVisibility = (permission: NotificationPermission) => {
     if (!currentUser) return;
 
+    console.log('🔔 updateBannerVisibility - Permission:', permission, 'Current user:', currentUser.name);
+
     // FORCE SHOW banner for ALL users when permission is not granted
-    // Only hide when permission is explicitly granted or denied
-    if (permission === 'granted' || permission === 'denied') {
+    // Only hide when permission is explicitly granted
+    if (permission === 'granted') {
+      console.log('🔔 Hiding banner - permission granted');
       setShowPermissionBanner(false);
     } else {
-      // Force show for all users when permission is 'default' (not granted)
+      // Force show for all users when permission is NOT granted
+      console.log('🔔 Showing banner - permission not granted');
       setShowPermissionBanner(true);
     }
   };
@@ -102,19 +106,25 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
   const requestNotificationPermission = async (): Promise<boolean> => {
     if (!permissionState.supported) {
-      console.warn('Notifications not supported in this browser');
+      console.warn('🔔 Notifications not supported in this browser');
       return false;
     }
 
     try {
+      console.log('🔔 Requesting notification permission...');
       const permission = await Notification.requestPermission();
       const granted = permission === 'granted';
+      
+      console.log('🔔 Permission result:', permission, 'Granted:', granted);
       
       setPermissionState({
         granted,
         permission,
         supported: true
       });
+
+      // Update banner visibility based on new permission
+      updateBannerVisibility(permission);
 
       if (granted) {
         await updateNotificationPreference(true);
@@ -270,6 +280,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const dismissPermissionBanner = () => {
+    console.log('🔔 User attempted to dismiss banner, requesting permission instead...');
     // Force users to interact with permission - don't allow dismissal
     // Only hide when they grant or deny permission
     requestNotificationPermission();

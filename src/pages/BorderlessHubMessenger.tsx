@@ -14,8 +14,10 @@ import ExactSearchModal from '@/components/Chat/ExactSearchModal';
 import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
 import SupportChatView from '@/components/Chat/SupportChatView';
 import UserSettingsModal from '@/components/Chat/UserSettingsModal';
+import NotificationPermissionBanner from '@/components/Chat/NotificationPermissionBanner';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
+import { useNotificationService } from '@/hooks/useNotificationService';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, ArrowRight, Headphones, Plus, Users, User, MessageSquare } from 'lucide-react';
 
@@ -69,6 +71,16 @@ const BorderlessHubMessenger: React.FC = () => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Initialize notification service for desktop
+  const {
+    showPermissionBanner,
+    requestNotificationPermission,
+    dismissPermissionBanner
+  } = useNotificationService({
+    currentUser,
+    sessionToken
+  });
 
   // Support rooms based on user access - always show these
   const getSupportRooms = (): MessengerSupportRoom[] => {
@@ -397,6 +409,13 @@ const BorderlessHubMessenger: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Notification Permission Banner - Desktop */}
+      {showPermissionBanner && (
+        <NotificationPermissionBanner
+          onRequestPermission={requestNotificationPermission}
+          onDismiss={dismissPermissionBanner}
+        />
+      )}
       {/* Mobile Header */}
       {showMobileChat ? (
         <div className="md:hidden">
@@ -450,7 +469,10 @@ const BorderlessHubMessenger: React.FC = () => {
                 🎧 پنل پشتیبانی
               </button>
             )}
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowUserSettings(true)}
+              className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            >
               <Avatar className="w-6 h-6">
                 <AvatarFallback 
                   style={{ backgroundColor: getAvatarColor(currentUser.name) }}
@@ -465,7 +487,8 @@ const BorderlessHubMessenger: React.FC = () => {
                   <span className="text-xs text-blue-600 block">@{currentUser.username}</span>
                 )}
               </span>
-            </div>
+              <User className="w-4 h-4 text-slate-400" />
+            </button>
             <button
               onClick={handleLogout}
               className="text-sm text-red-500 hover:text-red-600"
