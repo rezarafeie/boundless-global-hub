@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowRight, Send, User } from 'lucide-react';
 import { privateMessageService, type PrivateMessage, type PrivateConversation } from '@/lib/privateMessageService';
 import type { MessengerUser } from '@/lib/messengerService';
@@ -131,6 +131,7 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
           onClick={() => setShowUserProfile(true)}
         >
           <Avatar className="w-8 h-8">
+            <AvatarImage src={otherUser.avatar_url} alt={otherUser.name} />
             <AvatarFallback 
               style={{ backgroundColor: getAvatarColor(otherUser.name) }}
               className="text-white font-medium text-sm"
@@ -172,6 +173,7 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
                 >
                   {!isOwn && (
                     <Avatar className="w-6 h-6 flex-shrink-0">
+                      <AvatarImage src={otherUser.avatar_url} alt={otherUser.name} />
                       <AvatarFallback 
                         style={{ backgroundColor: getAvatarColor(otherUser.name) }}
                         className="text-white font-medium text-xs"

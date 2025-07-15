@@ -2,13 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Users, Loader2 } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MessengerChatViewProps {
   selectedRoom: ChatRoom | null;
@@ -28,6 +29,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,6 +40,36 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  // Fetch user avatars when messages change
+  useEffect(() => {
+    const fetchUserAvatars = async () => {
+      const userIds = [...new Set(messages.map(msg => msg.sender_id).filter(Boolean))];
+      if (userIds.length === 0) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('id, avatar_url')
+          .in('id', userIds);
+
+        if (error) throw error;
+
+        const avatarMap: Record<number, string> = {};
+        data?.forEach(user => {
+          if (user.avatar_url) {
+            avatarMap[user.id] = user.avatar_url;
+          }
+        });
+        
+        setUserAvatars(avatarMap);
+      } catch (error) {
+        console.error('Error fetching user avatars:', error);
+      }
+    };
+
+    fetchUserAvatars();
   }, [messages]);
 
   const loadMessages = async () => {
@@ -136,6 +168,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <Avatar className="w-10 h-10">
+          <AvatarImage src={selectedUser?.avatar_url} alt={chatTitle} />
           <AvatarFallback 
             style={{ backgroundColor: getAvatarColor(chatTitle) }}
             className="text-white font-medium"
@@ -183,6 +216,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           messages.map((message) => (
             <div key={message.id} className="flex items-start gap-3">
               <Avatar className="w-8 h-8">
+                <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
                 <AvatarFallback 
                   style={{ backgroundColor: getAvatarColor(message.sender?.name || 'U') }}
                   className="text-white font-medium text-xs"
