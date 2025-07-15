@@ -18,6 +18,11 @@ const MobileMessengerHeader: React.FC<MobileMessengerHeaderProps> = ({
   currentUser,
   onProfileClick
 }) => {
+  // Safety check - don't render if currentUser is not available
+  if (!currentUser) {
+    return null;
+  }
+
   const getAvatarColor = (name: string) => {
     const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
     const index = name.charCodeAt(0) % colors.length;

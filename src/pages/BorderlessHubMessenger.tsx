@@ -400,21 +400,25 @@ const BorderlessHubMessenger: React.FC = () => {
       {/* Mobile Header */}
       {showMobileChat ? (
         <div className="md:hidden">
-          <MobileMessengerHeader
-            onBack={handleBackToInbox}
-            onLogout={handleLogout}
-            currentUser={currentUser!}
-            onProfileClick={() => setShowUserSettings(true)}
-          />
+          {currentUser && (
+            <MobileMessengerHeader
+              onBack={handleBackToInbox}
+              onLogout={handleLogout}
+              currentUser={currentUser}
+              onProfileClick={() => setShowUserSettings(true)}
+            />
+          )}
         </div>
       ) : (
         <div className="md:hidden">
-          <MobileMessengerHeader
-            onBack={handleBackToHub}
-            onLogout={handleLogout}
-            currentUser={currentUser!}
-            onProfileClick={() => setShowUserSettings(true)}
-          />
+          {currentUser && (
+            <MobileMessengerHeader
+              onBack={handleBackToHub}
+              onLogout={handleLogout}
+              currentUser={currentUser}
+              onProfileClick={() => setShowUserSettings(true)}
+            />
+          )}
         </div>
       )}
 
