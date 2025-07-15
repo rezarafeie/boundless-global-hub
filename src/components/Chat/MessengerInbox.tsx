@@ -4,13 +4,14 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings } from 'lucide-react';
+import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useNotificationService } from '@/hooks/useNotificationService';
 import StartChatModal from './StartChatModal';
 import NotificationPermissionBanner from './NotificationPermissionBanner';
 import NotificationToggle from './NotificationToggle';
+import UserSettingsModal from './UserSettingsModal';
 
 interface MessengerInboxProps {
   sessionToken: string;
@@ -37,6 +38,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const [loading, setLoading] = useState(true);
   const [showStartChatModal, setShowStartChatModal] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showUserSettings, setShowUserSettings] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize notification service
@@ -118,6 +120,28 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+        {/* User Profile Section */}
+        <div 
+          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors mb-4"
+          onClick={() => setShowUserSettings(true)}
+        >
+          <Avatar className="w-10 h-10">
+            <AvatarFallback 
+              style={{ backgroundColor: getAvatarColor(currentUser.name || 'U') }}
+              className="text-white font-medium"
+            >
+              {currentUser.name?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{currentUser.name}</p>
+            {currentUser.username && (
+              <p className="text-xs text-muted-foreground">@{currentUser.username}</p>
+            )}
+          </div>
+          <User className="w-4 h-4 text-muted-foreground" />
+        </div>
+        
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             پیام‌رسان
@@ -331,6 +355,15 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         onUserSelect={handleUserSelectFromModal}
         sessionToken={sessionToken}
         currentUser={currentUser}
+      />
+
+      {/* User Settings Modal */}
+      <UserSettingsModal
+        isOpen={showUserSettings}
+        onClose={() => setShowUserSettings(false)}
+        currentUser={currentUser}
+        sessionToken={sessionToken}
+        onUserUpdate={onUserUpdate}
       />
     </div>
   );

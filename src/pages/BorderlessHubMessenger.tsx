@@ -13,6 +13,7 @@ import MobileMessengerHeader from '@/components/Chat/MobileMessengerHeader';
 import ExactSearchModal from '@/components/Chat/ExactSearchModal';
 import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
 import SupportChatView from '@/components/Chat/SupportChatView';
+import UserSettingsModal from '@/components/Chat/UserSettingsModal';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +64,7 @@ const BorderlessHubMessenger: React.FC = () => {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [showExactSearchModal, setShowExactSearchModal] = useState(false);
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+  const [showUserSettings, setShowUserSettings] = useState(false);
   const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
@@ -401,6 +403,8 @@ const BorderlessHubMessenger: React.FC = () => {
           <MobileMessengerHeader
             onBack={handleBackToInbox}
             onLogout={handleLogout}
+            currentUser={currentUser!}
+            onProfileClick={() => setShowUserSettings(true)}
           />
         </div>
       ) : (
@@ -408,6 +412,8 @@ const BorderlessHubMessenger: React.FC = () => {
           <MobileMessengerHeader
             onBack={handleBackToHub}
             onLogout={handleLogout}
+            currentUser={currentUser!}
+            onProfileClick={() => setShowUserSettings(true)}
           />
         </div>
       )}
@@ -746,6 +752,14 @@ const BorderlessHubMessenger: React.FC = () => {
         sessionToken={sessionToken!}
         userId={currentUser.id}
         currentUsername={currentUser.username}
+      />
+
+      <UserSettingsModal
+        isOpen={showUserSettings}
+        onClose={() => setShowUserSettings(false)}
+        currentUser={currentUser}
+        sessionToken={sessionToken!}
+        onUserUpdate={(updatedUser) => setCurrentUser(updatedUser)}
       />
     </div>
   );

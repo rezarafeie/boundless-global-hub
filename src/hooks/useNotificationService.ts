@@ -62,23 +62,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   const updateBannerVisibility = (permission: NotificationPermission) => {
     if (!currentUser) return;
 
-    // Show banner if:
-    // 1. Permission is not granted (default or denied but not permanently dismissed)
-    // 2. Not recently dismissed
-    const dismissKey = `notification_banner_dismissed_${currentUser.id}`;
-    const dismissed = localStorage.getItem(dismissKey);
-    
-    // If permission is denied, don't show banner
-    if (permission === 'denied') {
+    // FORCE SHOW banner for ALL users when permission is not granted
+    // Only hide when permission is explicitly granted or denied
+    if (permission === 'granted' || permission === 'denied') {
       setShowPermissionBanner(false);
-      return;
-    }
-
-    // If permission is not granted and not dismissed, show banner
-    if (permission !== 'granted' && !dismissed) {
-      setShowPermissionBanner(true);
     } else {
-      setShowPermissionBanner(false);
+      // Force show for all users when permission is 'default' (not granted)
+      setShowPermissionBanner(true);
     }
   };
 
@@ -280,10 +270,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const dismissPermissionBanner = () => {
-    setShowPermissionBanner(false);
-    if (currentUser) {
-      localStorage.setItem(`notification_banner_dismissed_${currentUser.id}`, 'true');
-    }
+    // Force users to interact with permission - don't allow dismissal
+    // Only hide when they grant or deny permission
+    requestNotificationPermission();
   };
 
   return {

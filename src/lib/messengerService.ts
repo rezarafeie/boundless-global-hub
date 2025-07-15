@@ -18,6 +18,7 @@ export interface MessengerUser {
   updated_at: string;
   last_seen: string;
   bio?: string;
+  notification_enabled?: boolean;
 }
 
 export interface ChatRoom {
