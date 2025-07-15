@@ -37,6 +37,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       supported: true
     });
 
+    // Show banner if permission not granted and not recently dismissed
+    updateBannerVisibility(permission);
+
     // Load user's notification preference from localStorage and Supabase
     loadNotificationPreference();
   }, [currentUser?.id]);
@@ -56,6 +59,29 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     };
   }, [currentUser?.id, sessionToken, notificationEnabled, permissionState.granted]);
 
+  const updateBannerVisibility = (permission: NotificationPermission) => {
+    if (!currentUser) return;
+
+    // Show banner if:
+    // 1. Permission is not granted (default or denied but not permanently dismissed)
+    // 2. Not recently dismissed
+    const dismissKey = `notification_banner_dismissed_${currentUser.id}`;
+    const dismissed = localStorage.getItem(dismissKey);
+    
+    // If permission is denied, don't show banner
+    if (permission === 'denied') {
+      setShowPermissionBanner(false);
+      return;
+    }
+
+    // If permission is not granted and not dismissed, show banner
+    if (permission !== 'granted' && !dismissed) {
+      setShowPermissionBanner(true);
+    } else {
+      setShowPermissionBanner(false);
+    }
+  };
+
   const loadNotificationPreference = async () => {
     if (!currentUser) return;
 
@@ -64,11 +90,6 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     if (localPref !== null) {
       const enabled = localPref === 'true';
       setNotificationEnabled(enabled);
-      
-      // Show banner only if notification not enabled and permission not denied
-      if (!enabled && permissionState.permission !== 'denied') {
-        setShowPermissionBanner(true);
-      }
     }
 
     // Then sync with Supabase
@@ -83,10 +104,6 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         const enabled = data.notification_enabled ?? true;
         setNotificationEnabled(enabled);
         localStorage.setItem(`notification_enabled_${currentUser.id}`, enabled.toString());
-        
-        if (!enabled && permissionState.permission !== 'denied') {
-          setShowPermissionBanner(true);
-        }
       }
     } catch (error) {
       console.warn('Could not load notification preference:', error);
@@ -264,7 +281,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
   const dismissPermissionBanner = () => {
     setShowPermissionBanner(false);
-    localStorage.setItem(`notification_banner_dismissed_${currentUser?.id}`, 'true');
+    if (currentUser) {
+      localStorage.setItem(`notification_banner_dismissed_${currentUser.id}`, 'true');
+    }
   };
 
   return {
