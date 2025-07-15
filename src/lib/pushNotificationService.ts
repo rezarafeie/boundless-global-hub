@@ -88,6 +88,14 @@ export const pushNotificationService = {
       }
     };
 
+    // Get session token from localStorage for RLS
+    const sessionToken = localStorage.getItem('rafiei_session_token') || localStorage.getItem('messenger_session_token');
+    
+    if (sessionToken) {
+      // Set session context for RLS
+      await supabase.rpc('set_session_context', { session_token: sessionToken });
+    }
+
     // Update user's push subscription in database
     const { error } = await supabase
       .from('chat_users')
@@ -98,12 +106,23 @@ export const pushNotificationService = {
       .eq('id', userId);
 
     if (error) {
+      console.error('🔔 Failed to save push subscription:', error);
       throw new Error(`Failed to save push subscription: ${error.message}`);
     }
+    
+    console.log('🔔 Push subscription saved successfully');
   },
 
   // Remove subscription from database
   async removeSubscription(userId: number): Promise<void> {
+    // Get session token from localStorage for RLS
+    const sessionToken = localStorage.getItem('rafiei_session_token') || localStorage.getItem('messenger_session_token');
+    
+    if (sessionToken) {
+      // Set session context for RLS
+      await supabase.rpc('set_session_context', { session_token: sessionToken });
+    }
+
     const { error } = await supabase
       .from('chat_users')
       .update({ 
@@ -113,8 +132,11 @@ export const pushNotificationService = {
       .eq('id', userId);
 
     if (error) {
+      console.error('🔔 Failed to remove push subscription:', error);
       throw new Error(`Failed to remove push subscription: ${error.message}`);
     }
+    
+    console.log('🔔 Push subscription removed successfully');
   },
 
   // Convert VAPID key

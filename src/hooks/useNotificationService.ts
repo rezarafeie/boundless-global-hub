@@ -175,8 +175,11 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           // Save subscription token to database
           if (subscription) {
             const subscriptionData = subscription.toJSON();
-            if (subscriptionData.endpoint) {
-              await supabase
+            if (subscriptionData.endpoint && sessionToken) {
+              // Set session context for RLS
+              await supabase.rpc('set_session_context', { session_token: sessionToken });
+              
+              const { error } = await supabase
                 .from('chat_users')
                 .update({ 
                   notification_token: subscriptionData.endpoint,
@@ -184,15 +187,22 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
                 })
                 .eq('id', currentUser.id);
               
-              console.log('🔔 Notification token saved to database');
+              if (error) {
+                console.error('🔔 Failed to save notification token:', error);
+              } else {
+                console.log('🔔 Notification token saved to database');
+              }
             }
           }
           
           // Update user presence when online
-          await supabase.rpc('update_user_presence', { 
-            p_user_id: currentUser.id, 
-            p_is_online: true 
-          });
+          if (sessionToken) {
+            await supabase.rpc('set_session_context', { session_token: sessionToken });
+            await supabase.rpc('update_user_presence', { 
+              p_user_id: currentUser.id, 
+              p_is_online: true 
+            });
+          }
           
         } catch (error) {
           console.error('Error setting up push notifications:', error);
@@ -223,17 +233,27 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const updateNotificationPreference = async (enabled: boolean): Promise<void> => {
-    if (!currentUser) return;
+    if (!currentUser || !sessionToken) return;
 
     setNotificationEnabled(enabled);
     localStorage.setItem(`notification_enabled_${currentUser.id}`, enabled.toString());
 
     try {
+      // Set session context for RLS
+      await supabase.rpc('set_session_context', { session_token: sessionToken });
+      
       // Update preference in database
-      await supabase
+      const { error } = await supabase
         .from('chat_users')
         .update({ notification_enabled: enabled })
         .eq('id', currentUser.id);
+        
+      if (error) {
+        console.error('🔔 Error updating notification preference:', error);
+        throw error;
+      }
+      
+      console.log('🔔 Successfully updated notification preference to:', enabled);
         
       // If disabling notifications, unsubscribe from push
       if (!enabled && permissionState.pushSubscribed) {
