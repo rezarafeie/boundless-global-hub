@@ -20,7 +20,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     supported: typeof window !== 'undefined' && 'Notification' in window
   });
   
-  const [notificationEnabled, setNotificationEnabled] = useState<boolean>(false);
+  const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
   const [showPermissionBanner, setShowPermissionBanner] = useState<boolean>(false);
   const channelRef = useRef<any>(null);
 
@@ -53,18 +53,24 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
   // Set up real-time message listener
   useEffect(() => {
-    if (!currentUser || !sessionToken || !notificationEnabled || !permissionState.granted) {
+    console.log('🔔 Setting up listener - User:', currentUser?.name, 'Session:', !!sessionToken, 'Permission:', permissionState.granted);
+    
+    if (!currentUser || !sessionToken || !permissionState.granted) {
+      console.log('🔔 Skipping listener setup - missing requirements');
       return;
     }
 
+    console.log('🔔 Setting up message listener...');
     setupMessageListener();
 
     return () => {
+      console.log('🔔 Cleaning up message listener');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
-  }, [currentUser?.id, sessionToken, notificationEnabled, permissionState.granted]);
+  }, [currentUser?.id, sessionToken, permissionState.granted]);
 
   const updateBannerVisibility = (permission: NotificationPermission) => {
     if (!currentUser) return;
@@ -162,8 +168,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const setupMessageListener = () => {
-    if (!currentUser || channelRef.current) return;
+    if (!currentUser || channelRef.current) {
+      console.log('🔔 Skipping listener setup - No user or channel already exists');
+      return;
+    }
 
+    console.log('🔔 Creating Supabase channel for message notifications...');
+    
     // Listen to all messenger messages
     channelRef.current = supabase
       .channel('messenger-notifications')
@@ -175,6 +186,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           table: 'messenger_messages'
         },
         (payload) => {
+          console.log('🔔 New messenger message received:', payload.new);
           handleNewMessage(payload.new as MessengerMessage);
         }
       )
@@ -186,17 +198,28 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           table: 'private_messages'
         },
         (payload) => {
+          console.log('🔔 New private message received:', payload.new);
           handleNewPrivateMessage(payload.new as any);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔔 Channel subscription status:', status);
+      });
   };
 
   const handleNewMessage = async (message: MessengerMessage) => {
-    if (!currentUser || !notificationEnabled || !permissionState.granted) return;
+    console.log('🔔 Processing new message - User:', currentUser?.name, 'Enabled:', notificationEnabled, 'Permission:', permissionState.granted);
+    
+    if (!currentUser || !notificationEnabled || !permissionState.granted) {
+      console.log('🔔 Skipping notification - requirements not met');
+      return;
+    }
     
     // Don't notify for own messages
-    if (message.sender_id === currentUser.id) return;
+    if (message.sender_id === currentUser.id) {
+      console.log('🔔 Skipping notification - own message');
+      return;
+    }
 
     try {
       // Check if user has access to this room
@@ -213,6 +236,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           const room = await messengerService.getRoomById(message.room_id);
           const roomName = room?.name || 'گروه';
           
+          console.log('🔔 Showing room notification:', roomName, senderName);
           showNotification(
             `پیام جدید در ${roomName}`,
             `${senderName}: ${message.message}`,
@@ -226,10 +250,18 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const handleNewPrivateMessage = async (message: any) => {
-    if (!currentUser || !notificationEnabled || !permissionState.granted) return;
+    console.log('🔔 Processing new private message - User:', currentUser?.name, 'Enabled:', notificationEnabled, 'Permission:', permissionState.granted);
+    
+    if (!currentUser || !notificationEnabled || !permissionState.granted) {
+      console.log('🔔 Skipping private notification - requirements not met');
+      return;
+    }
     
     // Don't notify for own messages
-    if (message.sender_id === currentUser.id) return;
+    if (message.sender_id === currentUser.id) {
+      console.log('🔔 Skipping private notification - own message');
+      return;
+    }
 
     try {
       // Check if this message is in a conversation involving current user
@@ -246,6 +278,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         const sender = await messengerService.getUserById(message.sender_id);
         const senderName = sender?.name || 'کاربر ناشناس';
         
+        console.log('🔔 Showing private message notification:', senderName);
         showNotification(
           `پیام خصوصی جدید از ${senderName}`,
           message.message,
