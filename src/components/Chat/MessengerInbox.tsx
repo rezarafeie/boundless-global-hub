@@ -126,7 +126,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           onClick={() => setShowUserSettings(true)}
         >
           <Avatar className="w-10 h-10">
-            <AvatarImage src={currentUser.avatar_url} alt={currentUser.name} />
+            <AvatarImage 
+              src={currentUser.avatar_url} 
+              alt={currentUser.name}
+              onLoad={() => console.log('✅ Current user avatar loaded:', currentUser.avatar_url)}
+              onError={(e) => console.log('❌ Current user avatar failed to load:', currentUser.avatar_url, e)}
+            />
             <AvatarFallback 
               style={{ backgroundColor: getAvatarColor(currentUser.name || 'U') }}
               className="text-white font-medium"
@@ -290,7 +295,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       }`}
                     >
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={conversation.other_user?.avatar_url} alt={conversation.other_user?.name} />
+                        <AvatarImage 
+                          src={conversation.other_user?.avatar_url} 
+                          alt={conversation.other_user?.name}
+                          onLoad={() => console.log('✅ Avatar loaded:', conversation.other_user?.avatar_url)}
+                          onError={(e) => console.log('❌ Avatar failed to load:', conversation.other_user?.avatar_url, e)}
+                        />
                         <AvatarFallback 
                           style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
                           className="text-white font-medium"

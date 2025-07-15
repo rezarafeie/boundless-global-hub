@@ -100,13 +100,22 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
     console.log('🔔 updateBannerVisibility - Permission:', permission, 'Current user:', currentUser.name);
 
-    // FORCE SHOW banner for ALL users when permission is not granted
-    // Only hide when permission is explicitly granted
+    // Check if user has dismissed the banner recently (within 24 hours)
+    const dismissalTime = localStorage.getItem(`notification_banner_dismissed_${currentUser.id}`);
+    const now = Date.now();
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+
+    if (dismissalTime && (now - parseInt(dismissalTime)) < oneDayInMs) {
+      console.log('🔔 Banner was recently dismissed, not showing');
+      setShowPermissionBanner(false);
+      return;
+    }
+
+    // Show banner if permission is not granted and not recently dismissed
     if (permission === 'granted') {
       console.log('🔔 Hiding banner - permission granted');
       setShowPermissionBanner(false);
     } else {
-      // Force show for all users when permission is NOT granted
       console.log('🔔 Showing banner - permission not granted');
       setShowPermissionBanner(true);
     }
@@ -409,10 +418,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const dismissPermissionBanner = () => {
-    console.log('🔔 User attempted to dismiss banner, requesting permission instead...');
-    // Force users to interact with permission - don't allow dismissal
-    // Only hide when they grant or deny permission
-    requestNotificationPermission();
+    console.log('🔔 User dismissed notification banner');
+    setShowPermissionBanner(false);
+    
+    // Store dismissal in localStorage to prevent showing again for a while
+    if (currentUser) {
+      localStorage.setItem(`notification_banner_dismissed_${currentUser.id}`, Date.now().toString());
+    }
   };
 
   return {
