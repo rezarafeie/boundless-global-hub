@@ -149,7 +149,7 @@ class PrivateMessageService {
         (conversations || []).map(async (conv) => {
           const otherUserId = conv.user1_id === userId ? conv.user2_id : conv.user1_id;
           
-          // Get other user details
+          // Get other user details with avatar
           const { data: otherUser } = await supabase
             .from('chat_users')
             .select('*')
