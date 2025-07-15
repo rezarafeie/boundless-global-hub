@@ -370,6 +370,7 @@ export type Database = {
       }
       chat_users: {
         Row: {
+          avatar_url: string | null
           bedoun_marz: boolean | null
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
@@ -397,6 +398,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          avatar_url?: string | null
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
@@ -424,6 +426,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          avatar_url?: string | null
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null

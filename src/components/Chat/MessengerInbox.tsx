@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
@@ -126,6 +126,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           onClick={() => setShowUserSettings(true)}
         >
           <Avatar className="w-10 h-10">
+            <AvatarImage src={currentUser.avatar_url} alt={currentUser.name} />
             <AvatarFallback 
               style={{ backgroundColor: getAvatarColor(currentUser.name || 'U') }}
               className="text-white font-medium"
@@ -289,6 +290,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       }`}
                     >
                       <Avatar className="w-10 h-10">
+                        <AvatarImage src={conversation.other_user?.avatar_url} alt={conversation.other_user?.name} />
                         <AvatarFallback 
                           style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
                           className="text-white font-medium"

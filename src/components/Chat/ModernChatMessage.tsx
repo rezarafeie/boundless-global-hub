@@ -1,17 +1,20 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Pin } from 'lucide-react';
 import type { ChatMessage } from '@/types/supabase';
 
 interface ModernChatMessageProps {
   message: ChatMessage;
   isOwnMessage?: boolean;
+  senderAvatarUrl?: string;
 }
 
 const ModernChatMessage: React.FC<ModernChatMessageProps> = ({ 
   message, 
-  isOwnMessage = false 
+  isOwnMessage = false,
+  senderAvatarUrl
 }) => {
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -46,12 +49,15 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
       <div className={`max-w-[70%] sm:max-w-[60%] flex items-start gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* User Avatar - only show for other users' messages */}
         {!isOwnMessage && (
-          <div 
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
-            style={{ backgroundColor: getAvatarColor(message.sender_name || 'User') }}
-          >
-            {getInitial(message.sender_name || 'U')}
-          </div>
+          <Avatar className="w-10 h-10 flex-shrink-0">
+            <AvatarImage src={senderAvatarUrl} alt={message.sender_name || 'User'} />
+            <AvatarFallback 
+              className="text-white font-bold text-sm"
+              style={{ backgroundColor: getAvatarColor(message.sender_name || 'User') }}
+            >
+              {getInitial(message.sender_name || 'U')}
+            </AvatarFallback>
+          </Avatar>
         )}
         
         <div className="flex flex-col">

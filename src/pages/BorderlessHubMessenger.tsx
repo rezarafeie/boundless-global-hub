@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import MessengerInbox from '@/components/Chat/MessengerInbox';
@@ -14,6 +14,7 @@ import ExactSearchModal from '@/components/Chat/ExactSearchModal';
 import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
 import SupportChatView from '@/components/Chat/SupportChatView';
 import UserSettingsModal from '@/components/Chat/UserSettingsModal';
+import { ProfileSettingsModal } from '@/components/Chat/ProfileSettingsModal';
 import NotificationPermissionBanner from '@/components/Chat/NotificationPermissionBanner';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { privateMessageService, type PrivateConversation } from '@/lib/privateMessageService';
@@ -68,6 +69,7 @@ const BorderlessHubMessenger: React.FC = () => {
   const [showExactSearchModal, setShowExactSearchModal] = useState(false);
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [privateConversations, setPrivateConversations] = useState<PrivateConversation[]>([]);
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
@@ -478,10 +480,11 @@ const BorderlessHubMessenger: React.FC = () => {
               </button>
             )}
             <button
-              onClick={() => setShowUserSettings(true)}
+              onClick={() => setShowProfileSettings(true)}
               className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
               <Avatar className="w-6 h-6">
+                <AvatarImage src={currentUser.avatar_url} alt={currentUser.name} />
                 <AvatarFallback 
                   style={{ backgroundColor: getAvatarColor(currentUser.name) }}
                   className="text-white font-medium text-xs"
@@ -794,6 +797,13 @@ const BorderlessHubMessenger: React.FC = () => {
         onClose={() => setShowUserSettings(false)}
         currentUser={currentUser}
         sessionToken={sessionToken!}
+        onUserUpdate={(updatedUser) => setCurrentUser(updatedUser)}
+      />
+
+      <ProfileSettingsModal
+        isOpen={showProfileSettings}
+        onClose={() => setShowProfileSettings(false)}
+        currentUser={currentUser}
         onUserUpdate={(updatedUser) => setCurrentUser(updatedUser)}
       />
     </div>
