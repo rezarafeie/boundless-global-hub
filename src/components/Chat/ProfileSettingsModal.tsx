@@ -94,6 +94,8 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 
       if (updateError) throw updateError;
 
+      console.log('✅ Avatar uploaded successfully:', avatarUrl);
+
       // Update local user state
       onUserUpdate({ ...currentUser, avatar_url: avatarUrl });
 
