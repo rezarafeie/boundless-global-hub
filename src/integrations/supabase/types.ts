@@ -386,6 +386,8 @@ export type Database = {
           last_name: string | null
           last_seen: string | null
           name: string
+          notification_enabled: boolean | null
+          notification_token: string | null
           password_hash: string | null
           phone: string
           role: string | null
@@ -411,6 +413,8 @@ export type Database = {
           last_name?: string | null
           last_seen?: string | null
           name: string
+          notification_enabled?: boolean | null
+          notification_token?: string | null
           password_hash?: string | null
           phone: string
           role?: string | null
@@ -436,6 +440,8 @@ export type Database = {
           last_name?: string | null
           last_seen?: string | null
           name?: string
+          notification_enabled?: boolean | null
+          notification_token?: string | null
           password_hash?: string | null
           phone?: string
           role?: string | null

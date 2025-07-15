@@ -4,10 +4,13 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare } from 'lucide-react';
+import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
+import { useNotificationService } from '@/hooks/useNotificationService';
 import StartChatModal from './StartChatModal';
+import NotificationPermissionBanner from './NotificationPermissionBanner';
+import NotificationToggle from './NotificationToggle';
 
 interface MessengerInboxProps {
   sessionToken: string;
@@ -33,7 +36,21 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showStartChatModal, setShowStartChatModal] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize notification service
+  const {
+    permissionState,
+    notificationEnabled,
+    showPermissionBanner,
+    requestNotificationPermission,
+    updateNotificationPreference,
+    dismissPermissionBanner
+  } = useNotificationService({
+    currentUser,
+    sessionToken
+  });
 
   useEffect(() => {
     loadData();
@@ -91,6 +108,14 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
+      {/* Notification Permission Banner */}
+      {showPermissionBanner && (
+        <NotificationPermissionBanner
+          onRequestPermission={requestNotificationPermission}
+          onDismiss={dismissPermissionBanner}
+        />
+      )}
+
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
@@ -107,6 +132,17 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               <Search className="w-4 h-4" />
               به‌روزرسانی
             </Button>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowNotificationSettings(!showNotificationSettings)}
+              className="flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              تنظیمات
+            </Button>
+            
             <Button
               size="sm"
               onClick={handleStartChat}
@@ -129,6 +165,30 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             dir="rtl"
           />
         </div>
+        
+        {/* Notification Settings */}
+        {showNotificationSettings && (
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <h4 className="text-sm font-medium mb-3">تنظیمات نوتیفیکیشن</h4>
+            <NotificationToggle
+              enabled={notificationEnabled && permissionState.granted}
+              onToggle={updateNotificationPreference}
+              disabled={!permissionState.supported || permissionState.permission === 'denied'}
+            />
+            
+            {permissionState.permission === 'denied' && (
+              <p className="text-xs text-destructive mt-2">
+                نوتیفیکیشن‌ها در مرورگر شما مسدود شده‌اند. از تنظیمات مرورگر آن‌ها را فعال کنید.
+              </p>
+            )}
+            
+            {!permissionState.supported && (
+              <p className="text-xs text-muted-foreground mt-2">
+                مرورگر شما از نوتیفیکیشن پشتیبانی نمی‌کند.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Chat List */}
