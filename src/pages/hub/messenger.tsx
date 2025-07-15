@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Messenger from '@/components/Chat/Messenger';
 import { Card, CardContent } from '@/components/ui/card';
 import { WifiOff, MessageCircle, Users } from 'lucide-react';
 import { type MessengerUser } from '@/lib/messengerService';
+import { useNotificationService } from '@/hooks/useNotificationService';
+import NotificationPermissionBanner from '@/components/Chat/NotificationPermissionBanner';
 
 interface MessengerPageProps {
   currentUser: MessengerUser;
@@ -13,6 +15,16 @@ interface MessengerPageProps {
 
 const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate, isOffline = false }) => {
   const sessionToken = localStorage.getItem('messenger_session_token');
+
+  // Initialize notification service for this page
+  const {
+    showPermissionBanner,
+    requestNotificationPermission,
+    dismissPermissionBanner
+  } = useNotificationService({
+    currentUser,
+    sessionToken
+  });
 
   if (!sessionToken) {
     return <div>Session not found</div>;
@@ -81,6 +93,14 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
 
   return (
     <div className="h-[calc(100vh-80px)]">
+      {/* Show notification banner if needed */}
+      {showPermissionBanner && !isOffline && (
+        <NotificationPermissionBanner
+          onRequestPermission={requestNotificationPermission}
+          onDismiss={dismissPermissionBanner}
+        />
+      )}
+      
       <Messenger
         sessionToken={sessionToken}
         currentUser={currentUser}
