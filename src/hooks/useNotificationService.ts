@@ -163,6 +163,22 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           pushSubscribed = !!subscription;
           console.log('🔔 Push subscription result:', pushSubscribed);
           
+          // Save subscription token to database
+          if (subscription) {
+            const subscriptionData = subscription.toJSON();
+            if (subscriptionData.endpoint) {
+              await supabase
+                .from('chat_users')
+                .update({ 
+                  notification_token: subscriptionData.endpoint,
+                  notification_enabled: true 
+                })
+                .eq('id', currentUser.id);
+              
+              console.log('🔔 Notification token saved to database');
+            }
+          }
+          
           // Update user presence when online
           await supabase.rpc('update_user_presence', { 
             p_user_id: currentUser.id, 
