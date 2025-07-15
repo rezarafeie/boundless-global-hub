@@ -22,47 +22,43 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
   };
 
   return (
-    <Alert className="m-4 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-      <div className="flex items-center gap-2">
-        <Bell className="h-4 w-4 text-primary" />
-        {pushSupported && <Smartphone className="h-4 w-4 text-accent" />}
+    <div className="fixed bottom-4 left-4 right-4 z-50 animate-fade-in">
+      <div className="mx-auto max-w-md">
+        <div className="bg-card/95 backdrop-blur-sm border border-border/50 rounded-xl shadow-lg p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-1">
+                <Bell className="h-3.5 w-3.5 text-primary" />
+                {pushSupported && <Smartphone className="h-3 w-3 text-accent" />}
+              </div>
+              <div>
+                <p className="text-xs font-medium text-foreground">فعال‌سازی اعلان‌ها</p>
+                <p className="text-xs text-muted-foreground">برای دریافت پیام‌های جدید</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                onClick={handleEnableNotifications}
+                className="h-7 px-3 text-xs bg-primary hover:bg-primary/90"
+              >
+                فعال
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDismiss}
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-      <AlertDescription className="flex items-center justify-between">
-        <div className="flex-1 ml-2">
-          <p className="text-primary font-medium">
-            🔔 دریافت اعلان‌های پیشرفته را فعال کنید!
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            با فعال‌سازی اعلان‌ها، حتی زمانی که صفحه بسته است نیز از پیام‌های جدید آگاه خواهید شد
-            {pushSupported && (
-              <span className="block text-xs text-accent-foreground mt-1">
-                ✨ پشتیبانی از اعلان‌های پیشرفته در دستگاه شما فعال است
-              </span>
-            )}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2 mr-4">
-          <Button
-            size="sm"
-            onClick={handleEnableNotifications}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            فعال‌سازی اعلان‌ها
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onDismiss}
-            className="text-muted-foreground hover:text-foreground p-1"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </AlertDescription>
-    </Alert>
+    </div>
   );
 };
 
