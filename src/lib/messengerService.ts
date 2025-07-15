@@ -136,6 +136,8 @@ class MessengerService {
     password: string;
     isBoundlessStudent?: boolean;
     countryCode?: string;
+    firstName?: string;
+    lastName?: string;
   }): Promise<{ session_token: string; user: MessengerUser }> {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     
@@ -162,6 +164,9 @@ class MessengerService {
       .from('chat_users')
       .insert({
         name: userData.name,
+        first_name: userData.firstName || userData.name.split(' ')[0],
+        last_name: userData.lastName || userData.name.split(' ').slice(1).join(' '),
+        full_name: userData.name,
         phone: cleanPhone,
         country_code: countryCode,
         username: userData.username,

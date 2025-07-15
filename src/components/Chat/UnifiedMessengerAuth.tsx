@@ -24,7 +24,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+98');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [isBoundlessStudent, setIsBoundlessStudent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -171,10 +172,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim()) {
+    if (!firstName.trim() || !lastName.trim()) {
       toast({
         title: 'خطا',
-        description: 'نام را وارد کنید',
+        description: 'نام و نام خانوادگی را وارد کنید',
         variant: 'destructive'
       });
       return;
@@ -208,12 +209,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     try {
       // Register user with separate country code
       const result = await messengerService.registerWithPassword({
-        name: name.trim(),
+        name: `${firstName.trim()} ${lastName.trim()}`,
         phone: phoneNumber,
         countryCode: countryCode,
         username: username,
         password: password,
-        isBoundlessStudent: isBoundlessStudent
+        isBoundlessStudent: isBoundlessStudent,
+        firstName: firstName.trim(),
+        lastName: lastName.trim()
       });
 
       // Check if user needs approval
@@ -270,7 +273,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     switch (currentStep) {
       case 'phone': return 'شماره تلفن خود را وارد کنید';
       case 'password': return isLogin ? 'رمز عبور خود را وارد کنید' : 'رمز عبور خود را انتخاب کنید';
-      case 'name': return 'نام کامل خود را وارد کنید';
+      case 'name': return 'نام و نام خانوادگی خود را وارد کنید';
       case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
     }
@@ -424,17 +427,31 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
           {currentStep === 'name' && (
             <form onSubmit={handleNameSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="نام و نام خانوادگی"
-                  required
-                  dir="rtl"
-                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="نام"
+                    required
+                    dir="rtl"
+                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="نام خانوادگی"
+                    required
+                    dir="rtl"
+                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  />
+                </div>
               </div>
               
               <div className="flex items-center space-x-2 space-x-reverse pt-4">
