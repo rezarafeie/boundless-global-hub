@@ -72,15 +72,15 @@ const BorderlessHubMessenger: React.FC = () => {
   const [unifiedChats, setUnifiedChats] = useState<UnifiedChatItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Initialize notification service for desktop
-  const {
-    showPermissionBanner,
-    requestNotificationPermission,
-    dismissPermissionBanner
-  } = useNotificationService({
+  // Initialize notification service for desktop (only when user is available)
+  const notificationService = useNotificationService({
     currentUser,
     sessionToken
   });
+
+  const showPermissionBanner = currentUser ? notificationService.showPermissionBanner : false;
+  const requestNotificationPermission = currentUser ? notificationService.requestNotificationPermission : () => Promise.resolve(false);
+  const dismissPermissionBanner = currentUser ? notificationService.dismissPermissionBanner : () => {};
 
   // Support rooms based on user access - always show these
   const getSupportRooms = (): MessengerSupportRoom[] => {

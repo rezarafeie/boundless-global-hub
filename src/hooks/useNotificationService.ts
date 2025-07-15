@@ -26,10 +26,17 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
   // Initialize notification permission state
   useEffect(() => {
-    if (!permissionState.supported) return;
+    console.log('🔔 useNotificationService - Init with user:', currentUser?.name);
+    
+    if (!permissionState.supported || !currentUser) {
+      console.log('🔔 Notifications not supported or no user');
+      return;
+    }
 
     const permission = Notification.permission;
     const granted = permission === 'granted';
+    
+    console.log('🔔 Current permission:', permission, 'Granted:', granted);
     
     setPermissionState({
       granted,
