@@ -6,6 +6,7 @@ import { Pin } from 'lucide-react';
 import { useChatMessages } from '@/hooks/useRealtime';
 import { chatService, chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import ChatAuth from './ChatAuth';
 import ChatPreview from './ChatPreview';
 import ModernChatHeader from './ModernChatHeader';
@@ -20,6 +21,7 @@ const ChatSection: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthForm, setShowAuthForm] = useState(false);
+  const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +34,36 @@ const ChatSection: React.FC = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Fetch user avatars for all message senders
+  useEffect(() => {
+    const fetchUserAvatars = async () => {
+      const userIds = [...new Set(messages.map(msg => msg.user_id).filter(Boolean))];
+      if (userIds.length === 0) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('id, avatar_url')
+          .in('id', userIds);
+
+        if (error) throw error;
+
+        const avatarMap: Record<number, string> = {};
+        data?.forEach(user => {
+          if (user.avatar_url) {
+            avatarMap[user.id] = user.avatar_url;
+          }
+        });
+        
+        setUserAvatars(avatarMap);
+      } catch (error) {
+        console.error('Error fetching user avatars:', error);
+      }
+    };
+
+    fetchUserAvatars();
   }, [messages]);
 
   const validateSession = async (token: string) => {
@@ -206,6 +238,7 @@ const ChatSection: React.FC = () => {
                 key={message.id}
                 message={message}
                 isOwnMessage={message.user_id === currentUserId}
+                senderAvatarUrl={message.user_id ? userAvatars[message.user_id] : undefined}
               />
             ))
           )}

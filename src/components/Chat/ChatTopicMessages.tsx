@@ -1,10 +1,11 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Pin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import ModernChatMessage from './ModernChatMessage';
 import type { ChatMessage } from '@/types/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatTopicMessagesProps {
   messages: ChatMessage[];
@@ -18,9 +19,40 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
   currentUserId 
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Fetch user avatars for all message senders
+  useEffect(() => {
+    const fetchUserAvatars = async () => {
+      const userIds = [...new Set(messages.map(msg => msg.user_id).filter(Boolean))];
+      if (userIds.length === 0) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('id, avatar_url')
+          .in('id', userIds);
+
+        if (error) throw error;
+
+        const avatarMap: Record<number, string> = {};
+        data?.forEach(user => {
+          if (user.avatar_url) {
+            avatarMap[user.id] = user.avatar_url;
+          }
+        });
+        
+        setUserAvatars(avatarMap);
+      } catch (error) {
+        console.error('Error fetching user avatars:', error);
+      }
+    };
+
+    fetchUserAvatars();
   }, [messages]);
 
   const pinnedMessages = messages.filter(msg => msg.is_pinned);
@@ -92,6 +124,7 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
               key={message.id}
               message={message}
               isOwnMessage={message.user_id === currentUserId}
+              senderAvatarUrl={message.user_id ? userAvatars[message.user_id] : undefined}
             />
           ))
         )}

@@ -16,9 +16,8 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
 }) => {
   const handleEnableNotifications = async () => {
     const granted = await onRequestPermission();
-    if (granted) {
-      onDismiss();
-    }
+    // Hide banner immediately regardless of permission result
+    onDismiss();
   };
 
   return (
