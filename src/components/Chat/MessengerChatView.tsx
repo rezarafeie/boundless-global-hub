@@ -9,6 +9,7 @@ import { ArrowLeft, Send, Users, Loader2 } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MessengerChatViewProps {
@@ -27,6 +28,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   onBack
 }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -185,10 +187,16 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           </AvatarFallback>
         </Avatar>
         
-        <div className="flex-1">
+        <div 
+          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
+          onClick={isMobile && onBack ? onBack : undefined}
+        >
           <h3 className="font-semibold text-slate-900 dark:text-white">{chatTitle}</h3>
           {chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
+          )}
+          {isMobile && onBack && (
+            <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
           )}
         </div>
         
