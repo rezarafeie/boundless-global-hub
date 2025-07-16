@@ -16,13 +16,15 @@ interface MessengerChatViewProps {
   selectedUser: MessengerUser | null;
   currentUser: MessengerUser;
   sessionToken: string;
+  onBack?: () => void;
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   selectedRoom,
   selectedUser,
   currentUser,
-  sessionToken
+  sessionToken,
+  onBack
 }) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
@@ -167,6 +169,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {onBack && (
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+        )}
+        
         <Avatar className="w-10 h-10">
           <AvatarImage src={selectedUser?.avatar_url} alt={chatTitle} />
           <AvatarFallback 

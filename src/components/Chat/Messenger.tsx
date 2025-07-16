@@ -24,6 +24,11 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
     setSelectedRoom(null);
   };
 
+  const handleBackToInbox = () => {
+    setSelectedRoom(null);
+    setSelectedUser(null);
+  };
+
   return (
     <div className="flex h-full">
       <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -44,6 +49,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
           selectedUser={selectedUser}
           currentUser={currentUser}
           sessionToken={sessionToken}
+          onBack={handleBackToInbox}
         />
       </div>
     </div>
