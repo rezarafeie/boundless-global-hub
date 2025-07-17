@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -10,6 +9,7 @@ import { Settings, Shield, Users } from 'lucide-react';
 const AdminSettingsPanel: React.FC = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<AdminSettings>({
+    id: 1,
     manual_approval_enabled: false,
     updated_at: new Date().toISOString()
   });

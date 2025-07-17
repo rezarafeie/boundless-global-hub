@@ -73,6 +73,12 @@ interface ValidationResult {
   user?: MessengerUser;
 }
 
+interface AuthResult {
+  user: MessengerUser | null;
+  error: any;
+  session_token?: string;
+}
+
 export const messengerService = {
   async getUsers(): Promise<MessengerUser[]> {
     try {
@@ -138,7 +144,6 @@ export const messengerService = {
 
   async getOrCreateChatUser(phone: string): Promise<MessengerUser | null> {
     try {
-      // Check if user exists
       let { data: existingUsers, error: selectError } = await supabase
         .from('chat_users')
         .select('*')
@@ -153,7 +158,6 @@ export const messengerService = {
         return existingUsers[0];
       }
 
-      // If user doesn't exist, create a new user
       const { data: newUserData, error: insertError } = await supabase
         .from('chat_users')
         .insert([{ phone: phone, name: phone, is_approved: true }])
@@ -172,54 +176,56 @@ export const messengerService = {
     }
   },
 
-  async login(phone: string): Promise<{ user: MessengerUser | null; error: any }> {
+  async login(phone: string): Promise<AuthResult> {
     try {
       const user = await this.getOrCreateChatUser(phone);
       if (!user) {
         return { user: null, error: 'Failed to create or retrieve user' };
       }
-      return { user: user, error: null };
+      const sessionToken = await this.createSession(user.id);
+      return { user: user, error: null, session_token: sessionToken };
     } catch (error) {
       console.error('Login error:', error);
       return { user: null, error: error };
     }
   },
 
-  async signup(phone: string): Promise<{ user: MessengerUser | null; error: any }> {
+  async signup(phone: string): Promise<AuthResult> {
     try {
       const user = await this.getOrCreateChatUser(phone);
       if (!user) {
         return { user: null, error: 'Failed to create or retrieve user' };
       }
-      return { user: user, error: null };
+      const sessionToken = await this.createSession(user.id);
+      return { user: user, error: null, session_token: sessionToken };
     } catch (error) {
       console.error('Signup error:', error);
       return { user: null, error: error };
     }
   },
 
-  async authenticateUser(phone: string, password: string): Promise<{ user: MessengerUser | null; error: any }> {
+  async authenticateUser(phone: string, password: string): Promise<AuthResult> {
     try {
-      // For now, just return the user without password validation
       const user = await this.getUserByPhone(phone);
       if (!user) {
         return { user: null, error: 'User not found' };
       }
-      return { user: user, error: null };
+      const sessionToken = await this.createSession(user.id);
+      return { user: user, error: null, session_token: sessionToken };
     } catch (error) {
       console.error('Authentication error:', error);
       return { user: null, error: error };
     }
   },
 
-  async registerWithPassword(phone: string, password: string, name: string): Promise<{ user: MessengerUser | null; error: any }> {
+  async registerWithPassword(phone: string, password: string, name: string): Promise<AuthResult> {
     try {
       const { data: newUserData, error: insertError } = await supabase
         .from('chat_users')
         .insert([{ 
           phone: phone, 
           name: name, 
-          password_hash: password, // In production, this should be hashed
+          password_hash: password,
           is_approved: true 
         }])
         .select('*')
@@ -230,7 +236,8 @@ export const messengerService = {
         return { user: null, error: insertError };
       }
 
-      return { user: newUserData, error: null };
+      const sessionToken = await this.createSession(newUserData.id);
+      return { user: newUserData, error: null, session_token: sessionToken };
     } catch (error) {
       console.error('Registration error:', error);
       return { user: null, error: error };
@@ -267,7 +274,6 @@ export const messengerService = {
 
       if (error) throw error;
       
-      // Add missing properties with defaults
       const rooms = (data || []).map(room => ({
         ...room,
         is_private: room.is_private || false,
@@ -385,8 +391,6 @@ export const messengerService = {
         });
 
       if (error) throw error;
-
-      // Webhook is now handled by database trigger automatically
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -446,6 +450,10 @@ export const messengerService = {
       console.error('Error updating user:', error);
       throw error;
     }
+  },
+
+  async updateUserRole(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean }): Promise<void> {
+    return this.updateUser(userId, updates);
   },
 
   async updateUserProfile(userId: number, updates: Partial<MessengerUser>): Promise<void> {
@@ -626,7 +634,6 @@ export const messengerService = {
 
   async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<void> {
     try {
-      // Implementation for sending private messages
       console.log(`Sending private message from ${senderId} to ${recipientId}: ${message}`);
     } catch (error) {
       console.error('Error sending private message:', error);
@@ -636,7 +643,6 @@ export const messengerService = {
 
   async getConversations(userId: number): Promise<any[]> {
     try {
-      // Implementation for fetching conversations
       console.log(`Fetching conversations for user ID: ${userId}`);
       return [];
     } catch (error) {

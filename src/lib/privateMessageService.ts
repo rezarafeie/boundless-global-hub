@@ -1,250 +1,217 @@
 import { supabase } from '@/integrations/supabase/client';
-
-export interface PrivateConversation {
-  id: number;
-  user1_id: number;
-  user2_id: number;
-  created_at: string;
-  updated_at: string;
-  last_message_at: string;
-  other_user: {
-    id: number;
-    name: string;
-    username?: string;
-    avatar_url?: string;
-    phone: string;
-  };
-  last_message?: {
-    id: number;
-    message: string;
-    sender_id: number;
-    created_at: string;
-    media_url?: string;
-  };
-  unread_count: number;
-}
+import { type MessengerUser } from './messengerService';
 
 export interface PrivateMessage {
   id: number;
+  created_at: string;
   conversation_id: number;
   sender_id: number;
   message: string;
-  media_url?: string;
-  message_type?: string;
-  media_content?: string;
-  created_at: string;
   is_read: boolean;
-  sender?: {
-    id: number;
-    name: string;
-    phone: string;
-    avatar_url?: string;
-  };
+}
+
+export interface PrivateConversation {
+  id: number;
+  created_at: string;
+  user1_id: number;
+  user2_id: number;
+  last_message_at: string;
+  other_user?: MessengerUser;
+  last_message?: PrivateMessage;
+  unread_count?: number;
 }
 
 export const privateMessageService = {
-  async getUserConversations(userId: number, sessionToken: string): Promise<PrivateConversation[]> {
+  async getConversation(conversationId: number): Promise<PrivateConversation | null> {
     try {
-      // Set session context
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
       const { data, error } = await supabase
         .from('private_conversations')
         .select(`
-          id,
-          user1_id,
-          user2_id,
-          created_at,
-          updated_at,
-          last_message_at,
-          user1:chat_users!private_conversations_user1_id_fkey (
-            id,
-            name,
-            username,
-            avatar_url,
-            phone
-          ),
-          user2:chat_users!private_conversations_user2_id_fkey (
-            id,
-            name,
-            username,
-            avatar_url,
-            phone
-          )
+          *,
+          other_user:chat_users!private_conversations_user2_id_fkey (*)
+        `)
+        .eq('id', conversationId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching conversation:', error);
+        return null;
+      }
+
+      return data || null;
+    } catch (error) {
+      console.error('Error fetching conversation:', error);
+      return null;
+    }
+  },
+
+  async getUserConversations(userId: number, sessionToken: string): Promise<PrivateConversation[]> {
+    try {
+      const { data, error } = await supabase
+        .from('private_conversations')
+        .select(`
+          *,
+          other_user:chat_users!private_conversations_user2_id_fkey (*)
         `)
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
-
-      const conversations: PrivateConversation[] = [];
-      
-      for (const conv of data || []) {
-        const otherUser = conv.user1_id === userId ? conv.user2 : conv.user1;
-        
-        // Get last message
-        const { data: lastMessage } = await supabase
-          .from('private_messages')
-          .select('id, message, sender_id, created_at, media_url')
-          .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        // Get unread count
-        const { count: unreadCount } = await supabase
-          .from('private_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .eq('is_read', false)
-          .neq('sender_id', userId);
-
-        conversations.push({
-          id: conv.id,
-          user1_id: conv.user1_id,
-          user2_id: conv.user2_id,
-          created_at: conv.created_at,
-          updated_at: conv.updated_at,
-          last_message_at: conv.last_message_at,
-          other_user: otherUser,
-          last_message: lastMessage?.[0],
-          unread_count: unreadCount || 0
-        });
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        return [];
       }
 
-      return conversations;
+      // Fetch last message and unread count for each conversation
+      const conversationsWithDetails = await Promise.all(
+        data.map(async (conversation) => {
+          const lastMessage = await this.getLastMessage(conversation.id);
+          const unreadCount = await this.getUnreadMessagesCount(conversation.id, userId);
+          return {
+            ...conversation,
+            last_message: lastMessage,
+            unread_count: unreadCount,
+          };
+        })
+      );
+
+      return conversationsWithDetails;
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      throw error;
+      return [];
     }
   },
 
-  async getOrCreateConversation(userId1: number, userId2: number, sessionToken: string): Promise<number> {
+  async getUnreadMessagesCount(conversationId: number, userId: number): Promise<number> {
     try {
-      // Set session context
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
-      const { data, error } = await supabase
-        .rpc('get_or_create_private_conversation', {
-          p_user1_id: userId1,
-          p_user2_id: userId2
-        });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error getting or creating conversation:', error);
-      throw error;
-    }
-  },
-
-  async sendMessage(
-    senderId: number, 
-    recipientId: number, 
-    message: string, 
-    sessionToken: string,
-    mediaUrl?: string,
-    mediaType?: string,
-    mediaContent?: string
-  ): Promise<PrivateMessage> {
-    try {
-      // Set session context
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
-      // Get or create conversation
-      const conversationId = await this.getOrCreateConversation(senderId, recipientId, sessionToken);
-      
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from('private_messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: senderId,
-          message,
-          media_url: mediaUrl,
-          message_type: mediaType,
-          media_content: mediaContent
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Webhook is now handled by database trigger automatically
-      
-      return data;
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  },
-
-  async getConversationMessages(conversationId: number, sessionToken: string): Promise<PrivateMessage[]> {
-    try {
-      // Set session context
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
-      const { data, error } = await supabase
-        .from('private_messages')
-        .select(`
-          id,
-          conversation_id,
-          sender_id,
-          message,
-          media_url,
-          message_type,
-          media_content,
-          created_at,
-          is_read,
-          sender:chat_users!private_messages_sender_id_fkey (
-            id,
-            name,
-            phone,
-            avatar_url
-          )
-        `)
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      throw error;
-    }
-  },
-
-  async markMessagesAsRead(conversationId: number, userId: number, sessionToken: string): Promise<void> {
-    try {
-      // Set session context
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
-      const { error } = await supabase
-        .from('private_messages')
-        .update({ is_read: true })
+        .select('*', { count: 'exact' })
         .eq('conversation_id', conversationId)
         .neq('sender_id', userId)
         .eq('is_read', false);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching unread messages count:', error);
+        return 0;
+      }
+
+      return count || 0;
     } catch (error) {
-      console.error('Error marking messages as read:', error);
-      throw error;
+      console.error('Error fetching unread messages count:', error);
+      return 0;
     }
   },
 
-  async exactSearch(query: string): Promise<any[]> {
+  async getLastMessage(conversationId: number): Promise<PrivateMessage | null> {
     try {
       const { data, error } = await supabase
-        .from('chat_users')
+        .from('private_messages')
         .select('*')
-        .or(`username.ilike.${query},phone.ilike.${query}`)
-        .eq('is_approved', true)
-        .limit(10);
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching last message:', error);
+        return null;
+      }
+
+      return data || null;
+    } catch (error) {
+      console.error('Error fetching last message:', error);
+      return null;
+    }
+  },
+
+  async getMessages(conversationId: number): Promise<PrivateMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('private_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return [];
+      }
+
       return data || [];
     } catch (error) {
-      console.error('Error in exact search:', error);
-      throw error;
+      console.error('Error fetching messages:', error);
+      return [];
+    }
+  },
+
+  async sendMessage(conversationId: number, senderId: number, message: string): Promise<PrivateMessage | null> {
+    try {
+      const { data, error } = await supabase
+        .from('private_messages')
+        .insert([{
+          conversation_id: conversationId,
+          sender_id: senderId,
+          message: message,
+          is_read: false
+        }])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error sending message:', error);
+        return null;
+      }
+
+      // Update last_message_at in private_conversations table
+      await supabase
+        .from('private_conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+      return data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return null;
+    }
+  },
+
+  async markMessagesAsRead(conversationId: number, userId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('private_messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', userId);
+
+      if (error) {
+        console.error('Error marking messages as read:', error);
+      }
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  },
+
+  async createConversation(user1Id: number, user2Id: number): Promise<PrivateConversation | null> {
+    try {
+      const { data, error } = await supabase
+        .from('private_conversations')
+        .insert([{
+          user1_id: user1Id,
+          user2_id: user2Id,
+          last_message_at: new Date().toISOString()
+        }])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error creating conversation:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return null;
     }
   },
 
@@ -269,76 +236,90 @@ export const privateMessageService = {
     }
   },
 
-  async updateUsername(userId: number, username: string, sessionToken: string): Promise<void> {
+  async updateUsername(userId: number, username: string): Promise<void> {
     try {
-      // Set session context
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-      
       const { error } = await supabase
         .from('chat_users')
-        .update({ username })
+        .update({ username: username })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating username:', error);
+        throw error;
+      }
     } catch (error) {
       console.error('Error updating username:', error);
       throw error;
     }
   },
 
-  async searchUsers(searchTerm: string): Promise<any[]> {
+  async searchUsers(searchTerm: string): Promise<MessengerUser[]> {
     try {
-      const cleanTerm = searchTerm.trim();
-      
-      if (!cleanTerm) {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .ilike('name', `%${searchTerm}%`)
+        .limit(10);
+
+      if (error) {
+        console.error('Search error:', error);
         return [];
       }
 
+      return data || [];
+    } catch (error) {
+      console.error('Error searching users:', error);
+      return [];
+    }
+  },
+
+  async exactSearch(searchTerm: string): Promise<MessengerUser[]> {
+    try {
+      console.log('Exact search for:', searchTerm);
+      
       let query = supabase
         .from('chat_users')
         .select('*')
         .eq('is_approved', true);
 
-      if (/^09\d{9}$/.test(cleanTerm)) {
-        query = query.eq('phone', cleanTerm);
-      } 
-      else if (cleanTerm.startsWith('@')) {
-        const username = cleanTerm.substring(1);
-        query = query.eq('username', username);
-      }
-      else {
-        query = query.eq('username', cleanTerm.toLowerCase());
+      // Check if it's a phone number
+      if (/^09\d{9}$/.test(searchTerm)) {
+        query = query.eq('phone', searchTerm);
+      } else {
+        // Username search
+        query = query.eq('username', searchTerm);
       }
 
       const { data, error } = await query.limit(10);
-      if (error) throw error;
+
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
+
       return data || [];
     } catch (error) {
-      console.error('Error searching users:', error);
-      throw error;
+      console.error('Error in exact search:', error);
+      return [];
     }
   },
 
   async getSupportConversations(): Promise<any[]> {
     try {
       const { data, error } = await supabase
-        .from('support_conversations')
-        .select(`
-          *,
-          chat_users!support_conversations_user_id_fkey (
-            id,
-            name,
-            phone,
-            avatar_url
-          )
-        `)
-        .order('last_message_at', { ascending: false });
+        .from('chat_users')
+        .select('*')
+        .or('username.eq.support,username.eq.boundless_support');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching support users:', error);
+        return [];
+      }
+
       return data || [];
     } catch (error) {
-      console.error('Error fetching support conversations:', error);
-      throw error;
+      console.error('Error fetching support users:', error);
+      return [];
     }
   }
 };

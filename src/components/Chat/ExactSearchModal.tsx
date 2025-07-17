@@ -37,7 +37,6 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   const [searchResults, setSearchResults] = useState<MessengerUser[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Pinned support users
   const getSupportUsers = (): SupportUser[] => {
     const supportUsers: SupportUser[] = [
       {
@@ -49,7 +48,6 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
       }
     ];
 
-    // Add boundless support for boundless users
     if (currentUser?.bedoun_marz || currentUser?.bedoun_marz_approved) {
       supportUsers.push({
         id: 'boundless_support',
@@ -69,9 +67,7 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
       return;
     }
 
-    // Debounce search
     const timeoutId = setTimeout(() => {
-      // Only search if it's a complete phone number or @username
       const trimmed = searchTerm.trim();
       const isValidPhoneSearch = /^09\d{9}$/.test(trimmed);
       const isValidUsernameSearch = trimmed.startsWith('@') && trimmed.length > 1;
@@ -97,16 +93,14 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
     try {
       console.log('Searching for:', searchTerm.trim());
       
-      // Prepare search term - remove @ if present for username search
       let searchQuery = searchTerm.trim();
       if (searchQuery.startsWith('@')) {
         searchQuery = searchQuery.substring(1);
       }
       
-      const results = await privateMessageService.exactSearch(searchQuery, sessionToken);
+      const results = await privateMessageService.exactSearch(searchQuery);
       console.log('Search results:', results);
       
-      // Filter out current user
       const filteredResults = results.filter(user => user.id !== currentUser.id);
       setSearchResults(filteredResults);
     } catch (error) {
@@ -125,7 +119,6 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
   };
 
   const handleSupportUserSelect = async (supportUser: SupportUser) => {
-    // Create a mock MessengerUser for support
     const supportMessengerUser: MessengerUser = {
       id: supportUser.type === 'academy_support' ? 999997 : 999998,
       name: supportUser.name,
@@ -141,7 +134,18 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
       updated_at: new Date().toISOString(),
       last_seen: new Date().toISOString(),
       role: 'support',
-      bio: supportUser.description
+      bio: supportUser.description,
+      email: null,
+      user_id: null,
+      first_name: null,
+      last_name: null,
+      full_name: null,
+      country_code: null,
+      signup_source: null,
+      notification_enabled: true,
+      notification_token: null,
+      password_hash: null,
+      avatar_url: undefined
     };
 
     handleUserSelect(supportMessengerUser);
@@ -177,7 +181,6 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Pinned Support Users */}
           {supportUsers.length > 0 && (
             <div className="space-y-2">
               <div className="text-sm font-medium text-muted-foreground px-1">
@@ -217,7 +220,6 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
             </div>
           )}
 
-          {/* Search Input */}
           <div className="relative">
             <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
