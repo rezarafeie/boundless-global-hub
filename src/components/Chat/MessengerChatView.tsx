@@ -364,7 +364,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
           onClick={isMobile && onBack ? onBack : undefined}
         >
-          <h3 className="font-semibold text-slate-900 dark:text-white">
+          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
             {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
           </h3>
           {chatDescription && (

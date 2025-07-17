@@ -132,8 +132,8 @@ const SuperGroupTopicSelection: React.FC<SuperGroupTopicSelectionProps> = ({
             className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 p-3 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-3"
             onClick={() => onTopicSelect(topic)}
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-lg text-white">
+            <div className="w-10 h-10 flex items-center justify-center">
+              <span className="text-2xl">
                 {(topic as any).icon || '🔹'}
               </span>
             </div>
