@@ -29,6 +29,7 @@ export interface ChatRoom {
   type: string;
   is_active: boolean;
   is_boundless_only: boolean;
+  is_super_group?: boolean;
   created_at: string;
   updated_at: string;
   last_message?: string;
@@ -407,6 +408,7 @@ class MessengerService {
         type: room.type,
         is_active: room.is_active,
         is_boundless_only: room.is_boundless_only,
+        is_super_group: room.is_super_group || false,
         created_at: room.created_at,
         updated_at: room.updated_at,
         last_message: null,
@@ -433,21 +435,19 @@ class MessengerService {
     } : null;
   }
 
-  async getMessages(roomId: number): Promise<MessengerMessage[]> {
+  async getMessages(roomId: number, topicId?: number): Promise<MessengerMessage[]> {
     const { data, error } = await supabase
       .from('messenger_messages')
-      .select(`
-        *,
-        chat_users!messenger_messages_sender_id_fkey(name, phone)
-      `)
+      .select('*')
       .eq('room_id', roomId)
+      .eq('topic_id', topicId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
     
-    return (data || []).map(message => ({
+    return (data || []).map((message: any) => ({
       ...message,
-      sender: message.chat_users || { name: 'Unknown', phone: '' }
+      sender: { name: 'User', phone: '' }
     }));
   }
 
@@ -469,7 +469,7 @@ class MessengerService {
     }));
   }
 
-  async sendMessage(roomId: number, senderId: number, message: string): Promise<MessengerMessage> {
+  async sendMessage(roomId: number, senderId: number, message: string, topicId?: number): Promise<MessengerMessage> {
     // Send webhook first
     try {
       const { webhookService } = await import('@/lib/webhookService');
@@ -496,7 +496,8 @@ class MessengerService {
       .insert({
         room_id: roomId,
         sender_id: senderId,
-        message: message
+        message: message,
+        topic_id: topicId || null
       })
       .select(`
         *,

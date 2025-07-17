@@ -5,12 +5,22 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import SuperGroupTopics from './SuperGroupTopics';
+import PinnedMessage from './PinnedMessage';
+import CreateTopicModal from './CreateTopicModal';
+import type { ChatTopic } from '@/types/supabase';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface MessengerChatViewProps {
   selectedRoom: ChatRoom | null;
@@ -34,13 +44,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
+  const [selectedTopic, setSelectedTopic] = useState<ChatTopic | null>(null);
+  const [pinnedMessage, setPinnedMessage] = useState<any>(null);
+  const [showCreateTopic, setShowCreateTopic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedRoom || selectedUser) {
       loadMessages();
+      if (selectedRoom) {
+        loadPinnedMessage();
+      }
     }
-  }, [selectedRoom?.id, selectedUser?.id]);
+  }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -76,13 +92,47 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     fetchUserAvatars();
   }, [messages]);
 
+  const loadPinnedMessage = async () => {
+    if (!selectedRoom) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('pinned_messages')
+        .select(`
+          *,
+          messenger_messages:message_id (
+            id,
+            message,
+            sender_id,
+            created_at
+          )
+        `)
+        .or(
+          selectedTopic 
+            ? `topic_id.eq.${selectedTopic.id}`
+            : `room_id.eq.${selectedRoom.id}`
+        )
+        .order('pinned_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setPinnedMessage(data);
+    } catch (error) {
+      console.error('Error loading pinned message:', error);
+    }
+  };
+
   const loadMessages = async () => {
     try {
       setLoading(true);
       let roomMessages: MessengerMessage[] = [];
       
       if (selectedRoom) {
-        roomMessages = await messengerService.getMessages(selectedRoom.id);
+        roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
       } else if (selectedUser) {
         const conversationId = await privateMessageService.getOrCreateConversation(
           currentUser.id,
@@ -116,7 +166,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setSending(true);
       
       if (selectedRoom) {
-        await messengerService.sendMessage(selectedRoom.id, currentUser.id, newMessage);
+        await messengerService.sendMessage(selectedRoom.id, currentUser.id, newMessage, selectedTopic?.id);
       } else if (selectedUser) {
         await privateMessageService.sendMessage(currentUser.id, selectedUser.id, newMessage, sessionToken);
       }
@@ -139,6 +189,80 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const handlePinMessage = async (message: MessengerMessage) => {
+    if (!currentUser?.is_messenger_admin) return;
+
+    try {
+      const summary = message.message.length > 100 
+        ? message.message.substring(0, 100) + '...'
+        : message.message;
+
+      const { error } = await supabase
+        .from('pinned_messages')
+        .insert({
+          message_id: message.id,
+          room_id: selectedTopic ? null : selectedRoom?.id,
+          topic_id: selectedTopic?.id || null,
+          pinned_by: currentUser.id,
+          summary
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'موفق',
+        description: 'پیام سنجاق شد',
+      });
+
+      loadPinnedMessage();
+    } catch (error) {
+      console.error('Error pinning message:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در سنجاق کردن پیام',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUnpinMessage = async () => {
+    if (!currentUser?.is_messenger_admin || !pinnedMessage) return;
+
+    try {
+      const { error } = await supabase
+        .from('pinned_messages')
+        .delete()
+        .eq('id', pinnedMessage.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'موفق',
+        description: 'سنجاق پیام برداشته شد',
+      });
+
+      setPinnedMessage(null);
+    } catch (error) {
+      console.error('Error unpinning message:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در برداشتن سنجاق پیام',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const scrollToMessage = (messageId: number) => {
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      messageElement.classList.add('highlight-message');
+      setTimeout(() => {
+        messageElement.classList.remove('highlight-message');
+      }, 2000);
     }
   };
 
@@ -203,10 +327,38 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="w-3 h-3" />
-            {selectedRoom ? 'گروه' : 'شخصی'}
+            {selectedRoom ? (selectedRoom.is_super_group ? 'سوپر گروه' : 'گروه') : 'شخصی'}
           </Badge>
         </div>
       </div>
+
+      {/* Super Group Topics */}
+      {selectedRoom?.is_super_group && (
+        <>
+          <SuperGroupTopics
+            roomId={selectedRoom.id}
+            currentUser={currentUser}
+            onTopicSelect={setSelectedTopic}
+            selectedTopic={selectedTopic}
+            onCreateTopic={() => setShowCreateTopic(true)}
+          />
+          <CreateTopicModal
+            open={showCreateTopic}
+            onOpenChange={setShowCreateTopic}
+            roomId={selectedRoom.id}
+          />
+        </>
+      )}
+
+      {/* Pinned Message */}
+      {pinnedMessage && (
+        <PinnedMessage
+          summary={pinnedMessage.summary}
+          onUnpin={currentUser?.is_messenger_admin ? handleUnpinMessage : undefined}
+          onClick={() => scrollToMessage(pinnedMessage.message_id)}
+          canUnpin={currentUser?.is_messenger_admin || false}
+        />
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -230,7 +382,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           </div>
         ) : (
           messages.map((message) => (
-            <div key={message.id} className="flex items-start gap-3">
+            <div key={message.id} id={`message-${message.id}`} className="flex items-start gap-3 group">
               <Avatar className="w-8 h-8">
                 <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
                 <AvatarFallback 
@@ -257,10 +409,28 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                   )}
                 </div>
                 
-                <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg">
+                <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg relative">
                   <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
                     {message.message}
                   </p>
+                  
+                  {currentUser?.is_messenger_admin && selectedRoom && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <MoreVertical className="w-3 h-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handlePinMessage(message)}>
+                            <Pin className="w-4 h-4 mr-2" />
+                            سنجاق کردن
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

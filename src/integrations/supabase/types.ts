@@ -315,6 +315,7 @@ export type Database = {
           id: number
           is_active: boolean | null
           is_boundless_only: boolean | null
+          is_super_group: boolean | null
           name: string
           type: string
           updated_at: string | null
@@ -325,6 +326,7 @@ export type Database = {
           id?: number
           is_active?: boolean | null
           is_boundless_only?: boolean | null
+          is_super_group?: boolean | null
           name: string
           type: string
           updated_at?: string | null
@@ -335,6 +337,7 @@ export type Database = {
           id?: number
           is_active?: boolean | null
           is_boundless_only?: boolean | null
+          is_super_group?: boolean | null
           name?: string
           type?: string
           updated_at?: string | null
@@ -347,6 +350,7 @@ export type Database = {
           description: string | null
           id: number
           is_active: boolean
+          room_id: number | null
           title: string
           updated_at: string | null
         }
@@ -355,6 +359,7 @@ export type Database = {
           description?: string | null
           id?: number
           is_active?: boolean
+          room_id?: number | null
           title: string
           updated_at?: string | null
         }
@@ -363,10 +368,19 @@ export type Database = {
           description?: string | null
           id?: number
           is_active?: boolean
+          room_id?: number | null
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_topics_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_users: {
         Row: {
@@ -687,6 +701,68 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pinned_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_id: number
+          pinned_at: string | null
+          pinned_by: number
+          room_id: number | null
+          summary: string
+          topic_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_id: number
+          pinned_at?: string | null
+          pinned_by: number
+          room_id?: number | null
+          summary: string
+          topic_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_id?: number
+          pinned_at?: string | null
+          pinned_by?: number
+          room_id?: number | null
+          summary?: string
+          topic_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinned_messages_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messenger_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinned_messages_pinned_by_fkey"
+            columns: ["pinned_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinned_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinned_messages_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "chat_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       private_conversations: {
         Row: {
