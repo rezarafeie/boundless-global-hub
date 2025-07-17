@@ -306,11 +306,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          {(onBack || onBackToRooms) && (
-            <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
+          <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
           
           <Avatar className="w-10 h-10">
             <AvatarImage src={selectedRoom.avatar_url} alt={selectedRoom.name} />
@@ -331,11 +329,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               موضوعی را برای شروع گفتگو انتخاب کنید
             </p>
           </div>
-          
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Crown className="w-3 h-3" />
-            سوپر گروه
-          </Badge>
         </div>
 
         {/* Topics Grid */}
@@ -353,11 +346,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        {(onBack || onBackToRooms) && (
-          <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
         
         <Avatar className="w-10 h-10">
           <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
@@ -400,10 +391,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               تغییر موضوع
             </Button>
           )}
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {selectedRoom ? (selectedRoom.is_super_group ? 'سوپر گروه' : 'گروه') : 'شخصی'}
-          </Badge>
         </div>
       </div>
 
