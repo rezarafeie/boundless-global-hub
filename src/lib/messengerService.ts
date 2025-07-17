@@ -35,9 +35,11 @@ export interface ChatRoom {
   name: string;
   description: string;
   avatar_url: string;
-  is_private: boolean;
-  creator_id: number;
+  type: string;
+  is_active: boolean;
+  is_boundless_only: boolean;
   is_super_group: boolean;
+  updated_at: string;
 }
 
 export interface MessengerMessage {
@@ -47,6 +49,7 @@ export interface MessengerMessage {
   sender_id: number;
   message: string;
   topic_id?: number;
+  conversation_id?: number;
   media_url?: string;
   message_type?: string;
   media_content?: string;
@@ -54,6 +57,12 @@ export interface MessengerMessage {
     name: string;
     phone: string;
   };
+}
+
+export interface AdminSettings {
+  id: number;
+  manual_approval_enabled: boolean;
+  updated_at: string;
 }
 
 export const messengerService = {
@@ -276,6 +285,214 @@ export const messengerService = {
     } catch (error) {
       console.error('Error fetching conversations:', error);
       throw error;
+    }
+  },
+
+  // Admin methods
+  async getAdminSettings(): Promise<AdminSettings> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching admin settings:', error);
+      throw error;
+    }
+  },
+
+  async updateAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update(settings)
+        .eq('id', 1);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating admin settings:', error);
+      throw error;
+    }
+  },
+
+  async getAllMessages(): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey (
+            name,
+            phone
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all messages:', error);
+      return [];
+    }
+  },
+
+  async deleteMessage(messageId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('messenger_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
+    }
+  },
+
+  async validateSession(sessionToken: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .select('*')
+        .eq('session_token', sessionToken)
+        .eq('is_active', true)
+        .single();
+
+      if (error) return false;
+      return !!data;
+    } catch (error) {
+      console.error('Error validating session:', error);
+      return false;
+    }
+  },
+
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update(updates)
+        .eq('id', roomId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating room:', error);
+      throw error;
+    }
+  },
+
+  async getTopics(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+      return [];
+    }
+  },
+
+  async createTopic(topicData: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .insert(topicData);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error creating topic:', error);
+      throw error;
+    }
+  },
+
+  async createRoom(roomData: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .insert(roomData);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error creating room:', error);
+      throw error;
+    }
+  },
+
+  async updateTopic(topicId: number, updates: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .update(updates)
+        .eq('id', topicId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating topic:', error);
+      throw error;
+    }
+  },
+
+  async deleteTopic(topicId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .delete()
+        .eq('id', topicId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+      throw error;
+    }
+  },
+
+  async deleteRoom(roomId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .delete()
+        .eq('id', roomId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      throw error;
+    }
+  },
+
+  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      return [];
     }
   }
 };
