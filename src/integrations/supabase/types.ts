@@ -1495,6 +1495,10 @@ export type Database = {
         Args: { p_user_id: number; p_is_online?: boolean }
         Returns: undefined
       }
+      url_encode: {
+        Args: { input: string }
+        Returns: string
+      }
       validate_user_session: {
         Args: { session_token_param: string }
         Returns: {

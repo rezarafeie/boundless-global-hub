@@ -169,8 +169,7 @@ export const privateMessageService = {
 
       if (error) throw error;
       
-      // Send webhook for media or text message
-      await this.sendMessageWebhook(data, senderId, recipientId);
+      // Webhook is now handled by database trigger automatically
       
       return data;
     } catch (error) {

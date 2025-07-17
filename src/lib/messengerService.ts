@@ -197,7 +197,7 @@ export const messengerService = {
     mediaContent?: string
   ): Promise<void> {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('messenger_messages')
         .insert({
           room_id: roomId,
@@ -207,14 +207,11 @@ export const messengerService = {
           media_url: mediaUrl,
           message_type: mediaType,
           media_content: mediaContent
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
-      // Send webhook for media or text message
-      await this.sendMessageWebhook(data, roomId, topicId);
+      // Webhook is now handled by database trigger automatically
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
