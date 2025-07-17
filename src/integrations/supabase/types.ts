@@ -310,6 +310,7 @@ export type Database = {
       }
       chat_rooms: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
           description: string | null
           id: number
@@ -321,6 +322,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
           description?: string | null
           id?: number
@@ -332,6 +334,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
           description?: string | null
           id?: number
@@ -348,6 +351,7 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          icon: string | null
           id: number
           is_active: boolean
           room_id: number | null
@@ -357,6 +361,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
+          icon?: string | null
           id?: number
           is_active?: boolean
           room_id?: number | null
@@ -366,6 +371,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
+          icon?: string | null
           id?: number
           is_active?: boolean
           room_id?: number | null

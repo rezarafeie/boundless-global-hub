@@ -272,7 +272,7 @@ const TopicManagement: React.FC<TopicManagementProps> = ({ currentUser, sessionT
     setEditingTopic(topic);
     setEditTitle(topic.title);
     setEditDescription(topic.description || '');
-    setEditIcon(topic.icon || '🔹');
+    setEditIcon((topic as any).icon || '🔹');
   };
 
   const cancelEdit = () => {
@@ -476,7 +476,7 @@ const TopicManagement: React.FC<TopicManagementProps> = ({ currentUser, sessionT
                       ) : (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{topic.icon || '🔹'}</span>
+                            <span className="text-lg">{(topic as any).icon || '🔹'}</span>
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-slate-900 dark:text-white">

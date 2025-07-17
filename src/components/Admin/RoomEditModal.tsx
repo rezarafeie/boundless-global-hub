@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type ChatRoom } from '@/lib/messengerService';
 import { supabase } from '@/integrations/supabase/client';
-import { Crown, Hash, Plus, Trash2, Settings } from 'lucide-react';
+import { Crown, Hash, Plus, Trash2, Settings, Upload, Image } from 'lucide-react';
 import type { ChatTopic } from '@/types/supabase';
 
 interface RoomEditModalProps {
@@ -38,6 +38,7 @@ const RoomEditModal: React.FC<RoomEditModalProps> = ({
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicDescription, setNewTopicDescription] = useState('');
   const [addingTopic, setAddingTopic] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -45,7 +46,8 @@ const RoomEditModal: React.FC<RoomEditModalProps> = ({
     type: 'group',
     is_active: true,
     is_boundless_only: false,
-    is_super_group: false
+    is_super_group: false,
+    avatar_url: ''
   });
 
   useEffect(() => {
@@ -56,7 +58,8 @@ const RoomEditModal: React.FC<RoomEditModalProps> = ({
         type: room.type || 'group',
         is_active: room.is_active !== false,
         is_boundless_only: room.is_boundless_only || false,
-        is_super_group: room.is_super_group || false
+        is_super_group: room.is_super_group || false,
+        avatar_url: (room as any).avatar_url || ''
       });
       
       if (room.is_super_group) {
@@ -181,6 +184,43 @@ const RoomEditModal: React.FC<RoomEditModalProps> = ({
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!room) return;
+
+    try {
+      setUploadingAvatar(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `room-${room.id}-${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
+      
+      toast({
+        title: 'موفق',
+        description: 'آواتار گروه آپلود شد',
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در آپلود آواتار',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (!room) return null;
 
   return (
@@ -224,9 +264,61 @@ const RoomEditModal: React.FC<RoomEditModalProps> = ({
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={3}
                 />
-              </div>
+               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+               {/* Avatar Upload */}
+               <div className="space-y-2">
+                 <Label>آواتار گروه</Label>
+                 <div className="flex items-center gap-4">
+                   {formData.avatar_url ? (
+                     <img 
+                       src={formData.avatar_url} 
+                       alt="Group avatar" 
+                       className="w-16 h-16 rounded-full object-cover"
+                     />
+                   ) : (
+                     <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                       <Image className="w-6 h-6 text-slate-400" />
+                     </div>
+                   )}
+                   <div className="flex-1">
+                     <input
+                       type="file"
+                       accept="image/*"
+                       onChange={(e) => {
+                         const file = e.target.files?.[0];
+                         if (file) handleAvatarUpload(file);
+                       }}
+                       className="hidden"
+                       id="avatar-upload"
+                     />
+                     <Button
+                       type="button"
+                       variant="outline"
+                       size="sm"
+                       onClick={() => document.getElementById('avatar-upload')?.click()}
+                       disabled={uploadingAvatar}
+                       className="w-full"
+                     >
+                       <Upload className="w-4 h-4 mr-2" />
+                       {uploadingAvatar ? 'در حال آپلود...' : 'آپلود آواتار'}
+                     </Button>
+                     {formData.avatar_url && (
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => setFormData(prev => ({ ...prev, avatar_url: '' }))}
+                         className="w-full mt-1 text-red-600 hover:text-red-700"
+                       >
+                         حذف آواتار
+                       </Button>
+                     )}
+                   </div>
+                 </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="is_active">فعال</Label>
                   <Switch

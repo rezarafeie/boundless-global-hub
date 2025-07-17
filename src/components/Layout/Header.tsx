@@ -1,19 +1,28 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Globe, Sun, Moon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import OnlineStatusIndicator from "@/components/OnlineStatusIndicator";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
   const { isDarkMode, toggleTheme } = useTheme();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleMessengerClick = () => {
+    if (isMobile) {
+      navigate('/hub/messenger');
+    }
+  };
 
   // Use different logos for light/dark modes with proper fallbacks
   const logoSrc = isDarkMode 
@@ -66,9 +75,12 @@ const Header = () => {
           <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Support" : "پشتیبانی"}
           </Link>
-          <Link to="/hub/messenger" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+          <div
+            className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary cursor-pointer"
+            onClick={handleMessengerClick}
+          >
             {language === "en" ? "Messenger" : "پیام‌رسان"}
-          </Link>
+          </div>
           <Link to="/hub" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Hub" : "هاب"}
           </Link>
@@ -179,13 +191,15 @@ const Header = () => {
                   >
                     {language === "en" ? "Support" : "پشتیبانی"}
                   </Link>
-                  <Link 
-                    to="/hub/messenger" 
-                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
-                    onClick={() => setIsMenuOpen(false)}
+                  <div
+                    className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary cursor-pointer"
+                    onClick={() => {
+                      handleMessengerClick();
+                      setIsMenuOpen(false);
+                    }}
                   >
                     {language === "en" ? "Messenger" : "پیام‌رسان"}
-                  </Link>
+                  </div>
                   <Link 
                     to="/hub" 
                     className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"

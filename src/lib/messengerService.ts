@@ -30,6 +30,7 @@ export interface ChatRoom {
   is_active: boolean;
   is_boundless_only: boolean;
   is_super_group?: boolean;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
   last_message?: string;

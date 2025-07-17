@@ -159,7 +159,9 @@ const SuperGroupSidebar: React.FC<SuperGroupSidebarProps> = ({
               onClick={() => onTopicSelect(topic)}
               className="w-full justify-start mb-1 h-12"
             >
-              <Hash className="w-4 h-4 mr-3" />
+              <span className="w-4 h-4 mr-3 text-center">
+                {(topic as any).icon || '🔹'}
+              </span>
               <div className="text-right flex-1 min-w-0">
                 <div className="font-medium truncate">{topic.title}</div>
                 {topic.description && (

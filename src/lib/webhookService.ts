@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 interface WebhookData {
   messageContent: string;
   senderName: string;
@@ -6,6 +8,7 @@ interface WebhookData {
   chatType: 'group' | 'private' | 'support';
   chatName?: string;
   topicName?: string;
+  topicId?: number;
   timestamp: string;
 }
 
@@ -16,6 +19,22 @@ export const webhookService = {
     try {
       console.log('Sending webhook for message:', data);
       
+      // Get topic name if topicId is provided but topicName is not
+      let topicName = data.topicName;
+      if (data.topicId && !topicName) {
+        try {
+          const { data: topic } = await supabase
+            .from('chat_topics')
+            .select('title')
+            .eq('id', data.topicId)
+            .single();
+          
+          topicName = topic?.title;
+        } catch (error) {
+          console.error('Error fetching topic name:', error);
+        }
+      }
+      
       // Send data directly without wrapping in nested structure
       const payload = {
         message_content: data.messageContent,
@@ -24,7 +43,7 @@ export const webhookService = {
         sender_email: data.senderEmail,
         chat_type: data.chatType,
         chat_name: data.chatName || '',
-        topic_name: data.topicName || '',
+        topic_name: topicName || '',
         timestamp: data.timestamp,
         triggered_from: window.location.origin
       };
