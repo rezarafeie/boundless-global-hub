@@ -306,7 +306,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       <div className="h-full flex flex-col bg-white dark:bg-slate-800">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-          <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
+          <Button variant="ghost" size="sm" onClick={onBackToRooms} className="flex-shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           
@@ -346,7 +346,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-        <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
+        <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         
