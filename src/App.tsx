@@ -6,6 +6,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { shouldShowMessengerOnly } from "./utils/subdomainDetection";
 
 // Import all pages
 import Index from "./pages/Index";
@@ -76,9 +77,38 @@ import EnAssessmentCenter from "./pages/en/AssessmentCenter";
 // User Hub page
 import UserHub from "./pages/UserHub";
 
+// Messenger App (for subdomain)
+import MessengerApp from "./pages/MessengerApp";
+
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Check if we're on the messenger subdomain
+  const isMessengerOnly = shouldShowMessengerOnly();
+  
+  if (isMessengerOnly) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <NotificationProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Routes>
+                      <Route path="*" element={<MessengerApp />} />
+                    </Routes>
+                  </TooltipProvider>
+                </AuthProvider>
+              </NotificationProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

@@ -1,0 +1,77 @@
+{
+  "name": "پیام‌رسان رفیعی",
+  "short_name": "پیام‌رسان",
+  "description": "Rafiei Messenger - Professional Communication Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": ["communication", "business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "گروه‌ها",
+      "short_name": "Groups",
+      "description": "دسترسی سریع به گروه‌های چت",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "پیام‌های خصوصی",
+      "short_name": "Private",
+      "description": "پیام‌های خصوصی",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Rafiei Messenger - Chat Interface"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
