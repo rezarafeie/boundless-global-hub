@@ -1,22 +1,65 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Hash, Crown } from 'lucide-react';
+import { messengerService } from '@/lib/messengerService';
+import { useToast } from '@/hooks/use-toast';
 import TopicManagement from './TopicManagement';
 // Dynamic import for SuperGroupManagement
 const SuperGroupManagement = React.lazy(() => import('@/components/Chat/SuperGroupManagement'));
 
 const TopicManagementTab = () => {
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [sessionToken, setSessionToken] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
-    // Get current user and session from localStorage or context
-    const token = localStorage.getItem('messenger_session_token');
-    if (token) {
-      setSessionToken(token);
-      // You might want to validate the session here and get user details
-    }
+    const validateSession = async () => {
+      try {
+        const token = localStorage.getItem('messenger_session_token');
+        if (token) {
+          setSessionToken(token);
+          const validation = await messengerService.validateSession(token);
+          if (validation?.valid) {
+            setCurrentUser(validation.user);
+          } else {
+            toast({
+              title: 'خطا',
+              description: 'جلسه کاربری نامعتبر است',
+              variant: 'destructive',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Session validation error:', error);
+        toast({
+          title: 'خطا',
+          description: 'خطا در تایید جلسه کاربری',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateSession();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!currentUser?.is_messenger_admin) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">شما دسترسی ادمین ندارید</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -33,7 +76,10 @@ const TopicManagementTab = () => {
         </TabsList>
 
         <TabsContent value="topics" className="space-y-6">
-          <TopicManagement />
+          <TopicManagement 
+            currentUser={currentUser}
+            sessionToken={sessionToken}
+          />
         </TabsContent>
 
         <TabsContent value="super-groups" className="space-y-6">
