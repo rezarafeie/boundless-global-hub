@@ -437,36 +437,33 @@ class MessengerService {
 
   async getMessages(roomId: number, topicId?: number): Promise<MessengerMessage[]> {
     try {
-      // Build the query without chaining to avoid TypeScript issues
-      let query;
+      console.log('Getting messages for roomId:', roomId, 'topicId:', topicId);
       
-      if (topicId !== undefined && topicId !== null) {
-        // Get messages for a specific topic
-        query = {
-          room_id: roomId,
-          topic_id: topicId
-        };
-      } else {
-        // Get room messages (no topic)
-        query = {
-          room_id: roomId,
-          topic_id: null
-        };
-      }
-
-      const { data, error } = await supabase
+      let query = supabase
         .from('messenger_messages')
         .select(`
           *,
           sender:chat_users!messenger_messages_sender_id_fkey(name, phone)
         `)
-        .match(query)
-        .order('created_at', { ascending: true });
+        .eq('room_id', roomId);
+
+      // Handle topic filtering properly
+      if (topicId !== undefined && topicId !== null) {
+        // Get messages for a specific topic
+        query = query.eq('topic_id', topicId);
+      } else {
+        // Get room messages (no topic) - include messages where topic_id is null
+        query = query.is('topic_id', null);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching messages:', error);
         throw error;
       }
+      
+      console.log('Fetched messages:', data);
       
       return (data || []).map((message: any) => ({
         ...message,

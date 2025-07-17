@@ -27,13 +27,23 @@ const MessengerAdminSection = () => {
         throw new Error('لطفاً ابتدا وارد شوید');
       }
 
+      console.log('Validating session token for admin access...');
       const result = await messengerService.validateSession(token);
-      if (!result || !result.user.is_messenger_admin) {
+      console.log('Session validation result:', result);
+      
+      if (!result || !result.valid) {
+        throw new Error('جلسه نامعتبر است');
+      }
+
+      console.log('User admin status:', result.user.is_messenger_admin);
+      
+      if (!result.user.is_messenger_admin) {
         throw new Error('شما دسترسی به این بخش ندارید');
       }
 
       setSessionToken(token);
       setCurrentUser(result.user);
+      console.log('Admin access granted for user:', result.user.name);
     } catch (error: any) {
       console.error('Admin access error:', error);
       toast({

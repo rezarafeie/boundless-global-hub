@@ -114,7 +114,11 @@ const SuperGroupTopics: React.FC<SuperGroupTopicsProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onCreateTopic}
+              onClick={() => {
+                console.log('Create topic clicked, currentUser:', currentUser);
+                console.log('Is messenger admin:', currentUser?.is_messenger_admin);
+                onCreateTopic();
+              }}
               className="flex items-center gap-1"
             >
               <Plus className="w-4 h-4" />

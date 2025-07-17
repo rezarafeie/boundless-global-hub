@@ -132,6 +132,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       let roomMessages: MessengerMessage[] = [];
       
       if (selectedRoom) {
+        console.log('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
+        console.log('Is super group:', selectedRoom.is_super_group);
         roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
       } else if (selectedUser) {
         const conversationId = await privateMessageService.getOrCreateConversation(
@@ -142,6 +144,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         roomMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
       }
       
+      console.log('Loaded messages:', roomMessages);
       setMessages(roomMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -150,6 +153,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         description: 'خطا در بارگذاری پیام‌ها',
         variant: 'destructive',
       });
+      setMessages([]); // Set empty array on error to prevent blank page
     } finally {
       setLoading(false);
     }
