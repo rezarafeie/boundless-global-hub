@@ -110,23 +110,6 @@ const SuperGroupTopicSelection: React.FC<SuperGroupTopicSelectionProps> = ({
       </div>
 
       <div className="space-y-2">
-        {/* General Topic Card */}
-        <div 
-          className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 p-3 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-3"
-          onClick={() => onTopicSelect(null)}
-        >
-          <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
-            <Hash className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-medium text-slate-900 dark:text-white">عمومی</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              پیام‌های عمومی گروه
-            </p>
-          </div>
-          <MessageSquare className="w-5 h-5 text-slate-400" />
-        </div>
-
         {/* Custom Topics */}
         {topics.map((topic) => (
           <div 
@@ -163,21 +146,6 @@ const SuperGroupTopicSelection: React.FC<SuperGroupTopicSelectionProps> = ({
           <p className="text-slate-600 dark:text-slate-400 mb-6">
             ادمین می‌تواند موضوعات جدید برای این سوپر گروه اضافه کند
           </p>
-          
-          {/* Show general topic even when no custom topics exist */}
-          <div 
-            className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 p-3 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-3 max-w-sm mx-auto"
-            onClick={() => onTopicSelect(null)}
-          >
-            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
-              <Hash className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-slate-900 dark:text-white">چت عمومی</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400">شروع گفتگو</p>
-            </div>
-            <MessageSquare className="w-5 h-5 text-slate-400" />
-          </div>
         </div>
       )}
     </div>

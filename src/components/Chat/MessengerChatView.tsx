@@ -134,9 +134,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       if (selectedRoom) {
         console.log('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
         console.log('Is super group:', selectedRoom.is_super_group);
-        // For super groups, pass topic ID (null for general topic)
+        // For super groups, topic is required
         if (selectedRoom.is_super_group) {
-          roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id || null);
+          roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
         } else {
           roomMessages = await messengerService.getMessages(selectedRoom.id);
         }
@@ -518,7 +518,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               )}
             </Button>
           </div>
-      </div>
+        </div>
     </div>
   );
 };
