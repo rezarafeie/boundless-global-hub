@@ -5,23 +5,56 @@ import { MessageSquare, Users, Settings, Crown } from 'lucide-react';
 import ChatManagementTab from './ChatManagementTab';
 import UserManagementTab from './UserManagementTab';
 import TopicManagementTab from './TopicManagementTab';
+import { useToast } from '@/hooks/use-toast';
+import { messengerService } from '@/lib/messengerService';
 import SuperGroupManagement from '@/components/Chat/SuperGroupManagement';
 
 const MessengerAdminSection = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [sessionToken, setSessionToken] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   React.useEffect(() => {
-    const token = localStorage.getItem('messenger_session_token');
-    if (token) {
-      setSessionToken(token);
-      // Get current user from localStorage or session
-      const userStr = localStorage.getItem('messenger_user');
-      if (userStr) {
-        setCurrentUser(JSON.parse(userStr));
-      }
-    }
+    checkAdminAccess();
   }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const token = localStorage.getItem('messenger_session_token');
+      if (!token) {
+        throw new Error('لطفاً ابتدا وارد شوید');
+      }
+
+      const result = await messengerService.validateSession(token);
+      if (!result || !result.user.is_messenger_admin) {
+        throw new Error('شما دسترسی به این بخش ندارید');
+      }
+
+      setSessionToken(token);
+      setCurrentUser(result.user);
+    } catch (error: any) {
+      console.error('Admin access error:', error);
+      toast({
+        title: 'خطا',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p className="text-slate-600">در حال بارگذاری...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
