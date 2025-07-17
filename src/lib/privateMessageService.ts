@@ -38,6 +38,7 @@ export interface PrivateMessage {
   sender?: {
     id: number;
     name: string;
+    phone: string;
     avatar_url?: string;
   };
 }
@@ -194,6 +195,7 @@ export const privateMessageService = {
           sender:chat_users!private_messages_sender_id_fkey (
             id,
             name,
+            phone,
             avatar_url
           )
         `)
@@ -223,6 +225,114 @@ export const privateMessageService = {
       if (error) throw error;
     } catch (error) {
       console.error('Error marking messages as read:', error);
+      throw error;
+    }
+  },
+
+  async exactSearch(query: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .or(`username.ilike.${query},phone.ilike.${query}`)
+        .eq('is_approved', true)
+        .limit(10);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error in exact search:', error);
+      throw error;
+    }
+  },
+
+  async checkUsernameAvailability(username: string, currentUserId?: number): Promise<boolean> {
+    try {
+      let query = supabase
+        .from('chat_users')
+        .select('id')
+        .eq('username', username);
+
+      if (currentUserId) {
+        query = query.neq('id', currentUserId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return !data || data.length === 0;
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      throw error;
+    }
+  },
+
+  async updateUsername(userId: number, username: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ username })
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating username:', error);
+      throw error;
+    }
+  },
+
+  async searchUsers(searchTerm: string): Promise<any[]> {
+    try {
+      const cleanTerm = searchTerm.trim();
+      
+      if (!cleanTerm) {
+        return [];
+      }
+
+      let query = supabase
+        .from('chat_users')
+        .select('*')
+        .eq('is_approved', true);
+
+      if (/^09\d{9}$/.test(cleanTerm)) {
+        query = query.eq('phone', cleanTerm);
+      } 
+      else if (cleanTerm.startsWith('@')) {
+        const username = cleanTerm.substring(1);
+        query = query.eq('username', username);
+      }
+      else {
+        query = query.eq('username', cleanTerm.toLowerCase());
+      }
+
+      const { data, error } = await query.limit(10);
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error searching users:', error);
+      throw error;
+    }
+  },
+
+  async getSupportConversations(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('support_conversations')
+        .select(`
+          *,
+          chat_users!support_conversations_user_id_fkey (
+            id,
+            name,
+            phone,
+            avatar_url
+          )
+        `)
+        .order('last_message_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching support conversations:', error);
       throw error;
     }
   }

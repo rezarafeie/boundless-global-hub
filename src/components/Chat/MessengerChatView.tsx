@@ -148,7 +148,16 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           selectedUser.id,
           sessionToken
         );
-        roomMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
+        const privateMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
+        // Convert private messages to messenger message format
+        roomMessages = privateMessages.map(msg => ({
+          ...msg,
+          room_id: undefined,
+          sender: {
+            name: msg.sender?.name || 'Unknown',
+            phone: msg.sender?.phone || ''
+          }
+        }));
       }
       
       console.log('Loaded messages:', roomMessages);

@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowRight, Send, User } from 'lucide-react';
 import { privateMessageService, type PrivateMessage, type PrivateConversation } from '@/lib/privateMessageService';
-import type { MessengerUser } from '@/lib/messengerService';
+import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import UserProfileModal from './UserProfileModal';
 import ModernChatInput from './ModernChatInput';
 import MediaMessage from './MediaMessage';
@@ -113,7 +113,22 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     });
   };
 
-  const handleStartChat = (user: MessengerUser) => {
+  const handleStartChat = (user: any) => {
+    // Convert to full MessengerUser type for compatibility
+    const fullUser: MessengerUser = {
+      ...user,
+      is_approved: true,
+      is_messenger_admin: false,
+      is_support_agent: false,
+      bedoun_marz: false,
+      bedoun_marz_approved: false,
+      bedoun_marz_request: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_seen: new Date().toISOString(),
+      role: 'user'
+    };
+    
     // Already in chat, just close modal
     setShowUserProfile(false);
   };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -160,7 +159,7 @@ const BorderlessHubMessenger: React.FC = () => {
         id: `private-${conv.id}`,
         type: 'private' as const,
         name: conv.other_user?.name || 'کاربر',
-        lastMessage: conv.last_message,
+        lastMessage: conv.last_message?.message || '',
         lastMessageTime: conv.last_message_at,
         unreadCount: conv.unread_count,
         data: conv
@@ -297,7 +296,8 @@ const BorderlessHubMessenger: React.FC = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         last_message_at: new Date().toISOString(),
-        other_user: user
+        other_user: user,
+        unread_count: 0
       };
       
       setSelectedConversation(conversation);
