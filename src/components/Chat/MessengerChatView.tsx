@@ -350,15 +350,18 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           <ArrowLeft className="w-4 h-4" />
         </Button>
         
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
-          <AvatarFallback 
-            style={{ backgroundColor: getAvatarColor(chatTitle) }}
-            className="text-white font-medium"
-          >
-            {chatTitle.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+        {/* Only show avatar if not a super group with selected topic */}
+        {!(selectedRoom?.is_super_group && selectedTopic) && (
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
+            <AvatarFallback 
+              style={{ backgroundColor: getAvatarColor(chatTitle) }}
+              className="text-white font-medium"
+            >
+              {chatTitle.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+        )}
           
         <div 
           className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
