@@ -303,10 +303,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   // If super group is selected but no topic, show topic selection interface
   if (selectedRoom?.is_super_group && !selectedTopic) {
     return (
-      <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800">
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
+        <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+          <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           
@@ -343,10 +343,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
+      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+        <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         
@@ -361,8 +361,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </Avatar>
           
         <div 
-          className={`flex-1 ${isMobile && (onBack || onBackToRooms) ? 'cursor-pointer' : ''}`}
-          onClick={isMobile && (onBack || onBackToRooms) ? (onBack || onBackToRooms) : undefined}
+          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
+          onClick={isMobile && onBack ? onBack : undefined}
         >
           <h3 className="font-semibold text-slate-900 dark:text-white">
             {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
@@ -373,22 +373,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           {selectedTopic?.description && (
             <p className="text-xs text-slate-400">{selectedTopic.description}</p>
           )}
-          {isMobile && (onBack || onBackToRooms) && (
+          {isMobile && onBack && (
             <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {selectedRoom?.is_super_group && selectedTopic && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setSelectedTopic(null)}
-              className="text-xs"
-            >
-              <Hash className="w-3 h-3 ml-1" />
-              تغییر موضوع
-            </Button>
           )}
         </div>
       </div>
@@ -404,7 +390,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {loading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -483,7 +469,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </div>
 
         {/* Message Input */}
-        <div className="sticky bottom-0 p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="flex-shrink-0 p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <div className="flex gap-2">
             <Input
               value={newMessage}

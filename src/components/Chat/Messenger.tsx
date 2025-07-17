@@ -30,7 +30,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen">
       <div className="w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col">
         <MessengerInbox
           sessionToken={sessionToken}
@@ -43,7 +43,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
         />
       </div>
       
-      <div className="flex-1 bg-slate-50 dark:bg-slate-900">
+      <div className="flex-1 bg-slate-50 dark:bg-slate-900 min-h-0">
         <MessengerChatView
           selectedRoom={selectedRoom}
           selectedUser={selectedUser}
