@@ -35,6 +35,7 @@ const SuperGroupSidebar: React.FC<SuperGroupSidebarProps> = ({
 
   const fetchTopics = async () => {
     try {
+      console.log('SuperGroupSidebar: Fetching topics for room:', roomId);
       const { data, error } = await supabase
         .from('chat_topics')
         .select('*')
@@ -42,10 +43,13 @@ const SuperGroupSidebar: React.FC<SuperGroupSidebarProps> = ({
         .eq('is_active', true)
         .order('created_at', { ascending: true });
 
+      console.log('SuperGroupSidebar: Topics query result:', { data, error });
       if (error) throw error;
+      
+      console.log('SuperGroupSidebar: Setting topics:', data || []);
       setTopics(data || []);
     } catch (error) {
-      console.error('Error fetching topics:', error);
+      console.error('SuperGroupSidebar: Error fetching topics:', error);
       toast({
         title: 'خطا',
         description: 'خطا در بارگذاری موضوعات',

@@ -307,7 +307,7 @@ const TopicManagement: React.FC<TopicManagementProps> = ({ currentUser, sessionT
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-blue-600" />
-          💬 مدیریت تاپیک‌ها
+          📝 مدیریت موضوعات
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -379,19 +379,22 @@ const TopicManagement: React.FC<TopicManagementProps> = ({ currentUser, sessionT
               placeholder="توضیحات تاپیک (اختیاری)..."
             />
             
-            <div className="flex flex-wrap gap-2">
-              <Label className="text-sm font-medium w-full mb-2">انتخاب آیکون:</Label>
-              {availableEmojis.map((emoji) => (
-                <Button
-                  key={emoji}
-                  variant={newTopicIcon === emoji ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setNewTopicIcon(emoji)}
-                  className="text-lg"
-                >
-                  {emoji}
-                </Button>
-              ))}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">انتخاب آیکون:</Label>
+              <div className="flex flex-wrap gap-2 p-3 border rounded-lg">
+                {availableEmojis.map((emoji) => (
+                  <Button
+                    key={emoji}
+                    variant={newTopicIcon === emoji ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setNewTopicIcon(emoji)}
+                    className="text-lg h-10 w-10 p-0"
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">آیکون انتخابی: {newTopicIcon}</p>
             </div>
             
             <Button 
@@ -442,18 +445,22 @@ const TopicManagement: React.FC<TopicManagementProps> = ({ currentUser, sessionT
                               onChange={(e) => setEditDescription(e.target.value)}
                               placeholder="توضیحات تاپیک"
                             />
-                            <div className="flex flex-wrap gap-1">
-                              {availableEmojis.map((emoji) => (
-                                <Button
-                                  key={emoji}
-                                  variant={editIcon === emoji ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => setEditIcon(emoji)}
-                                  className="text-sm"
-                                >
-                                  {emoji}
-                                </Button>
-                              ))}
+                            <div>
+                              <Label className="text-xs text-slate-500 mb-1 block">انتخاب آیکون:</Label>
+                              <div className="flex flex-wrap gap-1 p-2 border rounded">
+                                {availableEmojis.map((emoji) => (
+                                  <Button
+                                    key={emoji}
+                                    variant={editIcon === emoji ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setEditIcon(emoji)}
+                                    className="text-sm h-8 w-8 p-0"
+                                  >
+                                    {emoji}
+                                  </Button>
+                                ))}
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1">آیکون انتخابی: {editIcon}</p>
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">

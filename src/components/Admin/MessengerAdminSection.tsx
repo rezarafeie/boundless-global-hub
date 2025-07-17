@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Users, Settings } from 'lucide-react';
+import { MessageSquare, Users, Settings, Building2 } from 'lucide-react';
 import ChatManagementTab from './ChatManagementTab';
 import UserManagementTab from './UserManagementTab';
 import TopicManagementTab from './TopicManagementTab';
+import RoomManagement from './RoomManagement';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService } from '@/lib/messengerService';
 
@@ -68,7 +69,7 @@ const MessengerAdminSection = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="chat-management" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto">
+        <TabsList className="grid w-full grid-cols-4 h-auto">
           <TabsTrigger 
             value="chat-management" 
             className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
@@ -84,11 +85,18 @@ const MessengerAdminSection = () => {
             <span>مدیریت کاربران</span>
           </TabsTrigger>
           <TabsTrigger 
+            value="room-management" 
+            className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+          >
+            <Building2 className="w-5 h-5" />
+            <span>مدیریت گروه‌ها</span>
+          </TabsTrigger>
+          <TabsTrigger 
             value="topic-management" 
             className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
           >
             <Settings className="w-5 h-5" />
-            <span>موضوعات و سوپر گروه‌ها</span>
+            <span>مدیریت موضوعات</span>
           </TabsTrigger>
         </TabsList>
 
@@ -98,6 +106,10 @@ const MessengerAdminSection = () => {
 
         <TabsContent value="user-management" className="space-y-6">
           <UserManagementTab />
+        </TabsContent>
+
+        <TabsContent value="room-management" className="space-y-6">
+          <RoomManagement currentUser={currentUser} sessionToken={sessionToken} />
         </TabsContent>
 
         <TabsContent value="topic-management" className="space-y-6">

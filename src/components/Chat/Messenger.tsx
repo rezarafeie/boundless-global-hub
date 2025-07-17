@@ -49,7 +49,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
           selectedUser={selectedUser}
           currentUser={currentUser}
           sessionToken={sessionToken}
-          onBack={handleBackToInbox}
+          onBack={selectedRoom || selectedUser ? handleBackToInbox : undefined}
           onBackToRooms={handleBackToInbox}
         />
       </div>

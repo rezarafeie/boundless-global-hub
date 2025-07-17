@@ -330,8 +330,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          {onBack && !selectedRoom?.is_super_group && (
-            <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
+          {(onBack || onBackToRooms) && !selectedRoom?.is_super_group && (
+            <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
