@@ -98,21 +98,23 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     if (!newMessage.trim()) return;
 
     try {
-      const tempMessage = {
-        id: Date.now(),
-        sender_id: currentUser.id,
-        message: newMessage,
-        created_at: new Date().toISOString(),
-        conversation_id: conversation.id,
-        sender: {
-          name: currentUser.name,
-          phone: currentUser.phone
-        }
-      };
+        const tempMessage: PrivateMessage = {
+          id: Date.now(),
+          sender_id: currentUser.id,
+          message: newMessage,
+          created_at: new Date().toISOString(),
+          conversation_id: conversation.id,
+          is_read: false,
+          message_type: 'text',
+          media_url: null,
+          media_content: null,
+          reply_to_message_id: null,
+          forwarded_from_message_id: null
+        };
       setMessages(prevMessages => [...prevMessages, tempMessage]);
       setNewMessage('');
 
-      await privateMessageService.sendMessage(conversation.id, currentUser.id, newMessage, sessionToken);
+      await privateMessageService.sendMessage(conversation.id, currentUser.id, newMessage);
       loadMessages();
     } catch (error) {
       console.error('Error sending message:', error);
@@ -302,7 +304,7 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
             avatar_url: user.avatar_url,
             phone: user.phone
           });
-          onStartChat(fullUser);
+          // onStartChat(fullUser);
         }}
         sessionToken={sessionToken}
         currentUser={currentUser}

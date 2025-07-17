@@ -321,5 +321,28 @@ export const privateMessageService = {
       console.error('Error fetching support users:', error);
       return [];
     }
+  },
+
+  async getOrCreateConversation(user1Id: number, user2Id: number): Promise<number> {
+    return this.createConversation(user1Id, user2Id);
+  },
+
+  async getConversationMessages(conversationId: number): Promise<PrivateMessage[]> {
+    return this.getMessages(conversationId);
+  },
+
+  async markConversationAsRead(conversationId: number, userId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('private_messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+      throw error;
+    }
   }
 };

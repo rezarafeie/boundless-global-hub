@@ -67,3 +67,93 @@ export interface ChatTopicInsert {
   description?: string;
   is_active?: boolean;
 }
+
+// Database schema types - matching actual database structure
+export interface ChatRoom {
+  id: number;
+  name: string;
+  type: string;
+  description: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  is_super_group: boolean;
+  is_boundless_only: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MessengerUser {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  is_approved: boolean;
+  is_messenger_admin: boolean;
+  is_support_agent: boolean;
+  bedoun_marz: boolean;
+  bedoun_marz_approved: boolean;
+  bedoun_marz_request: boolean;
+  role: string | null;
+  created_at: string;
+  updated_at: string;
+  last_seen: string | null;
+  user_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string | null;
+  country_code: string | null;
+  password_hash: string | null;
+  signup_source: string | null;
+  notification_enabled: boolean;
+  notification_token: string | null;
+}
+
+export interface MessengerMessage {
+  id: number;
+  sender_id: number;
+  recipient_id: number | null;
+  room_id: number | null;
+  conversation_id: number | null;
+  topic_id: number | null;
+  message: string;
+  message_type: string;
+  media_url: string | null;
+  media_content: string | null;
+  is_read: boolean;
+  unread_by_support: boolean;
+  reply_to_message_id: number | null;
+  forwarded_from_message_id: number | null;
+  created_at: string;
+}
+
+export interface PrivateMessage {
+  id: number;
+  sender_id: number;
+  conversation_id: number;
+  message: string;
+  message_type: string | null;
+  media_url: string | null;
+  media_content: string | null;
+  is_read: boolean | null;
+  reply_to_message_id: number | null;
+  forwarded_from_message_id: number | null;
+  created_at: string;
+}
+
+export interface PrivateConversation {
+  id: number;
+  user1_id: number;
+  user2_id: number;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string | null;
+}
+
+export interface AdminSettings {
+  id: number;
+  manual_approval_enabled: boolean;
+  updated_at: string;
+}

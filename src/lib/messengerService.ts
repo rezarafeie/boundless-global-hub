@@ -34,15 +34,13 @@ export interface ChatRoom {
   id: number;
   created_at: string;
   name: string;
-  description: string;
-  avatar_url: string;
+  description: string | null;
+  avatar_url: string | null;
   type: string;
   is_active: boolean;
   is_boundless_only: boolean;
   is_super_group: boolean;
   updated_at: string;
-  is_private: boolean;
-  creator_id: number;
 }
 
 export interface MessengerMessage {
@@ -274,11 +272,7 @@ export const messengerService = {
 
       if (error) throw error;
       
-      const rooms = (data || []).map(room => ({
-        ...room,
-        is_private: room.is_private || false,
-        creator_id: room.creator_id || 1
-      }));
+      const rooms = data || [];
       
       return rooms;
     } catch (error) {
@@ -297,11 +291,7 @@ export const messengerService = {
 
       if (error) throw error;
       
-      return {
-        ...data,
-        is_private: data.is_private || false,
-        creator_id: data.creator_id || 1
-      };
+      return data;
     } catch (error) {
       console.error('Error fetching room by ID:', error);
       return null;
@@ -438,7 +428,7 @@ export const messengerService = {
     }
   },
 
-  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+  async updateUser(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean; is_approved?: boolean; }): Promise<void> {
     try {
       const { error } = await supabase
         .from('chat_users')
@@ -452,16 +442,32 @@ export const messengerService = {
     }
   },
 
-  async updateUserRole(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean }): Promise<void> {
+  async updateUserRole(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean; is_approved?: boolean; }): Promise<void> {
     return this.updateUser(userId, updates);
   },
 
-  async updateUserProfile(userId: number, updates: Partial<MessengerUser>): Promise<void> {
-    return this.updateUser(userId, updates);
+  async updateUserProfile(userId: number, name: string, bio: string): Promise<MessengerUser> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .update({ name, bio })
+      .eq('id', userId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
-  async updateUserDetails(userId: number, updates: Partial<MessengerUser>): Promise<void> {
-    return this.updateUser(userId, updates);
+  async updateUserDetails(userId: number, updates: { name?: string; bio?: string; [key: string]: any }): Promise<MessengerUser> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .update(updates)
+      .eq('id', userId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
@@ -478,12 +484,18 @@ export const messengerService = {
     }
   },
 
-  async getTopics(): Promise<any[]> {
+  async getTopics(roomId?: number): Promise<any[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('chat_topics')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (roomId) {
+        query = query.eq('room_id', roomId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
@@ -510,11 +522,7 @@ export const messengerService = {
     try {
       const { error } = await supabase
         .from('chat_rooms')
-        .insert({
-          ...roomData,
-          is_private: roomData.is_private || false,
-          creator_id: roomData.creator_id || 1
-        });
+        .insert(roomData);
 
       if (error) throw error;
     } catch (error) {
@@ -647,6 +655,39 @@ export const messengerService = {
       return [];
     } catch (error) {
       console.error('Error fetching conversations:', error);
+      throw error;
+    }
+  },
+
+  async updateNotificationSettings(userId: number, enabled: boolean, token?: string): Promise<void> {
+    try {
+      const updates: any = { notification_enabled: enabled };
+      if (token) {
+        updates.notification_token = token;
+      }
+      
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      throw error;
+    }
+  },
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('session_token', sessionToken);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deactivating session:', error);
       throw error;
     }
   }
