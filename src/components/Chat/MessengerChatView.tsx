@@ -364,8 +364,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           className={`flex-1 ${isMobile && (onBack || onBackToRooms) ? 'cursor-pointer' : ''}`}
           onClick={isMobile && (onBack || onBackToRooms) ? (onBack || onBackToRooms) : undefined}
         >
-          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            {selectedRoom?.is_super_group && <Crown className="w-4 h-4 text-yellow-600" />}
+          <h3 className="font-semibold text-slate-900 dark:text-white">
             {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
           </h3>
           {chatDescription && (
@@ -484,19 +483,20 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </div>
 
         {/* Message Input */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="sticky bottom-0 p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <div className="flex gap-2">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="پیام خود را بنویسید..."
+              placeholder={selectedTopic ? `پیام در ${selectedTopic.title}...` : "پیام خود را بنویسید..."}
               className="flex-1"
               disabled={sending}
             />
             <Button 
               onClick={sendMessage} 
-              disabled={!newMessage.trim() || sending}
+              disabled={sending || !newMessage.trim()}
+              size="sm"
             >
               {sending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
