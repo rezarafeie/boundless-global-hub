@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,74 +21,88 @@ const SuperGroupTopicSelection: React.FC<SuperGroupTopicSelectionProps> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTopics();
-    const cleanup = subscribeToTopics();
-    return cleanup;
-  }, [roomId]);
+    let mounted = true;
+    let channel: any = null;
 
-  const fetchTopics = async () => {
-    try {
-      console.log('SuperGroupTopicSelection: Fetching topics for room:', roomId);
-      const { data, error } = await supabase
-        .from('chat_topics')
-        .select('*')
-        .eq('room_id', roomId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: true });
+    const fetchTopics = async () => {
+      try {
+        console.log('SuperGroupTopicSelection: Fetching topics for room:', roomId);
+        const { data, error } = await supabase
+          .from('chat_topics')
+          .select('*')
+          .eq('room_id', roomId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true });
 
-      console.log('SuperGroupTopicSelection: Topics query result:', { data, error });
-      if (error) throw error;
-      
-      console.log('SuperGroupTopicSelection: Setting topics:', data || []);
-      setTopics(data || []);
-    } catch (error) {
-      console.error('SuperGroupTopicSelection: Error fetching topics:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری موضوعات',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const subscribeToTopics = () => {
-    const channelName = `topics_selection_${roomId}_${Date.now()}`;
-    
-    const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_topics',
-          filter: `room_id=eq.${roomId}`
-        },
-        (payload) => {
-          console.log('Topics selection subscription event:', payload);
-          if (payload.eventType === 'INSERT') {
-            const newTopic = payload.new as ChatTopic;
-            if (newTopic.is_active) {
-              setTopics(prev => [...prev, newTopic]);
-            }
-          } else if (payload.eventType === 'DELETE') {
-            setTopics(prev => prev.filter(t => t.id !== payload.old.id));
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedTopic = payload.new as ChatTopic;
-            setTopics(prev => prev.map(t =>
-              t.id === updatedTopic.id ? updatedTopic : t
-            ).filter(t => t.is_active));
-          }
+        console.log('SuperGroupTopicSelection: Topics query result:', { data, error });
+        if (error) throw error;
+        
+        if (mounted) {
+          console.log('SuperGroupTopicSelection: Setting topics:', data || []);
+          setTopics(data || []);
         }
-      )
-      .subscribe();
+      } catch (error) {
+        console.error('SuperGroupTopicSelection: Error fetching topics:', error);
+        if (mounted) {
+          toast({
+            title: 'خطا',
+            description: 'خطا در بارگذاری موضوعات',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const subscribeToTopics = () => {
+      // Create a unique channel name with timestamp to avoid conflicts
+      const channelName = `topics_selection_${roomId}_${Date.now()}_${Math.random()}`;
+      
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'chat_topics',
+            filter: `room_id=eq.${roomId}`
+          },
+          (payload) => {
+            if (!mounted) return;
+            
+            console.log('Topics selection subscription event:', payload);
+            if (payload.eventType === 'INSERT') {
+              const newTopic = payload.new as ChatTopic;
+              if (newTopic.is_active) {
+                setTopics(prev => [...prev, newTopic]);
+              }
+            } else if (payload.eventType === 'DELETE') {
+              setTopics(prev => prev.filter(t => t.id !== payload.old.id));
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedTopic = payload.new as ChatTopic;
+              setTopics(prev => prev.map(t =>
+                t.id === updatedTopic.id ? updatedTopic : t
+              ).filter(t => t.is_active));
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    fetchTopics();
+    subscribeToTopics();
 
     return () => {
-      console.log('Cleaning up topics selection subscription for room:', roomId);
-      supabase.removeChannel(channel);
+      mounted = false;
+      if (channel) {
+        console.log('Cleaning up topics selection subscription for room:', roomId);
+        supabase.removeChannel(channel);
+      }
     };
-  };
+  }, [roomId, toast]);
 
   if (loading) {
     return (

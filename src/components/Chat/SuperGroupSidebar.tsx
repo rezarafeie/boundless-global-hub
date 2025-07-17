@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,74 +29,88 @@ const SuperGroupSidebar: React.FC<SuperGroupSidebarProps> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTopics();
-    const cleanup = subscribeToTopics();
-    return cleanup;
-  }, [roomId]);
+    let mounted = true;
+    let channel: any = null;
 
-  const fetchTopics = async () => {
-    try {
-      console.log('SuperGroupSidebar: Fetching topics for room:', roomId);
-      const { data, error } = await supabase
-        .from('chat_topics')
-        .select('*')
-        .eq('room_id', roomId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: true });
+    const fetchTopics = async () => {
+      try {
+        console.log('SuperGroupSidebar: Fetching topics for room:', roomId);
+        const { data, error } = await supabase
+          .from('chat_topics')
+          .select('*')
+          .eq('room_id', roomId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true });
 
-      console.log('SuperGroupSidebar: Topics query result:', { data, error });
-      if (error) throw error;
-      
-      console.log('SuperGroupSidebar: Setting topics:', data || []);
-      setTopics(data || []);
-    } catch (error) {
-      console.error('SuperGroupSidebar: Error fetching topics:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری موضوعات',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const subscribeToTopics = () => {
-    const channelName = `topics_sidebar_${roomId}_${Date.now()}`;
-    
-    const channel = supabase
-      .channel(channelName)
-      .on('postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_topics',
-          filter: `room_id=eq.${roomId}`
-        },
-        (payload) => {
-          console.log('Topics sidebar subscription event:', payload);
-          if (payload.eventType === 'INSERT') {
-            const newTopic = payload.new as ChatTopic;
-            if (newTopic.is_active) {
-              setTopics(prev => [...prev, newTopic]);
-            }
-          } else if (payload.eventType === 'DELETE') {
-            setTopics(prev => prev.filter(t => t.id !== payload.old.id));
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedTopic = payload.new as ChatTopic;
-            setTopics(prev => prev.map(t =>
-              t.id === updatedTopic.id ? updatedTopic : t
-            ).filter(t => t.is_active));
-          }
+        console.log('SuperGroupSidebar: Topics query result:', { data, error });
+        if (error) throw error;
+        
+        if (mounted) {
+          console.log('SuperGroupSidebar: Setting topics:', data || []);
+          setTopics(data || []);
         }
-      )
-      .subscribe();
+      } catch (error) {
+        console.error('SuperGroupSidebar: Error fetching topics:', error);
+        if (mounted) {
+          toast({
+            title: 'خطا',
+            description: 'خطا در بارگذاری موضوعات',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const subscribeToTopics = () => {
+      // Create a unique channel name with timestamp and random number to avoid conflicts
+      const channelName = `topics_sidebar_${roomId}_${Date.now()}_${Math.random()}`;
+      
+      channel = supabase
+        .channel(channelName)
+        .on('postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'chat_topics',
+            filter: `room_id=eq.${roomId}`
+          },
+          (payload) => {
+            if (!mounted) return;
+            
+            console.log('Topics sidebar subscription event:', payload);
+            if (payload.eventType === 'INSERT') {
+              const newTopic = payload.new as ChatTopic;
+              if (newTopic.is_active) {
+                setTopics(prev => [...prev, newTopic]);
+              }
+            } else if (payload.eventType === 'DELETE') {
+              setTopics(prev => prev.filter(t => t.id !== payload.old.id));
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedTopic = payload.new as ChatTopic;
+              setTopics(prev => prev.map(t =>
+                t.id === updatedTopic.id ? updatedTopic : t
+              ).filter(t => t.is_active));
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    fetchTopics();
+    subscribeToTopics();
 
     return () => {
-      console.log('Cleaning up topics sidebar subscription for room:', roomId);
-      supabase.removeChannel(channel);
+      mounted = false;
+      if (channel) {
+        console.log('Cleaning up topics sidebar subscription for room:', roomId);
+        supabase.removeChannel(channel);
+      }
     };
-  };
+  }, [roomId, toast]);
 
   if (loading) {
     return (
@@ -138,22 +153,6 @@ const SuperGroupSidebar: React.FC<SuperGroupSidebarProps> = ({
       {/* Topics List */}
       <ScrollArea className="flex-1">
         <div className="p-2">
-          {/* General Topic */}
-          <Button
-            variant={!selectedTopic ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => onTopicSelect(null)}
-            className="w-full justify-start mb-1 h-12"
-          >
-            <Hash className="w-4 h-4 mr-3" />
-            <div className="text-right">
-              <div className="font-medium">عمومی</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
-                پیام‌های عمومی گروه
-              </div>
-            </div>
-          </Button>
-          
           {/* Custom Topics */}
           {topics.map((topic) => (
             <Button
