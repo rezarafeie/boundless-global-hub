@@ -7,7 +7,8 @@ import UserManagementTab from './UserManagementTab';
 import TopicManagementTab from './TopicManagementTab';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService } from '@/lib/messengerService';
-import SuperGroupManagement from '@/components/Chat/SuperGroupManagement';
+// Dynamic import to resolve module loading issues
+const SuperGroupManagement = React.lazy(() => import('@/components/Chat/SuperGroupManagement'));
 
 const MessengerAdminSection = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -103,10 +104,16 @@ const MessengerAdminSection = () => {
         </TabsContent>
 
         <TabsContent value="super-groups" className="space-y-6">
-          <SuperGroupManagement 
-            currentUser={currentUser}
-            sessionToken={sessionToken}
-          />
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            </div>
+          }>
+            <SuperGroupManagement 
+              currentUser={currentUser}
+              sessionToken={sessionToken}
+            />
+          </React.Suspense>
         </TabsContent>
       </Tabs>
     </div>
