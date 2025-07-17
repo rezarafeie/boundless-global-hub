@@ -28,7 +28,8 @@ const SuperGroupTopics: React.FC<SuperGroupTopicsProps> = ({
 
   useEffect(() => {
     fetchTopics();
-    subscribeToTopics();
+    const cleanup = subscribeToTopics();
+    return cleanup; // This ensures proper cleanup when component unmounts or roomId changes
   }, [roomId]);
 
   const fetchTopics = async () => {
@@ -55,8 +56,11 @@ const SuperGroupTopics: React.FC<SuperGroupTopicsProps> = ({
   };
 
   const subscribeToTopics = () => {
+    // Create a unique channel name to avoid conflicts
+    const channelName = `topics_room_${roomId}_${Date.now()}`;
+    
     const channel = supabase
-      .channel(`topics_room_${roomId}`)
+      .channel(channelName)
       .on('postgres_changes',
         {
           event: '*',
@@ -65,6 +69,7 @@ const SuperGroupTopics: React.FC<SuperGroupTopicsProps> = ({
           filter: `room_id=eq.${roomId}`
         },
         (payload) => {
+          console.log('Topics subscription event:', payload);
           if (payload.eventType === 'INSERT') {
             const newTopic = payload.new as ChatTopic;
             if (newTopic.is_active) {
@@ -82,7 +87,9 @@ const SuperGroupTopics: React.FC<SuperGroupTopicsProps> = ({
       )
       .subscribe();
 
+    // Return cleanup function
     return () => {
+      console.log('Cleaning up topics subscription for room:', roomId);
       supabase.removeChannel(channel);
     };
   };
