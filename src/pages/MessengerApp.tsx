@@ -58,7 +58,19 @@ const MessengerApp = () => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           last_seen: new Date().toISOString(),
-          role: 'user'
+          role: 'user',
+          email: null,
+          user_id: null,
+          first_name: null,
+          last_name: null,
+          full_name: null,
+          country_code: null,
+          signup_source: null,
+          bio: null,
+          notification_enabled: true,
+          notification_token: null,
+          password_hash: null,
+          avatar_url: null
         };
         setCurrentUser(mockUser);
         setForceOffline(true);

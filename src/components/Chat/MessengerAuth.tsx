@@ -110,22 +110,19 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     
     try {
       // Register user with password - pass country code separately
-      const result = await messengerService.registerWithPassword({
-        name: formData.name.trim(),
-        phone: formData.phone,
-        countryCode: formData.countryCode,
-        username: formData.username || undefined,
-        password: formData.password,
-        isBoundlessStudent: formData.isBoundlessStudent
-      });
+      const result = await messengerService.registerWithPassword(
+        formData.name.trim(),
+        formData.phone,
+        formData.password
+      );
 
       // Update username if provided and different
       if (formData.username && result.user.username !== formData.username) {
-        await privateMessageService.updateUsername(result.user.id, formData.username, result.session_token);
+        await privateMessageService.updateUsername(result.user.id, formData.username);
         result.user.username = formData.username;
       }
 
-      onAuthenticated(result.session_token, result.user.name, result.user);
+      onAuthenticated('default_session', result.user.name, result.user);
       
     } catch (error: any) {
       console.error('Registration error:', error);

@@ -64,7 +64,7 @@ const TopicRoomManagementPanel = () => {
       const sessionToken = localStorage.getItem('messenger_session_token') || '';
       const [topicsData, roomsData] = await Promise.all([
         messengerService.getTopics(),
-        messengerService.getRooms(sessionToken)
+        messengerService.getRooms()
       ]);
       
       setTopics(topicsData);

@@ -145,17 +145,16 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       } else if (selectedUser) {
         const conversationId = await privateMessageService.getOrCreateConversation(
           currentUser.id,
-          selectedUser.id,
-          sessionToken
+          selectedUser.id
         );
-        const privateMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
+        const privateMessages = await privateMessageService.getConversationMessages(conversationId);
         // Convert private messages to messenger message format
         roomMessages = privateMessages.map(msg => ({
           ...msg,
           room_id: undefined,
           sender: {
-            name: msg.sender?.name || 'Unknown',
-            phone: msg.sender?.phone || ''
+            name: 'User',
+            phone: ''
           }
         }));
       }
@@ -210,11 +209,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         await privateMessageService.sendMessage(
           currentUser.id, 
           selectedUser.id, 
-          message, 
-          sessionToken,
-          mediaUrl,
-          mediaType,
-          mediaContent
+          message
         );
       }
 
