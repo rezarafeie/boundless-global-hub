@@ -436,19 +436,40 @@ class MessengerService {
   }
 
   async getMessages(roomId: number, topicId?: number): Promise<MessengerMessage[]> {
-    const { data, error } = await supabase
-      .from('messenger_messages')
-      .select('*')
-      .eq('room_id', roomId)
-      .eq('topic_id', topicId)
-      .order('created_at', { ascending: true });
+    try {
+      if (topicId !== undefined && topicId !== null) {
+        const response = await supabase
+          .from('messenger_messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .eq('topic_id', topicId)
+          .order('created_at', { ascending: true });
 
-    if (error) throw error;
-    
-    return (data || []).map((message: any) => ({
-      ...message,
-      sender: { name: 'User', phone: '' }
-    }));
+        if (response.error) throw response.error;
+        
+        return (response.data || []).map((message: any) => ({
+          ...message,
+          sender: { name: 'User', phone: '' }
+        }));
+      } else {
+        const response = await supabase
+          .from('messenger_messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .is('topic_id', null)
+          .order('created_at', { ascending: true });
+
+        if (response.error) throw response.error;
+        
+        return (response.data || []).map((message: any) => ({
+          ...message,
+          sender: { name: 'User', phone: '' }
+        }));
+      }
+    } catch (error) {
+      console.error('Error getting messages:', error);
+      throw error;
+    }
   }
 
   async getPrivateMessages(conversationId: number): Promise<MessengerMessage[]> {
