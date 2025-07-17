@@ -176,8 +176,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     try {
       setSending(true);
       
-      // If it's a media message, use media type and URL in the message
-      const message = media ? '' : messageText;
+      // If it's a media message, set message text to empty if no text provided
+      const message = messageText || '';
       const mediaUrl = media?.url;
       const mediaType = media?.type;
       const mediaContent = media ? JSON.stringify({ 
@@ -191,7 +191,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         await messengerService.sendMessage(
           selectedRoom.id, 
           currentUser.id, 
-          message || '📎 فایل ضمیمه شده', 
+          message, 
           selectedTopic?.id,
           mediaUrl,
           mediaType,
@@ -201,7 +201,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         await privateMessageService.sendMessage(
           currentUser.id, 
           selectedUser.id, 
-          message || '📎 فایل ضمیمه شده', 
+          message, 
           sessionToken,
           mediaUrl,
           mediaType,

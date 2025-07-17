@@ -8,6 +8,8 @@ import { ArrowRight, Send, User } from 'lucide-react';
 import { privateMessageService, type PrivateMessage, type PrivateConversation } from '@/lib/privateMessageService';
 import type { MessengerUser } from '@/lib/messengerService';
 import UserProfileModal from './UserProfileModal';
+import ModernChatInput from './ModernChatInput';
+import MediaMessage from './MediaMessage';
 
 interface PrivateChatViewProps {
   conversation: PrivateConversation;
@@ -23,7 +25,6 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   onBack
 }) => {
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -65,20 +66,32 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || sending) return;
+  const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }) => {
+    if ((!messageText.trim() && !media) || sending) return;
 
     setSending(true);
     try {
-      const message = await privateMessageService.sendMessage(
-        conversation.id,
+      const message = messageText || '';
+      const mediaUrl = media?.url;
+      const mediaType = media?.type;
+      const mediaContent = media ? JSON.stringify({ 
+        name: media.name, 
+        size: media.size,
+        url: media.url,
+        type: media.type
+      }) : null;
+
+      await privateMessageService.sendMessage(
         currentUser.id,
-        newMessage.trim(),
-        sessionToken
+        otherUser.id,
+        message,
+        sessionToken,
+        mediaUrl,
+        mediaType,
+        mediaContent
       );
-      setMessages(prev => [...prev, message]);
-      setNewMessage('');
+      
+      await loadMessages();
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -190,7 +203,23 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
                         : 'bg-muted rounded-bl-md'
                     }`}
                   >
-                    <p className="text-sm">{message.message}</p>
+                    {/* Check if message has media */}
+                    {message.media_url ? (
+                      <div className="space-y-2">
+                        <MediaMessage
+                          url={message.media_url}
+                          type={message.message_type || 'application/octet-stream'}
+                          size={message.media_content ? JSON.parse(message.media_content).size : undefined}
+                          name={message.media_content ? JSON.parse(message.media_content).name : undefined}
+                        />
+                        {message.message && (
+                          <p className="text-sm">{message.message}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm">{message.message}</p>
+                    )}
+                    
                     <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : 'text-muted-foreground'}`}>
                       {formatTime(message.created_at)}
                     </p>
@@ -204,21 +233,11 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
       </ScrollArea>
 
       {/* Message Input */}
-      <div className="border-t p-4">
-        <form onSubmit={handleSendMessage} className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="پیام خود را بنویسید..."
-            className="flex-1"
-            dir="rtl"
-            disabled={sending}
-          />
-          <Button type="submit" size="sm" disabled={!newMessage.trim() || sending}>
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
-      </div>
+      <ModernChatInput
+        onSendMessage={sendMessage}
+        disabled={sending}
+        currentUserId={currentUser.id}
+      />
 
       {/* User Profile Modal */}
       <UserProfileModal

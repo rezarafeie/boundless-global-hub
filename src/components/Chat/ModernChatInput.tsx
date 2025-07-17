@@ -155,7 +155,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   const isMessageValid = message.trim().length > 0;
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 safe-area-padding-bottom">
+    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-3 safe-area-padding-bottom">
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
         {/* File Attachment and Voice Recorder */}
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -175,14 +175,14 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="برای نوشتن پیام اینجا بنویسید... ✍️"
-            className="resize-none border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 rounded-2xl px-4 py-3 pr-12 min-h-[48px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-200 text-base"
+            placeholder="پیام..."
+            className="resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-3 py-2 pr-10 min-h-[40px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-colors text-sm"
             disabled={disabled || isSending}
             rows={1}
             dir="rtl"
             style={{ direction: 'rtl', textAlign: 'right' }}
           />
-          <div className="absolute left-3 bottom-3">
+          <div className="absolute left-2 bottom-2">
             <EmojiPicker onEmojiSelect={handleEmojiSelect} />
           </div>
         </div>
@@ -190,13 +190,14 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
         <Button
           type="submit"
           disabled={!isMessageValid || disabled || isSending}
-          className={`rounded-2xl h-12 w-12 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-lg hover:shadow-xl flex-shrink-0 ${
+          size="sm"
+          className={`rounded-xl h-10 w-10 p-0 transition-all duration-200 flex-shrink-0 ${
             isMessageValid && !disabled && !isSending
-              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
+              ? 'bg-blue-500 hover:bg-blue-600 text-white'
               : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
           }`}
         >
-          <Send className="w-5 h-5" />
+          <Send className="w-4 h-4" />
         </Button>
       </form>
       
