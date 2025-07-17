@@ -215,7 +215,7 @@ class PrivateMessageService {
     }
   }
 
-  async sendMessage(conversationId: number, senderId: number, message: string, sessionToken: string): Promise<PrivateMessage> {
+  async sendMessage(conversationId: number, senderId: number, message: string, sessionToken: string, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<PrivateMessage> {
     try {
       // Send webhook first
       try {

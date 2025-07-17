@@ -48,6 +48,11 @@ export interface MessengerMessage {
   created_at: string;
   is_read: boolean;
   message_type?: string;
+  media_url?: string;
+  media_content?: string;
+  topic_id?: number;
+  unread_by_support?: boolean;
+  forwarded_from_message_id?: number;
   reply_to_message_id?: number;
   sender?: {
     name: string;
@@ -497,7 +502,7 @@ class MessengerService {
     }));
   }
 
-  async sendMessage(roomId: number, senderId: number, message: string, topicId?: number): Promise<MessengerMessage> {
+  async sendMessage(roomId: number, senderId: number, message: string, topicId?: number, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<MessengerMessage> {
     // Send webhook first
     try {
       const { webhookService } = await import('@/lib/webhookService');
@@ -537,7 +542,10 @@ class MessengerService {
         room_id: roomId,
         sender_id: senderId,
         message: message,
-        topic_id: topicId || null
+        topic_id: topicId || null,
+        media_url: mediaUrl,
+        message_type: mediaType,
+        media_content: mediaContent
       })
       .select(`
         *,

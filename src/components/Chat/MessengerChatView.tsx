@@ -13,6 +13,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import SuperGroupTopicSelection from './SuperGroupTopicSelection';
 import PinnedMessage from './PinnedMessage';
+import ModernChatInput from './ModernChatInput';
+import MediaMessage from './MediaMessage';
 import type { ChatTopic } from '@/types/supabase';
 import {
   DropdownMenu,
@@ -168,16 +170,43 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+  const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }) => {
+    if ((!messageText.trim() && !media) || sending) return;
 
     try {
       setSending(true);
       
+      // If it's a media message, use media type and URL in the message
+      const message = media ? '' : messageText;
+      const mediaUrl = media?.url;
+      const mediaType = media?.type;
+      const mediaContent = media ? JSON.stringify({ 
+        name: media.name, 
+        size: media.size,
+        url: media.url,
+        type: media.type
+      }) : null;
+      
       if (selectedRoom) {
-        await messengerService.sendMessage(selectedRoom.id, currentUser.id, newMessage, selectedTopic?.id);
+        await messengerService.sendMessage(
+          selectedRoom.id, 
+          currentUser.id, 
+          message || '📎 فایل ضمیمه شده', 
+          selectedTopic?.id,
+          mediaUrl,
+          mediaType,
+          mediaContent
+        );
       } else if (selectedUser) {
-        await privateMessageService.sendMessage(currentUser.id, selectedUser.id, newMessage, sessionToken);
+        await privateMessageService.sendMessage(
+          currentUser.id, 
+          selectedUser.id, 
+          message || '📎 فایل ضمیمه شده', 
+          sessionToken,
+          mediaUrl,
+          mediaType,
+          mediaContent
+        );
       }
 
       setNewMessage('');
@@ -197,7 +226,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      sendMessage(newMessage);
     }
   };
 
@@ -443,9 +472,26 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                   </div>
                   
                   <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg relative">
-                    <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
-                      {message.message}
-                    </p>
+                    {/* Check if message has media */}
+                    {message.media_url ? (
+                      <div className="space-y-2">
+                        <MediaMessage
+                          url={message.media_url}
+                          type={message.message_type || 'application/octet-stream'}
+                          size={message.media_content ? JSON.parse(message.media_content).size : undefined}
+                          name={message.media_content ? JSON.parse(message.media_content).name : undefined}
+                        />
+                        {message.message && (
+                          <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
+                            {message.message}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
+                        {message.message}
+                      </p>
+                    )}
                     
                     {currentUser?.is_messenger_admin && selectedRoom && (
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -473,29 +519,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </div>
 
         {/* Message Input */}
-        <div className="flex-shrink-0 p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <div className="flex gap-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={selectedTopic ? `پیام در ${selectedTopic.title}...` : "پیام خود را بنویسید..."}
-              className="flex-1"
-              disabled={sending}
-            />
-            <Button 
-              onClick={sendMessage} 
-              disabled={sending || !newMessage.trim()}
-              size="sm"
-            >
-              {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        </div>
+        <ModernChatInput
+          onSendMessage={sendMessage}
+          disabled={sending}
+          currentUserId={currentUser.id}
+        />
     </div>
   );
 };

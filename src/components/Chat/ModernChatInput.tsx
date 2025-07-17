@@ -4,19 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
+import FileAttachmentButton from './FileAttachmentButton';
+import VoiceRecorderButton from './VoiceRecorderButton';
+import { uploadFile, FileUploadResult } from '@/lib/fileUploadService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ModernChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, media?: { url: string; type: string; size?: number; name?: string }) => void;
   disabled?: boolean;
+  currentUserId?: number;
 }
 
 const ModernChatInput: React.FC<ModernChatInputProps> = ({ 
   onSendMessage, 
-  disabled = false 
+  disabled = false,
+  currentUserId 
 }) => {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +68,83 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
     }
   };
 
+  const handleFileSelect = async (files: FileList) => {
+    if (!currentUserId) return;
+    setIsSending(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Check file size (max 50MB)
+        if (file.size > 50 * 1024 * 1024) {
+          toast({
+            title: 'خطا',
+            description: `فایل ${file.name} بیش از حد بزرگ است (حداکثر ۵۰ مگابایت)`,
+            variant: 'destructive',
+          });
+          continue;
+        }
+
+        const uploadResult: FileUploadResult = await uploadFile(file, 'messenger-files', currentUserId);
+        
+        // Send the file as a message
+        await onSendMessage('', {
+          url: uploadResult.url,
+          type: uploadResult.type,
+          size: uploadResult.size,
+          name: uploadResult.name
+        });
+
+        toast({
+          title: 'موفق',
+          description: `فایل ${file.name} ارسال شد`,
+        });
+      }
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در آپلود فایل',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleVoiceRecorded = async (blob: Blob) => {
+    if (!currentUserId) return;
+    setIsSending(true);
+    try {
+      // Create a File object from the blob
+      const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+      
+      const uploadResult: FileUploadResult = await uploadFile(file, 'voice-messages', currentUserId);
+      
+      // Send the voice message
+      await onSendMessage('', {
+        url: uploadResult.url,
+        type: uploadResult.type,
+        size: uploadResult.size,
+        name: uploadResult.name
+      });
+
+      toast({
+        title: 'موفق',
+        description: 'پیام صوتی ارسال شد',
+      });
+    } catch (error) {
+      console.error('Voice upload error:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در ارسال پیام صوتی',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -72,7 +156,19 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
   return (
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-4 safe-area-padding-bottom">
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-3">
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
+        {/* File Attachment and Voice Recorder */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <FileAttachmentButton 
+            onFileSelect={handleFileSelect}
+            disabled={disabled || isSending || !currentUserId}
+          />
+          <VoiceRecorderButton 
+            onVoiceRecorded={handleVoiceRecorded}
+            disabled={disabled || isSending || !currentUserId}
+          />
+        </div>
+
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
@@ -107,7 +203,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       {isSending && (
         <div className="text-center mt-2">
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            در حال ارسال پیام...
+            در حال ارسال...
           </span>
         </div>
       )}
