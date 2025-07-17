@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PrivateConversation {
@@ -178,44 +177,6 @@ export const privateMessageService = {
     }
   },
 
-  async sendMessageWebhook(message: PrivateMessage, senderId: number, recipientId: number): Promise<void> {
-    try {
-      // Get sender and recipient info
-      const { data: senderData } = await supabase
-        .from('chat_users')
-        .select('name, phone, email')
-        .eq('id', senderId)
-        .single();
-
-      const { data: recipientData } = await supabase
-        .from('chat_users')
-        .select('name, phone, email')
-        .eq('id', recipientId)
-        .single();
-
-      if (!senderData || !recipientData) return;
-
-      const webhookData = {
-        messageContent: message.message || (message.media_url ? 'فایل ضمیمه شده' : ''),
-        senderName: senderData.name,
-        senderPhone: senderData.phone,
-        senderEmail: senderData.email || '',
-        chatType: 'private' as const,
-        chatName: `گفتگوی خصوصی با ${recipientData.name}`,
-        timestamp: message.created_at,
-        mediaUrl: message.media_url,
-        mediaType: message.message_type,
-        messageType: message.media_url ? 'media' : 'text'
-      };
-
-      // Import webhook service
-      const { webhookService } = await import('@/lib/webhookService');
-      await webhookService.sendMessageWebhook(webhookData);
-    } catch (error) {
-      console.error('Error sending webhook:', error);
-    }
-  },
-
   async getConversationMessages(conversationId: number, sessionToken: string): Promise<PrivateMessage[]> {
     try {
       // Set session context
@@ -308,8 +269,11 @@ export const privateMessageService = {
     }
   },
 
-  async updateUsername(userId: number, username: string): Promise<void> {
+  async updateUsername(userId: number, username: string, sessionToken: string): Promise<void> {
     try {
+      // Set session context
+      await supabase.rpc('set_session_context', { session_token: sessionToken });
+      
       const { error } = await supabase
         .from('chat_users')
         .update({ username })

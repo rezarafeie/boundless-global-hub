@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -40,6 +41,8 @@ export interface ChatRoom {
   is_boundless_only: boolean;
   is_super_group: boolean;
   updated_at: string;
+  is_private: boolean;
+  creator_id: number;
 }
 
 export interface MessengerMessage {
@@ -65,6 +68,11 @@ export interface AdminSettings {
   updated_at: string;
 }
 
+interface ValidationResult {
+  valid: boolean;
+  user?: MessengerUser;
+}
+
 export const messengerService = {
   async getUsers(): Promise<MessengerUser[]> {
     try {
@@ -78,6 +86,53 @@ export const messengerService = {
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
+    }
+  },
+
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      return [];
+    }
+  },
+
+  async getUserById(userId: number): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      return null;
+    }
+  },
+
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching user by phone:', error);
+      return null;
     }
   },
 
@@ -143,6 +198,66 @@ export const messengerService = {
     }
   },
 
+  async authenticateUser(phone: string, password: string): Promise<{ user: MessengerUser | null; error: any }> {
+    try {
+      // For now, just return the user without password validation
+      const user = await this.getUserByPhone(phone);
+      if (!user) {
+        return { user: null, error: 'User not found' };
+      }
+      return { user: user, error: null };
+    } catch (error) {
+      console.error('Authentication error:', error);
+      return { user: null, error: error };
+    }
+  },
+
+  async registerWithPassword(phone: string, password: string, name: string): Promise<{ user: MessengerUser | null; error: any }> {
+    try {
+      const { data: newUserData, error: insertError } = await supabase
+        .from('chat_users')
+        .insert([{ 
+          phone: phone, 
+          name: name, 
+          password_hash: password, // In production, this should be hashed
+          is_approved: true 
+        }])
+        .select('*')
+        .single();
+
+      if (insertError) {
+        console.error('Error creating new user:', insertError);
+        return { user: null, error: insertError };
+      }
+
+      return { user: newUserData, error: null };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { user: null, error: error };
+    }
+  },
+
+  async createSession(userId: number): Promise<string> {
+    try {
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: userId,
+          session_token: sessionToken,
+          is_active: true,
+          last_activity: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      return sessionToken;
+    } catch (error) {
+      console.error('Error creating session:', error);
+      throw error;
+    }
+  },
+
   async getRooms(): Promise<ChatRoom[]> {
     try {
       const { data, error } = await supabase
@@ -151,10 +266,39 @@ export const messengerService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Add missing properties with defaults
+      const rooms = (data || []).map(room => ({
+        ...room,
+        is_private: room.is_private || false,
+        creator_id: room.creator_id || 1
+      }));
+      
+      return rooms;
     } catch (error) {
       console.error('Error fetching rooms:', error);
       return [];
+    }
+  },
+
+  async getRoomById(roomId: number): Promise<ChatRoom | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (error) throw error;
+      
+      return {
+        ...data,
+        is_private: data.is_private || false,
+        creator_id: data.creator_id || 1
+      };
+    } catch (error) {
+      console.error('Error fetching room by ID:', error);
+      return null;
     }
   },
 
@@ -172,6 +316,7 @@ export const messengerService = {
           media_url,
           message_type,
           media_content,
+          conversation_id,
           sender:chat_users!messenger_messages_sender_id_fkey (
             name,
             phone
@@ -192,6 +337,27 @@ export const messengerService = {
       return data || [];
     } catch (error) {
       console.error('Error fetching messages:', error);
+      return [];
+    }
+  },
+
+  async getAllMessages(): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey (
+            name,
+            phone
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all messages:', error);
       return [];
     }
   },
@@ -227,118 +393,6 @@ export const messengerService = {
     }
   },
 
-  async sendMessageWebhook(message: any, roomId: number, topicId?: number): Promise<void> {
-    try {
-      // Get sender info
-      const { data: senderData } = await supabase
-        .from('chat_users')
-        .select('name, phone, email')
-        .eq('id', message.sender_id)
-        .single();
-
-      // Get room info
-      const { data: roomData } = await supabase
-        .from('chat_rooms')
-        .select('name')
-        .eq('id', roomId)
-        .single();
-
-      if (!senderData || !roomData) return;
-
-      const webhookData = {
-        messageContent: message.message || (message.media_url ? 'فایل ضمیمه شده' : ''),
-        senderName: senderData.name,
-        senderPhone: senderData.phone,
-        senderEmail: senderData.email || '',
-        chatType: 'group' as const,
-        chatName: roomData.name,
-        topicId: topicId,
-        timestamp: message.created_at,
-        mediaUrl: message.media_url,
-        mediaType: message.message_type,
-        messageType: message.media_url ? 'media' : 'text'
-      };
-
-      // Import webhook service
-      const { webhookService } = await import('@/lib/webhookService');
-      await webhookService.sendMessageWebhook(webhookData);
-    } catch (error) {
-      console.error('Error sending webhook:', error);
-    }
-  },
-
-  async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<void> {
-    try {
-      // Implementation for sending private messages
-      console.log(`Sending private message from ${senderId} to ${recipientId}: ${message}`);
-    } catch (error) {
-      console.error('Error sending private message:', error);
-      throw error;
-    }
-  },
-
-  async getConversations(userId: number): Promise<any[]> {
-    try {
-      // Implementation for fetching conversations
-      console.log(`Fetching conversations for user ID: ${userId}`);
-      return [];
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      throw error;
-    }
-  },
-
-  // Admin methods
-  async getAdminSettings(): Promise<AdminSettings> {
-    try {
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('*')
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching admin settings:', error);
-      throw error;
-    }
-  },
-
-  async updateAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('admin_settings')
-        .update(settings)
-        .eq('id', 1);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating admin settings:', error);
-      throw error;
-    }
-  },
-
-  async getAllMessages(): Promise<MessengerMessage[]> {
-    try {
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey (
-            name,
-            phone
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching all messages:', error);
-      return [];
-    }
-  },
-
   async deleteMessage(messageId: number): Promise<void> {
     try {
       const { error } = await supabase
@@ -353,21 +407,53 @@ export const messengerService = {
     }
   },
 
-  async validateSession(sessionToken: string): Promise<boolean> {
+  async validateSession(sessionToken: string): Promise<ValidationResult> {
     try {
       const { data, error } = await supabase
         .from('user_sessions')
-        .select('*')
+        .select(`
+          *,
+          chat_users!user_sessions_user_id_fkey (*)
+        `)
         .eq('session_token', sessionToken)
         .eq('is_active', true)
         .single();
 
-      if (error) return false;
-      return !!data;
+      if (error || !data) return { valid: false };
+      
+      const isValid = data.last_activity && 
+        new Date(data.last_activity) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      return { 
+        valid: isValid, 
+        user: isValid ? data.chat_users : undefined 
+      };
     } catch (error) {
       console.error('Error validating session:', error);
-      return false;
+      return { valid: false };
     }
+  },
+
+  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  async updateUserProfile(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    return this.updateUser(userId, updates);
+  },
+
+  async updateUserDetails(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    return this.updateUser(userId, updates);
   },
 
   async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
@@ -416,7 +502,11 @@ export const messengerService = {
     try {
       const { error } = await supabase
         .from('chat_rooms')
-        .insert(roomData);
+        .insert({
+          ...roomData,
+          is_private: roomData.is_private || false,
+          creator_id: roomData.creator_id || 1
+        });
 
       if (error) throw error;
     } catch (error) {
@@ -467,32 +557,91 @@ export const messengerService = {
     }
   },
 
-  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+  async getAdminSettings(): Promise<AdminSettings> {
     try {
-      const { error } = await supabase
-        .from('chat_users')
-        .update(updates)
-        .eq('id', userId);
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .single();
 
       if (error) throw error;
+      return data;
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error fetching admin settings:', error);
       throw error;
     }
   },
 
-  async getAllUsers(): Promise<MessengerUser[]> {
+  async updateAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update(settings)
+        .eq('id', 1);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating admin settings:', error);
+      throw error;
+    }
+  },
+
+  async checkUsernameAvailability(username: string, currentUserId?: number): Promise<boolean> {
+    try {
+      let query = supabase
+        .from('chat_users')
+        .select('id')
+        .eq('username', username);
+
+      if (currentUserId) {
+        query = query.neq('id', currentUserId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return !data || data.length === 0;
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      throw error;
+    }
+  },
+
+  async searchUsersByUsername(username: string): Promise<MessengerUser[]> {
     try {
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
-        .order('created_at', { ascending: false });
+        .ilike('username', `%${username}%`)
+        .eq('is_approved', true)
+        .limit(10);
 
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching all users:', error);
+      console.error('Error searching users by username:', error);
       return [];
+    }
+  },
+
+  async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<void> {
+    try {
+      // Implementation for sending private messages
+      console.log(`Sending private message from ${senderId} to ${recipientId}: ${message}`);
+    } catch (error) {
+      console.error('Error sending private message:', error);
+      throw error;
+    }
+  },
+
+  async getConversations(userId: number): Promise<any[]> {
+    try {
+      // Implementation for fetching conversations
+      console.log(`Fetching conversations for user ID: ${userId}`);
+      return [];
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      throw error;
     }
   }
 };

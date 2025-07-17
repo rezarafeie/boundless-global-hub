@@ -39,6 +39,9 @@ export const webhookService = {
         }
       }
       
+      // Ensure messageType is properly typed
+      const messageType: 'text' | 'media' = data.mediaUrl ? 'media' : 'text';
+      
       // Send data with media information
       const payload = {
         message_content: data.messageContent,
@@ -52,7 +55,7 @@ export const webhookService = {
         triggered_from: window.location.origin,
         media_url: data.mediaUrl || '',
         media_type: data.mediaType || '',
-        message_type: data.messageType || 'text'
+        message_type: messageType
       };
 
       // Use form data to ensure fields are sent separately
