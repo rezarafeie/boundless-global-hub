@@ -550,6 +550,7 @@ export type Database = {
           reply_to_message_id: number | null
           room_id: number | null
           sender_id: number | null
+          topic_id: number | null
           unread_by_support: boolean | null
         }
         Insert: {
@@ -566,6 +567,7 @@ export type Database = {
           reply_to_message_id?: number | null
           room_id?: number | null
           sender_id?: number | null
+          topic_id?: number | null
           unread_by_support?: boolean | null
         }
         Update: {
@@ -582,6 +584,7 @@ export type Database = {
           reply_to_message_id?: number | null
           room_id?: number | null
           sender_id?: number | null
+          topic_id?: number | null
           unread_by_support?: boolean | null
         }
         Relationships: [
@@ -611,6 +614,13 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_messenger_messages_topic_id"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "chat_topics"
             referencedColumns: ["id"]
           },
           {

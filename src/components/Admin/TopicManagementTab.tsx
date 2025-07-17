@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tag, Plus, Edit, Trash2, Users, Hash, Calendar, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { messengerService } from '@/lib/messengerService';
+import { messengerService, type ChatRoom } from '@/lib/messengerService';
+import RoomEditModal from './RoomEditModal';
 
 interface Topic {
   id: number;
@@ -39,6 +40,8 @@ const TopicManagementTab = () => {
   const [loading, setLoading] = useState(true);
   const [isCreateTopicOpen, setIsCreateTopicOpen] = useState(false);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<ChatRoom | null>(null);
+  const [isRoomEditOpen, setIsRoomEditOpen] = useState(false);
 
   // Topic form state
   const [topicForm, setTopicForm] = useState({
@@ -465,22 +468,25 @@ const TopicManagementTab = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleUpdateRoom(room.id, { is_active: !room.is_active })}
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteRoom(room.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                     <div className="flex gap-2">
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => {
+                           setEditingRoom(room as ChatRoom);
+                           setIsRoomEditOpen(true);
+                         }}
+                       >
+                         <Edit className="w-4 h-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="destructive"
+                         onClick={() => handleDeleteRoom(room.id)}
+                       >
+                         <Trash2 className="w-4 h-4" />
+                       </Button>
+                     </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -488,6 +494,17 @@ const TopicManagementTab = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Room Edit Modal */}
+      <RoomEditModal
+        room={editingRoom}
+        isOpen={isRoomEditOpen}
+        onClose={() => {
+          setIsRoomEditOpen(false);
+          setEditingRoom(null);
+        }}
+        onUpdate={fetchData}
+      />
     </div>
   );
 };
