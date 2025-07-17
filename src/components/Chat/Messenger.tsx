@@ -50,6 +50,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
           currentUser={currentUser}
           sessionToken={sessionToken}
           onBack={handleBackToInbox}
+          onBackToRooms={handleBackToInbox}
         />
       </div>
     </div>

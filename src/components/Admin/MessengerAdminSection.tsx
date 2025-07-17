@@ -1,14 +1,12 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Users, Settings, Crown } from 'lucide-react';
+import { MessageSquare, Users, Settings } from 'lucide-react';
 import ChatManagementTab from './ChatManagementTab';
 import UserManagementTab from './UserManagementTab';
 import TopicManagementTab from './TopicManagementTab';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService } from '@/lib/messengerService';
-// Dynamic import to resolve module loading issues
-const SuperGroupManagement = React.lazy(() => import('@/components/Chat/SuperGroupManagement'));
 
 const MessengerAdminSection = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -70,7 +68,7 @@ const MessengerAdminSection = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="chat-management" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
           <TabsTrigger 
             value="chat-management" 
             className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
@@ -90,14 +88,7 @@ const MessengerAdminSection = () => {
             className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
           >
             <Settings className="w-5 h-5" />
-            <span>مدیریت موضوعات</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="super-groups" 
-            className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
-          >
-            <Crown className="w-5 h-5" />
-            <span>سوپر گروه‌ها</span>
+            <span>موضوعات و سوپر گروه‌ها</span>
           </TabsTrigger>
         </TabsList>
 
@@ -111,19 +102,6 @@ const MessengerAdminSection = () => {
 
         <TabsContent value="topic-management" className="space-y-6">
           <TopicManagementTab />
-        </TabsContent>
-
-        <TabsContent value="super-groups" className="space-y-6">
-          <React.Suspense fallback={
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-            </div>
-          }>
-            <SuperGroupManagement 
-              currentUser={currentUser}
-              sessionToken={sessionToken}
-            />
-          </React.Suspense>
         </TabsContent>
       </Tabs>
     </div>

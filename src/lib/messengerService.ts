@@ -503,6 +503,17 @@ class MessengerService {
       const sender = await this.getUserById(senderId);
       const room = await this.getRoomById(roomId);
       
+      // Get topic name if topicId is provided
+      let topicName = '';
+      if (topicId) {
+        const { data: topic } = await supabase
+          .from('chat_topics')
+          .select('title')
+          .eq('id', topicId)
+          .single();
+        topicName = topic?.title || '';
+      }
+      
       if (sender) {
         await webhookService.sendMessageWebhook({
           messageContent: message,
@@ -511,6 +522,7 @@ class MessengerService {
           senderEmail: sender.email || '',
           chatType: 'group',
           chatName: `chat: ${room?.name || 'Unknown Room'}`,
+          topicName: topicName,
           timestamp: new Date().toISOString()
         });
       }

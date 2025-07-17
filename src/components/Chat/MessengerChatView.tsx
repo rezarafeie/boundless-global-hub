@@ -5,15 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import SuperGroupTopics from './SuperGroupTopics';
+import SuperGroupSidebar from './SuperGroupSidebar';
 import PinnedMessage from './PinnedMessage';
-import CreateTopicModal from './CreateTopicModal';
 import type { ChatTopic } from '@/types/supabase';
 import {
   DropdownMenu,
@@ -28,6 +27,7 @@ interface MessengerChatViewProps {
   currentUser: MessengerUser;
   sessionToken: string;
   onBack?: () => void;
+  onBackToRooms?: () => void;
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
@@ -35,7 +35,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   selectedUser,
   currentUser,
   sessionToken,
-  onBack
+  onBack,
+  onBackToRooms
 }) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -46,7 +47,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
   const [selectedTopic, setSelectedTopic] = useState<ChatTopic | null>(null);
   const [pinnedMessage, setPinnedMessage] = useState<any>(null);
-  const [showCreateTopic, setShowCreateTopic] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -295,175 +295,194 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     );
   }
 
-  return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-        )}
-        
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={selectedUser?.avatar_url} alt={chatTitle} />
-          <AvatarFallback 
-            style={{ backgroundColor: getAvatarColor(chatTitle) }}
-            className="text-white font-medium"
-          >
-            {chatTitle.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        
-        <div 
-          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
-          onClick={isMobile && onBack ? onBack : undefined}
-        >
-          <h3 className="font-semibold text-slate-900 dark:text-white">{chatTitle}</h3>
-          {chatDescription && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
-          )}
-          {isMobile && onBack && (
-            <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {selectedRoom ? (selectedRoom.is_super_group ? 'سوپر گروه' : 'گروه') : 'شخصی'}
-          </Badge>
+  // If super group is selected but no topic, show topic selection message
+  if (selectedRoom?.is_super_group && !selectedTopic) {
+    return (
+      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <Hash className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400 mb-2">
+            موضوعی انتخاب کنید
+          </p>
+          <p className="text-sm text-slate-400">
+            برای مشاهده پیام‌ها یک موضوع از سمت چپ انتخاب کنید
+          </p>
         </div>
       </div>
+    );
+  }
 
-      {/* Super Group Topics */}
+  return (
+    <div className="h-full flex">
+      {/* Super Group Sidebar */}
       {selectedRoom?.is_super_group && (
-        <>
-          <SuperGroupTopics
-            roomId={selectedRoom.id}
-            currentUser={currentUser}
-            onTopicSelect={setSelectedTopic}
-            selectedTopic={selectedTopic}
-            onCreateTopic={() => setShowCreateTopic(true)}
-          />
-          <CreateTopicModal
-            open={showCreateTopic}
-            onOpenChange={setShowCreateTopic}
-            roomId={selectedRoom.id}
-          />
-        </>
-      )}
-
-      {/* Pinned Message */}
-      {pinnedMessage && (
-        <PinnedMessage
-          summary={pinnedMessage.summary}
-          onUnpin={currentUser?.is_messenger_admin ? handleUnpinMessage : undefined}
-          onClick={() => scrollToMessage(pinnedMessage.message_id)}
-          canUnpin={currentUser?.is_messenger_admin || false}
+        <SuperGroupSidebar
+          roomId={selectedRoom.id}
+          roomName={selectedRoom.name}
+          currentUser={currentUser}
+          onTopicSelect={setSelectedTopic}
+          selectedTopic={selectedTopic}
+          onBackToRooms={onBackToRooms || onBack || (() => {})}
         />
       )}
+      
+      {/* Chat Content */}
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
+        {/* Header */}
+        <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          {onBack && !selectedRoom?.is_super_group && (
+            <Button variant="ghost" size="sm" onClick={onBack} className="flex-shrink-0">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
+          
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={selectedUser?.avatar_url} alt={chatTitle} />
+            <AvatarFallback 
+              style={{ backgroundColor: getAvatarColor(chatTitle) }}
+              className="text-white font-medium"
+            >
+              {chatTitle.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div 
+            className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
+            onClick={isMobile && onBack ? onBack : undefined}
+          >
+            <h3 className="font-semibold text-slate-900 dark:text-white">
+              {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
+            </h3>
+            {chatDescription && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
+            )}
+            {selectedTopic?.description && (
+              <p className="text-xs text-slate-400">{selectedTopic.description}</p>
+            )}
+            {isMobile && onBack && (
+              <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {selectedRoom ? (selectedRoom.is_super_group ? 'سوپر گروه' : 'گروه') : 'شخصی'}
+            </Badge>
+          </div>
+        </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <MessageSkeleton key={i} />
-            ))}
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-slate-400 mb-2">
-                هنوز پیامی در این گفتگو نیست
-              </p>
-              <p className="text-sm text-slate-400">
-                اولین نفری باشید که پیام می‌فرستد!
-              </p>
+        {/* Pinned Message */}
+        {pinnedMessage && (
+          <PinnedMessage
+            summary={pinnedMessage.summary}
+            onUnpin={currentUser?.is_messenger_admin ? handleUnpinMessage : undefined}
+            onClick={() => scrollToMessage(pinnedMessage.message_id)}
+            canUnpin={currentUser?.is_messenger_admin || false}
+          />
+        )}
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <MessageSkeleton key={i} />
+              ))}
             </div>
-          </div>
-        ) : (
-          messages.map((message) => (
-            <div key={message.id} id={`message-${message.id}`} className="flex items-start gap-3 group">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
-                <AvatarFallback 
-                  style={{ backgroundColor: getAvatarColor(message.sender?.name || 'U') }}
-                  className="text-white font-medium text-xs"
-                >
-                  {message.sender?.name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm text-slate-900 dark:text-white">
-                    {message.sender?.name || 'نامشخص'}
-                  </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                  {message.sender_id === currentUser.id && (
-                    <Badge variant="outline" className="text-xs">شما</Badge>
-                  )}
-                </div>
-                
-                <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg relative">
-                  <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
-                    {message.message}
-                  </p>
-                  
-                  {currentUser?.is_messenger_admin && selectedRoom && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <MoreVertical className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handlePinMessage(message)}>
-                            <Pin className="w-4 h-4 mr-2" />
-                            سنجاق کردن
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )}
-                </div>
+          ) : messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-500 dark:text-slate-400 mb-2">
+                  هنوز پیامی در این {selectedTopic ? 'موضوع' : 'گفتگو'} نیست
+                </p>
+                <p className="text-sm text-slate-400">
+                  اولین نفری باشید که پیام می‌فرستد!
+                </p>
               </div>
             </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          ) : (
+            messages.map((message) => (
+              <div key={message.id} id={`message-${message.id}`} className="flex items-start gap-3 group">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
+                  <AvatarFallback 
+                    style={{ backgroundColor: getAvatarColor(message.sender?.name || 'U') }}
+                    className="text-white font-medium text-xs"
+                  >
+                    {message.sender?.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm text-slate-900 dark:text-white">
+                      {message.sender?.name || 'نامشخص'}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {message.sender_id === currentUser.id && (
+                      <Badge variant="outline" className="text-xs">شما</Badge>
+                    )}
+                  </div>
+                  
+                  <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg relative">
+                    <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
+                      {message.message}
+                    </p>
+                    
+                    {currentUser?.is_messenger_admin && selectedRoom && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <MoreVertical className="w-3 h-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handlePinMessage(message)}>
+                              <Pin className="w-4 h-4 mr-2" />
+                              سنجاق کردن
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="پیام خود را بنویسید..."
-            className="flex-1"
-            disabled={sending}
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={!newMessage.trim() || sending}
-          >
-            {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
+        {/* Message Input */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="flex gap-2">
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="پیام خود را بنویسید..."
+              className="flex-1"
+              disabled={sending}
+            />
+            <Button 
+              onClick={sendMessage} 
+              disabled={!newMessage.trim() || sending}
+            >
+              {sending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

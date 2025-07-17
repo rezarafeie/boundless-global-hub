@@ -5,6 +5,7 @@ interface WebhookData {
   senderEmail: string;
   chatType: 'group' | 'private' | 'support';
   chatName?: string;
+  topicName?: string;
   timestamp: string;
 }
 
@@ -23,6 +24,7 @@ export const webhookService = {
         sender_email: data.senderEmail,
         chat_type: data.chatType,
         chat_name: data.chatName || '',
+        topic_name: data.topicName || '',
         timestamp: data.timestamp,
         triggered_from: window.location.origin
       };
