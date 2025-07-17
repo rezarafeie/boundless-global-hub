@@ -109,58 +109,48 @@ const SuperGroupTopicSelection: React.FC<SuperGroupTopicSelectionProps> = ({
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-2">
         {/* General Topic Card */}
-        <Card 
-          className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400"
+        <div 
+          className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 p-3 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-3"
           onClick={() => onTopicSelect(null)}
         >
-          <CardContent className="p-6 text-center">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Hash className="w-8 h-8 text-slate-600 dark:text-slate-400" />
-            </div>
-            <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-2">عمومی</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+            <Hash className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium text-slate-900 dark:text-white">عمومی</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               پیام‌های عمومی گروه
             </p>
-            <div className="mt-4">
-              <Button variant="outline" size="sm" className="w-full">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                ورود به چت عمومی
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <MessageSquare className="w-5 h-5 text-slate-400" />
+        </div>
 
         {/* Custom Topics */}
         {topics.map((topic) => (
-          <Card 
+          <div 
             key={topic.id}
-            className="cursor-pointer hover:shadow-lg transition-all duration-200 border hover:border-blue-500 dark:hover:border-blue-400"
+            className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 p-3 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-3"
             onClick={() => onTopicSelect(topic)}
           >
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl text-white">
-                  {(topic as any).icon || '🔹'}
-                </span>
-              </div>
-              <h3 className="font-semibold text-lg text-slate-900 dark:text-white mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-lg text-white">
+                {(topic as any).icon || '🔹'}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-slate-900 dark:text-white">
                 {topic.title}
               </h3>
               {topic.description && (
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {topic.description}
                 </p>
               )}
-              <div className="mt-4">
-                <Button variant="default" size="sm" className="w-full">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  ورود به {topic.title}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <MessageSquare className="w-5 h-5 text-slate-400" />
+          </div>
         ))}
       </div>
 
@@ -175,21 +165,19 @@ const SuperGroupTopicSelection: React.FC<SuperGroupTopicSelectionProps> = ({
           </p>
           
           {/* Show general topic even when no custom topics exist */}
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 max-w-sm mx-auto"
+          <div 
+            className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 p-3 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-3 max-w-sm mx-auto"
             onClick={() => onTopicSelect(null)}
           >
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Hash className="w-6 h-6 text-slate-600 dark:text-slate-400" />
-              </div>
-              <h3 className="font-medium text-slate-900 dark:text-white mb-2">چت عمومی</h3>
-              <Button variant="outline" size="sm" className="w-full">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                شروع گفتگو
-              </Button>
-            </CardContent>
-          </Card>
+            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+              <Hash className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-slate-900 dark:text-white">چت عمومی</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">شروع گفتگو</p>
+            </div>
+            <MessageSquare className="w-5 h-5 text-slate-400" />
+          </div>
         </div>
       )}
     </div>

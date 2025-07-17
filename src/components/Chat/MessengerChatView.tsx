@@ -134,7 +134,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       if (selectedRoom) {
         console.log('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
         console.log('Is super group:', selectedRoom.is_super_group);
-        roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
+        // For super groups, pass topic ID (null for general topic)
+        if (selectedRoom.is_super_group) {
+          roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id || null);
+        } else {
+          roomMessages = await messengerService.getMessages(selectedRoom.id);
+        }
       } else if (selectedUser) {
         const conversationId = await privateMessageService.getOrCreateConversation(
           currentUser.id,

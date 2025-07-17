@@ -208,6 +208,40 @@ const RoomManagement: React.FC<RoomManagementProps> = ({ currentUser, sessionTok
     });
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
+      
+      toast({
+        title: 'موفق',
+        description: 'آواتار آپلود شد',
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در آپلود آواتار',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const cancelEdit = () => {
     setEditingRoom(null);
     resetForm();
@@ -284,12 +318,18 @@ const RoomManagement: React.FC<RoomManagementProps> = ({ currentUser, sessionTok
                   />
                 </div>
                 <div>
-                  <Label>آدرس آواتار</Label>
-                  <Input
-                    value={formData.avatar_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
-                    placeholder="https://example.com/avatar.jpg"
-                  />
+                  <Label>آواتار گروه</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="flex-1"
+                    />
+                    {formData.avatar_url && (
+                      <img src={formData.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -346,14 +386,20 @@ const RoomManagement: React.FC<RoomManagementProps> = ({ currentUser, sessionTok
                           placeholder="توضیحات گروه..."
                         />
                       </div>
-                      <div>
-                        <Label>آدرس آواتار</Label>
-                        <Input
-                          value={formData.avatar_url}
-                          onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
-                          placeholder="https://example.com/avatar.jpg"
-                        />
-                      </div>
+                       <div>
+                         <Label>آواتار گروه</Label>
+                         <div className="flex items-center gap-2">
+                           <Input
+                             type="file"
+                             accept="image/*"
+                             onChange={handleAvatarUpload}
+                             className="flex-1"
+                           />
+                           {formData.avatar_url && (
+                             <img src={formData.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                           )}
+                         </div>
+                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
                           checked={formData.is_super_group}
