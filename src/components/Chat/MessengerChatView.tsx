@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash } from 'lucide-react';
+import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import SuperGroupSidebar from './SuperGroupSidebar';
+import SuperGroupTopicSelection from './SuperGroupTopicSelection';
 import PinnedMessage from './PinnedMessage';
 import type { ChatTopic } from '@/types/supabase';
 import {
@@ -295,82 +295,112 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     );
   }
 
-  // If super group is selected but no topic, show topic selection message
+  // If super group is selected but no topic, show topic selection interface
   if (selectedRoom?.is_super_group && !selectedTopic) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <Hash className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-slate-400 mb-2">
-            موضوعی انتخاب کنید
-          </p>
-          <p className="text-sm text-slate-400">
-            برای مشاهده پیام‌ها یک موضوع از سمت چپ انتخاب کنید
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full flex">
-      {/* Super Group Sidebar */}
-      {selectedRoom?.is_super_group && (
-        <SuperGroupSidebar
-          roomId={selectedRoom.id}
-          roomName={selectedRoom.name}
-          currentUser={currentUser}
-          onTopicSelect={setSelectedTopic}
-          selectedTopic={selectedTopic}
-          onBackToRooms={onBackToRooms || onBack || (() => {})}
-        />
-      )}
-      
-      {/* Chat Content */}
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          {(onBack || onBackToRooms) && !selectedRoom?.is_super_group && (
+          {(onBack || onBackToRooms) && (
             <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
           
           <Avatar className="w-10 h-10">
-            <AvatarImage src={selectedUser?.avatar_url} alt={chatTitle} />
+            <AvatarImage src={selectedRoom.avatar_url} alt={selectedRoom.name} />
             <AvatarFallback 
-              style={{ backgroundColor: getAvatarColor(chatTitle) }}
+              style={{ backgroundColor: getAvatarColor(selectedRoom.name) }}
               className="text-white font-medium"
             >
-              {chatTitle.charAt(0)}
+              {selectedRoom.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
           
-          <div 
-            className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
-            onClick={isMobile && onBack ? onBack : undefined}
-          >
-            <h3 className="font-semibold text-slate-900 dark:text-white">
-              {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
+          <div className="flex-1">
+            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Crown className="w-5 h-5 text-yellow-600" />
+              {selectedRoom.name}
             </h3>
-            {chatDescription && (
-              <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
-            )}
-            {selectedTopic?.description && (
-              <p className="text-xs text-slate-400">{selectedTopic.description}</p>
-            )}
-            {isMobile && onBack && (
-              <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
-            )}
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              موضوعی را برای شروع گفتگو انتخاب کنید
+            </p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Users className="w-3 h-3" />
-              {selectedRoom ? (selectedRoom.is_super_group ? 'سوپر گروه' : 'گروه') : 'شخصی'}
-            </Badge>
-          </div>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Crown className="w-3 h-3" />
+            سوپر گروه
+          </Badge>
         </div>
+
+        {/* Topics Grid */}
+        <div className="flex-1 p-6">
+          <SuperGroupTopicSelection 
+            roomId={selectedRoom.id}
+            onTopicSelect={setSelectedTopic}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col bg-white dark:bg-slate-800">
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {(onBack || onBackToRooms) && (
+          <Button variant="ghost" size="sm" onClick={onBack || onBackToRooms} className="flex-shrink-0">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+        )}
+        
+        <Avatar className="w-10 h-10">
+          <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
+          <AvatarFallback 
+            style={{ backgroundColor: getAvatarColor(chatTitle) }}
+            className="text-white font-medium"
+          >
+            {chatTitle.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+          
+        <div 
+          className={`flex-1 ${isMobile && (onBack || onBackToRooms) ? 'cursor-pointer' : ''}`}
+          onClick={isMobile && (onBack || onBackToRooms) ? (onBack || onBackToRooms) : undefined}
+        >
+          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            {selectedRoom?.is_super_group && <Crown className="w-4 h-4 text-yellow-600" />}
+            {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
+          </h3>
+          {chatDescription && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
+          )}
+          {selectedTopic?.description && (
+            <p className="text-xs text-slate-400">{selectedTopic.description}</p>
+          )}
+          {isMobile && (onBack || onBackToRooms) && (
+            <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {selectedRoom?.is_super_group && selectedTopic && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setSelectedTopic(null)}
+              className="text-xs"
+            >
+              <Hash className="w-3 h-3 ml-1" />
+              تغییر موضوع
+            </Button>
+          )}
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            {selectedRoom ? (selectedRoom.is_super_group ? 'سوپر گروه' : 'گروه') : 'شخصی'}
+          </Badge>
+        </div>
+      </div>
 
         {/* Pinned Message */}
         {pinnedMessage && (
@@ -483,7 +513,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               )}
             </Button>
           </div>
-        </div>
       </div>
     </div>
   );
