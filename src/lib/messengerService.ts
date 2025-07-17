@@ -437,35 +437,44 @@ class MessengerService {
 
   async getMessages(roomId: number, topicId?: number): Promise<MessengerMessage[]> {
     try {
+      // Build the query without chaining to avoid TypeScript issues
+      let query;
+      
       if (topicId !== undefined && topicId !== null) {
-        const response = await supabase
-          .from('messenger_messages')
-          .select('*')
-          .eq('room_id', roomId)
-          .eq('topic_id', topicId)
-          .order('created_at', { ascending: true });
-
-        if (response.error) throw response.error;
-        
-        return (response.data || []).map((message: any) => ({
-          ...message,
-          sender: { name: 'User', phone: '' }
-        }));
+        // Get messages for a specific topic
+        query = {
+          room_id: roomId,
+          topic_id: topicId
+        };
       } else {
-        const response = await supabase
-          .from('messenger_messages')
-          .select('*')
-          .eq('room_id', roomId)
-          .is('topic_id', null)
-          .order('created_at', { ascending: true });
-
-        if (response.error) throw response.error;
-        
-        return (response.data || []).map((message: any) => ({
-          ...message,
-          sender: { name: 'User', phone: '' }
-        }));
+        // Get room messages (no topic)
+        query = {
+          room_id: roomId,
+          topic_id: null
+        };
       }
+
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(name, phone)
+        `)
+        .match(query)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+      
+      return (data || []).map((message: any) => ({
+        ...message,
+        sender: { 
+          name: message.sender?.name || 'User', 
+          phone: message.sender?.phone || '' 
+        }
+      }));
     } catch (error) {
       console.error('Error getting messages:', error);
       throw error;
