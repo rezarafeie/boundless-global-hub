@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface WebhookData {
@@ -10,6 +11,9 @@ interface WebhookData {
   topicName?: string;
   topicId?: number;
   timestamp: string;
+  mediaUrl?: string;
+  mediaType?: string;
+  messageType?: 'text' | 'media';
 }
 
 const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk';
@@ -35,7 +39,7 @@ export const webhookService = {
         }
       }
       
-      // Send data directly without wrapping in nested structure
+      // Send data with media information
       const payload = {
         message_content: data.messageContent,
         sender_name: data.senderName,
@@ -45,7 +49,10 @@ export const webhookService = {
         chat_name: data.chatName || '',
         topic_name: topicName || '',
         timestamp: data.timestamp,
-        triggered_from: window.location.origin
+        triggered_from: window.location.origin,
+        media_url: data.mediaUrl || '',
+        media_type: data.mediaType || '',
+        message_type: data.messageType || 'text'
       };
 
       // Use form data to ensure fields are sent separately

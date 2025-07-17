@@ -168,10 +168,52 @@ export const privateMessageService = {
         .single();
 
       if (error) throw error;
+      
+      // Send webhook for media or text message
+      await this.sendMessageWebhook(data, senderId, recipientId);
+      
       return data;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
+    }
+  },
+
+  async sendMessageWebhook(message: PrivateMessage, senderId: number, recipientId: number): Promise<void> {
+    try {
+      // Get sender and recipient info
+      const { data: senderData } = await supabase
+        .from('chat_users')
+        .select('name, phone, email')
+        .eq('id', senderId)
+        .single();
+
+      const { data: recipientData } = await supabase
+        .from('chat_users')
+        .select('name, phone, email')
+        .eq('id', recipientId)
+        .single();
+
+      if (!senderData || !recipientData) return;
+
+      const webhookData = {
+        messageContent: message.message || (message.media_url ? 'فایل ضمیمه شده' : ''),
+        senderName: senderData.name,
+        senderPhone: senderData.phone,
+        senderEmail: senderData.email || '',
+        chatType: 'private' as const,
+        chatName: `گفتگوی خصوصی با ${recipientData.name}`,
+        timestamp: message.created_at,
+        mediaUrl: message.media_url,
+        mediaType: message.message_type,
+        messageType: message.media_url ? 'media' : 'text'
+      };
+
+      // Import webhook service
+      const { webhookService } = await import('@/lib/webhookService');
+      await webhookService.sendMessageWebhook(webhookData);
+    } catch (error) {
+      console.error('Error sending webhook:', error);
     }
   },
 

@@ -116,7 +116,11 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   const handleStartChat = (user: any) => {
     // Convert to full MessengerUser type for compatibility
     const fullUser: MessengerUser = {
-      ...user,
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      avatar_url: user.avatar_url,
+      phone: user.phone,
       is_approved: true,
       is_messenger_admin: false,
       is_support_agent: false,
@@ -126,7 +130,18 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       last_seen: new Date().toISOString(),
-      role: 'user'
+      role: 'user',
+      email: user.email || null,
+      user_id: user.user_id || null,
+      first_name: user.first_name || null,
+      last_name: user.last_name || null,
+      full_name: user.full_name || user.name,
+      country_code: user.country_code || null,
+      signup_source: user.signup_source || null,
+      bio: user.bio || null,
+      notification_enabled: user.notification_enabled || true,
+      notification_token: user.notification_token || null,
+      password_hash: user.password_hash || null
     };
     
     // Already in chat, just close modal
