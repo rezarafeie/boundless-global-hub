@@ -190,7 +190,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         formData.password
       );
 
+      console.log('Login result:', result);
+
       if (result.error) {
+        console.log('Login failed, showing error toast');
         toast({
           title: 'خطا در ورود',
           description: 'رمز عبور اشتباه است',
@@ -226,15 +229,21 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         }
       });
 
-      if (error) throw error;
+      console.log('OTP verification response:', { data, error });
 
-      if (data.success) {
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data && data.success) {
         setCurrentStep('password');
         toast({
           title: 'کد تأیید شد',
           description: 'اکنون رمز عبور خود را تعیین کنید',
         });
       } else {
+        console.log('OTP verification failed, showing error toast');
         toast({
           title: 'کد اشتباه است',
           description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
