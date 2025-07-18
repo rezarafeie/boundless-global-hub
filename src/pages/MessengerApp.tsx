@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import MessengerPage from './hub/messenger';
-import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
+import MessengerAuth from '@/components/Chat/MessengerAuth';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { ReplyProvider } from '@/contexts/ReplyContext';
@@ -120,7 +120,7 @@ const MessengerApp = () => {
 
   if (showAuth || !currentUser || !sessionToken) {
     return (
-      <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />
+      <MessengerAuth onAuthenticated={handleAuthenticated} />
     );
   }
 

@@ -120,6 +120,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     try {
       // Check if user already exists
       const formattedPhone = formatPhoneForAPI(formData.phone, formData.countryCode);
+      console.log('Checking if user exists for phone:', formattedPhone);
       const existingUser = await messengerService.getUserByPhone(formattedPhone);
       
       if (existingUser) {
@@ -132,6 +133,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       }
 
       // Send OTP
+      console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: {
           phone: formData.phone,
@@ -139,8 +141,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
 
+      console.log('OTP Response:', data);
       if (data.success) {
         setFormattedPhoneNumber(data.formattedPhone);
         setCurrentStep('otp');
