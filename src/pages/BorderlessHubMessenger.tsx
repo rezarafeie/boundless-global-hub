@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -82,7 +83,8 @@ interface UnifiedChatItem {
 }
 
 const BorderlessHubMessenger: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
+  const { data: session, update } = useSession();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -370,7 +372,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const handleLogout = async () => {
     setIsLogoutAlertOpen(false);
-    navigate('/');
+    await router.push('/api/auth/signout');
   };
 
   const getAvatarColor = (name: string) => {

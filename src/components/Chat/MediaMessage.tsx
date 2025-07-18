@@ -126,31 +126,6 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
   }
 
   if (isAudioFile(type)) {
-    // Check if it's a voice message (webm/ogg audio files)
-    const isVoiceMessage = type.includes('webm') || type.includes('ogg') || fileName.includes('voice');
-    
-    if (isVoiceMessage) {
-      // Import VoiceMessagePlayer dynamically
-      const VoiceMessagePlayer = React.lazy(() => import('./VoiceMessagePlayer'));
-      
-      return (
-        <React.Suspense fallback={
-          <Card className={cn("p-3 max-w-xs", className)}>
-            <div className="flex items-center gap-3">
-              <Music className="w-6 h-6 text-blue-500" />
-              <span className="text-sm">در حال بارگذاری...</span>
-            </div>
-          </Card>
-        }>
-          <VoiceMessagePlayer
-            url={url}
-            fileName={fileName}
-            className={className}
-          />
-        </React.Suspense>
-      );
-    }
-    
     return (
       <Card className={cn("p-3 max-w-xs", className)}>
         <div className="flex items-center gap-3">
