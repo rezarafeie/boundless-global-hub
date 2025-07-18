@@ -96,8 +96,8 @@ const Header = () => {
             {isDarkMode ? <Sun size={20} className="text-foreground" /> : <Moon size={20} className="text-foreground" />}
           </Button>
 
-          {/* Language Switcher - Icon Only */}
-          <Button
+          {/* Language Switcher - Hidden for now */}
+          {/* <Button
             variant="ghost"
             size="icon"
             onClick={toggleLanguage}
@@ -105,7 +105,7 @@ const Header = () => {
             aria-label={language === "en" ? "Switch to Persian" : "Switch to English"}
           >
             <Globe size={20} className="text-foreground" />
-          </Button>
+          </Button> */}
           
           {/* User Account Button - Desktop Only */}
           <Button
