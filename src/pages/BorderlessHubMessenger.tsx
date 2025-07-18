@@ -433,7 +433,7 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Header */}
         <div className="p-4 border-b dark:border-slate-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {process.env.NEXT_PUBLIC_APP_NAME}
+            پیام‌رسان
           </h2>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
