@@ -8,9 +8,10 @@ interface MessengerProps {
   sessionToken: string;
   currentUser: MessengerUser;
   onUserUpdate: (user: MessengerUser) => void;
+  isOffline?: boolean;
 }
 
-const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUserUpdate }) => {
+const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUserUpdate, isOffline = false }) => {
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [selectedUser, setSelectedUser] = useState<MessengerUser | null>(null);
   const isMobile = useIsMobile();
@@ -42,6 +43,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
           selectedUser={selectedUser}
           currentUser={currentUser}
           onUserUpdate={onUserUpdate}
+          isOffline={isOffline}
         />
       </div>
       

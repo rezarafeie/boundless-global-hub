@@ -23,6 +23,7 @@ interface MessengerInboxProps {
   selectedUser: MessengerUser | null;
   currentUser: MessengerUser;
   onUserUpdate: (user: MessengerUser) => void;
+  isOffline?: boolean;
 }
 
 const MessengerInbox: React.FC<MessengerInboxProps> = ({
@@ -32,7 +33,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   selectedRoom,
   selectedUser,
   currentUser,
-  onUserUpdate
+  onUserUpdate,
+  isOffline = false
 }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -66,21 +68,47 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     try {
       setLoading(true);
       console.log('Loading messenger data...');
-      const [roomsData, conversationsData] = await Promise.all([
-        messengerService.getRooms(sessionToken),
-        privateMessageService.getUserConversations(currentUser.id, sessionToken)
-      ]);
-
-      console.log('Loaded rooms:', roomsData);
-      console.log('Loaded conversations:', conversationsData);
-
-      // Show all active rooms - no filtering
-      const activeRooms = roomsData.filter(room => room.is_active);
       
-      setRooms(activeRooms);
-      setConversations(conversationsData);
+      if (isOffline) {
+        // Load cached data when offline
+        const cachedRooms = JSON.parse(localStorage.getItem('cached_rooms') || '[]');
+        const cachedConversations = JSON.parse(localStorage.getItem('cached_conversations') || '[]');
+        
+        console.log('Loading cached data (offline mode)');
+        setRooms(cachedRooms);
+        setConversations(cachedConversations);
+      } else {
+        // Load from server when online
+        const [roomsData, conversationsData] = await Promise.all([
+          messengerService.getRooms(sessionToken),
+          privateMessageService.getUserConversations(currentUser.id, sessionToken)
+        ]);
+
+        console.log('Loaded rooms:', roomsData);
+        console.log('Loaded conversations:', conversationsData);
+
+        // Show all active rooms - no filtering
+        const activeRooms = roomsData.filter(room => room.is_active);
+        
+        // Cache the data for offline use
+        localStorage.setItem('cached_rooms', JSON.stringify(activeRooms));
+        localStorage.setItem('cached_conversations', JSON.stringify(conversationsData));
+        
+        setRooms(activeRooms);
+        setConversations(conversationsData);
+      }
     } catch (error) {
       console.error('Error loading messenger data:', error);
+      
+      // Fallback to cached data on error
+      const cachedRooms = JSON.parse(localStorage.getItem('cached_rooms') || '[]');
+      const cachedConversations = JSON.parse(localStorage.getItem('cached_conversations') || '[]');
+      
+      if (cachedRooms.length > 0 || cachedConversations.length > 0) {
+        console.log('Loading cached data as fallback');
+        setRooms(cachedRooms);
+        setConversations(cachedConversations);
+      }
     } finally {
       setLoading(false);
     }
@@ -126,9 +154,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="متصل"></div>
-            <MessageCircle className="w-5 h-5 text-blue-500" />
-            <span className="text-sm text-muted-foreground">آنلاین</span>
+            <div className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} 
+                 title={isOffline ? 'آفلاین' : 'متصل'}></div>
+            <MessageCircle className={`w-5 h-5 ${isOffline ? 'text-red-500' : 'text-blue-500'}`} />
+            <span className="text-sm text-muted-foreground">
+              {isOffline ? 'آفلاین' : 'آنلاین'}
+            </span>
           </div>
           <div className="flex gap-2">
             <Button

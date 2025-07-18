@@ -101,11 +101,12 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
         />
       )}
       
-      <Messenger
-        sessionToken={sessionToken}
-        currentUser={currentUser}
-        onUserUpdate={onUserUpdate}
-      />
+        <Messenger 
+          sessionToken={sessionToken}
+          currentUser={currentUser}
+          onUserUpdate={onUserUpdate}
+          isOffline={isOffline}
+        />
     </div>
   );
 };
