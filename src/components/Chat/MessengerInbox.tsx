@@ -271,12 +271,14 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                           {room.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0 text-right">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            گروه
-                          </span>
-                          <p className="text-sm font-medium truncate">{room.name}</p>
+                          <p className="text-sm font-medium truncate text-right">{room.name}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              گروه
+                            </span>
+                          </div>
                         </div>
                         {room.description && (
                           <p className="text-xs text-muted-foreground truncate text-right">
