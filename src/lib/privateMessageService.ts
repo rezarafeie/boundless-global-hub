@@ -356,15 +356,15 @@ export const privateMessageService = {
 
   async getSupportConversations(sessionToken?: string): Promise<any[]> {
     try {
-      // First get support conversations with user details
+      // Get support conversations with user details
       const { data, error } = await supabase
         .from('support_conversations')
         .select(`
           *,
-          chat_users!support_conversations_user_id_fkey(
+          user:chat_users!user_id(
             id, name, username, phone, avatar_url, bedoun_marz
           ),
-          support_agents:chat_users!support_conversations_agent_id_fkey(
+          agent:chat_users!agent_id(
             id, name, username
           )
         `)
