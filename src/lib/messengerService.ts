@@ -387,6 +387,78 @@ export const messengerService = {
     }
   },
 
+  async sendSupportMessage(
+    senderId: number,
+    message: string,
+    mediaUrl?: string,
+    mediaType?: string,
+    mediaContent?: string
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('messenger_messages')
+        .insert({
+          sender_id: senderId,
+          recipient_id: 1, // Support user ID
+          message: message,
+          media_url: mediaUrl,
+          message_type: mediaType,
+          media_content: mediaContent
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending support message:', error);
+      throw error;
+    }
+  },
+
+  async getSupportMessages(userId: number): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(name, phone)
+        `)
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.1),and(sender_id.eq.1,recipient_id.eq.${userId})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching support messages:', error);
+      return [];
+    }
+  },
+
+  async sendPrivateMessageWithMedia(
+    senderId: number,
+    recipientId: number,
+    message: string,
+    mediaUrl?: string,
+    mediaType?: string,
+    mediaContent?: string
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('messenger_messages')
+        .insert({
+          sender_id: senderId,
+          recipient_id: recipientId,
+          message: message,
+          media_url: mediaUrl,
+          message_type: mediaType,
+          media_content: mediaContent
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending private message with media:', error);
+      throw error;
+    }
+  },
+
   async deleteMessage(messageId: number): Promise<void> {
     try {
       const { error } = await supabase

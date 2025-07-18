@@ -224,7 +224,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
       {/* Chat List */}
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-2" dir="rtl">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-sm text-muted-foreground">در حال بارگذاری...</div>
@@ -234,7 +234,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               {/* Group Chats */}
               {filteredRooms.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
                     گروه‌ها
                   </h3>
                   {filteredRooms.map((room) => (
@@ -255,22 +255,22 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                           {room.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 text-right">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium truncate">{room.name}</p>
                           <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                             📌 ثابت
                           </Badge>
+                          <p className="text-sm font-medium truncate">{room.name}</p>
                         </div>
                         {room.description && (
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-xs text-muted-foreground truncate text-right">
                             {room.description}
                           </p>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant="secondary" className="text-xs">
-                          <Users className="w-3 h-3 mr-1" />
+                          <Users className="w-3 h-3 ml-1" />
                           گروه
                         </Badge>
                       </div>
@@ -282,7 +282,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               {/* Private Conversations */}
               {filteredConversations.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
                     گفتگوهای شخصی
                   </h3>
                   {filteredConversations.map((conversation) => (
@@ -309,26 +309,26 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                           {conversation.other_user?.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 text-right">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium truncate">
-                            {conversation.other_user?.name || 'کاربر نامشخص'}
-                          </p>
                           {conversation.last_message_at && (
                             <span className="text-xs text-muted-foreground">
                               {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
                             </span>
                           )}
+                          <p className="text-sm font-medium truncate">
+                            {conversation.other_user?.name || 'کاربر نامشخص'}
+                          </p>
                         </div>
                         {conversation.other_user?.username && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground text-right">
                             @{conversation.other_user.username}
                           </p>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className="text-xs">
-                          <MessageCircle className="w-3 h-3 mr-1" />
+                          <MessageCircle className="w-3 h-3 ml-1" />
                           شخصی
                         </Badge>
                       </div>
@@ -336,6 +336,72 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                   ))}
                 </div>
               )}
+
+              {/* Support Conversations */}
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
+                  پشتیبانی
+                </h3>
+                <div
+                  onClick={() => {
+                    // Navigate to support user with ID 1
+                    const supportUser = {
+                      id: 1,
+                      name: 'پشتیبانی',
+                      username: 'support',
+                      phone: '',
+                      is_approved: true,
+                      is_support_agent: true,
+                      is_messenger_admin: false,
+                      bedoun_marz: false,
+                      bedoun_marz_approved: false,
+                      bedoun_marz_request: false,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                      last_seen: new Date().toISOString(),
+                      role: 'support',
+                      email: null,
+                      user_id: null,
+                      first_name: null,
+                      last_name: null,
+                      full_name: null,
+                      country_code: null,
+                      signup_source: null,
+                      bio: null,
+                      notification_enabled: true,
+                      notification_token: null,
+                      password_hash: null,
+                      avatar_url: null
+                    };
+                    onUserSelect(supportUser);
+                  }}
+                  className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
+                >
+                  <Avatar className="w-10 h-10">
+                    <AvatarFallback 
+                      style={{ backgroundColor: '#3B82F6' }}
+                      className="text-white font-medium"
+                    >
+                      <Headphones className="w-5 h-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0 text-right">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-green-500">آنلاین</span>
+                      <p className="text-sm font-medium">پشتیبانی</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-right">
+                      راهنمایی و پشتیبانی
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className="text-xs">
+                      <Headphones className="w-3 h-3 ml-1" />
+                      پشتیبانی
+                    </Badge>
+                  </div>
+                </div>
+              </div>
 
               {/* No Results */}
               {!loading && filteredRooms.length === 0 && filteredConversations.length === 0 && (

@@ -143,20 +143,25 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           roomMessages = await messengerService.getMessages(selectedRoom.id);
         }
       } else if (selectedUser) {
-        const conversationId = await privateMessageService.getOrCreateConversation(
-          currentUser.id,
-          selectedUser.id
-        );
-        const privateMessages = await privateMessageService.getConversationMessages(conversationId);
-        // Convert private messages to messenger message format
-        roomMessages = privateMessages.map(msg => ({
-          ...msg,
-          room_id: undefined,
-          sender: {
-            name: 'User',
-            phone: ''
-          }
-        }));
+        if (selectedUser.id === 1) {
+          // Support conversation - get messages from messenger_messages where recipient_id = 1
+          roomMessages = await messengerService.getSupportMessages(currentUser.id);
+        } else {
+          const conversationId = await privateMessageService.getOrCreateConversation(
+            currentUser.id,
+            selectedUser.id
+          );
+          const privateMessages = await privateMessageService.getConversationMessages(conversationId);
+          // Convert private messages to messenger message format
+          roomMessages = privateMessages.map(msg => ({
+            ...msg,
+            room_id: undefined,
+            sender: {
+              name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+              phone: ''
+            }
+          }));
+        }
       }
       
       console.log('Loaded messages:', roomMessages);
@@ -206,11 +211,36 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           mediaContent
         );
       } else if (selectedUser) {
-        await privateMessageService.sendMessage(
-          currentUser.id, 
-          selectedUser.id, 
-          message
-        );
+        // Check if it's support conversation
+        if (selectedUser.id === 1) {
+          // Send as support message via messenger service with recipient_id
+          await messengerService.sendSupportMessage(
+            currentUser.id,
+            message,
+            mediaUrl,
+            mediaType,
+            mediaContent
+          );
+        } else {
+          // Send private message with media support
+          if (media) {
+            // For private messages with media, we need to use messenger service
+            await messengerService.sendPrivateMessageWithMedia(
+              currentUser.id,
+              selectedUser.id,
+              message,
+              mediaUrl,
+              mediaType,
+              mediaContent
+            );
+          } else {
+            await privateMessageService.sendMessage(
+              currentUser.id, 
+              selectedUser.id, 
+              message
+            );
+          }
+        }
       }
 
       setNewMessage('');
