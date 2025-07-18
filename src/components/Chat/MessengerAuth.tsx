@@ -191,7 +191,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       );
 
       if (result.error) {
-        throw new Error(result.error.message || 'رمز عبور اشتباه است');
+        toast({
+          title: 'خطا در ورود',
+          description: 'رمز عبور اشتباه است',
+          variant: 'destructive'
+        });
+        return;
       }
 
       onAuthenticated(result.session_token || 'default_session', result.user?.name || '', result.user!);
@@ -230,7 +235,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
           description: 'اکنون رمز عبور خود را تعیین کنید',
         });
       } else {
-        throw new Error(data.error || 'کد وارد شده اشتباه است');
+        toast({
+          title: 'کد اشتباه است',
+          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
+          variant: 'destructive'
+        });
+        setOtpCode('');
+        return;
       }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
@@ -394,13 +405,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         return (
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="text-center space-y-2 mb-6">
-              <p className="text-sm text-muted-foreground">
-                شماره شما قبلاً ثبت شده است:
+              <p className="text-lg font-medium text-foreground">
+                خوش آمدید {existingUser?.name}!
               </p>
-              <p className="font-mono text-primary" dir="ltr">{formattedPhoneNumber}</p>
               <p className="text-sm text-muted-foreground">
-                کاربر: {existingUser?.name}
+                برای ادامه رمز عبور خود را وارد کنید
               </p>
+              <p className="font-mono text-primary text-sm mt-2" dir="ltr">{formattedPhoneNumber}</p>
             </div>
 
             <div className="space-y-2">
@@ -446,18 +457,31 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               <p className="font-mono text-primary" dir="ltr">{formattedPhoneNumber}</p>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center" dir="ltr">
               <InputOTP
                 maxLength={4}
                 value={otpCode}
                 onChange={setOtpCode}
                 disabled={loading}
+                className="gap-4"
               >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
+                <InputOTPGroup className="gap-4">
+                  <InputOTPSlot 
+                    index={0} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                  <InputOTPSlot 
+                    index={1} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                  <InputOTPSlot 
+                    index={2} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                  <InputOTPSlot 
+                    index={3} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
                 </InputOTPGroup>
               </InputOTP>
             </div>
