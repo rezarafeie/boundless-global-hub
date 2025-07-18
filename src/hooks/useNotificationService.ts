@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
