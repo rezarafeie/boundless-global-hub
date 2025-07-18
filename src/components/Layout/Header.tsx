@@ -146,7 +146,7 @@ const Header = () => {
                         : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png";
                     }}
                   />
-                  <span className="text-lg font-bold text-foreground">
+                  <span className="text-lg font-bold text-foreground whitespace-nowrap">
                     {translations.websiteName}
                   </span>
                   <OnlineStatusIndicator />
