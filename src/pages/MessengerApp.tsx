@@ -18,8 +18,8 @@ const MessengerApp = () => {
     try {
       const token = localStorage.getItem('messenger_session_token');
       if (!token) {
-        // Stay on messenger subdomain, redirect to hub/messenger for auth
-        window.location.href = 'https://messenger.rafiei.co/hub/messenger';
+        // On messenger subdomain, redirect to main domain for auth
+        window.location.href = 'https://rafiei.co/hub/messenger';
         return;
       }
 
@@ -35,8 +35,8 @@ const MessengerApp = () => {
 
         if (!sessionData?.valid) {
           localStorage.removeItem('messenger_session_token');
-          // Stay on messenger subdomain, redirect to hub/messenger for auth
-          window.location.href = 'https://messenger.rafiei.co/hub/messenger';
+          // On messenger subdomain, redirect to main domain for auth
+          window.location.href = 'https://rafiei.co/hub/messenger';
           return;
         }
 
@@ -78,8 +78,8 @@ const MessengerApp = () => {
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('messenger_session_token');
-      // Stay on messenger subdomain, redirect to hub/messenger for auth
-      window.location.href = 'https://messenger.rafiei.co/hub/messenger';
+      // On messenger subdomain, redirect to main domain for auth
+      window.location.href = 'https://rafiei.co/hub/messenger';
     } finally {
       setLoading(false);
     }
@@ -101,8 +101,8 @@ const MessengerApp = () => {
   }
 
   if (!currentUser) {
-    // Stay on messenger subdomain, redirect to hub/messenger for auth
-    window.location.href = 'https://messenger.rafiei.co/hub/messenger';
+    // On messenger subdomain, redirect to main domain for auth
+    window.location.href = 'https://rafiei.co/hub/messenger';
     return null;
   }
 
