@@ -342,7 +342,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     try {
       // Check if user has access to this room
       if (message.room_id) {
-        const rooms = await messengerService.getRooms();
+        const rooms = await messengerService.getRooms(sessionToken!);
         const hasAccess = rooms.some(room => room.id === message.room_id);
         
         if (hasAccess) {

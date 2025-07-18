@@ -111,7 +111,7 @@ const BorderlessHubMessengerAdmin = () => {
       if (!sessionToken) {
         throw new Error('No session token found');
       }
-      const fetchedRooms = await messengerService.getRooms();
+      const fetchedRooms = await messengerService.getRooms(sessionToken);
       setRooms(fetchedRooms);
     } catch (error: any) {
       console.error('Error fetching rooms:', error);

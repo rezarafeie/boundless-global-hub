@@ -65,17 +65,14 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       const updatedUser = await messengerService.updateUser(
         currentUser.id,
         {
-          is_support_agent: formData.notification_enabled,
-          is_messenger_admin: false,
-          is_approved: true
+          name: formData.name.trim(),
+          username: formData.username.trim() || null,
+          bio: formData.bio.trim() || null,
+          notification_enabled: formData.notification_enabled
         }
       );
 
-      const mockUpdatedUser = {
-        ...currentUser,
-        is_support_agent: formData.notification_enabled
-      };
-      onUserUpdate(mockUpdatedUser);
+      onUserUpdate(updatedUser);
       
       toast({
         title: "موفقیت",

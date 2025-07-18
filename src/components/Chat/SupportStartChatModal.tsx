@@ -42,7 +42,7 @@ const SupportStartChatModal: React.FC<SupportStartChatModalProps> = ({
     setLoading(true);
     try {
       console.log('Searching for users with term:', searchTerm);
-      const results = await privateMessageService.searchUsers(searchTerm);
+      const results = await privateMessageService.searchUsers(searchTerm, sessionToken);
       console.log('Search results received:', results);
       
       // Filter out current user and support agents

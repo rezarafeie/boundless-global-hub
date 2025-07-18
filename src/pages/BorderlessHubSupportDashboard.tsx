@@ -81,7 +81,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
         throw new Error('Session token not found');
       }
 
-      const conversationsData = await privateMessageService.getSupportConversations();
+      const conversationsData = await privateMessageService.getSupportConversations(sessionToken);
       
       console.log('Support conversations loaded:', conversationsData.length);
       setConversations(conversationsData);
@@ -131,7 +131,8 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       // Create conversation between the selected user and appropriate support
       const conversationId = await privateMessageService.getOrCreateConversation(
         user.id,
-        supportUserId
+        supportUserId,
+        sessionToken
       );
 
       console.log('New conversation created:', conversationId);
