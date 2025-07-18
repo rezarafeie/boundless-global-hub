@@ -55,7 +55,12 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       }
 
       const result = await messengerService.validateSession(sessionToken);
-      if (!result || !result.user.is_support_agent) {
+      if (!result || !result.user) {
+        throw new Error('نتیجه احراز هویت نامعتبر است');
+      }
+
+      // Check if user is support agent OR admin
+      if (!result.user.is_support_agent && !result.user.is_messenger_admin) {
         throw new Error('شما دسترسی به پنل پشتیبانی ندارید');
       }
 
@@ -277,7 +282,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     );
   }
 
-  if (!currentUser || !currentUser.is_support_agent) {
+  if (!currentUser || (!currentUser.is_support_agent && !currentUser.is_messenger_admin)) {
     return (
       <MainLayout>
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
