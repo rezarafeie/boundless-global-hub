@@ -272,7 +272,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            گروه
+                          </span>
                           <p className="text-sm font-medium truncate">{room.name}</p>
                         </div>
                         {room.description && (
@@ -292,8 +295,16 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                   {filteredConversations.map((conversation) => (
                     <div
                       key={conversation.id}
-                      onClick={() => onUserSelect(conversation.other_user)}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      onClick={() => {
+                        onUserSelect(conversation.other_user);
+                        // Mark conversation as read when opened
+                        if (conversation.unread_count && conversation.unread_count > 0) {
+                          privateMessageService.markMessagesAsRead(conversation.id, currentUser.id);
+                          // Update conversations to remove unread count
+                          setTimeout(() => updateConversationsList(), 100);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors relative ${
                         selectedUser?.id === conversation.other_user?.id
                           ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                           : 'hover:bg-muted'
@@ -312,7 +323,22 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {conversation.unread_count && conversation.unread_count > 0 && (
+                              <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                              </div>
+                            )}
+                            {conversation.last_message && (
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(conversation.last_message.created_at).toLocaleTimeString('fa-IR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm font-medium truncate">
                             {conversation.other_user?.name || 'کاربر نامشخص'}
                           </p>

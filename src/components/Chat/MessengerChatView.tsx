@@ -57,9 +57,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   useEffect(() => {
     if (selectedRoom || selectedUser) {
       loadMessages();
-      if (selectedRoom) {
-        loadPinnedMessage();
-      }
     }
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
@@ -96,40 +93,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
     fetchUserAvatars();
   }, [messages]);
-
-  const loadPinnedMessage = async () => {
-    if (!selectedRoom) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('pinned_messages')
-        .select(`
-          *,
-          messenger_messages:message_id (
-            id,
-            message,
-            sender_id,
-            created_at
-          )
-        `)
-        .or(
-          selectedTopic 
-            ? `topic_id.eq.${selectedTopic.id}`
-            : `room_id.eq.${selectedRoom.id}`
-        )
-        .order('pinned_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      setPinnedMessage(data);
-    } catch (error) {
-      console.error('Error loading pinned message:', error);
-    }
-  };
 
   const loadMessages = async () => {
     try {
@@ -285,80 +248,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
-  const handlePinMessage = async (message: MessengerMessage) => {
-    if (!currentUser?.is_messenger_admin) return;
-
-    try {
-      const summary = message.message.length > 100 
-        ? message.message.substring(0, 100) + '...'
-        : message.message;
-
-      const { error } = await supabase
-        .from('pinned_messages')
-        .insert({
-          message_id: message.id,
-          room_id: selectedTopic ? null : selectedRoom?.id,
-          topic_id: selectedTopic?.id || null,
-          pinned_by: currentUser.id,
-          summary
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'موفق',
-        description: 'پیام سنجاق شد',
-      });
-
-      loadPinnedMessage();
-    } catch (error) {
-      console.error('Error pinning message:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در سنجاق کردن پیام',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleUnpinMessage = async () => {
-    if (!currentUser?.is_messenger_admin || !pinnedMessage) return;
-
-    try {
-      const { error } = await supabase
-        .from('pinned_messages')
-        .delete()
-        .eq('id', pinnedMessage.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'موفق',
-        description: 'سنجاق پیام برداشته شد',
-      });
-
-      setPinnedMessage(null);
-    } catch (error) {
-      console.error('Error unpinning message:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در برداشتن سنجاق پیام',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const scrollToMessage = (messageId: number) => {
-    const messageElement = document.getElementById(`message-${messageId}`);
-    if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      messageElement.classList.add('highlight-message');
-      setTimeout(() => {
-        messageElement.classList.remove('highlight-message');
-      }, 2000);
-    }
-  };
-
   const getAvatarColor = (name: string) => {
     const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
     const index = name.charCodeAt(0) % colors.length;
@@ -479,18 +368,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </div>
       </div>
 
-        {/* Pinned Message */}
-        {pinnedMessage && (
-          <PinnedMessage
-            summary={pinnedMessage.summary}
-            onUnpin={currentUser?.is_messenger_admin ? handleUnpinMessage : undefined}
-            onClick={() => scrollToMessage(pinnedMessage.message_id)}
-            canUnpin={currentUser?.is_messenger_admin || false}
-          />
-        )}
-
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+             id="messages-container"
+        >
           {loading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
