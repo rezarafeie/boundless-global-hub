@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown } from 'lucide-react';
+import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import SuperGroupTopicSelection from './SuperGroupTopicSelection';
 import PinnedMessage from './PinnedMessage';
 import ModernChatInput from './ModernChatInput';
+import ModernChatMessage from './ModernChatMessage';
 import MediaMessage from './MediaMessage';
 import type { ChatTopic } from '@/types/supabase';
 import {
@@ -183,7 +184,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }) => {
+  const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => {
     if ((!messageText.trim() && !media) || sending) return;
 
     try {

@@ -78,7 +78,7 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
   const progress = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
 
   return (
-    <div className={cn("flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl max-w-xs", className)}>
+    <div className={cn("flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl w-full max-w-[280px]", className)}>
       <audio
         ref={audioRef}
         src={url}
@@ -106,18 +106,22 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
       <div className="flex-1 flex items-center gap-1 h-8 relative">
         {waveformData.map((height, index) => {
           const isActive = (index / waveformData.length) * 100 <= progress;
+          const animationDelay = isPlaying ? `${index * 0.05}s` : '0s';
           return (
             <div
               key={index}
               className={cn(
-                "w-1 rounded-full transition-colors duration-200",
+                "w-1 rounded-full transition-all duration-200",
                 isActive 
                   ? "bg-blue-500" 
-                  : "bg-slate-300 dark:bg-slate-600"
+                  : "bg-slate-300 dark:bg-slate-600",
+                isPlaying && isActive && "animate-pulse"
               )}
               style={{
                 height: `${height * 100}%`,
-                minHeight: '2px'
+                minHeight: '2px',
+                animationDelay: isPlaying && isActive ? animationDelay : undefined,
+                transform: isPlaying && isActive ? `scaleY(${1 + Math.sin(Date.now() * 0.01 + index) * 0.3})` : undefined
               }}
             />
           );

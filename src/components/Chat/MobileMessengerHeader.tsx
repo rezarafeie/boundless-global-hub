@@ -53,7 +53,8 @@ const MobileMessengerHeader: React.FC<MobileMessengerHeaderProps> = ({
         </Button>
         
         <div className="flex items-center gap-2">
-          <MessageCircle className="w-6 h-6 text-blue-500" />
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <MessageCircle className="w-5 h-5 text-blue-500" />
         </div>
         
         <Button

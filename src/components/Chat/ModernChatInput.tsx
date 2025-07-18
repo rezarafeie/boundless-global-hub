@@ -2,15 +2,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
 import FileAttachmentButton from './FileAttachmentButton';
 import VoiceRecorderButton from './VoiceRecorderButton';
 import { uploadFile, FileUploadResult } from '@/lib/fileUploadService';
 import { useToast } from '@/hooks/use-toast';
+import { useReply } from '@/contexts/ReplyContext';
 
 interface ModernChatInputProps {
-  onSendMessage: (message: string, media?: { url: string; type: string; size?: number; name?: string }) => void;
+  onSendMessage: (message: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => void;
   disabled?: boolean;
   currentUserId?: number;
 }
@@ -24,6 +25,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+  const { replyingTo, setReplyingTo } = useReply();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +33,9 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
     
     setIsSending(true);
     try {
-      await onSendMessage(message.trim());
+      await onSendMessage(message.trim(), undefined, replyingTo?.id);
       setMessage('');
+      setReplyingTo(null);
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -158,6 +161,30 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
   return (
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-3 safe-area-padding-bottom">
+      {/* Reply Preview */}
+      {replyingTo && (
+        <div className="max-w-6xl mx-auto mb-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border-l-4 border-blue-500">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
+                Reply to {replyingTo.sender_name}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-300 truncate">
+                {replyingTo.message}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplyingTo(null)}
+              className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
         {/* File Attachment and Voice Recorder */}
         <div className="flex items-center gap-1 flex-shrink-0">

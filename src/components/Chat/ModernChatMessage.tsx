@@ -2,20 +2,33 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Pin } from 'lucide-react';
+import { Pin, Reply } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { ChatMessage } from '@/types/supabase';
+import { useReply } from '@/contexts/ReplyContext';
 
 interface ModernChatMessageProps {
   message: ChatMessage;
   isOwnMessage?: boolean;
   senderAvatarUrl?: string;
+  currentUserId?: number;
 }
 
 const ModernChatMessage: React.FC<ModernChatMessageProps> = ({ 
   message, 
   isOwnMessage = false,
-  senderAvatarUrl
+  senderAvatarUrl,
+  currentUserId
 }) => {
+  const { setReplyingTo } = useReply();
+
+  const handleReply = () => {
+    setReplyingTo({
+      id: message.id,
+      message: message.message,
+      sender_name: message.sender_name || 'User'
+    });
+  };
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
@@ -45,14 +58,14 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
   };
 
   return (
-    <div className={`flex mb-4 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[70%] sm:max-w-[60%] flex items-start gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* User Avatar - only show for other users' messages */}
         {!isOwnMessage && (
-          <Avatar className="w-10 h-10 flex-shrink-0">
+          <Avatar className="w-8 h-8 flex-shrink-0">
             <AvatarImage src={senderAvatarUrl} alt={message.sender_name || 'User'} />
             <AvatarFallback 
-              className="text-white font-bold text-sm"
+              className="text-white font-bold text-xs"
               style={{ backgroundColor: getAvatarColor(message.sender_name || 'User') }}
             >
               {getInitial(message.sender_name || 'U')}
@@ -60,22 +73,24 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
           </Avatar>
         )}
         
-        <div className="flex flex-col">
+        <div className="flex flex-col group">
           <div
-            className={`rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
+            className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
               isOwnMessage
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-br-md'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md'
                 : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
             }`}
+            onClick={!isOwnMessage ? handleReply : undefined}
+            style={{ cursor: !isOwnMessage ? 'pointer' : 'default' }}
           >
             {/* Header - show sender name and role only for other users */}
             {!isOwnMessage && (
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
                   {message.sender_name}
                 </span>
                 {message.sender_role && message.sender_role !== 'member' && (
-                  <Badge className={`${getRoleColor(message.sender_role)} text-xs px-2 py-0.5 border`}>
+                  <Badge className={`${getRoleColor(message.sender_role)} text-xs px-1.5 py-0.5 border`}>
                     {getRoleText(message.sender_role)}
                   </Badge>
                 )}
@@ -92,19 +107,36 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
               {message.message}
             </p>
             
-            {/* Timestamp */}
-            <div className={`flex items-center justify-end mt-2 text-xs ${
-              isOwnMessage ? 'text-amber-100' : 'text-slate-500 dark:text-slate-400'
+            {/* Timestamp and Reply Button */}
+            <div className={`flex items-center justify-between mt-1.5 text-xs ${
+              isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
             }`}>
-              {message.is_pinned && isOwnMessage && (
-                <Pin className="w-3 h-3 mr-1" />
-              )}
-              <span>
-                {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </span>
+              <div className="flex items-center">
+                {!isOwnMessage && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReply();
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md"
+                  >
+                    <Reply className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center">
+                {message.is_pinned && isOwnMessage && (
+                  <Pin className="w-3 h-3 mr-1" />
+                )}
+                <span>
+                  {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
             </div>
           </div>
         </div>

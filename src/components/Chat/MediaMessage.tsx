@@ -70,11 +70,11 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isImageFile(type)) {
     return (
-      <div className={cn("max-w-full w-full", className)}>
+      <div className={cn("w-full max-w-[280px]", className)}>
         <img
           src={url}
           alt={fileName}
-          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-64 w-full max-w-full object-contain"
+          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-48 w-full object-cover"
           onClick={() => setShowFullImage(true)}
         />
         <div className="flex justify-between items-center mt-1">
@@ -108,10 +108,10 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isVideoFile(type)) {
     return (
-      <div className={cn("max-w-full w-full", className)}>
+      <div className={cn("w-full max-w-[280px]", className)}>
         <video
           controls
-          className="rounded-lg max-h-64 w-full max-w-full object-contain"
+          className="rounded-lg max-h-48 w-full object-cover"
           preload="metadata"
         >
           <source src={url} type={type} />
@@ -145,7 +145,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
           <VoiceMessagePlayer
             url={url}
             fileName={fileName}
-            className={cn("max-w-full w-full", className)}
+            className={cn("w-full max-w-[280px]", className)}
           />
         </React.Suspense>
       );
