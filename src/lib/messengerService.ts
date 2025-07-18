@@ -126,13 +126,20 @@ export const messengerService = {
 
   async getUserByPhone(phone: string): Promise<MessengerUser | null> {
     try {
+      console.log('getUserByPhone: Searching for phone:', phone);
+      
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
         .eq('phone', phone)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid error when no user found
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error in getUserByPhone:', error);
+        throw error;
+      }
+      
+      console.log('getUserByPhone: Found user:', data ? 'Yes' : 'No');
       return data;
     } catch (error) {
       console.error('Error fetching user by phone:', error);
