@@ -70,11 +70,11 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isImageFile(type)) {
     return (
-      <div className={cn("max-w-xs", className)}>
+      <div className={cn("max-w-full w-full", className)}>
         <img
           src={url}
           alt={fileName}
-          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-64 w-auto"
+          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-64 w-full max-w-full object-contain"
           onClick={() => setShowFullImage(true)}
         />
         <div className="flex justify-between items-center mt-1">
@@ -108,10 +108,10 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isVideoFile(type)) {
     return (
-      <div className={cn("max-w-xs", className)}>
+      <div className={cn("max-w-full w-full", className)}>
         <video
           controls
-          className="rounded-lg max-h-64 w-full"
+          className="rounded-lg max-h-64 w-full max-w-full object-contain"
           preload="metadata"
         >
           <source src={url} type={type} />
@@ -135,7 +135,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
       
       return (
         <React.Suspense fallback={
-          <Card className={cn("p-3 max-w-xs", className)}>
+          <Card className={cn("p-3 max-w-full w-full", className)}>
             <div className="flex items-center gap-3">
               <Music className="w-6 h-6 text-blue-500" />
               <span className="text-sm">در حال بارگذاری...</span>
@@ -145,14 +145,14 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
           <VoiceMessagePlayer
             url={url}
             fileName={fileName}
-            className={className}
+            className={cn("max-w-full w-full", className)}
           />
         </React.Suspense>
       );
     }
     
     return (
-      <Card className={cn("p-3 max-w-xs", className)}>
+      <Card className={cn("p-3 max-w-full w-full", className)}>
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">
             <Music className="w-6 h-6 text-blue-500" />
@@ -185,7 +185,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   // For PDF and other files
   return (
-    <Card className={cn("p-3 max-w-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors", className)}>
+    <Card className={cn("p-3 max-w-full w-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors", className)}>
       <div className="flex items-center gap-3">
         <div className="flex-shrink-0">
           {getFileIcon()}

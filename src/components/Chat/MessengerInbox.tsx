@@ -125,27 +125,26 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            پیام‌رسان
-          </h2>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="متصل"></div>
+            <span className="text-sm text-muted-foreground">آنلاین</span>
+          </div>
           <div className="flex gap-2">
             <Button
               size="sm"
               variant="outline"
               onClick={() => setShowUserSettings(true)}
-              className="flex items-center gap-2"
+              className="h-8 w-8 p-0"
             >
               <User className="w-4 h-4" />
-              پروفایل
             </Button>
             
             <Button
               size="sm"
               onClick={handleStartChat}
-              className="flex items-center gap-2"
+              className="h-8 w-8 p-0"
             >
               <Plus className="w-4 h-4" />
-              گفتگوی جدید
             </Button>
           </div>
         </div>
@@ -165,11 +164,31 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         {/* Chat Tabs */}
         <div className="mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">همه</TabsTrigger>
-              <TabsTrigger value="personal">شخصی</TabsTrigger>
-              <TabsTrigger value="groups">گروه‌ها</TabsTrigger>
-              <TabsTrigger value="support">پشتیبانی</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 bg-transparent border-b border-border rounded-none h-auto p-0">
+              <TabsTrigger 
+                value="all" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
+              >
+                همه
+              </TabsTrigger>
+              <TabsTrigger 
+                value="personal"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
+              >
+                شخصی
+              </TabsTrigger>
+              <TabsTrigger 
+                value="groups"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
+              >
+                گروه‌ها
+              </TabsTrigger>
+              <TabsTrigger 
+                value="support"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
+              >
+                پشتیبانی
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -187,11 +206,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               {/* All Chats */}
               {(activeTab === 'all' || activeTab === 'groups') && filteredRooms.length > 0 && (
                 <div className="mb-4">
-                  {activeTab === 'all' && (
-                    <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
-                      گروه‌ها
-                    </h3>
-                  )}
                   {filteredRooms.map((room) => (
                     <div
                       key={room.id}
@@ -203,6 +217,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       }`}
                     >
                       <Avatar className="w-10 h-10">
+                        <AvatarImage src={room.avatar_url} alt={room.name} />
                         <AvatarFallback 
                           style={{ backgroundColor: getAvatarColor(room.name) }}
                           className="text-white font-medium"
@@ -226,11 +241,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               {/* Private Conversations */}
               {(activeTab === 'all' || activeTab === 'personal') && filteredConversations.length > 0 && (
                 <div className="mb-4">
-                  {activeTab === 'all' && (
-                    <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
-                      گفتگوهای شخصی
-                    </h3>
-                  )}
                   {filteredConversations.map((conversation) => (
                     <div
                       key={conversation.id}
@@ -269,11 +279,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               {/* Support Conversations */}
               {(activeTab === 'all' || activeTab === 'support') && (
                 <div className="mb-4">
-                  {activeTab === 'all' && (
-                    <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
-                      پشتیبانی
-                    </h3>
-                  )}
                   <div
                     onClick={() => {
                       const supportUser = {

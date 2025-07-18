@@ -432,16 +432,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         >
           <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
-            {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : chatTitle}
+            {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
+             selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
           </h3>
-          {chatDescription && (
+          {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
           )}
           {selectedTopic?.description && (
             <p className="text-xs text-slate-400">{selectedTopic.description}</p>
-          )}
-          {isMobile && onBack && (
-            <p className="text-xs text-slate-400">ضربه بزنید برای بازگشت</p>
           )}
         </div>
       </div>

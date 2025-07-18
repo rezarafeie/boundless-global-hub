@@ -92,7 +92,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
   }
 
   return (
-    <div className="h-[calc(100vh-80px)]">
+    <div className="h-[calc(100vh-80px)] overflow-hidden">
       {/* Show notification banner if needed */}
       {showPermissionBanner && !isOffline && (
         <NotificationPermissionBanner
