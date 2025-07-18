@@ -19,8 +19,7 @@ const ModernChatHeader: React.FC<ModernChatHeaderProps> = ({
     <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 border-b border-slate-700 dark:border-slate-800">
       <div className="flex items-center gap-4">
         <div className="relative">
-          <MessageCircle className="w-8 h-8 text-amber-500" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
         </div>
         <div>
           <h3 className="text-white font-bold text-lg mb-1">

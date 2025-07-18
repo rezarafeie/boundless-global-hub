@@ -460,7 +460,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
                selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
             </h3>
-            <MessageCircle className="w-4 h-4 text-blue-500" />
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           </div>
           {selectedRoom && chatDescription && (
@@ -543,9 +542,27 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                           <div className="mb-2">
                             <MediaMessage
                               url={message.media_url}
-                              type={message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream'}
-                              size={message.media_content ? JSON.parse(message.media_content).size : undefined}
-                              name={message.media_content ? JSON.parse(message.media_content).name : undefined}
+                              type={(() => {
+                                try {
+                                  return message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream';
+                                } catch {
+                                  return 'application/octet-stream';
+                                }
+                              })()}
+                              size={(() => {
+                                try {
+                                  return message.media_content ? JSON.parse(message.media_content).size : undefined;
+                                } catch {
+                                  return undefined;
+                                }
+                              })()}
+                              name={(() => {
+                                try {
+                                  return message.media_content ? JSON.parse(message.media_content).name : message.media_url.split('/').pop();
+                                } catch {
+                                  return message.media_url.split('/').pop();
+                                }
+                              })()}
                               className="max-w-[280px]"
                             />
                           </div>
