@@ -31,3 +31,9 @@ security_update_password_require_reauthentication = true
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
