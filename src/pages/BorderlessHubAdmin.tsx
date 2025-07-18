@@ -1,14 +1,70 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Wifi, Users, MessageSquare, Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Settings, Wifi, Users, MessageSquare, Bell, Shield } from 'lucide-react';
+import { messengerService } from '@/lib/messengerService';
+import { useToast } from '@/hooks/use-toast';
 import HubManagementSection from '@/components/Admin/HubManagementSection';
 import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
 import NotificationManagementSection from '@/components/Admin/NotificationManagementSection';
 
 const BorderlessHubAdmin = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSupportLogin = async () => {
+    try {
+      // Get current session token
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) {
+        toast({
+          variant: "destructive",
+          title: "خطا",
+          description: "لطفاً ابتدا وارد شوید"
+        });
+        return;
+      }
+
+      // Validate session and get user data
+      const result = await messengerService.validateSession(sessionToken);
+      if (!result) {
+        toast({
+          variant: "destructive", 
+          title: "خطا",
+          description: "جلسه کاری نامعتبر است"
+        });
+        return;
+      }
+
+      // Force enable support access for admin users
+      if (result.is_messenger_admin) {
+        // Navigate to support panel with forced access
+        navigate('/hub/support?force_access=true');
+        toast({
+          title: "موفق",
+          description: "در حال انتقال به پنل پشتیبانی..."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "خطا", 
+          description: "شما دسترسی مدیریت ندارید"
+        });
+      }
+    } catch (error) {
+      console.error('Support login error:', error);
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "خطا در ورود به پنل پشتیبانی"
+      });
+    }
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20">
@@ -19,7 +75,7 @@ const BorderlessHubAdmin = () => {
               <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
                 <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
                   مرکز کنترل بدون مرز
                 </h1>
@@ -27,6 +83,16 @@ const BorderlessHubAdmin = () => {
                   پنل مدیریت کامل سیستم Hub و Messenger
                 </p>
               </div>
+              
+              {/* SSO Support Panel Login Button */}
+              <Button
+                onClick={handleSupportLogin}
+                variant="outline"
+                className="flex items-center gap-2 bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900 border-green-200 dark:border-green-800"
+              >
+                <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-green-700 dark:text-green-300">ورود به پنل پشتیبانی</span>
+              </Button>
             </div>
           </div>
         </div>
