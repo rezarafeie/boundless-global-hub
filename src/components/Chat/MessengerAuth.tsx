@@ -10,7 +10,7 @@ import { MessageCircle, User, Phone, AtSign, Check, ArrowRight } from 'lucide-re
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 
 interface MessengerAuthProps {
@@ -20,7 +20,6 @@ interface MessengerAuthProps {
 type AuthStep = 'phone' | 'check-user' | 'login' | 'otp' | 'password' | 'user-info' | 'complete';
 
 const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
-  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [loading, setLoading] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
@@ -109,10 +108,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     e.preventDefault();
     
     if (!formData.phone.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'لطفاً شماره تلفن را وارد کنید',
-        variant: 'destructive'
+      toast.error('خطا', {
+        description: 'لطفاً شماره تلفن را وارد کنید'
       });
       return;
     }
@@ -150,9 +147,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         if (data.success) {
           setFormattedPhoneNumber(data.formattedPhone);
           setCurrentStep('otp');
-          toast({
-            title: 'کد تأیید ارسال شد',
-            description: 'کد ۴ رقمی به شماره شما ارسال شد',
+          toast.success('کد تأیید ارسال شد', {
+            description: 'کد ۴ رقمی به شماره شما ارسال شد'
           });
         } else {
           throw new Error(data.error || 'خطا در ارسال کد تأیید');
@@ -160,10 +156,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       }
     } catch (error: any) {
       console.error('Error in phone submit:', error);
-      toast({
-        title: 'خطا',
-        description: error.message || 'لطفاً دوباره تلاش کنید',
-        variant: 'destructive'
+      toast.error('خطا', {
+        description: error.message || 'لطفاً دوباره تلاش کنید'
       });
     } finally {
       setLoading(false);
@@ -174,10 +168,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     e.preventDefault();
     
     if (!formData.password.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'لطفاً رمز عبور را وارد کنید',
-        variant: 'destructive'
+      toast.error('خطا', {
+        description: 'لطفاً رمز عبور را وارد کنید'
       });
       return;
     }
@@ -194,10 +186,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
       if (result.error) {
         console.log('Login failed, showing error toast');
-        toast({
-          title: 'خطا در ورود',
-          description: 'رمز عبور اشتباه است',
-          variant: 'destructive'
+        toast.error('خطا در ورود', {
+          description: 'رمز عبور اشتباه است'
         });
         return;
       }
@@ -206,10 +196,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       
     } catch (error: any) {
       console.error('Login error:', error);
-      toast({
-        title: 'خطا در ورود',
-        description: error.message || 'رمز عبور اشتباه است',
-        variant: 'destructive'
+      toast.error('خطا در ورود', {
+        description: error.message || 'رمز عبور اشتباه است'
       });
     } finally {
       setLoading(false);
@@ -238,26 +226,21 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
       if (data && data.success) {
         setCurrentStep('password');
-        toast({
-          title: 'کد تأیید شد',
-          description: 'اکنون رمز عبور خود را تعیین کنید',
+        toast.success('کد تأیید شد', {
+          description: 'اکنون رمز عبور خود را تعیین کنید'
         });
       } else {
         console.log('OTP verification failed, showing error toast');
-        toast({
-          title: 'کد اشتباه است',
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
-          variant: 'destructive'
+        toast.error('کد اشتباه است', {
+          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
         });
         setOtpCode('');
         return;
       }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
-      toast({
-        title: 'خطا در تأیید کد',
-        description: error.message || 'کد وارد شده اشتباه است',
-        variant: 'destructive'
+      toast.error('خطا در تأیید کد', {
+        description: error.message || 'کد وارد شده اشتباه است'
       });
       setOtpCode('');
     } finally {
@@ -276,10 +259,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     e.preventDefault();
     
     if (!formData.password.trim() || formData.password.length < 6) {
-      toast({
-        title: 'خطا',
-        description: 'رمز عبور باید حداقل ۶ کاراکتر باشد',
-        variant: 'destructive'
+      toast.error('خطا', {
+        description: 'رمز عبور باید حداقل ۶ کاراکتر باشد'
       });
       return;
     }
@@ -291,19 +272,15 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     e.preventDefault();
     
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'لطفاً نام و نام خانوادگی را وارد کنید',
-        variant: 'destructive'
+      toast.error('خطا', {
+        description: 'لطفاً نام و نام خانوادگی را وارد کنید'
       });
       return;
     }
 
     if (!formData.username || !usernameAvailable) {
-      toast({
-        title: 'خطا',
-        description: 'لطفاً نام کاربری معتبری انتخاب کنید',
-        variant: 'destructive'
+      toast.error('خطا', {
+        description: 'لطفاً نام کاربری معتبری انتخاب کنید'
       });
       return;
     }
@@ -338,10 +315,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast({
-        title: 'خطا در ثبت نام',
-        description: error.message || 'لطفاً دوباره تلاش کنید',
-        variant: 'destructive'
+      toast.error('خطا در ثبت نام', {
+        description: error.message || 'لطفاً دوباره تلاش کنید'
       });
     } finally {
       setLoading(false);
