@@ -13,16 +13,6 @@ const OnlineStatusIndicator: React.FC = () => {
       <PopoverTrigger asChild>
         <button className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors">
           <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-          <div className="hidden sm:flex items-center gap-2">
-            {isOnline ? (
-              <Wifi className="w-4 h-4 text-green-600" />
-            ) : (
-              <WifiOff className="w-4 h-4 text-red-600" />
-            )}
-            <span className="text-sm font-medium">
-              {isChecking ? 'بررسی...' : (isOnline ? 'آنلاین' : 'آفلاین')}
-            </span>
-          </div>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-3" align="end">

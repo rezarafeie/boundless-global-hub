@@ -19,9 +19,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleMessengerClick = () => {
-    if (isMobile) {
-      navigate('/hub/messenger');
-    }
+    navigate('/hub/messenger');
   };
 
   // Use different logos for light/dark modes with proper fallbacks
