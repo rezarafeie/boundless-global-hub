@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -122,8 +121,10 @@ const BorderlessHubMessenger: React.FC = () => {
   }, [debouncedValue]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (session?.user?.email) {
+      loadData();
+    }
+  }, [session?.user?.email]);
 
   useEffect(() => {
     if (debouncedSearchTerm) {
@@ -147,17 +148,14 @@ const BorderlessHubMessenger: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const sessionToken = localStorage.getItem('session_token') || '';
-      const userEmail = localStorage.getItem('user_email') || '';
-      
-      const existingUser = await messengerService.getOrCreateChatUser(userEmail);
+      const existingUser = await messengerService.getOrCreateChatUser(session?.user?.email as string);
       setUser(existingUser);
       setNotificationToken(existingUser.notification_token);
 
       const chatRooms = await messengerService.getRooms();
       setRooms(chatRooms);
 
-      const privateChats = await privateMessageService.getUserConversations(existingUser.id, sessionToken);
+      const privateChats = await privateMessageService.getUserConversations(existingUser.id, session.accessToken as string);
       setConversations(privateChats);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -261,11 +259,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
     try {
       setCreatingRoom(true);
-      await messengerService.createRoom({
-        name: newRoomName,
-        description: newRoomDescription,
-        type: 'group'
-      });
+      await messengerService.createRoom(newRoomName, newRoomDescription);
       toast({
         title: 'موفق',
         description: 'اتاق با موفقیت ایجاد شد',
@@ -630,9 +624,8 @@ const BorderlessHubMessenger: React.FC = () => {
           selectedRoom ? (
             <MessengerChatView
               selectedRoom={selectedRoom}
-              selectedUser={null}
               currentUser={user as MessengerUser}
-              sessionToken={localStorage.getItem('session_token') || ''}
+              sessionToken={session?.accessToken as string}
               onBackToRooms={handleBackToRooms}
             />
           ) : selectedUser ? (
@@ -642,12 +635,13 @@ const BorderlessHubMessenger: React.FC = () => {
                 user1_id: user?.id as number,
                 user2_id: selectedUser.id,
                 created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
                 last_message_at: new Date().toISOString(),
                 other_user: selectedUser,
                 unread_count: 0
               }}
               currentUser={user as MessengerUser}
-              sessionToken={localStorage.getItem('session_token') || ''}
+              sessionToken={session?.accessToken as string}
               onBack={handleBackToRooms}
             />
           ) : null
