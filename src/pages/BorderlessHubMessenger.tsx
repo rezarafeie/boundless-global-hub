@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -83,8 +82,11 @@ interface UnifiedChatItem {
 }
 
 const BorderlessHubMessenger: React.FC = () => {
-  const router = useRouter();
-  const { data: session, update } = useSession();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Mock session for now
+  const session = { user: { email: 'user@example.com' }, accessToken: 'mock-token' };
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -372,7 +374,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const handleLogout = async () => {
     setIsLogoutAlertOpen(false);
-    await router.push('/api/auth/signout');
+    navigate('/');
   };
 
   const getAvatarColor = (name: string) => {
@@ -429,7 +431,7 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Header */}
         <div className="p-4 border-b dark:border-slate-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {process.env.NEXT_PUBLIC_APP_NAME}
+            پیام‌رسان بدون مرز
           </h2>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
