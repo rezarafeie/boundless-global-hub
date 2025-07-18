@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Save, Bell, BellOff, Upload, LogOut } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { User, Save, Bell, BellOff, Upload, LogOut, ChevronDown } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { toast } from '@/components/ui/sonner';
 
@@ -40,6 +41,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   });
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordSectionOpen, setPasswordSectionOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -292,56 +294,68 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           </div>
 
           {/* Change Password Section */}
-          <div className="space-y-4 p-4 bg-muted rounded-lg">
-            <h4 className="text-sm font-medium">تغییر رمز عبور</h4>
-            
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="currentPassword">رمز عبور فعلی</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  placeholder="رمز عبور فعلی خود را وارد کنید"
-                  dir="ltr"
-                />
-              </div>
+          <Collapsible open={passwordSectionOpen} onOpenChange={setPasswordSectionOpen}>
+            <div className="p-4 bg-muted rounded-lg">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between p-0 h-auto text-sm font-medium"
+                >
+                  تغییر رمز عبور
+                  <ChevronDown className={`w-4 h-4 transition-transform ${passwordSectionOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
               
-              <div>
-                <Label htmlFor="newPassword">رمز عبور جدید</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  placeholder="حداقل ۶ کاراکتر"
-                  dir="ltr"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="confirmPassword">تکرار رمز عبور جدید</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  placeholder="رمز عبور جدید را دوباره وارد کنید"
-                  dir="ltr"
-                />
-              </div>
-              
-              <Button
-                onClick={handleChangePassword}
-                disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-                variant="outline"
-                className="w-full"
-              >
-                {changingPassword ? 'در حال تغییر...' : 'تغییر رمز عبور'}
-              </Button>
+              <CollapsibleContent className="pt-4">
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="currentPassword">رمز عبور فعلی</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder="رمز عبور فعلی خود را وارد کنید"
+                      dir="ltr"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="newPassword">رمز عبور جدید</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="حداقل ۶ کاراکتر"
+                      dir="ltr"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="confirmPassword">تکرار رمز عبور جدید</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="رمز عبور جدید را دوباره وارد کنید"
+                      dir="ltr"
+                    />
+                  </div>
+                  
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {changingPassword ? 'در حال تغییر...' : 'تغییر رمز عبور'}
+                  </Button>
+                </div>
+              </CollapsibleContent>
             </div>
-          </div>
+          </Collapsible>
 
           {/* Logout Section */}
           <div className="pt-4 border-t border-border">
