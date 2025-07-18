@@ -51,7 +51,8 @@ export const privateMessageService = {
         .from('private_conversations')
         .select(`
           *,
-          other_user:chat_users!private_conversations_user2_id_fkey (*)
+          user1:chat_users!private_conversations_user1_id_fkey (*),
+          user2:chat_users!private_conversations_user2_id_fkey (*)
         `)
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order('last_message_at', { ascending: false });
@@ -61,13 +62,18 @@ export const privateMessageService = {
         return [];
       }
 
-      // Fetch last message and unread count for each conversation
+      // Process conversations to get the "other user" and add message details
       const conversationsWithDetails = await Promise.all(
-        data.map(async (conversation) => {
+        data.map(async (conversation: any) => {
+          // Determine the other user (not the current user)
+          const otherUser = conversation.user1_id === userId ? conversation.user2 : conversation.user1;
+          
           const lastMessage = await this.getLastMessage(conversation.id);
           const unreadCount = await this.getUnreadMessagesCount(conversation.id, userId);
+          
           return {
             ...conversation,
+            other_user: otherUser,
             last_message: lastMessage,
             unread_count: unreadCount,
           };
@@ -193,11 +199,15 @@ export const privateMessageService = {
 
   async createConversation(user1Id: number, user2Id: number): Promise<PrivateConversation | null> {
     try {
+      // Ensure consistent ordering (smaller ID first)
+      const smallerId = Math.min(user1Id, user2Id);
+      const largerId = Math.max(user1Id, user2Id);
+      
       const { data, error } = await supabase
         .from('private_conversations')
         .insert([{
-          user1_id: user1Id,
-          user2_id: user2Id,
+          user1_id: smallerId,
+          user2_id: largerId,
           last_message_at: new Date().toISOString()
         }])
         .select('*')
@@ -324,7 +334,27 @@ export const privateMessageService = {
   },
 
   async getOrCreateConversation(user1Id: number, user2Id: number): Promise<number> {
-    return this.createConversation(user1Id, user2Id);
+    try {
+      // First, check if conversation already exists
+      const { data: existingConversation, error } = await supabase
+        .from('private_conversations')
+        .select('id')
+        .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+        .single();
+
+      if (existingConversation) {
+        return existingConversation.id;
+      }
+
+      // If no existing conversation, create one
+      const conversation = await this.createConversation(user1Id, user2Id);
+      return conversation?.id || 0;
+    } catch (error) {
+      console.error('Error getting or creating conversation:', error);
+      // If single() fails, try to create new conversation
+      const conversation = await this.createConversation(user1Id, user2Id);
+      return conversation?.id || 0;
+    }
   },
 
   async getConversationMessages(conversationId: number): Promise<PrivateMessage[]> {

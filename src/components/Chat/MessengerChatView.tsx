@@ -345,7 +345,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const chatTitle = selectedRoom ? selectedRoom.name : selectedUser?.name || '';
-  const chatDescription = selectedRoom ? selectedRoom.description : selectedUser?.phone || '';
+  const chatDescription = selectedRoom ? selectedRoom.description : '';
 
   if (!selectedRoom && !selectedUser) {
     return (

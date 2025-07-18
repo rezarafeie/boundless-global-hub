@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Save, Bell, BellOff } from 'lucide-react';
+import { User, Save, Bell, BellOff, Upload } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -115,9 +115,21 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-2">
                 آواتار شما بر اساس حرف اول نام شما تولید می‌شود
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  // TODO: Implement avatar upload
+                  console.log('Avatar upload clicked');
+                }}
+              >
+                <Upload className="w-4 h-4" />
+                آپلود تصویر
+              </Button>
             </div>
           </div>
 

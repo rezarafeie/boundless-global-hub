@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User, Upload, Camera } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useNotificationService } from '@/hooks/useNotificationService';
@@ -40,6 +41,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const [showStartChatModal, setShowStartChatModal] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize notification service
@@ -121,34 +124,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-        {/* User Profile Section */}
-        <div 
-          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors mb-4"
-          onClick={() => setShowUserSettings(true)}
-        >
-          <Avatar className="w-10 h-10">
-            <AvatarImage 
-              src={currentUser.avatar_url} 
-              alt={currentUser.name}
-              onLoad={() => console.log('✅ Current user avatar loaded:', currentUser.avatar_url)}
-              onError={(e) => console.log('❌ Current user avatar failed to load:', currentUser.avatar_url, e)}
-            />
-            <AvatarFallback 
-              style={{ backgroundColor: getAvatarColor(currentUser.name || 'U') }}
-              className="text-white font-medium"
-            >
-              {currentUser.name?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{currentUser.name}</p>
-            {currentUser.username && (
-              <p className="text-xs text-muted-foreground">@{currentUser.username}</p>
-            )}
-          </div>
-          <User className="w-4 h-4 text-muted-foreground" />
-        </div>
-        
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             پیام‌رسان
@@ -157,21 +132,11 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             <Button
               size="sm"
               variant="outline"
-              onClick={loadData}
+              onClick={() => setShowUserSettings(true)}
               className="flex items-center gap-2"
             >
-              <Search className="w-4 h-4" />
-              به‌روزرسانی
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowNotificationSettings(!showNotificationSettings)}
-              className="flex items-center gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              تنظیمات
+              <User className="w-4 h-4" />
+              پروفایل
             </Button>
             
             <Button
@@ -197,29 +162,17 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           />
         </div>
         
-        {/* Notification Settings */}
-        {showNotificationSettings && (
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <h4 className="text-sm font-medium mb-3">تنظیمات نوتیفیکیشن</h4>
-            <NotificationToggle
-              enabled={notificationEnabled && permissionState.granted}
-              onToggle={updateNotificationPreference}
-              disabled={!permissionState.supported || permissionState.permission === 'denied'}
-            />
-            
-            {permissionState.permission === 'denied' && (
-              <p className="text-xs text-destructive mt-2">
-                نوتیفیکیشن‌ها در مرورگر شما مسدود شده‌اند. از تنظیمات مرورگر آن‌ها را فعال کنید.
-              </p>
-            )}
-            
-            {!permissionState.supported && (
-              <p className="text-xs text-muted-foreground mt-2">
-                مرورگر شما از نوتیفیکیشن پشتیبانی نمی‌کند.
-              </p>
-            )}
-          </div>
-        )}
+        {/* Chat Tabs */}
+        <div className="mt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">همه</TabsTrigger>
+              <TabsTrigger value="personal">شخصی</TabsTrigger>
+              <TabsTrigger value="groups">گروه‌ها</TabsTrigger>
+              <TabsTrigger value="support">پشتیبانی</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* Chat List */}
@@ -231,12 +184,14 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             </div>
           ) : (
             <>
-              {/* Group Chats */}
-              {filteredRooms.length > 0 && (
+              {/* All Chats */}
+              {(activeTab === 'all' || activeTab === 'groups') && filteredRooms.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
-                    گروه‌ها
-                  </h3>
+                  {activeTab === 'all' && (
+                    <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
+                      گروه‌ها
+                    </h3>
+                  )}
                   {filteredRooms.map((room) => (
                     <div
                       key={room.id}
@@ -256,23 +211,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                            📌 ثابت
-                          </Badge>
-                          <p className="text-sm font-medium truncate">{room.name}</p>
-                        </div>
+                        <p className="text-sm font-medium truncate">{room.name}</p>
                         {room.description && (
                           <p className="text-xs text-muted-foreground truncate text-right">
                             {room.description}
                           </p>
                         )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="secondary" className="text-xs">
-                          <Users className="w-3 h-3 ml-1" />
-                          گروه
-                        </Badge>
                       </div>
                     </div>
                   ))}
@@ -280,11 +224,13 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               )}
 
               {/* Private Conversations */}
-              {filteredConversations.length > 0 && (
+              {(activeTab === 'all' || activeTab === 'personal') && filteredConversations.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
-                    گفتگوهای شخصی
-                  </h3>
+                  {activeTab === 'all' && (
+                    <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
+                      گفتگوهای شخصی
+                    </h3>
+                  )}
                   {filteredConversations.map((conversation) => (
                     <div
                       key={conversation.id}
@@ -299,8 +245,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         <AvatarImage 
                           src={conversation.other_user?.avatar_url} 
                           alt={conversation.other_user?.name}
-                          onLoad={() => console.log('✅ Avatar loaded:', conversation.other_user?.avatar_url)}
-                          onError={(e) => console.log('❌ Avatar failed to load:', conversation.other_user?.avatar_url, e)}
                         />
                         <AvatarFallback 
                           style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
@@ -310,27 +254,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center justify-between">
-                          {conversation.last_message_at && (
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
-                            </span>
-                          )}
-                          <p className="text-sm font-medium truncate">
-                            {conversation.other_user?.name || 'کاربر نامشخص'}
-                          </p>
-                        </div>
-                        {conversation.other_user?.username && (
-                          <p className="text-xs text-muted-foreground text-right">
-                            @{conversation.other_user.username}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="text-xs">
-                          <MessageCircle className="w-3 h-3 ml-1" />
-                          شخصی
-                        </Badge>
+                        <p className="text-sm font-medium truncate">
+                          {conversation.other_user?.name || 'کاربر نامشخص'}
+                        </p>
+                        <p className="text-xs text-muted-foreground text-right truncate">
+                          آخرین پیام...
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -338,73 +267,71 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               )}
 
               {/* Support Conversations */}
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
-                  پشتیبانی
-                </h3>
-                <div
-                  onClick={() => {
-                    // Navigate to support user with ID 1
-                    const supportUser = {
-                      id: 1,
-                      name: 'پشتیبانی',
-                      username: 'support',
-                      phone: '',
-                      is_approved: true,
-                      is_support_agent: true,
-                      is_messenger_admin: false,
-                      bedoun_marz: false,
-                      bedoun_marz_approved: false,
-                      bedoun_marz_request: false,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
-                      last_seen: new Date().toISOString(),
-                      role: 'support',
-                      email: null,
-                      user_id: null,
-                      first_name: null,
-                      last_name: null,
-                      full_name: null,
-                      country_code: null,
-                      signup_source: null,
-                      bio: null,
-                      notification_enabled: true,
-                      notification_token: null,
-                      password_hash: null,
-                      avatar_url: null
-                    };
-                    onUserSelect(supportUser);
-                  }}
-                  className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
-                >
-                  <Avatar className="w-10 h-10">
-                    <AvatarFallback 
-                      style={{ backgroundColor: '#3B82F6' }}
-                      className="text-white font-medium"
-                    >
-                      <Headphones className="w-5 h-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0 text-right">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-green-500">آنلاین</span>
-                      <p className="text-sm font-medium">پشتیبانی</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground text-right">
-                      راهنمایی و پشتیبانی
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      <Headphones className="w-3 h-3 ml-1" />
+              {(activeTab === 'all' || activeTab === 'support') && (
+                <div className="mb-4">
+                  {activeTab === 'all' && (
+                    <h3 className="text-sm font-medium text-muted-foreground px-2 mb-2 text-right">
                       پشتیبانی
-                    </Badge>
+                    </h3>
+                  )}
+                  <div
+                    onClick={() => {
+                      const supportUser = {
+                        id: 1,
+                        name: 'پشتیبانی',
+                        username: 'support',
+                        phone: '',
+                        is_approved: true,
+                        is_support_agent: true,
+                        is_messenger_admin: false,
+                        bedoun_marz: false,
+                        bedoun_marz_approved: false,
+                        bedoun_marz_request: false,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        last_seen: new Date().toISOString(),
+                        role: 'support',
+                        email: null,
+                        user_id: null,
+                        first_name: null,
+                        last_name: null,
+                        full_name: null,
+                        country_code: null,
+                        signup_source: null,
+                        bio: null,
+                        notification_enabled: true,
+                        notification_token: null,
+                        password_hash: null,
+                        avatar_url: null
+                      };
+                      onUserSelect(supportUser);
+                    }}
+                    className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
+                  >
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback 
+                        style={{ backgroundColor: '#3B82F6' }}
+                        className="text-white font-medium"
+                      >
+                        <Headphones className="w-5 h-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-sm font-medium">پشتیبانی</p>
+                      <p className="text-xs text-muted-foreground text-right">
+                        راهنمایی و پشتیبانی
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* No Results */}
-              {!loading && filteredRooms.length === 0 && filteredConversations.length === 0 && (
+              {!loading && (
+                (activeTab === 'all' && filteredRooms.length === 0 && filteredConversations.length === 0) ||
+                (activeTab === 'groups' && filteredRooms.length === 0) ||
+                (activeTab === 'personal' && filteredConversations.length === 0)
+              ) && (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
