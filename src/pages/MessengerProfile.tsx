@@ -41,7 +41,7 @@ const MessengerProfile: React.FC = () => {
 
   const checkAuth = async () => {
     try {
-      const sessionToken = localStorage.getItem('messengerSessionToken');
+      const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) {
         navigate('/hub/messenger');
         return;
@@ -49,7 +49,7 @@ const MessengerProfile: React.FC = () => {
 
       const user = await messengerService.validateSession(sessionToken);
       if (!user) {
-        localStorage.removeItem('messengerSessionToken');
+        localStorage.removeItem('messenger_session_token');
         navigate('/hub/messenger');
         return;
       }
@@ -100,7 +100,7 @@ const MessengerProfile: React.FC = () => {
 
     setSaving(true);
     try {
-      const sessionToken = localStorage.getItem('messengerSessionToken');
+      const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) return;
 
       const updatedUser = await messengerService.updateUserProfile(sessionToken, {
@@ -134,7 +134,7 @@ const MessengerProfile: React.FC = () => {
     }
 
     try {
-      const sessionToken = localStorage.getItem('messengerSessionToken');
+      const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) return;
 
       await messengerService.changePassword(sessionToken, passwordData.currentPassword, passwordData.newPassword);
@@ -157,7 +157,7 @@ const MessengerProfile: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('messengerSessionToken');
+    localStorage.removeItem('messenger_session_token');
     toast.success('با موفقیت خارج شدید');
     navigate('/hub/messenger');
   };
