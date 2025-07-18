@@ -127,6 +127,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="متصل"></div>
+            <MessageCircle className="w-5 h-5 text-blue-500" />
             <span className="text-sm text-muted-foreground">آنلاین</span>
           </div>
           <div className="flex gap-2">

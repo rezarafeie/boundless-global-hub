@@ -18,18 +18,11 @@ const ModernChatHeader: React.FC<ModernChatHeaderProps> = ({
   return (
     <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 border-b border-slate-700 dark:border-slate-800">
       <div className="flex items-center gap-4">
-        <div className="relative">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-        </div>
         <div>
           <h3 className="text-white font-bold text-lg mb-1">
             💬 گفت‌وگوهای بدون مرز
           </h3>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-slate-300 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              آنلاین
-            </span>
             <Badge className="bg-amber-600/20 text-amber-300 border-amber-600/30 text-xs">
               <Users className="w-3 h-3 mr-1" />
               {onlineCount} نفر

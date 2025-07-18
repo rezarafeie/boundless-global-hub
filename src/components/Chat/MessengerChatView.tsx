@@ -243,24 +243,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaContent
           );
         } else {
-          // Send private message with media support
-          if (media) {
-            // For private messages with media, we need to use messenger service
-            await messengerService.sendPrivateMessageWithMedia(
-              currentUser.id,
-              selectedUser.id,
-              message,
-              mediaUrl,
-              mediaType,
-              mediaContent
-            );
-          } else {
-            await privateMessageService.sendMessage(
-              currentUser.id, 
-              selectedUser.id, 
-              message
-            );
-          }
+          // For private messages, always use messenger service (supports both text and media)
+          await messengerService.sendPrivateMessageWithMedia(
+            currentUser.id,
+            selectedUser.id,
+            message,
+            mediaUrl,
+            mediaType,
+            mediaContent
+          );
         }
       }
 
@@ -460,7 +451,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
                selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
             </h3>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            
           </div>
           {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
