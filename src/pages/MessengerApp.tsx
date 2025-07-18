@@ -4,6 +4,7 @@ import MessengerPage from './hub/messenger';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
+import { ReplyProvider } from '@/contexts/ReplyContext';
 
 const MessengerApp = () => {
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
@@ -120,13 +121,15 @@ const MessengerApp = () => {
   const isOfflineMode = forceOffline || !isOnline;
 
   return (
-    <div className="h-screen overflow-hidden">
-      <MessengerPage 
-        currentUser={currentUser} 
-        onUserUpdate={handleUserUpdate}
-        isOffline={isOfflineMode}
-      />
-    </div>
+    <ReplyProvider>
+      <div className="h-screen overflow-hidden">
+        <MessengerPage 
+          currentUser={currentUser} 
+          onUserUpdate={handleUserUpdate}
+          isOffline={isOfflineMode}
+        />
+      </div>
+    </ReplyProvider>
   );
 };
 
