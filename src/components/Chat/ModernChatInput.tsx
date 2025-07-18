@@ -87,7 +87,8 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
         const uploadResult: FileUploadResult = await uploadFile(file, 'messenger-files', currentUserId);
         
-        // Send the file as a message
+        // Send the file as a message with proper media data
+        console.log('Sending media message with URL:', uploadResult.url);
         await onSendMessage('', {
           url: uploadResult.url,
           type: uploadResult.type,

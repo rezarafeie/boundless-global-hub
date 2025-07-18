@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MessengerUser {
@@ -368,6 +367,16 @@ export const messengerService = {
     mediaContent?: string
   ): Promise<void> {
     try {
+      console.log('Sending message with media data:', { 
+        roomId, 
+        senderId, 
+        message, 
+        topicId, 
+        mediaUrl, 
+        mediaType, 
+        mediaContent 
+      });
+
       const { error } = await supabase
         .from('messenger_messages')
         .insert({
@@ -380,7 +389,12 @@ export const messengerService = {
           media_content: mediaContent
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting message:', error);
+        throw error;
+      }
+
+      console.log('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -458,7 +472,7 @@ export const messengerService = {
     return data;
   },
 
-  async updateUserDetails(userId: number, updates: { name?: string; bio?: string; [key: string]: any }): Promise<MessengerUser> {
+  async updateUserDetails(userId: number, updates: { name?: string; bio?: string; username?: string; [key: string]: any }): Promise<MessengerUser> {
     const { data, error } = await supabase
       .from('chat_users')
       .update(updates)

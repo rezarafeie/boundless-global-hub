@@ -261,7 +261,12 @@ const BorderlessHubMessenger: React.FC = () => {
 
     try {
       setCreatingRoom(true);
-      await messengerService.createRoom(newRoomName, newRoomDescription);
+      await messengerService.createRoom({
+        name: newRoomName,
+        description: newRoomDescription,
+        type: 'group',
+        is_active: true
+      });
       toast({
         title: 'موفق',
         description: 'اتاق با موفقیت ایجاد شد',
@@ -331,7 +336,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
     setIsUsernameLoading(true);
     try {
-      const available = await privateMessageService.checkUsernameAvailability(name, user?.id);
+      const available = await messengerService.checkUsernameAvailability(name, user?.id);
       setUsernameAvailability(available);
     } catch (error) {
       console.error('Error checking username availability:', error);
@@ -351,7 +356,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
     setIsUsernameUpdating(true);
     try {
-      await privateMessageService.updateUsername(user.id, username);
+      await messengerService.updateUserDetails(user.id, { username });
       toast({
         title: 'موفق',
         description: 'نام کاربری با موفقیت تغییر کرد',
