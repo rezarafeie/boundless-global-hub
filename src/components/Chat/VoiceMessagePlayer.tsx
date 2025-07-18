@@ -50,7 +50,7 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current) {
+    if (audioRef.current && !isNaN(audioRef.current.duration)) {
       setAudioDuration(audioRef.current.duration);
     }
   };
@@ -70,6 +70,9 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
   };
 
   const formatTime = (time: number) => {
+    if (isNaN(time) || !isFinite(time)) {
+      return '0:00';
+    }
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -85,7 +88,10 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
+        onCanPlay={handleLoadedMetadata}
+        onLoadedData={handleLoadedMetadata}
         preload="metadata"
+        crossOrigin="anonymous"
       />
       
       {/* Play/Pause Button */}

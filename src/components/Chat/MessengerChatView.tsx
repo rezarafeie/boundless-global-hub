@@ -272,10 +272,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage(newMessage);
+      await sendMessage(newMessage);
     }
   };
 
