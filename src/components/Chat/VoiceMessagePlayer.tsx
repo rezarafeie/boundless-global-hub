@@ -78,7 +78,7 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
   const progress = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
 
   return (
-    <div className={cn("flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl w-full max-w-[280px]", className)}>
+    <div className={cn("flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-2xl min-w-[200px] max-w-[240px]", className)}>
       <audio
         ref={audioRef}
         src={url}
@@ -93,20 +93,19 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
         variant="ghost"
         size="sm"
         onClick={handlePlayPause}
-        className="h-8 w-8 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+        className="h-7 w-7 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex-shrink-0"
       >
         {isPlaying ? (
-          <Pause className="w-4 h-4" />
+          <Pause className="w-3 h-3" />
         ) : (
-          <Play className="w-4 h-4 ml-0.5" />
+          <Play className="w-3 h-3 ml-0.5" />
         )}
       </Button>
 
       {/* Waveform Visualization */}
-      <div className="flex-1 flex items-center gap-1 h-8 relative">
-        {waveformData.map((height, index) => {
-          const isActive = (index / waveformData.length) * 100 <= progress;
-          const animationDelay = isPlaying ? `${index * 0.05}s` : '0s';
+      <div className="flex-1 flex items-center gap-0.5 h-6 relative min-w-0">
+        {waveformData.slice(0, 30).map((height, index) => {
+          const isActive = (index / 30) * 100 <= progress;
           const animatedHeight = isPlaying && isActive 
             ? height * (1 + Math.sin(Date.now() * 0.01 + index * 0.5) * 0.3)
             : height;
@@ -114,17 +113,14 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
             <div
               key={index}
               className={cn(
-                "w-1 rounded-full transition-all duration-100",
+                "w-0.5 rounded-full transition-all duration-100 flex-shrink-0",
                 isActive 
                   ? "bg-blue-500" 
                   : "bg-slate-300 dark:bg-slate-600"
               )}
               style={{
-                height: `${animatedHeight * 100}%`,
-                minHeight: '2px',
-                animationDuration: isPlaying && isActive ? '0.2s' : undefined,
-                animationIterationCount: isPlaying && isActive ? 'infinite' : undefined,
-                animationTimingFunction: 'ease-in-out'
+                height: `${animatedHeight * 80 + 20}%`,
+                minHeight: '2px'
               }}
             />
           );
@@ -132,7 +128,7 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
       </div>
 
       {/* Duration */}
-      <div className="text-xs text-slate-600 dark:text-slate-400 min-w-[2.5rem] text-right">
+      <div className="text-xs text-slate-600 dark:text-slate-400 min-w-[2rem] text-right flex-shrink-0">
         {formatTime(isPlaying ? currentTime : audioDuration)}
       </div>
 
@@ -141,9 +137,9 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
         variant="ghost"
         size="sm"
         onClick={handleDownload}
-        className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+        className="h-5 w-5 p-0 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex-shrink-0"
       >
-        <Download className="w-3 h-3" />
+        <Download className="w-2.5 h-2.5" />
       </Button>
     </div>
   );

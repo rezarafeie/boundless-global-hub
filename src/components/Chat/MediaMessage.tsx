@@ -135,9 +135,9 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
       
       return (
         <React.Suspense fallback={
-          <Card className={cn("p-3 max-w-full w-full", className)}>
-            <div className="flex items-center gap-3">
-              <Music className="w-6 h-6 text-blue-500" />
+          <Card className={cn("p-2 min-w-[200px] max-w-[240px]", className)}>
+            <div className="flex items-center gap-2">
+              <Music className="w-5 h-5 text-blue-500" />
               <span className="text-sm">در حال بارگذاری...</span>
             </div>
           </Card>
@@ -145,7 +145,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
           <VoiceMessagePlayer
             url={url}
             fileName={fileName}
-            className={cn("w-full max-w-[280px]", className)}
+            className={className}
           />
         </React.Suspense>
       );
