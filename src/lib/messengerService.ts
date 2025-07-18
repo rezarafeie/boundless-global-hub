@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import bcrypt from 'bcryptjs';
 
 export interface MessengerUser {
   id: number;
@@ -248,20 +249,25 @@ export const messengerService = {
 
   async loginWithPassword(phone: string, password: string): Promise<AuthResult> {
     try {
-      const { data: userData, error: selectError } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('phone', phone)
-        .eq('password_hash', password)
-        .single();
+      // First get user by phone (without password comparison)
+      const user = await this.getUserByPhone(phone);
+      
+      if (!user || !user.password_hash) {
+        console.error('User not found or no password set');
+        return { user: null, error: { message: 'کاربر یافت نشد یا رمز عبور تنظیم نشده است' } };
+      }
 
-      if (selectError || !userData) {
-        console.error('Login failed:', selectError);
+      // Compare the password with the stored hash
+      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      
+      if (!isPasswordValid) {
+        console.error('Invalid password for user:', user.phone);
         return { user: null, error: { message: 'رمز عبور اشتباه است' } };
       }
 
-      const sessionToken = await this.createSession(userData.id);
-      return { user: userData, error: null, session_token: sessionToken };
+      // Password is correct, create session
+      const sessionToken = await this.createSession(user.id);
+      return { user: user, error: null, session_token: sessionToken };
     } catch (error) {
       console.error('Login error:', error);
       return { user: null, error: error };
@@ -270,12 +276,16 @@ export const messengerService = {
 
   async registerWithPassword(phone: string, password: string, name: string): Promise<AuthResult> {
     try {
+      // Hash the password before storing
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
       const { data: newUserData, error: insertError } = await supabase
         .from('chat_users')
         .insert([{ 
           phone: phone, 
           name: name, 
-          password_hash: password,
+          password_hash: hashedPassword,
           is_approved: true 
         }])
         .select('*')
