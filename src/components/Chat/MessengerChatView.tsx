@@ -538,7 +538,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                         )}
                         
                         {/* Media content */}
-                        {message.media_url && message.message_type === 'media' && (
+                        {message.media_url && (
                           <div className="mb-2">
                             <MediaMessage
                               url={message.media_url}
