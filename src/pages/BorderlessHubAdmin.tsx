@@ -83,16 +83,6 @@ const BorderlessHubAdmin = () => {
                   پنل مدیریت کامل سیستم Hub و Messenger
                 </p>
               </div>
-              
-              {/* SSO Support Panel Login Button */}
-              <Button
-                onClick={handleSupportLogin}
-                variant="outline"
-                className="flex items-center gap-2 bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900 border-green-200 dark:border-green-800"
-              >
-                <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-                <span className="text-green-700 dark:text-green-300">ورود به پنل پشتیبانی</span>
-              </Button>
             </div>
           </div>
         </div>
@@ -138,6 +128,18 @@ const BorderlessHubAdmin = () => {
               <NotificationManagementSection />
             </TabsContent>
           </Tabs>
+          
+          {/* SSO Support Panel Login Button - Bottom */}
+          <div className="mt-8 flex justify-center">
+            <Button
+              onClick={handleSupportLogin}
+              variant="outline"
+              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900 border-green-200 dark:border-green-800"
+            >
+              <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <span className="text-green-700 dark:text-green-300">ورود به پنل پشتیبانی</span>
+            </Button>
+          </div>
         </div>
       </div>
     </MainLayout>

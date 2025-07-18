@@ -122,15 +122,19 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
   useEffect(() => {
     const initialize = async () => {
+      console.log('Initializing support dashboard, force access:', forceAccess);
       const hasAccess = await checkSupportAccess();
-      if (hasAccess) {
+      if (hasAccess || forceAccess) {
+        console.log('Access granted, fetching conversations...');
         await fetchConversations();
+      } else {
+        console.log('Access denied and no force access');
       }
       setLoading(false);
     };
 
     initialize();
-  }, []);
+  }, [forceAccess]);
 
   const handleStartNewChat = async (user: MessengerUser) => {
     try {

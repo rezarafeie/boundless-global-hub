@@ -354,21 +354,31 @@ export const privateMessageService = {
     }
   },
 
-  async getSupportConversations(): Promise<any[]> {
+  async getSupportConversations(sessionToken?: string): Promise<any[]> {
     try {
+      // First get support conversations with user details
       const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .or('username.eq.support,username.eq.boundless_support');
+        .from('support_conversations')
+        .select(`
+          *,
+          chat_users!support_conversations_user_id_fkey(
+            id, name, username, phone, avatar_url, bedoun_marz
+          ),
+          support_agents:chat_users!support_conversations_agent_id_fkey(
+            id, name, username
+          )
+        `)
+        .order('last_message_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching support users:', error);
+        console.error('Error fetching support conversations:', error);
         return [];
       }
 
+      console.log('Support conversations fetched:', data?.length || 0);
       return data || [];
     } catch (error) {
-      console.error('Error fetching support users:', error);
+      console.error('Error fetching support conversations:', error);
       return [];
     }
   },
