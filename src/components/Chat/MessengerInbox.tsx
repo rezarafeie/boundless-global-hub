@@ -327,24 +327,24 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                           <div className="flex items-center gap-2">
                             {conversation.unread_count && conversation.unread_count > 0 && (
                               <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                                {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
                               </div>
                             )}
                             {conversation.last_message && (
                               <span className="text-xs text-muted-foreground">
-                                {new Date(conversation.last_message.created_at).toLocaleTimeString('fa-IR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
+                                {new Date(conversation.last_message.created_at).toLocaleTimeString("fa-IR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit"
                                 })}
                               </span>
                             )}
                           </div>
                           <p className="text-sm font-medium truncate">
-                            {conversation.other_user?.name || 'کاربر نامشخص'}
+                            {conversation.other_user?.name || "کاربر نامشخص"}
                           </p>
                         </div>
                         <p className="text-xs text-muted-foreground text-right truncate">
-                          {conversation.last_message?.message || 'آخرین پیام...'}
+                          {conversation.last_message?.message || "آخرین پیام..."}
                         </p>
                       </div>
                     </div>
