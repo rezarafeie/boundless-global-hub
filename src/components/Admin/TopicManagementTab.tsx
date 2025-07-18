@@ -19,9 +19,9 @@ const TopicManagementTab = () => {
         const token = localStorage.getItem('messenger_session_token');
         if (token) {
           setSessionToken(token);
-          const validation = await messengerService.validateSession(token);
-          if (validation?.valid) {
-            setCurrentUser(validation.user);
+          const user = await messengerService.validateSession(token);
+          if (user) {
+            setCurrentUser(user);
           } else {
             toast({
               title: 'خطا',

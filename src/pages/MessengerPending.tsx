@@ -32,8 +32,8 @@ const MessengerPending: React.FC = () => {
     }
 
     try {
-      const result = await messengerService.validateSession(token);
-      if (result && result.user.is_approved) {
+      const user = await messengerService.validateSession(token);
+      if (user && user.is_approved) {
         toast({
           title: 'تایید شدید!',
           description: 'حساب شما تایید شد. در حال انتقال به پیام‌رسان...',

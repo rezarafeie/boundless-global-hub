@@ -29,8 +29,8 @@ const ChatManagementTab = () => {
       }
 
       // Validate session
-      const sessionResult = await messengerService.validateSession(sessionToken);
-      if (!sessionResult || !sessionResult.user.is_messenger_admin) {
+      const user = await messengerService.validateSession(sessionToken);
+      if (!user || !user.is_messenger_admin) {
         throw new Error('شما دسترسی به این بخش ندارید');
       }
       

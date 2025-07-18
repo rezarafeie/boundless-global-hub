@@ -51,12 +51,12 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
         throw new Error('لطفاً ابتدا وارد شوید');
       }
 
-      const result = await messengerService.validateSession(sessionToken);
-      if (!result || !result.user.is_messenger_admin) {
+      const user = await messengerService.validateSession(sessionToken);
+      if (!user || !user.is_messenger_admin) {
         throw new Error('شما دسترسی به پنل مدیریت ندارید');
       }
 
-      setCurrentUser(result.user);
+      setCurrentUser(user);
       await fetchUsers();
     } catch (error: any) {
       console.error('Admin access error:', error);

@@ -79,6 +79,7 @@ import UserHub from "./pages/UserHub";
 
 // Messenger App (for subdomain)
 import MessengerApp from "./pages/MessengerApp";
+import MessengerProfile from "./pages/MessengerProfile";
 
 const queryClient = new QueryClient();
 
@@ -180,6 +181,7 @@ const App = () => {
                     <Route path="/hub/support" element={<BorderlessHubSupportDashboard />} />
                     <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
                     <Route path="/messenger-pending" element={<MessengerPending />} />
+                    <Route path="/profile" element={<MessengerProfile />} />
 
                     {/* Assessment */}
                     <Route path="/assessment" element={<AssessmentCenter />} />

@@ -2,6 +2,24 @@
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
 
+// Helper function to get user from session
+async function getUserFromSession(sessionToken: string): Promise<number | null> {
+  try {
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('user_id')
+      .eq('session_token', sessionToken)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) return null;
+    return data.user_id;
+  } catch (error) {
+    console.error('Error getting user from session:', error);
+    return null;
+  }
+}
+
 export interface MessengerUser {
   id: number;
   name: string;
@@ -535,7 +553,7 @@ export const messengerService = {
     }
   },
 
-  async validateSession(sessionToken: string): Promise<ValidationResult> {
+  async validateSession(sessionToken: string): Promise<MessengerUser | null> {
     try {
       const { data, error } = await supabase
         .from('user_sessions')
@@ -547,18 +565,15 @@ export const messengerService = {
         .eq('is_active', true)
         .single();
 
-      if (error || !data) return { valid: false };
+      if (error || !data) return null;
       
       const isValid = data.last_activity && 
         new Date(data.last_activity) > new Date(Date.now() - 24 * 60 * 60 * 1000);
       
-      return { 
-        valid: isValid, 
-        user: isValid ? data.chat_users : undefined 
-      };
+      return isValid ? data.chat_users : null;
     } catch (error) {
       console.error('Error validating session:', error);
-      return { valid: false };
+      return null;
     }
   },
 
@@ -580,16 +595,78 @@ export const messengerService = {
     return this.updateUser(userId, updates);
   },
 
-  async updateUserProfile(userId: number, name: string, bio: string): Promise<MessengerUser> {
+  async updateUserProfile(sessionToken: string, updates: Partial<MessengerUser>, userId?: number): Promise<MessengerUser> {
+    let targetUserId = userId;
+    if (!targetUserId) {
+      targetUserId = await getUserFromSession(sessionToken);
+      if (!targetUserId) {
+        throw new Error('نشست نامعتبر است');
+      }
+    }
+
     const { data, error } = await supabase
       .from('chat_users')
-      .update({ name, bio })
-      .eq('id', userId)
-      .select('*')
+      .update(updates)
+      .eq('id', targetUserId)
+      .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw new Error('خطا در به‌روزرسانی پروفایل');
+    }
+
     return data;
+  },
+
+  async checkUsernameUniqueness(username: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('id')
+      .eq('username', username)
+      .limit(1);
+
+    if (error) {
+      throw new Error('خطا در بررسی نام کاربری');
+    }
+
+    return data.length === 0;
+  },
+
+  async changePassword(sessionToken: string, currentPassword: string, newPassword: string): Promise<void> {
+    const userIdFromSession = await getUserFromSession(sessionToken);
+    if (!userIdFromSession) {
+      throw new Error('نشست نامعتبر است');
+    }
+
+    // Get current user with password hash
+    const { data: userData, error: userError } = await supabase
+      .from('chat_users')
+      .select('password_hash')
+      .eq('id', userIdFromSession)
+      .single();
+
+    if (userError || !userData) {
+      throw new Error('کاربر پیدا نشد');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, userData.password_hash);
+    if (!isCurrentPasswordValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    const { error: updateError } = await supabase
+      .from('chat_users')
+      .update({ password_hash: hashedNewPassword })
+      .eq('id', userIdFromSession);
+
+    if (updateError) {
+      throw new Error('خطا در تغییر رمز عبور');
+    }
   },
 
   async updateUserDetails(userId: number, updates: { name?: string; bio?: string; [key: string]: any }): Promise<MessengerUser> {

@@ -10,10 +10,10 @@ import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useNotificationService } from '@/hooks/useNotificationService';
+import { useNavigate } from 'react-router-dom';
 import StartChatModal from './StartChatModal';
 import NotificationPermissionBanner from './NotificationPermissionBanner';
 import NotificationToggle from './NotificationToggle';
-import UserSettingsModal from './UserSettingsModal';
 
 interface MessengerInboxProps {
   sessionToken: string;
@@ -44,10 +44,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const [loading, setLoading] = useState(true);
   const [showStartChatModal, setShowStartChatModal] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-  const [showUserSettings, setShowUserSettings] = useState(false);
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   // Initialize notification service
   const {
@@ -167,7 +167,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setShowUserSettings(true)}
+              onClick={() => navigate('/profile')}
               className="h-8 w-8 p-0"
             >
               <User className="w-4 h-4" />
@@ -421,15 +421,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         currentUser={currentUser}
       />
 
-      {/* User Settings Modal */}
-      <UserSettingsModal
-        isOpen={showUserSettings}
-        onClose={() => setShowUserSettings(false)}
-        currentUser={currentUser}
-        sessionToken={sessionToken}
-        onUserUpdate={onUserUpdate}
-        onLogout={onLogout}
-      />
     </div>
   );
 };
