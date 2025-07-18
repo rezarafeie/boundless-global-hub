@@ -356,29 +356,72 @@ export const privateMessageService = {
 
   async getSupportConversations(sessionToken?: string): Promise<any[]> {
     try {
-      // Get support conversations with user details
-      const { data, error } = await supabase
+      console.log('Fetching support conversations...');
+      
+      // First, get all support conversations
+      const { data: conversations, error: convError } = await supabase
         .from('support_conversations')
-        .select(`
-          *,
-          user:chat_users!user_id(
-            id, name, username, phone, avatar_url, bedoun_marz
-          ),
-          agent:chat_users!agent_id(
-            id, name, username
-          )
-        `)
+        .select('*')
         .order('last_message_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching support conversations:', error);
+      if (convError) {
+        console.error('Error fetching support conversations:', convError);
         return [];
       }
 
-      console.log('Support conversations fetched:', data?.length || 0);
-      return data || [];
+      console.log('Raw conversations fetched:', conversations?.length || 0);
+
+      if (!conversations || conversations.length === 0) {
+        return [];
+      }
+
+      // Get all unique user IDs and agent IDs
+      const userIds = [...new Set(conversations.map(conv => conv.user_id).filter(Boolean))];
+      const agentIds = [...new Set(conversations.map(conv => conv.agent_id).filter(Boolean))];
+      const allUserIds = [...new Set([...userIds, ...agentIds])];
+
+      console.log('User IDs to fetch:', userIds);
+      console.log('Agent IDs to fetch:', agentIds);
+
+      // Fetch user details for all users
+      let usersData: any[] = [];
+      if (allUserIds.length > 0) {
+        const { data: users, error: usersError } = await supabase
+          .from('chat_users')
+          .select('id, name, username, phone, avatar_url, bedoun_marz')
+          .in('id', allUserIds);
+
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+        } else {
+          usersData = users || [];
+          console.log('Users fetched:', usersData.length);
+        }
+      }
+
+      // Create a map for quick user lookup
+      const usersMap = new Map();
+      usersData.forEach(user => {
+        usersMap.set(user.id, user);
+      });
+
+      // Enrich conversations with user and agent data
+      const enrichedConversations = conversations.map(conversation => {
+        const user = usersMap.get(conversation.user_id);
+        const agent = usersMap.get(conversation.agent_id);
+
+        return {
+          ...conversation,
+          user: user || null,
+          agent: agent || null
+        };
+      });
+
+      console.log('Enriched conversations:', enrichedConversations.length);
+      return enrichedConversations;
+
     } catch (error) {
-      console.error('Error fetching support conversations:', error);
+      console.error('Error in getSupportConversations:', error);
       return [];
     }
   },
