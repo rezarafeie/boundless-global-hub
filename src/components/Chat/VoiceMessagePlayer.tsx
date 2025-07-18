@@ -107,21 +107,24 @@ const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
         {waveformData.map((height, index) => {
           const isActive = (index / waveformData.length) * 100 <= progress;
           const animationDelay = isPlaying ? `${index * 0.05}s` : '0s';
+          const animatedHeight = isPlaying && isActive 
+            ? height * (1 + Math.sin(Date.now() * 0.01 + index * 0.5) * 0.3)
+            : height;
           return (
             <div
               key={index}
               className={cn(
-                "w-1 rounded-full transition-all duration-200",
+                "w-1 rounded-full transition-all duration-100",
                 isActive 
                   ? "bg-blue-500" 
-                  : "bg-slate-300 dark:bg-slate-600",
-                isPlaying && isActive && "animate-pulse"
+                  : "bg-slate-300 dark:bg-slate-600"
               )}
               style={{
-                height: `${height * 100}%`,
+                height: `${animatedHeight * 100}%`,
                 minHeight: '2px',
-                animationDelay: isPlaying && isActive ? animationDelay : undefined,
-                transform: isPlaying && isActive ? `scaleY(${1 + Math.sin(Date.now() * 0.01 + index) * 0.3})` : undefined
+                animationDuration: isPlaying && isActive ? '0.2s' : undefined,
+                animationIterationCount: isPlaying && isActive ? 'infinite' : undefined,
+                animationTimingFunction: 'ease-in-out'
               }}
             />
           );

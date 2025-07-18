@@ -30,7 +30,7 @@ const MobileMessengerHeader: React.FC<MobileMessengerHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 md:hidden">
+    <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-3 md:hidden">
       <div className="flex items-center justify-between">
         {/* User Profile Button (replaces back button) */}
         <Button

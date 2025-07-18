@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -187,8 +186,34 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => {
     if ((!messageText.trim() && !media) || sending) return;
 
+    // Add message optimistically to the UI first (for smoother UX)
+    const optimisticMessage: MessengerMessage = {
+      id: Date.now(), // temporary ID
+      message: messageText || (media ? '📎 File' : ''),
+      sender_id: currentUser.id,
+      sender: { name: currentUser.name, phone: '' },
+      created_at: new Date().toISOString(),
+      media_url: media?.url || null,
+      media_content: media ? JSON.stringify({ 
+        name: media.name, 
+        size: media.size,
+        url: media.url,
+        type: media.type
+      }) : null,
+      message_type: media ? 'media' : 'text',
+      is_read: false,
+      reply_to_message_id: replyToId || null,
+      room_id: selectedRoom?.id || null,
+      recipient_id: selectedUser?.id || null,
+      conversation_id: null,
+      topic_id: selectedTopic?.id || null,
+      unread_by_support: false,
+      forwarded_from_message_id: null
+    };
+
     try {
       setSending(true);
+      setMessages(prev => [...prev, optimisticMessage]);
       
       // If it's a media message, set message text to empty if no text provided
       const message = messageText || '';
@@ -245,9 +270,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }
 
       setNewMessage('');
-      await loadMessages();
+      // Reload messages to get the actual message from server
+      setTimeout(() => loadMessages(), 500);
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       toast({
         title: 'خطا',
         description: 'خطا در ارسال پیام',
@@ -409,14 +437,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+      <div className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         
         {/* Only show avatar if not a super group with selected topic */}
         {!(selectedRoom?.is_super_group && selectedTopic) && (
-          <Avatar className="w-10 h-10">
+          <Avatar className="w-8 h-8">
             <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
             <AvatarFallback 
               style={{ backgroundColor: getAvatarColor(chatTitle) }}
@@ -431,11 +459,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
           onClick={isMobile && onBack ? onBack : undefined}
         >
-          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
-            {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
-             selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+              {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
+              {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
+               selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
+            </h3>
+            <MessageCircle className="w-4 h-4 text-blue-500" />
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          </div>
           {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
           )}
@@ -476,77 +508,80 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               </div>
             </div>
           ) : (
-            messages.map((message) => (
-              <div key={message.id} id={`message-${message.id}`} className="flex items-start gap-3 group">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
-                  <AvatarFallback 
-                    style={{ backgroundColor: getAvatarColor(message.sender?.name || 'U') }}
-                    className="text-white font-medium text-xs"
-                  >
-                    {message.sender?.name?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm text-slate-900 dark:text-white">
-                      {message.sender?.name || 'نامشخص'}
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                    {message.sender_id === currentUser.id && (
-                      <Badge variant="outline" className="text-xs">شما</Badge>
+            messages.map((message) => {
+              const isOwnMessage = message.sender_id === currentUser.id;
+              return (
+                <div key={message.id} id={`message-${message.id}`} className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {/* User Avatar - only show for other users' messages */}
+                    {!isOwnMessage && (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
+                        <AvatarFallback 
+                          className="text-white font-bold text-xs"
+                          style={{ backgroundColor: getAvatarColor(message.sender?.name || 'User') }}
+                        >
+                          {(message.sender?.name || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     )}
-                  </div>
-                  
-                  <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg relative">
-                    {/* Check if message has media */}
-                    {message.media_url ? (
-                      <div className="space-y-2">
-                        <MediaMessage
-                          url={message.media_url}
-                          type={message.message_type || 'application/octet-stream'}
-                          size={message.media_content ? JSON.parse(message.media_content).size : undefined}
-                          name={message.media_content ? JSON.parse(message.media_content).name : undefined}
-                        />
+                    
+                    <div className="flex flex-col">
+                      <div
+                        className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
+                          isOwnMessage
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {/* Header - show sender name only for other users */}
+                        {!isOwnMessage && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
+                              {message.sender?.name || 'نامشخص'}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Media content */}
+                        {message.media_url && message.message_type === 'media' && (
+                          <div className="mb-2">
+                            <MediaMessage
+                              url={message.media_url}
+                              type={message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream'}
+                              size={message.media_content ? JSON.parse(message.media_content).size : undefined}
+                              name={message.media_content ? JSON.parse(message.media_content).name : undefined}
+                              className="max-w-[280px]"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Message text content */}
                         {message.message && (
-                          <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
+                          <p className={`text-sm leading-relaxed ${
+                            isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+                          }`}>
                             {message.message}
                           </p>
                         )}
+                        
+                        {/* Timestamp */}
+                        <div className={`flex items-center justify-end mt-1.5 text-xs ${
+                          isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
+                        }`}>
+                          <span>
+                            {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
-                        {message.message}
-                      </p>
-                    )}
-                    
-                    {currentUser?.is_messenger_admin && selectedRoom && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                              <MoreVertical className="w-3 h-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handlePinMessage(message)}>
-                              <Pin className="w-4 h-4 mr-2" />
-                              سنجاق کردن
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
