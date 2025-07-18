@@ -107,6 +107,17 @@ const MessengerApp = () => {
     setCurrentUser(user);
   };
 
+  const handleLogout = () => {
+    // Clear session data
+    localStorage.removeItem('messenger_session_token');
+    
+    // Reset state
+    setCurrentUser(null);
+    setSessionToken(null);
+    setShowAuth(true);
+    setForceOffline(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -133,6 +144,7 @@ const MessengerApp = () => {
           currentUser={currentUser} 
           onUserUpdate={handleUserUpdate}
           isOffline={isOfflineMode}
+          onLogout={handleLogout}
         />
       </div>
     </ReplyProvider>
