@@ -121,10 +121,12 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       
       const uploadResult: FileUploadResult = await uploadFile(file, 'voice-messages', currentUserId);
       
-      // Send the voice message
-      await onSendMessage('', {
+      console.log('Voice message upload result:', uploadResult);
+      
+      // Send the voice message with proper media data
+      await onSendMessage('🎤 Voice Message', {
         url: uploadResult.url,
-        type: uploadResult.type,
+        type: 'audio/webm',
         size: uploadResult.size,
         name: uploadResult.name
       });
