@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import StartChatModal from './StartChatModal';
 import NotificationPermissionBanner from './NotificationPermissionBanner';
 import NotificationToggle from './NotificationToggle';
+import { useRealtimeChatUpdates } from '@/hooks/useRealtimeChatUpdates';
 
 interface MessengerInboxProps {
   sessionToken: string;
@@ -66,6 +67,15 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     loadData();
   }, [sessionToken]);
 
+  // Set up realtime subscriptions for chat updates
+  const { refreshConversations, refreshRooms } = useRealtimeChatUpdates({
+    currentUser,
+    sessionToken,
+    isOffline,
+    onConversationsUpdate: setConversations,
+    onRoomsUpdate: setRooms
+  });
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -82,7 +92,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       } else {
         // Load from server when online
         const [roomsData, conversationsData] = await Promise.all([
-          messengerService.getRooms(sessionToken),
+          messengerService.getRooms(),
           privateMessageService.getUserConversations(currentUser.id, sessionToken)
         ]);
 
@@ -140,6 +150,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const handleUserSelectFromModal = (user: MessengerUser) => {
     onUserSelect(user);
     setShowStartChatModal(false);
+    // Refresh conversations to show the new chat immediately
+    setTimeout(() => {
+      refreshConversations();
+    }, 500);
   };
 
   return (
