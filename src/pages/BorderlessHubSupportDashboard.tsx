@@ -54,14 +54,26 @@ const BorderlessHubSupportDashboard: React.FC = () => {
         throw new Error('لطفاً ابتدا وارد شوید');
       }
 
+      console.log('Validating session with token:', sessionToken?.substring(0, 10) + '...');
       const result = await messengerService.validateSession(sessionToken);
-      if (!result || !result.user) {
-        throw new Error('نتیجه احراز هویت نامعتبر است');
+      console.log('Validation result:', result);
+      
+      if (!result) {
+        throw new Error('نتیجه احراز هویت خالی است');
       }
+      
+      if (!result.user) {
+        console.log('No user in result:', result);
+        throw new Error('اطلاعات کاربر در نتیجه احراز هویت موجود نیست');
+      }
+
+      console.log('User data:', result.user);
+      console.log('is_support_agent:', result.user.is_support_agent);
+      console.log('is_messenger_admin:', result.user.is_messenger_admin);
 
       // Check if user is support agent OR admin
       if (!result.user.is_support_agent && !result.user.is_messenger_admin) {
-        throw new Error('شما دسترسی به پنل پشتیبانی ندارید');
+        throw new Error(`شما دسترسی به پنل پشتیبانی ندارید. is_support_agent: ${result.user.is_support_agent}, is_messenger_admin: ${result.user.is_messenger_admin}`);
       }
 
       setCurrentUser(result.user);
