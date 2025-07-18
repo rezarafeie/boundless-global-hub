@@ -7,7 +7,12 @@ export interface PrivateMessage {
   conversation_id: number;
   sender_id: number;
   message: string;
+  message_type?: string;
+  media_url?: string;
+  media_content?: string;
   is_read: boolean;
+  reply_to_message_id?: number;
+  forwarded_from_message_id?: number;
 }
 
 export interface PrivateConversation {
@@ -112,7 +117,19 @@ export const privateMessageService = {
     try {
       const { data, error } = await supabase
         .from('private_messages')
-        .select('*')
+        .select(`
+          id,
+          conversation_id,
+          sender_id,
+          message,
+          message_type,
+          media_url,
+          media_content,
+          is_read,
+          created_at,
+          reply_to_message_id,
+          forwarded_from_message_id
+        `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -134,7 +151,19 @@ export const privateMessageService = {
     try {
       const { data, error } = await supabase
         .from('private_messages')
-        .select('*')
+        .select(`
+          id,
+          conversation_id,
+          sender_id,
+          message,
+          message_type,
+          media_url,
+          media_content,
+          is_read,
+          created_at,
+          reply_to_message_id,
+          forwarded_from_message_id
+        `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
@@ -150,7 +179,7 @@ export const privateMessageService = {
     }
   },
 
-  async sendMessage(senderId: number, recipientId: number, message: string): Promise<PrivateMessage | null> {
+  async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<PrivateMessage | null> {
     try {
       // Get or create conversation first
       const conversationId = await this.getOrCreateConversation(senderId, recipientId);
@@ -166,6 +195,9 @@ export const privateMessageService = {
           conversation_id: conversationId,
           sender_id: senderId,
           message: message,
+          message_type: mediaType || 'text',
+          media_url: mediaUrl,
+          media_content: mediaContent,
           is_read: false
         }])
         .select('*')

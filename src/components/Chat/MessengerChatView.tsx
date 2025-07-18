@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
-import { privateMessageService } from '@/lib/privateMessageService';
+import { privateMessageService, type PrivateMessage } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,6 +156,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           roomMessages = privateMessages.map(msg => ({
             ...msg,
             room_id: undefined,
+            media_url: msg.media_url,
+            message_type: msg.message_type || 'text',
+            media_content: msg.media_content,
             sender: {
               name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
               phone: ''
@@ -243,8 +246,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaContent
           );
         } else {
-          // For private messages, always use messenger service (supports both text and media)
-          await messengerService.sendPrivateMessageWithMedia(
+          // For private messages, use the private message service directly with media support
+          await privateMessageService.sendMessage(
             currentUser.id,
             selectedUser.id,
             message,
