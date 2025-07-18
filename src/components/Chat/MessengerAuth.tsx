@@ -131,7 +131,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         setExistingUser(userExists);
         setCurrentStep('login');
       } else {
-        setCurrentStep('otp');
         // Send OTP for new user
         console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
         const { data, error } = await supabase.functions.invoke('send-otp', {
@@ -149,6 +148,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         console.log('OTP Response:', data);
         if (data.success) {
           setFormattedPhoneNumber(data.formattedPhone);
+          setCurrentStep('otp');
           toast({
             title: 'کد تأیید ارسال شد',
             description: 'کد ۴ رقمی به شماره شما ارسال شد',
@@ -278,10 +278,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       return;
     }
 
-    if (formData.username && !usernameAvailable) {
+    if (!formData.username || !usernameAvailable) {
       toast({
         title: 'خطا',
-        description: 'نام کاربری انتخاب شده معتبر نیست',
+        description: 'لطفاً نام کاربری معتبری انتخاب کنید',
         variant: 'destructive'
       });
       return;
@@ -303,19 +303,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         throw new Error(result.error.message || 'خطا در ثبت نام');
       }
 
-      // Update username if provided
-      if (formData.username && result.user) {
+      // Update username since it's now required
+      if (result.user) {
         await privateMessageService.updateUsername(result.user.id, formData.username);
         result.user.username = formData.username;
-      }
-
-      // Update boundless status if needed
-      if (formData.isBoundlessStudent && result.user) {
-        // Update bedoun_marz status via Supabase
-        await supabase
-          .from('chat_users')
-          .update({ bedoun_marz: true })
-          .eq('id', result.user.id);
       }
 
       setCurrentStep('complete');
@@ -563,7 +554,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   type="text"
                   value={formData.username}
                   onChange={(e) => handleUsernameChange(e.target.value)}
-                  placeholder="نام کاربری (اختیاری)"
+                  placeholder="نام کاربری"
+                  required
                   className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 pl-8 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
                   dir="ltr"
                 />
@@ -580,18 +572,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               )}
             </div>
 
-            <div className="flex items-center space-x-2 space-x-reverse pt-4">
-              <Checkbox
-                id="boundless"
-                checked={formData.isBoundlessStudent}
-                onCheckedChange={(checked) => 
-                  setFormData(prev => ({ ...prev, isBoundlessStudent: checked as boolean }))
-                }
-              />
-              <Label htmlFor="boundless" className="text-sm text-muted-foreground">
-                من دانشجوی دوره بدون مرز هستم
-              </Label>
-            </div>
 
             <div className="flex gap-3">
               <Button 
@@ -606,7 +586,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               <Button 
                 type="submit" 
                 className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                disabled={loading || (formData.username && !usernameAvailable)}
+                disabled={loading || !usernameAvailable}
               >
                 {loading ? 'در حال ثبت نام...' : 'تکمیل ثبت نام'}
               </Button>
