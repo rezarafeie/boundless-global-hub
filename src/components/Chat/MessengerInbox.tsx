@@ -158,10 +158,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} 
                  title={isOffline ? 'آفلاین' : 'متصل'}></div>
-            <MessageCircle className={`w-4 h-4 sm:w-5 sm:h-5 ${isOffline ? 'text-red-500' : 'text-blue-500'}`} />
-            <span className="text-xs sm:text-sm text-muted-foreground">
-              {isOffline ? 'آفلاین' : 'آنلاین'}
-            </span>
+            <MessageCircle className={`w-5 h-5 sm:w-6 sm:h-6 ${isOffline ? 'text-red-500' : 'text-blue-500'}`} />
           </div>
           <div className="flex gap-2">
             <Button
@@ -170,7 +167,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               onClick={() => navigate('/profile')}
               className="h-8 w-8 p-0"
             >
-              <User className="w-4 h-4" />
+              <User className="w-5 h-5" />
             </Button>
             
             <Button
@@ -178,7 +175,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               onClick={handleStartChat}
               className="h-8 w-8 p-0"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -199,7 +196,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         {/* Chat Tabs */}
         <div className="mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="grid w-full grid-cols-4 bg-transparent border-b border-border rounded-none h-auto p-0">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent rounded-none h-auto p-0" style={{ border: 'none' }}>
               <TabsTrigger 
                 value="all" 
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
