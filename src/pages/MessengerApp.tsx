@@ -33,28 +33,79 @@ const MessengerApp = () => {
         return;
       }
 
+      // Extend timeout to 10 seconds to give more time for validation
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout')), 2000)
+        setTimeout(() => reject(new Error('Connection timeout')), 10000)
       );
 
       try {
-        const sessionData = await Promise.race([
+        const user = await Promise.race([
           messengerService.validateSession(token),
           timeoutPromise
-        ]) as { valid: boolean; user: MessengerUser } | null;
+        ]) as MessengerUser | null;
 
-        if (!sessionData?.valid) {
+        if (!user) {
           localStorage.removeItem('messenger_session_token');
           setShowAuth(true);
           setLoading(false);
           return;
         }
 
-        setCurrentUser(sessionData.user);
+        setCurrentUser(user);
         setSessionToken(token);
         setForceOffline(false);
       } catch (connectionError) {
-        console.log('Connection failed, switching to offline mode');
+        console.log('Connection failed, checking if we have a valid token for offline mode');
+        
+        // If we have a token but can't connect, try to use cached user data
+        // This prevents logout during temporary network issues
+        if (token) {
+          console.log('Using offline mode with existing token');
+          const mockUser: MessengerUser = {
+            id: 0,
+            name: 'کاربر آفلاین',
+            phone: '',
+            username: 'offline_user',
+            is_approved: false,
+            is_support_agent: false,
+            is_messenger_admin: false,
+            bedoun_marz: false,
+            bedoun_marz_approved: false,
+            bedoun_marz_request: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            last_seen: new Date().toISOString(),
+            role: 'user',
+            email: null,
+            user_id: null,
+            first_name: null,
+            last_name: null,
+            full_name: null,
+            country_code: null,
+            signup_source: null,
+            bio: null,
+            notification_enabled: true,
+            notification_token: null,
+            password_hash: null,
+            avatar_url: null
+          };
+          setCurrentUser(mockUser);
+          setSessionToken(token);
+          setForceOffline(true);
+        } else {
+          // No token, show auth
+          setShowAuth(true);
+        }
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      // Only clear session if there's no token or if it's clearly invalid
+      const token = localStorage.getItem('messenger_session_token');
+      if (!token) {
+        setShowAuth(true);
+      } else {
+        // Keep the session but force offline mode
+        console.log('Keeping session in offline mode due to error');
         const mockUser: MessengerUser = {
           id: 0,
           name: 'کاربر آفلاین',
@@ -87,10 +138,6 @@ const MessengerApp = () => {
         setSessionToken(token);
         setForceOffline(true);
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('messenger_session_token');
-      setShowAuth(true);
     } finally {
       setLoading(false);
     }
