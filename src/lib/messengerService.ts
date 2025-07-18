@@ -216,6 +216,28 @@ export const messengerService = {
     }
   },
 
+  async loginWithPassword(phone: string, password: string): Promise<AuthResult> {
+    try {
+      const { data: userData, error: selectError } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .eq('password_hash', password)
+        .single();
+
+      if (selectError || !userData) {
+        console.error('Login failed:', selectError);
+        return { user: null, error: { message: 'رمز عبور اشتباه است' } };
+      }
+
+      const sessionToken = await this.createSession(userData.id);
+      return { user: userData, error: null, session_token: sessionToken };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { user: null, error: error };
+    }
+  },
+
   async registerWithPassword(phone: string, password: string, name: string): Promise<AuthResult> {
     try {
       const { data: newUserData, error: insertError } = await supabase

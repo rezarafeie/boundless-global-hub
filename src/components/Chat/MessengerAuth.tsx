@@ -17,7 +17,7 @@ interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
 }
 
-type AuthStep = 'phone' | 'otp' | 'password' | 'complete';
+type AuthStep = 'phone' | 'check-user' | 'login' | 'otp' | 'password' | 'user-info' | 'complete';
 
 const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const { toast } = useToast();
@@ -26,7 +26,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const [otpSending, setOtpSending] = useState(false);
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
     countryCode: '+98',
     username: '',
@@ -36,6 +37,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   
   const [otpCode, setOtpCode] = useState('');
   const [formattedPhoneNumber, setFormattedPhoneNumber] = useState('');
+  const [existingUser, setExistingUser] = useState<MessengerUser | null>(null);
   
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
@@ -106,66 +108,102 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim() || !formData.phone.trim()) {
+    if (!formData.phone.trim()) {
       toast({
         title: 'خطا',
-        description: 'لطفاً نام و شماره تلفن را وارد کنید',
+        description: 'لطفاً شماره تلفن را وارد کنید',
         variant: 'destructive'
       });
       return;
     }
 
-    setOtpSending(true);
+    setLoading(true);
     
     try {
       // Check if user already exists
       const formattedPhone = formatPhoneForAPI(formData.phone, formData.countryCode);
       console.log('Checking if user exists for phone:', formattedPhone);
-      const existingUser = await messengerService.getUserByPhone(formattedPhone);
+      const userExists = await messengerService.getUserByPhone(formattedPhone);
       
-      if (existingUser) {
-        toast({
-          title: 'خطا',
-          description: 'این شماره قبلاً ثبت شده است',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Send OTP
-      console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: {
-          phone: formData.phone,
-          countryCode: formData.countryCode
-        }
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      console.log('OTP Response:', data);
-      if (data.success) {
-        setFormattedPhoneNumber(data.formattedPhone);
-        setCurrentStep('otp');
-        toast({
-          title: 'کد تأیید ارسال شد',
-          description: 'کد ۴ رقمی به شماره شما ارسال شد',
-        });
+      setFormattedPhoneNumber(formattedPhone);
+      
+      if (userExists) {
+        setExistingUser(userExists);
+        setCurrentStep('login');
       } else {
-        throw new Error(data.error || 'خطا در ارسال کد تأیید');
+        setCurrentStep('otp');
+        // Send OTP for new user
+        console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
+        const { data, error } = await supabase.functions.invoke('send-otp', {
+          body: {
+            phone: formData.phone,
+            countryCode: formData.countryCode
+          }
+        });
+
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
+        }
+
+        console.log('OTP Response:', data);
+        if (data.success) {
+          setFormattedPhoneNumber(data.formattedPhone);
+          toast({
+            title: 'کد تأیید ارسال شد',
+            description: 'کد ۴ رقمی به شماره شما ارسال شد',
+          });
+        } else {
+          throw new Error(data.error || 'خطا در ارسال کد تأیید');
+        }
       }
     } catch (error: any) {
-      console.error('Error sending OTP:', error);
+      console.error('Error in phone submit:', error);
       toast({
-        title: 'خطا در ارسال کد تأیید',
+        title: 'خطا',
         description: error.message || 'لطفاً دوباره تلاش کنید',
         variant: 'destructive'
       });
     } finally {
-      setOtpSending(false);
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.password.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً رمز عبور را وارد کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const result = await messengerService.loginWithPassword(
+        formattedPhoneNumber,
+        formData.password
+      );
+
+      if (result.error) {
+        throw new Error(result.error.message || 'رمز عبور اشتباه است');
+      }
+
+      onAuthenticated(result.session_token || 'default_session', result.user?.name || '', result.user!);
+      
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        title: 'خطا در ورود',
+        description: error.message || 'رمز عبور اشتباه است',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -225,6 +263,21 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       return;
     }
 
+    setCurrentStep('user-info');
+  };
+
+  const handleUserInfoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً نام و نام خانوادگی را وارد کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (formData.username && !usernameAvailable) {
       toast({
         title: 'خطا',
@@ -237,11 +290,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+      
       // Register user with the formatted phone number
       const result = await messengerService.registerWithPassword(
         formattedPhoneNumber,
         formData.password,
-        formData.name.trim()
+        fullName
       );
 
       if (result.error) {
@@ -282,12 +337,18 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   };
 
   const handleBack = () => {
-    if (currentStep === 'otp') {
+    if (currentStep === 'login') {
+      setCurrentStep('phone');
+      setExistingUser(null);
+      setFormData(prev => ({ ...prev, password: '' }));
+    } else if (currentStep === 'otp') {
       setCurrentStep('phone');
       setOtpCode('');
     } else if (currentStep === 'password') {
       setCurrentStep('otp');
       setOtpCode('');
+    } else if (currentStep === 'user-info') {
+      setCurrentStep('password');
     }
   };
 
@@ -296,19 +357,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       case 'phone':
         return (
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="نام و نام خانوادگی"
-                required
-                dir="rtl"
-                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-              />
-            </div>
-
             <div className="space-y-2">
               <div className="flex border-0 border-b border-border" dir="ltr">
                 <Select value={formData.countryCode} onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}>
@@ -343,10 +391,56 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
             <Button 
               type="submit" 
               className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
-              disabled={otpSending}
+              disabled={loading}
             >
-              {otpSending ? 'در حال ارسال کد...' : 'ارسال کد تأیید'}
+              {loading ? 'در حال بررسی...' : 'ادامه'}
             </Button>
+          </form>
+        );
+
+      case 'login':
+        return (
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="text-center space-y-2 mb-6">
+              <p className="text-sm text-muted-foreground">
+                شماره شما قبلاً ثبت شده است:
+              </p>
+              <p className="font-mono text-primary" dir="ltr">{formattedPhoneNumber}</p>
+              <p className="text-sm text-muted-foreground">
+                کاربر: {existingUser?.name}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="رمز عبور"
+                required
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleBack}
+                className="flex-1 h-12 rounded-full"
+                disabled={loading}
+              >
+                بازگشت
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                disabled={loading}
+              >
+                {loading ? 'در حال ورود...' : 'ورود'}
+              </Button>
+            </div>
           </form>
         );
 
@@ -410,6 +504,54 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 placeholder="رمز عبور (حداقل ۶ کاراکتر)"
                 required
                 minLength={6}
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleBack}
+                className="flex-1 h-12 rounded-full"
+                disabled={loading}
+              >
+                بازگشت
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                disabled={loading}
+              >
+                {loading ? 'در حال پردازش...' : 'ادامه'}
+              </Button>
+            </div>
+          </form>
+        );
+
+      case 'user-info':
+        return (
+          <form onSubmit={handleUserInfoSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <Input
+                id="firstName"
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                placeholder="نام"
+                required
+                dir="rtl"
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+              
+              <Input
+                id="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                placeholder="نام خانوادگی"
+                required
+                dir="rtl"
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>
@@ -491,8 +633,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const getStepTitle = () => {
     switch (currentStep) {
       case 'phone': return 'شماره تلفن خود را وارد کنید';
+      case 'login': return 'رمز عبور خود را وارد کنید';
       case 'otp': return 'کد تأیید را وارد کنید';
       case 'password': return 'رمز عبور خود را تعیین کنید';
+      case 'user-info': return 'اطلاعات خود را تکمیل کنید';
       case 'complete': return 'ثبت نام تکمیل شد';
       default: return '';
     }
