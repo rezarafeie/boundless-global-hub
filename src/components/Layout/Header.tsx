@@ -47,7 +47,7 @@ const Header = () => {
                   : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png";
               }}
             />
-            <span className="text-xl font-bold tracking-tight text-foreground">
+            <span className="text-xl font-bold tracking-tight text-foreground whitespace-nowrap flex-shrink-0">
               {translations.websiteName}
             </span>
           </Link>
@@ -134,7 +134,7 @@ const Header = () => {
             >
               <div className="flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center gap-3 pb-6 border-b border-border dark:border-border">
+                <div className="flex items-center gap-3 pb-6 border-b border-border dark:border-border min-w-0">
                   <img 
                     src={logoSrc}
                     alt="Rafiei Academy" 
@@ -146,7 +146,7 @@ const Header = () => {
                         : "/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png";
                     }}
                   />
-                  <span className="text-lg font-bold text-foreground whitespace-nowrap">
+                  <span className="text-lg font-bold text-foreground whitespace-nowrap flex-shrink-0 min-w-0">
                     {translations.websiteName}
                   </span>
                   <OnlineStatusIndicator />
