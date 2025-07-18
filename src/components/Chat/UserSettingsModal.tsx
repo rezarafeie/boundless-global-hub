@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Save, Bell, BellOff, Upload } from 'lucide-react';
+import { User, Save, Bell, BellOff, Upload, LogOut } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +16,7 @@ interface UserSettingsModalProps {
   currentUser: MessengerUser;
   sessionToken: string;
   onUserUpdate: (user: MessengerUser) => void;
+  onLogout?: () => void;
 }
 
 const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
@@ -23,7 +24,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   onClose,
   currentUser,
   sessionToken,
-  onUserUpdate
+  onUserUpdate,
+  onLogout
 }) => {
   const [formData, setFormData] = useState({
     name: currentUser.name || '',
@@ -90,6 +92,27 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear session data
+    localStorage.removeItem('messenger_session_token');
+    localStorage.removeItem('messenger_user');
+    localStorage.removeItem('cached_rooms');
+    localStorage.removeItem('cached_conversations');
+    
+    toast({
+      title: "خروج موفق",
+      description: "با موفقیت از حساب خود خارج شدید",
+    });
+    
+    // Call the logout callback if provided
+    if (onLogout) {
+      onLogout();
+    } else {
+      // Fallback: reload the page to reset the app state
+      window.location.reload();
     }
   };
 
@@ -193,6 +216,18 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                 }
               />
             </div>
+          </div>
+
+          {/* Logout Section */}
+          <div className="pt-4 border-t border-border">
+            <Button
+              onClick={handleLogout}
+              variant="destructive"
+              className="w-full flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              خروج از حساب
+            </Button>
           </div>
 
           {/* Action Buttons */}

@@ -24,6 +24,7 @@ interface MessengerInboxProps {
   currentUser: MessengerUser;
   onUserUpdate: (user: MessengerUser) => void;
   isOffline?: boolean;
+  onLogout?: () => void;
 }
 
 const MessengerInbox: React.FC<MessengerInboxProps> = ({
@@ -34,7 +35,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   selectedUser,
   currentUser,
   onUserUpdate,
-  isOffline = false
+  isOffline = false,
+  onLogout
 }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -426,6 +428,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         currentUser={currentUser}
         sessionToken={sessionToken}
         onUserUpdate={onUserUpdate}
+        onLogout={onLogout}
       />
     </div>
   );

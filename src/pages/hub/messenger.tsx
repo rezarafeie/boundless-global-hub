@@ -11,9 +11,10 @@ interface MessengerPageProps {
   currentUser: MessengerUser;
   onUserUpdate: (user: MessengerUser) => void;
   isOffline?: boolean;
+  onLogout?: () => void;
 }
 
-const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate, isOffline = false }) => {
+const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate, isOffline = false, onLogout }) => {
   const sessionToken = localStorage.getItem('messenger_session_token');
 
   // Initialize notification service for this page
@@ -48,6 +49,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
           currentUser={currentUser}
           onUserUpdate={onUserUpdate}
           isOffline={isOffline}
+          onLogout={onLogout}
         />
     </div>
   );
