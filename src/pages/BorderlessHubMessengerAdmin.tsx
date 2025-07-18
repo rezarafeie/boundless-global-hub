@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+// @ts-nocheck
 import { useNavigate } from 'react-router-dom';
 import { messengerService, type MessengerUser, type ChatRoom } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';

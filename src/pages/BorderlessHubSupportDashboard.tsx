@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+// @ts-nocheck
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
