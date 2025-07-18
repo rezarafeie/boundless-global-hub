@@ -191,8 +191,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       id: Date.now(), // temporary ID
       message: messageText || (media ? '📎 File' : ''),
       sender_id: currentUser.id,
-      sender: { name: currentUser.name, phone: '' },
       created_at: new Date().toISOString(),
+      room_id: selectedRoom?.id || 0,
       media_url: media?.url || null,
       media_content: media ? JSON.stringify({ 
         name: media.name, 
@@ -201,14 +201,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         type: media.type
       }) : null,
       message_type: media ? 'media' : 'text',
-      is_read: false,
-      reply_to_message_id: replyToId || null,
-      room_id: selectedRoom?.id || null,
-      recipient_id: selectedUser?.id || null,
+      topic_id: selectedTopic?.id,
       conversation_id: null,
-      topic_id: selectedTopic?.id || null,
-      unread_by_support: false,
-      forwarded_from_message_id: null
+      sender: { name: currentUser.name, phone: currentUser.phone }
     };
 
     try {
