@@ -26,7 +26,7 @@ const Header = () => {
 
   // Use different logos for light/dark modes with proper fallbacks
   const logoSrc = isDarkMode 
-    ? "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png" // white logo for dark mode
+    ? "/lovable-uploads/e743fe4f-8642-41ec-a4bf-7d749942d8b6.png" // new dark theme logo
     : "/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png"; // black logo for light mode
 
   return (

@@ -7,8 +7,8 @@ import { BookOpen, Mail, MessageCircle, Phone, Home, User, MapPin } from "lucide
 const Footer = () => {
   const { translations } = useLanguage();
 
-  // Always use white logo in footer since footer has dark background
-  const footerLogoSrc = "/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png";
+  // Always use dark theme logo in footer since footer has dark background
+  const footerLogoSrc = "/lovable-uploads/e743fe4f-8642-41ec-a4bf-7d749942d8b6.png";
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-white">
