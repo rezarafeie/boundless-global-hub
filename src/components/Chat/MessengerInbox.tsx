@@ -322,8 +322,11 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                           {conversation.other_user?.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0 text-right">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium truncate text-right">
+                            {conversation.other_user?.name || "کاربر نامشخص"}
+                          </p>
                           <div className="flex items-center gap-2">
                             {conversation.unread_count && conversation.unread_count > 0 && (
                               <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
@@ -339,9 +342,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                               </span>
                             )}
                           </div>
-                          <p className="text-sm font-medium truncate">
-                            {conversation.other_user?.name || "کاربر نامشخص"}
-                          </p>
                         </div>
                         <p className="text-xs text-muted-foreground text-right truncate">
                           {conversation.last_message?.message || "آخرین پیام..."}
