@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -82,7 +83,8 @@ interface UnifiedChatItem {
 }
 
 const BorderlessHubMessenger: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
+  const { data: session, update } = useSession();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -121,8 +123,10 @@ const BorderlessHubMessenger: React.FC = () => {
   }, [debouncedValue]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (session?.user?.email) {
+      loadData();
+    }
+  }, [session?.user?.email]);
 
   useEffect(() => {
     if (debouncedSearchTerm) {
@@ -146,15 +150,14 @@ const BorderlessHubMessenger: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // For now, we'll use a placeholder email - this should be replaced with actual auth context
-      const existingUser = await messengerService.getOrCreateChatUser('user@example.com');
+      const existingUser = await messengerService.getOrCreateChatUser(session?.user?.email as string);
       setUser(existingUser);
       setNotificationToken(existingUser.notification_token);
 
       const chatRooms = await messengerService.getRooms();
       setRooms(chatRooms);
 
-      const privateChats = await privateMessageService.getUserConversations(existingUser.id, '');
+      const privateChats = await privateMessageService.getUserConversations(existingUser.id, session.accessToken as string);
       setConversations(privateChats);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -258,7 +261,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
     try {
       setCreatingRoom(true);
-      await messengerService.createRoom(newRoomName);
+      await messengerService.createRoom(newRoomName, newRoomDescription);
       toast({
         title: 'موفق',
         description: 'اتاق با موفقیت ایجاد شد',
@@ -369,7 +372,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const handleLogout = async () => {
     setIsLogoutAlertOpen(false);
-    navigate('/');
+    await router.push('/api/auth/signout');
   };
 
   const getAvatarColor = (name: string) => {
@@ -426,7 +429,7 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Header */}
         <div className="p-4 border-b dark:border-slate-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Messenger
+            {process.env.NEXT_PUBLIC_APP_NAME}
           </h2>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -623,9 +626,8 @@ const BorderlessHubMessenger: React.FC = () => {
           selectedRoom ? (
             <MessengerChatView
               selectedRoom={selectedRoom}
-              selectedUser={null}
               currentUser={user as MessengerUser}
-              sessionToken={''}
+              sessionToken={session?.accessToken as string}
               onBackToRooms={handleBackToRooms}
             />
           ) : selectedUser ? (
@@ -635,12 +637,13 @@ const BorderlessHubMessenger: React.FC = () => {
                 user1_id: user?.id as number,
                 user2_id: selectedUser.id,
                 created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
                 last_message_at: new Date().toISOString(),
                 other_user: selectedUser,
                 unread_count: 0
               }}
               currentUser={user as MessengerUser}
-              sessionToken={''}
+              sessionToken={session?.accessToken as string}
               onBack={handleBackToRooms}
             />
           ) : null
