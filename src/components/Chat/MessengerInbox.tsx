@@ -63,7 +63,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       setLoading(true);
       console.log('Loading messenger data...');
       const [roomsData, conversationsData] = await Promise.all([
-        messengerService.getRooms(sessionToken),
+        messengerService.getRooms(),
         privateMessageService.getUserConversations(currentUser.id, sessionToken)
       ]);
 

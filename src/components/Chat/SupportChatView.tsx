@@ -67,8 +67,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         console.log('Creating/getting conversation between:', currentUser.id, 'and', supportUserId);
         activeConversationId = await privateMessageService.getOrCreateConversation(
           currentUser.id,
-          supportUserId,
-          sessionToken
+          supportUserId
         );
         console.log('Got conversation ID:', activeConversationId);
       }
@@ -77,7 +76,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       
       // Load messages from the conversation
       console.log('Loading messages for conversation:', activeConversationId);
-      const conversationMessages = await privateMessageService.getConversationMessages(activeConversationId, sessionToken);
+      const conversationMessages = await privateMessageService.getConversationMessages(activeConversationId);
       console.log('Loaded messages:', conversationMessages.length);
       setMessages(conversationMessages);
     } catch (error) {
@@ -113,8 +112,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       await privateMessageService.sendMessage(
         conversationId,
         currentUser.id,
-        newMessage.trim(),
-        sessionToken
+        newMessage.trim()
       );
 
       setNewMessage('');
