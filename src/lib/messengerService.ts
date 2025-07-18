@@ -128,19 +128,39 @@ export const messengerService = {
     try {
       console.log('getUserByPhone: Searching for phone:', phone);
       
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('phone', phone)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid error when no user found
+      // Create multiple phone number formats to search for
+      const phoneFormats = [
+        phone, // Original format (e.g., +989120784457)
+        phone.replace(/^\+98/, ''), // Without country code (e.g., 9120784457)
+        phone.replace(/^\+98/, '0'), // With leading zero (e.g., 09120784457)
+        phone.replace(/^\+989/, '09'), // Direct conversion from +989 to 09
+      ];
+      
+      // Remove duplicates
+      const uniqueFormats = [...new Set(phoneFormats)];
+      console.log('getUserByPhone: Trying formats:', uniqueFormats);
+      
+      // Try each format until we find a user
+      for (const format of uniqueFormats) {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('phone', format)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Database error in getUserByPhone:', error);
-        throw error;
+        if (error) {
+          console.error('Database error in getUserByPhone:', error);
+          continue; // Try next format
+        }
+        
+        if (data) {
+          console.log('getUserByPhone: Found user with format:', format);
+          return data;
+        }
       }
       
-      console.log('getUserByPhone: Found user:', data ? 'Yes' : 'No');
-      return data;
+      console.log('getUserByPhone: No user found with any format');
+      return null;
     } catch (error) {
       console.error('Error fetching user by phone:', error);
       return null;
