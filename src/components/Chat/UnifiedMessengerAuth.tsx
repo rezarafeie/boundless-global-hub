@@ -104,7 +104,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Check if user exists with separate country code and phone
-      const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
+      const user = await messengerService.getUserByPhone(phoneNumber);
       if (user) {
         setExistingUser(user);
         setIsLogin(true);
@@ -139,13 +139,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       // Login flow
       setLoading(true);
       try {
-        const result = await messengerService.authenticateUser(phoneNumber, password, countryCode);
+        const result = await messengerService.authenticateUser(phoneNumber, password);
         if (result && existingUser) {
           if (!existingUser.is_approved) {
             setCurrentStep('pending');
             return;
           }
-          onAuthenticated(result.session_token, existingUser.name, existingUser);
+          onAuthenticated(result.session_token || 'mock-token', existingUser.name, existingUser);
         } else {
           toast({
             title: 'خطا',
@@ -208,16 +208,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Register user with separate country code
-      const result = await messengerService.registerWithPassword({
-        name: `${firstName.trim()} ${lastName.trim()}`,
-        phone: phoneNumber,
-        countryCode: countryCode,
-        username: username,
-        password: password,
-        isBoundlessStudent: isBoundlessStudent,
-        firstName: firstName.trim(),
-        lastName: lastName.trim()
-      });
+      const result = await messengerService.registerWithPassword(
+        `${firstName.trim()} ${lastName.trim()}`,
+        phoneNumber,
+        password
+      );
 
       // Check if user needs approval
       if (!result.user.is_approved) {
@@ -226,7 +221,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }
 
       // User is auto-approved, proceed to login
-      onAuthenticated(result.session_token, result.user.name, result.user);
+      onAuthenticated(result.session_token || 'mock-token', result.user.name, result.user);
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
@@ -242,10 +237,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const checkApprovalStatus = async () => {
     setLoading(true);
     try {
-      const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
+      const user = await messengerService.getUserByPhone(phoneNumber);
       if (user && user.is_approved) {
         const session = await messengerService.createSession(user.id);
-        onAuthenticated(session.session_token, user.name, user);
+        onAuthenticated(session, user.name, user);
       } else {
         toast({
           title: 'هنوز تایید نشده',

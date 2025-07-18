@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -83,8 +82,7 @@ interface UnifiedChatItem {
 }
 
 const BorderlessHubMessenger: React.FC = () => {
-  const router = useRouter();
-  const { data: session, update } = useSession();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -123,10 +121,8 @@ const BorderlessHubMessenger: React.FC = () => {
   }, [debouncedValue]);
 
   useEffect(() => {
-    if (session?.user?.email) {
-      loadData();
-    }
-  }, [session?.user?.email]);
+    loadData();
+  }, []);
 
   useEffect(() => {
     if (debouncedSearchTerm) {
@@ -150,14 +146,41 @@ const BorderlessHubMessenger: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const existingUser = await messengerService.getOrCreateChatUser(session?.user?.email as string);
-      setUser(existingUser);
-      setNotificationToken(existingUser.notification_token);
+      // Mock user for now
+      const mockUser: MessengerUser = {
+        id: 1,
+        name: 'Test User',
+        phone: '09123456789',
+        username: 'testuser',
+        is_approved: true,
+        is_support_agent: false,
+        is_messenger_admin: false,
+        bedoun_marz: false,
+        bedoun_marz_approved: false,
+        bedoun_marz_request: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+        role: 'user',
+        email: null,
+        user_id: null,
+        first_name: null,
+        last_name: null,
+        full_name: null,
+        country_code: null,
+        signup_source: null,
+        bio: null,
+        notification_enabled: true,
+        notification_token: null,
+        password_hash: null,
+        avatar_url: null
+      };
+      setUser(mockUser);
 
       const chatRooms = await messengerService.getRooms();
       setRooms(chatRooms);
 
-      const privateChats = await privateMessageService.getUserConversations(existingUser.id, session.accessToken as string);
+      const privateChats = await privateMessageService.getUserConversations(mockUser.id, 'mock-token');
       setConversations(privateChats);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -377,7 +400,7 @@ const BorderlessHubMessenger: React.FC = () => {
 
   const handleLogout = async () => {
     setIsLogoutAlertOpen(false);
-    await router.push('/api/auth/signout');
+    navigate('/');
   };
 
   const getAvatarColor = (name: string) => {
@@ -434,7 +457,7 @@ const BorderlessHubMessenger: React.FC = () => {
         {/* Header */}
         <div className="p-4 border-b dark:border-slate-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            {process.env.NEXT_PUBLIC_APP_NAME}
+            پیام‌رسان
           </h2>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -632,8 +655,9 @@ const BorderlessHubMessenger: React.FC = () => {
             <MessengerChatView
               selectedRoom={selectedRoom}
               currentUser={user as MessengerUser}
-              sessionToken={session?.accessToken as string}
+              sessionToken="mock-token"
               onBackToRooms={handleBackToRooms}
+              selectedUser={null}
             />
           ) : selectedUser ? (
             <PrivateChatView
@@ -642,13 +666,12 @@ const BorderlessHubMessenger: React.FC = () => {
                 user1_id: user?.id as number,
                 user2_id: selectedUser.id,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
                 last_message_at: new Date().toISOString(),
                 other_user: selectedUser,
                 unread_count: 0
               }}
               currentUser={user as MessengerUser}
-              sessionToken={session?.accessToken as string}
+              sessionToken="mock-token"
               onBack={handleBackToRooms}
             />
           ) : null

@@ -87,7 +87,7 @@ const UsernameSetupModal: React.FC<UsernameSetupModalProps> = ({
 
     setSaving(true);
     try {
-      await privateMessageService.updateUsername(userId, username, sessionToken);
+      await privateMessageService.updateUsername(userId, username);
       onUsernameSet(username);
       onClose();
     } catch (error) {

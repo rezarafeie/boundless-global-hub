@@ -111,11 +111,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
       }
 
       // Update user profile
-      const updatedUser = await messengerService.updateUserProfile(user.id, {
-        name: formData.name.trim(),
-        username: formData.username.trim() || null,
-        bio: formData.bio.trim() || null
-      }, sessionToken);
+      const updatedUser = await messengerService.updateUserProfile(user.id, JSON.stringify(formData), sessionToken!);
 
       toast({
         title: 'موفق',
