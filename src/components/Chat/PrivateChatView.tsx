@@ -79,9 +79,9 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const loadedMessages = await privateMessageService.getMessages(conversation.id);
+      const loadedMessages = await privateMessageService.getMessages(conversation.id, sessionToken);
       setMessages(loadedMessages);
-      await privateMessageService.markConversationAsRead(conversation.id, currentUser.id);
+      await privateMessageService.markConversationAsRead(conversation.id, sessionToken);
     } catch (error) {
       console.error('Error loading messages:', error);
       toast({
