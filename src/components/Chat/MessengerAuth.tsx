@@ -17,7 +17,7 @@ interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
 }
 
-type AuthStep = 'phone' | 'check-user' | 'login' | 'otp' | 'password' | 'user-info' | 'complete';
+type AuthStep = 'phone' | 'check-user' | 'login' | 'login-otp' | 'otp' | 'password' | 'user-info' | 'complete';
 
 const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
@@ -204,6 +204,87 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     }
   };
 
+  const handleLoginByOTP = async () => {
+    setOtpSending(true);
+    
+    try {
+      console.log('Sending OTP for login to:', formattedPhoneNumber);
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: {
+          phone: formData.phone,
+          countryCode: formData.countryCode
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      console.log('OTP Response for login:', data);
+      if (data.success) {
+        setCurrentStep('login-otp');
+        toast.success('کد تأیید ارسال شد', {
+          description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+        });
+      } else {
+        throw new Error(data.error || 'خطا در ارسال کد تأیید');
+      }
+    } catch (error: any) {
+      console.error('Error sending OTP for login:', error);
+      toast.error('خطا', {
+        description: error.message || 'خطا در ارسال کد تأیید'
+      });
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const verifyLoginOTP = async (code: string) => {
+    if (code.length !== 4) return;
+
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: {
+          phone: formattedPhoneNumber,
+          otpCode: code
+        }
+      });
+
+      console.log('Login OTP verification response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data && data.success) {
+        // OTP verified, log in the user
+        if (existingUser) {
+          const sessionToken = await messengerService.createSession(existingUser.id);
+          onAuthenticated(sessionToken, existingUser.name, existingUser);
+        }
+      } else {
+        console.log('Login OTP verification failed, showing error toast');
+        toast.error('کد اشتباه است', {
+          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
+        });
+        setOtpCode('');
+        return;
+      }
+    } catch (error: any) {
+      console.error('Error verifying login OTP:', error);
+      toast.error('خطا در تأیید کد', {
+        description: error.message || 'کد وارد شده اشتباه است'
+      });
+      setOtpCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const verifyOTP = async (code: string) => {
     if (code.length !== 4) return;
 
@@ -252,6 +333,8 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   useEffect(() => {
     if (otpCode.length === 4 && currentStep === 'otp') {
       verifyOTP(otpCode);
+    } else if (otpCode.length === 4 && currentStep === 'login-otp') {
+      verifyLoginOTP(otpCode);
     }
   }, [otpCode, currentStep]);
 
@@ -324,10 +407,11 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   };
 
   const handleBack = () => {
-    if (currentStep === 'login') {
+    if (currentStep === 'login' || currentStep === 'login-otp') {
       setCurrentStep('phone');
       setExistingUser(null);
       setFormData(prev => ({ ...prev, password: '' }));
+      setOtpCode('');
     } else if (currentStep === 'otp') {
       setCurrentStep('phone');
       setOtpCode('');
@@ -410,22 +494,34 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleBack}
+                  className="flex-1 h-12 rounded-full"
+                  disabled={loading}
+                >
+                  بازگشت
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                  disabled={loading}
+                >
+                  {loading ? 'در حال ورود...' : 'ورود'}
+                </Button>
+              </div>
+              
               <Button 
                 type="button" 
-                variant="outline" 
-                onClick={handleBack}
-                className="flex-1 h-12 rounded-full"
-                disabled={loading}
+                variant="ghost" 
+                onClick={handleLoginByOTP}
+                className="w-full h-10 text-sm text-muted-foreground hover:text-foreground"
+                disabled={otpSending}
               >
-                بازگشت
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                disabled={loading}
-              >
-                {loading ? 'در حال ورود...' : 'ورود'}
+                {otpSending ? 'در حال ارسال کد...' : 'ورود با کد یکبار مصرف'}
               </Button>
             </div>
           </form>
@@ -483,6 +579,70 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               <Button 
                 type="button" 
                 onClick={() => verifyOTP(otpCode)}
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                disabled={loading || otpCode.length !== 4}
+              >
+                {loading ? 'در حال تأیید...' : 'تأیید کد'}
+              </Button>
+            </div>
+          </div>
+         );
+
+      case 'login-otp':
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <p className="text-lg font-medium text-foreground">
+                خوش آمدید {existingUser?.name}!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                کد ۴ رقمی ارسال شده به شماره زیر را وارد کنید:
+              </p>
+              <p className="font-mono text-primary text-sm" dir="ltr">{formattedPhoneNumber}</p>
+            </div>
+
+            <div className="flex justify-center" dir="ltr">
+              <InputOTP
+                maxLength={4}
+                value={otpCode}
+                onChange={setOtpCode}
+                disabled={loading}
+                className="gap-4"
+              >
+                <InputOTPGroup className="gap-4">
+                  <InputOTPSlot 
+                    index={0} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                  <InputOTPSlot 
+                    index={1} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                  <InputOTPSlot 
+                    index={2} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                  <InputOTPSlot 
+                    index={3} 
+                    className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                  />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleBack}
+                className="flex-1 h-12 rounded-full"
+                disabled={loading}
+              >
+                بازگشت
+              </Button>
+              <Button 
+                type="button" 
+                onClick={() => verifyLoginOTP(otpCode)}
                 className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
                 disabled={loading || otpCode.length !== 4}
               >
@@ -623,6 +783,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     switch (currentStep) {
       case 'phone': return 'شماره تلفن خود را وارد کنید';
       case 'login': return 'رمز عبور خود را وارد کنید';
+      case 'login-otp': return 'کد تأیید را وارد کنید';
       case 'otp': return 'کد تأیید را وارد کنید';
       case 'password': return 'رمز عبور خود را تعیین کنید';
       case 'user-info': return 'اطلاعات خود را تکمیل کنید';

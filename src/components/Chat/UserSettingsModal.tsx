@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Save, Bell, BellOff, Upload, LogOut } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -33,8 +33,13 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     bio: currentUser.bio || '',
     notification_enabled: currentUser.notification_enabled ?? true
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -43,6 +48,11 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
         username: currentUser.username || '',
         bio: currentUser.bio || '',
         notification_enabled: currentUser.notification_enabled ?? true
+      });
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
       });
     }
   }, [isOpen, currentUser]);
@@ -55,10 +65,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      toast({
-        title: "خطا",
-        description: "نام الزامی است",
-        variant: "destructive"
+      toast.error('خطا', {
+        description: 'نام الزامی است'
       });
       return;
     }
@@ -77,18 +85,15 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
 
       onUserUpdate(updatedUser);
       
-      toast({
-        title: "موفقیت",
-        description: "تنظیمات شما ذخیره شد",
+      toast.success('موفقیت', {
+        description: 'تنظیمات شما ذخیره شد'
       });
       
       onClose();
     } catch (error) {
       console.error('Error updating user:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در ذخیره تنظیمات",
-        variant: "destructive"
+      toast.error('خطا', {
+        description: 'خطا در ذخیره تنظیمات'
       });
     } finally {
       setSaving(false);
@@ -102,9 +107,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     localStorage.removeItem('cached_rooms');
     localStorage.removeItem('cached_conversations');
     
-    toast({
-      title: "خروج موفق",
-      description: "با موفقیت از حساب خود خارج شدید",
+    toast.success('خروج موفق', {
+      description: 'با موفقیت از حساب خود خارج شدید'
     });
     
     // Call the logout callback if provided
@@ -113,6 +117,75 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     } else {
       // Fallback: reload the page to reset the app state
       window.location.reload();
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword.trim()) {
+      toast.error('خطا', {
+        description: 'لطفاً رمز عبور فعلی را وارد کنید'
+      });
+      return;
+    }
+
+    if (!passwordData.newPassword.trim() || passwordData.newPassword.length < 6) {
+      toast.error('خطا', {
+        description: 'رمز عبور جدید باید حداقل ۶ کاراکتر باشد'
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('خطا', {
+        description: 'رمز عبور جدید و تکرار آن باید یکسان باشند'
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      // First verify the current password
+      const loginResult = await messengerService.loginWithPassword(
+        currentUser.phone,
+        passwordData.currentPassword
+      );
+
+      if (loginResult.error) {
+        toast.error('خطا', {
+          description: 'رمز عبور فعلی اشتباه است'
+        });
+        return;
+      }
+
+      // Update the password
+      const result = await messengerService.updateUserPassword(
+        currentUser.id,
+        passwordData.newPassword
+      );
+
+      if (result.error) {
+        toast.error('خطا', {
+          description: 'خطا در تغییر رمز عبور'
+        });
+        return;
+      }
+
+      toast.success('موفقیت', {
+        description: 'رمز عبور با موفقیت تغییر کرد'
+      });
+
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('خطا', {
+        description: 'خطا در تغییر رمز عبور'
+      });
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -215,6 +288,58 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                   setFormData(prev => ({ ...prev, notification_enabled: checked }))
                 }
               />
+            </div>
+          </div>
+
+          {/* Change Password Section */}
+          <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <h4 className="text-sm font-medium">تغییر رمز عبور</h4>
+            
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="currentPassword">رمز عبور فعلی</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  placeholder="رمز عبور فعلی خود را وارد کنید"
+                  dir="ltr"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="newPassword">رمز عبور جدید</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                  placeholder="حداقل ۶ کاراکتر"
+                  dir="ltr"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="confirmPassword">تکرار رمز عبور جدید</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="رمز عبور جدید را دوباره وارد کنید"
+                  dir="ltr"
+                />
+              </div>
+              
+              <Button
+                onClick={handleChangePassword}
+                disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                variant="outline"
+                className="w-full"
+              >
+                {changingPassword ? 'در حال تغییر...' : 'تغییر رمز عبور'}
+              </Button>
             </div>
           </div>
 

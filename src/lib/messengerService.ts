@@ -812,6 +812,29 @@ export const messengerService = {
     }
   },
 
+  async updateUserPassword(userId: number, newPassword: string): Promise<{ error: any }> {
+    try {
+      // Hash the new password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+      
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ password_hash: hashedPassword })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating password:', error);
+        return { error };
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      return { error };
+    }
+  },
+
   async deactivateSession(sessionToken: string): Promise<void> {
     try {
       const { error } = await supabase
