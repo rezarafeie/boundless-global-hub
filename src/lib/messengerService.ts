@@ -126,7 +126,7 @@ export const messengerService = {
 
   async getUserByPhone(phone: string): Promise<MessengerUser | null> {
     try {
-      console.log('getUserByPhone: Searching for phone:', phone);
+      console.log('getUserByPhone: Starting search for phone:', phone);
       
       // Create multiple phone number formats to search for
       const phoneFormats = [
@@ -138,10 +138,11 @@ export const messengerService = {
       
       // Remove duplicates
       const uniqueFormats = [...new Set(phoneFormats)];
-      console.log('getUserByPhone: Trying formats:', uniqueFormats);
+      console.log('getUserByPhone: Trying these phone formats:', uniqueFormats);
       
       // Try each format until we find a user
       for (const format of uniqueFormats) {
+        console.log('getUserByPhone: Checking format:', format);
         const { data, error } = await supabase
           .from('chat_users')
           .select('*')
@@ -149,17 +150,19 @@ export const messengerService = {
           .maybeSingle();
 
         if (error) {
-          console.error('Database error in getUserByPhone:', error);
+          console.error('Database error for format', format, ':', error);
           continue; // Try next format
         }
         
         if (data) {
-          console.log('getUserByPhone: Found user with format:', format);
+          console.log('getUserByPhone: SUCCESS! Found user with format:', format, 'User:', data.name);
           return data;
+        } else {
+          console.log('getUserByPhone: No user found with format:', format);
         }
       }
       
-      console.log('getUserByPhone: No user found with any format');
+      console.log('getUserByPhone: FINAL RESULT - No user found with any format');
       return null;
     } catch (error) {
       console.error('Error fetching user by phone:', error);

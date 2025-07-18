@@ -123,6 +123,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       // Check if user already exists
       const formattedPhone = formatPhoneForAPI(formData.phone, formData.countryCode);
       console.log('Checking if user exists for phone:', formattedPhone);
+      console.log('Original phone input:', formData.phone, 'Country code:', formData.countryCode);
       const userExists = await messengerService.getUserByPhone(formattedPhone);
       
       setFormattedPhoneNumber(formattedPhone);
