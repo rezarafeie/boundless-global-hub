@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import MessengerPage from './hub/messenger';
+import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 
 const MessengerApp = () => {
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [forceOffline, setForceOffline] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const { isOnline } = useOfflineDetection();
 
   useEffect(() => {
@@ -18,8 +21,8 @@ const MessengerApp = () => {
     try {
       const token = localStorage.getItem('messenger_session_token');
       if (!token) {
-        // On messenger subdomain, redirect to main domain for auth
-        window.location.href = 'https://rafiei.co/hub/messenger';
+        setShowAuth(true);
+        setLoading(false);
         return;
       }
 
@@ -35,12 +38,13 @@ const MessengerApp = () => {
 
         if (!sessionData?.valid) {
           localStorage.removeItem('messenger_session_token');
-          // On messenger subdomain, redirect to main domain for auth
-          window.location.href = 'https://rafiei.co/hub/messenger';
+          setShowAuth(true);
+          setLoading(false);
           return;
         }
 
         setCurrentUser(sessionData.user);
+        setSessionToken(token);
         setForceOffline(false);
       } catch (connectionError) {
         console.log('Connection failed, switching to offline mode');
@@ -73,16 +77,23 @@ const MessengerApp = () => {
           avatar_url: null
         };
         setCurrentUser(mockUser);
+        setSessionToken(token);
         setForceOffline(true);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('messenger_session_token');
-      // On messenger subdomain, redirect to main domain for auth
-      window.location.href = 'https://rafiei.co/hub/messenger';
+      setShowAuth(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAuthenticated = (newSessionToken: string, userName: string, user: MessengerUser) => {
+    localStorage.setItem('messenger_session_token', newSessionToken);
+    setSessionToken(newSessionToken);
+    setCurrentUser(user);
+    setShowAuth(false);
   };
 
   const handleUserUpdate = (user: MessengerUser) => {
@@ -100,10 +111,10 @@ const MessengerApp = () => {
     );
   }
 
-  if (!currentUser) {
-    // On messenger subdomain, redirect to main domain for auth
-    window.location.href = 'https://rafiei.co/hub/messenger';
-    return null;
+  if (showAuth || !currentUser || !sessionToken) {
+    return (
+      <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />
+    );
   }
 
   const isOfflineMode = forceOffline || !isOnline;

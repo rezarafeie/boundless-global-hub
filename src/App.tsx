@@ -173,7 +173,7 @@ const App = () => {
                     {/* Hub pages */}
                     <Route path="/hub/*" element={<BorderlessHub />} />
                     <Route path="/hub/chat" element={<BorderlessHubChat />} />
-                    <Route path="/hub/messenger" element={<BorderlessHubMessenger />} />
+                    <Route path="/hub/messenger" element={<MessengerApp />} />
                     <Route path="/hub/messenger/pending" element={<MessengerPending />} />
                     <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
                     <Route path="/hub/support" element={<BorderlessHubSupportDashboard />} />
