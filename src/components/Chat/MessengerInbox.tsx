@@ -160,11 +160,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             <span className="text-xs sm:text-sm text-muted-foreground">
               {isOffline ? 'آفلاین' : 'آنلاین'}
             </span>
-            {isOffline && (
-              <span className="text-xs bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full">
-                حالت کش
-              </span>
-            )}
           </div>
           <div className="flex gap-2">
             <Button
@@ -190,7 +185,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             ref={searchInputRef}
-            placeholder={isOffline ? "جستجو در چت‌های کش شده..." : "جستجو در گفتگوها..."}
+            placeholder={isOffline ? "جستجو آفلاین..." : "جستجو در گفتگوها..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10 text-sm"
@@ -266,11 +261,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       <div className="flex-1 min-w-0 text-right">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate">{room.name}</p>
-                          {isOffline && (
-                            <span className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded">
-                              کش
-                            </span>
-                          )}
                         </div>
                         {room.description && (
                           <p className="text-xs text-muted-foreground truncate text-right">
@@ -313,11 +303,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                           <p className="text-sm font-medium truncate">
                             {conversation.other_user?.name || 'کاربر نامشخص'}
                           </p>
-                          {isOffline && (
-                            <span className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded">
-                              کش
-                            </span>
-                          )}
                         </div>
                         <p className="text-xs text-muted-foreground text-right truncate">
                           {conversation.last_message?.message || 'آخرین پیام...'}
@@ -398,7 +383,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                     )}
                     <p className="text-sm text-muted-foreground mb-2">
                       {isOffline 
-                        ? (searchTerm ? 'در چت‌های کش شده یافت نشد' : 'چت کش شده‌ای موجود نیست')
+                        ? (searchTerm ? 'در حالت آفلاین یافت نشد' : 'در حالت آفلاین')
                         : (searchTerm ? 'نتیجه‌ای یافت نشد' : 'گفتگویی موجود نیست')
                       }
                     </p>

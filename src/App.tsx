@@ -97,6 +97,7 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <Routes>
+                      <Route path="/hub/messenger" element={<MessengerApp />} />
                       <Route path="*" element={<MessengerApp />} />
                     </Routes>
                   </TooltipProvider>

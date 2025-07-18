@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import MessengerPage from './hub/messenger';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
@@ -13,6 +13,12 @@ const MessengerApp = () => {
   const [forceOffline, setForceOffline] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { isOnline } = useOfflineDetection();
+  const location = useLocation();
+
+  // Redirect to /hub/messenger if on messenger subdomain and not already there
+  if (typeof window !== 'undefined' && window.location.hostname === 'messenger.rafiei.co' && location.pathname !== '/hub/messenger') {
+    return <Navigate to="/hub/messenger" replace />;
+  }
 
   useEffect(() => {
     checkAuth();
