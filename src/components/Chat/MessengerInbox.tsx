@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User, Upload, Camera } from 'lucide-react';
+import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User, Upload, Camera, WifiOff } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { useNotificationService } from '@/hooks/useNotificationService';
@@ -151,15 +151,20 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       )}
 
       {/* Header */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} 
                  title={isOffline ? 'آفلاین' : 'متصل'}></div>
-            <MessageCircle className={`w-5 h-5 ${isOffline ? 'text-red-500' : 'text-blue-500'}`} />
-            <span className="text-sm text-muted-foreground">
+            <MessageCircle className={`w-4 h-4 sm:w-5 sm:h-5 ${isOffline ? 'text-red-500' : 'text-blue-500'}`} />
+            <span className="text-xs sm:text-sm text-muted-foreground">
               {isOffline ? 'آفلاین' : 'آنلاین'}
             </span>
+            {isOffline && (
+              <span className="text-xs bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full">
+                حالت کش
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <Button
@@ -185,11 +190,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
           <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             ref={searchInputRef}
-            placeholder="جستجو در گفتگوها..."
+            placeholder={isOffline ? "جستجو در چت‌های کش شده..." : "جستجو در گفتگوها..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
+            className="pr-10 text-sm"
             dir="rtl"
+            disabled={isOffline && (!conversations.length && !rooms.length)}
           />
         </div>
         
@@ -258,7 +264,14 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-right">
-                        <p className="text-sm font-medium truncate">{room.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">{room.name}</p>
+                          {isOffline && (
+                            <span className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded">
+                              کش
+                            </span>
+                          )}
+                        </div>
                         {room.description && (
                           <p className="text-xs text-muted-foreground truncate text-right">
                             {room.description}
@@ -296,11 +309,18 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-right">
-                        <p className="text-sm font-medium truncate">
-                          {conversation.other_user?.name || 'کاربر نامشخص'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">
+                            {conversation.other_user?.name || 'کاربر نامشخص'}
+                          </p>
+                          {isOffline && (
+                            <span className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded">
+                              کش
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground text-right truncate">
-                          آخرین پیام...
+                          {conversation.last_message?.message || 'آخرین پیام...'}
                         </p>
                       </div>
                     </div>
@@ -369,20 +389,34 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                 (activeTab === 'groups' && filteredRooms.length === 0) ||
                 (activeTab === 'personal' && filteredConversations.length === 0)
               ) && (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-8 px-4">
                   <div className="text-center">
-                    <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      {searchTerm ? 'نتیجه‌ای یافت نشد' : 'گفتگویی موجود نیست'}
+                    {isOffline ? (
+                      <WifiOff className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                    ) : (
+                      <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                    )}
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {isOffline 
+                        ? (searchTerm ? 'در چت‌های کش شده یافت نشد' : 'چت کش شده‌ای موجود نیست')
+                        : (searchTerm ? 'نتیجه‌ای یافت نشد' : 'گفتگویی موجود نیست')
+                      }
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleStartChat}
-                      className="mt-3"
-                    >
-                      شروع گفتگوی جدید
-                    </Button>
+                    {isOffline && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+                        چت‌ها پس از اتصال مجدد به‌روزرسانی می‌شوند
+                      </p>
+                    )}
+                    {!isOffline && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleStartChat}
+                        className="mt-3"
+                      >
+                        شروع گفتگوی جدید
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
