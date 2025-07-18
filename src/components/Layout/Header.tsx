@@ -40,7 +40,7 @@ const Header = () => {
             <img 
               src={logoSrc}
               alt="Rafiei Academy" 
-              className="h-8 w-auto transition-all duration-300"
+              className={`w-auto transition-all duration-300 ${isDarkMode ? 'h-7' : 'h-8'}`}
               onError={(e) => {
                 // Fallback if image fails to load
                 const target = e.target as HTMLImageElement;
