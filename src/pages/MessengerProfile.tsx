@@ -11,12 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from '@/components/ui/sonner';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { supabase } from '@/integrations/supabase/client';
 
 const MessengerProfile: React.FC = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isPasswordSectionOpen, setIsPasswordSectionOpen] = useState(false);
   
   // Form states
@@ -166,8 +168,74 @@ const MessengerProfile: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file || !currentUser) return;
 
-    // TODO: Implement avatar upload functionality
-    toast.info('قابلیت آپلود آواتار به زودی اضافه خواهد شد');
+    // Validate file type and size
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('فقط فایل‌های تصویری (JPG, PNG, WebP) مجاز هستند');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast.error('حجم فایل نباید بیشتر از ۵ مگابایت باشد');
+      return;
+    }
+
+    const loadingToast = toast.loading('در حال آپلود تصویر...');
+    setUploadingAvatar(true);
+
+    try {
+      const sessionToken = localStorage.getItem('messenger_session_token');
+      if (!sessionToken) return;
+
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('خطا در آپلود فایل');
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update user profile with new avatar URL
+      const updatedUser = await messengerService.updateUserProfile(sessionToken, {
+        avatar_url: publicUrl
+      }, currentUser.id);
+
+      setCurrentUser(updatedUser);
+      toast.dismiss(loadingToast);
+      toast.success('تصویر پروفایل با موفقیت به‌روزرسانی شد');
+
+      // Delete old avatar if exists
+      if (currentUser.avatar_url && currentUser.avatar_url.includes('supabase.co/storage')) {
+        const oldPath = currentUser.avatar_url.split('/avatars/')[1];
+        if (oldPath && oldPath !== fileName) {
+          await supabase.storage.from('avatars').remove([oldPath]);
+        }
+      }
+
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      toast.dismiss(loadingToast);
+      toast.error('خطا در آپلود تصویر پروفایل');
+    } finally {
+      setUploadingAvatar(false);
+    }
+
+    // Clear the input value so the same file can be selected again
+    event.target.value = '';
   };
 
   if (loading) {
@@ -193,7 +261,7 @@ const MessengerProfile: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/hub/messenger')}
             className="shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -228,13 +296,14 @@ const MessengerProfile: React.FC = () => {
                     {currentUser.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors">
+                <label className={`absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors ${uploadingAvatar ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <Camera className="h-4 w-4" />
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarUpload}
                     className="hidden"
+                    disabled={uploadingAvatar}
                   />
                 </label>
               </div>
