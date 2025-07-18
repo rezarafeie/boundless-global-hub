@@ -1,252 +1,130 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { User, Save, Check, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MessageCircle, Calendar, User, Crown, Shield } from 'lucide-react';
+import type { MessengerUser } from '@/lib/messengerService';
 
 interface UserProfileProps {
-  user: MessengerUser;
-  onUserUpdate: (user: MessengerUser) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  user: MessengerUser | null;
+  onStartChat?: (user: MessengerUser) => void;
+  currentUserId: number;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ user, onUserUpdate }) => {
-  const { toast } = useToast();
-  const [editing, setEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [checkingUsername, setCheckingUsername] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
-  
-  const [formData, setFormData] = useState({
-    name: user.name || '',
-    username: user.username || '',
-    bio: user.bio || ''
-  });
+const UserProfile: React.FC<UserProfileProps> = ({
+  isOpen,
+  onClose,
+  user,
+  onStartChat,
+  currentUserId
+}) => {
+  if (!user) return null;
 
-  useEffect(() => {
-    setFormData({
-      name: user.name || '',
-      username: user.username || '',
-      bio: user.bio || ''
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fa-IR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
-  }, [user]);
-
-  const checkUsernameAvailability = async (username: string) => {
-    if (!username || username === user.username) {
-      setUsernameAvailable(null);
-      return;
-    }
-
-    setCheckingUsername(true);
-    try {
-      const available = await messengerService.checkUsernameAvailability(username, user.id);
-      setUsernameAvailable(available);
-    } catch (error) {
-      console.error('Error checking username:', error);
-    } finally {
-      setCheckingUsername(false);
-    }
   };
 
-  const handleUsernameChange = (value: string) => {
-    setFormData({ ...formData, username: value });
-    
-    // Debounce username check
-    if (value !== user.username) {
-      const timeoutId = setTimeout(() => {
-        checkUsernameAvailability(value);
-      }, 500);
-      
-      return () => clearTimeout(timeoutId);
+  const handleStartChat = () => {
+    if (onStartChat) {
+      onStartChat(user);
     }
+    onClose();
   };
 
-  const handleSave = async () => {
-    if (formData.username && usernameAvailable === false) {
-      toast({
-        title: 'خطا',
-        description: 'این نام کاربری قبلاً استفاده شده است',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (formData.bio && formData.bio.length > 160) {
-      toast({
-        title: 'خطا',
-        description: 'بیوگرافی نمی‌تواند بیش از ۱۶۰ کاراکتر باشد',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await messengerService.updateUserDetails(user.id, {
-        name: formData.name,
-        username: formData.username || undefined,
-        bio: formData.bio
-      });
-
-      const updatedUser = {
-        ...user,
-        name: formData.name,
-        username: formData.username || undefined,
-        bio: formData.bio
-      };
-
-      onUserUpdate(updatedUser);
-      setEditing(false);
-      
-      toast({
-        title: 'موفق',
-        description: 'اطلاعات شما با موفقیت به‌روزرسانی شد',
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی اطلاعات',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      name: user.name || '',
-      username: user.username || '',
-      bio: user.bio || ''
-    });
-    setEditing(false);
-    setUsernameAvailable(null);
-  };
+  const isCurrentUser = user.id === currentUserId;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="w-5 h-5" />
-          اطلاعات کاربری
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!editing ? (
-          <>
-            <div>
-              <Label className="text-sm font-medium text-slate-600">نام کامل</Label>
-              <p className="text-lg">{user.name}</p>
-            </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-center">پروفایل کاربر</DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex flex-col items-center space-y-6 py-4">
+          {/* Avatar */}
+          <Avatar className="w-24 h-24">
+            <AvatarImage src={user.avatar_url} alt={user.name} />
+            <AvatarFallback 
+              style={{ backgroundColor: getAvatarColor(user.name) }}
+              className="text-white font-bold text-3xl"
+            >
+              {user.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          
+          {/* User Info */}
+          <div className="text-center space-y-2 w-full">
+            <h3 className="font-bold text-xl text-slate-900 dark:text-white">{user.name}</h3>
             
-            <div>
-              <Label className="text-sm font-medium text-slate-600">شماره تلفن</Label>
-              <p className="text-lg">{user.phone}</p>
-            </div>
+            {user.username && (
+              <p className="text-lg text-blue-600 dark:text-blue-400">@{user.username}</p>
+            )}
             
-            <div>
-              <Label className="text-sm font-medium text-slate-600">نام کاربری</Label>
-              <p className="text-lg">
-                {user.username ? `@${user.username}` : 'تنظیم نشده'}
-              </p>
-            </div>
-            
-            <div>
-              <Label className="text-sm font-medium text-slate-600">بیوگرافی</Label>
-              <p className="text-sm text-slate-700">
-                {user.bio || 'بیوگرافی ندارید'}
-              </p>
-            </div>
-            
-            <Button onClick={() => setEditing(true)} className="w-full">
-              ویرایش اطلاعات
-            </Button>
-          </>
-        ) : (
-          <>
-            <div>
-              <Label htmlFor="name">نام کامل</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="نام کامل خود را وارد کنید"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="username">نام کاربری</Label>
-              <div className="relative">
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => handleUsernameChange(e.target.value)}
-                  placeholder="username"
-                  className={`pl-8 ${
-                    formData.username && usernameAvailable === false ? 'border-red-500' : 
-                    formData.username && usernameAvailable === true ? 'border-green-500' : ''
-                  }`}
-                />
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">@</span>
-                {checkingUsername && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-                {!checkingUsername && formData.username && usernameAvailable === true && (
-                  <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
-                )}
-                {!checkingUsername && formData.username && usernameAvailable === false && (
-                  <X className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-red-500" />
-                )}
+            {user.bio && (
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 mt-4">
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {user.bio}
+                </p>
               </div>
-              {formData.username && usernameAvailable === false && (
-                <p className="text-sm text-red-500 mt-1">این نام کاربری قبلاً استفاده شده است</p>
-              )}
+            )}
+          </div>
+
+          {/* User Stats/Info */}
+          <div className="w-full space-y-3">
+            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400 text-sm">
+              <Calendar className="w-4 h-4" />
+              <span>عضویت: {formatDate(user.created_at)}</span>
             </div>
             
-            <div>
-              <Label htmlFor="bio">بیوگرافی</Label>
-              <Textarea
-                id="bio"
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                placeholder="کمی درباره خود بنویسید..."
-                rows={3}
-                maxLength={160}
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                {formData.bio.length}/160 کاراکتر
-              </p>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleSave} 
-                disabled={loading || (formData.username && usernameAvailable === false)}
-                className="flex-1"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'در حال ذخیره...' : 'ذخیره'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleCancel}
-                disabled={loading}
-                className="flex-1"
-              >
-                لغو
-              </Button>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+            {user.bedoun_marz_approved && (
+              <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400 text-sm">
+                <Crown className="w-4 h-4" />
+                <span>دانشجوی بدون مرز</span>
+              </div>
+            )}
+
+            {user.is_messenger_admin && (
+              <div className="flex items-center gap-3 text-purple-600 dark:text-purple-400 text-sm">
+                <Shield className="w-4 h-4" />
+                <span>مدیر پیام‌رسان</span>
+              </div>
+            )}
+
+            {user.is_support_agent && (
+              <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400 text-sm">
+                <User className="w-4 h-4" />
+                <span>نماینده پشتیبانی</span>
+              </div>
+            )}
+          </div>
+
+          {/* Action Button */}
+          {!isCurrentUser && onStartChat && (
+            <Button 
+              onClick={handleStartChat}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              size="lg"
+            >
+              <MessageCircle className="w-5 h-5 ml-2" />
+              شروع گفتگو
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

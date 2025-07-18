@@ -1,11 +1,11 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Pin, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ChatMessage } from '@/types/supabase';
 import { useReply } from '@/contexts/ReplyContext';
+import UserProfile from './UserProfile';
 
 interface ModernChatMessageProps {
   message: ChatMessage;
@@ -21,6 +21,8 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
   currentUserId
 }) => {
   const { setReplyingTo } = useReply();
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [profileUser, setProfileUser] = useState<any>(null);
 
   const handleReply = () => {
     setReplyingTo({
@@ -29,6 +31,7 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
       sender_name: message.sender_name || 'User'
     });
   };
+  
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
@@ -62,7 +65,23 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
       <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* User Avatar - only show for other users' messages */}
         {!isOwnMessage && (
-          <Avatar className="w-8 h-8 flex-shrink-0">
+          <Avatar 
+            className="w-8 h-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => {
+              setProfileUser({
+                id: message.user_id || 0,
+                name: message.sender_name || 'User',
+                username: null,
+                avatar_url: senderAvatarUrl,
+                bio: null,
+                created_at: new Date().toISOString(),
+                is_messenger_admin: false,
+                is_support_agent: false,
+                bedoun_marz_approved: false
+              });
+              setShowUserProfile(true);
+            }}
+          >
             <AvatarImage src={senderAvatarUrl} alt={message.sender_name || 'User'} />
             <AvatarFallback 
               className="text-white font-bold text-xs"
@@ -86,7 +105,23 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             {/* Header - show sender name and role only for other users */}
             {!isOwnMessage && (
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
+                <span className="font-medium text-xs text-slate-700 dark:text-slate-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProfileUser({
+                      id: message.user_id || 0,
+                      name: message.sender_name || 'User',
+                      username: null,
+                      avatar_url: senderAvatarUrl,
+                      bio: null,
+                      created_at: new Date().toISOString(),
+                      is_messenger_admin: false,
+                      is_support_agent: false,
+                      bedoun_marz_approved: false
+                    });
+                    setShowUserProfile(true);
+                  }}
+                >
                   {message.sender_name}
                 </span>
                 {message.sender_role && message.sender_role !== 'member' && (
@@ -141,6 +176,14 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      <UserProfile
+        isOpen={showUserProfile}
+        onClose={() => setShowUserProfile(false)}
+        user={profileUser}
+        currentUserId={currentUserId || 0}
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import PinnedMessage from './PinnedMessage';
 import ModernChatInput from './ModernChatInput';
 import ModernChatMessage from './ModernChatMessage';
 import MediaMessage from './MediaMessage';
+import UserProfile from './UserProfile';
 import type { ChatTopic } from '@/types/supabase';
 import {
   DropdownMenu,
@@ -49,6 +50,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
   const [selectedTopic, setSelectedTopic] = useState<ChatTopic | null>(null);
   const [pinnedMessage, setPinnedMessage] = useState<any>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [profileUser, setProfileUser] = useState<MessengerUser | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -433,7 +436,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         
         {/* Only show avatar if not a super group with selected topic */}
         {!(selectedRoom?.is_super_group && selectedTopic) && (
-          <Avatar className="w-8 h-8">
+          <Avatar 
+            className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => {
+              if (selectedUser) {
+                setProfileUser(selectedUser);
+                setShowUserProfile(true);
+              }
+            }}
+          >
             <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
             <AvatarFallback 
               style={{ backgroundColor: getAvatarColor(chatTitle) }}
@@ -445,11 +456,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         )}
           
         <div 
-          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : ''}`}
-          onClick={isMobile && onBack ? onBack : undefined}
+          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : selectedUser ? 'cursor-pointer' : ''}`}
+          onClick={isMobile && onBack ? onBack : selectedUser ? () => {
+            setProfileUser(selectedUser);
+            setShowUserProfile(true);
+          } : undefined}
         >
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+            <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
               {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
                selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
@@ -597,6 +611,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           onSendMessage={sendMessage}
           disabled={sending}
           currentUserId={currentUser.id}
+        />
+
+        {/* User Profile Modal */}
+        <UserProfile
+          isOpen={showUserProfile}
+          onClose={() => setShowUserProfile(false)}
+          user={profileUser}
+          currentUserId={currentUser.id}
+          onStartChat={() => {
+            // Already in chat
+          }}
         />
     </div>
   );

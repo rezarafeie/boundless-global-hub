@@ -24,7 +24,6 @@ export const useRealtimeChatUpdates = ({
     if (isOffline || !currentUser) return;
     
     try {
-      console.log('Refreshing conversations due to realtime update...');
       const conversationsData = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
       onConversationsUpdate(conversationsData);
       
@@ -39,7 +38,6 @@ export const useRealtimeChatUpdates = ({
     if (isOffline || !currentUser) return;
     
     try {
-      console.log('Refreshing rooms due to realtime update...');
       const roomsData = await messengerService.getRooms();
       const activeRooms = roomsData.filter(room => room.is_active);
       onRoomsUpdate(activeRooms);
@@ -68,12 +66,10 @@ export const useRealtimeChatUpdates = ({
           // Note: We'll filter client-side since OR filters are complex in realtime
         },
         (payload) => {
-          console.log('Private conversation change detected:', payload);
           // Filter to only refresh if this conversation involves the current user
           const newConv = payload.new || payload.old;
           if (newConv && typeof newConv === 'object' && 
               ((newConv as any).user1_id === currentUser.id || (newConv as any).user2_id === currentUser.id)) {
-            console.log('Conversation involves current user, refreshing...');
             refreshConversations();
           }
         }
@@ -91,15 +87,12 @@ export const useRealtimeChatUpdates = ({
           table: 'private_messages'
         },
         async (payload) => {
-          console.log('New private message detected:', payload);
-          
           // Check if this message involves the current user
           const newMessage = payload.new as any;
           if (newMessage && newMessage.conversation_id) {
             const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
             if (conversation && 
                 (conversation.user1_id === currentUser.id || conversation.user2_id === currentUser.id)) {
-              console.log('Message involves current user, refreshing conversations...');
               refreshConversations();
             }
           }
@@ -118,7 +111,6 @@ export const useRealtimeChatUpdates = ({
           table: 'messenger_messages'
         },
         (payload) => {
-          console.log('New messenger message detected:', payload);
           // This could indicate new activity in group chats
           // We might want to refresh rooms to update last message info
           refreshRooms();
@@ -137,14 +129,12 @@ export const useRealtimeChatUpdates = ({
           table: 'chat_rooms'
         },
         (payload) => {
-          console.log('Chat room change detected:', payload);
           refreshRooms();
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up realtime subscriptions...');
       supabase.removeChannel(conversationsChannel);
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(messengerMessagesChannel);
