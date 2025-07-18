@@ -150,8 +150,16 @@ export const privateMessageService = {
     }
   },
 
-  async sendMessage(conversationId: number, senderId: number, message: string): Promise<PrivateMessage | null> {
+  async sendMessage(senderId: number, recipientId: number, message: string): Promise<PrivateMessage | null> {
     try {
+      // Get or create conversation first
+      const conversationId = await this.getOrCreateConversation(senderId, recipientId);
+      
+      if (!conversationId) {
+        console.error('Failed to get or create conversation');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('private_messages')
         .insert([{
