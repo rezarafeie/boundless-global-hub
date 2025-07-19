@@ -36,7 +36,7 @@ if ('serviceWorker' in navigator) {
     // Always use the main service worker (consolidated)
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('SW registered successfully:', registration);
+        console.log('✅ SW registered successfully:', registration.scope);
         
         // Mobile-specific service worker handling
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
