@@ -52,6 +52,20 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           const { isSubscribed } = await pushNotificationService.getSubscriptionStatus(currentUser.id);
           pushSubscribed = isSubscribed;
           console.log('🔔 Push subscription status:', pushSubscribed);
+          
+          // Test if subscription is still valid
+          const isValid = await pushNotificationService.testSubscription(currentUser.id);
+          console.log('🔔 Subscription validity:', isValid);
+          
+          if (!isValid && granted) {
+            console.log('🔔 Invalid subscription detected, attempting to resubscribe...');
+            try {
+              await pushNotificationService.subscribe(currentUser.id);
+              pushSubscribed = true;
+            } catch (error) {
+              console.error('🔔 Failed to resubscribe:', error);
+            }
+          }
         } catch (error) {
           console.warn('Error checking push subscription:', error);
         }
@@ -65,8 +79,8 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         pushSubscribed
       });
 
-      // Show banner if permission not granted and not recently dismissed
-      updateBannerVisibility(permission);
+      // Update banner visibility based on new permission
+      updateBannerVisibility(permission, granted && pushSubscribed);
 
       // Load user's notification preference from localStorage and Supabase
       loadNotificationPreference();
@@ -96,10 +110,10 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     };
   }, [currentUser?.id, sessionToken, permissionState.granted]);
 
-  const updateBannerVisibility = (permission: NotificationPermission) => {
+  const updateBannerVisibility = (permission: NotificationPermission, hasValidSubscription: boolean = false) => {
     if (!currentUser) return;
 
-    console.log('🔔 updateBannerVisibility - Permission:', permission, 'Current user:', currentUser.name);
+    console.log('🔔 updateBannerVisibility - Permission:', permission, 'Valid subscription:', hasValidSubscription, 'Current user:', currentUser.name);
 
     // Check if user has dismissed the banner temporarily (within 24 hours)
     const dismissalTime = localStorage.getItem(`notification_banner_dismissed_${currentUser.id}`);
@@ -112,23 +126,25 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       return;
     }
 
-    // Check if user has permanently hidden the banner after granting permission
+    // Check if user has permanently hidden the banner
     const permanentlyHidden = localStorage.getItem(`notification_banner_hidden_${currentUser.id}`);
-    if (permanentlyHidden === 'true' && permission === 'granted') {
-      console.log('🔔 Banner permanently hidden after permission granted');
+    if (permanentlyHidden === 'true' && permission === 'granted' && hasValidSubscription) {
+      console.log('🔔 Banner permanently hidden - permission granted and subscription valid');
       setShowPermissionBanner(false);
       return;
     }
 
-    // Show banner if permission is not granted and not recently dismissed
-    if (permission === 'granted') {
-      console.log('🔔 Hiding banner - permission granted');
+    // Show banner if permission is not granted or subscription is invalid
+    if (permission === 'granted' && hasValidSubscription) {
+      console.log('🔔 Hiding banner - permission granted and subscription valid');
       setShowPermissionBanner(false);
-      // Mark banner as permanently hidden when permission is granted
+      // Mark banner as permanently hidden only when everything is working
       localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
     } else {
-      console.log('🔔 Showing banner - permission not granted');
+      console.log('🔔 Showing banner - permission not granted or subscription invalid');
       setShowPermissionBanner(true);
+      // Remove permanent hiding if notifications are not working
+      localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
     }
   };
 
@@ -183,27 +199,27 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           // Set session context for RLS first
           await supabase.rpc('set_session_context', { session_token: sessionToken });
           
-          // Save notification token to database immediately
-          const notificationToken = `browser_notification_${currentUser.id}_${Date.now()}`;
-          const { error } = await supabase
-            .from('chat_users')
-            .update({ 
-              notification_token: notificationToken,
-              notification_enabled: true 
-            })
-            .eq('id', currentUser.id);
-          
-          if (error) {
-            console.error('🔔 Failed to save notification token:', error);
-          } else {
-            console.log('🔔 Notification token saved to database:', notificationToken);
-          }
-          
           // Try to set up push subscription if supported
           if (pushNotificationService.isSupported()) {
             const subscription = await pushNotificationService.subscribe(currentUser.id);
             pushSubscribed = !!subscription;
             console.log('🔔 Push subscription result:', pushSubscribed);
+          } else {
+            // Fallback: save a simple notification token for browser notifications
+            const notificationToken = `browser_notification_${currentUser.id}_${Date.now()}`;
+            const { error } = await supabase
+              .from('chat_users')
+              .update({ 
+                notification_token: notificationToken,
+                notification_enabled: true 
+              })
+              .eq('id', currentUser.id);
+            
+            if (error) {
+              console.error('🔔 Failed to save notification token:', error);
+            } else {
+              console.log('🔔 Fallback notification token saved:', notificationToken);
+            }
           }
           
           // Update user presence when online
@@ -226,13 +242,12 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       });
 
       // Update banner visibility based on new permission
-      updateBannerVisibility(permission);
+      updateBannerVisibility(permission, pushSubscribed);
 
       if (granted) {
         await updateNotificationPreference(true);
-        setShowPermissionBanner(false);
-        // Hide banner permanently until notifications are deactivated
-        if (currentUser) {
+        // Only hide banner permanently if push subscription worked
+        if (pushSubscribed && currentUser) {
           localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
         }
       }
@@ -277,6 +292,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           }));
           // Remove permanent banner hiding when notifications are disabled
           localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
+          setShowPermissionBanner(true);
         } catch (error) {
           console.error('Error unsubscribing from push notifications:', error);
         }
@@ -286,10 +302,14 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       if (enabled && permissionState.granted && !permissionState.pushSubscribed && pushNotificationService.isSupported()) {
         try {
           const subscription = await pushNotificationService.subscribe(currentUser.id);
+          const newPushSubscribed = !!subscription;
           setPermissionState(prev => ({
             ...prev,
-            pushSubscribed: !!subscription
+            pushSubscribed: newPushSubscribed
           }));
+          
+          // Update banner visibility
+          updateBannerVisibility(permissionState.permission, newPushSubscribed);
         } catch (error) {
           console.error('Error subscribing to push notifications:', error);
         }
@@ -432,7 +452,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       console.log('🔔 Showing notification:', title, body);
       const notification = new Notification(title, {
         body: body.length > 100 ? body.substring(0, 100) + '...' : body,
-        icon: '/messenger-icon-192.png',
+        icon: '/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png',
         tag: `chat-${Date.now()}`,
         requireInteraction: false,
         silent: false

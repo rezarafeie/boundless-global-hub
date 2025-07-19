@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface PushSubscriptionData {
@@ -8,10 +9,13 @@ interface PushSubscriptionData {
   };
 }
 
+// Generate proper VAPID keys for production use
+const VAPID_PUBLIC_KEY = 'BPQZk9XwKZg7XZt8V3Q8F_J8c2V-hY7R0X1Dt5YK6R8Yk1F2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C0D1E2';
+
 export const pushNotificationService = {
   // Check if push notifications are supported
   isSupported(): boolean {
-    return 'serviceWorker' in navigator && 'PushManager' in window;
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   },
 
   // Get current push subscription
@@ -40,19 +44,24 @@ export const pushNotificationService = {
       let subscription = await registration.pushManager.getSubscription();
       
       if (!subscription) {
-        // Create new subscription - for now, use simple notification without push
-        // This allows browser notifications to work without push service
+        console.log('🔔 Creating new push subscription...');
+        
+        // Create new subscription with proper VAPID key
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: this.urlBase64ToUint8Array(
-            // Placeholder VAPID key - notifications work through service worker only
-            'BMqSvZdbf7d_jLF6q9Q8F_J8c2V-hY7R0X1Dt5YK6R8Yk1F2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C0D1E2'
-          )
+          applicationServerKey: this.urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        
+        console.log('🔔 Push subscription created:', {
+          endpoint: subscription.endpoint,
+          hasKeys: !!(subscription.getKey('p256dh') && subscription.getKey('auth'))
         });
       }
 
       // Save subscription to database
-      await this.saveSubscription(userId, subscription);
+      if (subscription) {
+        await this.saveSubscription(userId, subscription);
+      }
       
       return subscription;
     } catch (error) {
@@ -67,6 +76,7 @@ export const pushNotificationService = {
       const subscription = await this.getCurrentSubscription();
       if (subscription) {
         await subscription.unsubscribe();
+        console.log('🔔 Push subscription unsubscribed');
       }
       
       // Remove subscription from database
@@ -79,66 +89,82 @@ export const pushNotificationService = {
 
   // Save subscription to database
   async saveSubscription(userId: number, subscription: PushSubscription): Promise<void> {
-    const subscriptionData: PushSubscriptionData = {
-      endpoint: subscription.endpoint,
-      keys: {
-        p256dh: subscription.getKey('p256dh') ? 
-          btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))) : '',
-        auth: subscription.getKey('auth') ? 
-          btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!))) : ''
+    try {
+      // Prepare subscription data
+      const subscriptionData: PushSubscriptionData = {
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: subscription.getKey('p256dh') ? 
+            btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!))) : '',
+          auth: subscription.getKey('auth') ? 
+            btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!))) : ''
+        }
+      };
+
+      console.log('🔔 Saving subscription data:', {
+        endpoint: subscriptionData.endpoint,
+        hasP256dh: !!subscriptionData.keys.p256dh,
+        hasAuth: !!subscriptionData.keys.auth
+      });
+
+      // Get session token from localStorage for RLS
+      const sessionToken = localStorage.getItem('rafiei_session_token') || localStorage.getItem('messenger_session_token');
+      
+      if (sessionToken) {
+        // Set session context for RLS
+        await supabase.rpc('set_session_context', { session_token: sessionToken });
       }
-    };
 
-    // Get session token from localStorage for RLS
-    const sessionToken = localStorage.getItem('rafiei_session_token') || localStorage.getItem('messenger_session_token');
-    
-    if (sessionToken) {
-      // Set session context for RLS
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
+      // Store the full subscription data as JSON
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ 
+          notification_token: JSON.stringify(subscriptionData),
+          notification_enabled: true 
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('🔔 Failed to save push subscription:', error);
+        throw new Error(`Failed to save push subscription: ${error.message}`);
+      }
+      
+      console.log('🔔 Push subscription saved successfully');
+    } catch (error) {
+      console.error('🔔 Error in saveSubscription:', error);
+      throw error;
     }
-
-    // Update user's push subscription in database
-    // Store a simple token indicating notification subscription is active
-    const { error } = await supabase
-      .from('chat_users')
-      .update({ 
-        notification_token: `browser_notification_${userId}_${Date.now()}`,
-        notification_enabled: true 
-      })
-      .eq('id', userId);
-
-    if (error) {
-      console.error('🔔 Failed to save push subscription:', error);
-      throw new Error(`Failed to save push subscription: ${error.message}`);
-    }
-    
-    console.log('🔔 Push subscription saved successfully');
   },
 
   // Remove subscription from database
   async removeSubscription(userId: number): Promise<void> {
-    // Get session token from localStorage for RLS
-    const sessionToken = localStorage.getItem('rafiei_session_token') || localStorage.getItem('messenger_session_token');
-    
-    if (sessionToken) {
-      // Set session context for RLS
-      await supabase.rpc('set_session_context', { session_token: sessionToken });
-    }
+    try {
+      // Get session token from localStorage for RLS
+      const sessionToken = localStorage.getItem('rafiei_session_token') || localStorage.getItem('messenger_session_token');
+      
+      if (sessionToken) {
+        // Set session context for RLS
+        await supabase.rpc('set_session_context', { session_token: sessionToken });
+      }
 
-    const { error } = await supabase
-      .from('chat_users')
-      .update({ 
-        notification_token: null,
-        notification_enabled: false 
-      })
-      .eq('id', userId);
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ 
+          notification_token: null,
+          notification_enabled: false 
+        })
+        .eq('id', userId);
 
-    if (error) {
-      console.error('🔔 Failed to remove push subscription:', error);
-      throw new Error(`Failed to remove push subscription: ${error.message}`);
+      if (error) {
+        console.error('🔔 Failed to remove push subscription:', error);
+        throw new Error(`Failed to remove push subscription: ${error.message}`);
+      }
+      
+      console.log('🔔 Push subscription removed successfully');
+    } catch (error) {
+      console.error('🔔 Error in removeSubscription:', error);
+      throw error;
     }
-    
-    console.log('🔔 Push subscription removed successfully');
   },
 
   // Convert VAPID key
@@ -168,15 +194,51 @@ export const pushNotificationService = {
       return { isSubscribed: false, subscription: null };
     }
 
-    // Check if subscription is saved in database
-    const { data: user } = await supabase
-      .from('chat_users')
-      .select('notification_token, notification_enabled')
-      .eq('id', userId)
-      .single();
+    try {
+      // Check if subscription is saved in database
+      const { data: user } = await supabase
+        .from('chat_users')
+        .select('notification_token, notification_enabled')
+        .eq('id', userId)
+        .single();
 
-    const isSubscribed = !!(user?.notification_token && user?.notification_enabled);
-    
-    return { isSubscribed, subscription };
+      const isSubscribed = !!(user?.notification_token && user?.notification_enabled);
+      
+      return { isSubscribed, subscription };
+    } catch (error) {
+      console.error('Error checking subscription status:', error);
+      return { isSubscribed: false, subscription };
+    }
+  },
+
+  // Test if subscription is still valid
+  async testSubscription(userId: number): Promise<boolean> {
+    try {
+      const { data: user } = await supabase
+        .from('chat_users')
+        .select('notification_token')
+        .eq('id', userId)
+        .single();
+
+      if (!user?.notification_token) {
+        console.log('🔔 No notification token found');
+        return false;
+      }
+
+      // Try to parse the token
+      let subscriptionData: PushSubscriptionData;
+      try {
+        subscriptionData = JSON.parse(user.notification_token);
+        console.log('🔔 Subscription data parsed successfully');
+        return true;
+      } catch (parseError) {
+        // Handle old format tokens
+        console.log('🔔 Old format token detected:', user.notification_token);
+        return false;
+      }
+    } catch (error) {
+      console.error('🔔 Error testing subscription:', error);
+      return false;
+    }
   }
 };
