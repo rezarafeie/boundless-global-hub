@@ -31,7 +31,7 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
     subscription?: boolean;
     tokenSaved?: boolean;
     testSent?: boolean;
-    serviceWorkerReady?: boolean;
+    oneSignalReady?: boolean;
     mobileDetected?: boolean;
     deviceType?: string;
     error?: string;
@@ -52,7 +52,7 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
     setTestResults({});
     
     try {
-      console.log('🔧 Running mobile-aware notification diagnostics...');
+      console.log('🔧 Running OneSignal notification diagnostics...');
       
       // Test 1: Device detection
       const deviceType = detectDevice();
@@ -68,20 +68,23 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
         return;
       }
       
-      // Test 3: Service Worker readiness
-      let serviceWorkerReady = false;
+      // Test 3: OneSignal initialization
+      let oneSignalReady = false;
       try {
-        if ('serviceWorker' in navigator) {
-          const registration = await navigator.serviceWorker.ready;
-          serviceWorkerReady = !!registration;
-          console.log('🔧 Service worker ready:', registration);
-        }
-      } catch (swError) {
-        console.error('🔧 Service worker error:', swError);
+        await pushNotificationService.initOneSignal();
+        oneSignalReady = !!window.OneSignal;
+        console.log('🔧 OneSignal initialized:', oneSignalReady);
+      } catch (osError) {
+        console.error('🔧 OneSignal initialization error:', osError);
       }
-      setTestResults(prev => ({ ...prev, serviceWorkerReady }));
+      setTestResults(prev => ({ ...prev, oneSignalReady }));
       
-      // Test 4: Permission status with mobile-specific handling
+      if (!oneSignalReady) {
+        setTestResults(prev => ({ ...prev, error: 'OneSignal failed to initialize' }));
+        return;
+      }
+      
+      // Test 4: Permission status
       const permission = Notification.permission;
       setTestResults(prev => ({ ...prev, permission }));
       
@@ -96,7 +99,7 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
         return;
       }
       
-      // Test 5: Check subscription with mobile considerations
+      // Test 5: Check OneSignal subscription
       const status = await pushNotificationService.getSubscriptionStatus(currentUser.id);
       const subscriptionId = await pushNotificationService.getSubscription();
       setTestResults(prev => ({ 
@@ -125,14 +128,14 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
         }
       }
       
-      // Test 6: Send test notification via edge function
-      console.log('🔧 Sending test notification...');
-      const { error: functionError } = await supabase.functions.invoke('send-push-notification', {
+      // Test 6: Send test notification via OneSignal edge function
+      console.log('🔧 Sending test OneSignal notification...');
+      const { error: functionError } = await supabase.functions.invoke('send-onesignal-notification', {
         body: {
           recipientUserIds: [currentUser.id],
           message: {
             id: 9999,
-            text: `Test notification from ${deviceType}`,
+            text: `OneSignal test notification from ${deviceType}`,
             senderName: 'System Test',
             roomName: 'Test Room',
             senderId: 0,
@@ -142,14 +145,14 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
       });
       
       if (functionError) {
-        setTestResults(prev => ({ ...prev, error: `Edge function error: ${functionError.message}` }));
+        setTestResults(prev => ({ ...prev, error: `OneSignal function error: ${functionError.message}` }));
       } else {
         setTestResults(prev => ({ ...prev, testSent: true }));
         
         // Show additional mobile guidance
         if (mobileDetected && !isIOSSafari()) {
           setTimeout(() => {
-            console.log('🔧 Mobile notification should appear shortly...');
+            console.log('🔧 OneSignal notification should appear shortly...');
           }, 2000);
         }
       }
@@ -168,19 +171,12 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
 
   const requestPermission = async () => {
     try {
-      // Mobile-specific permission request handling
-      if (isIOSSafari()) {
-        // iOS Safari requires user gesture and specific timing
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
       const permission = await Notification.requestPermission();
       setTestResults(prev => ({ ...prev, permission }));
       
       if (permission === 'granted' && isMobile()) {
-        // Add small delay for mobile browsers to process
         setTimeout(() => {
-          console.log('🔧 Permission granted on mobile, ready for subscription');
+          console.log('🔧 Permission granted on mobile, ready for OneSignal subscription');
         }, 500);
       }
     } catch (error) {
@@ -204,7 +200,7 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TestTube className="h-5 w-5" />
-          Notification Diagnostics
+          OneSignal Diagnostics
           {mobileDetected ? <Smartphone className="h-4 w-4 text-blue-500" /> : <Monitor className="h-4 w-4" />}
         </CardTitle>
         <div className="text-sm text-muted-foreground">
@@ -230,10 +226,10 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
           </div>
           
           <div className="flex items-center justify-between">
-            <span>Service Worker:</span>
-            {testResults.serviceWorkerReady !== undefined && (
-              <Badge variant={testResults.serviceWorkerReady ? "default" : "destructive"}>
-                {testResults.serviceWorkerReady ? "Ready" : "Not Ready"}
+            <span>OneSignal Ready:</span>
+            {testResults.oneSignalReady !== undefined && (
+              <Badge variant={testResults.oneSignalReady ? "default" : "destructive"}>
+                {testResults.oneSignalReady ? "Ready" : "Not Ready"}
               </Badge>
             )}
           </div>
@@ -306,7 +302,7 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
           className="w-full"
         >
           <Bell className="h-4 w-4 mr-2" />
-          {testing ? 'Testing...' : 'Run Mobile Diagnostics'}
+          {testing ? 'Testing...' : 'Run OneSignal Diagnostics'}
         </Button>
       </CardContent>
     </Card>

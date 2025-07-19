@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 declare global {
@@ -69,8 +70,8 @@ export const pushNotificationService = {
 
       const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
       if (isSubscribed) {
-        const pushSubscriptionId = await window.OneSignal.User.PushSubscription.id;
-        return pushSubscriptionId;
+        const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        return subscriptionId;
       }
       
       return null;

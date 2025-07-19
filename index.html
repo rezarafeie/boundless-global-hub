@@ -1,62 +1,39 @@
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<!doctype html>
+<html lang="en" dir="rtl">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>آکادمی رفیعی | رضا رفیعی | مرجع تخصصی توسعه فردی و کسب‌وکار</title>
+    <title>آکادمی رضا رفیعی</title>
+    <meta name="description" content="پلتفرم آموزشی تخصصی رضا رفیعی برای یادگیری مهارت‌های دیجیتال مارکتینگ، کسب و کار آنلاین و توسعه شخصی." />
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#7c3aed" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Fonts -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    
+    <!-- OneSignal Web Push SDK -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
           appId: "e221c080-7853-46e5-ba40-93796318d1a0",
+          allowLocalhostAsSecureOrigin: true,
         });
       });
     </script>
-    <meta name="description" content="آکادمی رفیعی، مرجع تخصصی توسعه فردی و کسب‌وکار. آموزش‌های جامع برای تبدیل دانش به درآمد جهانی با رضا رفیعی." />
-    <meta name="author" content="رضا رفیعی" />
-    <meta name="keywords" content="آکادمی رفیعی، رضا رفیعی، کسب و کار، توسعه فردی، درآمد ارزی، آموزش آنلاین" />
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://academy.rafiei.co/" />
-    <meta property="og:title" content="آکادمی رفیعی | رضا رفیعی | مرجع تخصصی توسعه فردی و کسب‌وکار" />
-    <meta property="og:description" content="آکادمی رفیعی، مرجع تخصصی توسعه فردی و کسب‌وکار. آموزش‌های جامع برای تبدیل دانش به درآمد جهانی." />
-    <meta property="og:image" content="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://academy.rafiei.co/" />
-    <meta name="twitter:title" content="آکادمی رفیعی | رضا رفیعی | مرجع تخصصی توسعه فردی و کسب‌وکار" />
-    <meta name="twitter:description" content="آکادمی رفیعی، مرجع تخصصی توسعه فردی و کسب‌وکار. آموزش‌های جامع برای تبدیل دانش به درآمد جهانی." />
-    <meta name="twitter:image" content="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" />
-    <meta name="twitter:site" content="@RafieiAcademy" />
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" />
-    <link rel="apple-touch-icon" href="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" />
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" id="manifest-link" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Rafiei Academy" />
-    
-    <!-- Vazir Font (Persian) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" as="image" />
   </head>
-
   <body>
     <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

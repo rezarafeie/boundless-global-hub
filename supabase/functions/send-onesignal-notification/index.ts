@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -96,45 +97,51 @@ const handler = async (req: Request): Promise<Response> => {
     const notificationBody = message.text;
     const notificationUrl = '/hub/messenger';
 
-    // Collect OneSignal player IDs
-    const playerIds: string[] = [];
+    // Collect OneSignal subscription IDs
+    const subscriptionIds: string[] = [];
     
     for (const user of users) {
       console.log(`👤 User ${user.id} (${user.name}): enabled=${user.notification_enabled}, hasToken=${!!user.notification_token}`);
       
       if (user.notification_token) {
-        playerIds.push(user.notification_token);
+        subscriptionIds.push(user.notification_token);
       }
     }
 
-    if (playerIds.length === 0) {
+    if (subscriptionIds.length === 0) {
       return new Response(
         JSON.stringify({
           success: true,
-          message: 'No valid OneSignal player IDs found',
+          message: 'No valid OneSignal subscription IDs found',
           results: []
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Send OneSignal notification
+    // Send OneSignal notification using v16 API format
     const oneSignalPayload = {
       app_id: oneSignalAppId,
-      include_player_ids: playerIds,
+      include_subscription_ids: subscriptionIds,
       headings: { en: notificationTitle },
       contents: { en: notificationBody },
       url: notificationUrl,
       web_push_topic: `message_${message.id}`,
+      data: {
+        messageId: message.id,
+        senderId: message.senderId,
+        roomId: message.roomId,
+        conversationId: message.conversationId
+      }
     };
 
-    console.log(`📤 Sending OneSignal notification to ${playerIds.length} devices`);
+    console.log(`📤 Sending OneSignal notification to ${subscriptionIds.length} subscriptions`);
 
-    const oneSignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
+    const oneSignalResponse = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${oneSignalApiKey}`,
+        'Authorization': `Key ${oneSignalApiKey}`,
       },
       body: JSON.stringify(oneSignalPayload),
     });
@@ -148,7 +155,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('✅ OneSignal notification sent successfully:', {
       id: oneSignalResult.id,
-      recipients: oneSignalResult.recipients
+      recipients: oneSignalResult.recipients || 'unknown'
     });
 
     return new Response(
@@ -157,7 +164,8 @@ const handler = async (req: Request): Promise<Response> => {
         message: 'OneSignal notification sent successfully',
         oneSignalId: oneSignalResult.id,
         recipients: oneSignalResult.recipients,
-        playerIds: playerIds.length
+        subscriptionIds: subscriptionIds.length,
+        errors: oneSignalResult.errors || null
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
