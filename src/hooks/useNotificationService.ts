@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,25 +50,30 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       let pushSubscribed = false;
       if (granted && pushNotificationService.isSupported()) {
         try {
-          const { isSubscribed } = await pushNotificationService.getSubscriptionStatus(currentUser.id);
-          pushSubscribed = isSubscribed;
-          console.log('🔔 Push subscription status:', pushSubscribed);
+          const status = await pushNotificationService.getSubscriptionStatus(currentUser.id);
+          pushSubscribed = status.isSubscribed && status.hasValidToken;
+          console.log('🔔 Push subscription status:', {
+            isSubscribed: status.isSubscribed,
+            hasValidToken: status.hasValidToken,
+            error: status.error
+          });
           
-          // Test if subscription is still valid
-          const isValid = await pushNotificationService.testSubscription(currentUser.id);
-          console.log('🔔 Subscription validity:', isValid);
-          
-          if (!isValid && granted) {
-            console.log('🔔 Invalid subscription detected, attempting to resubscribe...');
+          // Test and cleanup invalid subscriptions
+          if (!status.hasValidToken && status.subscription) {
+            console.log('🔔 Subscription exists but token invalid, attempting cleanup and resubscribe...');
             try {
-              await pushNotificationService.subscribe(currentUser.id);
-              pushSubscribed = true;
+              const isValid = await pushNotificationService.testAndCleanupSubscription(currentUser.id);
+              if (!isValid) {
+                console.log('🔔 Creating new subscription after cleanup...');
+                await pushNotificationService.subscribe(currentUser.id);
+                pushSubscribed = true;
+              }
             } catch (error) {
-              console.error('🔔 Failed to resubscribe:', error);
+              console.error('🔔 Failed to resubscribe after cleanup:', error);
             }
           }
         } catch (error) {
-          console.warn('Error checking push subscription:', error);
+          console.warn('🔔 Error checking push subscription:', error);
         }
       }
       
@@ -79,10 +85,10 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         pushSubscribed
       });
 
-      // Update banner visibility based on new permission
+      // Update banner visibility
       updateBannerVisibility(permission, granted && pushSubscribed);
 
-      // Load user's notification preference from localStorage and Supabase
+      // Load user's notification preference
       loadNotificationPreference();
     };
 
@@ -113,9 +119,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   const updateBannerVisibility = (permission: NotificationPermission, hasValidSubscription: boolean = false) => {
     if (!currentUser) return;
 
-    console.log('🔔 updateBannerVisibility - Permission:', permission, 'Valid subscription:', hasValidSubscription, 'Current user:', currentUser.name);
+    console.log('🔔 updateBannerVisibility - Permission:', permission, 'Valid subscription:', hasValidSubscription);
 
-    // Check if user has dismissed the banner temporarily (within 24 hours)
+    // Check if user has dismissed the banner temporarily
     const dismissalTime = localStorage.getItem(`notification_banner_dismissed_${currentUser.id}`);
     const now = Date.now();
     const oneDayInMs = 24 * 60 * 60 * 1000;
@@ -138,12 +144,10 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     if (permission === 'granted' && hasValidSubscription) {
       console.log('🔔 Hiding banner - permission granted and subscription valid');
       setShowPermissionBanner(false);
-      // Mark banner as permanently hidden only when everything is working
       localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
     } else {
       console.log('🔔 Showing banner - permission not granted or subscription invalid');
       setShowPermissionBanner(true);
-      // Remove permanent hiding if notifications are not working
       localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
     }
   };
@@ -151,7 +155,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   const loadNotificationPreference = async () => {
     if (!currentUser) return;
 
-    // First check localStorage for quick access
+    // First check localStorage
     const localPref = localStorage.getItem(`notification_enabled_${currentUser.id}`);
     if (localPref !== null) {
       const enabled = localPref === 'true';
@@ -191,21 +195,21 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       let pushSubscribed = false;
       
-      // If permission granted, set up push notifications and save token
       if (granted && currentUser && sessionToken) {
         try {
           console.log('🔔 Setting up push notifications...');
           
-          // Set session context for RLS first
+          // Set session context for RLS
           await supabase.rpc('set_session_context', { session_token: sessionToken });
           
-          // Try to set up push subscription if supported
+          // Set up push subscription
           if (pushNotificationService.isSupported()) {
             const subscription = await pushNotificationService.subscribe(currentUser.id);
             pushSubscribed = !!subscription;
             console.log('🔔 Push subscription result:', pushSubscribed);
           } else {
-            // Fallback: save a simple notification token for browser notifications
+            console.log('🔔 Push notifications not supported, using fallback');
+            // Fallback notification token
             const notificationToken = `browser_notification_${currentUser.id}_${Date.now()}`;
             const { error } = await supabase
               .from('chat_users')
@@ -216,20 +220,20 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
               .eq('id', currentUser.id);
             
             if (error) {
-              console.error('🔔 Failed to save notification token:', error);
+              console.error('🔔 Failed to save fallback token:', error);
             } else {
-              console.log('🔔 Fallback notification token saved:', notificationToken);
+              console.log('🔔 Fallback notification token saved');
             }
           }
           
-          // Update user presence when online
+          // Update user presence
           await supabase.rpc('update_user_presence', { 
             p_user_id: currentUser.id, 
             p_is_online: true 
           });
           
         } catch (error) {
-          console.error('Error setting up push notifications:', error);
+          console.error('🔔 Error setting up push notifications:', error);
         }
       }
       
@@ -241,12 +245,10 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         pushSubscribed
       });
 
-      // Update banner visibility based on new permission
       updateBannerVisibility(permission, pushSubscribed);
 
       if (granted) {
         await updateNotificationPreference(true);
-        // Only hide banner permanently if push subscription worked
         if (pushSubscribed && currentUser) {
           localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
         }
@@ -254,7 +256,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
       return granted;
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      console.error('🔔 Error requesting notification permission:', error);
       return false;
     }
   };
@@ -266,10 +268,8 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     localStorage.setItem(`notification_enabled_${currentUser.id}`, enabled.toString());
 
     try {
-      // Set session context for RLS
       await supabase.rpc('set_session_context', { session_token: sessionToken });
       
-      // Update preference in database
       const { error } = await supabase
         .from('chat_users')
         .update({ notification_enabled: enabled })
@@ -282,40 +282,29 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       console.log('🔔 Successfully updated notification preference to:', enabled);
         
-      // If disabling notifications, unsubscribe from push and allow banner to show again
       if (!enabled && permissionState.pushSubscribed) {
         try {
           await pushNotificationService.unsubscribe(currentUser.id);
-          setPermissionState(prev => ({
-            ...prev,
-            pushSubscribed: false
-          }));
-          // Remove permanent banner hiding when notifications are disabled
+          setPermissionState(prev => ({ ...prev, pushSubscribed: false }));
           localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
           setShowPermissionBanner(true);
         } catch (error) {
-          console.error('Error unsubscribing from push notifications:', error);
+          console.error('🔔 Error unsubscribing from push notifications:', error);
         }
       }
       
-      // If enabling notifications and permission granted, subscribe to push
       if (enabled && permissionState.granted && !permissionState.pushSubscribed && pushNotificationService.isSupported()) {
         try {
           const subscription = await pushNotificationService.subscribe(currentUser.id);
           const newPushSubscribed = !!subscription;
-          setPermissionState(prev => ({
-            ...prev,
-            pushSubscribed: newPushSubscribed
-          }));
-          
-          // Update banner visibility
+          setPermissionState(prev => ({ ...prev, pushSubscribed: newPushSubscribed }));
           updateBannerVisibility(permissionState.permission, newPushSubscribed);
         } catch (error) {
-          console.error('Error subscribing to push notifications:', error);
+          console.error('🔔 Error subscribing to push notifications:', error);
         }
       }
     } catch (error) {
-      console.error('Error updating notification preference:', error);
+      console.error('🔔 Error updating notification preference:', error);
     }
   };
 
@@ -327,7 +316,6 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
     console.log('🔔 Creating Supabase channel for message notifications...');
     
-    // Listen to all messenger messages
     channelRef.current = supabase
       .channel('messenger-notifications')
       .on(
@@ -367,24 +355,20 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       return;
     }
     
-    // Don't notify for own messages
     if (message.sender_id === currentUser.id) {
       console.log('🔔 Skipping notification - own message');
       return;
     }
 
     try {
-      // Check if user has access to this room
       if (message.room_id) {
         const rooms = await messengerService.getRooms(sessionToken!);
         const hasAccess = rooms.some(room => room.id === message.room_id);
         
         if (hasAccess) {
-          // Get sender info
           const sender = await messengerService.getUserById(message.sender_id!);
           const senderName = sender?.name || 'کاربر ناشناس';
           
-          // Get room info
           const room = await messengerService.getRoomById(message.room_id);
           const roomName = room?.name || 'گروه';
           
@@ -397,7 +381,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         }
       }
     } catch (error) {
-      console.error('Error handling new message notification:', error);
+      console.error('🔔 Error handling new message notification:', error);
     }
   };
 
@@ -409,14 +393,12 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       return;
     }
     
-    // Don't notify for own messages
     if (message.sender_id === currentUser.id) {
       console.log('🔔 Skipping private notification - own message');
       return;
     }
 
     try {
-      // Check if this message is in a conversation involving current user
       const { data: conversation } = await supabase
         .from('private_conversations')
         .select('user1_id, user2_id')
@@ -426,7 +408,6 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       if (conversation && 
           (conversation.user1_id === currentUser.id || conversation.user2_id === currentUser.id)) {
         
-        // Get sender info
         const sender = await messengerService.getUserById(message.sender_id);
         const senderName = sender?.name || 'کاربر ناشناس';
         
@@ -438,7 +419,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         );
       }
     } catch (error) {
-      console.error('Error handling new private message notification:', error);
+      console.error('🔔 Error handling new private message notification:', error);
     }
   };
 
@@ -466,14 +447,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         notification.close();
       };
 
-      // Auto close after 8 seconds
       setTimeout(() => {
         notification.close();
       }, 8000);
       
       console.log('🔔 Notification displayed successfully');
     } catch (error) {
-      console.error('Error showing notification:', error);
+      console.error('🔔 Error showing notification:', error);
     }
   };
 
@@ -481,7 +461,6 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     console.log('🔔 User dismissed notification banner');
     setShowPermissionBanner(false);
     
-    // Store dismissal in localStorage to prevent showing again for a while
     if (currentUser) {
       localStorage.setItem(`notification_banner_dismissed_${currentUser.id}`, Date.now().toString());
     }

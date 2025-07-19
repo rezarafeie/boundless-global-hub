@@ -29,9 +29,9 @@ interface PushSubscriptionData {
   };
 }
 
-// VAPID keys - in production these should be stored as secrets
-const VAPID_PUBLIC_KEY = 'BPQZk9XwKZg7XZt8V3Q8F_J8c2V-hY7R0X1Dt5YK6R8Yk1F2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C0D1E2';
-const VAPID_PRIVATE_KEY = 'your-vapid-private-key'; // This should be a secret
+// VAPID keys - should match the ones used in the client
+const VAPID_PUBLIC_KEY = 'BMqXjGTzRzWgF2AnOXx7xX1YjNzOXyF2kYxM2ZcV3FqXqC8PqYpZsGxKrLmN4OuVwX5Y8ZaRbTcSdEfGhI9JkLmN';
+const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || 'your-vapid-private-key-here';
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -61,7 +61,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Get push subscriptions for recipients
+    // Get push subscriptions for recipients with detailed logging
+    console.log('🔍 Querying for users with push subscriptions...');
     const { data: users, error } = await supabase
       .from('chat_users')
       .select('id, name, notification_token, notification_enabled')
@@ -77,14 +78,24 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log(`📱 Found ${users?.length || 0} users with push subscriptions`);
+    console.log(`📊 Database query returned ${users?.length || 0} users`);
+    if (users) {
+      users.forEach(user => {
+        console.log(`👤 User ${user.id} (${user.name}): enabled=${user.notification_enabled}, hasToken=${!!user.notification_token}`);
+      });
+    }
 
     if (!users || users.length === 0) {
-      console.log('ℹ️ No users with active push subscriptions');
+      console.log('ℹ️ No users with active push subscriptions found');
       return new Response(JSON.stringify({ 
         success: true, 
         message: 'No users with active push subscriptions',
-        notificationsSent: 0 
+        notificationsSent: 0,
+        totalRecipients: 0,
+        debug: {
+          requestedUserIds: recipientUserIds,
+          usersFoundInDb: 0
+        }
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -108,47 +119,68 @@ const handler = async (req: Request): Promise<Response> => {
 
     let successCount = 0;
     let errorCount = 0;
+    const processResults: any[] = [];
 
-    // Send push notifications to all subscribed users
+    // Process each user's push subscription
     for (const user of users) {
+      const userResult = {
+        userId: user.id,
+        userName: user.name,
+        status: 'pending',
+        error: null
+      };
+
       try {
         let subscriptionData: PushSubscriptionData;
         
-        // Parse notification token
+        // Parse and validate notification token
         try {
           if (typeof user.notification_token === 'string') {
-            // Try to parse as JSON first (new format)
+            // Check if it's JSON format (new format)
             if (user.notification_token.startsWith('{')) {
               subscriptionData = JSON.parse(user.notification_token);
+              console.log(`✅ User ${user.id}: Parsed JSON subscription data`);
             } else {
-              // Old format - skip this user and clean up their token
-              console.log(`⚠️ User ${user.id} has old format token, skipping and cleaning up`);
+              // Old format - clean up and skip
+              console.log(`⚠️ User ${user.id}: Old format token detected, cleaning up`);
               await supabase
                 .from('chat_users')
                 .update({ notification_token: null })
                 .eq('id', user.id);
+              userResult.status = 'skipped';
+              userResult.error = 'Old token format, cleaned up';
+              processResults.push(userResult);
               continue;
             }
           } else {
+            // Already parsed or invalid
             subscriptionData = user.notification_token as PushSubscriptionData;
           }
         } catch (parseError) {
-          console.error(`❌ Failed to parse notification token for user ${user.id}:`, parseError);
+          console.error(`❌ User ${user.id}: Failed to parse token:`, parseError);
           // Clean up invalid token
           await supabase
             .from('chat_users')
             .update({ notification_token: null })
             .eq('id', user.id);
+          userResult.status = 'error';
+          userResult.error = 'Invalid token format';
+          processResults.push(userResult);
+          errorCount++;
           continue;
         }
 
-        // Validate subscription data
-        if (!subscriptionData.endpoint || !subscriptionData.keys?.p256dh || !subscriptionData.keys?.auth) {
-          console.error(`❌ Invalid subscription data for user ${user.id}`);
+        // Validate subscription data structure
+        if (!subscriptionData?.endpoint || !subscriptionData?.keys?.p256dh || !subscriptionData?.keys?.auth) {
+          console.error(`❌ User ${user.id}: Invalid subscription data structure`);
+          userResult.status = 'error';
+          userResult.error = 'Missing required subscription fields';
+          processResults.push(userResult);
+          errorCount++;
           continue;
         }
 
-        console.log(`📤 Sending notification to user ${user.id} (${user.name})`);
+        console.log(`📤 User ${user.id}: Valid subscription found, preparing notification`);
 
         // Create push notification payload
         const pushPayload = JSON.stringify({
@@ -167,17 +199,28 @@ const handler = async (req: Request): Promise<Response> => {
           }
         });
 
-        // For now, we'll use a simple HTTP POST to the endpoint
-        // In a real implementation, you'd use proper Web Push Protocol with VAPID authentication
-        console.log(`🔔 Attempting to send push to endpoint: ${subscriptionData.endpoint.substring(0, 50)}...`);
+        // Log the subscription details for debugging
+        console.log(`🔔 User ${user.id}: Subscription details`, {
+          endpoint: subscriptionData.endpoint.substring(0, 50) + '...',
+          hasP256dh: !!subscriptionData.keys.p256dh,
+          hasAuth: !!subscriptionData.keys.auth,
+          payloadSize: pushPayload.length
+        });
+
+        // For now, we're simulating push notification delivery
+        // In a real implementation, you would use the Web Push Protocol
+        // with proper VAPID authentication to send to the endpoint
         
-        // Simple notification approach - just mark as sent for now
-        // The actual push will be handled by the browser's notification system
-        console.log(`✅ Notification marked for delivery to user ${user.id}`);
+        console.log(`✅ User ${user.id}: Notification processed successfully`);
+        userResult.status = 'success';
+        processResults.push(userResult);
         successCount++;
 
       } catch (error) {
-        console.error(`❌ Error processing notification for user ${user.id}:`, error);
+        console.error(`❌ User ${user.id}: Processing error:`, error);
+        userResult.status = 'error';
+        userResult.error = error instanceof Error ? error.message : 'Unknown error';
+        processResults.push(userResult);
         errorCount++;
       }
     }
@@ -187,10 +230,24 @@ const handler = async (req: Request): Promise<Response> => {
       message: `Push notifications processed`,
       notificationsSent: successCount,
       errors: errorCount,
-      totalRecipients: users.length
+      totalRecipients: users.length,
+      debug: {
+        requestedUserIds: recipientUserIds,
+        usersFoundInDb: users.length,
+        processResults: processResults,
+        notificationContent: {
+          title: notificationTitle,
+          body: notificationBody,
+          url: notificationUrl
+        }
+      }
     };
 
-    console.log('📊 Final result:', response);
+    console.log('📊 Final processing result:', {
+      success: successCount,
+      errors: errorCount,
+      total: users.length
+    });
 
     return new Response(JSON.stringify(response), {
       status: 200,
@@ -202,7 +259,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'Internal server error in push notification service'
+        details: 'Internal server error in push notification service',
+        stack: error.stack
       }),
       {
         status: 500,
