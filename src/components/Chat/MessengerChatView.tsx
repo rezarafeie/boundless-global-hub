@@ -60,6 +60,135 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
+  // Real-time subscription for messages
+  useEffect(() => {
+    if (!selectedRoom && !selectedUser) return;
+    
+    const channels: any[] = [];
+    
+    // Subscribe to messenger messages for room chats
+    if (selectedRoom) {
+      const roomMessagesChannel = supabase
+        .channel(`room_messages_${selectedRoom.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messenger_messages',
+            filter: `room_id=eq.${selectedRoom.id}`
+          },
+          (payload) => {
+            console.log('New room message received:', payload);
+            // Add the new message to the current messages
+            const newMessage = payload.new as any;
+            setMessages(prev => {
+              // Avoid duplicates
+              const exists = prev.find(msg => msg.id === newMessage.id);
+              if (!exists) {
+                return [...prev, {
+                  ...newMessage,
+                  sender: { name: 'Unknown', phone: '' } // Will be updated by avatar fetch
+                }];
+              }
+              return prev;
+            });
+          }
+        )
+        .subscribe();
+      channels.push(roomMessagesChannel);
+    }
+
+    // Subscribe to private messages for private chats
+    if (selectedUser && selectedUser.id !== 1) {
+      const privateMessagesChannel = supabase
+        .channel(`private_messages_user_${selectedUser.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'private_messages'
+          },
+          async (payload) => {
+            console.log('New private message received:', payload);
+            const newMessage = payload.new as any;
+            
+            // Check if this message belongs to current conversation
+            const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
+            if (conversation && 
+                ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
+                 (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
+              
+              setMessages(prev => {
+                // Avoid duplicates
+                const exists = prev.find(msg => msg.id === newMessage.id);
+                if (!exists) {
+                  return [...prev, {
+                    ...newMessage,
+                    room_id: undefined,
+                    media_url: newMessage.media_url,
+                    message_type: newMessage.message_type || 'text',
+                    media_content: newMessage.media_content,
+                    sender: {
+                      name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+                      phone: ''
+                    }
+                  }];
+                }
+                return prev;
+              });
+            }
+          }
+        )
+        .subscribe();
+      channels.push(privateMessagesChannel);
+    }
+
+    // Subscribe to support messages (messenger_messages with recipient_id = 1)
+    if (selectedUser && selectedUser.id === 1) {
+      const supportMessagesChannel = supabase
+        .channel(`support_messages_${currentUser.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messenger_messages',
+            filter: `recipient_id=eq.1`
+          },
+          (payload) => {
+            console.log('New support message received:', payload);
+            const newMessage = payload.new as any;
+            
+            // Only add if it's from or to the current user
+            if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
+              setMessages(prev => {
+                // Avoid duplicates
+                const exists = prev.find(msg => msg.id === newMessage.id);
+                if (!exists) {
+                  return [...prev, {
+                    ...newMessage,
+                    sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' }
+                  }];
+                }
+                return prev;
+              });
+            }
+          }
+        )
+        .subscribe();
+      channels.push(supportMessagesChannel);
+    }
+
+    // Cleanup function
+    return () => {
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, [selectedRoom?.id, selectedUser?.id, currentUser.id]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -225,8 +354,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }
 
       setNewMessage('');
-      // Reload messages to get the actual message from server
-      setTimeout(() => loadMessages(), 500);
+      // Remove optimistic message once real-time update comes in
+      setTimeout(() => {
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      }, 1000);
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove optimistic message on error
