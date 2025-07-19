@@ -213,7 +213,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           );
         } else {
           // For private messages, use the private message service directly with media support
-          await privateMessageService.sendMessage(
+          await privateMessageService.sendPrivateMessage(
             currentUser.id,
             selectedUser.id,
             message,

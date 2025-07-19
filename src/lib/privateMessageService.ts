@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { type MessengerUser } from './messengerService';
+import { type MessengerUser, type MessengerMessage } from './messengerService';
 
 export interface PrivateMessage {
   id: number;
@@ -179,7 +179,7 @@ export const privateMessageService = {
     }
   },
 
-  async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<PrivateMessage | null> {
+  async sendPrivateMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<PrivateMessage | null> {
     try {
       // Get or create conversation first
       const conversationId = await this.getOrCreateConversation(senderId, recipientId);
@@ -502,8 +502,72 @@ export const privateMessageService = {
     }
   },
 
-  async getConversationMessages(conversationId: number): Promise<PrivateMessage[]> {
-    return this.getMessages(conversationId);
+  async getConversationMessages(conversationId: number, sessionToken?: string): Promise<any[]> {
+    try {
+      console.log('Fetching messages for conversation:', conversationId);
+      
+      // For support conversations, get messages from messenger_messages table
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          id,
+          conversation_id,
+          sender_id,
+          recipient_id,
+          room_id,
+          topic_id,
+          message,
+          message_type,
+          media_url,
+          media_content,
+          is_read,
+          created_at,
+          reply_to_message_id,
+          forwarded_from_message_id
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching conversation messages:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching conversation messages:', error);
+      return [];
+    }
+  },
+
+  async sendMessage(conversationId: number, senderId: number, message: string, sessionToken?: string): Promise<any | null> {
+    try {
+      console.log('Sending message to conversation:', conversationId, 'from sender:', senderId);
+      
+      // Send message as support conversation (to recipient_id = 1)
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .insert([{
+          conversation_id: conversationId,
+          sender_id: senderId,
+          recipient_id: 1, // Support user
+          message: message,
+          message_type: 'text',
+          is_read: false
+        }])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error sending message:', error);
+        return null;
+      }
+
+      return data || null;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return null;
+    }
   },
 
   async markConversationAsRead(conversationId: number, userId: number): Promise<void> {
