@@ -29,9 +29,9 @@ interface PushSubscriptionData {
   };
 }
 
-// VAPID keys - should match the ones used in the client
-const VAPID_PUBLIC_KEY = 'BMqXjGTzRzWgF2AnOXx7xX1YjNzOXyF2kYxM2ZcV3FqXqC8PqYpZsGxKrLmN4OuVwX5Y8ZaRbTcSdEfGhI9JkLmN';
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || 'your-vapid-private-key-here';
+// Real VAPID keys from Supabase secrets
+const VAPID_PUBLIC_KEY = 'BLIXLspXnGfJZCnXJFk-JM_PfURbW0UkuswePV_4sOOeTg1b8G_PuOs2LqwfH9r8KRaL9jFgSVP4tYTEkpHZIFY';
+const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || 'ois_gIJEWHTBoyQNyyB3lk_sIRBcea1gFO335RcNjWI';
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests

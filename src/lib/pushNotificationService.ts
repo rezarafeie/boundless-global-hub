@@ -9,8 +9,8 @@ interface PushSubscriptionData {
   };
 }
 
-// Proper VAPID keys - these should be stored as Supabase secrets in production
-const VAPID_PUBLIC_KEY = 'BMqXjGTzRzWgF2AnOXx7xX1YjNzOXyF2kYxM2ZcV3FqXqC8PqYpZsGxKrLmN4OuVwX5Y8ZaRbTcSdEfGhI9JkLmN';
+// Real VAPID public key from Supabase secrets
+const VAPID_PUBLIC_KEY = 'BLIXLspXnGfJZCnXJFk-JM_PfURbW0UkuswePV_4sOOeTg1b8G_PuOs2LqwfH9r8KRaL9jFgSVP4tYTEkpHZIFY';
 
 export const pushNotificationService = {
   // Check if push notifications are supported
