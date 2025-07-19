@@ -303,16 +303,21 @@ export const privateMessageService = {
     }
   },
 
-  async searchUsers(searchTerm: string): Promise<MessengerUser[]> {
+  async searchUsers(searchTerm: string, sessionToken?: string): Promise<MessengerUser[]> {
     try {
+      console.log('Searching users with term:', searchTerm);
+      
+      // Search by name, username, and phone
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .limit(10);
+        .or(`name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        .eq('is_approved', true)
+        .neq('id', 1) // Exclude support user
+        .limit(50);
 
       if (error) {
-        console.error('Search error:', error);
+        console.error('Error searching users:', error);
         return [];
       }
 
@@ -356,40 +361,80 @@ export const privateMessageService = {
 
   async getSupportConversations(sessionToken?: string): Promise<any[]> {
     try {
-      console.log('Fetching support conversations...');
+      console.log('Fetching support conversations from messenger_messages...');
       
-      // First, get all support conversations
-      const { data: conversations, error: convError } = await supabase
-        .from('support_conversations')
-        .select('*')
-        .order('last_message_at', { ascending: false });
+      // Get all unique conversation IDs where messages to/from support (recipient_id = 1 or sender_id = 1)
+      const { data: supportMessages, error: messagesError } = await supabase
+        .from('messenger_messages')
+        .select('conversation_id, sender_id, recipient_id, created_at')
+        .or('recipient_id.eq.1,sender_id.eq.1')
+        .not('conversation_id', 'is', null)
+        .order('created_at', { ascending: false });
 
-      if (convError) {
-        console.error('Error fetching support conversations:', convError);
+      if (messagesError) {
+        console.error('Error fetching support messages:', messagesError);
         return [];
       }
 
-      console.log('Raw conversations fetched:', conversations?.length || 0);
+      console.log('Support messages found:', supportMessages?.length || 0);
 
-      if (!conversations || conversations.length === 0) {
+      if (!supportMessages || supportMessages.length === 0) {
         return [];
       }
 
-      // Get all unique user IDs and agent IDs
-      const userIds = [...new Set(conversations.map(conv => conv.user_id).filter(Boolean))];
-      const agentIds = [...new Set(conversations.map(conv => conv.agent_id).filter(Boolean))];
-      const allUserIds = [...new Set([...userIds, ...agentIds])];
+      // Group by conversation_id and get the latest message time
+      const conversationMap = new Map();
+      supportMessages.forEach(msg => {
+        const convId = msg.conversation_id;
+        if (!conversationMap.has(convId) || new Date(msg.created_at) > new Date(conversationMap.get(convId).last_message_at)) {
+          // Determine user_id (the one who's not support)
+          const userId = msg.sender_id === 1 ? null : msg.sender_id; // We'll need to get this from other messages
+          
+          conversationMap.set(convId, {
+            id: convId,
+            conversation_id: convId,
+            last_message_at: msg.created_at,
+            status: 'open',
+            priority: 'normal',
+            thread_type_id: 1,
+            tag_list: [],
+            unread_count: 0,
+            user_id: userId
+          });
+        }
+      });
 
-      console.log('User IDs to fetch:', userIds);
-      console.log('Agent IDs to fetch:', agentIds);
+      // Get all unique user IDs from conversations (excluding support user id = 1)
+      const userIds = [...new Set(
+        supportMessages
+          .filter(msg => msg.sender_id !== 1 && msg.recipient_id !== 1)
+          .map(msg => msg.sender_id === 1 ? msg.recipient_id : msg.sender_id)
+          .filter(Boolean)
+      )];
 
-      // Fetch user details for all users
+      console.log('Unique user IDs found:', userIds);
+
+      // Update conversation map with correct user_ids
+      supportMessages.forEach(msg => {
+        const convId = msg.conversation_id;
+        if (conversationMap.has(convId)) {
+          const conv = conversationMap.get(convId);
+          if (!conv.user_id && msg.sender_id !== 1) {
+            conv.user_id = msg.sender_id;
+          }
+          if (!conv.user_id && msg.recipient_id !== 1) {
+            conv.user_id = msg.recipient_id;
+          }
+        }
+      });
+
+      // Fetch user details
       let usersData: any[] = [];
-      if (allUserIds.length > 0) {
+      if (userIds.length > 0) {
         const { data: users, error: usersError } = await supabase
           .from('chat_users')
-          .select('id, name, username, phone, avatar_url, bedoun_marz')
-          .in('id', allUserIds);
+          .select('id, name, username, phone, avatar_url, bedoun_marz, is_approved')
+          .in('id', userIds);
 
         if (usersError) {
           console.error('Error fetching users:', usersError);
@@ -405,20 +450,18 @@ export const privateMessageService = {
         usersMap.set(user.id, user);
       });
 
-      // Enrich conversations with user and agent data
-      const enrichedConversations = conversations.map(conversation => {
-        const user = usersMap.get(conversation.user_id);
-        const agent = usersMap.get(conversation.agent_id);
-
-        return {
+      // Convert conversations and enrich with user data
+      const conversations = Array.from(conversationMap.values())
+        .map(conversation => ({
           ...conversation,
-          user: user || null,
-          agent: agent || null
-        };
-      });
+          user: usersMap.get(conversation.user_id) || null,
+          agent: null // Support agent info could be added here
+        }))
+        .filter(conv => conv.user) // Only include conversations with valid users
+        .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
 
-      console.log('Enriched conversations:', enrichedConversations.length);
-      return enrichedConversations;
+      console.log('Final conversations:', conversations.length);
+      return conversations;
 
     } catch (error) {
       console.error('Error in getSupportConversations:', error);

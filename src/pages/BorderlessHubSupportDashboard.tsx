@@ -145,13 +145,10 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
       console.log('Creating new support conversation with user:', user.id);
       
-      // Determine support user ID based on user's boundless status
-      const supportUserId = user.bedoun_marz || user.bedoun_marz_approved ? 999998 : 999997;
-      
-      // Create conversation between the selected user and appropriate support
+      // Force create a support conversation by creating or getting existing conversation
       const conversationId = await privateMessageService.getOrCreateConversation(
         user.id,
-        supportUserId,
+        1, // Support user ID is always 1
         sessionToken
       );
 
@@ -630,13 +627,15 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       </div>
 
       {/* Start Chat Modal */}
-      <SupportStartChatModal
-        isOpen={showStartChatModal}
-        onClose={() => setShowStartChatModal(false)}
-        onUserSelect={handleStartNewChat}
-        sessionToken={localStorage.getItem('messenger_session_token') || ''}
-        currentUser={currentUser}
-      />
+      {currentUser && (
+        <SupportStartChatModal
+          isOpen={showStartChatModal}
+          onClose={() => setShowStartChatModal(false)}
+          onUserSelect={handleStartNewChat}
+          sessionToken={localStorage.getItem('messenger_session_token') || ''}
+          currentUser={currentUser}
+        />
+      )}
     </MainLayout>
   );
 };

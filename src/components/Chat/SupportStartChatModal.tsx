@@ -46,10 +46,9 @@ const SupportStartChatModal: React.FC<SupportStartChatModalProps> = ({
       const results = await privateMessageService.searchUsers(searchTerm, sessionToken);
       console.log('Search results received:', results);
       
-      // Filter out current user and support agents
+      // Filter out current user and support agents (but keep all approved users)
       const filteredResults = results.filter(user => 
         user.id !== currentUser.id && 
-        !user.is_support_agent &&
         user.is_approved
       );
       
