@@ -13,7 +13,7 @@ const VAPID_PUBLIC_KEY = 'BLIXLspXnGfJZCnXJFk-JM_PfURbW0UkuswePV_4sOOeTg1b8G_PuO
 
 // Mobile detection utilities
 const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-const isIOSSafari = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isIOSSafari = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 const isAndroid = () => /Android/i.test(navigator.userAgent);
 
 export const pushNotificationService = {

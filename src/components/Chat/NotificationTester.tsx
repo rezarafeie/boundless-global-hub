@@ -17,7 +17,7 @@ const isMobile = () => {
 };
 
 const isIOSSafari = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 };
 
 const isAndroid = () => {
@@ -63,7 +63,7 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
       const browserSupport = pushNotificationService.isSupported();
       setTestResults(prev => ({ ...prev, browserSupport }));
       
-      if (!browserSupported) {
+      if (!browserSupport) {
         setTestResults(prev => ({ ...prev, error: `Push notifications not supported on ${deviceType}` }));
         return;
       }
