@@ -19,7 +19,7 @@
       "url": "/",
       "icons": [
         {
-          "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+          "src": "/messenger-icon-192.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -32,7 +32,7 @@
       "url": "/",
       "icons": [
         {
-          "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+          "src": "/messenger-icon-192.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -41,7 +41,7 @@
   ],
   "screenshots": [
     {
-      "src": "/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png",
+      "src": "/messenger-icon-512.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",

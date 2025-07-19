@@ -7,9 +7,15 @@ import { isMessengerSubdomain } from './utils/subdomainDetection'
 // Update manifest and title for messenger subdomain
 if (isMessengerSubdomain()) {
   // Update manifest
-  const manifestLink = document.getElementById('manifest-link') as HTMLLinkElement;
+  const manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement;
   if (manifestLink) {
     manifestLink.href = '/messenger-manifest.json';
+  } else {
+    // Create manifest link if it doesn't exist
+    const newManifestLink = document.createElement('link');
+    newManifestLink.rel = 'manifest';
+    newManifestLink.href = '/messenger-manifest.json';
+    document.head.appendChild(newManifestLink);
   }
   
   // Update title

@@ -6,6 +6,8 @@ import { WifiOff, MessageCircle, Users } from 'lucide-react';
 import { type MessengerUser } from '@/lib/messengerService';
 import { useNotificationService } from '@/hooks/useNotificationService';
 import NotificationPermissionBanner from '@/components/Chat/NotificationPermissionBanner';
+import AddToHomeScreenBanner from '@/components/Chat/AddToHomeScreenBanner';
+import { isMessengerSubdomain } from '@/utils/subdomainDetection';
 
 interface MessengerPageProps {
   currentUser: MessengerUser;
@@ -42,6 +44,11 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
           onRequestPermission={requestNotificationPermission}
           onDismiss={dismissPermissionBanner}
         />
+      )}
+      
+      {/* Show add to home screen banner on messenger subdomain */}
+      {isMessengerSubdomain() && (
+        <AddToHomeScreenBanner />
       )}
       
         <Messenger 
