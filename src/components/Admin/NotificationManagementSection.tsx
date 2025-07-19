@@ -25,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/hooks/useNotifications';
 import { notificationService } from '@/lib/notificationService';
 import type { Notification, NotificationInsert } from '@/types/notifications';
+import NotificationLogs from './NotificationLogs';
+import NotificationDiagnostics from './NotificationDiagnostics';
 
 const NotificationManagementSection: React.FC = () => {
   const { toast } = useToast();
@@ -186,6 +188,12 @@ const NotificationManagementSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Diagnostics */}
+      <NotificationDiagnostics />
+      
+      {/* Logs */}
+      <NotificationLogs />
+      
       {/* Header */}
       <Card>
         <CardHeader>
