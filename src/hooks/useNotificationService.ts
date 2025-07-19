@@ -182,25 +182,23 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           console.log('🔔 Push subscription result:', pushSubscribed);
           
           // Save subscription token to database
-          if (subscription) {
-            const subscriptionData = subscription.toJSON();
-            if (subscriptionData.endpoint && sessionToken) {
-              // Set session context for RLS
-              await supabase.rpc('set_session_context', { session_token: sessionToken });
-              
-              const { error } = await supabase
-                .from('chat_users')
-                .update({ 
-                  notification_token: subscriptionData.endpoint,
-                  notification_enabled: true 
-                })
-                .eq('id', currentUser.id);
-              
-              if (error) {
-                console.error('🔔 Failed to save notification token:', error);
-              } else {
-                console.log('🔔 Notification token saved to database');
-              }
+          if (subscription && sessionToken) {
+            // Set session context for RLS
+            await supabase.rpc('set_session_context', { session_token: sessionToken });
+            
+            // Save a simple notification token to indicate subscription is active
+            const { error } = await supabase
+              .from('chat_users')
+              .update({ 
+                notification_token: `browser_notification_${currentUser.id}_${Date.now()}`,
+                notification_enabled: true 
+              })
+              .eq('id', currentUser.id);
+            
+            if (error) {
+              console.error('🔔 Failed to save notification token:', error);
+            } else {
+              console.log('🔔 Notification token saved to database');
             }
           }
           
@@ -424,12 +422,16 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const showNotification = (title: string, body: string, url?: string) => {
-    if (!permissionState.granted) return;
+    if (!permissionState.granted) {
+      console.log('🔔 Cannot show notification - permission not granted');
+      return;
+    }
 
     try {
+      console.log('🔔 Showing notification:', title, body);
       const notification = new Notification(title, {
         body: body.length > 100 ? body.substring(0, 100) + '...' : body,
-        icon: '/favicon.ico',
+        icon: '/messenger-icon-192.png',
         tag: `chat-${Date.now()}`,
         requireInteraction: false,
         silent: false
@@ -443,10 +445,12 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         notification.close();
       };
 
-      // Auto close after 5 seconds
+      // Auto close after 8 seconds
       setTimeout(() => {
         notification.close();
-      }, 5000);
+      }, 8000);
+      
+      console.log('🔔 Notification displayed successfully');
     } catch (error) {
       console.error('Error showing notification:', error);
     }
