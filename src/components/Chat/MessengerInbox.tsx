@@ -9,11 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, MessageCircle, Plus, Users, Headphones, MessageSquare, Settings, User, Upload, Camera, WifiOff } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
-import { useNotificationService } from '@/hooks/useNotificationService';
 import { useNavigate } from 'react-router-dom';
 import StartChatModal from './StartChatModal';
-import NotificationPermissionBanner from './NotificationPermissionBanner';
-import NotificationToggle from './NotificationToggle';
 import { useRealtimeChatUpdates } from '@/hooks/useRealtimeChatUpdates';
 
 interface MessengerInboxProps {
@@ -50,18 +47,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  // Initialize notification service
-  const {
-    permissionState,
-    notificationEnabled,
-    showPermissionBanner,
-    requestNotificationPermission,
-    updateNotificationPreference,
-    dismissPermissionBanner
-  } = useNotificationService({
-    currentUser,
-    sessionToken
-  });
+  // Remove duplicate notification service - handled by MessengerPage
 
   useEffect(() => {
     loadData();
@@ -170,14 +156,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Notification Permission Banner */}
-      {showPermissionBanner && (
-        <NotificationPermissionBanner
-          onRequestPermission={requestNotificationPermission}
-          onDismiss={dismissPermissionBanner}
-        />
-      )}
-
       {/* Header */}
       <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
