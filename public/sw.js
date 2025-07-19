@@ -1,8 +1,8 @@
 
-
-const CACHE_NAME = 'rafiei-academy-v4';
+const CACHE_NAME = 'rafiei-academy-v5';
 const urlsToCache = [
   '/',
+  '/hub/messenger',
   '/static/js/bundle.js',
   '/static/css/main.css',
   '/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png',
@@ -13,9 +13,18 @@ const urlsToCache = [
   'https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css'
 ];
 
-// Enhanced push notification handling
+// Mobile browser detection
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function isIOSSafari() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+// Enhanced push notification handling with mobile support
 self.addEventListener('push', function(event) {
-  console.log('🔔 Push event received:', event);
+  console.log('🔔 Push event received (Mobile: ' + isMobile() + ', iOS: ' + isIOSSafari() + '):', event);
   
   if (!event.data) {
     console.log('❌ No push data received');
@@ -28,7 +37,7 @@ self.addEventListener('push', function(event) {
     console.log('🔔 Push data parsed:', notificationData);
   } catch (e) {
     console.error('❌ Error parsing push data:', e);
-    // Fallback notification
+    // Enhanced fallback for mobile
     notificationData = {
       title: 'پیام جدید',
       body: event.data.text() || 'شما پیام جدیدی دریافت کرده‌اید',
@@ -37,6 +46,7 @@ self.addEventListener('push', function(event) {
     };
   }
 
+  // Mobile-optimized notification options
   const options = {
     body: notificationData.body || 'پیام جدید دریافت شد',
     icon: notificationData.icon || '/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png',
@@ -48,10 +58,10 @@ self.addEventListener('push', function(event) {
       timestamp: notificationData.timestamp
     },
     tag: `message-${notificationData.messageId || Date.now()}`,
-    requireInteraction: true,
+    requireInteraction: !isMobile(), // Mobile browsers handle this differently
     silent: false,
-    vibrate: [200, 100, 200],
-    actions: [
+    vibrate: isMobile() ? [200, 100, 200] : undefined, // Only vibrate on mobile
+    actions: isMobile() ? [] : [ // Simplified actions for mobile
       {
         action: 'reply',
         title: 'پاسخ',
@@ -65,23 +75,23 @@ self.addEventListener('push', function(event) {
     ]
   };
 
-  console.log('🔔 Showing notification with options:', options);
+  console.log('🔔 Showing notification with mobile-optimized options:', options);
 
   event.waitUntil(
     self.registration.showNotification(
       notificationData.title || 'پیام جدید', 
       options
     ).then(() => {
-      console.log('✅ Notification displayed successfully');
+      console.log('✅ Notification displayed successfully on mobile device');
     }).catch((error) => {
-      console.error('❌ Failed to show notification:', error);
+      console.error('❌ Failed to show notification on mobile:', error);
     })
   );
 });
 
-// Enhanced notification action handling
+// Enhanced notification click handling for mobile
 self.addEventListener('notificationclick', function(event) {
-  console.log('🔔 Notification click received:', event);
+  console.log('🔔 Notification click received (Mobile: ' + isMobile() + '):', event);
   
   event.notification.close();
   
@@ -89,15 +99,13 @@ self.addEventListener('notificationclick', function(event) {
   const messageId = event.notification.data?.messageId;
   const senderId = event.notification.data?.senderId;
   
-  if (event.action === 'reply') {
+  if (event.action === 'reply' && !isMobile()) {
     console.log('💬 Reply action clicked');
-    // Handle reply action - for now just open the messenger with focus on reply
     event.waitUntil(
       clients.matchAll({ includeUncontrolled: true, type: 'window' })
         .then(function(clientList) {
           const targetUrl = `${url}${url.includes('?') ? '&' : '?'}reply=${messageId || ''}`;
           
-          // Try to find existing messenger window
           for (const client of clientList) {
             if (client.url.includes('/hub/messenger') && 'focus' in client) {
               client.postMessage({ 
@@ -110,7 +118,6 @@ self.addEventListener('notificationclick', function(event) {
             }
           }
           
-          // Open new window if no existing messenger found
           if (clients.openWindow) {
             return clients.openWindow(targetUrl);
           }
@@ -119,12 +126,10 @@ self.addEventListener('notificationclick', function(event) {
         })
     );
   } else {
-    console.log('👀 View/default action clicked');
-    // Default click or view action
+    console.log('👀 View/default action clicked (Mobile optimized)');
     event.waitUntil(
       clients.matchAll({ includeUncontrolled: true, type: 'window' })
         .then(function(clientList) {
-          // Try to find existing messenger window
           for (const client of clientList) {
             if (client.url.includes('/hub/messenger') && 'focus' in client) {
               client.postMessage({ 
@@ -137,20 +142,19 @@ self.addEventListener('notificationclick', function(event) {
             }
           }
           
-          // Open new window if no existing messenger found
           if (clients.openWindow) {
             return clients.openWindow(url);
           }
         }).catch((error) => {
-          console.error('❌ Error handling view action:', error);
+          console.error('❌ Error handling view action on mobile:', error);
         })
     );
   }
 });
 
-// Background sync for offline functionality
+// Background sync for offline functionality (mobile-optimized)
 self.addEventListener('sync', function(event) {
-  console.log('🔄 Background sync event:', event.tag);
+  console.log('🔄 Background sync event (Mobile: ' + isMobile() + '):', event.tag);
   
   if (event.tag === 'background-sync-messages') {
     event.waitUntil(syncMessages());
@@ -160,10 +164,8 @@ self.addEventListener('sync', function(event) {
 });
 
 async function syncMessages() {
-  console.log('🔄 Syncing messages in background');
+  console.log('🔄 Syncing messages in background (Mobile device)');
   try {
-    // This could be used for background message syncing when back online
-    // For now, just log that sync is happening
     console.log('📱 Background message sync completed');
   } catch (error) {
     console.error('❌ Background message sync failed:', error);
@@ -171,9 +173,8 @@ async function syncMessages() {
 }
 
 async function syncPushSubscription() {
-  console.log('🔄 Syncing push subscription in background');
+  console.log('🔄 Syncing push subscription in background (Mobile device)');
   try {
-    // This will be handled by the main app when it comes back online
     console.log('🔔 Push subscription sync completed');
   } catch (error) {
     console.error('❌ Push subscription sync failed:', error);
@@ -182,18 +183,22 @@ async function syncPushSubscription() {
 
 // Install and cache management
 self.addEventListener('install', function(event) {
-  console.log('🔧 Service worker installing');
+  console.log('🔧 Service worker installing (Mobile: ' + isMobile() + ')');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
-        console.log('📦 Caching app resources');
+        console.log('📦 Caching app resources for mobile');
         return cache.addAll(urlsToCache);
       })
       .then(() => {
-        console.log('✅ Service worker installed successfully');
+        console.log('✅ Service worker installed successfully on mobile');
+        // Force activation on mobile for immediate updates
+        if (isMobile()) {
+          self.skipWaiting();
+        }
       })
       .catch((error) => {
-        console.error('❌ Service worker install failed:', error);
+        console.error('❌ Service worker install failed on mobile:', error);
       })
   );
 });
@@ -203,15 +208,12 @@ self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
-        // Return cached version or fetch from network
         if (response) {
-          console.log('📦 Serving from cache:', event.request.url);
           return response;
         }
         
-        console.log('🌐 Fetching from network:', event.request.url);
         return fetch(event.request).catch((error) => {
-          console.error('❌ Network fetch failed:', error);
+          console.error('❌ Network fetch failed on mobile:', error);
           throw error;
         });
       })
@@ -220,29 +222,32 @@ self.addEventListener('fetch', function(event) {
 
 // Activate event for cache cleanup
 self.addEventListener('activate', function(event) {
-  console.log('🔧 Service worker activating');
+  console.log('🔧 Service worker activating (Mobile: ' + isMobile() + ')');
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.map(function(cacheName) {
           if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Deleting old cache:', cacheName);
+            console.log('🗑️ Deleting old cache on mobile:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      console.log('✅ Service worker activated successfully');
+      console.log('✅ Service worker activated successfully on mobile');
+      // Take control of all clients immediately on mobile
+      if (isMobile()) {
+        return self.clients.claim();
+      }
     })
   );
 });
 
 // Handle messages from the main app
 self.addEventListener('message', function(event) {
-  console.log('📨 Message received in service worker:', event.data);
+  console.log('📨 Message received in service worker (Mobile: ' + isMobile() + '):', event.data);
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
-

@@ -3,13 +3,26 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, TestTube, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bell, TestTube, AlertCircle, CheckCircle, Smartphone, Monitor } from 'lucide-react';
 import { pushNotificationService } from '@/lib/pushNotificationService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationTesterProps {
   currentUser: { id: number; name: string } | null;
 }
+
+// Mobile detection utility
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+const isIOSSafari = () => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+};
+
+const isAndroid = () => {
+  return /Android/i.test(navigator.userAgent);
+};
 
 const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) => {
   const [testResults, setTestResults] = useState<{
@@ -18,9 +31,19 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
     subscription?: boolean;
     tokenSaved?: boolean;
     testSent?: boolean;
+    serviceWorkerReady?: boolean;
+    mobileDetected?: boolean;
+    deviceType?: string;
     error?: string;
   }>({});
   const [testing, setTesting] = useState(false);
+
+  const detectDevice = () => {
+    if (isIOSSafari()) return 'iOS Safari';
+    if (isAndroid()) return 'Android';
+    if (isMobile()) return 'Mobile (Other)';
+    return 'Desktop';
+  };
 
   const runDiagnostics = async () => {
     if (!currentUser) return;
@@ -29,44 +52,86 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
     setTestResults({});
     
     try {
-      console.log('🔧 Running notification diagnostics...');
+      console.log('🔧 Running mobile-aware notification diagnostics...');
       
-      // Test 1: Browser support
+      // Test 1: Device detection
+      const deviceType = detectDevice();
+      const mobileDetected = isMobile();
+      setTestResults(prev => ({ ...prev, deviceType, mobileDetected }));
+      
+      // Test 2: Browser support
       const browserSupport = pushNotificationService.isSupported();
       setTestResults(prev => ({ ...prev, browserSupport }));
       
-      // Test 2: Permission status
+      if (!browserSupported) {
+        setTestResults(prev => ({ ...prev, error: `Push notifications not supported on ${deviceType}` }));
+        return;
+      }
+      
+      // Test 3: Service Worker readiness
+      let serviceWorkerReady = false;
+      try {
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          serviceWorkerReady = !!registration;
+          console.log('🔧 Service worker ready:', registration);
+        }
+      } catch (swError) {
+        console.error('🔧 Service worker error:', swError);
+      }
+      setTestResults(prev => ({ ...prev, serviceWorkerReady }));
+      
+      // Test 4: Permission status with mobile-specific handling
       const permission = Notification.permission;
       setTestResults(prev => ({ ...prev, permission }));
       
       if (permission !== 'granted') {
-        setTestResults(prev => ({ ...prev, error: 'Notification permission not granted' }));
+        let errorMsg = 'Notification permission not granted';
+        if (isIOSSafari()) {
+          errorMsg += ' (iOS Safari requires user interaction)';
+        } else if (isAndroid()) {
+          errorMsg += ' (Android may require site engagement)';
+        }
+        setTestResults(prev => ({ ...prev, error: errorMsg }));
         return;
       }
       
-      // Test 3: Check subscription
+      // Test 5: Check subscription with mobile considerations
       const status = await pushNotificationService.getSubscriptionStatus(currentUser.id);
-      setTestResults(prev => ({ ...prev, subscription: !!status.subscription, tokenSaved: status.hasValidToken }));
+      setTestResults(prev => ({ 
+        ...prev, 
+        subscription: !!status.subscription, 
+        tokenSaved: status.hasValidToken 
+      }));
       
       if (!status.hasValidToken) {
         console.log('🔧 No valid token, attempting to create subscription...');
         try {
+          // Add delay for mobile browsers
+          if (mobileDetected) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
           await pushNotificationService.subscribe(currentUser.id);
           setTestResults(prev => ({ ...prev, subscription: true, tokenSaved: true }));
         } catch (error) {
-          setTestResults(prev => ({ ...prev, error: `Failed to create subscription: ${error}` }));
+          let errorMsg = `Failed to create subscription: ${error}`;
+          if (isIOSSafari()) {
+            errorMsg += ' (iOS Safari has limited push support)';
+          }
+          setTestResults(prev => ({ ...prev, error: errorMsg }));
           return;
         }
       }
       
-      // Test 4: Send test notification via edge function
+      // Test 6: Send test notification via edge function
       console.log('🔧 Sending test notification...');
       const { error: functionError } = await supabase.functions.invoke('send-push-notification', {
         body: {
           recipientUserIds: [currentUser.id],
           message: {
             id: 9999,
-            text: 'This is a test notification from the diagnostics tool',
+            text: `Test notification from ${deviceType}`,
             senderName: 'System Test',
             roomName: 'Test Room',
             senderId: 0,
@@ -79,11 +144,22 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
         setTestResults(prev => ({ ...prev, error: `Edge function error: ${functionError.message}` }));
       } else {
         setTestResults(prev => ({ ...prev, testSent: true }));
+        
+        // Show additional mobile guidance
+        if (mobileDetected && !isIOSSafari()) {
+          setTimeout(() => {
+            console.log('🔧 Mobile notification should appear shortly...');
+          }, 2000);
+        }
       }
       
     } catch (error) {
       console.error('🔧 Diagnostics error:', error);
-      setTestResults(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Unknown error' }));
+      let errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      if (mobileDetected) {
+        errorMsg += ` (Mobile: ${deviceType})`;
+      }
+      setTestResults(prev => ({ ...prev, error: errorMsg }));
     } finally {
       setTesting(false);
     }
@@ -91,10 +167,27 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
 
   const requestPermission = async () => {
     try {
+      // Mobile-specific permission request handling
+      if (isIOSSafari()) {
+        // iOS Safari requires user gesture and specific timing
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       const permission = await Notification.requestPermission();
       setTestResults(prev => ({ ...prev, permission }));
+      
+      if (permission === 'granted' && isMobile()) {
+        // Add small delay for mobile browsers to process
+        setTimeout(() => {
+          console.log('🔧 Permission granted on mobile, ready for subscription');
+        }, 500);
+      }
     } catch (error) {
-      console.error('Error requesting permission:', error);
+      console.error('Error requesting permission on mobile:', error);
+      setTestResults(prev => ({ 
+        ...prev, 
+        error: `Permission request failed on ${detectDevice()}: ${error}` 
+      }));
     }
   };
 
@@ -102,21 +195,44 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
     return null;
   }
 
+  const deviceType = testResults.deviceType || detectDevice();
+  const mobileDetected = testResults.mobileDetected ?? isMobile();
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TestTube className="h-5 w-5" />
           Notification Diagnostics
+          {mobileDetected ? <Smartphone className="h-4 w-4 text-blue-500" /> : <Monitor className="h-4 w-4" />}
         </CardTitle>
+        <div className="text-sm text-muted-foreground">
+          Device: {deviceType} {mobileDetected && '(Mobile)'}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span>Device Type:</span>
+            <Badge variant="outline">
+              {deviceType}
+            </Badge>
+          </div>
+          
           <div className="flex items-center justify-between">
             <span>Browser Support:</span>
             {testResults.browserSupport !== undefined && (
               <Badge variant={testResults.browserSupport ? "default" : "destructive"}>
                 {testResults.browserSupport ? "Supported" : "Not Supported"}
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <span>Service Worker:</span>
+            {testResults.serviceWorkerReady !== undefined && (
+              <Badge variant={testResults.serviceWorkerReady ? "default" : "destructive"}>
+                {testResults.serviceWorkerReady ? "Ready" : "Not Ready"}
               </Badge>
             )}
           </div>
@@ -171,13 +287,25 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
           </div>
         )}
         
+        {mobileDetected && isIOSSafari() && (
+          <div className="p-2 bg-blue-50 text-blue-700 text-xs rounded border border-blue-200">
+            📱 iOS Note: Push notifications have limited support on iOS Safari. For best results, add this site to your home screen.
+          </div>
+        )}
+        
+        {mobileDetected && isAndroid() && (
+          <div className="p-2 bg-green-50 text-green-700 text-xs rounded border border-green-200">
+            📱 Android: Make sure to interact with the site before testing notifications.
+          </div>
+        )}
+        
         <Button 
           onClick={runDiagnostics} 
           disabled={testing}
           className="w-full"
         >
           <Bell className="h-4 w-4 mr-2" />
-          {testing ? 'Testing...' : 'Run Diagnostics'}
+          {testing ? 'Testing...' : 'Run Mobile Diagnostics'}
         </Button>
       </CardContent>
     </Card>

@@ -30,16 +30,35 @@ if (isMessengerSubdomain()) {
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Register service worker for PWA
+// Register single service worker for PWA with mobile optimization
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const swFile = isMessengerSubdomain() ? '/messenger-sw.js' : '/sw.js';
-    navigator.serviceWorker.register(swFile)
+    // Always use the main service worker (consolidated)
+    navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('SW registered: ', registration);
+        console.log('SW registered successfully:', registration);
+        
+        // Mobile-specific service worker handling
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          console.log('Mobile device detected - service worker optimized for mobile');
+          
+          // Force update on mobile for immediate changes
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('New service worker available on mobile - updating');
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            }
+          });
+        }
       })
       .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
+        console.log('SW registration failed:', registrationError);
       });
   });
 }
