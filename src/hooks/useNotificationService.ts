@@ -124,6 +124,8 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     if (permission === 'granted') {
       console.log('🔔 Hiding banner - permission granted');
       setShowPermissionBanner(false);
+      // Mark banner as permanently hidden when permission is granted
+      localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
     } else {
       console.log('🔔 Showing banner - permission not granted');
       setShowPermissionBanner(true);
@@ -173,43 +175,42 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       let pushSubscribed = false;
       
-      // If permission granted, set up push notifications
-      if (granted && currentUser && pushNotificationService.isSupported()) {
+      // If permission granted, set up push notifications and save token
+      if (granted && currentUser && sessionToken) {
         try {
           console.log('🔔 Setting up push notifications...');
-          const subscription = await pushNotificationService.subscribe(currentUser.id);
-          pushSubscribed = !!subscription;
-          console.log('🔔 Push subscription result:', pushSubscribed);
           
-          // Save subscription token to database
-          if (subscription && sessionToken) {
-            // Set session context for RLS
-            await supabase.rpc('set_session_context', { session_token: sessionToken });
-            
-            // Save a simple notification token to indicate subscription is active
-            const { error } = await supabase
-              .from('chat_users')
-              .update({ 
-                notification_token: `browser_notification_${currentUser.id}_${Date.now()}`,
-                notification_enabled: true 
-              })
-              .eq('id', currentUser.id);
-            
-            if (error) {
-              console.error('🔔 Failed to save notification token:', error);
-            } else {
-              console.log('🔔 Notification token saved to database');
-            }
+          // Set session context for RLS first
+          await supabase.rpc('set_session_context', { session_token: sessionToken });
+          
+          // Save notification token to database immediately
+          const notificationToken = `browser_notification_${currentUser.id}_${Date.now()}`;
+          const { error } = await supabase
+            .from('chat_users')
+            .update({ 
+              notification_token: notificationToken,
+              notification_enabled: true 
+            })
+            .eq('id', currentUser.id);
+          
+          if (error) {
+            console.error('🔔 Failed to save notification token:', error);
+          } else {
+            console.log('🔔 Notification token saved to database:', notificationToken);
+          }
+          
+          // Try to set up push subscription if supported
+          if (pushNotificationService.isSupported()) {
+            const subscription = await pushNotificationService.subscribe(currentUser.id);
+            pushSubscribed = !!subscription;
+            console.log('🔔 Push subscription result:', pushSubscribed);
           }
           
           // Update user presence when online
-          if (sessionToken) {
-            await supabase.rpc('set_session_context', { session_token: sessionToken });
-            await supabase.rpc('update_user_presence', { 
-              p_user_id: currentUser.id, 
-              p_is_online: true 
-            });
-          }
+          await supabase.rpc('update_user_presence', { 
+            p_user_id: currentUser.id, 
+            p_is_online: true 
+          });
           
         } catch (error) {
           console.error('Error setting up push notifications:', error);
