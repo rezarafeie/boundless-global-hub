@@ -407,8 +407,17 @@ export const privateMessageService = {
       // Get all unique user IDs from conversations (excluding support user id = 1)
       const userIds = [...new Set(
         supportMessages
-          .filter(msg => msg.sender_id !== 1 && msg.recipient_id !== 1)
-          .map(msg => msg.sender_id === 1 ? msg.recipient_id : msg.sender_id)
+          .map(msg => {
+            // If sender is support (1), then user is recipient
+            if (msg.sender_id === 1 && msg.recipient_id !== 1) {
+              return msg.recipient_id;
+            }
+            // If recipient is support (1), then user is sender
+            if (msg.recipient_id === 1 && msg.sender_id !== 1) {
+              return msg.sender_id;
+            }
+            return null;
+          })
           .filter(Boolean)
       )];
 
