@@ -53,12 +53,12 @@ const UserCountdownTimer: React.FC<UserCountdownTimerProps> = ({ className = "" 
 
   if (isExpired) {
     return (
-      <div className={`bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center ${className}`}>
+      <div className={`bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center ${className}`}>
         <div className="flex items-center justify-center mb-2">
-          <Clock className="w-5 h-5 text-red-600 ml-2" />
-          <span className="text-red-600 font-bold">پایان مهلت ویژه</span>
+          <Clock className="w-5 h-5 text-green-600 ml-2" />
+          <span className="text-green-600 font-bold">فرصت محدود ثبت‌نام</span>
         </div>
-        <p className="text-red-600 text-sm">فرصت ویژه شما به پایان رسیده است</p>
+        <p className="text-green-600 text-sm">همین الان ثبت‌نام کنید و به جمع موفقان بپیوندید</p>
       </div>
     );
   }
