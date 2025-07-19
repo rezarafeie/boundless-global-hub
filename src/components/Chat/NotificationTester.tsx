@@ -98,9 +98,10 @@ const NotificationTester: React.FC<NotificationTesterProps> = ({ currentUser }) 
       
       // Test 5: Check subscription with mobile considerations
       const status = await pushNotificationService.getSubscriptionStatus(currentUser.id);
+      const subscriptionId = await pushNotificationService.getSubscription();
       setTestResults(prev => ({ 
         ...prev, 
-        subscription: !!status.subscription, 
+        subscription: !!subscriptionId, 
         tokenSaved: status.hasValidToken 
       }));
       

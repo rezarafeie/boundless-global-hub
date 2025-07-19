@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,28 +49,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       let pushSubscribed = false;
       if (granted && pushNotificationService.isSupported()) {
         try {
-          const status = await pushNotificationService.getSubscriptionStatus(currentUser.id);
-          pushSubscribed = status.isSubscribed && status.hasValidToken;
+          const subscriptionId = await pushNotificationService.getSubscription();
+          const hasValidSubscription = subscriptionId ? await pushNotificationService.isSubscriptionValid() : false;
+          pushSubscribed = hasValidSubscription;
           console.log('🔔 Push subscription status:', {
-            isSubscribed: status.isSubscribed,
-            hasValidToken: status.hasValidToken,
-            error: status.error
+            subscriptionId,
+            hasValidSubscription
           });
-          
-          // Test and cleanup invalid subscriptions
-          if (!status.hasValidToken && status.subscription) {
-            console.log('🔔 Subscription exists but token invalid, attempting cleanup and resubscribe...');
-            try {
-              const isValid = await pushNotificationService.testAndCleanupSubscription(currentUser.id);
-              if (!isValid) {
-                console.log('🔔 Creating new subscription after cleanup...');
-                await pushNotificationService.subscribe(currentUser.id);
-                pushSubscribed = true;
-              }
-            } catch (error) {
-              console.error('🔔 Failed to resubscribe after cleanup:', error);
-            }
-          }
         } catch (error) {
           console.warn('🔔 Error checking push subscription:', error);
         }
@@ -188,10 +172,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
     try {
       console.log('🔔 Requesting notification permission...');
-      const permission = await Notification.requestPermission();
-      const granted = permission === 'granted';
+      const granted = await pushNotificationService.requestPermission();
       
-      console.log('🔔 Permission result:', permission, 'Granted:', granted);
+      console.log('🔔 Permission result:', granted);
       
       let pushSubscribed = false;
       
@@ -203,27 +186,11 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
           await supabase.rpc('set_session_context', { session_token: sessionToken });
           
           // Set up push subscription
-          if (pushNotificationService.isSupported()) {
-            const subscription = await pushNotificationService.subscribe(currentUser.id);
-            pushSubscribed = !!subscription;
+          const subscriptionId = await pushNotificationService.getSubscription();
+          if (subscriptionId) {
+            await pushNotificationService.saveSubscriptionToDatabase(currentUser.id, subscriptionId);
+            pushSubscribed = true;
             console.log('🔔 Push subscription result:', pushSubscribed);
-          } else {
-            console.log('🔔 Push notifications not supported, using fallback');
-            // Fallback notification token
-            const notificationToken = `browser_notification_${currentUser.id}_${Date.now()}`;
-            const { error } = await supabase
-              .from('chat_users')
-              .update({ 
-                notification_token: notificationToken,
-                notification_enabled: true 
-              })
-              .eq('id', currentUser.id);
-            
-            if (error) {
-              console.error('🔔 Failed to save fallback token:', error);
-            } else {
-              console.log('🔔 Fallback notification token saved');
-            }
           }
           
           // Update user presence
@@ -239,13 +206,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       setPermissionState({
         granted,
-        permission,
+        permission: granted ? 'granted' : 'denied',
         supported: true,
         pushSupported: pushNotificationService.isSupported(),
         pushSubscribed
       });
 
-      updateBannerVisibility(permission, pushSubscribed);
+      updateBannerVisibility(granted ? 'granted' : 'denied', pushSubscribed);
 
       if (granted) {
         await updateNotificationPreference(true);
@@ -284,7 +251,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         
       if (!enabled && permissionState.pushSubscribed) {
         try {
-          await pushNotificationService.unsubscribe(currentUser.id);
+          await pushNotificationService.unsubscribe();
           setPermissionState(prev => ({ ...prev, pushSubscribed: false }));
           localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
           setShowPermissionBanner(true);
@@ -295,10 +262,15 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       if (enabled && permissionState.granted && !permissionState.pushSubscribed && pushNotificationService.isSupported()) {
         try {
-          const subscription = await pushNotificationService.subscribe(currentUser.id);
-          const newPushSubscribed = !!subscription;
-          setPermissionState(prev => ({ ...prev, pushSubscribed: newPushSubscribed }));
-          updateBannerVisibility(permissionState.permission, newPushSubscribed);
+          const success = await pushNotificationService.requestPermission();
+          if (success) {
+            const subscriptionId = await pushNotificationService.getSubscription();
+            if (subscriptionId) {
+              await pushNotificationService.saveSubscriptionToDatabase(currentUser.id, subscriptionId);
+              setPermissionState(prev => ({ ...prev, pushSubscribed: true }));
+              updateBannerVisibility(permissionState.permission, true);
+            }
+          }
         } catch (error) {
           console.error('🔔 Error subscribing to push notifications:', error);
         }
