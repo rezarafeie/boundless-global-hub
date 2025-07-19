@@ -101,13 +101,21 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
     console.log('🔔 updateBannerVisibility - Permission:', permission, 'Current user:', currentUser.name);
 
-    // Check if user has dismissed the banner recently (within 24 hours)
+    // Check if user has dismissed the banner temporarily (within 24 hours)
     const dismissalTime = localStorage.getItem(`notification_banner_dismissed_${currentUser.id}`);
     const now = Date.now();
     const oneDayInMs = 24 * 60 * 60 * 1000;
 
     if (dismissalTime && (now - parseInt(dismissalTime)) < oneDayInMs) {
       console.log('🔔 Banner was recently dismissed, not showing');
+      setShowPermissionBanner(false);
+      return;
+    }
+
+    // Check if user has permanently hidden the banner after granting permission
+    const permanentlyHidden = localStorage.getItem(`notification_banner_hidden_${currentUser.id}`);
+    if (permanentlyHidden === 'true' && permission === 'granted') {
+      console.log('🔔 Banner permanently hidden after permission granted');
       setShowPermissionBanner(false);
       return;
     }
@@ -224,6 +232,10 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       if (granted) {
         await updateNotificationPreference(true);
         setShowPermissionBanner(false);
+        // Hide banner permanently until notifications are deactivated
+        if (currentUser) {
+          localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
+        }
       }
 
       return granted;
@@ -256,7 +268,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       
       console.log('🔔 Successfully updated notification preference to:', enabled);
         
-      // If disabling notifications, unsubscribe from push
+      // If disabling notifications, unsubscribe from push and allow banner to show again
       if (!enabled && permissionState.pushSubscribed) {
         try {
           await pushNotificationService.unsubscribe(currentUser.id);
@@ -264,6 +276,8 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
             ...prev,
             pushSubscribed: false
           }));
+          // Remove permanent banner hiding when notifications are disabled
+          localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
         } catch (error) {
           console.error('Error unsubscribing from push notifications:', error);
         }
