@@ -48,7 +48,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
-  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [showStartChatModal, setShowStartChatModal] = useState(false);
 
   const checkSupportAccess = async () => {
     try {
@@ -145,20 +145,34 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
       console.log('Creating new support conversation with user:', user.id);
       
-      // For support chats, send a message to create the conversation
-      await messengerService.sendSupportMessage(
+      // Determine support user ID based on user's boundless status
+      const supportUserId = user.bedoun_marz || user.bedoun_marz_approved ? 999998 : 999997;
+      
+      // Create conversation between the selected user and appropriate support
+      const conversationId = await privateMessageService.getOrCreateConversation(
         user.id,
-        'شروع گفتگو با پشتیبانی'
+        supportUserId,
+        sessionToken
       );
 
-      // Refresh conversations to include the new one
+      console.log('New conversation created:', conversationId);
+      
+      // Refresh conversations to show the new one
       await fetchConversations();
       
-      setShowNewChatModal(false);
+      // Find and select the new conversation
+      setTimeout(() => {
+        const newConversation = conversations.find(conv => 
+          conv.user?.id === user.id
+        );
+        if (newConversation) {
+          handleConversationSelect(newConversation);
+        }
+      }, 1000);
       
       toast({
         title: 'موفق',
-        description: `گفتگو با ${user.name} شروع شد`,
+        description: `گفتگوی جدید با ${user.name} شروع شد`,
       });
       
     } catch (error) {
@@ -328,7 +342,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button 
-                    onClick={() => setShowNewChatModal(true)}
+                    onClick={() => setShowStartChatModal(true)}
                     size="sm"
                     variant="default"
                   >
@@ -366,7 +380,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
               
               <div className="flex gap-2">
                 <Button 
-                  onClick={() => setShowNewChatModal(true)}
+                  onClick={() => setShowStartChatModal(true)}
                   variant="default"
                   size="sm"
                 >
@@ -616,15 +630,13 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       </div>
 
       {/* Start Chat Modal */}
-      {currentUser && (
-        <SupportStartChatModal
-          isOpen={showNewChatModal}
-          onClose={() => setShowNewChatModal(false)}
-          onUserSelect={handleStartNewChat}
-          sessionToken={localStorage.getItem('messenger_session_token') || ''}
-          currentUser={currentUser}
-        />
-      )}
+      <SupportStartChatModal
+        isOpen={showStartChatModal}
+        onClose={() => setShowStartChatModal(false)}
+        onUserSelect={handleStartNewChat}
+        sessionToken={localStorage.getItem('messenger_session_token') || ''}
+        currentUser={currentUser}
+      />
     </MainLayout>
   );
 };
