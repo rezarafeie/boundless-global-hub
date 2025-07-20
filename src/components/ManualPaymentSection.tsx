@@ -83,10 +83,26 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   };
 
   const submitManualPayment = async () => {
+    console.log('submitManualPayment called with:', { 
+      uploadedFile: !!uploadedFile, 
+      formData,
+      course: { id: course.id, title: course.title }
+    });
+
     if (!uploadedFile) {
       toast({
         title: "خطا",
         description: "لطفا رسید پرداخت را آپلود کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if all required form fields are filled
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      toast({
+        title: "خطا",
+        description: "لطفا تمام فیلدهای فرم را تکمیل کنید",
         variant: "destructive"
       });
       return;
