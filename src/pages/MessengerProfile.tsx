@@ -12,9 +12,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from '@/components/ui/sonner';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const MessengerProfile: React.FC = () => {
   const navigate = useNavigate();
+  const { logout: unifiedLogout } = useAuth(); // Get unified logout function
   const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -158,10 +160,14 @@ const MessengerProfile: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('messenger_session_token');
-    toast.success('با موفقیت خارج شدید');
-    navigate('/hub/messenger');
+  const handleLogout = async () => {
+    console.log('🚪 Profile logout initiated...');
+    
+    // Use unified logout to clear all sessions (messenger + academy)
+    await unifiedLogout();
+    
+    toast.success('با موفقیت از تمام سیستم‌ها خارج شدید');
+    navigate('/auth'); // Redirect to auth page instead of messenger
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
