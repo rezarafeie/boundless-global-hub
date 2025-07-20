@@ -7,6 +7,7 @@ import HubManagementPanel from '@/components/Admin/HubManagementPanel';
 import AnnouncementManagementModal from '@/components/Admin/AnnouncementManagementModal';
 import LiveStreamManagementModal from '@/components/Admin/LiveStreamManagementModal';
 import RafieiMeetManagementModal from '@/components/Admin/RafieiMeetManagementModal';
+import GoogleAuthSettings from '@/components/Admin/GoogleAuthSettings';
 
 const HubManagementSection = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -113,6 +114,9 @@ const HubManagementSection = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Google Auth Settings */}
+      <GoogleAuthSettings />
 
       {/* Hub Management Panel */}
       <HubManagementPanel />

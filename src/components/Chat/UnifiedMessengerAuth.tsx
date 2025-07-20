@@ -15,6 +15,7 @@ import { privateMessageService } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
+import useGoogleAuthSettings from '@/hooks/useGoogleAuthSettings';
 
 interface UnifiedMessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -40,6 +41,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [username, setUsername] = useState('');
   const [isBoundlessStudent, setIsBoundlessStudent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { isGoogleAuthEnabled } = useGoogleAuthSettings();
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameError, setUsernameError] = useState('');
@@ -690,8 +692,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'name': return 'نام شما';
       case 'username': return 'انتخاب نام کاربری';
       case 'pending': return 'در انتظار تایید';
-      case 'otp-link': return 'ربط حساب Google';
-      case 'linking': return 'ربط حساب Google';
+      case 'otp-link': return 'تأیید شماره تلفن';
+      case 'linking': return 'ربط حساب';
       case 'name-confirm': return 'تأیید اطلاعات';
       case 'success': return 'موفقیت آمیز';
     }
@@ -704,8 +706,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'name': return 'نام و نام خانوادگی خود را وارد کنید';
       case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
-      case 'otp-link': return 'کد تأیید برای ربط حساب Google ارسال شد';
-      case 'linking': return 'شماره تلفن خود را وارد کنید';
+      case 'otp-link': return 'کد تأیید ارسال شد';
+      case 'linking': return 'اطلاعات حساب خود را وارد کنید';
       case 'name-confirm': return 'اطلاعات خود را بررسی و تأیید کنید';
       case 'success': return 'حساب Google شما با موفقیت ربط داده شد!';
     }
@@ -771,11 +773,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {getCountryCodeOptions().map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        {country.flag} {country.code}
-                      </SelectItem>
-                    ))}
+                     {getCountryCodeOptions().map((country, index) => (
+                       <SelectItem key={`${country.code}-${index}`} value={country.code}>
+                         {country.flag} {country.code}
+                       </SelectItem>
+                     ))}
                   </SelectContent>
                 </Select>
                 <Input
@@ -806,40 +808,44 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               )}
             </Button>
             
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">یا</span>
-              </div>
-            </div>
+            {/* Google Sign In Section - Only show if enabled */}
+            {isGoogleAuthEnabled && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">یا</span>
+                  </div>
+                </div>
 
-            {/* Google Sign In Button */}
-            <Button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading}
-              variant="outline"
-              className="w-full h-10 bg-background dark:bg-background border border-border dark:border-border hover:bg-accent dark:hover:bg-accent text-foreground dark:text-foreground rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              {googleLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  در حال ورود...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  ورود با Google
-                </>
-              )}
-            </Button>
+                <Button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={googleLoading}
+                  variant="outline"
+                  className="w-full h-10 bg-background dark:bg-background border border-border dark:border-border hover:bg-accent dark:hover:bg-accent text-foreground dark:text-foreground rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  {googleLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      در حال ورود...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      ورود با Google
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </form>
         )}
 
@@ -1270,11 +1276,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {getCountryCodeOptions().map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          {country.flag} {country.code}
-                        </SelectItem>
-                      ))}
+                       {getCountryCodeOptions().map((country, index) => (
+                         <SelectItem key={`${country.code}-linking-${index}`} value={country.code}>
+                           {country.flag} {country.code}
+                         </SelectItem>
+                       ))}
                     </SelectContent>
                   </Select>
                   <Input
@@ -1300,7 +1306,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                     در حال بررسی...
                   </>
                 ) : (
-                  'ربط حساب'
+                  'ادامه'
                 )}
               </Button>
             </form>

@@ -761,6 +761,35 @@ export type Database = {
           },
         ]
       }
+      google_auth_settings: {
+        Row: {
+          id: number
+          is_enabled: boolean
+          updated_at: string
+          updated_by: number | null
+        }
+        Insert: {
+          id?: number
+          is_enabled?: boolean
+          updated_at?: string
+          updated_by?: number | null
+        }
+        Update: {
+          id?: number
+          is_enabled?: boolean
+          updated_at?: string
+          updated_by?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_auth_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       license_errors: {
         Row: {
           api_response: string | null

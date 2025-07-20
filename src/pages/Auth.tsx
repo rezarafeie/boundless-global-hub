@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { unifiedAuthService } from '@/lib/unifiedAuthService';
 import { messengerService } from '@/lib/messengerService';
+import useGoogleAuthSettings from '@/hooks/useGoogleAuthSettings';
 
 const Auth: React.FC = () => {
   const { user, isAuthenticated, login } = useAuth();
@@ -18,6 +19,7 @@ const Auth: React.FC = () => {
   const [showRegistration, setShowRegistration] = useState(false);
   const [linkingEmail, setLinkingEmail] = useState<string | null>(null);
   const [isLinkingMode, setIsLinkingMode] = useState(false);
+  const { isGoogleAuthEnabled } = useGoogleAuthSettings();
 
   // Check for URL linking parameter and redirect URL
   useEffect(() => {
@@ -39,8 +41,8 @@ const Auth: React.FC = () => {
 
   // Check for Google auth session on mount
   useEffect(() => {
-    // Don't run auth check if we're in linking mode
-    if (isLinkingMode) {
+    // Don't run auth check if we're in linking mode or if Google auth is disabled
+    if (isLinkingMode || !isGoogleAuthEnabled) {
       return;
     }
 
@@ -111,7 +113,7 @@ const Auth: React.FC = () => {
     };
 
     checkGoogleAuth();
-  }, [login, linkingEmail, isLinkingMode]);
+  }, [login, linkingEmail, isLinkingMode, isGoogleAuthEnabled]);
 
   // Modified redirect condition - don't redirect if we're in linking mode
   if (isAuthenticated && user && !isLinkingMode) {
