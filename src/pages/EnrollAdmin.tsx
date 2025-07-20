@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +25,8 @@ interface Course {
   redirect_url: string | null;
   spotplayer_course_id: string | null;
   is_spotplayer_enabled: boolean;
+  create_test_license: boolean;
+  woocommerce_create_access: boolean;
   created_at: string;
 }
 
@@ -70,6 +71,8 @@ const EnrollAdmin: React.FC = () => {
     redirect_url: '',
     spotplayer_course_id: '',
     is_spotplayer_enabled: false,
+    create_test_license: false,
+    woocommerce_create_access: true,
     is_active: true
   });
 
@@ -191,6 +194,8 @@ const EnrollAdmin: React.FC = () => {
       redirect_url: course.redirect_url || '',
       spotplayer_course_id: course.spotplayer_course_id || '',
       is_spotplayer_enabled: course.is_spotplayer_enabled || false,
+      create_test_license: course.create_test_license || false,
+      woocommerce_create_access: course.woocommerce_create_access !== false,
       is_active: course.is_active
     });
     setShowCourseModal(true);
@@ -206,6 +211,8 @@ const EnrollAdmin: React.FC = () => {
       redirect_url: '',
       spotplayer_course_id: '',
       is_spotplayer_enabled: false,
+      create_test_license: false,
+      woocommerce_create_access: true,
       is_active: true
     });
     setShowCourseModal(true);
@@ -891,7 +898,7 @@ const EnrollAdmin: React.FC = () => {
 
       {/* Course Management Modal */}
       <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedCourse ? 'ویرایش دوره' : 'ایجاد دوره جدید'}
@@ -980,20 +987,57 @@ const EnrollAdmin: React.FC = () => {
               </div>
 
               {courseForm.is_spotplayer_enabled && (
-                <div className="space-y-2">
-                  <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer</Label>
-                  <Input
-                    id="spotplayer_course_id"
-                    value={courseForm.spotplayer_course_id}
-                    onChange={(e) => setCourseForm(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
-                    placeholder="شناسه دوره در سیستم SpotPlayer"
-                    required={courseForm.is_spotplayer_enabled}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    این شناسه برای ایجاد لایسنس در سیستم SpotPlayer استفاده می‌شود
-                  </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer</Label>
+                    <Input
+                      id="spotplayer_course_id"
+                      value={courseForm.spotplayer_course_id}
+                      onChange={(e) => setCourseForm(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
+                      placeholder="شناسه دوره در سیستم SpotPlayer"
+                      required={courseForm.is_spotplayer_enabled}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      این شناسه برای ایجاد لایسنس در سیستم SpotPlayer استفاده می‌شود
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="create-test-license" className="text-sm font-medium">
+                        ایجاد لایسنس تستی
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        لایسنس‌های تستی محدودیت زمانی دارند
+                      </p>
+                    </div>
+                    <Switch
+                      id="create-test-license"
+                      checked={courseForm.create_test_license}
+                      onCheckedChange={(checked) => setCourseForm(prev => ({ ...prev, create_test_license: checked }))}
+                    />
+                  </div>
                 </div>
               )}
+            </div>
+
+            {/* WooCommerce Configuration */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="woocommerce-access" className="text-base font-medium">
+                    دسترسی WooCommerce
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    در صورت غیرفعال بودن، دکمه دسترسی به دوره حذف می‌شود
+                  </p>
+                </div>
+                <Switch
+                  id="woocommerce-access"
+                  checked={courseForm.woocommerce_create_access}
+                  onCheckedChange={(checked) => setCourseForm(prev => ({ ...prev, woocommerce_create_access: checked }))}
+                />
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">
