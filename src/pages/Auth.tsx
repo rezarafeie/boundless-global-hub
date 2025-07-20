@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
+import GoogleAuth from '@/components/Auth/GoogleAuth';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Auth: React.FC = () => {
@@ -29,7 +29,7 @@ const Auth: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />
+        <GoogleAuth onAuthenticated={handleAuthenticated} />
       </div>
     </div>
   );

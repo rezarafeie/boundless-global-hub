@@ -4,6 +4,7 @@ import { messengerService, MessengerUser } from '@/lib/messengerService';
 import { unifiedAuthService, UnifiedUser } from '@/lib/unifiedAuthService';
 import { supabase } from '@/integrations/supabase/client';
 import { getCookie, setCookie, deleteCookie } from '@/lib/cookieUtils';
+import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: UnifiedUser | null;
@@ -75,6 +76,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       
       try {
+        // Set up Supabase auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log('🔐 Supabase auth state changed:', event, session?.user?.email);
+            
+            if (event === 'SIGNED_IN' && session?.user) {
+              console.log('✅ Google/Supabase auth success');
+              await handleSupabaseAuth(session, session.user);
+            } else if (event === 'SIGNED_OUT') {
+              console.log('🚪 Supabase auth signed out');
+              // Don't clear everything here as it might be a messenger logout
+            }
+          }
+        );
+
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('🔄 Found existing Supabase session');
+          await handleSupabaseAuth(session, session.user);
+          setIsLoading(false);
+          return () => subscription.unsubscribe();
+        }
+
+        
         // Check all possible authentication sources
         const cookieToken = getCookie('session_token');
         const cookieUser = getCookie('current_user');
@@ -105,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               if (validatedUser.isMessengerUser) {
                 localStorage.setItem('messenger_session_token', cookieToken);
               }
-              return;
+              return () => subscription.unsubscribe();
             } else {
               console.log('❌ Cookie session validation failed');
               // Clear invalid cookies
@@ -134,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               // Sync to cookies for cross-system compatibility
               setCookie('session_token', localStorageToken, 30);
               setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
-              return;
+              return () => subscription.unsubscribe();
             } else {
               console.log('❌ LocalStorage session validation failed');
               localStorage.removeItem('messenger_session_token');
@@ -146,6 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         console.log('🚫 No valid session found anywhere');
+        return () => subscription.unsubscribe();
       } catch (error) {
         console.error('💥 Critical error during auth initialization:', error);
         // Clean up everything on critical error
@@ -158,8 +185,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    initializeAuth();
+    const cleanup = initializeAuth();
+    return () => {
+      cleanup.then(unsub => unsub && unsub());
+    };
   }, []);
+
+  // Handle Supabase (Google) authentication
+  const handleSupabaseAuth = async (session: Session, user: User) => {
+    try {
+      console.log('🔄 Processing Supabase auth for:', user.email);
+      
+      // Create unified user from Supabase user
+      const unifiedUser: UnifiedUser = {
+        id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'کاربر',
+        firstName: user.user_metadata?.given_name || '',
+        lastName: user.user_metadata?.family_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        countryCode: '+98',
+        username: user.email?.split('@')[0],
+        isAcademyUser: true,
+        isMessengerUser: false,
+        academyData: {
+          id: user.id,
+          email: user.email,
+          first_name: user.user_metadata?.given_name || '',
+          last_name: user.user_metadata?.family_name || ''
+        }
+      };
+
+      // Store session
+      const sessionToken = session.access_token;
+      setUser(unifiedUser);
+      setToken(sessionToken);
+      
+      // Store in both systems for compatibility
+      setCookie('session_token', sessionToken, 30);
+      setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
+      
+      console.log('✅ Supabase auth processed successfully');
+    } catch (error) {
+      console.error('❌ Error processing Supabase auth:', error);
+    }
+  };
 
   const convertToUnifiedUser = (messengerUser: MessengerUser): UnifiedUser => {
     return {
