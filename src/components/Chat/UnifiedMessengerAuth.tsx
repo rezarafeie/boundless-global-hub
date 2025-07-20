@@ -352,9 +352,19 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     
     try {
+      // Format phone consistently with send-otp function
+      let formattedPhone = phoneNumber;
+      if (countryCode === '+98') {
+        formattedPhone = `${countryCode}${phoneNumber}`;
+      } else {
+        formattedPhone = `00${countryCode.slice(1)}${phoneNumber}`;
+      }
+
+      console.log('Verifying OTP for phone:', formattedPhone, 'Code:', code);
+      
       const { data, error } = await supabase.functions.invoke('verify-otp', {
         body: {
-          phone: `${countryCode}${phoneNumber}`,
+          phone: formattedPhone,
           otpCode: code
         }
       });
@@ -816,64 +826,109 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
         {currentStep === 'otp-link' && (
           <div className="space-y-6">
-            <div className="text-center space-y-2 mb-6">
-              <p className="text-lg font-medium text-foreground">
-                ربط حساب Google
+            <div className="text-center space-y-3 mb-8">
+              {/* Animated Icon */}
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <svg className="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 12l2 2 4-4"/>
+                  <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+                  <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+                  <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+                  <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+                </svg>
+              </div>
+              
+              <h3 className="text-lg font-semibold text-foreground">
+                تأیید شماره تلفن
+              </h3>
+              
+              <p className="text-sm text-muted-foreground">
+                کد تأیید ۴ رقمی به شماره
+              </p>
+              <p className="text-base font-medium text-foreground dir-ltr">
+                {countryCode}{phoneNumber}
               </p>
               <p className="text-sm text-muted-foreground">
-                شماره {countryCode}{phoneNumber} قبلاً ثبت شده است
+                ارسال شد. کد را در زیر وارد کنید
               </p>
-              <p className="text-sm text-muted-foreground">
-                کد ۴ رقمی ارسال شده را وارد کنید تا حساب Google شما ربط داده شود
-              </p>
-              {prefillData?.email && (
-                <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                  ایمیل: {prefillData.email}
-                </p>
+              
+              {linkingEmail && (
+                <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 rounded-lg p-3 mt-4">
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    ربط حساب Google: {linkingEmail}
+                  </p>
+                </div>
               )}
             </div>
 
-            <div className="flex justify-center">
+            {/* Enhanced OTP Input */}
+            <div className="flex justify-center mb-8">
               <InputOTP
                 value={otpCode}
                 onChange={setOtpCode}
                 maxLength={4}
-                className="gap-2"
+                className="gap-3"
               >
                 <InputOTPGroup>
-                  <InputOTPSlot index={0} className="w-12 h-12 text-lg" />
-                  <InputOTPSlot index={1} className="w-12 h-12 text-lg" />
-                  <InputOTPSlot index={2} className="w-12 h-12 text-lg" />
-                  <InputOTPSlot index={3} className="w-12 h-12 text-lg" />
+                  <InputOTPSlot 
+                    index={0} 
+                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                  />
+                  <InputOTPSlot 
+                    index={1} 
+                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                  />
+                  <InputOTPSlot 
+                    index={2} 
+                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                  />
+                  <InputOTPSlot 
+                    index={3} 
+                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                  />
                 </InputOTPGroup>
               </InputOTP>
             </div>
 
-            <div className="text-center">
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">در حال تأیید...</span>
+              </div>
+            )}
+
+            {/* Resend Section */}
+            <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
                 کد را دریافت نکردید؟
               </p>
               <Button 
-                variant="link" 
-                className="text-sm p-0 h-auto"
+                variant="ghost" 
+                size="sm"
+                className="text-primary hover:text-primary/80 hover:bg-primary/10 font-medium"
                 onClick={handlePhoneSubmit}
                 disabled={loading}
               >
-                ارسال مجدد
+                ارسال مجدد کد
               </Button>
             </div>
 
-            <Button 
-              variant="ghost" 
-              onClick={() => {
-                setCurrentStep('phone');
-                setOtpCode('');
-                setIsGoogleLinking(false);
-              }}
-              className="w-full h-12 rounded-full text-muted-foreground"
-            >
-              برگشت
-            </Button>
+            {/* Back Button */}
+            <div className="pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCurrentStep('phone');
+                  setOtpCode('');
+                  setIsGoogleLinking(false);
+                }}
+                className="w-full h-12 rounded-full border-border hover:bg-muted/50"
+                disabled={loading}
+              >
+                تغییر شماره تلفن
+              </Button>
+            </div>
           </div>
         )}
 
