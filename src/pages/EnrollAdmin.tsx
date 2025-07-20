@@ -92,41 +92,32 @@ const EnrollAdmin: React.FC = () => {
 
   const fetchEnrollments = async () => {
     try {
-      console.log('Fetching enrollments...');
-      
-      // First, let's check if we have any enrollments at all
-      const { data: allEnrollments, error: allError } = await supabase
-        .from('enrollments')
-        .select('*');
-      
-      console.log('All enrollments:', allEnrollments);
-      console.log('Enrollments error:', allError);
-      
-      // Then check if we have any courses
-      const { data: allCourses, error: coursesError } = await supabase
-        .from('courses')
-        .select('*');
-      
-      console.log('All courses:', allCourses);
-      console.log('Courses error:', coursesError);
-      
-      // Now try the join query
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses (
-            title,
-            slug
-          )
-        `)
-        .order('created_at', { ascending: false });
+      // Fetch enrollments and courses separately, then join in JavaScript
+      const [enrollmentsResult, coursesResult] = await Promise.all([
+        supabase
+          .from('enrollments')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('courses')
+          .select('id, title, slug')
+      ]);
 
-      console.log('Joined data:', data);
-      console.log('Join error:', error);
+      if (enrollmentsResult.error) throw enrollmentsResult.error;
+      if (coursesResult.error) throw coursesResult.error;
 
-      if (error) throw error;
-      setEnrollments(data || []);
+      // Create a courses lookup map
+      const coursesMap = new Map(
+        (coursesResult.data || []).map(course => [course.id, course])
+      );
+
+      // Join the data in JavaScript
+      const enrollmentsWithCourses = (enrollmentsResult.data || []).map(enrollment => ({
+        ...enrollment,
+        courses: coursesMap.get(enrollment.course_id) || { title: 'دوره نامشخص', slug: '' }
+      }));
+
+      setEnrollments(enrollmentsWithCourses);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
       toast({
