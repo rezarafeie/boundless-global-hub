@@ -27,6 +27,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [isBoundlessStudent, setIsBoundlessStudent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -182,6 +183,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       return;
     }
 
+    if (!email.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'ایمیل را وارد کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setCurrentStep('username');
   };
 
@@ -215,6 +225,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         countryCode: countryCode,
         username: username,
         password: password,
+        email: email.trim(),
         isBoundlessStudent: isBoundlessStudent,
         firstName: firstName.trim(),
         lastName: lastName.trim()
@@ -425,28 +436,43 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
         {currentStep === 'name' && (
           <form onSubmit={handleNameSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="نام"
-                  required
-                  dir="rtl"
-                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-                />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="نام"
+                    required
+                    dir="rtl"
+                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="نام خانوادگی"
+                    required
+                    dir="rtl"
+                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  />
+                </div>
               </div>
+              
               <div className="space-y-2">
                 <Input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="نام خانوادگی"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ایمیل"
                   required
-                  dir="rtl"
+                  dir="ltr"
                   className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
                 />
               </div>

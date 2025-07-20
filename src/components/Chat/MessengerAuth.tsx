@@ -29,6 +29,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     lastName: '',
     phone: '',
     countryCode: '+98',
+    email: '',
     username: '',
     password: '',
     isBoundlessStudent: false
@@ -361,6 +362,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       return;
     }
 
+    if (!formData.email.trim()) {
+      toast.error('خطا', {
+        description: 'لطفاً ایمیل را وارد کنید'
+      });
+      return;
+    }
+
     if (!formData.username || !usernameAvailable) {
       toast.error('خطا', {
         description: 'لطفاً نام کاربری معتبری انتخاب کنید'
@@ -379,6 +387,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         phone: formattedPhoneNumber,
         countryCode: '+98',
         password: formData.password,
+        email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName
       });
@@ -715,6 +724,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 placeholder="نام خانوادگی"
                 required
                 dir="rtl"
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+              
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="ایمیل"
+                required
+                dir="ltr"
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>

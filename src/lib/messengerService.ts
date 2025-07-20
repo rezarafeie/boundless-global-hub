@@ -935,13 +935,14 @@ export const messengerService = {
     phone: string;
     countryCode: string;
     password: string;
+    email?: string;
     username?: string;
     firstName?: string;
     lastName?: string;
     isBoundlessStudent?: boolean;
   }): Promise<AuthResult> {
     try {
-      const { name, phone, countryCode, password, username, firstName, lastName, isBoundlessStudent } = userData;
+      const { name, phone, countryCode, password, email, username, firstName, lastName, isBoundlessStudent } = userData;
       
       // Check if user already exists
       const existingUser = await this.getUserByPhone(phone, countryCode);
@@ -958,6 +959,7 @@ export const messengerService = {
         .insert([{ 
           phone: phone, 
           name: name,
+          email: email,
           first_name: firstName,
           last_name: lastName,
           username: username,

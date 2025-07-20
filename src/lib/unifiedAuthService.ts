@@ -142,6 +142,7 @@ class UnifiedAuthService {
         countryCode,
         username: username || `user_${phone.slice(-6)}`,
         password,
+        email,
         isBoundlessStudent: false,
         firstName,
         lastName
