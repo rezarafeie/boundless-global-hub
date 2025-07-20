@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { supabase } from "../_shared/supabase.ts"
 
@@ -49,6 +50,9 @@ serve(async (req) => {
       throw new Error('SpotPlayer course ID is not configured for this course');
     }
 
+    // Create unique watermark by combining phone and enrollment ID (last 8 chars)
+    const uniqueWatermark = `${userPhone}-${enrollmentId.slice(-8)}`;
+
     // Prepare SpotPlayer API request
     const spotPlayerRequestBody = {
       test: false,
@@ -57,7 +61,7 @@ serve(async (req) => {
       watermark: {
         texts: [
           {
-            text: userPhone
+            text: uniqueWatermark
           }
         ]
       }
@@ -137,13 +141,13 @@ serve(async (req) => {
 
     // Try to log error to database if we have enrollment info
     try {
-      const body = await req.clone().json();
-      if (body.enrollmentId && body.courseId) {
+      const { enrollmentId, courseId } = await req.json();
+      if (enrollmentId && courseId) {
         await supabase
           .from('license_errors')
           .insert({
-            enrollment_id: body.enrollmentId,
-            course_id: body.courseId,
+            enrollment_id: enrollmentId,
+            course_id: courseId,
             error_message: error.message,
             api_response: null
           });
