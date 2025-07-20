@@ -118,7 +118,7 @@ const Dashboard = () => {
     const response = await supabase
       .from('enrollments')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('chat_user_id', parseInt(user.id));
 
     if (response.error) {
       console.error('Error fetching enrolled courses:', response.error);
@@ -205,7 +205,7 @@ const Dashboard = () => {
     const { data, error } = await supabase
       .from('enrollments')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('chat_user_id', parseInt(user.id))
       .order('created_at', { ascending: false });
 
     if (error) {

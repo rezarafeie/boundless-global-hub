@@ -117,7 +117,7 @@ const Auth: React.FC = () => {
 
   // Modified redirect condition - don't redirect if we're in linking mode
   if (isAuthenticated && user && !isLinkingMode) {
-    const redirectUrl = localStorage.getItem('auth_redirect') || '/';
+    const redirectUrl = localStorage.getItem('auth_redirect') || '/dashboard';
     localStorage.removeItem('auth_redirect');
     return <Navigate to={redirectUrl} replace />;
   }
