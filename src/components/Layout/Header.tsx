@@ -116,7 +116,7 @@ const Header = () => {
             asChild
             className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hidden md:flex dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
           >
-            <Link to="/dashboard">
+            <Link to="/auth">
               {isAuthenticated && user ? 
                 user.name || user.firstName || user.username || 'کاربر' : 
                 (language === "en" ? "Login / Register" : "ورود / ثبت‌نام")
@@ -224,7 +224,7 @@ const Header = () => {
                     className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                     <Link to="/dashboard">
+                     <Link to="/auth">
                        {isAuthenticated && user ? 
                          user.name || user.firstName || user.username || 'کاربر' : 
                          (language === "en" ? "Login / Register" : "ورود / ثبت‌نام")
