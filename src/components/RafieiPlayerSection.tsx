@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Play, Download, Loader2, ExternalLink, Copy } from 'lucide-react';
+import { Play, Download, Loader2, ExternalLink, Copy, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,13 +35,21 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
     license_id?: string;
     license_key?: string;
     license_url?: string;
-  } | null>(enrollment?.spotplayer_license_id ? {
-    license_id: enrollment.spotplayer_license_id,
-    license_key: enrollment.spotplayer_license_key,
-    license_url: enrollment.spotplayer_license_url
-  } : null);
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
   
   const { toast } = useToast();
+
+  // Load existing license data on component mount
+  useEffect(() => {
+    if (enrollment?.spotplayer_license_id && enrollment?.spotplayer_license_key) {
+      setLicenseData({
+        license_id: enrollment.spotplayer_license_id,
+        license_key: enrollment.spotplayer_license_key,
+        license_url: enrollment.spotplayer_license_url
+      });
+    }
+  }, [enrollment]);
 
   const createLicense = async () => {
     if (!enrollment || !course) {
@@ -80,11 +88,23 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
       console.log('License creation response:', data);
 
       if (data?.success) {
-        setLicenseData({
+        const newLicenseData = {
           license_id: data.license.id,
           license_key: data.license.key,
           license_url: data.license.url
-        });
+        };
+        
+        setLicenseData(newLicenseData);
+        
+        // Update the enrollment in database
+        await supabase
+          .from('enrollments')
+          .update({
+            spotplayer_license_id: data.license.id,
+            spotplayer_license_key: data.license.key,
+            spotplayer_license_url: data.license.url
+          })
+          .eq('id', enrollment.id);
         
         toast({
           title: "لایسنس رفیعی پلیر ایجاد شد",
@@ -105,12 +125,22 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "کپی شد",
-      description: "کد لایسنس در کلیپ‌بورد کپی شد.",
-    });
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({
+        title: "کپی شد",
+        description: "کد لایسنس در کلیپ‌بورد کپی شد.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "خطا",
+        description: "امکان کپی کردن وجود ندارد",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePlayerClick = () => {
@@ -143,33 +173,81 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
         </div>
 
         {licenseData?.license_key ? (
-          <div className="space-y-3">
-            <div className="bg-white/70 rounded-lg p-3 border border-purple-100">
-              <label className="text-sm font-medium text-purple-700 block mb-1">
-                کد لایسنس:
-              </label>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-purple-50 text-purple-800 px-2 py-1 rounded text-sm font-mono">
-                  {licenseData.license_key}
-                </code>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyToClipboard(licenseData.license_key!)}
-                  className="border-purple-200 text-purple-600 hover:bg-purple-50"
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
+          <div className="space-y-4">
+            {/* License Box */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-semibold text-green-700">لایسنس فعال</span>
+                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs">
+                  آماده استفاده
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-green-700 block mb-2">
+                    🔑 کد لایسنس شما:
+                  </label>
+                  <div className="bg-white rounded-lg border-2 border-green-200 p-3">
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 bg-green-50 text-green-800 px-3 py-2 rounded-md text-sm font-mono border border-green-200 break-all overflow-hidden">
+                        {licenseData.license_key}
+                      </code>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(licenseData.license_key!)}
+                      className="w-full mt-2 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4 ml-2" />
+                          کپی شد ✓
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 ml-2" />
+                          کپی کردن لایسنس
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {licenseData.license_url && (
+                  <div>
+                    <label className="text-sm font-medium text-green-700 block mb-2">
+                      📦 لینک دانلود:
+                    </label>
+                    <div className="bg-white rounded-lg border-2 border-green-200 p-3">
+                      <code className="text-sm text-green-800 break-all">
+                        {licenseData.license_url}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyToClipboard(licenseData.license_url!)}
+                        className="w-full mt-2 border-green-300 text-green-700 hover:bg-green-100"
+                      >
+                        <Copy className="h-4 w-4 ml-2" />
+                        کپی لینک دانلود
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <Button 
               onClick={handlePlayerClick}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              size="lg"
             >
-              <Play className="ml-2 h-4 w-4" />
-              🎬 تماشا در رفیعی پلیر
-              <ExternalLink className="mr-2 h-3 w-3" />
+              <Play className="ml-2 h-5 w-5" />
+              🎬 ورود به رفیعی پلیر
+              <ExternalLink className="mr-2 h-4 w-4" />
             </Button>
           </div>
         ) : (
