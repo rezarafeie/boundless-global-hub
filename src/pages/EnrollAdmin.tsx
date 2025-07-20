@@ -4,12 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EnrollHeader from '@/components/Layout/EnrollHeader';
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  slug: string;
+  price: number;
+  is_active: boolean;
+  redirect_url: string | null;
+  created_at: string;
+}
 
 interface Enrollment {
   id: string;
@@ -35,15 +48,45 @@ interface Enrollment {
 const EnrollAdmin: React.FC = () => {
   const { toast } = useToast();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+  const [showCourseModal, setShowCourseModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [courseForm, setCourseForm] = useState({
+    title: '',
+    description: '',
+    slug: '',
+    price: 0,
+    redirect_url: '',
+    is_active: true
+  });
 
   useEffect(() => {
-    fetchEnrollments();
+    Promise.all([fetchEnrollments(), fetchCourses()]);
   }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری لیست دوره‌ها",
+        variant: "destructive"
+      });
+    }
+  };
 
   const fetchEnrollments = async () => {
     try {
@@ -124,7 +167,66 @@ const EnrollAdmin: React.FC = () => {
   const handleViewDetails = (enrollment: Enrollment) => {
     setSelectedEnrollment(enrollment);
     setAdminNotes(enrollment.admin_notes || '');
-    setShowModal(true);
+    setShowEnrollmentModal(true);
+  };
+
+  const handleEditCourse = (course: Course) => {
+    setSelectedCourse(course);
+    setCourseForm({
+      title: course.title,
+      description: course.description || '',
+      slug: course.slug,
+      price: course.price,
+      redirect_url: course.redirect_url || '',
+      is_active: course.is_active
+    });
+    setShowCourseModal(true);
+  };
+
+  const handleCreateCourse = () => {
+    setSelectedCourse(null);
+    setCourseForm({
+      title: '',
+      description: '',
+      slug: '',
+      price: 0,
+      redirect_url: '',
+      is_active: true
+    });
+    setShowCourseModal(true);
+  };
+
+  const handleSaveCourse = async () => {
+    setProcessing(true);
+    try {
+      if (selectedCourse) {
+        // Update existing course
+        const { error } = await supabase
+          .from('courses')
+          .update(courseForm)
+          .eq('id', selectedCourse.id);
+        if (error) throw error;
+        toast({ title: "دوره بروزرسانی شد" });
+      } else {
+        // Create new course
+        const { error } = await supabase
+          .from('courses')
+          .insert(courseForm);
+        if (error) throw error;
+        toast({ title: "دوره جدید ایجاد شد" });
+      }
+      fetchCourses();
+      setShowCourseModal(false);
+    } catch (error) {
+      console.error('Error saving course:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در ذخیره دوره",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleApprove = async () => {
@@ -167,7 +269,7 @@ const EnrollAdmin: React.FC = () => {
 
       // Refresh the list
       fetchEnrollments();
-      setShowModal(false);
+      setShowEnrollmentModal(false);
 
     } catch (error) {
       console.error('Error approving payment:', error);
@@ -204,7 +306,7 @@ const EnrollAdmin: React.FC = () => {
       });
 
       fetchEnrollments();
-      setShowModal(false);
+      setShowEnrollmentModal(false);
 
     } catch (error) {
       console.error('Error rejecting payment:', error);
@@ -239,134 +341,226 @@ const EnrollAdmin: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
-                    <p className="text-2xl font-bold">{enrollments.length}</p>
-                  </div>
-                  <User className="h-8 w-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
+          <Tabs defaultValue="enrollments" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="enrollments">مدیریت ثبت‌نام‌ها</TabsTrigger>
+              <TabsTrigger value="courses">مدیریت دوره‌ها</TabsTrigger>
+            </TabsList>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">در انتظار تایید</p>
-                    <p className="text-2xl font-bold text-amber-600">
-                      {enrollments.filter(e => e.manual_payment_status === 'pending').length}
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-amber-600" />
-                </div>
-              </CardContent>
-            </Card>
+            <TabsContent value="enrollments" className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
+                        <p className="text-2xl font-bold">{enrollments.length}</p>
+                      </div>
+                      <User className="h-8 w-8 text-primary" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">تایید شده</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {enrollments.filter(e => e.manual_payment_status === 'approved').length}
-                    </p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">در انتظار تایید</p>
+                        <p className="text-2xl font-bold text-amber-600">
+                          {enrollments.filter(e => e.manual_payment_status === 'pending').length}
+                        </p>
+                      </div>
+                      <Clock className="h-8 w-8 text-amber-600" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">رد شده</p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {enrollments.filter(e => e.manual_payment_status === 'rejected').length}
-                    </p>
-                  </div>
-                  <XCircle className="h-8 w-8 text-red-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">تایید شده</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {enrollments.filter(e => e.manual_payment_status === 'approved').length}
+                        </p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Enrollments Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-6 w-6" />
-                پرداخت‌های دستی
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {enrollments.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>نام و نام خانوادگی</TableHead>
-                        <TableHead>دوره</TableHead>
-                        <TableHead>مبلغ</TableHead>
-                        <TableHead>وضعیت</TableHead>
-                        <TableHead>تاریخ ثبت‌نام</TableHead>
-                        <TableHead>عملیات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {enrollments.map((enrollment) => (
-                        <TableRow key={enrollment.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{enrollment.full_name}</div>
-                              <div className="text-sm text-muted-foreground">{enrollment.email}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{enrollment.courses?.title}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(enrollment.manual_payment_status)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{formatDate(enrollment.created_at)}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewDetails(enrollment)}
-                            >
-                              <Eye className="h-4 w-4 ml-1" />
-                              مشاهده
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">رد شده</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          {enrollments.filter(e => e.manual_payment_status === 'rejected').length}
+                        </p>
+                      </div>
+                      <XCircle className="h-8 w-8 text-red-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Enrollments Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-6 w-6" />
+                    پرداخت‌های دستی
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {enrollments.length === 0 ? (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-lg font-medium text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>نام و نام خانوادگی</TableHead>
+                            <TableHead>دوره</TableHead>
+                            <TableHead>مبلغ</TableHead>
+                            <TableHead>وضعیت</TableHead>
+                            <TableHead>تاریخ ثبت‌نام</TableHead>
+                            <TableHead>عملیات</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {enrollments.map((enrollment) => (
+                            <TableRow key={enrollment.id}>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{enrollment.full_name}</div>
+                                  <div className="text-sm text-muted-foreground">{enrollment.email}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(enrollment.manual_payment_status)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">{formatDate(enrollment.created_at)}</div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewDetails(enrollment)}
+                                >
+                                  <Eye className="h-4 w-4 ml-1" />
+                                  مشاهده
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="courses" className="space-y-6">
+              {/* Course Management */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-6 w-6" />
+                      مدیریت دوره‌ها
+                    </CardTitle>
+                    <Button onClick={handleCreateCourse}>
+                      <Plus className="h-4 w-4 ml-2" />
+                      دوره جدید
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {courses.length === 0 ? (
+                    <div className="text-center py-12">
+                      <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-lg font-medium text-muted-foreground">هیچ دوره‌ای یافت نشد</p>
+                      <Button onClick={handleCreateCourse} className="mt-4">
+                        <Plus className="h-4 w-4 ml-2" />
+                        اولین دوره را ایجاد کنید
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>عنوان دوره</TableHead>
+                            <TableHead>اسلاگ</TableHead>
+                            <TableHead>قیمت</TableHead>
+                            <TableHead>وضعیت</TableHead>
+                            <TableHead>تاریخ ایجاد</TableHead>
+                            <TableHead>عملیات</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {courses.map((course) => (
+                            <TableRow key={course.id}>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{course.title}</div>
+                                  <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                    {course.description}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <code className="text-sm bg-muted px-2 py-1 rounded">{course.slug}</code>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-mono">{formatPrice(course.price)}</div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={course.is_active ? "default" : "secondary"}>
+                                  {course.is_active ? "فعال" : "غیرفعال"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">{formatDate(course.created_at)}</div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditCourse(course)}
+                                >
+                                  <Edit className="h-4 w-4 ml-1" />
+                                  ویرایش
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
-      {/* Details Modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
+      {/* Enrollment Details Modal */}
+      <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>جزئیات ثبت‌نام</DialogTitle>
@@ -481,6 +675,103 @@ const EnrollAdmin: React.FC = () => {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Course Management Modal */}
+      <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedCourse ? 'ویرایش دوره' : 'ایجاد دوره جدید'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">عنوان دوره</Label>
+                <Input
+                  id="title"
+                  value={courseForm.title}
+                  onChange={(e) => setCourseForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="نام دوره"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="slug">اسلاگ</Label>
+                <Input
+                  id="slug"
+                  value={courseForm.slug}
+                  onChange={(e) => setCourseForm(prev => ({ ...prev, slug: e.target.value }))}
+                  placeholder="course-slug"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">توضیحات</Label>
+              <Textarea
+                id="description"
+                value={courseForm.description}
+                onChange={(e) => setCourseForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="توضیحات دوره..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">قیمت (تومان)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={courseForm.price}
+                  onChange={(e) => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                  placeholder="0"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="redirect_url">لینک دسترسی</Label>
+                <Input
+                  id="redirect_url"
+                  value={courseForm.redirect_url}
+                  onChange={(e) => setCourseForm(prev => ({ ...prev, redirect_url: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={courseForm.is_active}
+                onChange={(e) => setCourseForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                className="rounded"
+              />
+              <Label htmlFor="is_active">دوره فعال است</Label>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button
+                onClick={handleSaveCourse}
+                disabled={processing}
+                className="flex-1"
+              >
+                {processing ? 'در حال ذخیره...' : (selectedCourse ? 'بروزرسانی' : 'ایجاد دوره')}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowCourseModal(false)}
+                className="flex-1"
+              >
+                انصراف
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
