@@ -218,14 +218,20 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         }
 
         console.log('✅ Enrollment created via direct insert:', directResult);
-        setEnrollmentId(directResult.id);
+        
+        // Redirect to pending page with enrollment ID
+        window.location.href = `/enroll/pending?orderId=${directResult.id}`;
+        return;
       } else {
         console.log('✅ Enrollment created via edge function:', edgeResult.enrollment);
-        setEnrollmentId(edgeResult.enrollment?.id);
+        
+        // Redirect to pending page with enrollment ID
+        const enrollmentId = edgeResult.enrollment?.id;
+        if (enrollmentId) {
+          window.location.href = `/enroll/pending?orderId=${enrollmentId}`;
+          return;
+        }
       }
-
-      // Show success modal
-      setShowWaitingModal(true);
       
       toast({
         title: "ثبت موفق",

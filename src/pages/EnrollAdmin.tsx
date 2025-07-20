@@ -238,7 +238,7 @@ const EnrollAdmin: React.FC = () => {
           manual_payment_status: 'approved',
           payment_status: 'completed',
           admin_notes: adminNotes,
-          approved_by: 'Admin', // You might want to get the actual admin user
+          approved_by: 'Admin',
           approved_at: new Date().toISOString()
         })
         .eq('id', selectedEnrollment.id);
@@ -246,35 +246,25 @@ const EnrollAdmin: React.FC = () => {
       if (updateError) throw updateError;
 
       // Call WooCommerce API (similar to successful Zarinpal payment)
-      const { error: wooError } = await supabase.functions.invoke('zarinpal-verify', {
-        body: {
-          authority: 'MANUAL_PAYMENT',
-          enrollmentId: selectedEnrollment.id,
-          manualApproval: true
-        }
-      });
+      try {
+        const { error: wooError } = await supabase.functions.invoke('zarinpal-verify', {
+          body: {
+            authority: 'MANUAL_PAYMENT',
+            enrollmentId: selectedEnrollment.id,
+            manualApproval: true
+          }
+        });
 
-      if (wooError) {
+        if (wooError) {
+          console.warn('WooCommerce API call failed:', wooError);
+        }
+      } catch (wooError) {
         console.warn('WooCommerce API call failed:', wooError);
-        // Don't throw error, as the enrollment is already approved
       }
 
-      // Construct success URL for the user to redirect them
-      const course = courses.find(c => c.id === selectedEnrollment.course_id);
-      const successUrl = `/enroll/success?course=${course?.slug}&email=${selectedEnrollment.email}&enrollment=${selectedEnrollment.id}&status=OK&Authority=MANUAL_PAYMENT`;
-      
       toast({
-        title: "تایید شد",
-        description: "پرداخت با موفقیت تایید شد و کاربر می‌تواند به دوره دسترسی پیدا کند",
-        action: (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => window.open(successUrl, '_blank')}
-          >
-            مشاهده صفحه موفقیت
-          </Button>
-        )
+        title: "✅ تایید شد",
+        description: "پرداخت تایید شد. کاربر به صفحه موفقیت منتقل می‌شود",
       });
 
       // Refresh the list
@@ -311,8 +301,8 @@ const EnrollAdmin: React.FC = () => {
       if (error) throw error;
 
       toast({
-        title: "رد شد",
-        description: "پرداخت رد شد",
+        title: "❌ رد شد",
+        description: "پرداخت رد شد. کاربر به صفحه رد منتقل می‌شود",
       });
 
       fetchEnrollments();

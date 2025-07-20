@@ -23,6 +23,7 @@ import Checkout from "./pages/Checkout";
 import PaymentRequest from "./pages/PaymentRequest";
 import Enroll from "./pages/Enroll";
 import EnrollSuccess from "./pages/EnrollSuccess";
+import EnrollPending from "./pages/EnrollPending";
 import EnrollAdmin from "./pages/EnrollAdmin";
 import EnrollReject from "./pages/EnrollReject";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
@@ -142,11 +143,11 @@ const App = () => {
                     <Route path="/payment-request" element={<PaymentRequest />} />
                     
                     {/* Enrollment pages */}
-          <Route path="/enroll" element={<Enroll />} />
-          <Route path="/enroll/success" element={<EnrollSuccess />} />
-          <Route path="/enroll/admin" element={<EnrollAdmin />} />
-          <Route path="/enroll/reject" element={<EnrollReject />} />
-                    <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                    <Route path="/enroll" element={<Enroll />} />
+                    <Route path="/enroll/success" element={<EnrollSuccess />} />
+                    <Route path="/enroll/pending" element={<EnrollPending />} />
+                    <Route path="/enroll/admin" element={<EnrollAdmin />} />
+                    <Route path="/enroll/reject" element={<EnrollReject />} />
 
                     {/* Course landing pages */}
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
