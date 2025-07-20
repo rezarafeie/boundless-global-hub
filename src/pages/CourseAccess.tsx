@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import MessengerAuth from '@/components/Chat/MessengerAuth';
+import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 
 interface Course {
   id: string;
@@ -304,7 +304,7 @@ const CourseAccess: React.FC = () => {
                     </Button>
                   </div>
                   <div className="p-4">
-                    <MessengerAuth onAuthenticated={(token, name, user) => {
+                    <UnifiedMessengerAuth onAuthenticated={(token, name, user) => {
                       login(user, token);
                       setShowAuth(false);
                       toast({
