@@ -308,15 +308,15 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b border-border/30">
                 <span className="text-muted-foreground">نام بانک:</span>
-                <span className="font-medium text-foreground">بانک ملی ایران</span>
+                <span className="font-medium text-foreground">بلوبانک</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/30">
-                <span className="text-muted-foreground">شماره حساب:</span>
-                <span className="font-mono font-medium text-foreground">1234567890123456</span>
+                <span className="text-muted-foreground">شماره کارت:</span>
+                <span className="font-mono font-medium text-foreground">6219861919595958</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-muted-foreground">نام صاحب حساب:</span>
-                <span className="font-medium text-foreground">آکادمی رفیعی</span>
+                <span className="font-medium text-foreground">سید عباس رفیعی</span>
               </div>
             </div>
           </div>
