@@ -54,34 +54,14 @@ serve(async (req) => {
         }
       }
 
-      // Create SpotPlayer license if enabled for this course
-      await createSpotPlayerLicense(enrollment, enrollmentId);
-
-      // Fetch updated enrollment data after license creation
-      const { data: updatedEnrollment, error: updateError } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses (*)
-        `)
-        .eq('id', enrollmentId)
-        .single();
-
-      if (updateError) {
-        console.error('Failed to fetch updated enrollment:', updateError);
-        // Use original enrollment data as fallback
-      }
-
-      const finalEnrollment = updatedEnrollment || enrollment;
-
       // Return success for manual payment (don't modify payment status - admin already approved)
       return new Response(
         JSON.stringify({
           success: true,
           refId: 'MANUAL_PAYMENT_APPROVED',
           woocommerceOrderId,
-          course: finalEnrollment.courses,
-          enrollment: finalEnrollment
+          course: enrollment.courses,
+          enrollment: enrollment
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -144,33 +124,13 @@ serve(async (req) => {
         }
       }
 
-      // Create SpotPlayer license if enabled for this course
-      await createSpotPlayerLicense(enrollment, enrollmentId);
-
-      // Fetch updated enrollment data after license creation
-      const { data: updatedEnrollment, error: updateError } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses (*)
-        `)
-        .eq('id', enrollmentId)
-        .single();
-
-      if (updateError) {
-        console.error('Failed to fetch updated enrollment:', updateError);
-        // Use original enrollment data as fallback
-      }
-
-      const finalEnrollment = updatedEnrollment || enrollment;
-
       return new Response(
         JSON.stringify({
           success: true,
           refId: zarinpalData.data.ref_id,
           woocommerceOrderId,
-          course: finalEnrollment.courses,
-          enrollment: finalEnrollment
+          course: enrollment.courses,
+          enrollment: enrollment
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
