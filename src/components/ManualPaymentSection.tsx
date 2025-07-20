@@ -194,7 +194,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         payment_method: 'manual',
         manual_payment_status: 'pending' as const,
         receipt_url: publicUrl,
-        chat_user_id: user?.id
+        chat_user_id: user?.id ? parseInt(user.id) : null
       };
 
       console.log('💾 Creating enrollment with data:', enrollmentData);

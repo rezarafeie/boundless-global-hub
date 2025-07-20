@@ -181,7 +181,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // First, try to find by chat_user_id (most direct match)
       const { data: directMatch, error: directError } = await query
-        .eq('chat_user_id', user.id);
+        .eq('chat_user_id', parseInt(user.id));
       
       if (directError) {
         console.error('Error checking direct enrollment:', directError);
@@ -241,7 +241,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const { error: updateError } = await supabase
             .from('enrollments')
-            .update({ chat_user_id: user.id })
+            .update({ chat_user_id: parseInt(user.id) })
             .eq('id', matchingEnrollment.id);
           
           if (updateError) {

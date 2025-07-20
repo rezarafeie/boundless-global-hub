@@ -57,11 +57,11 @@ const Enroll: React.FC = () => {
     if (isAuthenticated && user) {
       setFormData(prev => ({
         ...prev,
-        firstName: user.first_name || prev.firstName,
-        lastName: user.last_name || prev.lastName,
+        firstName: user.firstName || prev.firstName,
+        lastName: user.lastName || prev.lastName,
         email: user.email || prev.email,
         phone: user.phone ? user.phone.replace(/^(\+98|98|0)/, '') : prev.phone,
-        countryCode: user.country_code || prev.countryCode
+        countryCode: user.countryCode || prev.countryCode
       }));
     }
   }, [isAuthenticated, user]);
