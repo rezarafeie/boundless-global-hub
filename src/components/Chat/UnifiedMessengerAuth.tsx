@@ -598,8 +598,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         description: 'حساب Google شما با موفقیت ربط داده شد'
       });
 
-      console.log('🎉 Linking successful, logging in user...');
-      onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+      console.log('🎉 Linking successful, showing success...');
+      setCurrentStep('success');
+      
+      // Auto-login after showing success message
+      setTimeout(() => {
+        onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+      }, 2000);
     } catch (error: any) {
       console.error('Error in name confirmation:', error);
       toast({
@@ -688,6 +693,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'otp-link': return 'ربط حساب Google';
       case 'linking': return 'ربط حساب Google';
       case 'name-confirm': return 'تأیید اطلاعات';
+      case 'success': return 'موفقیت آمیز';
     }
   };
 
@@ -701,6 +707,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'otp-link': return 'کد تأیید برای ربط حساب Google ارسال شد';
       case 'linking': return 'شماره تلفن خود را وارد کنید';
       case 'name-confirm': return 'اطلاعات خود را بررسی و تأیید کنید';
+      case 'success': return 'حساب Google شما با موفقیت ربط داده شد!';
     }
   };
 
@@ -1297,6 +1304,60 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 )}
               </Button>
             </form>
+          </div>
+        )}
+
+        {currentStep === 'success' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-4">
+              <div className="w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-12 h-12 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              
+              <h3 className="text-2xl font-semibold text-foreground">
+                🎉 موفقیت آمیز!
+              </h3>
+              
+              <p className="text-sm text-muted-foreground">
+                حساب Google شما با موفقیت ربط داده شد
+              </p>
+              
+              <div className="bg-green-50/50 dark:bg-green-950/20 border border-green-200/50 dark:border-green-800/30 rounded-lg p-4 mt-6">
+                <div className="space-y-3">
+                  {linkingEmail && (
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5 text-green-600 dark:text-green-400" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      </svg>
+                      <div className="text-right flex-1">
+                        <p className="text-xs font-medium text-green-600 dark:text-green-400">حساب Google</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 font-mono">{linkingEmail}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {existingUser && (
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      <div className="text-right flex-1">
+                        <p className="text-xs font-medium text-green-600 dark:text-green-400">حساب موجود</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 font-mono">{existingUser.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="pt-4">
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  در حال ورود...
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
