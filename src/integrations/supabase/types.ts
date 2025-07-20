@@ -516,42 +516,66 @@ export type Database = {
       }
       enrollments: {
         Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           course_id: string
           created_at: string
           email: string
           full_name: string
           id: string
+          manual_payment_status:
+            | Database["public"]["Enums"]["manual_payment_status"]
+            | null
           payment_amount: number
+          payment_method: string | null
           payment_status: string
           phone: string
+          receipt_url: string | null
           updated_at: string
           woocommerce_order_id: number | null
           zarinpal_authority: string | null
           zarinpal_ref_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           course_id: string
           created_at?: string
           email: string
           full_name: string
           id?: string
+          manual_payment_status?:
+            | Database["public"]["Enums"]["manual_payment_status"]
+            | null
           payment_amount: number
+          payment_method?: string | null
           payment_status?: string
           phone: string
+          receipt_url?: string | null
           updated_at?: string
           woocommerce_order_id?: number | null
           zarinpal_authority?: string | null
           zarinpal_ref_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           course_id?: string
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          manual_payment_status?:
+            | Database["public"]["Enums"]["manual_payment_status"]
+            | null
           payment_amount?: number
+          payment_method?: string | null
           payment_status?: string
           phone?: string
+          receipt_url?: string | null
           updated_at?: string
           woocommerce_order_id?: number | null
           zarinpal_authority?: string | null
@@ -1697,6 +1721,7 @@ export type Database = {
       course_status: "active" | "closed" | "full"
       course_type: "free" | "paid"
       enrollment_status: "enrolled" | "completed"
+      manual_payment_status: "pending" | "approved" | "rejected"
       support_tag:
         | "technical"
         | "billing"
@@ -1854,6 +1879,7 @@ export const Constants = {
       course_status: ["active", "closed", "full"],
       course_type: ["free", "paid"],
       enrollment_status: ["enrolled", "completed"],
+      manual_payment_status: ["pending", "approved", "rejected"],
       support_tag: [
         "technical",
         "billing",

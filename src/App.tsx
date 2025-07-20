@@ -23,6 +23,7 @@ import Checkout from "./pages/Checkout";
 import PaymentRequest from "./pages/PaymentRequest";
 import Enroll from "./pages/Enroll";
 import EnrollSuccess from "./pages/EnrollSuccess";
+import EnrollAdmin from "./pages/EnrollAdmin";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
 
 // Course pages
@@ -140,8 +141,9 @@ const App = () => {
                     <Route path="/payment-request" element={<PaymentRequest />} />
                     
                     {/* Enrollment pages */}
-                    <Route path="/enroll" element={<Enroll />} />
-                    <Route path="/enroll/success" element={<EnrollSuccess />} />
+          <Route path="/enroll" element={<Enroll />} />
+          <Route path="/enroll/success" element={<EnrollSuccess />} />
+          <Route path="/enroll/admin" element={<EnrollAdmin />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
 
                     {/* Course landing pages */}

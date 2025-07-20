@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import PurpleLoader from "@/components/PurpleLoader";
+import EnrollHeader from "@/components/Layout/EnrollHeader";
 
 interface IframeModalProps {
   isOpen: boolean;
@@ -107,20 +108,17 @@ const IframeModal: React.FC<IframeModalProps> = ({
   const updatedUrl = url.replace('rafeie.com', 'auth.rafiei.co');
 
   return (
-    <div 
-      className="fixed z-[9999]"
-      style={{
-        top: `${HEADER_HEIGHT}px`,
-        left: 0,
-        right: 0,
-        height: `calc(100vh - ${HEADER_HEIGHT}px)`
-      }}
-    >
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
+      {/* Header */}
+      <div className="flex-shrink-0">
+        <EnrollHeader showBackButton={false} />
+      </div>
+      
       {/* Close Button */}
       {showCloseButton && (
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-[10000] bg-white/90 hover:bg-white text-black rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
+          className="absolute top-20 right-4 z-[10000] bg-white/90 hover:bg-white text-black rounded-full p-2 shadow-lg transition-all duration-200 hover:scale-110"
           aria-label="بستن"
         >
           <X size={24} />
@@ -133,16 +131,18 @@ const IframeModal: React.FC<IframeModalProps> = ({
       )}
 
       {/* Iframe */}
-      <iframe
-        ref={iframeRef}
-        src={updatedUrl}
-        title={title}
-        className={`w-full h-full border-0 transition-opacity duration-500 ${
-          iframeLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        onLoad={handleIframeLoad}
-        allow="fullscreen"
-      />
+      <div className="flex-1 bg-white overflow-hidden">
+        <iframe
+          ref={iframeRef}
+          src={updatedUrl}
+          title={title}
+          className={`w-full h-full border-0 transition-opacity duration-500 ${
+            iframeLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={handleIframeLoad}
+          allow="fullscreen"
+        />
+      </div>
     </div>
   );
 };

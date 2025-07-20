@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star } from 'lucide-react';
+import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EnrollHeader from '@/components/Layout/EnrollHeader';
+import ManualPaymentSection from '@/components/ManualPaymentSection';
 
 interface Course {
   id: string;
@@ -26,8 +27,8 @@ const Enroll: React.FC = () => {
 
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'manual'>('zarinpal');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -119,6 +120,9 @@ const Enroll: React.FC = () => {
     e.preventDefault();
     
     if (!validateForm() || !course) return;
+    
+    // Manual payment is handled in ManualPaymentSection component
+    if (paymentMethod === 'manual') return;
 
     setSubmitting(true);
     
@@ -185,143 +189,182 @@ const Enroll: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            آکادمی رفیعی
-          </h1>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+      <EnrollHeader />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 items-start">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Course Info */}
-            <Card className="order-2 md:order-1 bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+            <Card className="order-2 lg:order-1 bg-card/60 backdrop-blur-sm border-0 shadow-2xl">
+              <CardHeader className="pb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                  </div>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                     دوره آنلاین
                   </Badge>
                 </div>
-                <CardTitle className="text-2xl mb-2">{course.title}</CardTitle>
-                <p className="text-muted-foreground leading-relaxed">
+                <CardTitle className="text-3xl mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {course.title}
+                </CardTitle>
+                <p className="text-muted-foreground leading-relaxed text-lg">
                   {course.description}
                 </p>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
-                    <span className="font-medium">قیمت دوره:</span>
-                    <span className="text-2xl font-bold text-purple-600">
-                      {formatPrice(course.price)}
-                    </span>
+              <CardContent className="space-y-6">
+                {/* Price Section */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl blur-xl"></div>
+                  <div className="relative p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-medium">قیمت دوره:</span>
+                      <div className="text-left">
+                        <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                          {formatPrice(course.price)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      <span>دسترسی مادام‌العمر</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      <span>پرداخت امن</span>
-                    </div>
+                </div>
+                
+                {/* Features */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">دسترسی مادام‌العمر</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">پرداخت امن</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">۲۴/۷ پشتیبانی</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border">
+                    <Zap className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">شروع فوری</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Registration Form */}
-            <Card className="order-1 md:order-2 bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="order-1 lg:order-2 bg-card/60 backdrop-blur-sm border-0 shadow-2xl">
               <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <User className="h-5 w-5 text-purple-600" />
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
                   ثبت‌نام در دوره
                 </CardTitle>
+                <p className="text-muted-foreground">
+                  اطلاعات خود را وارد کنید و روش پرداخت را انتخاب کنید
+                </p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">نام</Label>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName" className="text-sm font-medium">نام</Label>
+                        <Input
+                          id="firstName"
+                          type="text"
+                          value={formData.firstName}
+                          onChange={(e) => handleInputChange('firstName', e.target.value)}
+                          placeholder="علی"
+                          className="h-12 text-base"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName" className="text-sm font-medium">نام خانوادگی</Label>
+                        <Input
+                          id="lastName"
+                          type="text"
+                          value={formData.lastName}
+                          onChange={(e) => handleInputChange('lastName', e.target.value)}
+                          placeholder="احمدی"
+                          className="h-12 text-base"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-sm font-medium">ایمیل</Label>
                       <Input
-                        id="firstName"
-                        type="text"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        placeholder="علی"
-                        className="mt-1"
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        placeholder="example@email.com"
+                        className="h-12 text-base"
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="lastName">نام خانوادگی</Label>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-sm font-medium">شماره تلفن</Label>
                       <Input
-                        id="lastName"
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        placeholder="احمدی"
-                        className="mt-1"
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        placeholder="09123456789"
+                        className="h-12 text-base"
                         required
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="email">ایمیل</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="example@email.com"
-                      className="mt-1"
-                      required
-                    />
-                  </div>
+                  {/* Payment Methods */}
+                  <ManualPaymentSection
+                    course={course}
+                    formData={formData}
+                    onPaymentMethodChange={setPaymentMethod}
+                    selectedMethod={paymentMethod}
+                  />
 
-                  <div>
-                    <Label htmlFor="phone">شماره تلفن</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="09123456789"
-                      className="mt-1"
-                      required
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-6 text-lg font-medium"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                        در حال پردازش...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="h-5 w-5 mr-2" />
-                        ثبت‌نام و پرداخت
-                      </>
-                    )}
-                  </Button>
+                  {/* Submit Button - Only for Zarinpal */}
+                  {paymentMethod === 'zarinpal' && (
+                    <Button
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-6 w-6 animate-spin ml-2" />
+                          در حال پردازش...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-6 w-6 ml-2" />
+                          پرداخت آنلاین {formatPrice(course.price)}
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </form>
 
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-                  <p className="font-medium mb-1">🔒 پرداخت امن</p>
-                  <p>
-                    پرداخت شما از طریق درگاه امن زرین‌پال انجام می‌شود.
+                {/* Security Note */}
+                <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <span className="font-medium text-primary">پرداخت امن</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    تمامی پرداخت‌ها از طریق درگاه‌های امن و معتبر انجام می‌شود. اطلاعات شما محفوظ است.
                   </p>
                 </div>
               </CardContent>

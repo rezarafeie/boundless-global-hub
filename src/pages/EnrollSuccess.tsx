@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EnrollHeader from '@/components/Layout/EnrollHeader';
 
 interface VerificationResult {
   success: boolean;
@@ -117,15 +118,8 @@ const EnrollSuccess: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            آکادمی رفیعی
-          </h1>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+      <EnrollHeader showBackButton={false} />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
