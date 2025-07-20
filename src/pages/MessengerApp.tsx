@@ -228,7 +228,7 @@ const MessengerApp = () => {
     notification_token: null,
     password_hash: null,
     avatar_url: null
-  } as MessengerUser) : null;
+  } : null) as MessengerUser | null;
 
   if (!currentUser) {
     return (
