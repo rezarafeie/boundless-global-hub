@@ -21,6 +21,8 @@ interface Course {
   woocommerce_product_id: number | null;
   redirect_url: string | null;
   is_active: boolean;
+  spotplayer_course_id?: string | null;
+  is_spotplayer_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -51,7 +53,9 @@ const CourseManagement: React.FC = () => {
     price: '',
     woocommerce_product_id: '',
     redirect_url: '',
-    is_active: true
+    is_active: true,
+    spotplayer_course_id: '',
+    is_spotplayer_enabled: false
   });
 
   useEffect(() => {
@@ -107,7 +111,9 @@ const CourseManagement: React.FC = () => {
       price: '',
       woocommerce_product_id: '',
       redirect_url: '',
-      is_active: true
+      is_active: true,
+      spotplayer_course_id: '',
+      is_spotplayer_enabled: false
     });
     setSelectedCourse(null);
   };
@@ -121,7 +127,9 @@ const CourseManagement: React.FC = () => {
       price: course.price.toString(),
       woocommerce_product_id: course.woocommerce_product_id?.toString() || '',
       redirect_url: course.redirect_url || '',
-      is_active: course.is_active
+      is_active: course.is_active,
+      spotplayer_course_id: course.spotplayer_course_id || '',
+      is_spotplayer_enabled: course.is_spotplayer_enabled || false
     });
     setShowCourseModal(true);
   };
@@ -146,7 +154,9 @@ const CourseManagement: React.FC = () => {
         price: parseFloat(formData.price),
         woocommerce_product_id: formData.woocommerce_product_id ? parseInt(formData.woocommerce_product_id) : null,
         redirect_url: formData.redirect_url.trim() || null,
-        is_active: formData.is_active
+        is_active: formData.is_active,
+        spotplayer_course_id: formData.spotplayer_course_id.trim() || null,
+        is_spotplayer_enabled: formData.is_spotplayer_enabled
       };
 
       if (selectedCourse) {
@@ -323,6 +333,36 @@ const CourseManagement: React.FC = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, redirect_url: e.target.value }))}
                   placeholder="https://academy.rafiei.co/course/boundless"
                 />
+              </div>
+
+              {/* SpotPlayer Section */}
+              <div className="border-t pt-4 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">تنظیمات رفیعی پلیر (SpotPlayer)</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_spotplayer_enabled"
+                    checked={formData.is_spotplayer_enabled}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_spotplayer_enabled: checked }))}
+                  />
+                  <Label htmlFor="is_spotplayer_enabled">فعال‌سازی رفیعی پلیر</Label>
+                </div>
+
+                {formData.is_spotplayer_enabled && (
+                  <div>
+                    <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer *</Label>
+                    <Input
+                      id="spotplayer_course_id"
+                      value={formData.spotplayer_course_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
+                      placeholder="مثال: course_123"
+                      required={formData.is_spotplayer_enabled}
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      شناسه دوره در پنل SpotPlayer که برای ایجاد لایسنس استفاده می‌شود
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">

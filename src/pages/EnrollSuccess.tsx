@@ -61,7 +61,9 @@ const EnrollSuccess: React.FC = () => {
           courses (
             title,
             slug,
-            redirect_url
+            redirect_url,
+            is_spotplayer_enabled,
+            spotplayer_course_id
           )
         `)
         .eq('id', enrollmentId)
@@ -269,6 +271,26 @@ const EnrollSuccess: React.FC = () => {
                       <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
                         فعال
                       </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rafiei Player Section */}
+                {result.enrollment?.spotplayer_license_key && (
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                    <h3 className="font-semibold text-purple-800 dark:text-purple-400 mb-3">دسترسی رفیعی پلیر</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">کد لایسنس:</span>
+                        <span className="font-mono font-medium text-sm">{result.enrollment.spotplayer_license_key}</span>
+                      </div>
+                      <Button
+                        onClick={() => window.open('https://app.rafeie.com/player/', '_blank')}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                        size="sm"
+                      >
+                        🎬 تماشا در رفیعی پلیر
+                      </Button>
                     </div>
                   </div>
                 )}

@@ -1,0 +1,169 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { supabase } from "../_shared/supabase.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+interface SpotPlayerRequest {
+  enrollmentId: string;
+  userFullName: string;
+  userPhone: string;
+  courseId: string;
+}
+
+interface SpotPlayerResponse {
+  _id: string;
+  key: string;
+  url: string;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { enrollmentId, userFullName, userPhone, courseId }: SpotPlayerRequest = await req.json();
+
+    console.log('Creating SpotPlayer license for enrollment:', enrollmentId);
+
+    // Get course details including SpotPlayer course ID
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('spotplayer_course_id, is_spotplayer_enabled')
+      .eq('id', courseId)
+      .single();
+
+    if (courseError) {
+      throw new Error(`Failed to fetch course: ${courseError.message}`);
+    }
+
+    if (!course.is_spotplayer_enabled) {
+      throw new Error('SpotPlayer is not enabled for this course');
+    }
+
+    if (!course.spotplayer_course_id) {
+      throw new Error('SpotPlayer course ID is not configured for this course');
+    }
+
+    // Prepare SpotPlayer API request
+    const spotPlayerRequestBody = {
+      test: false,
+      course: [course.spotplayer_course_id],
+      name: userFullName,
+      watermark: {
+        texts: [
+          {
+            text: userPhone
+          }
+        ]
+      }
+    };
+
+    console.log('Sending request to SpotPlayer API:', spotPlayerRequestBody);
+
+    // Call SpotPlayer API
+    const spotPlayerResponse = await fetch('https://panel.spotplayer.ir/license/edit/', {
+      method: 'POST',
+      headers: {
+        '$API': 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==',
+        '$LEVEL': '-1',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(spotPlayerRequestBody)
+    });
+
+    if (!spotPlayerResponse.ok) {
+      const errorText = await spotPlayerResponse.text();
+      throw new Error(`SpotPlayer API error: ${spotPlayerResponse.status} - ${errorText}`);
+    }
+
+    const spotPlayerData: SpotPlayerResponse = await spotPlayerResponse.json();
+    console.log('SpotPlayer API response:', spotPlayerData);
+
+    // Construct the full video access URL
+    const fullVideoUrl = `https://dl.spotplayer.ir${spotPlayerData.url}`;
+
+    // Update enrollment with SpotPlayer license data
+    const { error: updateError } = await supabase
+      .from('enrollments')
+      .update({
+        spotplayer_license_id: spotPlayerData._id,
+        spotplayer_license_key: spotPlayerData.key,
+        spotplayer_license_url: fullVideoUrl
+      })
+      .eq('id', enrollmentId);
+
+    if (updateError) {
+      console.error('Failed to update enrollment with license data:', updateError);
+      
+      // Log error to license_errors table
+      await supabase
+        .from('license_errors')
+        .insert({
+          enrollment_id: enrollmentId,
+          course_id: courseId,
+          error_message: `Failed to update enrollment: ${updateError.message}`,
+          api_response: JSON.stringify(spotPlayerData)
+        });
+
+      throw new Error(`Failed to update enrollment: ${updateError.message}`);
+    }
+
+    console.log('Successfully created SpotPlayer license and updated enrollment');
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        license: {
+          id: spotPlayerData._id,
+          key: spotPlayerData.key,
+          url: fullVideoUrl
+        }
+      }),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
+
+  } catch (error) {
+    console.error('SpotPlayer license creation error:', error);
+
+    // Try to log error to database if we have enrollment info
+    try {
+      const body = await req.clone().json();
+      if (body.enrollmentId && body.courseId) {
+        await supabase
+          .from('license_errors')
+          .insert({
+            enrollment_id: body.enrollmentId,
+            course_id: body.courseId,
+            error_message: error.message,
+            api_response: null
+          });
+      }
+    } catch (logError) {
+      console.error('Failed to log error to database:', logError);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      { 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
+  }
+});

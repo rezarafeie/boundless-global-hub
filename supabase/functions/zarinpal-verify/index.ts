@@ -55,17 +55,20 @@ serve(async (req) => {
         }
       }
 
-      // Return success for manual payment (don't modify payment status - admin already approved)
-      return new Response(
-        JSON.stringify({
-          success: true,
-          refId: 'MANUAL_PAYMENT_APPROVED',
-          woocommerceOrderId,
-          course: enrollment.courses,
-          enrollment: enrollment
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        // Create SpotPlayer license if enabled for this course
+        await createSpotPlayerLicense(enrollment, enrollmentId);
+
+        // Return success for manual payment (don't modify payment status - admin already approved)
+        return new Response(
+          JSON.stringify({
+            success: true,
+            refId: 'MANUAL_PAYMENT_APPROVED',
+            woocommerceOrderId,
+            course: enrollment.courses,
+            enrollment: enrollment
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
 
     // Regular Zarinpal verification for non-manual payments
@@ -124,6 +127,9 @@ serve(async (req) => {
           // Don't fail the whole process if WooCommerce fails
         }
       }
+
+      // Create SpotPlayer license if enabled for this course
+      await createSpotPlayerLicense(enrollment, enrollmentId);
 
       return new Response(
         JSON.stringify({
@@ -211,5 +217,83 @@ async function createWooCommerceOrder(enrollment: any): Promise<number | null> {
   } catch (error) {
     console.error('WooCommerce API error:', error);
     return null;
+  }
+}
+
+async function createSpotPlayerLicense(enrollment: any, enrollmentId: string): Promise<void> {
+  try {
+    // Check if SpotPlayer is enabled for this course
+    if (!enrollment.courses.is_spotplayer_enabled || !enrollment.courses.spotplayer_course_id) {
+      console.log('SpotPlayer not enabled for this course, skipping license creation');
+      return;
+    }
+
+    console.log('Creating SpotPlayer license for enrollment:', enrollmentId);
+
+    const spotPlayerRequestBody = {
+      test: false,
+      course: [enrollment.courses.spotplayer_course_id],
+      name: enrollment.full_name,
+      watermark: {
+        texts: [
+          {
+            text: enrollment.phone
+          }
+        ]
+      }
+    };
+
+    console.log('Sending request to SpotPlayer API:', spotPlayerRequestBody);
+
+    // Call SpotPlayer API
+    const spotPlayerResponse = await fetch('https://panel.spotplayer.ir/license/edit/', {
+      method: 'POST',
+      headers: {
+        '$API': 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==',
+        '$LEVEL': '-1',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(spotPlayerRequestBody)
+    });
+
+    if (!spotPlayerResponse.ok) {
+      const errorText = await spotPlayerResponse.text();
+      throw new Error(`SpotPlayer API error: ${spotPlayerResponse.status} - ${errorText}`);
+    }
+
+    const spotPlayerData = await spotPlayerResponse.json();
+    console.log('SpotPlayer API response:', spotPlayerData);
+
+    // Construct the full video access URL
+    const fullVideoUrl = `https://dl.spotplayer.ir${spotPlayerData.url}`;
+
+    // Update enrollment with SpotPlayer license data
+    const { error: updateError } = await supabase
+      .from('enrollments')
+      .update({
+        spotplayer_license_id: spotPlayerData._id,
+        spotplayer_license_key: spotPlayerData.key,
+        spotplayer_license_url: fullVideoUrl
+      })
+      .eq('id', enrollmentId);
+
+    if (updateError) {
+      throw new Error(`Failed to update enrollment: ${updateError.message}`);
+    }
+
+    console.log('Successfully created SpotPlayer license and updated enrollment');
+
+  } catch (error) {
+    console.error('SpotPlayer license creation error:', error);
+    
+    // Log error to license_errors table
+    await supabase
+      .from('license_errors')
+      .insert({
+        enrollment_id: enrollmentId,
+        course_id: enrollment.course_id,
+        error_message: error.message,
+        api_response: null
+      });
   }
 }

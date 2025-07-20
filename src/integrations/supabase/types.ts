@@ -481,9 +481,11 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_spotplayer_enabled: boolean | null
           price: number
           redirect_url: string | null
           slug: string
+          spotplayer_course_id: string | null
           title: string
           updated_at: string
           woocommerce_product_id: number | null
@@ -493,9 +495,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_spotplayer_enabled?: boolean | null
           price?: number
           redirect_url?: string | null
           slug: string
+          spotplayer_course_id?: string | null
           title: string
           updated_at?: string
           woocommerce_product_id?: number | null
@@ -505,9 +509,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_spotplayer_enabled?: boolean | null
           price?: number
           redirect_url?: string | null
           slug?: string
+          spotplayer_course_id?: string | null
           title?: string
           updated_at?: string
           woocommerce_product_id?: number | null
@@ -532,6 +538,9 @@ export type Database = {
           payment_status: string
           phone: string
           receipt_url: string | null
+          spotplayer_license_id: string | null
+          spotplayer_license_key: string | null
+          spotplayer_license_url: string | null
           updated_at: string
           woocommerce_order_id: number | null
           zarinpal_authority: string | null
@@ -554,6 +563,9 @@ export type Database = {
           payment_status?: string
           phone: string
           receipt_url?: string | null
+          spotplayer_license_id?: string | null
+          spotplayer_license_key?: string | null
+          spotplayer_license_url?: string | null
           updated_at?: string
           woocommerce_order_id?: number | null
           zarinpal_authority?: string | null
@@ -576,6 +588,9 @@ export type Database = {
           payment_status?: string
           phone?: string
           receipt_url?: string | null
+          spotplayer_license_id?: string | null
+          spotplayer_license_key?: string | null
+          spotplayer_license_url?: string | null
           updated_at?: string
           woocommerce_order_id?: number | null
           zarinpal_authority?: string | null
@@ -590,6 +605,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      license_errors: {
+        Row: {
+          api_response: string | null
+          course_id: string | null
+          created_at: string | null
+          enrollment_id: string | null
+          error_message: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          api_response?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          enrollment_id?: string | null
+          error_message: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          api_response?: string | null
+          course_id?: string | null
+          created_at?: string | null
+          enrollment_id?: string | null
+          error_message?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       live_settings: {
         Row: {
