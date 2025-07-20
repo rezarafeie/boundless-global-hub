@@ -252,41 +252,40 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       {/* Payment Method Selection */}
       <div className="space-y-4">
-        <Label className="text-base font-medium text-foreground">روش پرداخت</Label>
+        <Label className="text-base font-medium text-foreground text-right">روش پرداخت</Label>
         <RadioGroup
           value={selectedMethod}
           onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'manual')}
           className="space-y-3"
         >
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <RadioGroupItem value="zarinpal" id="zarinpal" />
+          <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
             <Label 
               htmlFor="zarinpal" 
-              className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full"
+              className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
             >
-              <CreditCard className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium text-foreground">پرداخت آنلاین</div>
-                <div className="text-sm text-muted-foreground">از طریق درگاه زرین‌پال</div>
+              <div className="text-right">
+                <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
+                <div className="text-sm text-muted-foreground text-right">از طریق درگاه زرین‌پال</div>
               </div>
+              <CreditCard className="h-5 w-5 text-primary" />
             </Label>
+            <RadioGroupItem value="zarinpal" id="zarinpal" />
           </div>
-          
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <RadioGroupItem value="manual" id="manual" />
+          <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
             <Label 
               htmlFor="manual" 
-              className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full"
+              className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
             >
-              <FileText className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium text-foreground">پرداخت دستی</div>
-                <div className="text-sm text-muted-foreground">واریز به حساب و آپلود رسید</div>
+              <div className="text-right">
+                <div className="font-medium text-foreground text-right">پرداخت دستی</div>
+                <div className="text-sm text-muted-foreground text-right">واریز به حساب و آپلود رسید</div>
               </div>
+              <FileText className="h-5 w-5 text-primary" />
             </Label>
+            <RadioGroupItem value="manual" id="manual" />
           </div>
         </RadioGroup>
       </div>
