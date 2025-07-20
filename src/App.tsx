@@ -24,6 +24,7 @@ import PaymentRequest from "./pages/PaymentRequest";
 import Enroll from "./pages/Enroll";
 import EnrollSuccess from "./pages/EnrollSuccess";
 import EnrollAdmin from "./pages/EnrollAdmin";
+import EnrollReject from "./pages/EnrollReject";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
 
 // Course pages
@@ -144,6 +145,7 @@ const App = () => {
           <Route path="/enroll" element={<Enroll />} />
           <Route path="/enroll/success" element={<EnrollSuccess />} />
           <Route path="/enroll/admin" element={<EnrollAdmin />} />
+          <Route path="/enroll/reject" element={<EnrollReject />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
 
                     {/* Course landing pages */}

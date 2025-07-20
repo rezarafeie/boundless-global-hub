@@ -51,12 +51,11 @@ const EnrollAdmin: React.FC = () => {
         .from('enrollments')
         .select(`
           *,
-          courses (
+          courses!inner (
             title,
             slug
           )
         `)
-        .eq('payment_method', 'manual')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
