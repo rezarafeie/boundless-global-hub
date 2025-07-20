@@ -21,6 +21,9 @@ import PaidCourses from "./pages/PaidCourses";
 import Support from "./pages/Support";
 import Checkout from "./pages/Checkout";
 import PaymentRequest from "./pages/PaymentRequest";
+import Enroll from "./pages/Enroll";
+import EnrollSuccess from "./pages/EnrollSuccess";
+import EnrollmentAdmin from "./pages/EnrollmentAdmin";
 
 // Course pages
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
@@ -135,6 +138,11 @@ const App = () => {
                     <Route path="/support" element={<Support />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/payment-request" element={<PaymentRequest />} />
+                    
+                    {/* Enrollment pages */}
+                    <Route path="/enroll" element={<Enroll />} />
+                    <Route path="/enroll/success" element={<EnrollSuccess />} />
+                    <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
 
                     {/* Course landing pages */}
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
