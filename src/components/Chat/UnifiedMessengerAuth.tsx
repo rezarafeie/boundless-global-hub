@@ -48,6 +48,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [googleLoading, setGoogleLoading] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [isGoogleLinking, setIsGoogleLinking] = useState(false);
+  const [formattedPhoneForOTP, setFormattedPhoneForOTP] = useState(''); // Store formatted phone for OTP
 
   // Initialize linking flow if linkingEmail is provided
   useEffect(() => {
@@ -57,6 +58,52 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       setCurrentStep('linking');
     }
   }, [linkingEmail]);
+
+  // Enhanced phone number lookup with multiple format attempts
+  const findUserByPhone = async (phone: string, countryCode: string): Promise<MessengerUser | null> => {
+    console.log('🔍 Searching for user with phone:', phone, 'country code:', countryCode);
+    
+    // Try different phone number formats
+    const phoneFormats = [];
+    
+    if (countryCode === '+98') {
+      // Iranian phone number formats
+      phoneFormats.push(
+        `+98${phone}`,           // +989xxxxxxxxx
+        `0098${phone}`,          // 00989xxxxxxxxx  
+        `98${phone}`,            // 989xxxxxxxxx
+        `0${phone}`,             // 09xxxxxxxxx
+        phone                    // 9xxxxxxxxx
+      );
+    } else {
+      // Other country formats
+      phoneFormats.push(
+        `${countryCode}${phone}`,
+        `00${countryCode.slice(1)}${phone}`,
+        phone
+      );
+    }
+
+    console.log('📞 Trying phone formats:', phoneFormats);
+
+    // Try each format
+    for (const phoneFormat of phoneFormats) {
+      try {
+        console.log('🔍 Trying phone format:', phoneFormat);
+        const user = await messengerService.getUserByPhone(phoneFormat);
+        if (user) {
+          console.log('✅ Found user with phone format:', phoneFormat, 'User:', user);
+          return user;
+        }
+      } catch (error) {
+        console.log('❌ No user found with format:', phoneFormat);
+        continue;
+      }
+    }
+
+    console.log('❌ No user found with any phone format');
+    return null;
+  };
 
   const validateUsername = (value: string) => {
     const regex = /^[a-z0-9_]{3,20}$/;
@@ -111,7 +158,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
-
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -126,8 +172,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
-      // Check if user exists with separate country code and phone
-      const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
+      // Enhanced user lookup with multiple phone formats
+      const user = await findUserByPhone(phoneNumber, countryCode);
       
       // Special handling for linking flow from URL parameter
       if (currentStep === 'linking' && linkingEmail) {
@@ -135,6 +181,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           console.log('🔗 Found existing user for linking:', user);
           setExistingUser(user);
           setIsGoogleLinking(true);
+          
+          // Format phone for OTP sending
+          const formattedPhone = countryCode === '+98' 
+            ? `+98${phoneNumber}` 
+            : `00${countryCode.slice(1)}${phoneNumber}`;
+          
+          setFormattedPhoneForOTP(formattedPhone);
+          console.log('📱 Formatted phone for OTP:', formattedPhone);
           
           // Send OTP for linking
           const { data, error } = await supabase.functions.invoke('send-otp', {
@@ -179,6 +233,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           setIsGoogleLinking(true);
           setCurrentStep('otp-link');
           
+          // Format phone for OTP sending
+          const formattedPhone = countryCode === '+98' 
+            ? `+98${phoneNumber}` 
+            : `00${countryCode.slice(1)}${phoneNumber}`;
+          
+          setFormattedPhoneForOTP(formattedPhone);
+          console.log('📱 Formatted phone for OTP:', formattedPhone);
+          
           // Send OTP for verification
           const { data, error } = await supabase.functions.invoke('send-otp', {
             body: {
@@ -211,6 +273,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }
     } catch (error) {
       console.error('Error checking phone:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در بررسی شماره تلفن',
+        variant: 'destructive'
+      });
       // If error, assume new user
       setIsLogin(false);
       setCurrentStep('password');
@@ -352,35 +419,48 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     
     try {
-      // Format phone consistently with send-otp function
-      let formattedPhone = phoneNumber;
-      if (countryCode === '+98') {
-        formattedPhone = `${countryCode}${phoneNumber}`;
-      } else {
-        formattedPhone = `00${countryCode.slice(1)}${phoneNumber}`;
-      }
+      // Use the stored formatted phone number for consistency
+      const phoneForVerification = formattedPhoneForOTP || (countryCode === '+98' 
+        ? `+98${phoneNumber}` 
+        : `00${countryCode.slice(1)}${phoneNumber}`);
 
-      console.log('Verifying OTP for phone:', formattedPhone, 'Code:', code);
+      console.log('🔐 Verifying OTP for phone:', phoneForVerification, 'Code:', code);
       
       const { data, error } = await supabase.functions.invoke('verify-otp', {
         body: {
-          phone: formattedPhone,
+          phone: phoneForVerification,
           otpCode: code
         }
       });
 
-      console.log('Linking OTP verification response:', { data, error });
+      console.log('✅ Linking OTP verification response:', { data, error });
 
       if (error) {
         console.error('Edge function error:', error);
         throw error;
       }
 
-      if (data && data.success && existingUser) {
+      if (data && data.success) {
+        // If existingUser is null, try to find the user again
+        let userToUpdate = existingUser;
+        if (!userToUpdate) {
+          console.log('🔍 ExistingUser is null, searching again...');
+          userToUpdate = await findUserByPhone(phoneNumber, countryCode);
+          
+          if (!userToUpdate) {
+            throw new Error('کاربر یافت نشد. لطفاً دوباره تلاش کنید.');
+          }
+          
+          console.log('✅ Found user on retry:', userToUpdate);
+          setExistingUser(userToUpdate);
+        }
+
         // OTP verified, now link Google email to the existing account
         const emailToLink = linkingEmail || prefillData?.email;
-        const firstNameToLink = prefillData?.firstName || existingUser.first_name;
-        const lastNameToLink = prefillData?.lastName || existingUser.last_name;
+        const firstNameToLink = prefillData?.firstName || userToUpdate.first_name;
+        const lastNameToLink = prefillData?.lastName || userToUpdate.last_name;
+        
+        console.log('🔗 Linking email to user:', emailToLink, 'User ID:', userToUpdate.id);
         
         const { error: updateError } = await supabase
           .from('chat_users')
@@ -390,36 +470,38 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             last_name: lastNameToLink,
             full_name: firstNameToLink && lastNameToLink 
               ? `${firstNameToLink} ${lastNameToLink}`
-              : existingUser.full_name
+              : userToUpdate.full_name
           })
-          .eq('id', existingUser.id);
+          .eq('id', userToUpdate.id);
 
         if (updateError) {
+          console.error('Update error:', updateError);
           throw updateError;
         }
 
         // Create session and login
-        const sessionToken = await messengerService.createSession(existingUser.id);
+        const sessionToken = await messengerService.createSession(userToUpdate.id);
         
         // Update the user object with new data
         const updatedUser = {
-          ...existingUser,
-          email: emailToLink || existingUser.email,
+          ...userToUpdate,
+          email: emailToLink || userToUpdate.email,
           first_name: firstNameToLink,
           last_name: lastNameToLink,
           full_name: firstNameToLink && lastNameToLink 
             ? `${firstNameToLink} ${lastNameToLink}`
-            : existingUser.full_name
+            : userToUpdate.full_name
         };
 
         toast({
-          title: 'حساب با موفقیت ربط داده شد',
-          description: 'حساب Google شما با شماره تلفن ربط داده شد'
+          title: 'موفقیت آمیز',
+          description: 'حساب Google شما با موفقیت ربط داده شد'
         });
 
+        console.log('🎉 Linking successful, logging in user...');
         onAuthenticated(sessionToken, updatedUser.name, updatedUser);
       } else {
-        console.log('Linking OTP verification failed, showing error toast');
+        console.log('❌ Linking OTP verification failed');
         toast({
           title: 'کد اشتباه است',
           description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
@@ -827,35 +909,44 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         {currentStep === 'otp-link' && (
           <div className="space-y-6">
             <div className="text-center space-y-3 mb-8">
-              {/* Animated Icon */}
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <svg className="w-8 h-8 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {/* Enhanced Animated Icon */}
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                <svg className="w-10 h-10 text-primary animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 12l2 2 4-4"/>
-                  <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
-                  <path d="M3 12c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
-                  <path d="M12 21c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
-                  <path d="M12 3c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1z"/>
+                  <circle cx="12" cy="12" r="10"/>
                 </svg>
               </div>
               
-              <h3 className="text-lg font-semibold text-foreground">
+              <h3 className="text-xl font-semibold text-foreground">
                 تأیید شماره تلفن
               </h3>
               
-              <p className="text-sm text-muted-foreground">
-                کد تأیید ۴ رقمی به شماره
-              </p>
-              <p className="text-base font-medium text-foreground dir-ltr">
-                {countryCode}{phoneNumber}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                ارسال شد. کد را در زیر وارد کنید
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  کد تأیید ۴ رقمی به شماره
+                </p>
+                <p className="text-lg font-medium text-foreground font-mono bg-muted/30 rounded-lg py-2 px-4" dir="ltr">
+                  {formattedPhoneForOTP || `${countryCode}${phoneNumber}`}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  ارسال شد. کد را در زیر وارد کنید
+                </p>
+              </div>
               
               {linkingEmail && (
-                <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 rounded-lg p-3 mt-4">
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
-                    ربط حساب Google: {linkingEmail}
+                <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 rounded-lg p-4 mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    </svg>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      حساب Google
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+                    {linkingEmail}
                   </p>
                 </div>
               )}
@@ -867,54 +958,59 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 value={otpCode}
                 onChange={setOtpCode}
                 maxLength={4}
-                className="gap-3"
+                className="gap-4"
               >
                 <InputOTPGroup>
                   <InputOTPSlot 
                     index={0} 
-                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
                   />
                   <InputOTPSlot 
                     index={1} 
-                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
                   />
                   <InputOTPSlot 
                     index={2} 
-                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
                   />
                   <InputOTPSlot 
                     index={3} 
-                    className="w-14 h-14 text-xl font-bold border-2 border-border rounded-xl transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5"
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
                   />
                 </InputOTPGroup>
               </InputOTP>
             </div>
 
-            {/* Loading State */}
+            {/* Enhanced Loading State */}
             {loading && (
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">در حال تأیید...</span>
+              <div className="flex items-center justify-center space-x-3 mb-6 bg-primary/5 rounded-lg py-4 px-6">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="text-base text-primary font-medium">در حال تأیید و ربط حساب...</span>
               </div>
             )}
 
-            {/* Resend Section */}
-            <div className="text-center space-y-3">
-              <p className="text-sm text-muted-foreground">
-                کد را دریافت نکردید؟
-              </p>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-primary hover:text-primary/80 hover:bg-primary/10 font-medium"
-                onClick={handlePhoneSubmit}
-                disabled={loading}
-              >
-                ارسال مجدد کد
-              </Button>
+            {/* Enhanced Resend Section */}
+            <div className="text-center space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  کد را دریافت نکردید؟
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-primary hover:text-primary/80 hover:bg-primary/10 font-medium transition-all duration-200"
+                  onClick={handlePhoneSubmit}
+                  disabled={loading}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  ارسال مجدد کد
+                </Button>
+              </div>
             </div>
 
-            {/* Back Button */}
+            {/* Enhanced Back Button */}
             <div className="pt-4">
               <Button 
                 variant="outline" 
@@ -922,10 +1018,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   setCurrentStep('phone');
                   setOtpCode('');
                   setIsGoogleLinking(false);
+                  setExistingUser(null);
+                  setFormattedPhoneForOTP('');
                 }}
-                className="w-full h-12 rounded-full border-border hover:bg-muted/50"
+                className="w-full h-12 rounded-full border-border hover:bg-muted/50 transition-all duration-200"
                 disabled={loading}
               >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
                 تغییر شماره تلفن
               </Button>
             </div>
