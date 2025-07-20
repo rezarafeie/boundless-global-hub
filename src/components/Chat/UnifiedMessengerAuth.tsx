@@ -255,6 +255,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           }
 
           if (data.success) {
+            setCurrentStep('otp-link'); // Go to OTP verification step
             toast({
               title: 'کد تأیید ارسال شد',
               description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
