@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -53,30 +54,23 @@ interface Enrollment {
 
 const EnrollAdmin: React.FC = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
-  const [showCourseModal, setShowCourseModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
   const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'courses'>('dashboard');
-  const [courseForm, setCourseForm] = useState({
-    title: '',
-    description: '',
-    slug: '',
-    price: 0,
-    redirect_url: '',
-    spotplayer_course_id: '',
-    is_spotplayer_enabled: false,
-    create_test_license: false,
-    woocommerce_create_access: true,
-    is_active: true
-  });
 
   useEffect(() => {
+    // Check for tab parameter and set active view
+    const tab = searchParams.get('tab');
+    if (tab && ['dashboard', 'enrollments', 'courses'].includes(tab)) {
+      setActiveView(tab as 'dashboard' | 'enrollments' | 'courses');
+    }
+    
     Promise.all([fetchEnrollments(), fetchCourses()]);
     
     // Set up auto reload every 30 seconds
@@ -86,7 +80,7 @@ const EnrollAdmin: React.FC = () => {
     
     // Cleanup interval on component unmount
     return () => clearInterval(autoReloadInterval);
-  }, []);
+  }, [searchParams]);
 
   const fetchCourses = async () => {
     try {
@@ -185,71 +179,13 @@ const EnrollAdmin: React.FC = () => {
   };
 
   const handleEditCourse = (course: Course) => {
-    setSelectedCourse(course);
-    setCourseForm({
-      title: course.title,
-      description: course.description || '',
-      slug: course.slug,
-      price: course.price,
-      redirect_url: course.redirect_url || '',
-      spotplayer_course_id: course.spotplayer_course_id || '',
-      is_spotplayer_enabled: course.is_spotplayer_enabled || false,
-      create_test_license: course.create_test_license || false,
-      woocommerce_create_access: course.woocommerce_create_access !== false,
-      is_active: course.is_active
-    });
-    setShowCourseModal(true);
+    window.location.href = `/enroll/admin/course/${course.id}`;
   };
 
   const handleCreateCourse = () => {
-    setSelectedCourse(null);
-    setCourseForm({
-      title: '',
-      description: '',
-      slug: '',
-      price: 0,
-      redirect_url: '',
-      spotplayer_course_id: '',
-      is_spotplayer_enabled: false,
-      create_test_license: false,
-      woocommerce_create_access: true,
-      is_active: true
-    });
-    setShowCourseModal(true);
+    window.location.href = '/enroll/admin/course/new';
   };
 
-  const handleSaveCourse = async () => {
-    setProcessing(true);
-    try {
-      if (selectedCourse) {
-        // Update existing course
-        const { error } = await supabase
-          .from('courses')
-          .update(courseForm)
-          .eq('id', selectedCourse.id);
-        if (error) throw error;
-        toast({ title: "دوره بروزرسانی شد" });
-      } else {
-        // Create new course
-        const { error } = await supabase
-          .from('courses')
-          .insert(courseForm);
-        if (error) throw error;
-        toast({ title: "دوره جدید ایجاد شد" });
-      }
-      fetchCourses();
-      setShowCourseModal(false);
-    } catch (error) {
-      console.error('Error saving course:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در ذخیره دوره",
-        variant: "destructive"
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
 
   const handleApprove = async () => {
     if (!selectedEnrollment) return;
@@ -896,178 +832,6 @@ const EnrollAdmin: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Course Management Modal */}
-      <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedCourse ? 'ویرایش دوره' : 'ایجاد دوره جدید'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">عنوان دوره</Label>
-                <Input
-                  id="title"
-                  value={courseForm.title}
-                  onChange={(e) => setCourseForm(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="نام دوره"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="slug">اسلاگ</Label>
-                <Input
-                  id="slug"
-                  value={courseForm.slug}
-                  onChange={(e) => setCourseForm(prev => ({ ...prev, slug: e.target.value }))}
-                  placeholder="course-slug"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">توضیحات</Label>
-              <Textarea
-                id="description"
-                value={courseForm.description}
-                onChange={(e) => setCourseForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="توضیحات دوره..."
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">قیمت (تومان)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={courseForm.price}
-                  onChange={(e) => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
-                  placeholder="0"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="redirect_url">لینک دسترسی</Label>
-                <Input
-                  id="redirect_url"
-                  value={courseForm.redirect_url}
-                  onChange={(e) => setCourseForm(prev => ({ ...prev, redirect_url: e.target.value }))}
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-
-            {/* SpotPlayer Configuration */}
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="spotplayer-toggle" className="text-base font-medium">
-                    رفیعی پلیر (SpotPlayer)
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    فعال‌سازی پخش ویدیو از طریق رفیعی پلیر
-                  </p>
-                </div>
-                <Switch
-                  id="spotplayer-toggle"
-                  checked={courseForm.is_spotplayer_enabled}
-                  onCheckedChange={(checked) => 
-                    setCourseForm(prev => ({ 
-                      ...prev, 
-                      is_spotplayer_enabled: checked,
-                      spotplayer_course_id: checked ? prev.spotplayer_course_id : ''
-                    }))
-                  }
-                />
-              </div>
-
-              {courseForm.is_spotplayer_enabled && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer</Label>
-                    <Input
-                      id="spotplayer_course_id"
-                      value={courseForm.spotplayer_course_id}
-                      onChange={(e) => setCourseForm(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
-                      placeholder="شناسه دوره در سیستم SpotPlayer"
-                      required={courseForm.is_spotplayer_enabled}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      این شناسه برای ایجاد لایسنس در سیستم SpotPlayer استفاده می‌شود
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label htmlFor="create-test-license" className="text-sm font-medium">
-                        ایجاد لایسنس تستی
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        لایسنس‌های تستی محدودیت زمانی دارند
-                      </p>
-                    </div>
-                    <Switch
-                      id="create-test-license"
-                      checked={courseForm.create_test_license}
-                      onCheckedChange={(checked) => setCourseForm(prev => ({ ...prev, create_test_license: checked }))}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* WooCommerce Configuration */}
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="woocommerce-access" className="text-base font-medium">
-                    دسترسی WooCommerce
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    در صورت غیرفعال بودن، دکمه دسترسی به دوره حذف می‌شود
-                  </p>
-                </div>
-                <Switch
-                  id="woocommerce-access"
-                  checked={courseForm.woocommerce_create_access}
-                  onCheckedChange={(checked) => setCourseForm(prev => ({ ...prev, woocommerce_create_access: checked }))}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="is_active"
-                checked={courseForm.is_active}
-                onCheckedChange={(checked) => setCourseForm(prev => ({ ...prev, is_active: checked }))}
-              />
-              <Label htmlFor="is_active">دوره فعال است</Label>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <Button
-                onClick={handleSaveCourse}
-                disabled={processing}
-                className="flex-1"
-              >
-                {processing ? 'در حال ذخیره...' : (selectedCourse ? 'بروزرسانی' : 'ایجاد دوره')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowCourseModal(false)}
-                className="flex-1"
-              >
-                انصراف
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 };

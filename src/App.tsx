@@ -27,6 +27,7 @@ import EnrollPending from "./pages/EnrollPending";
 import EnrollAdmin from "./pages/EnrollAdmin";
 import EnrollReject from "./pages/EnrollReject";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
+import CourseManagement from "./pages/Course/CourseManagement";
 
 // Course pages
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
@@ -147,6 +148,7 @@ const App = () => {
                     <Route path="/enroll/success" element={<EnrollSuccess />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollAdmin />} />
+                    <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
 
                     {/* Course landing pages */}
