@@ -178,6 +178,34 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
       }
 
       console.log('✅ [Enhanced Hook] Successfully saved subscription ID to database');
+      
+      // Send webhook notification about new token
+      try {
+        const webhookData = {
+          event_type: 'notification_enabled',
+          user_id: currentUser.id,
+          user_name: currentUser.name,
+          user_phone: currentUser.phone,
+          onesignal_token: subscriptionId,
+          timestamp: new Date().toISOString(),
+          triggered_from: 'notification_service'
+        };
+        
+        const formData = new FormData();
+        Object.entries(webhookData).forEach(([key, value]) => {
+          formData.append(key, String(value));
+        });
+
+        await fetch('https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        console.log('✅ [Enhanced Hook] Webhook sent for new notification token');
+      } catch (webhookError) {
+        console.warn('⚠️ [Enhanced Hook] Webhook failed but token saved:', webhookError);
+      }
+      
       return true;
     } catch (error) {
       console.error('🔔 [Enhanced Hook] Error in saveNotificationToken:', error);

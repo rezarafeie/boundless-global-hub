@@ -2,6 +2,7 @@
 import { detectMobileCapabilities, getOneSignalConfig, type MobileDeviceInfo } from './mobilePushDetection';
 import { serviceWorkerManager } from './serviceWorkerManager';
 import { enhancedOneSignalLoader } from './enhancedOneSignalLoader';
+import { enhancedWebhookService } from './enhancedWebhookService';
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ export const enhancedPushNotificationService = {
   isInitialized: false,
   initializationPromise: null as Promise<void> | null,
   deviceInfo: null as MobileDeviceInfo | null,
+  lastError: null as string | null,
 
   getDeviceInfo(): MobileDeviceInfo {
     if (!this.deviceInfo) {
@@ -356,6 +358,7 @@ export const enhancedPushNotificationService = {
   async subscribe(userId: number): Promise<boolean> {
     try {
       console.log('🔔 [Enhanced Service] Starting subscription process for user:', userId);
+      this.lastError = null;
       
       const success = await this.requestPermissionWithUserGesture();
       
@@ -374,16 +377,48 @@ export const enhancedPushNotificationService = {
         
         if (subscriptionId) {
           console.log('✅ [Enhanced Service] Subscription process completed successfully');
+          this.lastError = null;
           return true;
         } else {
+          this.lastError = 'Permission granted but no subscription ID created';
           console.warn('⚠️ [Enhanced Service] Permission granted but no subscription ID after retries');
           return false;
         }
+      } else {
+        this.lastError = 'Permission request failed or denied';
       }
       
       return false;
     } catch (error) {
+      this.lastError = error instanceof Error ? error.message : 'Unknown error during subscription';
       console.error('❌ [Enhanced Service] Error subscribing:', error);
+      return false;
+    }
+  },
+
+  async forceReload(): Promise<boolean> {
+    console.log('🔄 [Enhanced Service] Force reloading OneSignal...');
+    
+    try {
+      // Clear service worker cache
+      await serviceWorkerManager.clearServiceWorkerCache();
+      
+      // Force reload SDK
+      await enhancedOneSignalLoader.forceReloadSDK();
+      
+      // Reset state
+      this.isInitialized = false;
+      this.initializationPromise = null;
+      this.lastError = null;
+      
+      // Initialize again
+      await this.initOneSignal();
+      
+      console.log('✅ [Enhanced Service] Force reload completed');
+      return true;
+    } catch (error) {
+      this.lastError = error instanceof Error ? error.message : 'Force reload failed';
+      console.error('❌ [Enhanced Service] Force reload failed:', error);
       return false;
     }
   },
@@ -398,12 +433,14 @@ export const enhancedPushNotificationService = {
     sdkLoaded: boolean; 
     swRegistered: boolean;
     deviceSupported: boolean;
+    lastError: string | null;
   } {
     return {
       isInitialized: this.isInitialized,
       sdkLoaded: enhancedOneSignalLoader.isSDKLoaded(),
       swRegistered: serviceWorkerManager.isServiceWorkerRegistered(),
-      deviceSupported: this.getDeviceInfo().supportsWebPush
+      deviceSupported: this.getDeviceInfo().supportsWebPush,
+      lastError: this.lastError
     };
   }
 };

@@ -1,8 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, X, Smartphone, Loader2, AlertCircle, CheckCircle, Download, Info } from 'lucide-react';
+import { Bell, X, Smartphone, Loader2, AlertCircle, CheckCircle, Download, Info, RefreshCw } from 'lucide-react';
 import { enhancedPushNotificationService } from '@/lib/enhancedPushNotificationService';
+import { serviceWorkerManager } from '@/lib/serviceWorkerManager';
+import { enhancedOneSignalLoader } from '@/lib/enhancedOneSignalLoader';
 import type { MobileDeviceInfo } from '@/lib/mobilePushDetection';
 
 interface EnhancedNotificationPermissionBannerProps {
@@ -19,6 +21,8 @@ const EnhancedNotificationPermissionBanner: React.FC<EnhancedNotificationPermiss
   const [showStatus, setShowStatus] = useState<'success' | 'error' | 'info' | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [showDetails, setShowDetails] = useState(false);
+  const [isForceReloading, setIsForceReloading] = useState(false);
+  const [currentStep, setCurrentStep] = useState('');
   
   const deviceInfo = enhancedPushNotificationService.getDeviceInfo();
 
@@ -26,22 +30,33 @@ const EnhancedNotificationPermissionBanner: React.FC<EnhancedNotificationPermiss
     console.log('🔔 [Enhanced Banner] Enable button clicked');
     setIsLoading(true);
     setShowStatus(null);
+    setCurrentStep('بررسی قابلیت‌ها...');
     
     if (!deviceInfo.supportsWebPush) {
       setShowStatus('info');
       setStatusMessage('اعلان‌های وب در این دستگاه محدودیت دارد');
       setIsLoading(false);
       setShowDetails(true);
+      setCurrentStep('');
       return;
     }
     
     try {
+      // Step-by-step progress
+      setCurrentStep('راه‌اندازی OneSignal...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setCurrentStep('درخواست مجوز...');
       const granted = await onRequestPermission();
       console.log('🔔 [Enhanced Banner] Permission request result:', granted);
       
       if (granted) {
+        setCurrentStep('ذخیره اطلاعات...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         setShowStatus('success');
         setStatusMessage('اعلان‌ها با موفقیت فعال شد');
+        setCurrentStep('');
         setTimeout(() => {
           onDismiss();
         }, 2000);
@@ -53,14 +68,56 @@ const EnhancedNotificationPermissionBanner: React.FC<EnhancedNotificationPermiss
           setStatusMessage('مجوز اعلان رد شد');
         }
         setShowDetails(true);
+        setCurrentStep('');
       }
     } catch (error) {
       console.error('🔔 [Enhanced Banner] Error:', error);
       setShowStatus('error');
       setStatusMessage('خطا در فعال‌سازی اعلان‌ها');
       setShowDetails(true);
+      setCurrentStep('');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForceReload = async () => {
+    console.log('🔄 [Enhanced Banner] Force reload OneSignal');
+    setIsForceReloading(true);
+    setShowStatus(null);
+    setCurrentStep('پاک‌سازی کش...');
+    
+    try {
+      // Clear service worker cache
+      await serviceWorkerManager.clearServiceWorkerCache();
+      setCurrentStep('بارگذاری مجدد SDK...');
+      
+      // Force reload OneSignal SDK
+      await enhancedOneSignalLoader.forceReloadSDK();
+      setCurrentStep('راه‌اندازی مجدد...');
+      
+      // Reset initialization state
+      enhancedPushNotificationService.isInitialized = false;
+      enhancedPushNotificationService.initializationPromise = null;
+      
+      // Try to initialize again
+      await enhancedPushNotificationService.initOneSignal();
+      
+      setShowStatus('success');
+      setStatusMessage('OneSignal با موفقیت بارگذاری شد');
+      setCurrentStep('');
+      
+      setTimeout(() => {
+        setShowStatus(null);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('🔄 [Enhanced Banner] Force reload failed:', error);
+      setShowStatus('error');
+      setStatusMessage('خطا در بارگذاری مجدد');
+      setCurrentStep('');
+    } finally {
+      setIsForceReloading(false);
     }
   };
 
@@ -144,7 +201,7 @@ const EnhancedNotificationPermissionBanner: React.FC<EnhancedNotificationPermiss
                   {showStatus === 'success' ? 'اعلان‌ها فعال شد' : 'فعال‌سازی اعلان‌ها'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {statusMessage || getDeviceSpecificMessage()}
+                  {currentStep || statusMessage || getDeviceSpecificMessage()}
                 </p>
                 {deviceInfo.isIOS && !deviceInfo.supportsWebPush && (
                   <p className="text-xs text-yellow-600 mt-1">
@@ -159,7 +216,7 @@ const EnhancedNotificationPermissionBanner: React.FC<EnhancedNotificationPermiss
                 <Button
                   size="sm"
                   onClick={handleEnableNotifications}
-                  disabled={isLoading}
+                  disabled={isLoading || isForceReloading}
                   className="h-8 px-3 text-xs bg-primary hover:bg-primary/90"
                 >
                   {isLoading ? (
@@ -174,21 +231,35 @@ const EnhancedNotificationPermissionBanner: React.FC<EnhancedNotificationPermiss
               )}
               
               {showStatus === 'error' && deviceInfo.supportsWebPush && (
-                <Button
-                  size="sm"
-                  onClick={handleEnableNotifications}
-                  disabled={isLoading}
-                  className="h-8 px-3 text-xs bg-destructive hover:bg-destructive/90"
-                >
-                  تلاش مجدد
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleEnableNotifications}
+                    disabled={isLoading || isForceReloading}
+                    className="h-8 px-3 text-xs bg-destructive hover:bg-destructive/90"
+                  >
+                    تلاش مجدد
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleForceReload}
+                    disabled={isLoading || isForceReloading}
+                    className="h-8 px-2 text-xs bg-orange-500 hover:bg-orange-600"
+                  >
+                    {isForceReloading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                  </Button>
+                </>
               )}
               
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={onDismiss}
-                disabled={isLoading}
+                disabled={isLoading || isForceReloading}
                 className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-3 w-3" />

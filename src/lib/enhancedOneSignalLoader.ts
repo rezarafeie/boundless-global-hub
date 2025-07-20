@@ -145,6 +145,37 @@ export class EnhancedOneSignalLoader {
     return this.isLoaded && typeof window.OneSignal !== 'undefined';
   }
 
+  async forceReloadSDK(): Promise<boolean> {
+    console.log('🔄 [OneSignal Loader] Force reloading SDK...');
+    
+    // Reset internal state
+    this.isLoaded = false;
+    this.isLoading = false;
+    this.loadPromise = null;
+    
+    // Remove existing OneSignal scripts
+    const existingScripts = document.querySelectorAll('script[src*="OneSignal"]');
+    existingScripts.forEach(script => {
+      const scriptElement = script as HTMLScriptElement;
+      console.log('🗑️ [OneSignal Loader] Removing existing script:', scriptElement.src);
+      script.remove();
+    });
+    
+    // Clear OneSignal from window
+    if (window.OneSignal) {
+      delete window.OneSignal;
+    }
+    if (window.OneSignalDeferred) {
+      delete window.OneSignalDeferred;
+    }
+    
+    // Wait a bit for cleanup
+    await this.delay(500);
+    
+    // Load SDK again
+    return this.loadOneSignalSDK();
+  }
+
   getLoadingStatus(): { isLoaded: boolean; isLoading: boolean } {
     return {
       isLoaded: this.isLoaded,

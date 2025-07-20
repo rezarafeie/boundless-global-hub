@@ -7,7 +7,7 @@ import { enhancedPushNotificationService } from '@/lib/enhancedPushNotificationS
 import { enhancedOneSignalLoader } from '@/lib/enhancedOneSignalLoader';
 import { serviceWorkerManager } from '@/lib/serviceWorkerManager';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, XCircle, AlertCircle, Smartphone, Monitor, Bell, Download, Info, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Smartphone, Monitor, Bell, Download, Info, RefreshCw, Wifi, WifiOff, Zap } from 'lucide-react';
 import type { MobileDeviceInfo } from '@/lib/mobilePushDetection';
 
 interface EnhancedNotificationDiagnosticsProps {
@@ -45,7 +45,8 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       token: null
     },
     lastTestResult: null,
-    initializationError: null
+    initializationError: null,
+    isForceReloading: false
   });
 
   const [testing, setTesting] = useState(false);

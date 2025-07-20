@@ -81,6 +81,38 @@ export class ServiceWorkerManager {
     return this.registration;
   }
 
+  async clearServiceWorkerCache(): Promise<void> {
+    console.log('🧹 [SW Manager] Clearing service worker cache...');
+    
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => {
+            console.log('🗑️ [SW Manager] Deleting cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+        console.log('✅ [SW Manager] All caches cleared');
+      }
+      
+      // Also unregister all service workers
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        console.log('🗑️ [SW Manager] Unregistering:', registration.scope);
+        await registration.unregister();
+      }
+      
+      // Reset internal state
+      this.isRegistered = false;
+      this.registration = null;
+      
+      console.log('✅ [SW Manager] Service worker cache and registrations cleared');
+    } catch (error) {
+      console.error('❌ [SW Manager] Error clearing cache:', error);
+    }
+  }
+
   isServiceWorkerRegistered(): boolean {
     return this.isRegistered && !!this.registration;
   }
