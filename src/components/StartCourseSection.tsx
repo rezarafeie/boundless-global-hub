@@ -65,7 +65,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     },
     {
       id: 'woocommerce',
-      title: 'ووکامرس',
+      title: 'سیستم دسترسی به دوره های آکادمی رفیعی ( قدیمی )',
       description: 'دسترسی آنلاین به دوره',
       icon: ShoppingCart,
       enabled: hasWooCommerce,
@@ -162,63 +162,69 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
 
       {/* Access Types Grid */}
       <div className="grid gap-4 md:gap-6">
-        {accessTypes.filter(type => type.enabled).map((accessType) => (
-          <Card 
-            key={accessType.id}
-            className={`${getColorClasses(accessType.color, 'border')} ${getColorClasses(accessType.color, 'bg')} border-2`}
-          >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 ${getColorClasses(accessType.color, 'bg')} rounded-xl flex items-center justify-center border ${getColorClasses(accessType.color, 'border')}`}>
-                    <accessType.icon className={`h-6 w-6 ${getColorClasses(accessType.color, 'text')}`} />
-                  </div>
-                  <div>
-                    <CardTitle className={`${getColorClasses(accessType.color, 'text')} text-lg`}>
-                      {accessType.title}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {accessType.description}
-                    </p>
-                  </div>
-                </div>
-                {getStatusBadge(accessType.status)}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Features List */}
-              <div className="grid grid-cols-2 gap-2">
-                {accessType.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className={`h-4 w-4 ${getColorClasses(accessType.color, 'text')}`} />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Action based on access type */}
-              {accessType.id === 'woocommerce' && accessType.status === 'active' && (
-                <Button 
-                  onClick={onEnterCourse}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                  size="lg"
+        {accessTypes.map((accessType) => {
+          if (!accessType.enabled) return null;
+          
+          return (
+            <div key={accessType.id}>
+              {/* Rafiei Player - Special integrated section */}
+              {accessType.id === 'rafiei-player' ? (
+                <RafieiPlayerSection 
+                  enrollment={enrollment}
+                  course={course}
+                />
+              ) : (
+                /* Other access types - Regular cards */
+                <Card 
+                  className={`${getColorClasses(accessType.color, 'border')} ${getColorClasses(accessType.color, 'bg')} border-2`}
                 >
-                  <ExternalLink className="ml-2 h-5 w-5" />
-                  ورود به دوره - ووکامرس
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 ${getColorClasses(accessType.color, 'bg')} rounded-xl flex items-center justify-center border ${getColorClasses(accessType.color, 'border')}`}>
+                          <accessType.icon className={`h-6 w-6 ${getColorClasses(accessType.color, 'text')}`} />
+                        </div>
+                        <div>
+                          <CardTitle className={`${getColorClasses(accessType.color, 'text')} text-lg`}>
+                            {accessType.title}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            {accessType.description}
+                          </p>
+                        </div>
+                      </div>
+                      {getStatusBadge(accessType.status)}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Features List */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {accessType.features.map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm">
+                          <CheckCircle className={`h-4 w-4 ${getColorClasses(accessType.color, 'text')}`} />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
 
-        {/* Rafiei Player Section - Special handling */}
-        {hasRafieiPlayer && (
-          <RafieiPlayerSection 
-            enrollment={enrollment}
-            course={course}
-          />
-        )}
+                    {/* Action based on access type */}
+                    {accessType.id === 'woocommerce' && accessType.status === 'active' && (
+                      <Button 
+                        onClick={onEnterCourse}
+                        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                        size="lg"
+                      >
+                        <ExternalLink className="ml-2 h-5 w-5" />
+                        ورود به دوره - سیستم قدیمی
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          );
+        })}
 
         {/* Academy Access - Coming Soon */}
         {!hasAcademyAccess && (
