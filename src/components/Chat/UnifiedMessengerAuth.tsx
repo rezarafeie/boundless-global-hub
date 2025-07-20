@@ -26,7 +26,7 @@ interface UnifiedMessengerAuthProps {
   linkingEmail?: string | null;
 }
 
-type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking';
+type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking' | 'name-confirm';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail }) => {
   const { toast } = useToast();
@@ -48,13 +48,16 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [googleLoading, setGoogleLoading] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [isGoogleLinking, setIsGoogleLinking] = useState(false);
-  const [formattedPhoneForOTP, setFormattedPhoneForOTP] = useState(''); // Store formatted phone for OTP
+  const [formattedPhoneForOTP, setFormattedPhoneForOTP] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false); // Track OTP verification status
 
   // Initialize linking flow if linkingEmail is provided
   useEffect(() => {
     if (linkingEmail) {
       console.log('🔗 Initializing linking flow for:', linkingEmail);
       setEmail(linkingEmail);
+      setFirstName(prefillData?.firstName || '');
+      setLastName(prefillData?.lastName || '');
       setCurrentStep('linking');
     }
   }, [linkingEmail]);
@@ -231,7 +234,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         if (prefillData?.email && !user.email) {
           console.log('🔗 Google user wants to link to existing phone number');
           setIsGoogleLinking(true);
-          setCurrentStep('otp-link');
           
           // Format phone for OTP sending
           const formattedPhone = countryCode === '+98' 
@@ -255,7 +257,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           }
 
           if (data.success) {
-            setCurrentStep('otp-link'); // Go to OTP verification step
+            setCurrentStep('otp-link');
             toast({
               title: 'کد تأیید ارسال شد',
               description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
@@ -434,7 +436,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         }
       });
 
-      console.log('✅ Linking OTP verification response:', { data, error });
+      console.log('✅ OTP verification response:', { data, error });
 
       if (error) {
         console.error('Edge function error:', error);
@@ -442,67 +444,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }
 
       if (data && data.success) {
-        // If existingUser is null, try to find the user again
-        let userToUpdate = existingUser;
-        if (!userToUpdate) {
-          console.log('🔍 ExistingUser is null, searching again...');
-          userToUpdate = await findUserByPhone(phoneNumber, countryCode);
-          
-          if (!userToUpdate) {
-            throw new Error('کاربر یافت نشد. لطفاً دوباره تلاش کنید.');
-          }
-          
-          console.log('✅ Found user on retry:', userToUpdate);
-          setExistingUser(userToUpdate);
-        }
-
-        // OTP verified, now link Google email to the existing account
-        const emailToLink = linkingEmail || prefillData?.email;
-        const firstNameToLink = prefillData?.firstName || userToUpdate.first_name;
-        const lastNameToLink = prefillData?.lastName || userToUpdate.last_name;
-        
-        console.log('🔗 Linking email to user:', emailToLink, 'User ID:', userToUpdate.id);
-        
-        const { error: updateError } = await supabase
-          .from('chat_users')
-          .update({
-            email: emailToLink,
-            first_name: firstNameToLink,
-            last_name: lastNameToLink,
-            full_name: firstNameToLink && lastNameToLink 
-              ? `${firstNameToLink} ${lastNameToLink}`
-              : userToUpdate.full_name
-          })
-          .eq('id', userToUpdate.id);
-
-        if (updateError) {
-          console.error('Update error:', updateError);
-          throw updateError;
-        }
-
-        // Create session and login
-        const sessionToken = await messengerService.createSession(userToUpdate.id);
-        
-        // Update the user object with new data
-        const updatedUser = {
-          ...userToUpdate,
-          email: emailToLink || userToUpdate.email,
-          first_name: firstNameToLink,
-          last_name: lastNameToLink,
-          full_name: firstNameToLink && lastNameToLink 
-            ? `${firstNameToLink} ${lastNameToLink}`
-            : userToUpdate.full_name
-        };
-
+        console.log('✅ OTP verified successfully, moving to name confirmation');
+        setOtpVerified(true);
+        setCurrentStep('name-confirm');
         toast({
-          title: 'موفقیت آمیز',
-          description: 'حساب Google شما با موفقیت ربط داده شد'
+          title: 'کد تأیید شد',
+          description: 'اطلاعات خود را بررسی و تأیید کنید'
         });
-
-        console.log('🎉 Linking successful, logging in user...');
-        onAuthenticated(sessionToken, updatedUser.name, updatedUser);
       } else {
-        console.log('❌ Linking OTP verification failed');
+        console.log('❌ OTP verification failed');
         toast({
           title: 'کد اشتباه است',
           description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
@@ -512,13 +462,96 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         return;
       }
     } catch (error: any) {
-      console.error('Error verifying linking OTP:', error);
+      console.error('Error verifying OTP:', error);
       toast({
         title: 'خطا در تأیید کد',
         description: error.message || 'کد وارد شده اشتباه است',
         variant: 'destructive'
       });
       setOtpCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // New function to handle final name confirmation and account linking
+  const handleNameConfirmation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!firstName.trim() || !lastName.trim()) {
+      toast({
+        title: 'خطا',
+        description: 'نام و نام خانوادگی را وارد کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // If existingUser is null, try to find the user again
+      let userToUpdate = existingUser;
+      if (!userToUpdate) {
+        console.log('🔍 ExistingUser is null, searching again...');
+        userToUpdate = await findUserByPhone(phoneNumber, countryCode);
+        
+        if (!userToUpdate) {
+          throw new Error('کاربر یافت نشد. لطفاً دوباره تلاش کنید.');
+        }
+        
+        console.log('✅ Found user on retry:', userToUpdate);
+        setExistingUser(userToUpdate);
+      }
+
+      // Link Google email to the existing account
+      const emailToLink = linkingEmail || prefillData?.email;
+      const firstNameToLink = firstName.trim();
+      const lastNameToLink = lastName.trim();
+      
+      console.log('🔗 Linking email to user:', emailToLink, 'User ID:', userToUpdate.id);
+      
+      const { error: updateError } = await supabase
+        .from('chat_users')
+        .update({
+          email: emailToLink,
+          first_name: firstNameToLink,
+          last_name: lastNameToLink,
+          full_name: `${firstNameToLink} ${lastNameToLink}`
+        })
+        .eq('id', userToUpdate.id);
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
+
+      // Create session and login
+      const sessionToken = await messengerService.createSession(userToUpdate.id);
+      
+      // Update the user object with new data
+      const updatedUser = {
+        ...userToUpdate,
+        email: emailToLink || userToUpdate.email,
+        first_name: firstNameToLink,
+        last_name: lastNameToLink,
+        full_name: `${firstNameToLink} ${lastNameToLink}`
+      };
+
+      toast({
+        title: 'موفقیت آمیز',
+        description: 'حساب Google شما با موفقیت ربط داده شد'
+      });
+
+      console.log('🎉 Linking successful, logging in user...');
+      onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+    } catch (error: any) {
+      console.error('Error in name confirmation:', error);
+      toast({
+        title: 'خطا در ربط حساب',
+        description: error.message || 'لطفاً دوباره تلاش کنید',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -599,6 +632,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'pending': return 'در انتظار تایید';
       case 'otp-link': return 'ربط حساب Google';
       case 'linking': return 'ربط حساب Google';
+      case 'name-confirm': return 'تأیید اطلاعات';
     }
   };
 
@@ -611,6 +645,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
       case 'otp-link': return 'کد تأیید برای ربط حساب Google ارسال شد';
       case 'linking': return 'شماره تلفن خود را وارد کنید';
+      case 'name-confirm': return 'اطلاعات خود را بررسی و تأیید کنید';
     }
   };
 
@@ -986,7 +1021,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             {loading && (
               <div className="flex items-center justify-center space-x-3 mb-6 bg-primary/5 rounded-lg py-4 px-6">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="text-base text-primary font-medium">در حال تأیید و ربط حساب...</span>
+                <span className="text-base text-primary font-medium">در حال تأیید کد...</span>
               </div>
             )}
 
@@ -1021,6 +1056,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   setIsGoogleLinking(false);
                   setExistingUser(null);
                   setFormattedPhoneForOTP('');
+                  setOtpVerified(false);
                 }}
                 className="w-full h-12 rounded-full border-border hover:bg-muted/50 transition-all duration-200"
                 disabled={loading}
@@ -1031,6 +1067,101 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 تغییر شماره تلفن
               </Button>
             </div>
+          </div>
+        )}
+
+        {currentStep === 'name-confirm' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-3 mb-8">
+              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Check className="w-10 h-10 text-green-600 dark:text-green-400" />
+              </div>
+              
+              <h3 className="text-xl font-semibold text-foreground">
+                تأیید اطلاعات
+              </h3>
+              
+              <p className="text-sm text-muted-foreground">
+                اطلاعات زیر برای ربط حساب Google استفاده خواهد شد
+              </p>
+              
+              {linkingEmail && (
+                <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-800/30 rounded-lg p-4 mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    </svg>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      حساب Google
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+                    {linkingEmail}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleNameConfirmation} className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Input
+                      id="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="نام"
+                      required
+                      dir="rtl"
+                      className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      id="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="نام خانوادگی"
+                      required
+                      dir="rtl"
+                      className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-8">
+                <Button 
+                  type="submit" 
+                  className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      در حال ربط حساب...
+                    </>
+                  ) : (
+                    'تأیید و ربط حساب'
+                  )}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => {
+                    setCurrentStep('otp-link');
+                    setOtpCode('');
+                  }}
+                  className="px-4 h-12 rounded-full text-muted-foreground"
+                  disabled={loading}
+                >
+                  برگشت
+                </Button>
+              </div>
+            </form>
           </div>
         )}
 
