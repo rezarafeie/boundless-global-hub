@@ -364,7 +364,7 @@ const EnrollAdmin: React.FC = () => {
       
       <div className="flex h-screen pt-16">
         {/* Sidebar */}
-        <div className="w-64 bg-card border-r border-border flex-shrink-0">
+        <div className="w-64 bg-card border-r border-border flex-shrink-0 hidden md:block">
           <div className="p-4">
             <nav className="space-y-2">
               {sidebarItems.map((item) => (
@@ -386,9 +386,30 @@ const EnrollAdmin: React.FC = () => {
           </div>
         </div>
 
+        {/* Mobile Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+          <nav className="flex justify-around py-2">
+            {sidebarItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id as any)}
+                className={cn(
+                  "flex flex-col items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors",
+                  activeView === item.id
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-xs">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
         {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="container mx-auto px-6 py-8">
+        <div className="flex-1 overflow-auto pb-20 md:pb-0">
+          <div className="container mx-auto px-4 md:px-6 py-8">
             
             {/* Dashboard View */}
             {activeView === 'dashboard' && (

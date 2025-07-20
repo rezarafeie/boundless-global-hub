@@ -95,37 +95,57 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     setUploading(true);
 
     try {
+      console.log('Starting manual payment submission...');
+      
       // Upload receipt to storage
-      const fileName = `${Date.now()}_${course.id}_${formData.email}_receipt.${uploadedFile.name.split('.').pop()}`;
+      const fileName = `${Date.now()}_${course.id}_${formData.email.replace(/[^a-zA-Z0-9]/g, '_')}_receipt.${uploadedFile.name.split('.').pop()}`;
+      console.log('Uploading file:', fileName);
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('payment-receipts')
         .upload(fileName, uploadedFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('File uploaded successfully:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('payment-receipts')
         .getPublicUrl(fileName);
 
+      console.log('Public URL:', publicUrl);
+
       // Create enrollment record with manual payment
-      const { data: enrollmentData, error: enrollmentError } = await supabase
+      const enrollmentData = {
+        course_id: course.id,
+        full_name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone,
+        payment_amount: course.price,
+        payment_status: 'pending',
+        payment_method: 'manual',
+        manual_payment_status: 'pending' as const,
+        receipt_url: publicUrl
+      };
+
+      console.log('Creating enrollment with data:', enrollmentData);
+
+      const { data: createdEnrollment, error: enrollmentError } = await supabase
         .from('enrollments')
-        .insert({
-          course_id: course.id,
-          full_name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          phone: formData.phone,
-          payment_amount: course.price,
-          payment_status: 'pending',
-          payment_method: 'manual',
-          manual_payment_status: 'pending',
-          receipt_url: publicUrl
-        })
+        .insert(enrollmentData)
         .select()
         .single();
 
-      if (enrollmentError) throw enrollmentError;
+      if (enrollmentError) {
+        console.error('Enrollment error:', enrollmentError);
+        throw enrollmentError;
+      }
+
+      console.log('Enrollment created successfully:', createdEnrollment);
 
       setShowWaitingModal(true);
       
@@ -134,11 +154,16 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         description: "رسید پرداخت شما با موفقیت ثبت شد و در انتظار تایید است",
       });
 
+      // Reset form
+      setUploadedFile(null);
+      const fileInput = document.getElementById('receipt') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+
     } catch (error) {
       console.error('Manual payment error:', error);
       toast({
         title: "خطا",
-        description: "خطا در ثبت پرداخت دستی. لطفا مجددا تلاش کنید.",
+        description: `خطا در ثبت پرداخت دستی: ${error.message || 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
