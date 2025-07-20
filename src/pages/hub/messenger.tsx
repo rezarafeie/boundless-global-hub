@@ -1,14 +1,12 @@
-
 import React, { useEffect } from 'react';
 import Messenger from '@/components/Chat/Messenger';
 import { Card, CardContent } from '@/components/ui/card';
 import { WifiOff, MessageCircle, Users } from 'lucide-react';
 import { type MessengerUser } from '@/lib/messengerService';
-import { useNotificationService } from '@/hooks/useNotificationService';
-import NotificationPermissionBanner from '@/components/Chat/NotificationPermissionBanner';
+import { useEnhancedNotificationService } from '@/hooks/useEnhancedNotificationService';
+import EnhancedNotificationPermissionBanner from '@/components/Chat/EnhancedNotificationPermissionBanner';
 import AddToHomeScreenBanner from '@/components/Chat/AddToHomeScreenBanner';
-import NotificationTester from '@/components/Chat/NotificationTester';
-import NotificationDiagnostics from '@/components/Chat/NotificationDiagnostics';
+import EnhancedNotificationDiagnostics from '@/components/Chat/EnhancedNotificationDiagnostics';
 import { isMessengerSubdomain } from '@/utils/subdomainDetection';
 
 interface MessengerPageProps {
@@ -21,12 +19,12 @@ interface MessengerPageProps {
 const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate, isOffline = false, onLogout }) => {
   const sessionToken = localStorage.getItem('messenger_session_token');
 
-  // Initialize notification service for this page
+  // Initialize enhanced notification service for this page
   const {
     showPermissionBanner,
     requestNotificationPermission,
     dismissPermissionBanner
-  } = useNotificationService({
+  } = useEnhancedNotificationService({
     currentUser,
     sessionToken
   });
@@ -40,9 +38,9 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
 
   return (
     <div className="h-full overflow-hidden">
-      {/* Show notification banner if needed */}
+      {/* Show enhanced notification banner if needed */}
       {showPermissionBanner && !isOffline && (
-        <NotificationPermissionBanner
+        <EnhancedNotificationPermissionBanner
           onRequestPermission={requestNotificationPermission}
           onDismiss={dismissPermissionBanner}
         />
@@ -53,10 +51,10 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
         <AddToHomeScreenBanner />
       )}
       
-      {/* Show notification diagnostics for debugging */}
+      {/* Show enhanced notification diagnostics for debugging */}
       {showDiagnostics && (
         <div className="fixed top-4 right-4 z-50 max-w-sm">
-          <NotificationDiagnostics 
+          <EnhancedNotificationDiagnostics 
             currentUser={currentUser}
             sessionToken={sessionToken}
           />
