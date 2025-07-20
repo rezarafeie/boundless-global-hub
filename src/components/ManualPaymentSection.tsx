@@ -22,6 +22,7 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
+  countryCode: string;
 }
 
 interface ManualPaymentSectionProps {
@@ -188,6 +189,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         full_name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
+        country_code: formData.countryCode,
         payment_amount: course.price,
         payment_method: 'manual',
         manual_payment_status: 'pending' as const,

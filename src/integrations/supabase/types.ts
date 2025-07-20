@@ -668,6 +668,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           chat_user_id: number | null
+          country_code: string | null
           course_id: string
           created_at: string
           email: string
@@ -694,6 +695,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           chat_user_id?: number | null
+          country_code?: string | null
           course_id: string
           created_at?: string
           email: string
@@ -720,6 +722,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           chat_user_id?: number | null
+          country_code?: string | null
           course_id?: string
           created_at?: string
           email?: string
