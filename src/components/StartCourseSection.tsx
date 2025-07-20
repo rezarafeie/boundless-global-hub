@@ -38,6 +38,8 @@ interface StartCourseSectionProps {
     support_link?: string | null;
     telegram_channel_link?: string | null;
     gifts_link?: string | null;
+    enable_course_access?: boolean;
+    slug?: string;
   } | undefined;
   onEnterCourse: () => void;
   userEmail?: string;
@@ -52,7 +54,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   // Determine available access types
   const hasRafieiPlayer = course?.is_spotplayer_enabled;
   const hasWooCommerce = course?.woocommerce_create_access !== false;
-  const hasAcademyAccess = false; // This will be enabled later
+  const hasAcademyAccess = course?.enable_course_access; // Now enabled based on course setting
   
   const accessTypes = [
     {
@@ -87,17 +89,17 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     },
     {
       id: 'academy',
-      title: 'آکادمی رفیعی',
-      description: 'پلتفرم جامع آموزش',
+      title: 'آکادمی رفیعی جدید',
+      description: 'پلتفرم جامع آموزش آنلاین',
       icon: GraduationCap,
       enabled: hasAcademyAccess,
-      status: 'coming-soon',
+      status: hasAcademyAccess ? 'active' : 'coming-soon',
       color: 'green',
       features: [
-        'پلتفرم یکپارچه',
-        'تست و ارزیابی',
-        'گواهینامه معتبر',
-        'کمیونیتی دانشجویان'
+        'محتوای درس‌ها',
+        'ویدیو و فایل‌ها',
+        'سیستم یادگیری مدرن',
+        'دسترسی کامل آنلاین'
       ]
     }
   ];
@@ -214,18 +216,30 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       ))}
                     </div>
 
-                    {/* Action based on access type */}
-                    {accessType.id === 'woocommerce' && accessType.status === 'active' && (
-                      <Button 
-                        onClick={onEnterCourse}
-                        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                        size="lg"
-                      >
-                        <ExternalLink className="ml-2 h-5 w-5" />
-                        ورود به دوره - سیستم قدیمی
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                      </Button>
-                    )}
+              {/* Action based on access type */}
+              {accessType.id === 'woocommerce' && accessType.status === 'active' && (
+                <Button 
+                  onClick={onEnterCourse}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                  size="lg"
+                >
+                  <ExternalLink className="ml-2 h-5 w-5" />
+                  ورود به دوره - سیستم قدیمی
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                </Button>
+              )}
+
+              {accessType.id === 'academy' && accessType.status === 'active' && (
+                <Button 
+                  onClick={() => window.location.href = `/access?course=${course?.slug}`}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                  size="lg"
+                >
+                  <GraduationCap className="ml-2 h-5 w-5" />
+                  ورود به آکادمی جدید
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                </Button>
+              )}
                   </CardContent>
                 </Card>
               )}
@@ -233,51 +247,6 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           );
         })}
 
-        {/* Academy Access - Coming Soon */}
-        {!hasAcademyAccess && (
-          <Card className="border-2 border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                    <GraduationCap className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-gray-700 dark:text-gray-300 text-lg">
-                      آکادمی رفیعی
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      پلتفرم جامع آموزش آنلاین
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-800">
-                  به‌زودی
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {[
-                  'پلتفرم یکپارچه',
-                  'تست و ارزیابی',
-                  'گواهینامه معتبر',
-                  'کمیونیتی دانشجویان'
-                ].map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-gray-500" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  این بخش به‌زودی راه‌اندازی خواهد شد و امکانات جدیدی برای شما فراهم می‌کند
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Course Action Links - Support, Telegram, Gifts */}
         {course && enrollment && (

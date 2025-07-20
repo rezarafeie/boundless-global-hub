@@ -31,6 +31,7 @@ interface Course {
   support_link: string | null;
   telegram_channel_link: string | null;
   gifts_link: string | null;
+  enable_course_access: boolean;
   created_at: string;
 }
 

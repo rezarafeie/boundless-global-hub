@@ -68,7 +68,8 @@ const EnrollSuccess: React.FC = () => {
             woocommerce_create_access,
             support_link,
             telegram_channel_link,
-            gifts_link
+            gifts_link,
+            enable_course_access
           )
         `)
         .eq('id', enrollmentId)

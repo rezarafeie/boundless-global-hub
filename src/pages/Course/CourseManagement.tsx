@@ -27,6 +27,7 @@ interface Course {
   support_link: string | null;
   telegram_channel_link: string | null;
   gifts_link: string | null;
+  enable_course_access: boolean;
   created_at: string;
 }
 
@@ -50,6 +51,7 @@ const CourseManagement: React.FC = () => {
     support_link: '',
     telegram_channel_link: '',
     gifts_link: '',
+    enable_course_access: false,
     is_active: true
   });
   
@@ -87,6 +89,7 @@ const CourseManagement: React.FC = () => {
           support_link: data.support_link || '',
           telegram_channel_link: data.telegram_channel_link || '',
           gifts_link: data.gifts_link || '',
+          enable_course_access: data.enable_course_access || false,
           is_active: data.is_active
         });
       }
@@ -342,7 +345,47 @@ const CourseManagement: React.FC = () => {
               </div>
             </div>
 
-            {/* Course Links Configuration - Only show if course is active */}
+            {/* Course Access System */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <h3 className="text-lg font-semibold">سیستم دسترسی آکادمی جدید</h3>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="course-access-toggle" className="text-base font-medium">
+                    فعال‌سازی سیستم دسترسی دوره
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    اگر فعال باشد، کاربران می‌توانند به محتوای دروس دسترسی پیدا کنند
+                  </p>
+                </div>
+                <Switch
+                  id="course-access-toggle"
+                  checked={courseForm.enable_course_access}
+                  onCheckedChange={(checked) => 
+                    setCourseForm(prev => ({ ...prev, enable_course_access: checked }))
+                  }
+                />
+              </div>
+
+              {courseForm.enable_course_access && (
+                <div className="mt-6 space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">مدیریت دروس و بخش‌ها</h4>
+                    <p className="text-sm text-blue-600 dark:text-blue-300 mb-3">
+                      برای مدیریت کامل دروس و بخش‌های این دوره، ابتدا دوره را ذخیره کنید
+                    </p>
+                    <Button
+                      variant="outline"
+                      disabled={!isEdit}
+                      onClick={() => navigate(`/enroll/admin/course/${courseId}/lessons`)}
+                      className="border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    >
+                      {isEdit ? 'مدیریت دروس و بخش‌ها' : 'ابتدا دوره را ذخیره کنید'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
             {courseForm.is_active && (
               <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                 <h3 className="text-lg font-semibold">لینک‌های دوره</h3>
