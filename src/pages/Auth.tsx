@@ -17,12 +17,18 @@ const Auth: React.FC = () => {
   const [showRegistration, setShowRegistration] = useState(false);
   const [linkingEmail, setLinkingEmail] = useState<string | null>(null);
 
-  // Check for URL linking parameter
+  // Check for URL linking parameter and redirect URL
   useEffect(() => {
     const linkParam = searchParams.get('link');
+    const redirectParam = searchParams.get('redirect');
+    
     if (linkParam) {
       console.log('🔗 Found linking parameter:', linkParam);
       setLinkingEmail(linkParam);
+    }
+    
+    if (redirectParam) {
+      localStorage.setItem('auth_redirect', redirectParam);
     }
   }, [searchParams]);
 
@@ -42,20 +48,31 @@ const Auth: React.FC = () => {
         );
         
         if (existingUser) {
-          console.log('✅ User exists, logging in...');
-          // User exists, login through messenger service for unified session
-          if (existingUser.isMessengerUser && existingUser.messengerData) {
-            const sessionToken = await messengerService.createSession(existingUser.messengerData.id);
-            login(existingUser, sessionToken);
-          } else if (existingUser.isAcademyUser) {
-            // For academy users, we'll create a session token
-            const sessionToken = `academy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            login(existingUser, sessionToken);
+          console.log('✅ User exists with email:', existingUser.email);
+          
+          // Check if Google email matches - if yes, user is already linked
+          if (existingUser.email === session.user.email) {
+            console.log('✅ User already linked, logging in...');
+            // User exists and Gmail is already linked, login normally
+            if (existingUser.isMessengerUser && existingUser.messengerData) {
+              const sessionToken = await messengerService.createSession(existingUser.messengerData.id);
+              login(existingUser, sessionToken);
+            } else if (existingUser.isAcademyUser) {
+              const sessionToken = `academy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              login(existingUser, sessionToken);
+            }
+          } else {
+            console.log('🔗 User exists but Gmail not linked, redirecting to linking...');
+            // User exists but Gmail is not linked - force redirect to linking
+            if (!linkingEmail) {
+              window.location.href = `/auth?link=${encodeURIComponent(session.user.email || '')}`;
+              return;
+            }
           }
         } else {
           console.log('📝 User needs linking or registration');
           
-          // If we don't have a linking parameter in URL, redirect to linking flow
+          // If we don't have a linking parameter in URL, redirect to linking flow  
           if (!linkingEmail && session.user.email) {
             console.log('🔗 Redirecting to linking flow for unlinked Google account');
             window.location.href = `/auth?link=${encodeURIComponent(session.user.email)}`;
@@ -78,9 +95,11 @@ const Auth: React.FC = () => {
     checkGoogleAuth();
   }, [login, linkingEmail]);
 
-  // If user is already authenticated, redirect to home
+  // If user is already authenticated, redirect to saved URL or home
   if (isAuthenticated && user) {
-    return <Navigate to="/" replace />;
+    const redirectUrl = localStorage.getItem('auth_redirect') || '/';
+    localStorage.removeItem('auth_redirect');
+    return <Navigate to={redirectUrl} replace />;
   }
 
   const handleAuthenticated = (sessionToken: string, userName: string, userData: any) => {
