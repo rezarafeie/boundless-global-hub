@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  console.log('useAuth called, context:', context);
+  console.log('useAuth called, context:', context ? 'exists' : 'undefined');
   if (context === undefined) {
     console.error('useAuth hook called outside of AuthProvider!');
     throw new Error('useAuth must be used within an AuthProvider');
@@ -36,15 +36,11 @@ interface AuthProviderProps {
 const normalizePhone = (phone: string): string[] => {
   if (!phone) return [];
   
-  // Remove all non-digit characters
   const cleanPhone = phone.replace(/\D/g, '');
-  
   const variations = [];
   
-  // Add the original clean phone
   variations.push(cleanPhone);
   
-  // If it starts with 98, also add without 98 and with 0
   if (cleanPhone.startsWith('98')) {
     const withoutCountryCode = cleanPhone.substring(2);
     variations.push(withoutCountryCode);
@@ -53,20 +49,18 @@ const normalizePhone = (phone: string): string[] => {
     }
   }
   
-  // If it starts with 9, also add with 0 prefix and with +98
   if (cleanPhone.startsWith('9') && !cleanPhone.startsWith('98')) {
     variations.push('0' + cleanPhone);
     variations.push('98' + cleanPhone);
   }
   
-  // If it starts with 09, also add without 0 and with +98
   if (cleanPhone.startsWith('09')) {
     const withoutZero = cleanPhone.substring(1);
     variations.push(withoutZero);
     variations.push('98' + withoutZero);
   }
   
-  return [...new Set(variations)]; // Remove duplicates
+  return [...new Set(variations)];
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -76,24 +70,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored session on mount
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
+        // First check for unified auth session
         const storedToken = getCookie('session_token');
         const storedUser = getCookie('current_user');
         
         if (storedToken && storedUser) {
+          console.log('Found unified auth session');
           try {
             const parsedUser = JSON.parse(decodeURIComponent(storedUser));
-            
-            // Validate session using unified auth service
             const validatedUser = await unifiedAuthService.validateSession(storedToken);
             
             if (validatedUser) {
               setUser(validatedUser);
               setToken(storedToken);
+              console.log('Unified auth session validated');
+              return;
             } else {
-              // Clear invalid session
+              console.log('Unified auth session invalid, clearing');
               deleteCookie('session_token');
               deleteCookie('current_user');
             }
@@ -103,10 +100,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             deleteCookie('current_user');
           }
         }
+        
+        // Check for messenger session as fallback
+        const messengerToken = localStorage.getItem('messenger_session_token');
+        if (messengerToken) {
+          console.log('Found messenger session, attempting to validate and sync');
+          try {
+            const messengerUser = await messengerService.validateSession(messengerToken);
+            if (messengerUser) {
+              console.log('Messenger session valid, converting to unified user');
+              const unifiedUser = convertToUnifiedUser(messengerUser);
+              setUser(unifiedUser);
+              setToken(messengerToken);
+              
+              // Sync to cookies for cross-system compatibility
+              setCookie('session_token', messengerToken, 30);
+              setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
+              return;
+            }
+          } catch (error) {
+            console.log('Messenger session validation failed:', error);
+            localStorage.removeItem('messenger_session_token');
+          }
+        }
+        
+        console.log('No valid session found');
       } catch (error) {
         console.error('Error initializing auth:', error);
         deleteCookie('session_token');
         deleteCookie('current_user');
+        localStorage.removeItem('messenger_session_token');
       } finally {
         setIsLoading(false);
       }
@@ -115,7 +138,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Helper function to convert MessengerUser to UnifiedUser
   const convertToUnifiedUser = (messengerUser: MessengerUser): UnifiedUser => {
     return {
       id: messengerUser.id.toString(),
@@ -133,16 +155,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   };
 
-  const login = (user: UnifiedUser | MessengerUser, token: string) => {
-    const unifiedUser = 'isMessengerUser' in user ? user : convertToUnifiedUser(user);
+  const login = (userData: UnifiedUser | MessengerUser, tokenData: string) => {
+    console.log('Login called with:', { userData, tokenData });
+    
+    const unifiedUser = 'isMessengerUser' in userData ? userData : convertToUnifiedUser(userData);
     setUser(unifiedUser);
-    setToken(token);
-    setCookie('session_token', token, 30); // Expires in 30 days
+    setToken(tokenData);
+    
+    // Store in both systems for compatibility
+    setCookie('session_token', tokenData, 30);
     setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
+    
+    // If it's a messenger user, also store in localStorage
+    if (unifiedUser.isMessengerUser) {
+      localStorage.setItem('messenger_session_token', tokenData);
+    }
   };
 
   const logout = async () => {
     try {
+      console.log('Logout called');
       if (token) {
         await unifiedAuthService.logout(token);
       }
@@ -153,6 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(null);
       deleteCookie('session_token');
       deleteCookie('current_user');
+      localStorage.removeItem('messenger_session_token');
     }
   };
 
@@ -170,21 +203,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('Checking enrollment for user:', user.id, 'course:', courseId);
     
     try {
-      // Get all phone number variations for comparison
       const phoneVariations = normalizePhone(user.phone);
       const emailVariations = user.email ? [user.email.toLowerCase()] : [];
       
       console.log('Phone variations to check:', phoneVariations);
       console.log('Email variations to check:', emailVariations);
       
-      // Build query conditions
       let query = supabase
         .from('enrollments')
         .select('id, payment_status, chat_user_id, phone, email')
         .eq('course_id', courseId)
         .eq('payment_status', 'completed');
       
-      // First, try to find by chat_user_id (most direct match)
       const { data: directMatch, error: directError } = await query
         .eq('chat_user_id', parseInt(user.id));
       
@@ -197,7 +227,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return true;
       }
       
-      // If no direct match, check by phone and email
       const { data: allEnrollments, error: allError } = await supabase
         .from('enrollments')
         .select('id, payment_status, chat_user_id, phone, email')
@@ -211,9 +240,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('All completed enrollments for course:', allEnrollments);
       
-      // Check if any enrollment matches our phone/email variations
       const matchingEnrollment = allEnrollments?.find(enrollment => {
-        // Check phone variations
         if (enrollment.phone) {
           const enrollmentPhoneVariations = normalizePhone(enrollment.phone);
           const phoneMatch = phoneVariations.some(userPhone => 
@@ -227,7 +254,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
         
-        // Check email variations
         if (enrollment.email && emailVariations.length > 0) {
           const emailMatch = emailVariations.includes(enrollment.email.toLowerCase());
           if (emailMatch) {
@@ -242,7 +268,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (matchingEnrollment) {
         console.log('Found matching enrollment, updating chat_user_id:', matchingEnrollment);
         
-        // Update the enrollment to link it with current user
         try {
           const { error: updateError } = await supabase
             .from('enrollments')

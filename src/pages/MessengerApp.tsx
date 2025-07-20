@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import MessengerPage from './hub/messenger';
@@ -5,15 +6,15 @@ import MessengerAuth from '@/components/Chat/MessengerAuth';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { ReplyProvider } from '@/contexts/ReplyContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const MessengerApp = () => {
-  const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [forceOffline, setForceOffline] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { isOnline } = useOfflineDetection();
   const location = useLocation();
+  const { user: unifiedUser, token: unifiedToken, login, logout, isAuthenticated } = useAuth();
 
   // Redirect to /hub/messenger if on messenger subdomain and not already there
   if (typeof window !== 'undefined' && window.location.hostname === 'messenger.rafiei.co' && location.pathname !== '/hub/messenger') {
@@ -22,10 +23,30 @@ const MessengerApp = () => {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [unifiedUser, unifiedToken]);
 
   const checkAuth = async () => {
     try {
+      // First check if we have a unified auth session
+      if (isAuthenticated && unifiedUser && unifiedToken) {
+        console.log('Found unified auth session, checking messenger compatibility');
+        
+        // If unified user is a messenger user, we're good to go
+        if (unifiedUser.isMessengerUser && unifiedUser.messengerData) {
+          console.log('Unified user is messenger user, using that session');
+          setForceOffline(false);
+          setLoading(false);
+          return;
+        }
+        
+        // If not a messenger user, still allow access but might need to sync
+        console.log('Unified user exists but not messenger user');
+        setForceOffline(false);
+        setLoading(false);
+        return;
+      }
+
+      // Check for local messenger session as fallback
       const token = localStorage.getItem('messenger_session_token');
       if (!token) {
         setShowAuth(true);
@@ -51,14 +72,14 @@ const MessengerApp = () => {
           return;
         }
 
-        setCurrentUser(user);
-        setSessionToken(token);
+        // Convert messenger user to unified user and sync with AuthContext
+        console.log('Found valid messenger session, syncing with unified auth');
+        login(user, token);
         setForceOffline(false);
       } catch (connectionError) {
         console.log('Connection failed, checking if we have a valid token for offline mode');
         
         // If we have a token but can't connect, try to use cached user data
-        // This prevents logout during temporary network issues
         if (token) {
           console.log('Using offline mode with existing token');
           const mockUser: MessengerUser = {
@@ -89,8 +110,7 @@ const MessengerApp = () => {
             password_hash: null,
             avatar_url: null
           };
-          setCurrentUser(mockUser);
-          setSessionToken(token);
+          login(mockUser, token);
           setForceOffline(true);
         } else {
           // No token, show auth
@@ -99,12 +119,10 @@ const MessengerApp = () => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Only clear session if there's no token or if it's clearly invalid
       const token = localStorage.getItem('messenger_session_token');
       if (!token) {
         setShowAuth(true);
       } else {
-        // Keep the session but force offline mode
         console.log('Keeping session in offline mode due to error');
         const mockUser: MessengerUser = {
           id: 0,
@@ -134,8 +152,7 @@ const MessengerApp = () => {
           password_hash: null,
           avatar_url: null
         };
-        setCurrentUser(mockUser);
-        setSessionToken(token);
+        login(mockUser, token);
         setForceOffline(true);
       }
     } finally {
@@ -145,22 +162,21 @@ const MessengerApp = () => {
 
   const handleAuthenticated = (newSessionToken: string, userName: string, user: MessengerUser) => {
     localStorage.setItem('messenger_session_token', newSessionToken);
-    setSessionToken(newSessionToken);
-    setCurrentUser(user);
+    
+    // Sync with unified auth system
+    login(user, newSessionToken);
     setShowAuth(false);
   };
 
-  const handleUserUpdate = (user: MessengerUser) => {
-    setCurrentUser(user);
+  const handleUserUpdate = (updatedUser: MessengerUser) => {
+    // Update both local state and unified auth
+    login(updatedUser, unifiedToken || localStorage.getItem('messenger_session_token') || '');
   };
 
-  const handleLogout = () => {
-    // Clear session data
+  const handleLogout = async () => {
+    // Clear both local session and unified session
     localStorage.removeItem('messenger_session_token');
-    
-    // Reset state
-    setCurrentUser(null);
-    setSessionToken(null);
+    await logout();
     setShowAuth(true);
     setForceOffline(false);
   };
@@ -176,13 +192,49 @@ const MessengerApp = () => {
     );
   }
 
-  if (showAuth || !currentUser || !sessionToken) {
+  if (showAuth || (!isAuthenticated && !unifiedUser)) {
     return (
       <MessengerAuth onAuthenticated={handleAuthenticated} />
     );
   }
 
   const isOfflineMode = forceOffline || !isOnline;
+  
+  // Get current user data (prefer messenger data if available)
+  const currentUser = unifiedUser?.messengerData || (unifiedUser?.isMessengerUser ? {
+    id: parseInt(unifiedUser.id),
+    name: unifiedUser.name,
+    phone: unifiedUser.phone,
+    username: unifiedUser.username || '',
+    is_approved: true,
+    is_support_agent: false,
+    is_messenger_admin: false,
+    bedoun_marz: false,
+    bedoun_marz_approved: false,
+    bedoun_marz_request: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    last_seen: new Date().toISOString(),
+    role: 'user' as const,
+    email: unifiedUser.email,
+    user_id: null,
+    first_name: unifiedUser.firstName,
+    last_name: unifiedUser.lastName,
+    full_name: unifiedUser.name,
+    country_code: unifiedUser.countryCode,
+    signup_source: null,
+    bio: null,
+    notification_enabled: true,
+    notification_token: null,
+    password_hash: null,
+    avatar_url: null
+  } as MessengerUser) : null;
+
+  if (!currentUser) {
+    return (
+      <MessengerAuth onAuthenticated={handleAuthenticated} />
+    );
+  }
 
   return (
     <ReplyProvider>

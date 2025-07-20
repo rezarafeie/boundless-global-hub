@@ -5,16 +5,20 @@ import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Auth: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
 
   // If user is already authenticated, redirect to home
-  if (user) {
+  if (isAuthenticated && user) {
     return <Navigate to="/" replace />;
   }
 
-  const handleAuthenticated = (sessionToken: string, userName: string, user: any) => {
-    // The AuthContext will handle the authentication state
-    window.location.href = '/';
+  const handleAuthenticated = (sessionToken: string, userName: string, userData: any) => {
+    console.log('Auth page: User authenticated', { sessionToken, userName, userData });
+    
+    // Use the login function from AuthContext to sync the session
+    login(userData, sessionToken);
+    
+    // Redirect will happen automatically due to the Navigate above
   };
 
   return (
