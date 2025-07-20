@@ -8,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { TetherlandService } from '@/lib/tetherlandService';
 
 interface Course {
   id: string;
@@ -18,6 +19,8 @@ interface Course {
   title: string;
   description: string;
   price: number;
+  use_dollar_price: boolean;
+  usd_price: number | null;
   woocommerce_product_id: number | null;
   redirect_url: string | null;
   is_active: boolean;
@@ -53,6 +56,8 @@ const CourseManagement: React.FC = () => {
     title: '',
     description: '',
     price: '',
+    use_dollar_price: false,
+    usd_price: '',
     woocommerce_product_id: '',
     redirect_url: '',
     is_active: true,
@@ -62,9 +67,52 @@ const CourseManagement: React.FC = () => {
     woocommerce_create_access: true
   });
 
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [calculatedRialPrice, setCalculatedRialPrice] = useState<number | null>(null);
+  const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
+
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  // Fetch exchange rate and calculate Rial price when USD price changes
+  useEffect(() => {
+    if (formData.use_dollar_price && formData.usd_price && parseFloat(formData.usd_price) > 0) {
+      fetchExchangeRate(parseFloat(formData.usd_price));
+    } else {
+      setExchangeRate(null);
+      setCalculatedRialPrice(null);
+    }
+  }, [formData.use_dollar_price, formData.usd_price]);
+
+  const fetchExchangeRate = async (usdAmount: number) => {
+    setLoadingExchangeRate(true);
+    try {
+      const rialAmount = await TetherlandService.convertUSDToIRR(usdAmount);
+      const rate = await TetherlandService.getUSDTToIRRRate();
+      
+      setExchangeRate(rate);
+      setCalculatedRialPrice(rialAmount);
+      
+      // Update the price field with calculated Rial amount
+      setFormData(prev => ({ ...prev, price: rialAmount.toString() }));
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت نرخ ارز",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingExchangeRate(false);
+    }
+  };
+
+  const refreshExchangeRate = () => {
+    if (formData.usd_price && parseFloat(formData.usd_price) > 0) {
+      fetchExchangeRate(parseFloat(formData.usd_price));
+    }
+  };
 
   const fetchCourses = async () => {
     try {
@@ -113,6 +161,8 @@ const CourseManagement: React.FC = () => {
       title: '',
       description: '',
       price: '',
+      use_dollar_price: false,
+      usd_price: '',
       woocommerce_product_id: '',
       redirect_url: '',
       is_active: true,
@@ -122,6 +172,8 @@ const CourseManagement: React.FC = () => {
       woocommerce_create_access: true
     });
     setSelectedCourse(null);
+    setExchangeRate(null);
+    setCalculatedRialPrice(null);
   };
 
   const handleEditCourse = (course: Course) => {
@@ -131,6 +183,8 @@ const CourseManagement: React.FC = () => {
       title: course.title,
       description: course.description || '',
       price: course.price.toString(),
+      use_dollar_price: course.use_dollar_price || false,
+      usd_price: course.usd_price?.toString() || '',
       woocommerce_product_id: course.woocommerce_product_id?.toString() || '',
       redirect_url: course.redirect_url || '',
       is_active: course.is_active,
@@ -139,6 +193,12 @@ const CourseManagement: React.FC = () => {
       create_test_license: course.create_test_license || false,
       woocommerce_create_access: course.woocommerce_create_access !== false
     });
+    
+    // If editing a dollar-priced course, fetch the exchange rate
+    if (course.use_dollar_price && course.usd_price) {
+      fetchExchangeRate(course.usd_price);
+    }
+    
     setShowCourseModal(true);
   };
 
@@ -160,6 +220,8 @@ const CourseManagement: React.FC = () => {
         title: formData.title.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
+        use_dollar_price: formData.use_dollar_price,
+        usd_price: formData.use_dollar_price && formData.usd_price ? parseFloat(formData.usd_price) : null,
         woocommerce_product_id: formData.woocommerce_product_id ? parseInt(formData.woocommerce_product_id) : null,
         redirect_url: formData.redirect_url.trim() || null,
         is_active: formData.is_active,
@@ -309,19 +371,91 @@ const CourseManagement: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="price">قیمت (تومان) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="2500000"
-                    required
-                  />
-                </div>
+              {/* Pricing Section */}
+              <div className="border-t pt-4 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  تنظیمات قیمت‌گذاری
+                </h3>
                 
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="use_dollar_price"
+                    checked={formData.use_dollar_price}
+                    onCheckedChange={(checked) => {
+                      setFormData(prev => ({ ...prev, use_dollar_price: checked }));
+                      if (!checked) {
+                        setExchangeRate(null);
+                        setCalculatedRialPrice(null);
+                      }
+                    }}
+                  />
+                  <Label htmlFor="use_dollar_price">استفاده از قیمت دلاری</Label>
+                </div>
+
+                {formData.use_dollar_price ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="usd_price">قیمت (دلار آمریکا) *</Label>
+                      <Input
+                        id="usd_price"
+                        type="number"
+                        step="0.01"
+                        value={formData.usd_price}
+                        onChange={(e) => setFormData(prev => ({ ...prev, usd_price: e.target.value }))}
+                        placeholder="49.99"
+                        required={formData.use_dollar_price}
+                      />
+                    </div>
+
+                    {exchangeRate && calculatedRialPrice && (
+                      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-blue-800 dark:text-blue-400">قیمت محاسبه شده</h4>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={refreshExchangeRate}
+                            disabled={loadingExchangeRate}
+                          >
+                            <RefreshCw className={`h-4 w-4 ${loadingExchangeRate ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="text-muted-foreground">
+                            نرخ تتر به ریال: {TetherlandService.formatIRRAmount(exchangeRate)} ریال
+                          </p>
+                          <p className="font-medium text-lg text-blue-700 dark:text-blue-300">
+                            قیمت نهایی: {TetherlandService.formatIRRAmount(calculatedRialPrice)} ریال
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {loadingExchangeRate && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        در حال دریافت نرخ ارز...
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="price">قیمت (تومان) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                      placeholder="2500000"
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="woocommerce_product_id">ID محصول WooCommerce</Label>
                   <Input
@@ -473,7 +607,17 @@ const CourseManagement: React.FC = () => {
                           {course.slug}
                         </code>
                       </TableCell>
-                      <TableCell>{formatPrice(course.price)}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div>{formatPrice(course.price)}</div>
+                          {course.use_dollar_price && course.usd_price && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <DollarSign className="h-3 w-3" />
+                              {TetherlandService.formatUSDAmount(course.usd_price)}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={course.is_active ? "default" : "secondary"}>
                           {course.is_active ? 'فعال' : 'غیرفعال'}

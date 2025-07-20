@@ -5,16 +5,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { CreditCard, FileText, Upload, Loader2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { CreditCard, FileText, Upload, Loader2, Clock, CheckCircle, AlertCircle, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { TetherlandService } from '@/lib/tetherlandService';
 
 interface Course {
   id: string;
   title: string;
   price: number;
+  use_dollar_price?: boolean;
+  usd_price?: number | null;
 }
 
 interface FormData {
@@ -30,6 +33,7 @@ interface ManualPaymentSectionProps {
   formData: FormData;
   onPaymentMethodChange: (method: 'zarinpal' | 'manual') => void;
   selectedMethod: 'zarinpal' | 'manual';
+  finalRialPrice?: number | null; // For dollar-priced courses
 }
 
 const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
@@ -37,6 +41,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   formData,
   onPaymentMethodChange,
   selectedMethod,
+  finalRialPrice,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -184,13 +189,16 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       console.log('🔗 Public URL generated:', publicUrl);
 
       // Create enrollment with uploaded receipt
+      // Use finalRialPrice for dollar courses, fallback to course.price
+      const paymentAmount = finalRialPrice || course.price;
+      
       const enrollmentData = {
         course_id: course.id,
         full_name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
         country_code: formData.countryCode,
-        payment_amount: course.price,
+        payment_amount: paymentAmount,
         payment_method: 'manual',
         manual_payment_status: 'pending' as const,
         receipt_url: publicUrl,
@@ -300,8 +308,29 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         <div className="space-y-6 animate-fade-in">
           <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
             <CardHeader>
-              <CardTitle className="text-amber-800 dark:text-amber-200 text-lg">
-                مبلغ قابل پرداخت: {formatPrice(course.price)}
+              <CardTitle className="text-amber-800 dark:text-amber-200 text-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <span>مبلغ قابل پرداخت:</span>
+                  <span className="text-xl">
+                    {finalRialPrice 
+                      ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                      : formatPrice(course.price)
+                    }
+                  </span>
+                </div>
+                
+                {/* Show USD price if available */}
+                {course.use_dollar_price && course.usd_price && (
+                  <div className="flex items-center justify-between text-sm border-t border-amber-200 pt-2">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      <span>قیمت اصلی (دلار):</span>
+                    </div>
+                    <span className="font-medium">
+                      {TetherlandService.formatUSDAmount(course.usd_price)}
+                    </span>
+                  </div>
+                )}
               </CardTitle>
             </CardHeader>
           </Card>

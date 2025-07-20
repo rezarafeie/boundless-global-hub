@@ -664,6 +664,8 @@ export type Database = {
           telegram_channel_link: string | null
           title: string
           updated_at: string
+          usd_price: number | null
+          use_dollar_price: boolean
           woocommerce_create_access: boolean | null
           woocommerce_product_id: number | null
         }
@@ -684,6 +686,8 @@ export type Database = {
           telegram_channel_link?: string | null
           title: string
           updated_at?: string
+          usd_price?: number | null
+          use_dollar_price?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }
@@ -704,6 +708,8 @@ export type Database = {
           telegram_channel_link?: string | null
           title?: string
           updated_at?: string
+          usd_price?: number | null
+          use_dollar_price?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }

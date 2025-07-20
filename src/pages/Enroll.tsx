@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap } from 'lucide-react';
+import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap, DollarSign } from 'lucide-react';
 import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import ManualPaymentSection from '@/components/ManualPaymentSection';
+import { TetherlandService } from '@/lib/tetherlandService';
 
 interface Course {
   id: string;
@@ -20,6 +21,8 @@ interface Course {
   title: string;
   description: string;
   price: number;
+  use_dollar_price: boolean;
+  usd_price: number | null;
   redirect_url: string;
   is_spotplayer_enabled: boolean;
   spotplayer_course_id: string | null;
@@ -35,6 +38,9 @@ const Enroll: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'manual'>('zarinpal');
+  const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -83,6 +89,35 @@ const Enroll: React.FC = () => {
       }
     }
   }, [isAuthenticated, user, toast]);
+
+  // Fetch exchange rate when course has dollar pricing
+  useEffect(() => {
+    if (course?.use_dollar_price && course?.usd_price) {
+      fetchExchangeRateForCourse(course.usd_price);
+    }
+  }, [course]);
+
+  const fetchExchangeRateForCourse = async (usdAmount: number) => {
+    setLoadingExchangeRate(true);
+    try {
+      const rialAmount = await TetherlandService.convertUSDToIRR(usdAmount);
+      const rate = await TetherlandService.getUSDTToIRRRate();
+      
+      setExchangeRate(rate);
+      setFinalRialPrice(rialAmount);
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت نرخ ارز. قیمت ریالی نمایش داده شده ممکن است به‌روز نباشد.",
+        variant: "destructive"
+      });
+      // Fallback to course price if exchange rate fails
+      setFinalRialPrice(course?.price || 0);
+    } finally {
+      setLoadingExchangeRate(false);
+    }
+  };
 
   const fetchCourse = async () => {
     try {
@@ -220,6 +255,11 @@ const Enroll: React.FC = () => {
         }
       } else {
         // Paid course - proceed with Zarinpal payment
+        // Use the calculated final price for dollar courses
+        const paymentAmount = course.use_dollar_price && finalRialPrice 
+          ? finalRialPrice 
+          : course.price;
+          
         const response = await supabase.functions.invoke('zarinpal-request', {
           body: {
             courseSlug: course.slug,
@@ -227,7 +267,8 @@ const Enroll: React.FC = () => {
             lastName: formData.lastName,
             email: formData.email,
             phone: formData.phone,
-            countryCode: formData.countryCode
+            countryCode: formData.countryCode,
+            customAmount: paymentAmount // Pass the calculated amount
           }
         });
 
@@ -321,13 +362,47 @@ const Enroll: React.FC = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl blur-xl"></div>
                   <div className="relative p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-medium">قیمت دوره:</span>
-                      <div className="text-left">
-                        <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                          {formatPrice(course.price)}
-                        </span>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-medium">قیمت دوره:</span>
+                        <div className="text-left">
+                          <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                            {course.use_dollar_price && finalRialPrice 
+                              ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                              : formatPrice(course.price)
+                            }
+                          </span>
+                        </div>
                       </div>
+                      
+                      {/* Dollar Price Information */}
+                      {course.use_dollar_price && course.usd_price && (
+                        <div className="border-t border-border/30 pt-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="h-4 w-4 text-blue-600" />
+                              <span className="text-muted-foreground">قیمت اصلی (دلار):</span>
+                            </div>
+                            <span className="font-medium text-blue-600">
+                              {TetherlandService.formatUSDAmount(course.usd_price)}
+                            </span>
+                          </div>
+                          
+                          {exchangeRate && (
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                              <span>نرخ تبدیل:</span>
+                              <span>{TetherlandService.formatIRRAmount(exchangeRate)} ریال</span>
+                            </div>
+                          )}
+                          
+                          {loadingExchangeRate && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              در حال محاسبه قیمت نهایی...
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -515,12 +590,13 @@ const Enroll: React.FC = () => {
                   </div>
 
                   {/* Payment Methods */}
-                  <ManualPaymentSection
-                    course={course}
-                    formData={formData}
-                    onPaymentMethodChange={setPaymentMethod}
-                    selectedMethod={paymentMethod}
-                  />
+                <ManualPaymentSection
+                  course={course}
+                  formData={formData}
+                  onPaymentMethodChange={setPaymentMethod}
+                  selectedMethod={paymentMethod}
+                  finalRialPrice={finalRialPrice}
+                />
 
                   {/* Submit Button - Only for Zarinpal */}
                   {paymentMethod === 'zarinpal' && (
@@ -537,7 +613,10 @@ const Enroll: React.FC = () => {
                       ) : (
                         <>
                           <CreditCard className="h-6 w-6 ml-2" />
-                          پرداخت آنلاین {formatPrice(course.price)}
+                          پرداخت آنلاین {course.use_dollar_price && finalRialPrice 
+                            ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                            : formatPrice(course.price)
+                          }
                         </>
                       )}
                     </Button>
