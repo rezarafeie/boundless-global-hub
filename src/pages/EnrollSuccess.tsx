@@ -64,7 +64,8 @@ const EnrollSuccess: React.FC = () => {
             slug,
             redirect_url,
             is_spotplayer_enabled,
-            spotplayer_course_id
+            spotplayer_course_id,
+            woocommerce_create_access
           )
         `)
         .eq('id', enrollmentId)
@@ -285,16 +286,18 @@ const EnrollSuccess: React.FC = () => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={handleEnterCourse}
-                    className="flex-1 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground py-6"
-                    size="lg"
-                  >
-                    <ExternalLink className="h-5 w-5 mr-2" />
-                    ورود به دوره
-                  </Button>
-                </div>
+                {result.course?.woocommerce_create_access !== false && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={handleEnterCourse}
+                      className="flex-1 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground py-6"
+                      size="lg"
+                    >
+                      <ExternalLink className="h-5 w-5 mr-2" />
+                      ورود به دوره
+                    </Button>
+                  </div>
+                )}
 
                 {/* Additional Info */}
                 <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">

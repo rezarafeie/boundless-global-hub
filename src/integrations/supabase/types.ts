@@ -477,6 +477,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          create_test_license: boolean | null
           created_at: string
           description: string | null
           id: string
@@ -488,9 +489,11 @@ export type Database = {
           spotplayer_course_id: string | null
           title: string
           updated_at: string
+          woocommerce_create_access: boolean | null
           woocommerce_product_id: number | null
         }
         Insert: {
+          create_test_license?: boolean | null
           created_at?: string
           description?: string | null
           id?: string
@@ -502,9 +505,11 @@ export type Database = {
           spotplayer_course_id?: string | null
           title: string
           updated_at?: string
+          woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }
         Update: {
+          create_test_license?: boolean | null
           created_at?: string
           description?: string | null
           id?: string
@@ -516,6 +521,7 @@ export type Database = {
           spotplayer_course_id?: string | null
           title?: string
           updated_at?: string
+          woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }
         Relationships: []

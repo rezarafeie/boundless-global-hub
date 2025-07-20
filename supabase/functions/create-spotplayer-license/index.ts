@@ -31,10 +31,10 @@ serve(async (req) => {
 
     console.log('Creating SpotPlayer license for enrollment:', enrollmentId);
 
-    // Get course details including SpotPlayer course ID
+    // Get course details including SpotPlayer course ID and test license setting
     const { data: course, error: courseError } = await supabase
       .from('courses')
-      .select('spotplayer_course_id, is_spotplayer_enabled')
+      .select('spotplayer_course_id, is_spotplayer_enabled, create_test_license')
       .eq('id', courseId)
       .single();
 
@@ -55,7 +55,7 @@ serve(async (req) => {
 
     // Prepare SpotPlayer API request
     const spotPlayerRequestBody = {
-      test: false,
+      test: course.create_test_license || false, // Use test mode if enabled in course settings
       course: [course.spotplayer_course_id],
       name: userFullName,
       watermark: {

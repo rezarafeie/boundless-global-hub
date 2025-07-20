@@ -23,6 +23,8 @@ interface Course {
   is_active: boolean;
   spotplayer_course_id?: string | null;
   is_spotplayer_enabled?: boolean;
+  create_test_license?: boolean;
+  woocommerce_create_access?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -55,7 +57,9 @@ const CourseManagement: React.FC = () => {
     redirect_url: '',
     is_active: true,
     spotplayer_course_id: '',
-    is_spotplayer_enabled: false
+    is_spotplayer_enabled: false,
+    create_test_license: false,
+    woocommerce_create_access: true
   });
 
   useEffect(() => {
@@ -113,7 +117,9 @@ const CourseManagement: React.FC = () => {
       redirect_url: '',
       is_active: true,
       spotplayer_course_id: '',
-      is_spotplayer_enabled: false
+      is_spotplayer_enabled: false,
+      create_test_license: false,
+      woocommerce_create_access: true
     });
     setSelectedCourse(null);
   };
@@ -129,7 +135,9 @@ const CourseManagement: React.FC = () => {
       redirect_url: course.redirect_url || '',
       is_active: course.is_active,
       spotplayer_course_id: course.spotplayer_course_id || '',
-      is_spotplayer_enabled: course.is_spotplayer_enabled || false
+      is_spotplayer_enabled: course.is_spotplayer_enabled || false,
+      create_test_license: course.create_test_license || false,
+      woocommerce_create_access: course.woocommerce_create_access !== false
     });
     setShowCourseModal(true);
   };
@@ -156,7 +164,9 @@ const CourseManagement: React.FC = () => {
         redirect_url: formData.redirect_url.trim() || null,
         is_active: formData.is_active,
         spotplayer_course_id: formData.spotplayer_course_id.trim() || null,
-        is_spotplayer_enabled: formData.is_spotplayer_enabled
+        is_spotplayer_enabled: formData.is_spotplayer_enabled,
+        create_test_license: formData.create_test_license,
+        woocommerce_create_access: formData.woocommerce_create_access
       };
 
       if (selectedCourse) {
@@ -349,20 +359,52 @@ const CourseManagement: React.FC = () => {
                 </div>
 
                 {formData.is_spotplayer_enabled && (
-                  <div>
-                    <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer *</Label>
-                    <Input
-                      id="spotplayer_course_id"
-                      value={formData.spotplayer_course_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
-                      placeholder="مثال: course_123"
-                      required={formData.is_spotplayer_enabled}
-                    />
-                    <p className="text-sm text-muted-foreground mt-1">
-                      شناسه دوره در پنل SpotPlayer که برای ایجاد لایسنس استفاده می‌شود
-                    </p>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer *</Label>
+                      <Input
+                        id="spotplayer_course_id"
+                        value={formData.spotplayer_course_id}
+                        onChange={(e) => setFormData(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
+                        placeholder="مثال: course_123"
+                        required={formData.is_spotplayer_enabled}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        شناسه دوره در پنل SpotPlayer که برای ایجاد لایسنس استفاده می‌شود
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="create_test_license"
+                        checked={formData.create_test_license}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, create_test_license: checked }))}
+                      />
+                      <Label htmlFor="create_test_license">ایجاد لایسنس تستی</Label>
+                      <p className="text-sm text-muted-foreground">
+                        لایسنس‌های تستی محدودیت زمانی دارند
+                      </p>
+                    </div>
                   </div>
                 )}
+              </div>
+
+              
+              {/* WooCommerce Section */}
+              <div className="border-t pt-4 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">تنظیمات WooCommerce</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="woocommerce_create_access"
+                    checked={formData.woocommerce_create_access}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, woocommerce_create_access: checked }))}
+                  />
+                  <Label htmlFor="woocommerce_create_access">ایجاد دسترسی در WooCommerce</Label>
+                  <p className="text-sm text-muted-foreground">
+                    در صورت غیرفعال بودن، دکمه دسترسی به دوره حذف می‌شود
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
