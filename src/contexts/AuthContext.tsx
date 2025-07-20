@@ -20,7 +20,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  console.log('useAuth called, context:', context);
   if (context === undefined) {
+    console.error('useAuth hook called outside of AuthProvider!');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
@@ -68,6 +70,7 @@ const normalizePhone = (phone: string): string[] => {
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  console.log('AuthProvider rendering...');
   const [user, setUser] = useState<UnifiedUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
