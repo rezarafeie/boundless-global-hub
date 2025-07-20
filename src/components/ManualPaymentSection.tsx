@@ -220,7 +220,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         phone: formData.phone.trim(),
         payment_amount: course.price,
         payment_method: 'manual',
-        manual_payment_status: 'pending',
+        manual_payment_status: 'pending' as const,
         receipt_url: publicUrl
       };
 
