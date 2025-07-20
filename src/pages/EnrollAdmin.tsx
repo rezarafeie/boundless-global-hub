@@ -69,6 +69,14 @@ const EnrollAdmin: React.FC = () => {
 
   useEffect(() => {
     Promise.all([fetchEnrollments(), fetchCourses()]);
+    
+    // Set up auto reload every 30 seconds
+    const autoReloadInterval = setInterval(() => {
+      Promise.all([fetchEnrollments(), fetchCourses()]);
+    }, 30000); // 30 seconds
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(autoReloadInterval);
   }, []);
 
   const fetchCourses = async () => {
