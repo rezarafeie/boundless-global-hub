@@ -341,12 +341,12 @@ const Enroll: React.FC = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="phone" className="text-sm font-medium">شماره تلفن</Label>
-                      <div className="flex border border-input rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                      <div className="flex border border-input rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background" dir="ltr">
                         <Select 
                           value={formData.countryCode} 
                           onValueChange={(value) => handleInputChange('countryCode', value)}
                         >
-                          <SelectTrigger className="w-24 border-0 border-r border-input rounded-none bg-transparent focus:ring-0 px-2">
+                          <SelectTrigger className="w-24 border-0 border-l border-input rounded-none bg-transparent focus:ring-0 px-2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

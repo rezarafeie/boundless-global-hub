@@ -177,53 +177,100 @@ const CourseAccess: React.FC = () => {
 
   const renderLessonContent = (lesson: Lesson) => {
     return (
-      <div className="space-y-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Lesson Header */}
-        <div className="border-b pb-4">
-          <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
+        <div className="text-center lg:text-right space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+            <CheckCircle className="h-4 w-4" />
+            درس در حال پخش
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">{lesson.title}</h1>
         </div>
 
         {/* Video Section */}
         {lesson.video_url && (
-          <div className="aspect-video bg-black rounded-lg overflow-hidden">
-            <iframe
-              src={lesson.video_url}
-              className="w-full h-full"
-              allowFullScreen
-              title={lesson.title}
-            />
+          <div className="relative">
+            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border">
+              <iframe
+                src={lesson.video_url}
+                className="w-full h-full"
+                allowFullScreen
+                title={lesson.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            </div>
           </div>
         )}
 
-        {/* File Download */}
-        {lesson.file_url && (
-          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <div>
-                    <p className="font-medium text-blue-800 dark:text-blue-300">فایل ضمیمه</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">دانلود منابع درس</p>
+        {/* Content and Download Section */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Lesson Content */}
+            {lesson.content && (
+              <Card className="border-0 bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-6 lg:p-8">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    توضیحات درس
+                  </h3>
+                  <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
+                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
                   </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(lesson.file_url!, '_blank')}
-                  className="border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900"
-                >
-                  <Download className="h-4 w-4 ml-2" />
-                  دانلود
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
-        {/* Lesson Content */}
-        <div className="prose prose-lg max-w-none dark:prose-invert">
-          <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+          {/* Sidebar Content */}
+          <div className="space-y-6">
+            {/* File Download */}
+            {lesson.file_url && (
+              <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20">
+                <CardContent className="p-6">
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto">
+                      <Download className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-emerald-800 dark:text-emerald-300 mb-2">منابع درس</h4>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
+                        فایل‌های ضمیمه و منابع اضافی این درس
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => window.open(lesson.file_url!, '_blank')}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      دانلود منابع
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Course Progress */}
+            <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20">
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
+                    <BookOpen className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">پیشرفت دوره</h4>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mb-4">
+                      در حال مطالعه درس {sections.findIndex(s => s.lessons.some(l => l.id === lesson.id)) + 1}
+                    </p>
+                  </div>
+                  <div className="w-full bg-blue-100 dark:bg-blue-900 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">45% تکمیل شده</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -295,15 +342,20 @@ const CourseAccess: React.FC = () => {
             </Card>
             
             {showAuth && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-background rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-                  <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">ورود / ثبت‌نام</h2>
-                    <Button variant="ghost" size="sm" onClick={() => setShowAuth(false)}>
-                      ✕
-                    </Button>
-                  </div>
-                  <div className="p-4">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-background rounded-2xl w-full max-w-md shadow-2xl border animate-scale-in">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-semibold">ورود / ثبت‌نام</h2>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowAuth(false)}
+                        className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+                      >
+                        ✕
+                      </Button>
+                    </div>
                     <UnifiedMessengerAuth onAuthenticated={(token, name, user) => {
                       login(user, token);
                       setShowAuth(false);
@@ -342,66 +394,125 @@ const CourseAccess: React.FC = () => {
 
         {/* Enrolled - Show Course Content */}
         {isAuthenticated && enrollment && (
-          <div className="flex h-[calc(100vh-140px)]">
+          <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)]">
+            {/* Mobile Course Navigation Header */}
+            <div className="lg:hidden bg-card border-b p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">محتوای دوره</h3>
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
+                </Badge>
+              </div>
+            </div>
+
             {/* Sidebar - Course Navigation */}
-            <div className="w-80 bg-card border-r overflow-y-auto">
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-4">محتوای دوره</h3>
+            <div className="w-full lg:w-80 bg-card lg:border-l overflow-y-auto lg:max-h-[calc(100vh-140px)]">
+              <div className="p-4 lg:p-6">
+                <div className="hidden lg:flex items-center justify-between mb-6">
+                  <h3 className="font-semibold text-xl">محتوای دوره</h3>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
+                  </Badge>
+                </div>
                 
                 {sections.length === 0 ? (
-                  <div className="text-center py-8">
-                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">هنوز درسی اضافه نشده است</p>
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h4 className="font-medium text-lg mb-2">هنوز درسی اضافه نشده</h4>
+                    <p className="text-muted-foreground text-sm">محتوای دوره به زودی اضافه خواهد شد</p>
                   </div>
                 ) : (
-                  <Accordion type="multiple" defaultValue={sections.map(s => s.id)}>
-                    {sections.map((section) => (
-                      <AccordionItem key={section.id} value={section.id}>
-                        <AccordionTrigger className="text-sm font-medium">
-                          {section.title}
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-1 pl-4">
-                            {section.lessons.map((lesson) => (
+                  <div className="space-y-4">
+                    {sections.map((section, sectionIndex) => (
+                      <div key={section.id} className="border rounded-lg overflow-hidden bg-background">
+                        <div className="p-4 bg-muted/30 border-b">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-foreground">{section.title}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {section.lessons.length} درس
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="divide-y">
+                          {section.lessons.map((lesson, lessonIndex) => {
+                            const isSelected = selectedLesson?.id === lesson.id;
+                            const lessonNumber = sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
+                            
+                            return (
                               <button
                                 key={lesson.id}
                                 onClick={() => setSelectedLesson(lesson)}
-                                className={`w-full text-left p-3 rounded-lg transition-colors hover:bg-muted/50 ${
-                                  selectedLesson?.id === lesson.id 
-                                    ? 'bg-primary/10 border-l-2 border-primary' 
-                                    : ''
+                                className={`w-full text-right p-4 transition-all duration-200 hover:bg-muted/50 group ${
+                                  isSelected 
+                                    ? 'bg-primary/5 border-l-4 border-primary' 
+                                    : 'border-l-4 border-transparent'
                                 }`}
                               >
-                                <div className="flex items-center gap-2">
-                                  <Play className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm">{lesson.title}</span>
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                                    isSelected 
+                                      ? 'bg-primary text-primary-foreground' 
+                                      : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
+                                  }`}>
+                                    {lessonNumber}
+                                  </div>
+                                  <div className="flex-1 text-right">
+                                    <h5 className={`font-medium text-sm leading-tight ${
+                                      isSelected ? 'text-primary' : 'text-foreground'
+                                    }`}>
+                                      {lesson.title}
+                                    </h5>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {lesson.video_url && (
+                                        <div className="flex items-center gap-1">
+                                          <Play className="h-3 w-3 text-muted-foreground" />
+                                          <span className="text-xs text-muted-foreground">ویدیو</span>
+                                        </div>
+                                      )}
+                                      {lesson.file_url && (
+                                        <div className="flex items-center gap-1">
+                                          <FileText className="h-3 w-3 text-muted-foreground" />
+                                          <span className="text-xs text-muted-foreground">فایل</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <ChevronRight className={`h-4 w-4 transition-transform ${
+                                    isSelected ? 'text-primary rotate-90' : 'text-muted-foreground'
+                                  }`} />
                                 </div>
                               </button>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
+                            );
+                          })}
+                        </div>
+                      </div>
                     ))}
-                  </Accordion>
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto">
-              <div className="p-6">
-                {selectedLesson ? (
-                  renderLessonContent(selectedLesson)
-                ) : (
-                  <div className="text-center py-12">
-                    <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">درسی انتخاب نشده</h3>
-                    <p className="text-muted-foreground">
-                      از فهرست سمت چپ درسی را انتخاب کنید
+              {selectedLesson ? (
+                <div className="p-4 lg:p-8">
+                  {renderLessonContent(selectedLesson)}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full p-8">
+                  <div className="text-center max-w-md">
+                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                      <BookOpen className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-4">درسی انتخاب نشده</h3>
+                    <p className="text-muted-foreground text-lg">
+                      از فهرست کناری درسی را انتخاب کنید تا شروع کنید
                     </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}
