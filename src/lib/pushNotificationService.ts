@@ -1,4 +1,3 @@
-
 declare global {
   interface Window {
     OneSignal?: any;
@@ -21,14 +20,14 @@ export const pushNotificationService = {
     // Return immediately if already initialized
     if (this.isInitialized && window.OneSignal) {
       console.log('🔔 [Android] OneSignal already initialized');
-      return Promise.resolve();
+      return Promise.resolve<void>();
     }
 
     this.initializationPromise = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         console.error('🔔 [Android] OneSignal initialization timeout');
         reject(new Error('OneSignal initialization timeout'));
-      }, 15000); // Increased timeout for mobile
+      }, 15000);
 
       const checkAndInit = async () => {
         try {
