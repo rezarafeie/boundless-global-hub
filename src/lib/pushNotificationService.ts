@@ -1,177 +1,170 @@
 
-import { supabase } from '@/integrations/supabase/client';
-
 declare global {
   interface Window {
     OneSignal?: any;
-    OneSignalDeferred?: Array<(OneSignal: any) => void>;
   }
 }
 
 export const pushNotificationService = {
+  isInitialized: false,
+  initializationPromise: null as Promise<void> | null,
+
   async initOneSignal(): Promise<void> {
-    console.log('🔔 Initializing OneSignal...');
-    return new Promise((resolve, reject) => {
-      if (window.OneSignal) {
-        console.log('🔔 OneSignal already loaded');
-        resolve();
-        return;
-      }
-      
-      // Set timeout to prevent hanging
+    console.log('🔔 [Android] Starting OneSignal initialization...');
+    
+    // Return existing initialization promise if already in progress
+    if (this.initializationPromise) {
+      console.log('🔔 [Android] Using existing initialization promise');
+      return this.initializationPromise;
+    }
+
+    // Return immediately if already initialized
+    if (this.isInitialized && window.OneSignal) {
+      console.log('🔔 [Android] OneSignal already initialized');
+      return Promise.resolve();
+    }
+
+    this.initializationPromise = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.error('🔔 OneSignal initialization timeout');
+        console.error('🔔 [Android] OneSignal initialization timeout');
         reject(new Error('OneSignal initialization timeout'));
-      }, 10000);
-      
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async function(OneSignal) {
+      }, 15000); // Increased timeout for mobile
+
+      const checkAndInit = async () => {
         try {
-          console.log('🔔 OneSignal SDK loaded, initializing...');
-          await OneSignal.init({
+          if (typeof window.OneSignal === 'undefined') {
+            console.log('🔔 [Android] OneSignal not loaded yet, waiting...');
+            setTimeout(checkAndInit, 500);
+            return;
+          }
+
+          console.log('🔔 [Android] OneSignal SDK loaded, initializing...');
+          
+          await window.OneSignal.init({
             appId: "e221c080-7853-46e5-ba40-93796318d1a0",
             allowLocalhostAsSecureOrigin: true,
+            serviceWorkerPath: '/OneSignalSDKWorker.js',
+            serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js',
+            autoRegister: true,
+            autoResubscribe: true,
+            notificationClickHandlerAction: 'focus',
+            persistNotification: false
           });
-          console.log('🔔 OneSignal initialized successfully');
+
+          console.log('🔔 [Android] OneSignal initialized successfully');
+          this.isInitialized = true;
           clearTimeout(timeout);
           resolve();
         } catch (error) {
-          console.error('🔔 OneSignal initialization error:', error);
+          console.error('🔔 [Android] OneSignal initialization error:', error);
           clearTimeout(timeout);
           reject(error);
         }
-      });
+      };
+
+      checkAndInit();
     });
+
+    return this.initializationPromise;
   },
 
-  async requestPermission(): Promise<boolean> {
+  async requestPermissionWithUserGesture(): Promise<boolean> {
     try {
-      console.log('🔔 Starting permission request...');
+      console.log('🔔 [Android] Starting permission request with user gesture...');
+      
+      // Initialize OneSignal first
       await this.initOneSignal();
       
       if (!window.OneSignal) {
-        console.error('🔔 OneSignal not loaded');
+        console.error('🔔 [Android] OneSignal not available after initialization');
         return false;
       }
 
-      // Check current subscription status
+      // Check if already subscribed
       const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 Current subscription status:', isSubscribed);
+      console.log('🔔 [Android] Current subscription status:', isSubscribed);
       
       if (isSubscribed) {
-        console.log('✅ User already subscribed to OneSignal');
+        console.log('✅ [Android] User already subscribed');
         return true;
       }
 
-      // Force permission request using OneSignal's native prompt
-      console.log('🔔 Requesting OneSignal permission...');
-      await window.OneSignal.User.PushSubscription.optIn();
+      // Request permission with user gesture
+      console.log('🔔 [Android] Requesting OneSignal permission...');
       
-      // Wait a moment for subscription to process
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use slidedown prompt for better mobile UX
+      await window.OneSignal.Slidedown.promptPush();
       
-      const newSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 New subscription state:', newSubscriptionState);
+      // Wait for user response
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      if (newSubscriptionState) {
-        console.log('✅ OneSignal permission granted and subscribed');
+      // Check final subscription status
+      const finalSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 [Android] Final subscription state:', finalSubscriptionState);
+      
+      if (finalSubscriptionState) {
+        console.log('✅ [Android] Permission granted and subscribed');
         return true;
       } else {
-        console.log('❌ OneSignal permission denied');
+        console.log('❌ [Android] Permission denied or subscription failed');
         return false;
       }
     } catch (error) {
-      console.error('❌ Error requesting OneSignal permission:', error);
+      console.error('❌ [Android] Error requesting permission:', error);
       return false;
     }
   },
 
   async getSubscription(): Promise<string | null> {
     try {
-      await this.initOneSignal();
-      
+      if (!this.isInitialized) {
+        console.log('🔔 [Android] OneSignal not initialized, cannot get subscription');
+        return null;
+      }
+
       if (!window.OneSignal) {
-        console.log('🔔 OneSignal not available for subscription check');
+        console.log('🔔 [Android] OneSignal not available');
         return null;
       }
 
       const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 Subscription check - opted in:', isSubscribed);
+      console.log('🔔 [Android] Subscription check - opted in:', isSubscribed);
       
       if (isSubscribed) {
         const subscriptionId = await window.OneSignal.User.PushSubscription.id;
-        console.log('🔔 OneSignal subscription ID:', subscriptionId ? 'found' : 'null');
+        console.log('🔔 [Android] OneSignal subscription ID:', subscriptionId ? 'found' : 'null');
         return subscriptionId;
       }
       
       return null;
     } catch (error) {
-      console.error('❌ Error getting OneSignal subscription:', error);
+      console.error('❌ [Android] Error getting subscription:', error);
       return null;
-    }
-  },
-
-  async saveSubscriptionToDatabase(userId: number, subscriptionId: string): Promise<void> {
-    try {
-      console.log('🔔 Saving subscription to database for user:', userId);
-      const { error } = await supabase
-        .from('chat_users')
-        .update({ 
-          notification_token: subscriptionId
-        })
-        .eq('id', userId);
-
-      if (error) throw error;
-      console.log('✅ OneSignal subscription saved to database');
-    } catch (error) {
-      console.error('❌ Error saving OneSignal subscription:', error);
-      throw error;
-    }
-  },
-
-  async unsubscribe(): Promise<void> {
-    try {
-      await this.initOneSignal();
-      
-      if (!window.OneSignal) {
-        console.error('OneSignal not loaded');
-        return;
-      }
-
-      await window.OneSignal.User.PushSubscription.optOut();
-      console.log('✅ Unsubscribed from OneSignal notifications');
-    } catch (error) {
-      console.error('❌ Error unsubscribing from OneSignal:', error);
-      throw error;
     }
   },
 
   async isSubscriptionValid(): Promise<boolean> {
     try {
-      await this.initOneSignal();
-      
-      if (!window.OneSignal) {
+      if (!this.isInitialized || !window.OneSignal) {
         return false;
       }
 
       const isOptedIn = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 Subscription validity check:', isOptedIn);
-      return isOptedIn;
+      const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+      
+      const isValid = isOptedIn && !!subscriptionId;
+      console.log('🔔 [Android] Subscription validity check:', { isOptedIn, hasId: !!subscriptionId, isValid });
+      return isValid;
     } catch (error) {
-      console.error('❌ Error checking OneSignal subscription validity:', error);
+      console.error('❌ [Android] Error checking subscription validity:', error);
       return false;
     }
   },
 
-  isSupported(): boolean {
-    const supported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window;
-    console.log('🔔 Push notifications supported:', supported);
-    return supported;
-  },
-
   async getSubscriptionStatus(userId: number): Promise<{ isSubscribed: boolean; hasValidToken: boolean }> {
     try {
-      console.log('🔔 Getting subscription status for user:', userId);
+      console.log('🔔 [Android] Getting subscription status for user:', userId);
+      
       const subscriptionId = await this.getSubscription();
       const isValid = await this.isSubscriptionValid();
       
@@ -180,31 +173,53 @@ export const pushNotificationService = {
         hasValidToken: isValid
       };
       
-      console.log('🔔 Subscription status:', status);
+      console.log('🔔 [Android] Subscription status:', status);
       return status;
     } catch (error) {
-      console.error('❌ Error getting subscription status:', error);
+      console.error('❌ [Android] Error getting subscription status:', error);
       return { isSubscribed: false, hasValidToken: false };
     }
   },
 
   async subscribe(userId: number): Promise<boolean> {
     try {
-      console.log('🔔 Starting subscription process for user:', userId);
-      const success = await this.requestPermission();
+      console.log('🔔 [Android] Starting subscription process for user:', userId);
+      
+      const success = await this.requestPermissionWithUserGesture();
+      
       if (success) {
         const subscriptionId = await this.getSubscription();
         if (subscriptionId) {
-          await this.saveSubscriptionToDatabase(userId, subscriptionId);
-          console.log('✅ Subscription process completed successfully');
+          console.log('✅ [Android] Subscription process completed successfully');
+          // Note: Database saving should be handled by the calling code
         } else {
-          console.warn('⚠️ Permission granted but no subscription ID found');
+          console.warn('⚠️ [Android] Permission granted but no subscription ID found');
         }
       }
+      
       return success;
     } catch (error) {
-      console.error('❌ Error subscribing:', error);
+      console.error('❌ [Android] Error subscribing:', error);
       return false;
     }
+  },
+
+  isSupported(): boolean {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const hasNotification = 'Notification' in window;
+    const hasSecureContext = window.isSecureContext;
+    
+    const supported = hasServiceWorker && hasNotification && hasSecureContext;
+    
+    console.log('🔔 [Android] Support check:', {
+      isMobile,
+      hasServiceWorker,
+      hasNotification,
+      hasSecureContext,
+      supported
+    });
+    
+    return supported;
   }
 };

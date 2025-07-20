@@ -5,11 +5,9 @@ import { messengerService, type MessengerUser, type MessengerMessage } from '@/l
 import { pushNotificationService } from '@/lib/pushNotificationService';
 
 interface NotificationPermissionState {
-  granted: boolean;
-  permission: NotificationPermission;
+  oneSignalReady: boolean;
+  oneSignalSubscribed: boolean;
   supported: boolean;
-  pushSupported: boolean;
-  pushSubscribed: boolean;
 }
 
 interface NotificationServiceOptions {
@@ -18,118 +16,94 @@ interface NotificationServiceOptions {
 }
 
 export const useNotificationService = ({ currentUser, sessionToken }: NotificationServiceOptions) => {
-  console.log('🔔 useNotificationService initialized with user:', currentUser?.id, 'sessionToken:', !!sessionToken);
+  console.log('🔔 [Android] useNotificationService initialized with user:', currentUser?.id, 'sessionToken:', !!sessionToken);
+  
   const [permissionState, setPermissionState] = useState<NotificationPermissionState>({
-    granted: false,
-    permission: 'default',
-    supported: typeof window !== 'undefined' && 'Notification' in window,
-    pushSupported: pushNotificationService.isSupported(),
-    pushSubscribed: false
+    oneSignalReady: false,
+    oneSignalSubscribed: false,
+    supported: pushNotificationService.isSupported()
   });
   
   const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
   const [showPermissionBanner, setShowPermissionBanner] = useState<boolean>(false);
   const channelRef = useRef<any>(null);
 
-  // Initialize notification permission state
+  // Initialize notification state
   useEffect(() => {
-    console.log('🔔 useNotificationService - Init with user:', currentUser?.name);
+    console.log('🔔 [Android] useNotificationService - Init with user:', currentUser?.name);
     
     if (!permissionState.supported || !currentUser) {
-      console.log('🔔 Notifications not supported or no user');
+      console.log('🔔 [Android] Notifications not supported or no user');
       return;
     }
 
-    const initializeNotifications = async () => {
-      console.log('🔔 Initializing notification service...');
+    const checkSubscriptionStatus = async () => {
+      console.log('🔔 [Android] Checking OneSignal subscription status...');
       
-      // Check OneSignal subscription status instead of browser permission
-      let pushSubscribed = false;
-      let granted = false;
-      
-      if (pushNotificationService.isSupported()) {
-        try {
-          const subscriptionStatus = await pushNotificationService.getSubscriptionStatus(currentUser.id);
-          pushSubscribed = subscriptionStatus.hasValidToken;
-          granted = subscriptionStatus.isSubscribed;
-          
-          console.log('🔔 OneSignal status:', {
-            subscribed: pushSubscribed,
-            granted: granted
-          });
-        } catch (error) {
-          console.warn('🔔 Error checking OneSignal subscription:', error);
-        }
-      }
-      
-      const browserPermission = Notification.permission;
-      console.log('🔔 Browser permission:', browserPermission);
-      
-      setPermissionState({
-        granted: granted && browserPermission === 'granted',
-        permission: browserPermission,
-        supported: true,
-        pushSupported: pushNotificationService.isSupported(),
-        pushSubscribed
-      });
+      try {
+        const subscriptionStatus = await pushNotificationService.getSubscriptionStatus(currentUser.id);
+        
+        console.log('🔔 [Android] OneSignal status:', subscriptionStatus);
+        
+        setPermissionState(prev => ({
+          ...prev,
+          oneSignalReady: pushNotificationService.isInitialized,
+          oneSignalSubscribed: subscriptionStatus.hasValidToken
+        }));
 
-      // Show banner if not properly subscribed
-      updateBannerVisibility(granted, pushSubscribed);
-      
-      // Load user's notification preference
-      loadNotificationPreference();
+        // Show banner if not fully subscribed
+        const shouldShowBanner = !subscriptionStatus.hasValidToken;
+        updateBannerVisibility(shouldShowBanner);
+        
+        // Load user's notification preference
+        loadNotificationPreference();
+      } catch (error) {
+        console.warn('🔔 [Android] Error checking subscription status:', error);
+        // Show banner on error
+        updateBannerVisibility(true);
+      }
     };
 
-    initializeNotifications();
+    checkSubscriptionStatus();
   }, [currentUser?.id]);
 
   // Set up real-time message listener
   useEffect(() => {
-    if (!currentUser || !sessionToken || !permissionState.granted || !permissionState.pushSubscribed) {
-      console.log('🔔 Skipping listener setup - missing requirements');
+    if (!currentUser || !sessionToken || !permissionState.oneSignalSubscribed) {
+      console.log('🔔 [Android] Skipping listener setup - missing requirements');
       return;
     }
 
-    console.log('🔔 Setting up message listener...');
+    console.log('🔔 [Android] Setting up message listener...');
     setupMessageListener();
 
     return () => {
-      console.log('🔔 Cleaning up message listener');
+      console.log('🔔 [Android] Cleaning up message listener');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [currentUser?.id, sessionToken, permissionState.granted, permissionState.pushSubscribed]);
+  }, [currentUser?.id, sessionToken, permissionState.oneSignalSubscribed]);
 
-  const updateBannerVisibility = (hasPermission: boolean, hasValidSubscription: boolean) => {
+  const updateBannerVisibility = (shouldShow: boolean) => {
     if (!currentUser) return;
 
-    console.log('🔔 updateBannerVisibility - Permission:', hasPermission, 'Valid subscription:', hasValidSubscription);
+    console.log('🔔 [Android] updateBannerVisibility - Should show:', shouldShow);
 
-    // Show banner if either permission is missing OR subscription is invalid
-    const shouldShowBanner = !hasPermission || !hasValidSubscription;
-    
-    // Check if user has permanently dismissed the banner
+    // Check if user has permanently dismissed the banner recently
     const dismissalTime = localStorage.getItem(`notification_banner_dismissed_${currentUser.id}`);
     const now = Date.now();
     const oneDayInMs = 24 * 60 * 60 * 1000;
 
-    if (dismissalTime && (now - parseInt(dismissalTime)) < oneDayInMs && shouldShowBanner) {
-      console.log('🔔 Banner was recently dismissed, not showing');
+    if (dismissalTime && (now - parseInt(dismissalTime)) < oneDayInMs && shouldShow) {
+      console.log('🔔 [Android] Banner was recently dismissed, not showing');
       setShowPermissionBanner(false);
       return;
     }
 
-    console.log('🔔 Setting banner visibility to:', shouldShowBanner);
-    setShowPermissionBanner(shouldShowBanner);
-    
-    // If fully subscribed, mark as permanently handled
-    if (hasPermission && hasValidSubscription) {
-      localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
-    } else {
-      localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
-    }
+    console.log('🔔 [Android] Setting banner visibility to:', shouldShow);
+    setShowPermissionBanner(shouldShow);
   };
 
   const loadNotificationPreference = async () => {
@@ -161,28 +135,29 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const requestNotificationPermission = async (): Promise<boolean> => {
+    console.log('🔔 [Android] Banner activate button clicked - Starting permission request...');
+    
     if (!permissionState.supported) {
-      console.warn('🔔 Notifications not supported in this browser');
+      console.warn('🔔 [Android] Notifications not supported in this browser');
       return false;
     }
 
     if (!currentUser) {
-      console.warn('🔔 No current user for permission request');
+      console.warn('🔔 [Android] No current user for permission request');
       return false;
     }
 
     try {
-      console.log('🔔 Starting permission request process...');
-      
       // Set session context for RLS
       if (sessionToken) {
         await supabase.rpc('set_session_context', { session_token: sessionToken });
       }
       
-      // Request OneSignal permission
+      // Request OneSignal permission (this will initialize if needed)
+      console.log('🔔 [Android] Requesting OneSignal subscription...');
       const success = await pushNotificationService.subscribe(currentUser.id);
       
-      console.log('🔔 Permission request result:', success);
+      console.log('🔔 [Android] Permission request result:', success);
       
       if (success) {
         // Update state
@@ -190,13 +165,12 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         
         setPermissionState(prev => ({
           ...prev,
-          granted: true,
-          permission: 'granted',
-          pushSubscribed: subscriptionStatus.hasValidToken
+          oneSignalReady: true,
+          oneSignalSubscribed: subscriptionStatus.hasValidToken
         }));
 
         // Update banner visibility
-        updateBannerVisibility(true, subscriptionStatus.hasValidToken);
+        updateBannerVisibility(!subscriptionStatus.hasValidToken);
 
         // Update notification preference
         await updateNotificationPreference(true);
@@ -208,13 +182,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
             p_is_online: true 
           });
         } catch (error) {
-          console.warn('🔔 Could not update user presence:', error);
+          console.warn('🔔 [Android] Could not update user presence:', error);
         }
       }
 
       return success;
     } catch (error) {
-      console.error('🔔 Error requesting notification permission:', error);
+      console.error('🔔 [Android] Error requesting notification permission:', error);
       return false;
     }
   };
@@ -234,23 +208,13 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         .eq('id', currentUser.id);
         
       if (error) {
-        console.error('🔔 Error updating notification preference:', error);
+        console.error('🔔 [Android] Error updating notification preference:', error);
         throw error;
       }
       
-      console.log('🔔 Successfully updated notification preference to:', enabled);
-        
-      if (!enabled && permissionState.pushSubscribed) {
-        try {
-          await pushNotificationService.unsubscribe();
-          setPermissionState(prev => ({ ...prev, pushSubscribed: false }));
-          updateBannerVisibility(false, false);
-        } catch (error) {
-          console.error('🔔 Error unsubscribing from push notifications:', error);
-        }
-      }
+      console.log('🔔 [Android] Successfully updated notification preference to:', enabled);
     } catch (error) {
-      console.error('🔔 Error updating notification preference:', error);
+      console.error('🔔 [Android] Error updating notification preference:', error);
     }
   };
 
@@ -294,7 +258,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const handleNewMessage = async (message: MessengerMessage) => {
-    if (!currentUser || !notificationEnabled || !permissionState.granted || !permissionState.pushSubscribed) {
+    if (!currentUser || !notificationEnabled || !permissionState.oneSignalSubscribed) {
       console.log('🔔 Skipping notification - requirements not met');
       return;
     }
@@ -330,7 +294,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const handleNewPrivateMessage = async (message: any) => {
-    if (!currentUser || !notificationEnabled || !permissionState.granted || !permissionState.pushSubscribed) {
+    if (!currentUser || !notificationEnabled || !permissionState.oneSignalSubscribed) {
       console.log('🔔 Skipping private notification - requirements not met');
       return;
     }
@@ -366,7 +330,12 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const showNotification = (title: string, body: string, url?: string) => {
-    if (!permissionState.granted) {
+    if (!permissionState.oneSignalReady) {
+      console.log('🔔 Cannot show notification - OneSignal not ready');
+      return;
+    }
+
+    if (!permissionState.oneSignalSubscribed) {
       console.log('🔔 Cannot show notification - permission not granted');
       return;
     }
@@ -400,7 +369,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const dismissPermissionBanner = () => {
-    console.log('🔔 User dismissed notification banner');
+    console.log('🔔 [Android] User dismissed notification banner');
     setShowPermissionBanner(false);
     
     if (currentUser) {

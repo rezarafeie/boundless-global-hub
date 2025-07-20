@@ -20,17 +20,8 @@
     <!-- Fonts -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
     
-    <!-- OneSignal Web Push SDK -->
+    <!-- OneSignal Web Push SDK - Only load script, no initialization -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "e221c080-7853-46e5-ba40-93796318d1a0",
-          allowLocalhostAsSecureOrigin: true,
-        });
-      });
-    </script>
   </head>
   <body>
     <div id="root"></div>
