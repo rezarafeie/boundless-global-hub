@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Bell, X, Smartphone } from 'lucide-react';
 
 interface NotificationPermissionBannerProps {
@@ -15,9 +14,23 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
   pushSupported = false
 }) => {
   const handleEnableNotifications = async () => {
-    const granted = await onRequestPermission();
-    // Hide banner immediately regardless of permission result
-    onDismiss();
+    console.log('🔔 Banner activate button clicked');
+    try {
+      const granted = await onRequestPermission();
+      console.log('🔔 Permission request result from banner:', granted);
+      
+      // Only hide banner if permission was successfully granted
+      if (granted) {
+        console.log('🔔 Permission granted, hiding banner');
+        onDismiss();
+      } else {
+        console.log('🔔 Permission denied, keeping banner visible');
+        // Keep banner visible so user can try again
+      }
+    } catch (error) {
+      console.error('🔔 Error in banner permission request:', error);
+      // Keep banner visible on error
+    }
   };
 
   return (

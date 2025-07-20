@@ -40,38 +40,41 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
     }
 
     const initializeNotifications = async () => {
-      const permission = Notification.permission;
-      const granted = permission === 'granted';
+      console.log('🔔 Initializing notification service...');
       
-      console.log('🔔 Current permission:', permission, 'Granted:', granted);
-      
-      // Check push subscription status
+      // Check OneSignal subscription status instead of browser permission
       let pushSubscribed = false;
-      if (granted && pushNotificationService.isSupported()) {
+      let granted = false;
+      
+      if (pushNotificationService.isSupported()) {
         try {
-          const subscriptionId = await pushNotificationService.getSubscription();
-          const hasValidSubscription = subscriptionId ? await pushNotificationService.isSubscriptionValid() : false;
-          pushSubscribed = hasValidSubscription;
-          console.log('🔔 Push subscription status:', {
-            subscriptionId,
-            hasValidSubscription
+          const subscriptionStatus = await pushNotificationService.getSubscriptionStatus(currentUser.id);
+          pushSubscribed = subscriptionStatus.hasValidToken;
+          granted = subscriptionStatus.isSubscribed;
+          
+          console.log('🔔 OneSignal status:', {
+            subscribed: pushSubscribed,
+            granted: granted
           });
         } catch (error) {
-          console.warn('🔔 Error checking push subscription:', error);
+          console.warn('🔔 Error checking OneSignal subscription:', error);
         }
       }
       
+      const browserPermission = Notification.permission;
+      console.log('🔔 Browser permission:', browserPermission);
+      
       setPermissionState({
-        granted,
-        permission,
+        granted: granted && browserPermission === 'granted',
+        permission: browserPermission,
         supported: true,
         pushSupported: pushNotificationService.isSupported(),
         pushSubscribed
       });
 
-      // Update banner visibility
-      updateBannerVisibility(permission, granted && pushSubscribed);
-
+      // Show banner if not properly subscribed
+      updateBannerVisibility(granted, pushSubscribed);
+      
       // Load user's notification preference
       loadNotificationPreference();
     };
@@ -81,9 +84,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
 
   // Set up real-time message listener
   useEffect(() => {
-    console.log('🔔 Setting up listener - User:', currentUser?.name, 'Session:', !!sessionToken, 'Permission:', permissionState.granted);
-    
-    if (!currentUser || !sessionToken || !permissionState.granted) {
+    if (!currentUser || !sessionToken || !permissionState.granted || !permissionState.pushSubscribed) {
       console.log('🔔 Skipping listener setup - missing requirements');
       return;
     }
@@ -98,40 +99,34 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         channelRef.current = null;
       }
     };
-  }, [currentUser?.id, sessionToken, permissionState.granted]);
+  }, [currentUser?.id, sessionToken, permissionState.granted, permissionState.pushSubscribed]);
 
-  const updateBannerVisibility = (permission: NotificationPermission, hasValidSubscription: boolean = false) => {
+  const updateBannerVisibility = (hasPermission: boolean, hasValidSubscription: boolean) => {
     if (!currentUser) return;
 
-    console.log('🔔 updateBannerVisibility - Permission:', permission, 'Valid subscription:', hasValidSubscription);
+    console.log('🔔 updateBannerVisibility - Permission:', hasPermission, 'Valid subscription:', hasValidSubscription);
 
-    // Check if user has dismissed the banner temporarily
+    // Show banner if either permission is missing OR subscription is invalid
+    const shouldShowBanner = !hasPermission || !hasValidSubscription;
+    
+    // Check if user has permanently dismissed the banner
     const dismissalTime = localStorage.getItem(`notification_banner_dismissed_${currentUser.id}`);
     const now = Date.now();
     const oneDayInMs = 24 * 60 * 60 * 1000;
 
-    if (dismissalTime && (now - parseInt(dismissalTime)) < oneDayInMs) {
+    if (dismissalTime && (now - parseInt(dismissalTime)) < oneDayInMs && shouldShowBanner) {
       console.log('🔔 Banner was recently dismissed, not showing');
       setShowPermissionBanner(false);
       return;
     }
 
-    // Check if user has permanently hidden the banner
-    const permanentlyHidden = localStorage.getItem(`notification_banner_hidden_${currentUser.id}`);
-    if (permanentlyHidden === 'true' && permission === 'granted' && hasValidSubscription) {
-      console.log('🔔 Banner permanently hidden - permission granted and subscription valid');
-      setShowPermissionBanner(false);
-      return;
-    }
-
-    // Show banner if permission is not granted or subscription is invalid
-    if (permission === 'granted' && hasValidSubscription) {
-      console.log('🔔 Hiding banner - permission granted and subscription valid');
-      setShowPermissionBanner(false);
+    console.log('🔔 Setting banner visibility to:', shouldShowBanner);
+    setShowPermissionBanner(shouldShowBanner);
+    
+    // If fully subscribed, mark as permanently handled
+    if (hasPermission && hasValidSubscription) {
       localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
     } else {
-      console.log('🔔 Showing banner - permission not granted or subscription invalid');
-      setShowPermissionBanner(true);
       localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
     }
   };
@@ -170,58 +165,53 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
       return false;
     }
 
+    if (!currentUser) {
+      console.warn('🔔 No current user for permission request');
+      return false;
+    }
+
     try {
-      console.log('🔔 Requesting notification permission...');
-      const granted = await pushNotificationService.requestPermission();
+      console.log('🔔 Starting permission request process...');
       
-      console.log('🔔 Permission result:', granted);
+      // Set session context for RLS
+      if (sessionToken) {
+        await supabase.rpc('set_session_context', { session_token: sessionToken });
+      }
       
-      let pushSubscribed = false;
+      // Request OneSignal permission
+      const success = await pushNotificationService.subscribe(currentUser.id);
       
-      if (granted && currentUser && sessionToken) {
+      console.log('🔔 Permission request result:', success);
+      
+      if (success) {
+        // Update state
+        const subscriptionStatus = await pushNotificationService.getSubscriptionStatus(currentUser.id);
+        
+        setPermissionState(prev => ({
+          ...prev,
+          granted: true,
+          permission: 'granted',
+          pushSubscribed: subscriptionStatus.hasValidToken
+        }));
+
+        // Update banner visibility
+        updateBannerVisibility(true, subscriptionStatus.hasValidToken);
+
+        // Update notification preference
+        await updateNotificationPreference(true);
+        
+        // Update user presence
         try {
-          console.log('🔔 Setting up push notifications...');
-          
-          // Set session context for RLS
-          await supabase.rpc('set_session_context', { session_token: sessionToken });
-          
-          // Set up push subscription
-          const subscriptionId = await pushNotificationService.getSubscription();
-          if (subscriptionId) {
-            await pushNotificationService.saveSubscriptionToDatabase(currentUser.id, subscriptionId);
-            pushSubscribed = true;
-            console.log('🔔 Push subscription result:', pushSubscribed);
-          }
-          
-          // Update user presence
           await supabase.rpc('update_user_presence', { 
             p_user_id: currentUser.id, 
             p_is_online: true 
           });
-          
         } catch (error) {
-          console.error('🔔 Error setting up push notifications:', error);
-        }
-      }
-      
-      setPermissionState({
-        granted,
-        permission: granted ? 'granted' : 'denied',
-        supported: true,
-        pushSupported: pushNotificationService.isSupported(),
-        pushSubscribed
-      });
-
-      updateBannerVisibility(granted ? 'granted' : 'denied', pushSubscribed);
-
-      if (granted) {
-        await updateNotificationPreference(true);
-        if (pushSubscribed && currentUser) {
-          localStorage.setItem(`notification_banner_hidden_${currentUser.id}`, 'true');
+          console.warn('🔔 Could not update user presence:', error);
         }
       }
 
-      return granted;
+      return success;
     } catch (error) {
       console.error('🔔 Error requesting notification permission:', error);
       return false;
@@ -253,26 +243,9 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
         try {
           await pushNotificationService.unsubscribe();
           setPermissionState(prev => ({ ...prev, pushSubscribed: false }));
-          localStorage.removeItem(`notification_banner_hidden_${currentUser.id}`);
-          setShowPermissionBanner(true);
+          updateBannerVisibility(false, false);
         } catch (error) {
           console.error('🔔 Error unsubscribing from push notifications:', error);
-        }
-      }
-      
-      if (enabled && permissionState.granted && !permissionState.pushSubscribed && pushNotificationService.isSupported()) {
-        try {
-          const success = await pushNotificationService.requestPermission();
-          if (success) {
-            const subscriptionId = await pushNotificationService.getSubscription();
-            if (subscriptionId) {
-              await pushNotificationService.saveSubscriptionToDatabase(currentUser.id, subscriptionId);
-              setPermissionState(prev => ({ ...prev, pushSubscribed: true }));
-              updateBannerVisibility(permissionState.permission, true);
-            }
-          }
-        } catch (error) {
-          console.error('🔔 Error subscribing to push notifications:', error);
         }
       }
     } catch (error) {
@@ -320,9 +293,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const handleNewMessage = async (message: MessengerMessage) => {
-    console.log('🔔 Processing new message - User:', currentUser?.name, 'Enabled:', notificationEnabled, 'Permission:', permissionState.granted);
-    
-    if (!currentUser || !notificationEnabled || !permissionState.granted) {
+    if (!currentUser || !notificationEnabled || !permissionState.granted || !permissionState.pushSubscribed) {
       console.log('🔔 Skipping notification - requirements not met');
       return;
     }
@@ -358,9 +329,7 @@ export const useNotificationService = ({ currentUser, sessionToken }: Notificati
   };
 
   const handleNewPrivateMessage = async (message: any) => {
-    console.log('🔔 Processing new private message - User:', currentUser?.name, 'Enabled:', notificationEnabled, 'Permission:', permissionState.granted);
-    
-    if (!currentUser || !notificationEnabled || !permissionState.granted) {
+    if (!currentUser || !notificationEnabled || !permissionState.granted || !permissionState.pushSubscribed) {
       console.log('🔔 Skipping private notification - requirements not met');
       return;
     }

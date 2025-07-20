@@ -10,42 +10,68 @@ declare global {
 
 export const pushNotificationService = {
   async initOneSignal(): Promise<void> {
-    return new Promise((resolve) => {
+    console.log('🔔 Initializing OneSignal...');
+    return new Promise((resolve, reject) => {
       if (window.OneSignal) {
+        console.log('🔔 OneSignal already loaded');
         resolve();
         return;
       }
       
+      // Set timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        console.error('🔔 OneSignal initialization timeout');
+        reject(new Error('OneSignal initialization timeout'));
+      }, 10000);
+      
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "e221c080-7853-46e5-ba40-93796318d1a0",
-          allowLocalhostAsSecureOrigin: true,
-        });
-        resolve();
+        try {
+          console.log('🔔 OneSignal SDK loaded, initializing...');
+          await OneSignal.init({
+            appId: "e221c080-7853-46e5-ba40-93796318d1a0",
+            allowLocalhostAsSecureOrigin: true,
+          });
+          console.log('🔔 OneSignal initialized successfully');
+          clearTimeout(timeout);
+          resolve();
+        } catch (error) {
+          console.error('🔔 OneSignal initialization error:', error);
+          clearTimeout(timeout);
+          reject(error);
+        }
       });
     });
   },
 
   async requestPermission(): Promise<boolean> {
     try {
+      console.log('🔔 Starting permission request...');
       await this.initOneSignal();
       
       if (!window.OneSignal) {
-        console.error('OneSignal not loaded');
+        console.error('🔔 OneSignal not loaded');
         return false;
       }
 
-      // Check if already subscribed
+      // Check current subscription status
       const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 Current subscription status:', isSubscribed);
+      
       if (isSubscribed) {
         console.log('✅ User already subscribed to OneSignal');
         return true;
       }
 
-      // Force request permission and subscribe using OneSignal's showNativePrompt
+      // Force permission request using OneSignal's native prompt
+      console.log('🔔 Requesting OneSignal permission...');
       await window.OneSignal.User.PushSubscription.optIn();
+      
+      // Wait a moment for subscription to process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const newSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 New subscription state:', newSubscriptionState);
       
       if (newSubscriptionState) {
         console.log('✅ OneSignal permission granted and subscribed');
@@ -65,12 +91,16 @@ export const pushNotificationService = {
       await this.initOneSignal();
       
       if (!window.OneSignal) {
+        console.log('🔔 OneSignal not available for subscription check');
         return null;
       }
 
       const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 Subscription check - opted in:', isSubscribed);
+      
       if (isSubscribed) {
         const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        console.log('🔔 OneSignal subscription ID:', subscriptionId ? 'found' : 'null');
         return subscriptionId;
       }
       
@@ -83,6 +113,7 @@ export const pushNotificationService = {
 
   async saveSubscriptionToDatabase(userId: number, subscriptionId: string): Promise<void> {
     try {
+      console.log('🔔 Saving subscription to database for user:', userId);
       const { error } = await supabase
         .from('chat_users')
         .update({ 
@@ -123,7 +154,9 @@ export const pushNotificationService = {
         return false;
       }
 
-      return await window.OneSignal.User.PushSubscription.optedIn;
+      const isOptedIn = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 Subscription validity check:', isOptedIn);
+      return isOptedIn;
     } catch (error) {
       console.error('❌ Error checking OneSignal subscription validity:', error);
       return false;
@@ -131,18 +164,24 @@ export const pushNotificationService = {
   },
 
   isSupported(): boolean {
-    return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window;
+    const supported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window;
+    console.log('🔔 Push notifications supported:', supported);
+    return supported;
   },
 
   async getSubscriptionStatus(userId: number): Promise<{ isSubscribed: boolean; hasValidToken: boolean }> {
     try {
+      console.log('🔔 Getting subscription status for user:', userId);
       const subscriptionId = await this.getSubscription();
       const isValid = await this.isSubscriptionValid();
       
-      return {
+      const status = {
         isSubscribed: !!subscriptionId,
         hasValidToken: isValid
       };
+      
+      console.log('🔔 Subscription status:', status);
+      return status;
     } catch (error) {
       console.error('❌ Error getting subscription status:', error);
       return { isSubscribed: false, hasValidToken: false };
@@ -151,11 +190,15 @@ export const pushNotificationService = {
 
   async subscribe(userId: number): Promise<boolean> {
     try {
+      console.log('🔔 Starting subscription process for user:', userId);
       const success = await this.requestPermission();
       if (success) {
         const subscriptionId = await this.getSubscription();
         if (subscriptionId) {
           await this.saveSubscriptionToDatabase(userId, subscriptionId);
+          console.log('✅ Subscription process completed successfully');
+        } else {
+          console.warn('⚠️ Permission granted but no subscription ID found');
         }
       }
       return success;
