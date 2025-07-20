@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3 } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +24,8 @@ interface Course {
   price: number;
   is_active: boolean;
   redirect_url: string | null;
+  spotplayer_course_id: string | null;
+  is_spotplayer_enabled: boolean;
   created_at: string;
 }
 
@@ -64,6 +68,8 @@ const EnrollAdmin: React.FC = () => {
     slug: '',
     price: 0,
     redirect_url: '',
+    spotplayer_course_id: '',
+    is_spotplayer_enabled: false,
     is_active: true
   });
 
@@ -183,6 +189,8 @@ const EnrollAdmin: React.FC = () => {
       slug: course.slug,
       price: course.price,
       redirect_url: course.redirect_url || '',
+      spotplayer_course_id: course.spotplayer_course_id || '',
+      is_spotplayer_enabled: course.is_spotplayer_enabled || false,
       is_active: course.is_active
     });
     setShowCourseModal(true);
@@ -196,6 +204,8 @@ const EnrollAdmin: React.FC = () => {
       slug: '',
       price: 0,
       redirect_url: '',
+      spotplayer_course_id: '',
+      is_spotplayer_enabled: false,
       is_active: true
     });
     setShowCourseModal(true);
@@ -673,6 +683,7 @@ const EnrollAdmin: React.FC = () => {
                               <TableHead>قیمت</TableHead>
                               <TableHead>کاربران ثبت‌نام شده</TableHead>
                               <TableHead>وضعیت</TableHead>
+                              <TableHead>SpotPlayer</TableHead>
                               <TableHead>لینک ثبت‌نام</TableHead>
                               <TableHead>عملیات</TableHead>
                             </TableRow>
@@ -705,6 +716,18 @@ const EnrollAdmin: React.FC = () => {
                                   <Badge variant={course.is_active ? "default" : "secondary"}>
                                     {course.is_active ? "فعال" : "غیرفعال"}
                                   </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {course.is_spotplayer_enabled ? (
+                                    <div className="flex items-center gap-1">
+                                      <Play className="h-3 w-3 text-green-600" />
+                                      <Badge variant="outline" className="text-green-600 border-green-600">
+                                        فعال
+                                      </Badge>
+                                    </div>
+                                  ) : (
+                                    <Badge variant="secondary">غیرفعال</Badge>
+                                  )}
                                 </TableCell>
                                 <TableCell>
                                   <Button
@@ -932,13 +955,52 @@ const EnrollAdmin: React.FC = () => {
               </div>
             </div>
 
+            {/* SpotPlayer Configuration */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="spotplayer-toggle" className="text-base font-medium">
+                    رفیعی پلیر (SpotPlayer)
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    فعال‌سازی پخش ویدیو از طریق رفیعی پلیر
+                  </p>
+                </div>
+                <Switch
+                  id="spotplayer-toggle"
+                  checked={courseForm.is_spotplayer_enabled}
+                  onCheckedChange={(checked) => 
+                    setCourseForm(prev => ({ 
+                      ...prev, 
+                      is_spotplayer_enabled: checked,
+                      spotplayer_course_id: checked ? prev.spotplayer_course_id : ''
+                    }))
+                  }
+                />
+              </div>
+
+              {courseForm.is_spotplayer_enabled && (
+                <div className="space-y-2">
+                  <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer</Label>
+                  <Input
+                    id="spotplayer_course_id"
+                    value={courseForm.spotplayer_course_id}
+                    onChange={(e) => setCourseForm(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
+                    placeholder="شناسه دوره در سیستم SpotPlayer"
+                    required={courseForm.is_spotplayer_enabled}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    این شناسه برای ایجاد لایسنس در سیستم SpotPlayer استفاده می‌شود
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Switch
                 id="is_active"
                 checked={courseForm.is_active}
-                onChange={(e) => setCourseForm(prev => ({ ...prev, is_active: e.target.checked }))}
-                className="rounded"
+                onCheckedChange={(checked) => setCourseForm(prev => ({ ...prev, is_active: checked }))}
               />
               <Label htmlFor="is_active">دوره فعال است</Label>
             </div>
