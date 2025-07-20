@@ -8,12 +8,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 import OnlineStatusIndicator from "@/components/OnlineStatusIndicator";
 
 const Header = () => {
   const { translations, language, toggleLanguage } = useLanguage();
   const { isDarkMode, toggleTheme } = useTheme();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -114,7 +116,12 @@ const Header = () => {
             asChild
             className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hidden md:flex dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
           >
-            <Link to="/dashboard">{language === "en" ? "My Account" : "حساب کاربری"}</Link>
+            <Link to="/dashboard">
+              {isAuthenticated && user ? 
+                user.name || user.firstName || user.username || 'کاربر' : 
+                (language === "en" ? "Login / Register" : "ورود / ثبت‌نام")
+              }
+            </Link>
           </Button>
           
           {/* Mobile Menu */}
@@ -217,7 +224,12 @@ const Header = () => {
                     className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <Link to="/dashboard">{language === "en" ? "My Account" : "حساب کاربری"}</Link>
+                     <Link to="/dashboard">
+                       {isAuthenticated && user ? 
+                         user.name || user.firstName || user.username || 'کاربر' : 
+                         (language === "en" ? "Login / Register" : "ورود / ثبت‌نام")
+                       }
+                     </Link>
                   </Button>
                   
                   {/* Theme Toggle */}
