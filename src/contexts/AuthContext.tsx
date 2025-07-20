@@ -28,6 +28,43 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper function to normalize phone numbers for comparison
+const normalizePhone = (phone: string): string[] => {
+  if (!phone) return [];
+  
+  // Remove all non-digit characters
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  const variations = [];
+  
+  // Add the original clean phone
+  variations.push(cleanPhone);
+  
+  // If it starts with 98, also add without 98 and with 0
+  if (cleanPhone.startsWith('98')) {
+    const withoutCountryCode = cleanPhone.substring(2);
+    variations.push(withoutCountryCode);
+    if (!withoutCountryCode.startsWith('0')) {
+      variations.push('0' + withoutCountryCode);
+    }
+  }
+  
+  // If it starts with 9, also add with 0 prefix and with +98
+  if (cleanPhone.startsWith('9') && !cleanPhone.startsWith('98')) {
+    variations.push('0' + cleanPhone);
+    variations.push('98' + cleanPhone);
+  }
+  
+  // If it starts with 09, also add without 0 and with +98
+  if (cleanPhone.startsWith('09')) {
+    const withoutZero = cleanPhone.substring(1);
+    variations.push(withoutZero);
+    variations.push('98' + withoutZero);
+  }
+  
+  return [...new Set(variations)]; // Remove duplicates
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<MessengerUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -103,16 +140,103 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkEnrollment = async (courseId: string): Promise<boolean> => {
     if (!user) return false;
     
+    console.log('Checking enrollment for user:', user.id, 'course:', courseId);
+    
     try {
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select('id')
-        .eq('course_id', courseId)
-        .eq('payment_status', 'completed')
-        .or(`chat_user_id.eq.${user.id},phone.eq.${user.phone},email.eq.${user.email || ''}`)
-        .maybeSingle();
+      // Get all phone number variations for comparison
+      const phoneVariations = normalizePhone(user.phone);
+      const emailVariations = user.email ? [user.email.toLowerCase()] : [];
       
-      return !error && !!data;
+      console.log('Phone variations to check:', phoneVariations);
+      console.log('Email variations to check:', emailVariations);
+      
+      // Build query conditions
+      let query = supabase
+        .from('enrollments')
+        .select('id, payment_status, chat_user_id, phone, email')
+        .eq('course_id', courseId)
+        .eq('payment_status', 'completed');
+      
+      // First, try to find by chat_user_id (most direct match)
+      const { data: directMatch, error: directError } = await query
+        .eq('chat_user_id', user.id);
+      
+      if (directError) {
+        console.error('Error checking direct enrollment:', directError);
+      }
+      
+      if (directMatch && directMatch.length > 0) {
+        console.log('Found direct enrollment match:', directMatch);
+        return true;
+      }
+      
+      // If no direct match, check by phone and email
+      const { data: allEnrollments, error: allError } = await supabase
+        .from('enrollments')
+        .select('id, payment_status, chat_user_id, phone, email')
+        .eq('course_id', courseId)
+        .eq('payment_status', 'completed');
+      
+      if (allError) {
+        console.error('Error fetching all enrollments:', allError);
+        return false;
+      }
+      
+      console.log('All completed enrollments for course:', allEnrollments);
+      
+      // Check if any enrollment matches our phone/email variations
+      const matchingEnrollment = allEnrollments?.find(enrollment => {
+        // Check phone variations
+        if (enrollment.phone) {
+          const enrollmentPhoneVariations = normalizePhone(enrollment.phone);
+          const phoneMatch = phoneVariations.some(userPhone => 
+            enrollmentPhoneVariations.some(enrollmentPhone => 
+              userPhone === enrollmentPhone
+            )
+          );
+          if (phoneMatch) {
+            console.log('Found phone match:', enrollment.phone, 'matches user phone:', user.phone);
+            return true;
+          }
+        }
+        
+        // Check email variations
+        if (enrollment.email && emailVariations.length > 0) {
+          const emailMatch = emailVariations.includes(enrollment.email.toLowerCase());
+          if (emailMatch) {
+            console.log('Found email match:', enrollment.email, 'matches user email:', user.email);
+            return true;
+          }
+        }
+        
+        return false;
+      });
+      
+      if (matchingEnrollment) {
+        console.log('Found matching enrollment, updating chat_user_id:', matchingEnrollment);
+        
+        // Update the enrollment to link it with current user
+        try {
+          const { error: updateError } = await supabase
+            .from('enrollments')
+            .update({ chat_user_id: user.id })
+            .eq('id', matchingEnrollment.id);
+          
+          if (updateError) {
+            console.error('Error updating enrollment chat_user_id:', updateError);
+          } else {
+            console.log('Successfully linked enrollment to current user');
+          }
+        } catch (updateError) {
+          console.error('Exception updating enrollment:', updateError);
+        }
+        
+        return true;
+      }
+      
+      console.log('No matching enrollment found for user');
+      return false;
+      
     } catch (error) {
       console.error('Error checking enrollment:', error);
       return false;
