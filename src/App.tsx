@@ -89,6 +89,9 @@ import UserHub from "./pages/UserHub";
 import MessengerApp from "./pages/MessengerApp";
 import MessengerProfile from "./pages/MessengerProfile";
 
+// Import the new component
+import CourseContentManagement from "./pages/Course/CourseContentManagement";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -150,6 +153,7 @@ const App = () => {
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollAdmin />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
+                    <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
                     
                     {/* Course Access */}
