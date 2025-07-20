@@ -47,16 +47,38 @@ const EnrollAdmin: React.FC = () => {
 
   const fetchEnrollments = async () => {
     try {
+      console.log('Fetching enrollments...');
+      
+      // First, let's check if we have any enrollments at all
+      const { data: allEnrollments, error: allError } = await supabase
+        .from('enrollments')
+        .select('*');
+      
+      console.log('All enrollments:', allEnrollments);
+      console.log('Enrollments error:', allError);
+      
+      // Then check if we have any courses
+      const { data: allCourses, error: coursesError } = await supabase
+        .from('courses')
+        .select('*');
+      
+      console.log('All courses:', allCourses);
+      console.log('Courses error:', coursesError);
+      
+      // Now try the join query
       const { data, error } = await supabase
         .from('enrollments')
         .select(`
           *,
-          courses!inner (
+          courses (
             title,
             slug
           )
         `)
         .order('created_at', { ascending: false });
+
+      console.log('Joined data:', data);
+      console.log('Join error:', error);
 
       if (error) throw error;
       setEnrollments(data || []);
