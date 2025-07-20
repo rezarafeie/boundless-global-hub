@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { courseSlug, fullName, email, phone } = await req.json();
+    const { courseSlug, firstName, lastName, email, phone } = await req.json();
 
     // Get course details
     const { data: course, error: courseError } = await supabase
@@ -35,7 +35,7 @@ serve(async (req) => {
       .from('enrollments')
       .insert({
         course_id: course.id,
-        full_name: fullName,
+        full_name: `${firstName} ${lastName}`,
         email: email,
         phone: phone,
         payment_amount: course.price,

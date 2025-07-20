@@ -30,7 +30,8 @@ const Enroll: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: ''
   });
@@ -75,10 +76,19 @@ const Enroll: React.FC = () => {
   };
 
   const validateForm = () => {
-    if (!formData.fullName.trim()) {
+    if (!formData.firstName.trim()) {
       toast({
         title: "خطا",
-        description: "لطفا نام و نام خانوادگی خود را وارد کنید",
+        description: "لطفا نام خود را وارد کنید",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.lastName.trim()) {
+      toast({
+        title: "خطا",
+        description: "لطفا نام خانوادگی خود را وارد کنید",
         variant: "destructive"
       });
       return false;
@@ -116,7 +126,8 @@ const Enroll: React.FC = () => {
       const response = await supabase.functions.invoke('zarinpal-request', {
         body: {
           courseSlug: course.slug,
-          fullName: formData.fullName,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone
         }
@@ -235,17 +246,31 @@ const Enroll: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="fullName">نام و نام خانوادگی</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={formData.fullName}
-                      onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      placeholder="مثال: علی احمدی"
-                      className="mt-1"
-                      required
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">نام</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        placeholder="علی"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">نام خانوادگی</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        placeholder="احمدی"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div>
