@@ -12,7 +12,8 @@ import {
   Download,
   ChevronRight,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -342,20 +343,15 @@ const CourseAccess: React.FC = () => {
             </Card>
             
             {showAuth && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-background rounded-2xl w-full max-w-md shadow-2xl border animate-scale-in">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-semibold">ورود / ثبت‌نام</h2>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setShowAuth(false)}
-                        className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-                      >
-                        ✕
-                      </Button>
-                    </div>
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="w-screen h-screen bg-background relative flex items-center justify-center">
+                  <button
+                    onClick={() => setShowAuth(false)}
+                    className="absolute top-6 right-6 z-50 p-3 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                  <div className="w-full max-w-md mx-auto px-6">
                     <UnifiedMessengerAuth onAuthenticated={(token, name, user) => {
                       login(user, token);
                       setShowAuth(false);
