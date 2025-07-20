@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { enhancedPushNotificationService } from '@/lib/enhancedPushNotificationService';
+import { enhancedOneSignalLoader } from '@/lib/enhancedOneSignalLoader';
+import { serviceWorkerManager } from '@/lib/serviceWorkerManager';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, XCircle, AlertCircle, Smartphone, Monitor, Bell, Download, Info, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Smartphone, Monitor, Bell, Download, Info, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import type { MobileDeviceInfo } from '@/lib/mobilePushDetection';
 
 interface EnhancedNotificationDiagnosticsProps {
@@ -19,126 +21,223 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
 }) => {
   const [diagnostics, setDiagnostics] = useState<any>({
     deviceInfo: null,
-    oneSignalReady: false,
-    oneSignalLoaded: false,
-    oneSignalInitialized: false,
+    oneSignalStatus: {
+      sdkLoaded: false,
+      isInitialized: false,
+      isReady: false
+    },
+    serviceWorkerStatus: {
+      supported: false,
+      registered: false,
+      registrationScope: null
+    },
+    networkStatus: {
+      online: navigator.onLine,
+      connectivity: 'checking'
+    },
     permission: 'default',
-    subscription: false,
-    subscriptionId: null,
-    tokenSaved: false,
+    subscription: {
+      isValid: false,
+      subscriptionId: null
+    },
+    database: {
+      tokenSaved: false,
+      token: null
+    },
     lastTestResult: null,
-    databaseToken: null,
     initializationError: null
   });
 
   const [testing, setTesting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const runDiagnostics = async () => {
+  const runComprehensiveDiagnostics = async () => {
     setRefreshing(true);
     
     try {
-      // Get enhanced device info
+      console.log('🔍 [Diagnostics] Starting comprehensive diagnostics...');
+      
+      // Get device info
       const deviceInfo = enhancedPushNotificationService.getDeviceInfo();
       
-      // Check OneSignal loading
-      const oneSignalLoaded = typeof window.OneSignal !== 'undefined';
+      // Check network connectivity
+      const networkStatus = {
+        online: navigator.onLine,
+        connectivity: await checkConnectivity()
+      };
       
-      // Check OneSignal initialization
-      const oneSignalInitialized = enhancedPushNotificationService['isInitialized'];
+      // Check service worker status
+      const serviceWorkerStatus = await checkServiceWorkerStatus();
       
-      // Try to initialize OneSignal
-      let initializationError = null;
-      try {
-        if (deviceInfo.supportsWebPush) {
-          await enhancedPushNotificationService.initOneSignal();
-        }
-      } catch (error) {
-        initializationError = error.message;
-        console.error('OneSignal initialization failed:', error);
-      }
+      // Check OneSignal SDK status
+      const oneSignalStatus = await checkOneSignalStatus(deviceInfo);
       
-      // Check OneSignal readiness
-      const oneSignalReady = oneSignalInitialized && !!window.OneSignal;
+      // Check permissions
+      const permission = await checkPermissionStatus();
       
-      // Check permission
-      const permission = 'Notification' in window ? Notification.permission : 'unavailable';
+      // Check subscription status
+      const subscription = await checkSubscriptionStatus();
       
-      // Check subscription
-      let subscription = false;
-      let subscriptionId = null;
-      try {
-        subscription = await enhancedPushNotificationService.isSubscriptionValid();
-        subscriptionId = await enhancedPushNotificationService.getSubscription();
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-      }
-      
-      // Check if token is saved in database
-      let databaseToken = null;
-      let tokenSaved = false;
-      
-      if (currentUser && sessionToken) {
-        try {
-          await supabase.rpc('set_session_context', { session_token: sessionToken });
-          const { data, error } = await supabase
-            .from('chat_users')
-            .select('notification_token, notification_enabled')
-            .eq('id', currentUser.id)
-            .single();
-            
-          if (!error && data) {
-            databaseToken = data.notification_token;
-            tokenSaved = !!data.notification_token;
-          }
-        } catch (error) {
-          console.error('Error checking database token:', error);
-        }
-      }
+      // Check database status
+      const database = await checkDatabaseStatus();
       
       setDiagnostics({
         deviceInfo,
-        oneSignalLoaded,
-        oneSignalInitialized,
-        oneSignalReady,
+        oneSignalStatus,
+        serviceWorkerStatus,
+        networkStatus,
         permission,
         subscription,
-        subscriptionId,
-        tokenSaved,
-        databaseToken,
-        initializationError,
-        lastTestResult: diagnostics.lastTestResult
+        database,
+        lastTestResult: diagnostics.lastTestResult,
+        initializationError: oneSignalStatus.initializationError || null
       });
       
+      console.log('✅ [Diagnostics] Comprehensive diagnostics completed');
+      
     } catch (error) {
-      console.error('Error running diagnostics:', error);
+      console.error('❌ [Diagnostics] Comprehensive diagnostics failed:', error);
+      setDiagnostics(prev => ({
+        ...prev,
+        initializationError: error.message
+      }));
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const checkConnectivity = async (): Promise<string> => {
+    try {
+      const response = await fetch('/favicon.ico', { method: 'HEAD', cache: 'no-cache' });
+      return response.ok ? 'good' : 'limited';
+    } catch {
+      return 'poor';
+    }
+  };
+
+  const checkServiceWorkerStatus = async () => {
+    const supported = 'serviceWorker' in navigator;
+    let registered = false;
+    let registrationScope = null;
+    let activeWorker = null;
+    
+    if (supported) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        const unifiedRegistration = registrations.find(reg => 
+          reg.scope.endsWith('/') && reg.active?.scriptURL.includes('unified-sw.js')
+        );
+        
+        if (unifiedRegistration) {
+          registered = true;
+          registrationScope = unifiedRegistration.scope;
+          activeWorker = unifiedRegistration.active?.scriptURL;
+        }
+      } catch (error) {
+        console.error('Error checking service worker:', error);
+      }
+    }
+    
+    return { supported, registered, registrationScope, activeWorker };
+  };
+
+  const checkOneSignalStatus = async (deviceInfo: MobileDeviceInfo) => {
+    const loaderStatus = enhancedOneSignalLoader.getLoadingStatus();
+    const initStatus = enhancedPushNotificationService.getInitializationStatus();
+    
+    let initializationError = null;
+    
+    if (deviceInfo.supportsWebPush && !initStatus.isInitialized) {
+      try {
+        console.log('🔍 [Diagnostics] Attempting OneSignal initialization for diagnostics...');
+        await enhancedPushNotificationService.initOneSignal();
+      } catch (error) {
+        initializationError = error.message;
+        console.error('OneSignal diagnostic initialization failed:', error);
+      }
+    }
+    
+    return {
+      sdkLoaded: loaderStatus.isLoaded,
+      isInitialized: initStatus.isInitialized,
+      isReady: initStatus.isInitialized && !!window.OneSignal,
+      swRegistered: initStatus.swRegistered,
+      deviceSupported: initStatus.deviceSupported,
+      initializationError
+    };
+  };
+
+  const checkPermissionStatus = async () => {
+    if ('Notification' in window) {
+      return Notification.permission;
+    }
+    return 'unavailable';
+  };
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      const isValid = await enhancedPushNotificationService.isSubscriptionValid();
+      const subscriptionId = await enhancedPushNotificationService.getSubscription();
+      
+      return {
+        isValid,
+        subscriptionId
+      };
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return {
+        isValid: false,
+        subscriptionId: null
+      };
+    }
+  };
+
+  const checkDatabaseStatus = async () => {
+    if (!currentUser || !sessionToken) {
+      return { tokenSaved: false, token: null };
+    }
+    
+    try {
+      await supabase.rpc('set_session_context', { session_token: sessionToken });
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('notification_token, notification_enabled')
+        .eq('id', currentUser.id)
+        .single();
+        
+      if (!error && data) {
+        return {
+          tokenSaved: !!data.notification_token,
+          token: data.notification_token
+        };
+      }
+    } catch (error) {
+      console.error('Error checking database token:', error);
+    }
+    
+    return { tokenSaved: false, token: null };
   };
 
   const sendTestNotification = async () => {
     setTesting(true);
     
     try {
-      // First check if we have a valid subscription
       const subscriptionId = await enhancedPushNotificationService.getSubscription();
       
       if (!subscriptionId) {
         setDiagnostics(prev => ({
           ...prev,
-          lastTestResult: { success: false, error: 'No valid subscription found' }
+          lastTestResult: { success: false, error: 'No valid subscription found', type: 'test_notification' }
         }));
         return;
       }
 
-      // Send test notification via edge function
       const { data, error } = await supabase.functions.invoke('send-onesignal-notification', {
         body: {
           recipientUserIds: [currentUser.id],
           message: {
             id: Date.now(),
-            text: 'تست اعلان بهبود یافته - موفقیت‌آمیز!',
+            text: 'تست اعلان بهبود یافته - موفقیت‌آمیز! 🎉',
             senderName: 'سیستم تشخیص پیشرفته',
             senderId: 0,
             timestamp: new Date().toISOString()
@@ -149,12 +248,12 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       if (error) {
         setDiagnostics(prev => ({
           ...prev,
-          lastTestResult: { success: false, error: error.message }
+          lastTestResult: { success: false, error: error.message, type: 'test_notification' }
         }));
       } else {
         setDiagnostics(prev => ({
           ...prev,
-          lastTestResult: { success: true, data }
+          lastTestResult: { success: true, data, type: 'test_notification' }
         }));
       }
 
@@ -162,7 +261,7 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       console.error('Error sending test notification:', error);
       setDiagnostics(prev => ({
         ...prev,
-        lastTestResult: { success: false, error: error.message }
+        lastTestResult: { success: false, error: error.message, type: 'test_notification' }
       }));
     } finally {
       setTesting(false);
@@ -173,7 +272,7 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
     setTesting(true);
     
     try {
-      console.log('🔔 Testing permission request...');
+      console.log('🔔 [Diagnostics] Testing permission request...');
       const success = await enhancedPushNotificationService.requestPermissionWithUserGesture();
       
       setDiagnostics(prev => ({
@@ -187,7 +286,7 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       
       // Refresh diagnostics after permission test
       setTimeout(() => {
-        runDiagnostics();
+        runComprehensiveDiagnostics();
       }, 2000);
       
     } catch (error) {
@@ -202,7 +301,19 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
   };
 
   useEffect(() => {
-    runDiagnostics();
+    runComprehensiveDiagnostics();
+    
+    // Listen for network status changes
+    const handleOnline = () => runComprehensiveDiagnostics();
+    const handleOffline = () => runComprehensiveDiagnostics();
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [currentUser, sessionToken]);
 
   const StatusIcon = ({ status }: { status: boolean }) => {
@@ -218,6 +329,16 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       return <Smartphone className="h-5 w-5 text-blue-500" />;
     }
     return <Monitor className="h-5 w-5 text-gray-500" />;
+  };
+
+  const NetworkIcon = ({ status }: { status: string }) => {
+    if (status === 'good') {
+      return <Wifi className="h-4 w-4 text-green-500" />;
+    } else if (status === 'limited') {
+      return <Wifi className="h-4 w-4 text-yellow-500" />;
+    } else {
+      return <WifiOff className="h-4 w-4 text-red-500" />;
+    }
   };
 
   const PermissionBadge = ({ permission }: { permission: string }) => {
@@ -249,29 +370,80 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
-          تشخیص پیشرفته اعلان‌ها
+          تشخیص جامع اعلان‌ها
           {deviceInfo && <DeviceIcon deviceInfo={deviceInfo} />}
+          <NetworkIcon status={diagnostics.networkStatus.connectivity} />
         </CardTitle>
         {deviceInfo && (
           <div className="text-sm text-muted-foreground">
             {deviceInfo.browser} • {deviceInfo.isIOS ? 'iOS' : deviceInfo.isAndroid ? 'Android' : 'Desktop'} 
             {deviceInfo.osVersion !== 'Unknown' && ` • ${deviceInfo.osVersion}`}
+            {!diagnostics.networkStatus.online && ' • آفلاین'}
           </div>
         )}
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Initialization Error */}
+        {/* Critical Errors */}
         {diagnostics.initializationError && (
           <div className="border border-red-200 rounded-lg p-4 bg-red-50">
             <div className="flex items-center gap-2 mb-2">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span className="font-semibold text-red-800">خطای راه‌اندازی</span>
+              <span className="font-semibold text-red-800">خطای بحرانی</span>
             </div>
             <p className="text-sm text-red-700">
               {diagnostics.initializationError}
             </p>
           </div>
         )}
+
+        {/* Network Status */}
+        <div>
+          <h4 className="font-semibold mb-3 flex items-center gap-2">
+            <NetworkIcon status={diagnostics.networkStatus.connectivity} />
+            وضعیت شبکه
+          </h4>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span>اتصال:</span>
+              <StatusIcon status={diagnostics.networkStatus.online} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span>کیفیت:</span>
+              <Badge className={`${
+                diagnostics.networkStatus.connectivity === 'good' ? 'bg-green-500' :
+                diagnostics.networkStatus.connectivity === 'limited' ? 'bg-yellow-500' : 'bg-red-500'
+              } text-white`}>
+                {diagnostics.networkStatus.connectivity === 'good' ? 'عالی' :
+                 diagnostics.networkStatus.connectivity === 'limited' ? 'محدود' : 'ضعیف'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Service Worker Status */}
+        <div>
+          <h4 className="font-semibold mb-3">وضعیت Service Worker</h4>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span>پشتیبانی:</span>
+              <StatusIcon status={diagnostics.serviceWorkerStatus.supported} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span>ثبت شده:</span>
+              <StatusIcon status={diagnostics.serviceWorkerStatus.registered} />
+            </div>
+            {diagnostics.serviceWorkerStatus.registrationScope && (
+              <div className="text-xs text-gray-600">
+                <span>محدوده: {diagnostics.serviceWorkerStatus.registrationScope}</span>
+              </div>
+            )}
+            {diagnostics.serviceWorkerStatus.activeWorker && (
+              <div className="text-xs text-gray-600">
+                <span>فایل فعال: {diagnostics.serviceWorkerStatus.activeWorker.split('/').pop()}</span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Device Capabilities */}
         {deviceInfo && (
@@ -294,8 +466,8 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
                 <StatusIcon status={window.isSecureContext} />
               </div>
               <div className="flex items-center justify-between">
-                <span>Service Worker:</span>
-                <StatusIcon status={'serviceWorker' in navigator} />
+                <span>Notification API:</span>
+                <StatusIcon status={'Notification' in window} />
               </div>
             </div>
           </div>
@@ -308,24 +480,24 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
             <div className="flex items-center justify-between">
               <span>SDK بارگذاری شده:</span>
               <div className="flex items-center gap-2">
-                <StatusIcon status={diagnostics.oneSignalLoaded} />
-                <span>{diagnostics.oneSignalLoaded ? 'بله' : 'خیر'}</span>
+                <StatusIcon status={diagnostics.oneSignalStatus.sdkLoaded} />
+                <span>{diagnostics.oneSignalStatus.sdkLoaded ? 'بله' : 'خیر'}</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
               <span>راه‌اندازی شده:</span>
               <div className="flex items-center gap-2">
-                <StatusIcon status={diagnostics.oneSignalInitialized} />
-                <span>{diagnostics.oneSignalInitialized ? 'بله' : 'خیر'}</span>
+                <StatusIcon status={diagnostics.oneSignalStatus.isInitialized} />
+                <span>{diagnostics.oneSignalStatus.isInitialized ? 'بله' : 'خیر'}</span>
               </div>
             </div>
             
             <div className="flex items-center justify-between">
               <span>آماده به کار:</span>
               <div className="flex items-center gap-2">
-                <StatusIcon status={diagnostics.oneSignalReady} />
-                <span>{diagnostics.oneSignalReady ? 'آماده' : 'آماده نیست'}</span>
+                <StatusIcon status={diagnostics.oneSignalStatus.isReady} />
+                <span>{diagnostics.oneSignalStatus.isReady ? 'آماده' : 'آماده نیست'}</span>
               </div>
             </div>
           </div>
@@ -343,28 +515,28 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
           <div className="flex items-center justify-between">
             <span>اشتراک:</span>
             <div className="flex items-center gap-2">
-              <StatusIcon status={diagnostics.subscription} />
-              <span>{diagnostics.subscription ? 'فعال' : 'غیر فعال'}</span>
+              <StatusIcon status={diagnostics.subscription.isValid} />
+              <span>{diagnostics.subscription.isValid ? 'فعال' : 'غیر فعال'}</span>
             </div>
           </div>
 
-          {diagnostics.subscriptionId && (
+          {diagnostics.subscription.subscriptionId && (
             <div className="text-xs text-gray-600">
-              <span>Subscription ID: {diagnostics.subscriptionId.substring(0, 20)}...</span>
+              <span>Subscription ID: {diagnostics.subscription.subscriptionId.substring(0, 20)}...</span>
             </div>
           )}
 
           <div className="flex items-center justify-between">
             <span>ذخیره در دیتابیس:</span>
             <div className="flex items-center gap-2">
-              <StatusIcon status={diagnostics.tokenSaved} />
-              <span>{diagnostics.tokenSaved ? 'بله' : 'خیر'}</span>
+              <StatusIcon status={diagnostics.database.tokenSaved} />
+              <span>{diagnostics.database.tokenSaved ? 'بله' : 'خیر'}</span>
             </div>
           </div>
 
-          {diagnostics.databaseToken && (
+          {diagnostics.database.token && (
             <div className="text-xs text-gray-600">
-              <span>DB Token: {diagnostics.databaseToken.substring(0, 20)}...</span>
+              <span>DB Token: {diagnostics.database.token.substring(0, 20)}...</span>
             </div>
           )}
         </div>
@@ -443,13 +615,13 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
         {/* Actions */}
         <div className="flex gap-2 flex-wrap">
           <Button 
-            onClick={runDiagnostics}
+            onClick={runComprehensiveDiagnostics}
             disabled={refreshing}
             variant="outline"
             className="flex-1 min-w-0"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'در حال بررسی...' : 'بررسی مجدد'}
+            {refreshing ? 'در حال بررسی...' : 'بررسی جامع'}
           </Button>
           
           {deviceInfo?.supportsWebPush && (
@@ -466,7 +638,7 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
           
           <Button 
             onClick={sendTestNotification}
-            disabled={testing || !diagnostics.tokenSaved || !deviceInfo?.supportsWebPush}
+            disabled={testing || !diagnostics.database.tokenSaved || !deviceInfo?.supportsWebPush}
             className="flex-1 min-w-0"
           >
             <Bell className="h-4 w-4 mr-2" />

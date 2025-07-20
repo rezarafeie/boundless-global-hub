@@ -1,5 +1,7 @@
 
 import { detectMobileCapabilities, getOneSignalConfig, type MobileDeviceInfo } from './mobilePushDetection';
+import { serviceWorkerManager } from './serviceWorkerManager';
+import { enhancedOneSignalLoader } from './enhancedOneSignalLoader';
 
 declare global {
   interface Window {
@@ -8,416 +10,314 @@ declare global {
   }
 }
 
-export class EnhancedPushNotificationService {
-  private isInitialized = false;
-  private initializationPromise: Promise<void> | null = null;
-  private deviceInfo: MobileDeviceInfo;
-  private retryCount = 0;
-  private maxRetries = 3;
-
-  constructor() {
-    this.deviceInfo = detectMobileCapabilities();
-    console.log('🔔 [Enhanced] Device capabilities detected:', this.deviceInfo);
-  }
+export const enhancedPushNotificationService = {
+  isInitialized: false,
+  initializationPromise: null as Promise<void> | null,
+  deviceInfo: null as MobileDeviceInfo | null,
 
   getDeviceInfo(): MobileDeviceInfo {
-    return this.deviceInfo;
-  }
-
-  async ensureOneSignalLoaded(): Promise<boolean> {
-    // Check if OneSignal is already loaded
-    if (typeof window.OneSignal !== 'undefined') {
-      console.log('🔔 [Enhanced] OneSignal already loaded');
-      return true;
+    if (!this.deviceInfo) {
+      this.deviceInfo = detectMobileCapabilities();
+      console.log('🔔 [Enhanced Service] Device info detected:', this.deviceInfo);
     }
-
-    // Try to load OneSignal SDK manually if not loaded
-    console.log('🔔 [Enhanced] OneSignal not detected, attempting manual load...');
-    
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-      script.async = true;
-      
-      script.onload = () => {
-        console.log('🔔 [Enhanced] OneSignal SDK loaded manually');
-        // Wait a bit for SDK to initialize
-        setTimeout(() => {
-          resolve(typeof window.OneSignal !== 'undefined');
-        }, 1000);
-      };
-      
-      script.onerror = () => {
-        console.error('🔔 [Enhanced] Failed to load OneSignal SDK');
-        resolve(false);
-      };
-      
-      document.head.appendChild(script);
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        resolve(typeof window.OneSignal !== 'undefined');
-      }, 10000);
-    });
-  }
+    return this.deviceInfo;
+  },
 
   async initOneSignal(): Promise<void> {
-    console.log('🔔 [Enhanced] Starting OneSignal initialization...');
+    console.log('🔔 [Enhanced Service] Starting OneSignal initialization...');
     
-    // Return existing initialization promise if already in progress
     if (this.initializationPromise) {
-      console.log('🔔 [Enhanced] Using existing initialization promise');
+      console.log('🔔 [Enhanced Service] Using existing initialization promise');
       return this.initializationPromise;
     }
 
-    // Return immediately if already initialized
     if (this.isInitialized && window.OneSignal) {
-      console.log('🔔 [Enhanced] OneSignal already initialized');
+      console.log('🔔 [Enhanced Service] OneSignal already initialized');
       return Promise.resolve();
     }
 
-    // Check if web push is supported on this device
-    if (!this.deviceInfo.supportsWebPush) {
-      const error = new Error(`Web push not supported: ${this.deviceInfo.limitations.join(', ')}`);
-      console.error('🔔 [Enhanced]', error.message);
-      throw error;
-    }
+    this.initializationPromise = this.performInitialization();
+    return this.initializationPromise;
+  },
 
-    this.initializationPromise = new Promise<void>(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        console.error('🔔 [Enhanced] OneSignal initialization timeout after 30 seconds');
-        reject(new Error('OneSignal initialization timeout'));
-      }, 30000);
+  async performInitialization(): Promise<void> {
+    try {
+      const deviceInfo = this.getDeviceInfo();
+      
+      if (!deviceInfo.supportsWebPush) {
+        console.warn('🔔 [Enhanced Service] Web push not supported on this device');
+        throw new Error('Web push notifications not supported on this device');
+      }
 
-      try {
-        // Ensure OneSignal SDK is loaded
-        const sdkLoaded = await this.ensureOneSignalLoaded();
-        if (!sdkLoaded) {
-          throw new Error('Failed to load OneSignal SDK');
-        }
+      // Step 1: Register unified service worker
+      console.log('🔧 [Enhanced Service] Registering unified service worker...');
+      const swRegistration = await serviceWorkerManager.registerUnifiedServiceWorker();
+      
+      if (!swRegistration) {
+        throw new Error('Failed to register service worker');
+      }
 
-        // Wait for OneSignal to be available
-        await this.waitForOneSignal();
+      // Step 2: Load OneSignal SDK
+      console.log('📦 [Enhanced Service] Loading OneSignal SDK...');
+      const sdkLoaded = await enhancedOneSignalLoader.loadOneSignalSDK();
+      
+      if (!sdkLoaded) {
+        throw new Error('Failed to load OneSignal SDK');
+      }
 
-        console.log('🔔 [Enhanced] OneSignal SDK detected, attempting initialization...');
-        
-        // Use OneSignalDeferred pattern for proper initialization
-        if (!window.OneSignalDeferred) {
-          window.OneSignalDeferred = [];
-        }
+      // Step 3: Wait for OneSignal to be ready
+      console.log('⏳ [Enhanced Service] Waiting for OneSignal to be ready...');
+      await this.waitForOneSignalReady();
 
-        window.OneSignalDeferred.push(async (OneSignal: any) => {
-          console.log('🔔 [Enhanced] OneSignal deferred initialization started');
-          
+      // Step 4: Initialize OneSignal with device-specific config
+      console.log('🔧 [Enhanced Service] Initializing OneSignal with config...');
+      const config = getOneSignalConfig(deviceInfo);
+      
+      // Enhanced config for unified service worker
+      const enhancedConfig = {
+        ...config,
+        serviceWorkerPath: '/unified-sw.js',
+        serviceWorkerUpdaterPath: '/unified-sw.js',
+        serviceWorkerParam: { scope: '/' }
+      };
+
+      console.log('🔧 [Enhanced Service] OneSignal config:', enhancedConfig);
+
+      if (!window.OneSignalDeferred) {
+        window.OneSignalDeferred = [];
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('OneSignal initialization timeout'));
+        }, 15000);
+
+        window.OneSignalDeferred!.push(async function(OneSignal: any) {
           try {
-            const config = getOneSignalConfig(this.deviceInfo);
-            console.log('🔔 [Enhanced] Using config for device:', config);
-
-            await OneSignal.init(config);
-
-            // Wait for OneSignal to be fully ready
-            await this.waitForOneSignalReady(OneSignal);
-
-            console.log('🔔 [Enhanced] OneSignal initialized successfully');
-            this.isInitialized = true;
+            console.log('🔔 [Enhanced Service] OneSignal deferred initialization started');
+            
+            await OneSignal.init(enhancedConfig);
+            
+            console.log('✅ [Enhanced Service] OneSignal initialized successfully');
             clearTimeout(timeout);
             resolve();
-          } catch (initError) {
-            console.error('🔔 [Enhanced] OneSignal deferred init error:', initError);
+          } catch (error) {
+            console.error('❌ [Enhanced Service] OneSignal initialization failed:', error);
             clearTimeout(timeout);
-            reject(initError);
+            reject(error);
           }
         });
+      });
 
-      } catch (error) {
-        console.error('🔔 [Enhanced] OneSignal initialization error:', error);
-        clearTimeout(timeout);
-        reject(error);
+      this.isInitialized = true;
+      console.log('🎉 [Enhanced Service] Enhanced push notification service initialized');
+
+    } catch (error) {
+      console.error('❌ [Enhanced Service] Initialization failed:', error);
+      this.isInitialized = false;
+      throw error;
+    }
+  },
+
+  async waitForOneSignalReady(maxWait: number = 10000): Promise<void> {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < maxWait) {
+      if (typeof window.OneSignal !== 'undefined') {
+        console.log('✅ [Enhanced Service] OneSignal is ready');
+        return;
       }
-    });
-
-    return this.initializationPromise;
-  }
-
-  private async waitForOneSignal(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const maxWaitTime = 15000; // 15 seconds
-      const checkInterval = 500; // 500ms
-      let elapsed = 0;
-
-      const checkOneSignal = () => {
-        if (typeof window.OneSignal !== 'undefined') {
-          resolve();
-          return;
-        }
-
-        elapsed += checkInterval;
-        if (elapsed >= maxWaitTime) {
-          reject(new Error('OneSignal not available after waiting'));
-          return;
-        }
-
-        setTimeout(checkOneSignal, checkInterval);
-      };
-
-      checkOneSignal();
-    });
-  }
-
-  private async waitForOneSignalReady(OneSignal: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const maxWaitTime = 10000; // 10 seconds
-      const checkInterval = 200; // 200ms
-      let elapsed = 0;
-
-      const checkReady = async () => {
-        try {
-          // Try to access OneSignal User API to ensure it's ready
-          if (OneSignal.User && OneSignal.User.PushSubscription) {
-            console.log('🔔 [Enhanced] OneSignal User API is ready');
-            resolve();
-            return;
-          }
-        } catch (error) {
-          console.log('🔔 [Enhanced] OneSignal not fully ready yet:', error);
-        }
-
-        elapsed += checkInterval;
-        if (elapsed >= maxWaitTime) {
-          console.warn('🔔 [Enhanced] OneSignal readiness timeout, proceeding anyway');
-          resolve(); // Don't reject, just proceed
-          return;
-        }
-
-        setTimeout(checkReady, checkInterval);
-      };
-
-      checkReady();
-    });
-  }
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    throw new Error('OneSignal not ready within timeout period');
+  },
 
   async requestPermissionWithUserGesture(): Promise<boolean> {
     try {
-      console.log('🔔 [Enhanced] Starting permission request...');
+      console.log('🔔 [Enhanced Service] Starting permission request...');
       
-      // Check device capabilities first
-      if (!this.deviceInfo.supportsWebPush) {
-        console.log('🔔 [Enhanced] Web push not supported on this device');
-        return false;
-      }
-
-      // Initialize OneSignal first
       await this.initOneSignal();
       
       if (!window.OneSignal) {
-        console.error('🔔 [Enhanced] OneSignal not available after initialization');
+        console.error('🔔 [Enhanced Service] OneSignal not available');
         return false;
       }
 
-      console.log('🔔 [Enhanced] OneSignal available, checking current state...');
+      const deviceInfo = this.getDeviceInfo();
+      console.log('🔔 [Enhanced Service] Device-specific permission request for:', deviceInfo.browser, deviceInfo.isIOS ? 'iOS' : deviceInfo.isAndroid ? 'Android' : 'Desktop');
 
-      // Check current permission status
-      let isSubscribed = false;
+      // Check current status first
+      let currentStatus = false;
       try {
-        isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
-        console.log('🔔 [Enhanced] Current subscription status:', isSubscribed);
+        currentStatus = await window.OneSignal.User.PushSubscription.optedIn;
+        console.log('🔔 [Enhanced Service] Current opt-in status:', currentStatus);
       } catch (error) {
-        console.log('🔔 [Enhanced] Could not check current subscription status:', error);
+        console.log('🔔 [Enhanced Service] Could not check current status:', error);
       }
       
-      if (isSubscribed) {
-        console.log('✅ [Enhanced] User already subscribed');
+      if (currentStatus) {
+        console.log('✅ [Enhanced Service] Already opted in');
         return true;
       }
 
-      // Device-specific permission request strategy
-      if (this.deviceInfo.isIOS) {
-        return await this.requestIOSPermission();
-      } else if (this.deviceInfo.isAndroid) {
-        return await this.requestAndroidPermission();
+      // Device-specific permission strategies
+      if (deviceInfo.isAndroid) {
+        return await this.handleAndroidPermission();
+      } else if (deviceInfo.isIOS) {
+        return await this.handleIOSPermission();
       } else {
-        return await this.requestDesktopPermission();
+        return await this.handleDesktopPermission();
       }
 
     } catch (error) {
-      console.error('❌ [Enhanced] Error requesting permission:', error);
+      console.error('❌ [Enhanced Service] Permission request failed:', error);
+      return false;
+    }
+  },
+
+  async handleAndroidPermission(): Promise<boolean> {
+    console.log('🤖 [Enhanced Service] Handling Android permission...');
+    
+    try {
+      // For Android, try OneSignal opt-in first
+      await window.OneSignal.User.PushSubscription.optIn();
       
-      // Retry logic
-      if (this.retryCount < this.maxRetries) {
-        this.retryCount++;
-        console.log(`🔔 [Enhanced] Retrying permission request (${this.retryCount}/${this.maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-        return this.requestPermissionWithUserGesture();
+      // Wait for subscription to be created
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const isOptedIn = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🤖 [Enhanced Service] Android opt-in result:', isOptedIn);
+      
+      if (isOptedIn) {
+        return true;
+      }
+      
+      // Fallback to native browser permission
+      if ('Notification' in window) {
+        console.log('🤖 [Enhanced Service] Android fallback to native permission...');
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('❌ [Enhanced Service] Android permission failed:', error);
+      return false;
+    }
+  },
+
+  async handleIOSPermission(): Promise<boolean> {
+    console.log('🍎 [Enhanced Service] Handling iOS permission...');
+    
+    const deviceInfo = this.getDeviceInfo();
+    
+    if (!deviceInfo.isPWA) {
+      console.log('⚠️ [Enhanced Service] iOS requires PWA mode for notifications');
+      return false;
+    }
+    
+    try {
+      // iOS requires native permission request
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        console.log('🍎 [Enhanced Service] iOS native permission result:', permission);
+        
+        if (permission === 'granted') {
+          // Try to create OneSignal subscription after native permission
+          try {
+            await window.OneSignal.User.PushSubscription.optIn();
+            await new Promise(resolve => setTimeout(resolve, 3000)); // Longer wait for iOS
+            
+            const isOptedIn = await window.OneSignal.User.PushSubscription.optedIn;
+            console.log('🍎 [Enhanced Service] iOS OneSignal opt-in result:', isOptedIn);
+            
+            return isOptedIn;
+          } catch (error) {
+            console.warn('⚠️ [Enhanced Service] iOS OneSignal opt-in failed, but native permission granted:', error);
+            return true; // Return true since native permission was granted
+          }
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('❌ [Enhanced Service] iOS permission failed:', error);
+      return false;
+    }
+  },
+
+  async handleDesktopPermission(): Promise<boolean> {
+    console.log('🖥️ [Enhanced Service] Handling Desktop permission...');
+    
+    try {
+      // Try OneSignal slidedown first for desktop
+      if (window.OneSignal.Slidedown) {
+        console.log('🖥️ [Enhanced Service] Using OneSignal slidedown...');
+        await window.OneSignal.Slidedown.promptPush();
+        
+        // Wait for user interaction
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const slidedownResult = await window.OneSignal.User.PushSubscription.optedIn;
+        console.log('🖥️ [Enhanced Service] Desktop slidedown result:', slidedownResult);
+        
+        if (slidedownResult) {
+          return true;
+        }
+      }
+      
+      // Fallback to direct opt-in
+      console.log('🖥️ [Enhanced Service] Desktop fallback to direct opt-in...');
+      await window.OneSignal.User.PushSubscription.optIn();
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const directResult = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🖥️ [Enhanced Service] Desktop direct opt-in result:', directResult);
+      
+      return directResult;
+      
+    } catch (error) {
+      console.error('❌ [Enhanced Service] Desktop permission failed:', error);
+      
+      // Final fallback to native browser API
+      if ('Notification' in window) {
+        console.log('🖥️ [Enhanced Service] Desktop final fallback to native...');
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
       }
       
       return false;
     }
-  }
-
-  private async requestIOSPermission(): Promise<boolean> {
-    console.log('🔔 [Enhanced] Using iOS-specific permission request...');
-    
-    try {
-      // For iOS PWA, try OneSignal first
-      if (this.deviceInfo.isPWA) {
-        console.log('🔔 [Enhanced] iOS PWA detected, trying OneSignal opt-in...');
-        await window.OneSignal.User.PushSubscription.optIn();
-        
-        // Wait for subscription to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
-        if (optedIn) {
-          console.log('✅ [Enhanced] iOS PWA OneSignal subscription successful');
-          return true;
-        }
-      }
-      
-      // Fallback to native browser API
-      if ('Notification' in window) {
-        console.log('🔔 [Enhanced] Requesting native browser notification permission for iOS...');
-        const permission = await Notification.requestPermission();
-        console.log('🔔 [Enhanced] iOS native permission result:', permission);
-        
-        if (permission === 'granted') {
-          // Try to get OneSignal subscription after native permission
-          try {
-            await window.OneSignal.User.PushSubscription.optIn();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
-            return optedIn;
-          } catch (error) {
-            console.log('🔔 [Enhanced] OneSignal opt-in failed on iOS, but native permission granted');
-            return true; // Native permission is granted, that's what matters for iOS
-          }
-        }
-      }
-    } catch (error) {
-      console.error('🔔 [Enhanced] iOS permission request failed:', error);
-    }
-    
-    return false;
-  }
-
-  private async requestAndroidPermission(): Promise<boolean> {
-    console.log('🔔 [Enhanced] Using Android-specific permission request...');
-    
-    try {
-      // Try OneSignal direct opt-in first
-      console.log('🔔 [Enhanced] Attempting OneSignal opt-in for Android...');
-      await window.OneSignal.User.PushSubscription.optIn();
-      
-      // Wait for subscription to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const result = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 [Enhanced] Android OneSignal opt-in result:', result);
-      
-      if (result) {
-        return true;
-      }
-    } catch (error) {
-      console.log('🔔 [Enhanced] Android OneSignal opt-in failed, trying native:', error);
-    }
-    
-    // Fallback to native browser notification
-    if ('Notification' in window) {
-      console.log('🔔 [Enhanced] Trying native notification permission for Android...');
-      const permission = await Notification.requestPermission();
-      console.log('🔔 [Enhanced] Android native permission result:', permission);
-      
-      if (permission === 'granted') {
-        // Try OneSignal again after native permission
-        try {
-          await window.OneSignal.User.PushSubscription.optIn();
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
-          return optedIn;
-        } catch (error) {
-          console.log('🔔 [Enhanced] OneSignal still failed, but native permission granted');
-          return true;
-        }
-      }
-    }
-    
-    return false;
-  }
-
-  private async requestDesktopPermission(): Promise<boolean> {
-    console.log('🔔 [Enhanced] Using desktop-specific permission request...');
-    
-    try {
-      // Use OneSignal Slidedown for desktop
-      console.log('🔔 [Enhanced] Attempting OneSignal slidedown for desktop...');
-      await window.OneSignal.Slidedown.promptPush();
-      console.log('🔔 [Enhanced] Desktop slidedown permission prompt triggered');
-      
-      // Wait for user interaction
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      const result = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 [Enhanced] Desktop slidedown result:', result);
-      
-      if (result) {
-        return true;
-      }
-    } catch (error) {
-      console.log('🔔 [Enhanced] Desktop slidedown failed, trying direct opt-in:', error);
-    }
-    
-    // Fallback to direct opt-in
-    try {
-      console.log('🔔 [Enhanced] Attempting direct opt-in for desktop...');
-      await window.OneSignal.User.PushSubscription.optIn();
-      
-      // Wait for subscription to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const result = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 [Enhanced] Desktop direct opt-in result:', result);
-      return result;
-    } catch (error) {
-      console.log('🔔 [Enhanced] Desktop direct opt-in failed:', error);
-    }
-    
-    // Final fallback to native browser API
-    if ('Notification' in window) {
-      console.log('🔔 [Enhanced] Trying native notification permission for desktop...');
-      const permission = await Notification.requestPermission();
-      console.log('🔔 [Enhanced] Desktop native permission result:', permission);
-      return permission === 'granted';
-    }
-    
-    return false;
-  }
+  },
 
   async getSubscription(): Promise<string | null> {
     try {
       if (!this.isInitialized || !window.OneSignal) {
-        console.log('🔔 [Enhanced] OneSignal not initialized for subscription check');
+        console.log('🔔 [Enhanced Service] OneSignal not initialized');
         return null;
       }
 
-      const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 [Enhanced] Subscription check - opted in:', isSubscribed);
+      const isOptedIn = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 [Enhanced Service] Subscription check - opted in:', isOptedIn);
       
-      if (isSubscribed) {
+      if (isOptedIn) {
         const subscriptionId = await window.OneSignal.User.PushSubscription.id;
-        console.log('🔔 [Enhanced] OneSignal subscription ID:', subscriptionId ? 'found' : 'null');
+        console.log('🔔 [Enhanced Service] Subscription ID:', subscriptionId ? 'found' : 'null');
         return subscriptionId;
       }
       
       return null;
     } catch (error) {
-      console.error('❌ [Enhanced] Error getting subscription:', error);
+      console.error('❌ [Enhanced Service] Error getting subscription:', error);
       return null;
     }
-  }
+  },
 
   async isSubscriptionValid(): Promise<boolean> {
     try {
       if (!this.isInitialized || !window.OneSignal) {
-        console.log('🔔 [Enhanced] OneSignal not ready for subscription validation');
         return false;
       }
 
@@ -425,17 +325,17 @@ export class EnhancedPushNotificationService {
       const subscriptionId = await window.OneSignal.User.PushSubscription.id;
       
       const isValid = isOptedIn && !!subscriptionId;
-      console.log('🔔 [Enhanced] Subscription validity check:', { isOptedIn, hasId: !!subscriptionId, isValid });
+      console.log('🔔 [Enhanced Service] Subscription validity:', { isOptedIn, hasId: !!subscriptionId, isValid });
       return isValid;
     } catch (error) {
-      console.error('❌ [Enhanced] Error checking subscription validity:', error);
+      console.error('❌ [Enhanced Service] Error checking subscription validity:', error);
       return false;
     }
-  }
+  },
 
   async getSubscriptionStatus(userId: number): Promise<{ isSubscribed: boolean; hasValidToken: boolean }> {
     try {
-      console.log('🔔 [Enhanced] Getting subscription status for user:', userId);
+      console.log('🔔 [Enhanced Service] Getting subscription status for user:', userId);
       
       const subscriptionId = await this.getSubscription();
       const isValid = await this.isSubscriptionValid();
@@ -445,56 +345,65 @@ export class EnhancedPushNotificationService {
         hasValidToken: isValid
       };
       
-      console.log('🔔 [Enhanced] Subscription status:', status);
+      console.log('🔔 [Enhanced Service] Subscription status:', status);
       return status;
     } catch (error) {
-      console.error('❌ [Enhanced] Error getting subscription status:', error);
+      console.error('❌ [Enhanced Service] Error getting subscription status:', error);
       return { isSubscribed: false, hasValidToken: false };
     }
-  }
+  },
 
   async subscribe(userId: number): Promise<boolean> {
     try {
-      console.log('🔔 [Enhanced] Starting subscription process for user:', userId);
+      console.log('🔔 [Enhanced Service] Starting subscription process for user:', userId);
       
       const success = await this.requestPermissionWithUserGesture();
       
       if (success) {
-        // Wait longer for subscription to be fully established
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait for subscription to be fully created
+        let subscriptionId = null;
+        let attempts = 0;
+        const maxAttempts = 8; // Increased attempts
         
-        const subscriptionId = await this.getSubscription();
-        console.log('🔔 [Enhanced] Subscription ID obtained:', subscriptionId ? 'success' : 'failed');
+        while (!subscriptionId && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1))); // Progressive delay
+          subscriptionId = await this.getSubscription();
+          attempts++;
+          console.log(`🔔 [Enhanced Service] Subscription attempt ${attempts}: ${subscriptionId ? 'found' : 'not found'}`);
+        }
         
         if (subscriptionId) {
-          console.log('✅ [Enhanced] Subscription process completed successfully');
+          console.log('✅ [Enhanced Service] Subscription process completed successfully');
           return true;
         } else {
-          console.warn('⚠️ [Enhanced] Permission granted but no subscription ID found');
-          // Try one more time after a delay
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          const retrySubscriptionId = await this.getSubscription();
-          return !!retrySubscriptionId;
+          console.warn('⚠️ [Enhanced Service] Permission granted but no subscription ID after retries');
+          return false;
         }
       }
       
       return false;
     } catch (error) {
-      console.error('❌ [Enhanced] Error subscribing:', error);
+      console.error('❌ [Enhanced Service] Error subscribing:', error);
       return false;
     }
-  }
+  },
 
   isSupported(): boolean {
-    return this.deviceInfo.supportsWebPush;
-  }
+    const deviceInfo = this.getDeviceInfo();
+    return deviceInfo.supportsWebPush;
+  },
 
-  reset(): void {
-    this.isInitialized = false;
-    this.initializationPromise = null;
-    this.retryCount = 0;
+  getInitializationStatus(): { 
+    isInitialized: boolean; 
+    sdkLoaded: boolean; 
+    swRegistered: boolean;
+    deviceSupported: boolean;
+  } {
+    return {
+      isInitialized: this.isInitialized,
+      sdkLoaded: enhancedOneSignalLoader.isSDKLoaded(),
+      swRegistered: serviceWorkerManager.isServiceWorkerRegistered(),
+      deviceSupported: this.getDeviceInfo().supportsWebPush
+    };
   }
-}
-
-// Export singleton instance
-export const enhancedPushNotificationService = new EnhancedPushNotificationService();
+};

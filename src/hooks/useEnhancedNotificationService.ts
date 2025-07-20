@@ -56,12 +56,14 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
         await enhancedPushNotificationService.initOneSignal();
         
         const subscriptionStatus = await enhancedPushNotificationService.getSubscriptionStatus(currentUser.id);
+        const initStatus = enhancedPushNotificationService.getInitializationStatus();
         
         console.log('🔔 [Enhanced Hook] Subscription status:', subscriptionStatus);
+        console.log('🔔 [Enhanced Hook] Initialization status:', initStatus);
         
         setPermissionState(prev => ({
           ...prev,
-          oneSignalReady: enhancedPushNotificationService['isInitialized'],
+          oneSignalReady: initStatus.isInitialized,
           oneSignalSubscribed: subscriptionStatus.hasValidToken,
           supported: true,
           deviceInfo
@@ -204,9 +206,6 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
         await supabase.rpc('set_session_context', { session_token: sessionToken });
       }
       
-      // Initialize OneSignal first
-      await enhancedPushNotificationService.initOneSignal();
-      
       // Request permission using enhanced service
       console.log('🔔 [Enhanced Hook] Requesting enhanced subscription...');
       const success = await enhancedPushNotificationService.subscribe(currentUser.id);
@@ -214,24 +213,19 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
       console.log('🔔 [Enhanced Hook] Permission request result:', success);
       
       if (success) {
-        // Wait a moment for OneSignal to process the subscription
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
         // Get the subscription ID with retries
         let subscriptionId = null;
         let attempts = 0;
-        const maxAttempts = 5;
+        const maxAttempts = 6;
         
         while (!subscriptionId && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1)));
           subscriptionId = await enhancedPushNotificationService.getSubscription();
-          if (!subscriptionId) {
-            console.log(`🔔 [Enhanced Hook] Attempt ${attempts + 1}: No subscription ID yet, waiting...`);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            attempts++;
-          }
+          attempts++;
+          console.log(`🔔 [Enhanced Hook] Attempt ${attempts}: ${subscriptionId ? 'found' : 'not found'}`);
         }
         
-        console.log('🔔 [Enhanced Hook] Obtained subscription ID:', subscriptionId);
+        console.log('🔔 [Enhanced Hook] Final subscription ID:', subscriptionId);
         
         if (subscriptionId) {
           // Save the subscription ID to the database
