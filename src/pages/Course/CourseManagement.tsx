@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
+import { TetherlandService } from '@/lib/tetherlandService';
 
 interface Course {
   id: string;
@@ -18,6 +19,8 @@ interface Course {
   description: string | null;
   slug: string;
   price: number;
+  use_dollar_price: boolean;
+  usd_price: number | null;
   is_active: boolean;
   redirect_url: string | null;
   spotplayer_course_id: string | null;
@@ -43,6 +46,8 @@ const CourseManagement: React.FC = () => {
     description: '',
     slug: '',
     price: 0,
+    use_dollar_price: false,
+    usd_price: 0,
     redirect_url: '',
     spotplayer_course_id: '',
     is_spotplayer_enabled: false,
@@ -57,12 +62,54 @@ const CourseManagement: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [calculatedRialPrice, setCalculatedRialPrice] = useState<number | null>(null);
+  const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
 
   useEffect(() => {
     if (isEdit) {
       fetchCourse();
     }
   }, [courseId]);
+
+  // Fetch exchange rate and calculate Rial price when USD price changes
+  useEffect(() => {
+    if (courseForm.use_dollar_price && courseForm.usd_price && courseForm.usd_price > 0) {
+      fetchExchangeRate(courseForm.usd_price);
+    } else {
+      setExchangeRate(null);
+      setCalculatedRialPrice(null);
+    }
+  }, [courseForm.use_dollar_price, courseForm.usd_price]);
+
+  const fetchExchangeRate = async (usdAmount: number) => {
+    setLoadingExchangeRate(true);
+    try {
+      const rialAmount = await TetherlandService.convertUSDToIRR(usdAmount);
+      const rate = await TetherlandService.getUSDTToIRRRate();
+      
+      setExchangeRate(rate);
+      setCalculatedRialPrice(rialAmount);
+      
+      // Update the price field with calculated Rial amount
+      setCourseForm(prev => ({ ...prev, price: rialAmount }));
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت نرخ ارز",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingExchangeRate(false);
+    }
+  };
+
+  const refreshExchangeRate = () => {
+    if (courseForm.usd_price && courseForm.usd_price > 0) {
+      fetchExchangeRate(courseForm.usd_price);
+    }
+  };
 
   const fetchCourse = async () => {
     setLoading(true);
@@ -81,6 +128,8 @@ const CourseManagement: React.FC = () => {
           description: data.description || '',
           slug: data.slug,
           price: data.price,
+          use_dollar_price: data.use_dollar_price || false,
+          usd_price: data.usd_price || 0,
           redirect_url: data.redirect_url || '',
           spotplayer_course_id: data.spotplayer_course_id || '',
           is_spotplayer_enabled: data.is_spotplayer_enabled || false,
@@ -92,6 +141,11 @@ const CourseManagement: React.FC = () => {
           enable_course_access: data.enable_course_access || false,
           is_active: data.is_active
         });
+
+        // If editing a dollar-priced course, fetch the exchange rate
+        if (data.use_dollar_price && data.usd_price) {
+          fetchExchangeRate(data.usd_price);
+        }
       }
     } catch (error) {
       console.error('Error fetching course:', error);
@@ -108,11 +162,30 @@ const CourseManagement: React.FC = () => {
   const handleSave = async () => {
     setProcessing(true);
     try {
+      const courseData = {
+        title: courseForm.title,
+        description: courseForm.description,
+        slug: courseForm.slug,
+        price: courseForm.price,
+        use_dollar_price: courseForm.use_dollar_price,
+        usd_price: courseForm.use_dollar_price ? courseForm.usd_price : null,
+        redirect_url: courseForm.redirect_url,
+        spotplayer_course_id: courseForm.spotplayer_course_id,
+        is_spotplayer_enabled: courseForm.is_spotplayer_enabled,
+        create_test_license: courseForm.create_test_license,
+        woocommerce_create_access: courseForm.woocommerce_create_access,
+        support_link: courseForm.support_link,
+        telegram_channel_link: courseForm.telegram_channel_link,
+        gifts_link: courseForm.gifts_link,
+        enable_course_access: courseForm.enable_course_access,
+        is_active: courseForm.is_active
+      };
+
       if (isEdit) {
         // Update existing course
         const { error } = await supabase
           .from('courses')
-          .update(courseForm)
+          .update(courseData)
           .eq('id', courseId);
         if (error) throw error;
         toast({ title: "دوره بروزرسانی شد" });
@@ -120,7 +193,7 @@ const CourseManagement: React.FC = () => {
         // Create new course
         const { error } = await supabase
           .from('courses')
-          .insert(courseForm);
+          .insert(courseData);
         if (error) throw error;
         toast({ title: "دوره جدید ایجاد شد" });
       }
@@ -221,27 +294,98 @@ const CourseManagement: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">قیمت (تومان)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={courseForm.price}
-                  onChange={(e) => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
-                  placeholder="0"
-                />
-              </div>
+            {/* Pricing Section */}
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                تنظیمات قیمت‌گذاری
+              </h3>
               
-              <div className="space-y-2">
-                <Label htmlFor="redirect_url">لینک دسترسی</Label>
-                <Input
-                  id="redirect_url"
-                  value={courseForm.redirect_url}
-                  onChange={(e) => setCourseForm(prev => ({ ...prev, redirect_url: e.target.value }))}
-                  placeholder="https://..."
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="use_dollar_price"
+                  checked={courseForm.use_dollar_price}
+                  onCheckedChange={(checked) => {
+                    setCourseForm(prev => ({ ...prev, use_dollar_price: checked }));
+                    if (!checked) {
+                      setExchangeRate(null);
+                      setCalculatedRialPrice(null);
+                    }
+                  }}
                 />
+                <Label htmlFor="use_dollar_price">استفاده از قیمت دلاری</Label>
               </div>
+
+              {courseForm.use_dollar_price ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="usd_price">قیمت (دلار آمریکا) *</Label>
+                    <Input
+                      id="usd_price"
+                      type="number"
+                      step="0.01"
+                      value={courseForm.usd_price}
+                      onChange={(e) => setCourseForm(prev => ({ ...prev, usd_price: parseFloat(e.target.value) || 0 }))}
+                      placeholder="49.99"
+                      required={courseForm.use_dollar_price}
+                    />
+                  </div>
+
+                  {exchangeRate && calculatedRialPrice && (
+                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-blue-800 dark:text-blue-400">قیمت محاسبه شده</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={refreshExchangeRate}
+                          disabled={loadingExchangeRate}
+                        >
+                          <RefreshCw className={`h-4 w-4 ${loadingExchangeRate ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <p className="text-muted-foreground">
+                          نرخ تتر به ریال: {TetherlandService.formatIRRAmount(exchangeRate)} ریال
+                        </p>
+                        <p className="font-medium text-lg text-blue-700 dark:text-blue-300">
+                          قیمت نهایی: {TetherlandService.formatIRRAmount(calculatedRialPrice)} ریال
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {loadingExchangeRate && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      در حال دریافت نرخ ارز...
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="price">قیمت (تومان) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={courseForm.price}
+                    onChange={(e) => setCourseForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                    placeholder="2500000"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="redirect_url">لینک دسترسی</Label>
+              <Input
+                id="redirect_url"
+                value={courseForm.redirect_url}
+                onChange={(e) => setCourseForm(prev => ({ ...prev, redirect_url: e.target.value }))}
+                placeholder="https://..."
+              />
             </div>
 
             {/* Course Status */}
@@ -386,6 +530,8 @@ const CourseManagement: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Course Links */}
             {courseForm.is_active && (
               <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                 <h3 className="text-lg font-semibold">لینک‌های دوره</h3>
