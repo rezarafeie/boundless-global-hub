@@ -1,6 +1,8 @@
+
 declare global {
   interface Window {
     OneSignal?: any;
+    OneSignalDeferred?: any[];
   }
 }
 
@@ -20,10 +22,10 @@ export const pushNotificationService = {
     // Return immediately if already initialized
     if (this.isInitialized && window.OneSignal) {
       console.log('🔔 [Android] OneSignal already initialized');
-      return Promise.resolve<void>();
+      return Promise.resolve();
     }
 
-    this.initializationPromise = new Promise((resolve, reject) => {
+    this.initializationPromise = new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         console.error('🔔 [Android] OneSignal initialization timeout');
         reject(new Error('OneSignal initialization timeout'));
@@ -88,24 +90,55 @@ export const pushNotificationService = {
         return true;
       }
 
-      // Request permission with user gesture
+      // Request permission using OneSignal v16 API
       console.log('🔔 [Android] Requesting OneSignal permission...');
       
-      // Use slidedown prompt for better mobile UX
-      await window.OneSignal.Slidedown.promptPush();
-      
-      // Wait for user response
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Check final subscription status
-      const finalSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 [Android] Final subscription state:', finalSubscriptionState);
-      
-      if (finalSubscriptionState) {
-        console.log('✅ [Android] Permission granted and subscribed');
-        return true;
-      } else {
-        console.log('❌ [Android] Permission denied or subscription failed');
+      try {
+        // Use the correct OneSignal v16 API method
+        await window.OneSignal.User.PushSubscription.optIn();
+        console.log('🔔 [Android] Permission request sent');
+        
+        // Wait a bit for the permission dialog to appear and be processed
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check if permission was granted
+        const finalSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
+        console.log('🔔 [Android] Final subscription state:', finalSubscriptionState);
+        
+        if (finalSubscriptionState) {
+          console.log('✅ [Android] Permission granted and subscribed');
+          return true;
+        } else {
+          console.log('❌ [Android] Permission denied or subscription failed');
+          
+          // Try fallback method with native browser API
+          if ('Notification' in window) {
+            console.log('🔔 [Android] Trying fallback browser notification permission...');
+            const permission = await Notification.requestPermission();
+            console.log('🔔 [Android] Browser permission result:', permission);
+            
+            if (permission === 'granted') {
+              // Try OneSignal subscription again
+              await window.OneSignal.User.PushSubscription.optIn();
+              const retryResult = await window.OneSignal.User.PushSubscription.optedIn;
+              console.log('🔔 [Android] Retry subscription result:', retryResult);
+              return retryResult;
+            }
+          }
+          
+          return false;
+        }
+      } catch (permissionError) {
+        console.error('🔔 [Android] Permission request error:', permissionError);
+        
+        // Fallback to browser native permission
+        if ('Notification' in window) {
+          console.log('🔔 [Android] Fallback to native browser permission...');
+          const permission = await Notification.requestPermission();
+          console.log('🔔 [Android] Native permission result:', permission);
+          return permission === 'granted';
+        }
+        
         return false;
       }
     } catch (error) {
@@ -190,7 +223,6 @@ export const pushNotificationService = {
         const subscriptionId = await this.getSubscription();
         if (subscriptionId) {
           console.log('✅ [Android] Subscription process completed successfully');
-          // Note: Database saving should be handled by the calling code
         } else {
           console.warn('⚠️ [Android] Permission granted but no subscription ID found');
         }

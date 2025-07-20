@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, X, Smartphone, Loader2 } from 'lucide-react';
+import { Bell, X, Smartphone, Loader2, AlertCircle } from 'lucide-react';
 
 interface NotificationPermissionBannerProps {
   onRequestPermission: () => Promise<boolean>;
@@ -15,25 +15,28 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
 }) => {
   console.log('🔔 [Android] NotificationPermissionBanner rendered');
   const [isLoading, setIsLoading] = useState(false);
+  const [showError, setShowError] = useState(false);
   
   const handleEnableNotifications = async () => {
     console.log('🔔 [Android] Banner activate button clicked - IMMEDIATE LOG');
     setIsLoading(true);
+    setShowError(false);
     
     try {
       const granted = await onRequestPermission();
       console.log('🔔 [Android] Permission request result from banner:', granted);
       
-      // Only hide banner if permission was successfully granted
       if (granted) {
         console.log('🔔 [Android] Permission granted, hiding banner');
         onDismiss();
       } else {
-        console.log('🔔 [Android] Permission denied, keeping banner visible');
+        console.log('🔔 [Android] Permission denied, showing error state');
+        setShowError(true);
         // Keep banner visible so user can try again
       }
     } catch (error) {
       console.error('🔔 [Android] Error in banner permission request:', error);
+      setShowError(true);
       // Keep banner visible on error
     } finally {
       setIsLoading(false);
@@ -49,11 +52,17 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
               <div className="flex items-center gap-1">
                 <Bell className="h-3.5 w-3.5 text-primary" />
                 <Smartphone className="h-3 w-3 text-accent" />
+                {showError && <AlertCircle className="h-3 w-3 text-destructive" />}
               </div>
               <div>
                 <p className="text-xs font-medium text-foreground">فعال‌سازی اعلان‌ها</p>
                 <p className="text-xs text-muted-foreground">
-                  {pushSupported ? 'برای دریافت پیام‌های جدید' : 'نیاز به تعامل کاربر'}
+                  {showError 
+                    ? 'خطا در فعال‌سازی - دوباره تلاش کنید'
+                    : pushSupported 
+                      ? 'برای دریافت پیام‌های جدید' 
+                      : 'نیاز به تعامل کاربر'
+                  }
                 </p>
               </div>
             </div>
@@ -63,13 +72,19 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
                 size="sm"
                 onClick={handleEnableNotifications}
                 disabled={isLoading}
-                className="h-7 px-3 text-xs bg-primary hover:bg-primary/90"
+                className={`h-7 px-3 text-xs ${
+                  showError 
+                    ? 'bg-destructive hover:bg-destructive/90' 
+                    : 'bg-primary hover:bg-primary/90'
+                }`}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     در حال فعال‌سازی...
                   </>
+                ) : showError ? (
+                  'تلاش مجدد'
                 ) : (
                   'فعال'
                 )}
