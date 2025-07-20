@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,12 +8,23 @@ import { messengerService } from '@/lib/messengerService';
 
 const Auth: React.FC = () => {
   const { user, isAuthenticated, login } = useAuth();
+  const [searchParams] = useSearchParams();
   const [googleUserData, setGoogleUserData] = useState<{
     email?: string;
     firstName?: string;
     lastName?: string;
   } | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [linkingEmail, setLinkingEmail] = useState<string | null>(null);
+
+  // Check for URL linking parameter
+  useEffect(() => {
+    const linkParam = searchParams.get('link');
+    if (linkParam) {
+      console.log('🔗 Found linking parameter:', linkParam);
+      setLinkingEmail(linkParam);
+    }
+  }, [searchParams]);
 
   // Check for Google auth session on mount
   useEffect(() => {
@@ -42,10 +53,20 @@ const Auth: React.FC = () => {
             login(existingUser, sessionToken);
           }
         } else {
-          console.log('📝 User needs to complete registration');
-          // User doesn't exist, prefill registration form
+          console.log('📝 User needs linking or registration');
+          
+          // If we don't have a linking parameter in URL, redirect to linking flow
+          if (!linkingEmail && session.user.email) {
+            console.log('🔗 Redirecting to linking flow for unlinked Google account');
+            window.location.href = `/auth?link=${encodeURIComponent(session.user.email)}`;
+            return;
+          }
+          
+          // If we have a linking email from URL, use that for linking flow
+          const emailToUse = linkingEmail || session.user.email || '';
+          
           setGoogleUserData({
-            email: session.user.email || '',
+            email: emailToUse,
             firstName: session.user.user_metadata?.given_name || '',
             lastName: session.user.user_metadata?.family_name || ''
           });
@@ -55,7 +76,7 @@ const Auth: React.FC = () => {
     };
 
     checkGoogleAuth();
-  }, [login]);
+  }, [login, linkingEmail]);
 
   // If user is already authenticated, redirect to home
   if (isAuthenticated && user) {
@@ -82,6 +103,7 @@ const Auth: React.FC = () => {
         <UnifiedMessengerAuth 
           onAuthenticated={handleAuthenticated} 
           prefillData={googleUserData || undefined}
+          linkingEmail={linkingEmail}
         />
       </div>
     </div>

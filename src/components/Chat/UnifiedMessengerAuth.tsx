@@ -23,11 +23,12 @@ interface UnifiedMessengerAuthProps {
     firstName?: string;
     lastName?: string;
   };
+  linkingEmail?: string | null;
 }
 
-type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link';
+type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking';
 
-const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData }) => {
+const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail }) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -47,6 +48,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [googleLoading, setGoogleLoading] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [isGoogleLinking, setIsGoogleLinking] = useState(false);
+
+  // Initialize linking flow if linkingEmail is provided
+  useEffect(() => {
+    if (linkingEmail) {
+      console.log('🔗 Initializing linking flow for:', linkingEmail);
+      setEmail(linkingEmail);
+      setCurrentStep('linking');
+    }
+  }, [linkingEmail]);
 
   const validateUsername = (value: string) => {
     const regex = /^[a-z0-9_]{3,20}$/;
@@ -118,6 +128,47 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     try {
       // Check if user exists with separate country code and phone
       const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
+      
+      // Special handling for linking flow from URL parameter
+      if (currentStep === 'linking' && linkingEmail) {
+        if (user) {
+          console.log('🔗 Found existing user for linking:', user);
+          setExistingUser(user);
+          setIsGoogleLinking(true);
+          
+          // Send OTP for linking
+          const { data, error } = await supabase.functions.invoke('send-otp', {
+            body: {
+              phone: phoneNumber,
+              countryCode: countryCode
+            }
+          });
+
+          if (error) {
+            console.error('Edge function error:', error);
+            throw error;
+          }
+
+          if (data.success) {
+            setCurrentStep('otp-link');
+            toast({
+              title: 'کد تأیید ارسال شد',
+              description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
+            });
+          } else {
+            throw new Error(data.error || 'خطا در ارسال کد تأیید');
+          }
+        } else {
+          // Phone number doesn't exist, need to create new user with linking data
+          setIsLogin(false);
+          setIsGoogleLinking(true);
+          setCurrentStep('password');
+        }
+        setLoading(false);
+        return;
+      }
+      
+      // Regular flow (not linking)
       if (user) {
         setExistingUser(user);
         
@@ -261,14 +312,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
     setLoading(true);
     try {
-      // Register user with separate country code
+      // Register user with separate country code, include linking email if available
+      const emailToUse = linkingEmail || email.trim();
       const result = await messengerService.registerWithPassword({
         name: `${firstName.trim()} ${lastName.trim()}`,
         phone: phoneNumber,
         countryCode: countryCode,
         username: username,
         password: password,
-        email: email.trim(),
+        email: emailToUse,
         isBoundlessStudent: isBoundlessStudent,
         firstName: firstName.trim(),
         lastName: lastName.trim()
@@ -316,14 +368,18 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
       if (data && data.success && existingUser) {
         // OTP verified, now link Google email to the existing account
+        const emailToLink = linkingEmail || prefillData?.email;
+        const firstNameToLink = prefillData?.firstName || existingUser.first_name;
+        const lastNameToLink = prefillData?.lastName || existingUser.last_name;
+        
         const { error: updateError } = await supabase
           .from('chat_users')
           .update({
-            email: prefillData?.email,
-            first_name: prefillData?.firstName || existingUser.first_name,
-            last_name: prefillData?.lastName || existingUser.last_name,
-            full_name: prefillData?.firstName && prefillData?.lastName 
-              ? `${prefillData.firstName} ${prefillData.lastName}`
+            email: emailToLink,
+            first_name: firstNameToLink,
+            last_name: lastNameToLink,
+            full_name: firstNameToLink && lastNameToLink 
+              ? `${firstNameToLink} ${lastNameToLink}`
               : existingUser.full_name
           })
           .eq('id', existingUser.id);
@@ -338,11 +394,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         // Update the user object with new data
         const updatedUser = {
           ...existingUser,
-          email: prefillData?.email || existingUser.email,
-          first_name: prefillData?.firstName || existingUser.first_name,
-          last_name: prefillData?.lastName || existingUser.last_name,
-          full_name: prefillData?.firstName && prefillData?.lastName 
-            ? `${prefillData.firstName} ${prefillData.lastName}`
+          email: emailToLink || existingUser.email,
+          first_name: firstNameToLink,
+          last_name: lastNameToLink,
+          full_name: firstNameToLink && lastNameToLink 
+            ? `${firstNameToLink} ${lastNameToLink}`
             : existingUser.full_name
         };
 
@@ -449,6 +505,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'username': return 'انتخاب نام کاربری';
       case 'pending': return 'در انتظار تایید';
       case 'otp-link': return 'ربط حساب Google';
+      case 'linking': return 'ربط حساب Google';
     }
   };
 
@@ -460,6 +517,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
       case 'otp-link': return 'کد تأیید برای ربط حساب Google ارسال شد';
+      case 'linking': return 'برای ربط حساب Google، شماره تلفن خود را وارد کنید';
     }
   };
 
@@ -816,6 +874,75 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             >
               برگشت
             </Button>
+          </div>
+        )}
+
+        {currentStep === 'linking' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2 mb-6">
+              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-500" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+              </div>
+              <p className="text-lg font-medium text-foreground">
+                ربط حساب Google
+              </p>
+              <p className="text-sm text-muted-foreground">
+                حساب Google شما هنوز به شماره تلفنی ربط نشده است
+              </p>
+              {linkingEmail && (
+                <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                  Gmail: {linkingEmail}
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex border-0 border-b border-border" dir="ltr">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getCountryCodeOptions().map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.flag} {country.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                      cleanValue = cleanValue.replace(/^[0+]+/, '');
+                      setPhoneNumber(cleanValue);
+                    }}
+                    placeholder="شماره تلفن"
+                    required
+                    dir="ltr"
+                    className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال بررسی...
+                  </>
+                ) : (
+                  'ربط حساب'
+                )}
+              </Button>
+            </form>
           </div>
         )}
       </CardContent>
