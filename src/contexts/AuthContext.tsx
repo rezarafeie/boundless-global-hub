@@ -82,10 +82,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (storedToken && storedUser) {
           try {
             const parsedUser = JSON.parse(decodeURIComponent(storedUser));
-            // Validate the session with the server
-            const isValid = await messengerService.validateSession(storedToken);
-            if (isValid) {
-              setUser(parsedUser);
+            
+            // Validate session using unified auth service
+            const validatedUser = await unifiedAuthService.validateSession(storedToken);
+            
+            if (validatedUser) {
+              setUser(validatedUser);
               setToken(storedToken);
             } else {
               // Clear invalid session

@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 
 import React, { useState } from 'react';
@@ -283,252 +282,248 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
   if (currentStep === 'pending') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-0 shadow-none bg-background">
-          <CardHeader className="text-center pb-8">
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-10 h-10 text-amber-500" />
+      <Card className="w-full max-w-md border-0 shadow-none bg-background">
+        <CardHeader className="text-center pb-8">
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-10 h-10 text-amber-500" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>
+          <CardDescription className="text-muted-foreground mt-2">{getStepDescription()}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Button 
+            onClick={checkApprovalStatus}
+            disabled={loading}
+            className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                در حال بررسی...
+              </>
+            ) : (
+              'بررسی وضعیت'
+            )}
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => setCurrentStep('phone')}
+            className="w-full h-12 rounded-full text-muted-foreground"
+          >
+            برگشت
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="w-full max-w-md border-0 shadow-none bg-background">
+      <CardHeader className="text-center pb-8">
+        <div className="flex justify-center mb-6">
+          <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+            <User className="w-10 h-10 text-primary-foreground" />
+          </div>
+        </div>
+        <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>
+        <CardDescription className="text-muted-foreground mt-2">{getStepDescription()}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {currentStep === 'phone' && (
+          <form onSubmit={handlePhoneSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex border-0 border-b border-border" dir="ltr">
+                <Select value={countryCode} onValueChange={setCountryCode}>
+                  <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getCountryCodeOptions().map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.flag} {country.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                    // Remove leading zeros and plus signs
+                    cleanValue = cleanValue.replace(/^[0+]+/, '');
+                    setPhoneNumber(cleanValue);
+                  }}
+                  placeholder="شماره تلفن"
+                  required
+                  dir="ltr"
+                  className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"
+                />
               </div>
             </div>
-            <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>
-            <CardDescription className="text-muted-foreground mt-2">{getStepDescription()}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Button 
-              onClick={checkApprovalStatus}
-              disabled={loading}
-              className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal"
-            >
+            <Button type="submit" className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal mt-8" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   در حال بررسی...
                 </>
               ) : (
-                'بررسی وضعیت'
+                'ادامه'
               )}
             </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => setCurrentStep('phone')}
-              className="w-full h-12 rounded-full text-muted-foreground"
-            >
-              برگشت
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+          </form>
+        )}
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-0 shadow-none bg-background">
-        <CardHeader className="text-center pb-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
-              <User className="w-10 h-10 text-primary-foreground" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>
-          <CardDescription className="text-muted-foreground mt-2">{getStepDescription()}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {currentStep === 'phone' && (
-            <form onSubmit={handlePhoneSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex border-0 border-b border-border" dir="ltr">
-                  <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getCountryCodeOptions().map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          {country.flag} {country.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => {
-                      let cleanValue = e.target.value.replace(/[^0-9]/g, '');
-                      // Remove leading zeros and plus signs
-                      cleanValue = cleanValue.replace(/^[0+]+/, '');
-                      setPhoneNumber(cleanValue);
-                    }}
-                    placeholder="شماره تلفن"
-                    required
-                    dir="ltr"
-                    className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"
-                  />
-                </div>
+        {currentStep === 'password' && (
+          <form onSubmit={handlePasswordSubmit} className="space-y-6">
+            {isLogin && existingUser && (
+              <div className="text-center mb-6">
+                <p className="text-sm text-muted-foreground">
+                  ورود برای: <span className="font-medium text-foreground">{existingUser.name}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">{countryCode}{phoneNumber}</p>
               </div>
-              <Button type="submit" className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal mt-8" disabled={loading}>
+            )}
+            
+            <div className="space-y-2">
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={isLogin ? "رمز عبور" : "رمز عبور جدید"}
+                required
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+            </div>
+            
+            <div className="flex gap-3 mt-8">
+              <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    در حال بررسی...
+                    {isLogin ? 'در حال ورود...' : 'ادامه'}
                   </>
                 ) : (
-                  'ادامه'
+                  isLogin ? 'ورود' : 'ادامه'
                 )}
               </Button>
-            </form>
-          )}
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setCurrentStep('phone')}
+                className="px-4 h-12 rounded-full text-muted-foreground"
+              >
+                برگشت
+              </Button>
+            </div>
+          </form>
+        )}
 
-          {currentStep === 'password' && (
-            <form onSubmit={handlePasswordSubmit} className="space-y-6">
-              {isLogin && existingUser && (
-                <div className="text-center mb-6">
-                  <p className="text-sm text-muted-foreground">
-                    ورود برای: <span className="font-medium text-foreground">{existingUser.name}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">{countryCode}{phoneNumber}</p>
-                </div>
-              )}
-              
+        {currentStep === 'name' && (
+          <form onSubmit={handleNameSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={isLogin ? "رمز عبور" : "رمز عبور جدید"}
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="نام"
                   required
+                  dir="rtl"
                   className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
                 />
               </div>
-              
-              <div className="flex gap-3 mt-8">
-                <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {isLogin ? 'در حال ورود...' : 'ادامه'}
-                    </>
-                  ) : (
-                    isLogin ? 'ورود' : 'ادامه'
-                  )}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => setCurrentStep('phone')}
-                  className="px-4 h-12 rounded-full text-muted-foreground"
-                >
-                  برگشت
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {currentStep === 'name' && (
-            <form onSubmit={handleNameSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Input
-                    id="firstName"
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="نام"
-                    required
-                    dir="rtl"
-                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    id="lastName"
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="نام خانوادگی"
-                    required
-                    dir="rtl"
-                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-8">
-                <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal">ادامه</Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => setCurrentStep('password')}
-                  className="px-4 h-12 rounded-full text-muted-foreground"
-                >
-                  برگشت
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {currentStep === 'username' && (
-            <form onSubmit={handleUsernameSubmit} className="space-y-6">
               <div className="space-y-2">
-                <div className="relative">
-                  <Input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => handleUsernameChange(e.target.value)}
-                    placeholder="نام کاربری"
-                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 pl-8 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-                    dir="ltr"
-                    required
-                  />
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2">
-                    {usernameChecking ? (
-                      <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
-                    ) : usernameAvailable === true ? (
-                      <Check className="w-4 h-4 text-green-500" />
-                    ) : null}
-                  </div>
-                </div>
-                {usernameError && (
-                  <p className="text-sm text-destructive">{usernameError}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  نام کاربری منحصر به فرد است و دیگران می‌توانند با آن شما را پیدا کنند
-                </p>
+                <Input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="نام خانوادگی"
+                  required
+                  dir="rtl"
+                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                />
               </div>
+            </div>
+            
+            <div className="flex gap-3 mt-8">
+              <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal">ادامه</Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setCurrentStep('password')}
+                className="px-4 h-12 rounded-full text-muted-foreground"
+              >
+                برگشت
+              </Button>
+            </div>
+          </form>
+        )}
 
-              <div className="flex gap-3 mt-8">
-                <Button 
-                  type="submit" 
-                  className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
-                  disabled={loading || (username && !usernameAvailable)}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      در حال ثبت نام...
-                    </>
-                  ) : (
-                    'ثبت نام'
-                  )}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  onClick={() => setCurrentStep('name')}
-                  className="px-4 h-12 rounded-full text-muted-foreground"
-                >
-                  برگشت
-                </Button>
+        {currentStep === 'username' && (
+          <form onSubmit={handleUsernameSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <div className="relative">
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  placeholder="نام کاربری"
+                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 pl-8 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  dir="ltr"
+                  required
+                />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                  {usernameChecking ? (
+                    <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
+                  ) : usernameAvailable === true ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : null}
+                </div>
               </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+              {usernameError && (
+                <p className="text-sm text-destructive">{usernameError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                نام کاربری منحصر به فرد است و دیگران می‌توانند با آن شما را پیدا کنند
+              </p>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                disabled={loading || (username && !usernameAvailable)}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال ثبت نام...
+                  </>
+                ) : (
+                  'ثبت نام'
+                )}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setCurrentStep('name')}
+                className="px-4 h-12 rounded-full text-muted-foreground"
+              >
+                برگشت
+              </Button>
+            </div>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

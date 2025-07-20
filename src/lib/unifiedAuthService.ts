@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import bcrypt from 'bcryptjs';
@@ -250,10 +251,15 @@ class UnifiedAuthService {
   // Validate session and return user
   async validateSession(sessionToken: string): Promise<UnifiedUser | null> {
     try {
-      // Check if it's a messenger session
+      console.log('Validating session token:', sessionToken.substring(0, 10) + '...');
+      
+      // First check if it's a messenger session
       const isValidMessenger = await messengerService.validateSession(sessionToken);
+      
       if (isValidMessenger) {
-        // Get user from messenger session
+        console.log('Valid messenger session found');
+        
+        // Get user from session token
         const { data: sessionData } = await supabase
           .from('user_sessions')
           .select('user_id')
@@ -273,9 +279,35 @@ class UnifiedAuthService {
             await this.syncUserData(unifiedUser);
             return unifiedUser;
           }
+        } else {
+          // If no session data but messenger validation passed, try to get user by token
+          // This might be a new session
+          console.log('No session data found, but messenger validation passed');
         }
       }
 
+      // Check unified sessions (for academy users or other custom sessions)
+      const { data: unifiedSession } = await supabase
+        .from('user_sessions')
+        .select('user_id')
+        .eq('session_token', sessionToken)
+        .eq('is_active', true)
+        .single();
+
+      if (unifiedSession) {
+        // Get user from chat_users or academy_users
+        const { data: chatUser } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', unifiedSession.user_id)
+          .single();
+
+        if (chatUser) {
+          return await this.createUnifiedUserFromMessenger(chatUser);
+        }
+      }
+
+      console.log('No valid session found');
       return null;
     } catch (error) {
       console.error('Error validating session:', error);

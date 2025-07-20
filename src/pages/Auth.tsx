@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
@@ -18,7 +19,9 @@ const Auth: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />
+      <div className="w-full max-w-md">
+        <UnifiedMessengerAuth onAuthenticated={handleAuthenticated} />
+      </div>
     </div>
   );
 };
