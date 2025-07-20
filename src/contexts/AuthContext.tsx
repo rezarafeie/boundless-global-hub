@@ -1,17 +1,18 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { messengerService, MessengerUser } from '@/lib/messengerService';
+import { unifiedAuthService, UnifiedUser } from '@/lib/unifiedAuthService';
 import { supabase } from '@/integrations/supabase/client';
 import { getCookie, setCookie, deleteCookie } from '@/lib/cookieUtils';
 
 interface AuthContextType {
-  user: MessengerUser | null;
+  user: UnifiedUser | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (user: MessengerUser, token: string) => void;
+  login: (user: UnifiedUser | MessengerUser, token: string) => void;
   logout: () => Promise<void>;
-  updateUser: (user: MessengerUser) => void;
+  updateUser: (user: UnifiedUser | MessengerUser) => void;
   checkEnrollment: (courseId: string) => Promise<boolean>;
 }
 
@@ -67,7 +68,7 @@ const normalizePhone = (phone: string): string[] => {
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<MessengerUser | null>(null);
+  const [user, setUser] = useState<UnifiedUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -109,17 +110,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = (user: MessengerUser, token: string) => {
-    setUser(user);
+  // Helper function to convert MessengerUser to UnifiedUser
+  const convertToUnifiedUser = (messengerUser: MessengerUser): UnifiedUser => {
+    return {
+      id: messengerUser.id.toString(),
+      name: messengerUser.name || `${messengerUser.first_name || ''} ${messengerUser.last_name || ''}`.trim(),
+      firstName: messengerUser.first_name || '',
+      lastName: messengerUser.last_name || '',
+      email: messengerUser.email || '',
+      phone: messengerUser.phone || '',
+      countryCode: messengerUser.country_code || '+98',
+      username: messengerUser.username,
+      isAcademyUser: false,
+      isMessengerUser: true,
+      messengerData: messengerUser,
+      academyData: undefined
+    };
+  };
+
+  const login = (user: UnifiedUser | MessengerUser, token: string) => {
+    const unifiedUser = 'isMessengerUser' in user ? user : convertToUnifiedUser(user);
+    setUser(unifiedUser);
     setToken(token);
     setCookie('session_token', token, 30); // Expires in 30 days
-    setCookie('current_user', encodeURIComponent(JSON.stringify(user)), 30);
+    setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
   };
 
   const logout = async () => {
     try {
       if (token) {
-        await messengerService.deactivateSession(token);
+        await unifiedAuthService.logout(token);
       }
     } catch (error) {
       console.error('Logout error:', error);
@@ -131,10 +151,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updateUser = (updatedUser: MessengerUser) => {
-    setUser(updatedUser);
+  const updateUser = (updatedUser: UnifiedUser | MessengerUser) => {
+    const unifiedUser = 'isMessengerUser' in updatedUser ? updatedUser : convertToUnifiedUser(updatedUser);
+    setUser(unifiedUser);
     if (token) {
-      setCookie('current_user', encodeURIComponent(JSON.stringify(updatedUser)), 30);
+      setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
     }
   };
 

@@ -374,11 +374,14 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
       
       // Register user with the formatted phone number
-      const result = await messengerService.registerWithPassword(
-        formattedPhoneNumber,
-        formData.password,
-        fullName
-      );
+      const result = await messengerService.registerWithPassword({
+        name: fullName,
+        phone: formattedPhoneNumber,
+        countryCode: '+98',
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      });
 
       if (result.error) {
         throw new Error(result.error.message || 'خطا در ثبت نام');

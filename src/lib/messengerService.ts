@@ -143,17 +143,23 @@ export const messengerService = {
     }
   },
 
-  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+  async getUserByPhone(phone: string, countryCode?: string): Promise<MessengerUser | null> {
     try {
-      console.log('getUserByPhone: Starting search for phone:', phone);
+      console.log('getUserByPhone: Starting search for phone:', phone, 'with country code:', countryCode);
       
       // Create multiple phone number formats to search for
       const phoneFormats = [
-        phone, // Original format (e.g., +989120784457)
-        phone.replace(/^\+98/, ''), // Without country code (e.g., 9120784457)
-        phone.replace(/^\+98/, '0'), // With leading zero (e.g., 09120784457)
+        phone, // Original format
+        phone.replace(/^\+98/, ''), // Without country code
+        phone.replace(/^\+98/, '0'), // With leading zero
         phone.replace(/^\+989/, '09'), // Direct conversion from +989 to 09
       ];
+      
+      // If countryCode is provided, also try with it
+      if (countryCode && !phone.includes(countryCode)) {
+        phoneFormats.push(countryCode + phone);
+        phoneFormats.push(countryCode + phone.replace(/^0/, ''));
+      }
       
       // Remove duplicates
       const uniqueFormats = [...new Set(phoneFormats)];
@@ -292,35 +298,6 @@ export const messengerService = {
     }
   },
 
-  async registerWithPassword(phone: string, password: string, name: string): Promise<AuthResult> {
-    try {
-      // Hash the password before storing
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-      
-      const { data: newUserData, error: insertError } = await supabase
-        .from('chat_users')
-        .insert([{ 
-          phone: phone, 
-          name: name, 
-          password_hash: hashedPassword,
-          is_approved: true 
-        }])
-        .select('*')
-        .single();
-
-      if (insertError) {
-        console.error('Error creating new user:', insertError);
-        return { user: null, error: insertError };
-      }
-
-      const sessionToken = await this.createSession(newUserData.id);
-      return { user: newUserData, error: null, session_token: sessionToken };
-    } catch (error) {
-      console.error('Registration error:', error);
-      return { user: null, error: error };
-    }
-  },
 
   async createSession(userId: number): Promise<string> {
     try {
@@ -924,5 +901,59 @@ export const messengerService = {
       console.error('Error deactivating session:', error);
       throw error;
     }
-  }
+  },
+
+  // Extended registerWithPassword that takes an object with user details
+  async registerWithPassword(userData: {
+    name: string;
+    phone: string;
+    countryCode: string;
+    password: string;
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    isBoundlessStudent?: boolean;
+  }): Promise<AuthResult> {
+    try {
+      const { name, phone, countryCode, password, username, firstName, lastName, isBoundlessStudent } = userData;
+      
+      // Check if user already exists
+      const existingUser = await this.getUserByPhone(phone, countryCode);
+      if (existingUser) {
+        return { user: null, error: { message: 'کاربر با این شماره تلفن قبلاً ثبت نام کرده است' } };
+      }
+
+      // Hash the password before storing
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
+      const { data: newUserData, error: insertError } = await supabase
+        .from('chat_users')
+        .insert([{ 
+          phone: phone, 
+          name: name,
+          first_name: firstName,
+          last_name: lastName,
+          username: username,
+          country_code: countryCode,
+          password_hash: hashedPassword,
+          bedoun_marz: isBoundlessStudent || false,
+          is_approved: true 
+        }])
+        .select('*')
+        .single();
+
+      if (insertError) {
+        console.error('Error creating new user:', insertError);
+        return { user: null, error: insertError };
+      }
+
+      const sessionToken = await this.createSession(newUserData.id);
+      return { user: newUserData, error: null, session_token: sessionToken };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { user: null, error: error };
+    }
+  },
+
 };
