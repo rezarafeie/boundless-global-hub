@@ -532,6 +532,8 @@ export const messengerService = {
 
   async validateSession(sessionToken: string): Promise<MessengerUser | null> {
     try {
+      console.log('🔍 MessengerService: Validating session:', sessionToken.substring(0, 10) + '...');
+      
       const { data, error } = await supabase
         .from('user_sessions')
         .select(`
@@ -542,14 +544,38 @@ export const messengerService = {
         .eq('is_active', true)
         .single();
 
-      if (error || !data) return null;
+      if (error || !data) {
+        console.log('❌ MessengerService: No session data found');
+        return null;
+      }
       
-      const isValid = data.last_activity && 
-        new Date(data.last_activity) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+      // Check if session is still valid (24 hours)
+      const sessionAge = new Date().getTime() - new Date(data.last_activity).getTime();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      const isValid = sessionAge < twentyFourHours;
       
-      return isValid ? data.chat_users : null;
+      if (!isValid) {
+        console.log('❌ MessengerService: Session expired');
+        // Deactivate expired session
+        await supabase
+          .from('user_sessions')
+          .update({ is_active: false })
+          .eq('session_token', sessionToken);
+        return null;
+      }
+      
+      // Update last activity to keep session alive
+      await supabase
+        .from('user_sessions')
+        .update({ 
+          last_activity: new Date().toISOString() 
+        })
+        .eq('session_token', sessionToken);
+      
+      console.log('✅ MessengerService: Session valid for user:', data.chat_users?.name);
+      return data.chat_users || null;
     } catch (error) {
-      console.error('Error validating session:', error);
+      console.error('💥 MessengerService: Error validating session:', error);
       return null;
     }
   },

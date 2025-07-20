@@ -71,67 +71,90 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('🔄 Initializing auth...');
+      setIsLoading(true);
+      
       try {
-        console.log('Initializing auth...');
+        // Check all possible authentication sources
+        const cookieToken = getCookie('session_token');
+        const cookieUser = getCookie('current_user');
+        const localStorageToken = localStorage.getItem('messenger_session_token');
         
-        // First check for unified auth session
-        const storedToken = getCookie('session_token');
-        const storedUser = getCookie('current_user');
-        
-        if (storedToken && storedUser) {
-          console.log('Found unified auth session');
+        console.log('📁 Found auth data:', {
+          cookieToken: cookieToken ? 'Yes' : 'No',
+          cookieUser: cookieUser ? 'Yes' : 'No',
+          localStorageToken: localStorageToken ? 'Yes' : 'No'
+        });
+
+        // Try to restore from cookies first (most reliable)
+        if (cookieToken && cookieUser) {
+          console.log('🍪 Attempting to restore from cookies...');
           try {
-            const parsedUser = JSON.parse(decodeURIComponent(storedUser));
-            const validatedUser = await unifiedAuthService.validateSession(storedToken);
+            const parsedUser = JSON.parse(decodeURIComponent(cookieUser));
+            console.log('👤 Parsed user from cookie:', parsedUser.name);
+            
+            // Validate the session
+            const validatedUser = await unifiedAuthService.validateSession(cookieToken);
             
             if (validatedUser) {
+              console.log('✅ Cookie session validated successfully');
               setUser(validatedUser);
-              setToken(storedToken);
-              console.log('Unified auth session validated');
+              setToken(cookieToken);
+              
+              // Ensure localStorage is also synced
+              if (validatedUser.isMessengerUser) {
+                localStorage.setItem('messenger_session_token', cookieToken);
+              }
               return;
             } else {
-              console.log('Unified auth session invalid, clearing');
+              console.log('❌ Cookie session validation failed');
+              // Clear invalid cookies
               deleteCookie('session_token');
               deleteCookie('current_user');
             }
           } catch (parseError) {
-            console.error('Error parsing stored user:', parseError);
+            console.error('❌ Error parsing stored user from cookies:', parseError);
             deleteCookie('session_token');
             deleteCookie('current_user');
           }
         }
-        
-        // Check for messenger session as fallback
-        const messengerToken = localStorage.getItem('messenger_session_token');
-        if (messengerToken) {
-          console.log('Found messenger session, attempting to validate and sync');
+
+        // If no valid cookie session, try localStorage token
+        if (localStorageToken) {
+          console.log('💾 Attempting to restore from localStorage...');
           try {
-            const messengerUser = await messengerService.validateSession(messengerToken);
+            const messengerUser = await messengerService.validateSession(localStorageToken);
+            
             if (messengerUser) {
-              console.log('Messenger session valid, converting to unified user');
+              console.log('✅ LocalStorage session validated successfully');
               const unifiedUser = convertToUnifiedUser(messengerUser);
               setUser(unifiedUser);
-              setToken(messengerToken);
+              setToken(localStorageToken);
               
               // Sync to cookies for cross-system compatibility
-              setCookie('session_token', messengerToken, 30);
+              setCookie('session_token', localStorageToken, 30);
               setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
               return;
+            } else {
+              console.log('❌ LocalStorage session validation failed');
+              localStorage.removeItem('messenger_session_token');
             }
           } catch (error) {
-            console.log('Messenger session validation failed:', error);
+            console.log('❌ LocalStorage session validation error:', error);
             localStorage.removeItem('messenger_session_token');
           }
         }
         
-        console.log('No valid session found');
+        console.log('🚫 No valid session found anywhere');
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('💥 Critical error during auth initialization:', error);
+        // Clean up everything on critical error
         deleteCookie('session_token');
         deleteCookie('current_user');
         localStorage.removeItem('messenger_session_token');
       } finally {
         setIsLoading(false);
+        console.log('🏁 Auth initialization complete');
       }
     };
 
@@ -156,36 +179,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = (userData: UnifiedUser | MessengerUser, tokenData: string) => {
-    console.log('Login called with:', { userData, tokenData });
+    console.log('🔐 Login called with user:', userData.name || 'Unknown');
     
     const unifiedUser = 'isMessengerUser' in userData ? userData : convertToUnifiedUser(userData);
+    
+    // Update state
     setUser(unifiedUser);
     setToken(tokenData);
     
-    // Store in both systems for compatibility
+    // Store in both systems for maximum compatibility
+    console.log('💾 Storing session data...');
     setCookie('session_token', tokenData, 30);
     setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
     
-    // If it's a messenger user, also store in localStorage
-    if (unifiedUser.isMessengerUser) {
-      localStorage.setItem('messenger_session_token', tokenData);
-    }
+    // Always store in localStorage for messenger compatibility
+    localStorage.setItem('messenger_session_token', tokenData);
+    
+    console.log('✅ Login successful for:', unifiedUser.name);
   };
 
   const logout = async () => {
+    console.log('🚪 Logout initiated');
     try {
-      console.log('Logout called');
       if (token) {
         await unifiedAuthService.logout(token);
+        console.log('📡 Server logout completed');
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Server logout error:', error);
     } finally {
+      // Clear all auth data
       setUser(null);
       setToken(null);
       deleteCookie('session_token');
       deleteCookie('current_user');
       localStorage.removeItem('messenger_session_token');
+      console.log('🧹 All auth data cleared');
     }
   };
 

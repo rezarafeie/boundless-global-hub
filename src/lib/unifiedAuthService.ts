@@ -251,39 +251,19 @@ class UnifiedAuthService {
   // Validate session and return user
   async validateSession(sessionToken: string): Promise<UnifiedUser | null> {
     try {
-      console.log('Validating session token:', sessionToken.substring(0, 10) + '...');
+      console.log('🔍 Validating session token:', sessionToken.substring(0, 10) + '...');
       
       // First check if it's a messenger session
-      const isValidMessenger = await messengerService.validateSession(sessionToken);
+      const messengerUser = await messengerService.validateSession(sessionToken);
       
-      if (isValidMessenger) {
-        console.log('Valid messenger session found');
+      if (messengerUser) {
+        console.log('✅ Valid messenger session found for:', messengerUser.name);
+        const unifiedUser = await this.createUnifiedUserFromMessenger(messengerUser);
         
-        // Get user from session token
-        const { data: sessionData } = await supabase
-          .from('user_sessions')
-          .select('user_id')
-          .eq('session_token', sessionToken)
-          .eq('is_active', true)
-          .single();
-
-        if (sessionData) {
-          const { data: messengerUser } = await supabase
-            .from('chat_users')
-            .select('*')
-            .eq('id', sessionData.user_id)
-            .single();
-
-          if (messengerUser) {
-            const unifiedUser = await this.createUnifiedUserFromMessenger(messengerUser);
-            await this.syncUserData(unifiedUser);
-            return unifiedUser;
-          }
-        } else {
-          // If no session data but messenger validation passed, try to get user by token
-          // This might be a new session
-          console.log('No session data found, but messenger validation passed');
-        }
+        // Update session activity
+        await this.updateSessionActivity(sessionToken, messengerUser.id);
+        
+        return unifiedUser;
       }
 
       // Check unified sessions (for academy users or other custom sessions)
@@ -292,10 +272,13 @@ class UnifiedAuthService {
         .select('user_id')
         .eq('session_token', sessionToken)
         .eq('is_active', true)
+        .gte('last_activity', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24 hours
         .single();
 
       if (unifiedSession) {
-        // Get user from chat_users or academy_users
+        console.log('✅ Valid unified session found for user:', unifiedSession.user_id);
+        
+        // Get user from chat_users
         const { data: chatUser } = await supabase
           .from('chat_users')
           .select('*')
@@ -303,15 +286,35 @@ class UnifiedAuthService {
           .single();
 
         if (chatUser) {
-          return await this.createUnifiedUserFromMessenger(chatUser);
+          const unifiedUser = await this.createUnifiedUserFromMessenger(chatUser);
+          
+          // Update session activity
+          await this.updateSessionActivity(sessionToken, chatUser.id);
+          
+          return unifiedUser;
         }
       }
 
-      console.log('No valid session found');
+      console.log('❌ No valid session found');
       return null;
     } catch (error) {
-      console.error('Error validating session:', error);
+      console.error('💥 Error validating session:', error);
       return null;
+    }
+  }
+
+  // Helper method to update session activity
+  private async updateSessionActivity(sessionToken: string, userId: number): Promise<void> {
+    try {
+      await supabase
+        .from('user_sessions')
+        .update({ 
+          last_activity: new Date().toISOString(),
+          is_active: true 
+        })
+        .eq('session_token', sessionToken);
+    } catch (error) {
+      console.error('Error updating session activity:', error);
     }
   }
 

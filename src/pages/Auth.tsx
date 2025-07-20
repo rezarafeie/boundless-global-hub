@@ -13,11 +13,16 @@ const Auth: React.FC = () => {
   }
 
   const handleAuthenticated = (sessionToken: string, userName: string, userData: any) => {
-    console.log('Auth page: User authenticated', { sessionToken, userName, userData });
+    console.log('🎉 Auth page: User authenticated successfully', { 
+      sessionToken: sessionToken.substring(0, 10) + '...', 
+      userName, 
+      userId: userData.id 
+    });
     
-    // Use the login function from AuthContext to sync the session
+    // Use the login function from AuthContext to sync the session across all systems
     login(userData, sessionToken);
     
+    console.log('🔄 Session synced, redirecting...');
     // Redirect will happen automatically due to the Navigate above
   };
 
