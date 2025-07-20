@@ -517,7 +517,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
       case 'otp-link': return 'کد تأیید برای ربط حساب Google ارسال شد';
-      case 'linking': return 'برای ربط حساب Google، شماره تلفن خود را وارد کنید';
+      case 'linking': return 'شماره تلفن خود را وارد کنید';
     }
   };
 
