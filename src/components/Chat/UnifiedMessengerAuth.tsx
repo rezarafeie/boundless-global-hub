@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { MessageCircle, Phone, User, Lock, AtSign, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
@@ -24,7 +25,7 @@ interface UnifiedMessengerAuthProps {
   };
 }
 
-type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending';
+type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData }) => {
   const { toast } = useToast();
@@ -44,6 +45,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [existingUser, setExistingUser] = useState<MessengerUser | null>(null);
   const [isLogin, setIsLogin] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [isGoogleLinking, setIsGoogleLinking] = useState(false);
 
   const validateUsername = (value: string) => {
     const regex = /^[a-z0-9_]{3,20}$/;
@@ -117,8 +120,40 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       const user = await messengerService.getUserByPhone(phoneNumber, countryCode);
       if (user) {
         setExistingUser(user);
-        setIsLogin(true);
-        setCurrentStep('password');
+        
+        // If we have Google prefill data, this means user logged in with Google
+        // but the phone number already exists - we need to link the accounts via OTP
+        if (prefillData?.email && !user.email) {
+          console.log('🔗 Google user wants to link to existing phone number');
+          setIsGoogleLinking(true);
+          setCurrentStep('otp-link');
+          
+          // Send OTP for verification
+          const { data, error } = await supabase.functions.invoke('send-otp', {
+            body: {
+              phone: phoneNumber,
+              countryCode: countryCode
+            }
+          });
+
+          if (error) {
+            console.error('Edge function error:', error);
+            throw error;
+          }
+
+          if (data.success) {
+            toast({
+              title: 'کد تأیید ارسال شد',
+              description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
+            });
+          } else {
+            throw new Error(data.error || 'خطا در ارسال کد تأیید');
+          }
+        } else {
+          // Normal login flow
+          setIsLogin(true);
+          setCurrentStep('password');
+        }
       } else {
         setIsLogin(false);
         setCurrentStep('password');
@@ -259,6 +294,94 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
+  const verifyLinkingOTP = async (code: string) => {
+    if (code.length !== 4) return;
+
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: {
+          phone: `${countryCode}${phoneNumber}`,
+          otpCode: code
+        }
+      });
+
+      console.log('Linking OTP verification response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data && data.success && existingUser) {
+        // OTP verified, now link Google email to the existing account
+        const { error: updateError } = await supabase
+          .from('chat_users')
+          .update({
+            email: prefillData?.email,
+            first_name: prefillData?.firstName || existingUser.first_name,
+            last_name: prefillData?.lastName || existingUser.last_name,
+            full_name: prefillData?.firstName && prefillData?.lastName 
+              ? `${prefillData.firstName} ${prefillData.lastName}`
+              : existingUser.full_name
+          })
+          .eq('id', existingUser.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        // Create session and login
+        const sessionToken = await messengerService.createSession(existingUser.id);
+        
+        // Update the user object with new data
+        const updatedUser = {
+          ...existingUser,
+          email: prefillData?.email || existingUser.email,
+          first_name: prefillData?.firstName || existingUser.first_name,
+          last_name: prefillData?.lastName || existingUser.last_name,
+          full_name: prefillData?.firstName && prefillData?.lastName 
+            ? `${prefillData.firstName} ${prefillData.lastName}`
+            : existingUser.full_name
+        };
+
+        toast({
+          title: 'حساب با موفقیت ربط داده شد',
+          description: 'حساب Google شما با شماره تلفن ربط داده شد'
+        });
+
+        onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+      } else {
+        console.log('Linking OTP verification failed, showing error toast');
+        toast({
+          title: 'کد اشتباه است',
+          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
+          variant: 'destructive'
+        });
+        setOtpCode('');
+        return;
+      }
+    } catch (error: any) {
+      console.error('Error verifying linking OTP:', error);
+      toast({
+        title: 'خطا در تأیید کد',
+        description: error.message || 'کد وارد شده اشتباه است',
+        variant: 'destructive'
+      });
+      setOtpCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Auto-verify OTP when 4 digits are entered
+  useEffect(() => {
+    if (otpCode.length === 4 && currentStep === 'otp-link') {
+      verifyLinkingOTP(otpCode);
+    }
+  }, [otpCode, currentStep]);
+
   const checkApprovalStatus = async () => {
     setLoading(true);
     try {
@@ -325,6 +448,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'name': return 'نام شما';
       case 'username': return 'انتخاب نام کاربری';
       case 'pending': return 'در انتظار تایید';
+      case 'otp-link': return 'ربط حساب Google';
     }
   };
 
@@ -335,6 +459,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       case 'name': return 'نام و نام خانوادگی خود را وارد کنید';
       case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
+      case 'otp-link': return 'کد تأیید برای ربط حساب Google ارسال شد';
     }
   };
 
@@ -629,6 +754,69 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               </Button>
             </div>
           </form>
+        )}
+
+        {currentStep === 'otp-link' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2 mb-6">
+              <p className="text-lg font-medium text-foreground">
+                ربط حساب Google
+              </p>
+              <p className="text-sm text-muted-foreground">
+                شماره {countryCode}{phoneNumber} قبلاً ثبت شده است
+              </p>
+              <p className="text-sm text-muted-foreground">
+                کد ۴ رقمی ارسال شده را وارد کنید تا حساب Google شما ربط داده شود
+              </p>
+              {prefillData?.email && (
+                <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                  ایمیل: {prefillData.email}
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-center">
+              <InputOTP
+                value={otpCode}
+                onChange={setOtpCode}
+                maxLength={4}
+                className="gap-2"
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} className="w-12 h-12 text-lg" />
+                  <InputOTPSlot index={1} className="w-12 h-12 text-lg" />
+                  <InputOTPSlot index={2} className="w-12 h-12 text-lg" />
+                  <InputOTPSlot index={3} className="w-12 h-12 text-lg" />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                کد را دریافت نکردید؟
+              </p>
+              <Button 
+                variant="link" 
+                className="text-sm p-0 h-auto"
+                onClick={handlePhoneSubmit}
+                disabled={loading}
+              >
+                ارسال مجدد
+              </Button>
+            </div>
+
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setCurrentStep('phone');
+                setOtpCode('');
+                setIsGoogleLinking(false);
+              }}
+              className="w-full h-12 rounded-full text-muted-foreground"
+            >
+              برگشت
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
