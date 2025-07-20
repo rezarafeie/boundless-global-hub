@@ -71,6 +71,7 @@ import MessengerPending from "./pages/MessengerPending";
 import AssessmentCenter from "./pages/AssessmentCenter";
 import TestLanding from "./pages/Assessment/TestLanding";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import UserDashboard from "./pages/Dashboard";
 import InstructorProfile from "./pages/InstructorProfile";
 import AIAssistant from "./pages/AIAssistant";
 import SolidarityLanding from "./pages/Solidarity/SolidarityLanding";
@@ -197,6 +198,9 @@ const App = () => {
                     <Route path="/course/access/american-business" element={<AmericanBusinessAccess />} />
                     <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
 
+                    {/* Dashboard */}
+                    <Route path="/dashboard" element={<UserDashboard />} />
+
                     {/* Hub pages */}
                     <Route path="/hub/*" element={<BorderlessHub />} />
                     <Route path="/hub/chat" element={<BorderlessHubChat />} />
@@ -213,7 +217,6 @@ const App = () => {
                     <Route path="/assessment/:slug" element={<TestLanding />} />
 
                     {/* Other pages */}
-                    <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/instructor" element={<InstructorProfile />} />
                     <Route path="/ai-assistant" element={<AIAssistant />} />
                     <Route path="/solidarity" element={<SolidarityLanding />} />

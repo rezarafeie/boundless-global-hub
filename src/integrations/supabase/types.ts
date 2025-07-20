@@ -564,6 +564,53 @@ export type Database = {
           },
         ]
       }
+      course_licenses: {
+        Row: {
+          activated_at: string | null
+          course_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          license_data: Json | null
+          license_key: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          course_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          license_data?: Json | null
+          license_key?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          course_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          license_data?: Json | null
+          license_key?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_licenses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_sections: {
         Row: {
           course_id: string
