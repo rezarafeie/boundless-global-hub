@@ -18,6 +18,8 @@ interface Course {
   description: string;
   price: number;
   redirect_url: string;
+  is_spotplayer_enabled: boolean;
+  spotplayer_course_id: string | null;
 }
 
 const Enroll: React.FC = () => {
@@ -204,9 +206,15 @@ const Enroll: React.FC = () => {
                     <Star className="h-5 w-5 text-yellow-500 fill-current" />
                     <Star className="h-5 w-5 text-yellow-500 fill-current" />
                   </div>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                   <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                     دوره آنلاین
                   </Badge>
+                  {course.is_spotplayer_enabled && (
+                    <Badge variant="default" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg">
+                      <Zap className="h-3 w-3 ml-1" />
+                      Rafiei Player Support
+                    </Badge>
+                  )}
                 </div>
                 <CardTitle className="text-3xl mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                   {course.title}
@@ -230,6 +238,23 @@ const Enroll: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Rafiei Player Special Feature */}
+                {course.is_spotplayer_enabled && (
+                  <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border-2 border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 bg-emerald-500 rounded-lg">
+                        <Zap className="h-5 w-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                        Rafiei Player Support
+                      </h3>
+                    </div>
+                    <p className="text-emerald-600 dark:text-emerald-400 text-sm leading-relaxed">
+                      این دوره در پلتفرم Rafiei Player قابل دسترسی است. شما می‌توانید ویدیوها را دانلود کرده و بدون نیاز به اینترنت تماشا کنید. دسترسی شما هرگز منقضی نمی‌شود.
+                    </p>
+                  </div>
+                )}
                 
                 {/* Features */}
                 <div className="grid grid-cols-2 gap-4">
