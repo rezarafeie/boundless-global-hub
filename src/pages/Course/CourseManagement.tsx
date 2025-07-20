@@ -24,6 +24,9 @@ interface Course {
   is_spotplayer_enabled: boolean;
   create_test_license: boolean;
   woocommerce_create_access: boolean;
+  support_link: string | null;
+  telegram_channel_link: string | null;
+  gifts_link: string | null;
   created_at: string;
 }
 
@@ -44,6 +47,9 @@ const CourseManagement: React.FC = () => {
     is_spotplayer_enabled: false,
     create_test_license: false,
     woocommerce_create_access: true,
+    support_link: '',
+    telegram_channel_link: '',
+    gifts_link: '',
     is_active: true
   });
   
@@ -78,6 +84,9 @@ const CourseManagement: React.FC = () => {
           is_spotplayer_enabled: data.is_spotplayer_enabled || false,
           create_test_license: data.create_test_license || false,
           woocommerce_create_access: data.woocommerce_create_access !== false,
+          support_link: data.support_link || '',
+          telegram_channel_link: data.telegram_channel_link || '',
+          gifts_link: data.gifts_link || '',
           is_active: data.is_active
         });
       }
@@ -332,6 +341,57 @@ const CourseManagement: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* Course Links Configuration - Only show if course is active */}
+            {courseForm.is_active && (
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <h3 className="text-lg font-semibold">لینک‌های دوره</h3>
+                <p className="text-sm text-muted-foreground">
+                  لینک‌های اختیاری که به کاربران ثبت‌نام شده نمایش داده می‌شود
+                </p>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="support_link">لینک فعال‌سازی پشتیبانی</Label>
+                    <Input
+                      id="support_link"
+                      value={courseForm.support_link}
+                      onChange={(e) => setCourseForm(prev => ({ ...prev, support_link: e.target.value }))}
+                      placeholder="https://t.me/your_support_bot"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      لینک بات تلگرام یا سیستم پشتیبانی دوره
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="telegram_channel_link">لینک کانال تلگرام</Label>
+                    <Input
+                      id="telegram_channel_link"
+                      value={courseForm.telegram_channel_link}
+                      onChange={(e) => setCourseForm(prev => ({ ...prev, telegram_channel_link: e.target.value }))}
+                      placeholder="https://t.me/your_course_channel"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      لینک کانال تلگرام مخصوص این دوره
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="gifts_link">لینک دانلود هدایا</Label>
+                    <Input
+                      id="gifts_link"
+                      value={courseForm.gifts_link}
+                      onChange={(e) => setCourseForm(prev => ({ ...prev, gifts_link: e.target.value }))}
+                      placeholder="https://drive.google.com/your_bonus_materials"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      لینک دانلود محتوای تکمیلی و هدایای دوره
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Save Button */}
             <div className="flex justify-end gap-4 pt-4">

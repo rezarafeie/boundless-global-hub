@@ -65,7 +65,10 @@ const EnrollSuccess: React.FC = () => {
             redirect_url,
             is_spotplayer_enabled,
             spotplayer_course_id,
-            woocommerce_create_access
+            woocommerce_create_access,
+            support_link,
+            telegram_channel_link,
+            gifts_link
           )
         `)
         .eq('id', enrollmentId)
@@ -282,6 +285,7 @@ const EnrollSuccess: React.FC = () => {
                   enrollment={result.enrollment}
                   course={result.course}
                   onEnterCourse={handleEnterCourse}
+                  userEmail={email || ''}
                 />
 
                 {/* Additional Info */}

@@ -475,11 +475,47 @@ export type Database = {
         }
         Relationships: []
       }
+      course_click_logs: {
+        Row: {
+          action_type: string
+          clicked_at: string
+          course_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          clicked_at?: string
+          course_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          clicked_at?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_click_logs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           create_test_license: boolean | null
           created_at: string
           description: string | null
+          gifts_link: string | null
           id: string
           is_active: boolean
           is_spotplayer_enabled: boolean | null
@@ -487,6 +523,8 @@ export type Database = {
           redirect_url: string | null
           slug: string
           spotplayer_course_id: string | null
+          support_link: string | null
+          telegram_channel_link: string | null
           title: string
           updated_at: string
           woocommerce_create_access: boolean | null
@@ -496,6 +534,7 @@ export type Database = {
           create_test_license?: boolean | null
           created_at?: string
           description?: string | null
+          gifts_link?: string | null
           id?: string
           is_active?: boolean
           is_spotplayer_enabled?: boolean | null
@@ -503,6 +542,8 @@ export type Database = {
           redirect_url?: string | null
           slug: string
           spotplayer_course_id?: string | null
+          support_link?: string | null
+          telegram_channel_link?: string | null
           title: string
           updated_at?: string
           woocommerce_create_access?: boolean | null
@@ -512,6 +553,7 @@ export type Database = {
           create_test_license?: boolean | null
           created_at?: string
           description?: string | null
+          gifts_link?: string | null
           id?: string
           is_active?: boolean
           is_spotplayer_enabled?: boolean | null
@@ -519,6 +561,8 @@ export type Database = {
           redirect_url?: string | null
           slug?: string
           spotplayer_course_id?: string | null
+          support_link?: string | null
+          telegram_channel_link?: string | null
           title?: string
           updated_at?: string
           woocommerce_create_access?: boolean | null

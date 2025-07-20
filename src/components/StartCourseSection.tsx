@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
+import CourseActionLinks from './CourseActionLinks';
 import RafieiPlayerSection from './RafieiPlayerSection';
 
 interface StartCourseSectionProps {
@@ -21,6 +22,7 @@ interface StartCourseSectionProps {
     created_at: string;
     full_name: string;
     phone: string;
+    email?: string;
     spotplayer_license_id?: string;
     spotplayer_license_key?: string;
     spotplayer_license_url?: string;
@@ -33,14 +35,19 @@ interface StartCourseSectionProps {
     is_spotplayer_enabled?: boolean;
     spotplayer_course_id?: string;
     woocommerce_create_access?: boolean;
+    support_link?: string | null;
+    telegram_channel_link?: string | null;
+    gifts_link?: string | null;
   } | undefined;
   onEnterCourse: () => void;
+  userEmail?: string;
 }
 
 const StartCourseSection: React.FC<StartCourseSectionProps> = ({ 
   enrollment, 
   course, 
-  onEnterCourse 
+  onEnterCourse,
+  userEmail 
 }) => {
   // Determine available access types
   const hasRafieiPlayer = course?.is_spotplayer_enabled;
@@ -270,6 +277,15 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Course Action Links - Support, Telegram, Gifts */}
+        {course && enrollment && (
+          <CourseActionLinks 
+            course={course}
+            enrollment={enrollment}
+            userEmail={userEmail || enrollment?.email}
+          />
         )}
       </div>
     </div>

@@ -28,6 +28,9 @@ interface Course {
   is_spotplayer_enabled: boolean;
   create_test_license: boolean;
   woocommerce_create_access: boolean;
+  support_link: string | null;
+  telegram_channel_link: string | null;
+  gifts_link: string | null;
   created_at: string;
 }
 
