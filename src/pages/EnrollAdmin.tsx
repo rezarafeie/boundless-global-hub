@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EnrollHeader from '@/components/Layout/EnrollHeader';
@@ -56,6 +57,7 @@ const EnrollAdmin: React.FC = () => {
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'courses'>('dashboard');
   const [courseForm, setCourseForm] = useState({
     title: '',
     description: '',
@@ -149,6 +151,10 @@ const EnrollAdmin: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(new Date(dateString));
+  };
+
+  const getEnrolledUsersCount = (courseId: string) => {
+    return enrollments.filter(e => e.course_id === courseId && e.payment_status === 'completed').length;
   };
 
   const getStatusBadge = (status: string | null) => {
@@ -320,6 +326,24 @@ const EnrollAdmin: React.FC = () => {
     }
   };
 
+  const sidebarItems = [
+    {
+      id: 'dashboard',
+      label: 'داشبورد',
+      icon: BarChart3,
+    },
+    {
+      id: 'enrollments',
+      label: 'مدیریت ثبت‌نام‌ها',
+      icon: CreditCard,
+    },
+    {
+      id: 'courses',
+      label: 'مدیریت دوره‌ها',
+      icon: BookOpen,
+    },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
@@ -336,226 +360,369 @@ const EnrollAdmin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <EnrollHeader title="مدیریت ثبت‌نام‌ها" />
+      <EnrollHeader title="پنل مدیریت" />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          
-          <Tabs defaultValue="enrollments" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="enrollments">مدیریت ثبت‌نام‌ها</TabsTrigger>
-              <TabsTrigger value="courses">مدیریت دوره‌ها</TabsTrigger>
-            </TabsList>
+      <div className="flex h-screen pt-16">
+        {/* Sidebar */}
+        <div className="w-64 bg-card border-r border-border flex-shrink-0">
+          <div className="p-4">
+            <nav className="space-y-2">
+              {sidebarItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveView(item.id as any)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                    activeView === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
 
-            <TabsContent value="enrollments" className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
-                        <p className="text-2xl font-bold">{enrollments.length}</p>
-                      </div>
-                      <User className="h-8 w-8 text-primary" />
-                    </div>
-                  </CardContent>
-                </Card>
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="container mx-auto px-6 py-8">
+            
+            {/* Dashboard View */}
+            {activeView === 'dashboard' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold">داشبورد مدیریت</h1>
+                  <p className="text-muted-foreground mt-2">مرور کلی از وضعیت سیستم</p>
+                </div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">در انتظار تایید</p>
-                        <p className="text-2xl font-bold text-amber-600">
-                          {enrollments.filter(e => e.manual_payment_status === 'pending').length}
-                        </p>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">کل دوره‌ها</p>
+                          <p className="text-2xl font-bold">{courses.length}</p>
+                        </div>
+                        <BookOpen className="h-8 w-8 text-primary" />
                       </div>
-                      <Clock className="h-8 w-8 text-amber-600" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">تایید شده</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {enrollments.filter(e => e.manual_payment_status === 'approved').length}
-                        </p>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
+                          <p className="text-2xl font-bold">{enrollments.length}</p>
+                        </div>
+                        <User className="h-8 w-8 text-primary" />
                       </div>
-                      <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">رد شده</p>
-                        <p className="text-2xl font-bold text-red-600">
-                          {enrollments.filter(e => e.manual_payment_status === 'rejected').length}
-                        </p>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">در انتظار تایید</p>
+                          <p className="text-2xl font-bold text-amber-600">
+                            {enrollments.filter(e => e.manual_payment_status === 'pending').length}
+                          </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-amber-600" />
                       </div>
-                      <XCircle className="h-8 w-8 text-red-600" />
-                    </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">دوره‌های فعال</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {courses.filter(c => c.is_active).length}
+                          </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Recent Activity */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>آخرین ثبت‌نام‌ها</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {enrollments.slice(0, 5).length === 0 ? (
+                      <p className="text-muted-foreground text-center py-8">هیچ ثبت‌نامی یافت نشد</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {enrollments.slice(0, 5).map((enrollment) => (
+                          <div key={enrollment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                              <p className="font-medium">{enrollment.full_name}</p>
+                              <p className="text-sm text-muted-foreground">{enrollment.courses?.title || 'نامشخص'}</p>
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-medium">{formatPrice(enrollment.payment_amount)}</p>
+                              <p className="text-xs text-muted-foreground">{formatDate(enrollment.created_at)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
+            )}
 
-              {/* Enrollments Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-6 w-6" />
-                    پرداخت‌های دستی
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {enrollments.length === 0 ? (
-                    <div className="text-center py-12">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-lg font-medium text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>نام و نام خانوادگی</TableHead>
-                            <TableHead>دوره</TableHead>
-                            <TableHead>مبلغ</TableHead>
-                            <TableHead>وضعیت</TableHead>
-                            <TableHead>تاریخ ثبت‌نام</TableHead>
-                            <TableHead>عملیات</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {enrollments.map((enrollment) => (
-                            <TableRow key={enrollment.id}>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{enrollment.full_name}</div>
-                                  <div className="text-sm text-muted-foreground">{enrollment.email}</div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
-                              </TableCell>
-                              <TableCell>
-                                {getStatusBadge(enrollment.manual_payment_status)}
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">{formatDate(enrollment.created_at)}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleViewDetails(enrollment)}
-                                >
-                                  <Eye className="h-4 w-4 ml-1" />
-                                  مشاهده
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+            {/* Enrollments View */}
+            {activeView === 'enrollments' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold">مدیریت ثبت‌نام‌ها</h1>
+                  <p className="text-muted-foreground mt-2">مدیریت و تایید پرداخت‌های دستی</p>
+                </div>
 
-            <TabsContent value="courses" className="space-y-6">
-              {/* Course Management */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
+                          <p className="text-2xl font-bold">{enrollments.length}</p>
+                        </div>
+                        <User className="h-8 w-8 text-primary" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">در انتظار تایید</p>
+                          <p className="text-2xl font-bold text-amber-600">
+                            {enrollments.filter(e => e.manual_payment_status === 'pending').length}
+                          </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-amber-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">تایید شده</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {enrollments.filter(e => e.manual_payment_status === 'approved').length}
+                          </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">رد شده</p>
+                          <p className="text-2xl font-bold text-red-600">
+                            {enrollments.filter(e => e.manual_payment_status === 'rejected').length}
+                          </p>
+                        </div>
+                        <XCircle className="h-8 w-8 text-red-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Enrollments Table */}
+                <Card>
+                  <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-6 w-6" />
-                      مدیریت دوره‌ها
+                      <CreditCard className="h-6 w-6" />
+                      پرداخت‌های دستی
                     </CardTitle>
-                    <Button onClick={handleCreateCourse}>
-                      <Plus className="h-4 w-4 ml-2" />
-                      دوره جدید
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {courses.length === 0 ? (
-                    <div className="text-center py-12">
-                      <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-lg font-medium text-muted-foreground">هیچ دوره‌ای یافت نشد</p>
-                      <Button onClick={handleCreateCourse} className="mt-4">
-                        <Plus className="h-4 w-4 ml-2" />
-                        اولین دوره را ایجاد کنید
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>عنوان دوره</TableHead>
-                            <TableHead>اسلاگ</TableHead>
-                            <TableHead>قیمت</TableHead>
-                            <TableHead>وضعیت</TableHead>
-                            <TableHead>تاریخ ایجاد</TableHead>
-                            <TableHead>عملیات</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {courses.map((course) => (
-                            <TableRow key={course.id}>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{course.title}</div>
-                                  <div className="text-sm text-muted-foreground truncate max-w-xs">
-                                    {course.description}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <code className="text-sm bg-muted px-2 py-1 rounded">{course.slug}</code>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-mono">{formatPrice(course.price)}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={course.is_active ? "default" : "secondary"}>
-                                  {course.is_active ? "فعال" : "غیرفعال"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">{formatDate(course.created_at)}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditCourse(course)}
-                                >
-                                  <Edit className="h-4 w-4 ml-1" />
-                                  ویرایش
-                                </Button>
-                              </TableCell>
+                  </CardHeader>
+                  <CardContent>
+                    {enrollments.length === 0 ? (
+                      <div className="text-center py-12">
+                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-lg font-medium text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>نام و نام خانوادگی</TableHead>
+                              <TableHead>دوره</TableHead>
+                              <TableHead>مبلغ</TableHead>
+                              <TableHead>وضعیت</TableHead>
+                              <TableHead>تاریخ ثبت‌نام</TableHead>
+                              <TableHead>عملیات</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                          </TableHeader>
+                          <TableBody>
+                            {enrollments.map((enrollment) => (
+                              <TableRow key={enrollment.id}>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{enrollment.full_name}</div>
+                                    <div className="text-sm text-muted-foreground">{enrollment.email}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
+                                </TableCell>
+                                <TableCell>
+                                  {getStatusBadge(enrollment.manual_payment_status)}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm">{formatDate(enrollment.created_at)}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleViewDetails(enrollment)}
+                                  >
+                                    <Eye className="h-4 w-4 ml-1" />
+                                    مشاهده
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Courses View */}
+            {activeView === 'courses' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold">مدیریت دوره‌ها</h1>
+                    <p className="text-muted-foreground mt-2">ایجاد و ویرایش دوره‌های آموزشی</p>
+                  </div>
+                  <Button onClick={handleCreateCourse}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    دوره جدید
+                  </Button>
+                </div>
+
+                {/* Course Management */}
+                <Card>
+                  <CardContent className="p-6">
+                    {courses.length === 0 ? (
+                      <div className="text-center py-12">
+                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-lg font-medium text-muted-foreground">هیچ دوره‌ای یافت نشد</p>
+                        <Button onClick={handleCreateCourse} className="mt-4">
+                          <Plus className="h-4 w-4 ml-2" />
+                          اولین دوره را ایجاد کنید
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>عنوان دوره</TableHead>
+                              <TableHead>اسلاگ</TableHead>
+                              <TableHead>قیمت</TableHead>
+                              <TableHead>کاربران ثبت‌نام شده</TableHead>
+                              <TableHead>وضعیت</TableHead>
+                              <TableHead>لینک ثبت‌نام</TableHead>
+                              <TableHead>عملیات</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {courses.map((course) => (
+                              <TableRow key={course.id}>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{course.title}</div>
+                                    <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                      {course.description}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <code className="text-sm bg-muted px-2 py-1 rounded">{course.slug}</code>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-mono">{formatPrice(course.price)}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium">{getEnrolledUsersCount(course.id)}</span>
+                                    <span className="text-sm text-muted-foreground">کاربر</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={course.is_active ? "default" : "secondary"}>
+                                    {course.is_active ? "فعال" : "غیرفعال"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                  >
+                                    <a 
+                                      href={`/enroll?course=${course.slug}`} 
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                      ثبت‌نام
+                                    </a>
+                                  </Button>
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditCourse(course)}
+                                  >
+                                    <Edit className="h-4 w-4 ml-1" />
+                                    ویرایش
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
