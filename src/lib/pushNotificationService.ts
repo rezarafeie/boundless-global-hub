@@ -43,8 +43,8 @@ export const pushNotificationService = {
         return true;
       }
 
-      // Request permission and subscribe
-      await window.OneSignal.Slidedown.promptPush();
+      // Force request permission and subscribe using OneSignal's showNativePrompt
+      await window.OneSignal.User.PushSubscription.optIn();
       const newSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
       
       if (newSubscriptionState) {
