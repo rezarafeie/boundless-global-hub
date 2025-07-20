@@ -268,9 +268,22 @@ const EnrollAdmin: React.FC = () => {
         // Don't throw error, as the enrollment is already approved
       }
 
+      // Construct success URL for the user to redirect them
+      const course = courses.find(c => c.id === selectedEnrollment.course_id);
+      const successUrl = `/enroll/success?course=${course?.slug}&email=${selectedEnrollment.email}&enrollment=${selectedEnrollment.id}&status=OK&Authority=MANUAL_PAYMENT`;
+      
       toast({
         title: "تایید شد",
-        description: "پرداخت با موفقیت تایید شد و کاربر به دوره دسترسی پیدا کرد",
+        description: "پرداخت با موفقیت تایید شد و کاربر می‌تواند به دوره دسترسی پیدا کند",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.open(successUrl, '_blank')}
+          >
+            مشاهده صفحه موفقیت
+          </Button>
+        )
       });
 
       // Refresh the list
