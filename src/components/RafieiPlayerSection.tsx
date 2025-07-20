@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,8 @@ interface RafieiPlayerSectionProps {
     course_id: string;
     payment_amount: number;
     created_at: string;
+    full_name: string;
+    phone: string;
     spotplayer_license_id?: string;
     spotplayer_license_key?: string;
     spotplayer_license_url?: string;
@@ -41,44 +44,54 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
   const { toast } = useToast();
 
   const createLicense = async () => {
-    if (!enrollment || !course) return;
+    if (!enrollment || !course) {
+      toast({
+        title: "خطا",
+        description: "اطلاعات ثبت‌نام یا دوره یافت نشد.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsCreatingLicense(true);
+    
     try {
+      console.log('Sending license creation request with data:', {
+        enrollmentId: enrollment.id,
+        userFullName: enrollment.full_name,
+        userPhone: enrollment.phone,
+        courseId: enrollment.course_id
+      });
+
       const { data, error } = await supabase.functions.invoke('create-spotplayer-license', {
         body: {
-          enrollment: enrollment,
-          course: course,
-          user: {
-            email: 'user@example.com', // This should come from enrollment data
-            name: enrollment.id // This should come from enrollment data
-          }
+          enrollmentId: enrollment.id,
+          userFullName: enrollment.full_name,
+          userPhone: enrollment.phone,
+          courseId: enrollment.course_id
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      console.log('License creation response:', data);
 
       if (data?.success) {
-        // Refresh enrollment data to get the license
-        const { data: updatedEnrollment, error: fetchError } = await supabase
-          .from('enrollments')
-          .select('spotplayer_license_id, spotplayer_license_key, spotplayer_license_url')
-          .eq('id', enrollment.id)
-          .single();
-
-        if (!fetchError && updatedEnrollment) {
-          setLicenseData({
-            license_id: updatedEnrollment.spotplayer_license_id,
-            license_key: updatedEnrollment.spotplayer_license_key,
-            license_url: updatedEnrollment.spotplayer_license_url
-          });
-          toast({
-            title: "لایسنس رفیعی پلیر ایجاد شد",
-            description: "لایسنس شما با موفقیت ایجاد شد و آماده استفاده است.",
-          });
-        }
+        setLicenseData({
+          license_id: data.license.id,
+          license_key: data.license.key,
+          license_url: data.license.url
+        });
+        
+        toast({
+          title: "لایسنس رفیعی پلیر ایجاد شد",
+          description: "لایسنس شما با موفقیت ایجاد شد و آماده استفاده است.",
+        });
       } else {
-        throw new Error(data?.message || 'خطا در ایجاد لایسنس');
+        throw new Error(data?.error || 'خطا در ایجاد لایسنس');
       }
     } catch (error) {
       console.error('License creation error:', error);
