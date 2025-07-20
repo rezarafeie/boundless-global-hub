@@ -275,16 +275,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await unifiedAuthService.logout(token);
         console.log('📡 Server logout completed');
       }
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('❌ Server logout error:', error);
     } finally {
       // Clear all auth data
       setUser(null);
       setToken(null);
+      
+      // Delete all cookies
       deleteCookie('session_token');
       deleteCookie('current_user');
+      deleteCookie('rafiei-dismissed-floating');
+      deleteCookie('rafiei-dismissed-popup');
+      
+      // Clear all localStorage items
       localStorage.removeItem('messenger_session_token');
-      console.log('🧹 All auth data cleared');
+      localStorage.clear();
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      
+      console.log('🧹 All auth data, cookies, and sessions cleared');
     }
   };
 
