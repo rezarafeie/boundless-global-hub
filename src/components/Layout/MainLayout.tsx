@@ -24,9 +24,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const hideFooterRoutes = ['/mag', '/payreq'];
   const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
   
-  // Routes where both header and footer should be hidden (access pages and redirect pages)
+  // Routes where both header and footer should be hidden (redirect pages only)
   // Dashboard should NOT be included here - it needs the header
-  const hideHeaderFooterRoutes = location.pathname.startsWith('/access') || location.pathname.startsWith('/redirect');
+  const hideHeaderFooterRoutes = location.pathname.startsWith('/redirect');
   
   // Routes that require online connection - only messenger requires connection now
   const requiresConnectionRoutes = ['/hub/messenger'];
