@@ -13,8 +13,9 @@ const NotificationPermissionBanner: React.FC<NotificationPermissionBannerProps> 
   onDismiss,
   pushSupported = false
 }) => {
+  console.log('🔔 NotificationPermissionBanner rendered');
   const handleEnableNotifications = async () => {
-    console.log('🔔 Banner activate button clicked');
+    console.log('🔔 Banner activate button clicked - IMMEDIATE LOG');
     try {
       const granted = await onRequestPermission();
       console.log('🔔 Permission request result from banner:', granted);

@@ -18,6 +18,7 @@ interface NotificationServiceOptions {
 }
 
 export const useNotificationService = ({ currentUser, sessionToken }: NotificationServiceOptions) => {
+  console.log('🔔 useNotificationService initialized with user:', currentUser?.id, 'sessionToken:', !!sessionToken);
   const [permissionState, setPermissionState] = useState<NotificationPermissionState>({
     granted: false,
     permission: 'default',
