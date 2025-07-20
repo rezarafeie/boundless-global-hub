@@ -420,7 +420,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                   <li>• مبلغ را به حساب مشخص شده واریز کنید</li>
                   <li>• رسید پرداخت را آپلود کنید</li>
                   <li>• پس از بررسی، دسترسی به دوره فعال می‌شود</li>
-                  <li>• زمان بررسی: ۲۴ ساعت</li>
+                  
                 </ul>
               </div>
             </div>
@@ -461,7 +461,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
             <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4">
               <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">مراحل بعدی:</h4>
               <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                <li>• بررسی رسید پرداخت (تا ۲۴ ساعت)</li>
+                <li>• بررسی رسید پرداخت</li>
                 <li>• ارسال ایمیل تایید</li>
                 <li>• فعال‌سازی دسترسی به دوره</li>
               </ul>
