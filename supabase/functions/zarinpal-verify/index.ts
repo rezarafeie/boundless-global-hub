@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { supabase } from "../_shared/supabase.ts"
 
@@ -13,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { authority, enrollmentId } = await req.json();
+    const { authority, enrollmentId, manualApproval } = await req.json();
 
     // Get enrollment details
     const { data: enrollment, error: enrollmentError } = await supabase
@@ -32,6 +33,42 @@ serve(async (req) => {
       );
     }
 
+    // Handle manual payments - skip Zarinpal verification
+    if (authority === 'MANUAL_PAYMENT' || manualApproval) {
+      console.log('Processing manual payment approval for enrollment:', enrollmentId);
+
+      // Create WooCommerce order if product ID is available and order doesn't exist
+      let woocommerceOrderId = enrollment.woocommerce_order_id;
+      if (enrollment.courses.woocommerce_product_id && !woocommerceOrderId) {
+        try {
+          const wooOrderId = await createWooCommerceOrder(enrollment);
+          if (wooOrderId) {
+            woocommerceOrderId = wooOrderId;
+            await supabase
+              .from('enrollments')
+              .update({ woocommerce_order_id: wooOrderId })
+              .eq('id', enrollmentId);
+          }
+        } catch (wooError) {
+          console.error('WooCommerce order creation failed:', wooError);
+          // Don't fail the whole process if WooCommerce fails
+        }
+      }
+
+      // Return success for manual payment (don't modify payment status - admin already approved)
+      return new Response(
+        JSON.stringify({
+          success: true,
+          refId: 'MANUAL_PAYMENT_APPROVED',
+          woocommerceOrderId,
+          course: enrollment.courses,
+          enrollment: enrollment
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Regular Zarinpal verification for non-manual payments
     const merchantId = Deno.env.get('ZARINPAL_MERCHANT_ID');
     if (!merchantId) {
       return new Response(
