@@ -26,36 +26,61 @@ export const pushNotificationService = {
     }
 
     this.initializationPromise = new Promise<void>((resolve, reject) => {
+      console.log('🔔 [Android] Creating new initialization promise');
+      
       const timeout = setTimeout(() => {
-        console.error('🔔 [Android] OneSignal initialization timeout');
+        console.error('🔔 [Android] OneSignal initialization timeout after 20 seconds');
         reject(new Error('OneSignal initialization timeout'));
-      }, 15000);
+      }, 20000);
 
       const checkAndInit = async () => {
         try {
+          console.log('🔔 [Android] Checking OneSignal availability:', {
+            oneSignalExists: typeof window.OneSignal !== 'undefined',
+            oneSignalType: typeof window.OneSignal,
+            windowKeys: Object.keys(window).filter(k => k.includes('OneSignal'))
+          });
+
           if (typeof window.OneSignal === 'undefined') {
-            console.log('🔔 [Android] OneSignal not loaded yet, waiting...');
+            console.log('🔔 [Android] OneSignal not loaded yet, retrying in 500ms...');
             setTimeout(checkAndInit, 500);
             return;
           }
 
-          console.log('🔔 [Android] OneSignal SDK loaded, initializing...');
+          console.log('🔔 [Android] OneSignal SDK detected, attempting initialization...');
           
-          await window.OneSignal.init({
-            appId: "e221c080-7853-46e5-ba40-93796318d1a0",
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: '/OneSignalSDKWorker.js',
-            serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js',
-            autoRegister: true,
-            autoResubscribe: true,
-            notificationClickHandlerAction: 'focus',
-            persistNotification: false
+          // Use OneSignalDeferred pattern for proper initialization
+          if (!window.OneSignalDeferred) {
+            window.OneSignalDeferred = [];
+          }
+
+          window.OneSignalDeferred.push(async function(OneSignal: any) {
+            console.log('🔔 [Android] OneSignal deferred initialization started');
+            
+            try {
+              await OneSignal.init({
+                appId: "e221c080-7853-46e5-ba40-93796318d1a0",
+                allowLocalhostAsSecureOrigin: true,
+                serviceWorkerPath: '/OneSignalSDKWorker.js',
+                serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js',
+                autoRegister: false, // Changed to false to prevent auto-prompt
+                autoResubscribe: true,
+                notificationClickHandlerAction: 'focus',
+                persistNotification: false
+              });
+
+              console.log('🔔 [Android] OneSignal initialized successfully via deferred');
+              clearTimeout(timeout);
+              resolve();
+            } catch (initError) {
+              console.error('🔔 [Android] OneSignal deferred init error:', initError);
+              clearTimeout(timeout);
+              reject(initError);
+            }
           });
 
-          console.log('🔔 [Android] OneSignal initialized successfully');
           this.isInitialized = true;
-          clearTimeout(timeout);
-          resolve();
+          
         } catch (error) {
           console.error('🔔 [Android] OneSignal initialization error:', error);
           clearTimeout(timeout);
@@ -63,6 +88,7 @@ export const pushNotificationService = {
         }
       };
 
+      // Start checking immediately
       checkAndInit();
     });
 
@@ -81,49 +107,59 @@ export const pushNotificationService = {
         return false;
       }
 
-      // Check if already subscribed
-      const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
-      console.log('🔔 [Android] Current subscription status:', isSubscribed);
+      console.log('🔔 [Android] OneSignal available, checking current state...');
+
+      // Check current permission status
+      let isSubscribed = false;
+      try {
+        isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
+        console.log('🔔 [Android] Current subscription status:', isSubscribed);
+      } catch (error) {
+        console.log('🔔 [Android] Could not check current subscription status:', error);
+      }
       
       if (isSubscribed) {
         console.log('✅ [Android] User already subscribed');
         return true;
       }
 
-      // Request permission using OneSignal v16 API
-      console.log('🔔 [Android] Requesting OneSignal permission...');
+      // Request permission using OneSignal v16 Slidedown API
+      console.log('🔔 [Android] Requesting OneSignal permission via Slidedown...');
       
       try {
-        // Use the correct OneSignal v16 API method
-        await window.OneSignal.User.PushSubscription.optIn();
-        console.log('🔔 [Android] Permission request sent');
+        // Use OneSignal Slidedown to show permission prompt
+        await window.OneSignal.Slidedown.promptPush();
+        console.log('🔔 [Android] Slidedown permission prompt triggered');
         
-        // Wait a bit for the permission dialog to appear and be processed
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for user interaction
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Check if permission was granted
         const finalSubscriptionState = await window.OneSignal.User.PushSubscription.optedIn;
-        console.log('🔔 [Android] Final subscription state:', finalSubscriptionState);
+        console.log('🔔 [Android] Final subscription state after slidedown:', finalSubscriptionState);
         
         if (finalSubscriptionState) {
-          console.log('✅ [Android] Permission granted and subscribed');
+          console.log('✅ [Android] Permission granted and subscribed via slidedown');
           return true;
         } else {
-          console.log('❌ [Android] Permission denied or subscription failed');
+          console.log('🔔 [Android] Slidedown failed, trying direct opt-in...');
           
-          // Try fallback method with native browser API
+          // Try direct opt-in as fallback
+          await window.OneSignal.User.PushSubscription.optIn();
+          const directOptInResult = await window.OneSignal.User.PushSubscription.optedIn;
+          console.log('🔔 [Android] Direct opt-in result:', directOptInResult);
+          
+          if (directOptInResult) {
+            console.log('✅ [Android] Permission granted via direct opt-in');
+            return true;
+          }
+          
+          // Final fallback to native browser API
           if ('Notification' in window) {
-            console.log('🔔 [Android] Trying fallback browser notification permission...');
+            console.log('🔔 [Android] Trying native browser notification permission as final fallback...');
             const permission = await Notification.requestPermission();
-            console.log('🔔 [Android] Browser permission result:', permission);
-            
-            if (permission === 'granted') {
-              // Try OneSignal subscription again
-              await window.OneSignal.User.PushSubscription.optIn();
-              const retryResult = await window.OneSignal.User.PushSubscription.optedIn;
-              console.log('🔔 [Android] Retry subscription result:', retryResult);
-              return retryResult;
-            }
+            console.log('🔔 [Android] Native permission result:', permission);
+            return permission === 'granted';
           }
           
           return false;
