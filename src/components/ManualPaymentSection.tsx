@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Upload, Clock, CheckCircle, Copy } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { CreditCard, Upload, Clock, CheckCircle, Copy, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -35,6 +38,9 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showWaitingModal, setShowWaitingModal] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const bankAccount = {
     number: "6219861919595958",
@@ -54,13 +60,63 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     });
   };
 
+  const validateForm = () => {
+    console.log('🔍 Starting form validation...');
+    const errors: string[] = [];
+    
+    if (!formData.firstName?.trim()) {
+      errors.push('نام الزامی است');
+    }
+    if (!formData.lastName?.trim()) {
+      errors.push('نام خانوادگی الزامی است');
+    }
+    if (!formData.email?.trim()) {
+      errors.push('ایمیل الزامی است');
+    } else if (!formData.email.includes('@')) {
+      errors.push('ایمیل معتبر نیست');
+    }
+    if (!formData.phone?.trim()) {
+      errors.push('شماره تلفن الزامی است');
+    }
+    if (!uploadedFile) {
+      errors.push('رسید پرداخت الزامی است');
+    }
+
+    console.log('📋 Form validation result:', { 
+      errors, 
+      formData: {
+        firstName: formData.firstName?.trim() || 'empty',
+        lastName: formData.lastName?.trim() || 'empty', 
+        email: formData.email?.trim() || 'empty',
+        phone: formData.phone?.trim() || 'empty'
+      },
+      hasFile: !!uploadedFile 
+    });
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📁 File upload triggered');
     const file = event.target.files?.[0];
-    if (!file) return;
+    
+    if (!file) {
+      console.log('❌ No file selected');
+      return;
+    }
+
+    console.log('📄 File details:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      sizeInMB: (file.size / (1024 * 1024)).toFixed(2)
+    });
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
+      console.error('❌ Invalid file type:', file.type);
       toast({
         title: "خطا",
         description: "لطفا فایل تصویری (JPG, PNG, WEBP) آپلود کنید",
@@ -71,6 +127,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
+      console.error('❌ File too large:', file.size);
       toast({
         title: "خطا",
         description: "حجم فایل نباید بیشتر از 5 مگابایت باشد",
@@ -79,68 +136,88 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       return;
     }
 
+    console.log('✅ File validation passed');
     setUploadedFile(file);
+    setValidationErrors(prev => prev.filter(error => !error.includes('رسید')));
+    
+    toast({
+      title: "موفق",
+      description: `فایل ${file.name} انتخاب شد`,
+    });
   };
 
   const submitManualPayment = async () => {
-    console.log('submitManualPayment called with:', { 
+    console.log('🚀 Manual payment submission started');
+    console.log('📊 Initial state:', { 
       uploadedFile: !!uploadedFile, 
       formData,
       course: { id: course.id, title: course.title }
     });
 
-    if (!uploadedFile) {
-      toast({
-        title: "خطا",
-        description: "لطفا رسید پرداخت را آپلود کنید",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if all required form fields are filled
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      toast({
-        title: "خطا",
-        description: "لطفا تمام فیلدهای فرم را تکمیل کنید",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setUploading(true);
+    // Reset progress and errors
+    setProgress(0);
+    setCurrentStep('در حال بررسی اطلاعات...');
+    setValidationErrors([]);
 
     try {
-      console.log('Starting manual payment submission...');
+      // Step 1: Validate form
+      setProgress(10);
+      setCurrentStep('بررسی صحت اطلاعات...');
       
-      // Upload receipt to storage
-      const fileName = `${Date.now()}_${course.id}_${formData.email.replace(/[^a-zA-Z0-9]/g, '_')}_receipt.${uploadedFile.name.split('.').pop()}`;
-      console.log('Uploading file:', fileName);
+      if (!validateForm()) {
+        console.error('❌ Form validation failed');
+        toast({
+          title: "خطا در اعتبارسنجی",
+          description: "لطفا خطاهای فرم را برطرف کنید",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('✅ Form validation passed');
+      setUploading(true);
+
+      // Step 2: Prepare file upload
+      setProgress(20);
+      setCurrentStep('آماده‌سازی آپلود فایل...');
+      
+      const fileName = `${Date.now()}_${course.id}_${formData.email.replace(/[^a-zA-Z0-9]/g, '_')}_receipt.${uploadedFile!.name.split('.').pop()}`;
+      console.log('📤 Uploading file with name:', fileName);
+      
+      // Step 3: Upload to Supabase Storage
+      setProgress(40);
+      setCurrentStep('آپلود رسید...');
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('payment-receipts')
-        .upload(fileName, uploadedFile);
+        .upload(fileName, uploadedFile!);
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+        console.error('❌ Upload error:', uploadError);
+        throw new Error(`خطا در آپلود فایل: ${uploadError.message}`);
       }
 
-      console.log('File uploaded successfully:', uploadData);
+      console.log('✅ File uploaded successfully:', uploadData);
 
-      // Get public URL
+      // Step 4: Get public URL
+      setProgress(60);
+      setCurrentStep('دریافت لینک فایل...');
+      
       const { data: { publicUrl } } = supabase.storage
         .from('payment-receipts')
         .getPublicUrl(fileName);
 
-      console.log('Public URL:', publicUrl);
+      console.log('🔗 Public URL generated:', publicUrl);
 
-      // Create enrollment record with manual payment
+      // Step 5: Create enrollment record
+      setProgress(80);
+      setCurrentStep('ثبت اطلاعات پرداخت...');
+      
       const enrollmentData = {
         course_id: course.id,
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
+        full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
         payment_amount: course.price,
         payment_status: 'pending',
         payment_method: 'manual',
@@ -148,7 +225,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         receipt_url: publicUrl
       };
 
-      console.log('Creating enrollment with data:', enrollmentData);
+      console.log('💾 Creating enrollment with data:', enrollmentData);
 
       const { data: createdEnrollment, error: enrollmentError } = await supabase
         .from('enrollments')
@@ -157,33 +234,46 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         .single();
 
       if (enrollmentError) {
-        console.error('Enrollment error:', enrollmentError);
-        throw enrollmentError;
+        console.error('❌ Enrollment creation error:', enrollmentError);
+        throw new Error(`خطا در ثبت اطلاعات: ${enrollmentError.message}`);
       }
 
-      console.log('Enrollment created successfully:', createdEnrollment);
+      console.log('✅ Enrollment created successfully:', createdEnrollment);
 
-      setShowWaitingModal(true);
+      // Step 6: Complete
+      setProgress(100);
+      setCurrentStep('تکمیل شد!');
+
+      setTimeout(() => {
+        setShowWaitingModal(true);
+        
+        toast({
+          title: "رسید آپلود شد",
+          description: "رسید پرداخت شما با موفقیت ثبت شد و در انتظار تایید است",
+        });
+
+        // Reset form
+        setUploadedFile(null);
+        setValidationErrors([]);
+        const fileInput = document.getElementById('receipt') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+      }, 500);
+
+    } catch (error: any) {
+      console.error('❌ Manual payment error:', error);
+      setCurrentStep('خطا در پردازش');
       
       toast({
-        title: "رسید آپلود شد",
-        description: "رسید پرداخت شما با موفقیت ثبت شد و در انتظار تایید است",
-      });
-
-      // Reset form
-      setUploadedFile(null);
-      const fileInput = document.getElementById('receipt') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
-
-    } catch (error) {
-      console.error('Manual payment error:', error);
-      toast({
         title: "خطا",
-        description: `خطا در ثبت پرداخت دستی: ${error.message || 'خطای نامشخص'}`,
+        description: error.message || 'خطای نامشخص در ثبت پرداخت دستی',
         variant: "destructive"
       });
     } finally {
       setUploading(false);
+      if (!showWaitingModal) {
+        setProgress(0);
+        setCurrentStep('');
+      }
     }
   };
 
@@ -271,6 +361,31 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Validation Errors */}
+            {validationErrors.length > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <ul className="list-disc list-inside space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Progress Indicator */}
+            {uploading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>{currentStep}</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="w-full" />
+              </div>
+            )}
+
             {/* Bank Details */}
             <div className="grid gap-4 p-4 bg-white rounded-lg border">
               <div className="flex items-center justify-between">
@@ -310,6 +425,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                 accept="image/*"
                 onChange={handleFileUpload}
                 className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                disabled={uploading}
               />
               {uploadedFile && (
                 <div className="flex items-center gap-2 text-sm text-green-600">
@@ -325,14 +441,14 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
             {/* Submit Button */}
             <Button
               onClick={submitManualPayment}
-              disabled={!uploadedFile || uploading}
+              disabled={uploading || validationErrors.length > 0}
               className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90"
               size="lg"
             >
               {uploading ? (
                 <>
-                  <Clock className="h-5 w-5 animate-spin ml-2" />
-                  در حال آپلود...
+                  <Loader2 className="h-5 w-5 animate-spin ml-2" />
+                  {currentStep || 'در حال پردازش...'}
                 </>
               ) : (
                 <>
