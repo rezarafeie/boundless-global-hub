@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
@@ -16,6 +17,7 @@ const Auth: React.FC = () => {
   } | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [linkingEmail, setLinkingEmail] = useState<string | null>(null);
+  const [isLinkingMode, setIsLinkingMode] = useState(false);
 
   // Check for URL linking parameter and redirect URL
   useEffect(() => {
@@ -25,6 +27,9 @@ const Auth: React.FC = () => {
     if (linkParam) {
       console.log('🔗 Found linking parameter:', linkParam);
       setLinkingEmail(linkParam);
+      setIsLinkingMode(true);
+      // Clear any existing auth session when starting linking process
+      supabase.auth.signOut();
     }
     
     if (redirectParam) {
@@ -34,6 +39,11 @@ const Auth: React.FC = () => {
 
   // Check for Google auth session on mount
   useEffect(() => {
+    // Don't run auth check if we're in linking mode
+    if (isLinkingMode) {
+      return;
+    }
+
     const checkGoogleAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -64,8 +74,12 @@ const Auth: React.FC = () => {
           } else {
             console.log('🔗 User exists but Gmail not linked, redirecting to linking...');
             // User exists but Gmail is not linked - force redirect to linking
-            if (!linkingEmail) {
-              window.location.href = `/auth?link=${encodeURIComponent(session.user.email || '')}`;
+            const currentUrl = window.location.pathname + window.location.search;
+            const targetUrl = `/auth?link=${encodeURIComponent(session.user.email || '')}`;
+            
+            // Prevent infinite redirect - only redirect if we're not already on the target URL
+            if (currentUrl !== targetUrl) {
+              window.location.href = targetUrl;
               return;
             }
           }
@@ -73,9 +87,13 @@ const Auth: React.FC = () => {
           console.log('📝 User needs linking or registration');
           
           // If we don't have a linking parameter in URL, redirect to linking flow  
-          if (!linkingEmail && session.user.email) {
+          const currentUrl = window.location.pathname + window.location.search;
+          const targetUrl = `/auth?link=${encodeURIComponent(session.user.email || '')}`;
+          
+          // Prevent infinite redirect - only redirect if we're not already on the target URL
+          if (session.user.email && currentUrl !== targetUrl) {
             console.log('🔗 Redirecting to linking flow for unlinked Google account');
-            window.location.href = `/auth?link=${encodeURIComponent(session.user.email)}`;
+            window.location.href = targetUrl;
             return;
           }
           
@@ -93,10 +111,10 @@ const Auth: React.FC = () => {
     };
 
     checkGoogleAuth();
-  }, [login, linkingEmail]);
+  }, [login, linkingEmail, isLinkingMode]);
 
-  // If user is already authenticated, redirect to saved URL or home
-  if (isAuthenticated && user) {
+  // Modified redirect condition - don't redirect if we're in linking mode
+  if (isAuthenticated && user && !isLinkingMode) {
     const redirectUrl = localStorage.getItem('auth_redirect') || '/';
     localStorage.removeItem('auth_redirect');
     return <Navigate to={redirectUrl} replace />;
