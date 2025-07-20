@@ -41,7 +41,8 @@ Deno.serve(async (req) => {
       payment_amount,
       payment_method,
       manual_payment_status,
-      receipt_url
+      receipt_url,
+      chat_user_id
     } = body;
 
     // Validate required fields
@@ -50,6 +51,21 @@ Deno.serve(async (req) => {
     }
 
     console.log('✅ Validation passed, creating enrollment...');
+
+    // Try to find existing chat_user by phone or email if not provided
+    let resolvedChatUserId = chat_user_id;
+    if (!resolvedChatUserId) {
+      const { data: existingUser } = await supabase
+        .from('chat_users')
+        .select('id')
+        .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
+        .single();
+      
+      if (existingUser) {
+        resolvedChatUserId = existingUser.id;
+        console.log('🔗 Found existing chat_user:', resolvedChatUserId);
+      }
+    }
 
     // Create enrollment record with service role privileges
     const { data: createdEnrollment, error: enrollmentError } = await supabase
@@ -63,7 +79,8 @@ Deno.serve(async (req) => {
         payment_status: 'pending',
         payment_method: payment_method || 'manual',
         manual_payment_status: manual_payment_status || 'pending',
-        receipt_url
+        receipt_url,
+        chat_user_id: resolvedChatUserId
       })
       .select()
       .single();

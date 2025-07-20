@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { CreditCard, FileText, Upload, Loader2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface Course {
@@ -37,6 +38,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   selectedMethod,
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -189,7 +191,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         payment_amount: course.price,
         payment_method: 'manual',
         manual_payment_status: 'pending' as const,
-        receipt_url: publicUrl
+        receipt_url: publicUrl,
+        chat_user_id: user?.id
       };
 
       console.log('💾 Creating enrollment with data:', enrollmentData);

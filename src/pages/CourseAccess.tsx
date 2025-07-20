@@ -16,8 +16,10 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import MessengerAuth from '@/components/Chat/MessengerAuth';
 
 interface Course {
   id: string;
@@ -53,27 +55,26 @@ interface Enrollment {
 const CourseAccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
   
   const courseSlug = searchParams.get('course');
   
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    checkAuthAndLoadCourse();
-  }, [courseSlug]);
+    if (!authLoading) {
+      checkAuthAndLoadCourse();
+    }
+  }, [courseSlug, authLoading, isAuthenticated]);
 
   const checkAuthAndLoadCourse = async () => {
     setLoading(true);
     try {
-      // Check if user is logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-      
       if (!courseSlug) {
         toast({
           title: "خطا",
@@ -105,18 +106,12 @@ const CourseAccess: React.FC = () => {
       setCourse(courseData);
 
       // If user is logged in, check enrollment
-      if (user) {
-        const { data: enrollmentData } = await supabase
-          .from('enrollments')
-          .select('*')
-          .eq('course_id', courseData.id)
-          .eq('payment_status', 'completed')
-          .single();
-
-        setEnrollment(enrollmentData);
+      if (isAuthenticated && user) {
+        const isEnrolled = await checkEnrollment(courseData.id);
+        setEnrollment(isEnrolled ? { id: 'enrolled', course_id: courseData.id, payment_status: 'completed' } : null);
 
         // If enrolled, fetch course content
-        if (enrollmentData) {
+        if (isEnrolled) {
           await fetchCourseContent(courseData.id);
         }
       }
@@ -234,7 +229,7 @@ const CourseAccess: React.FC = () => {
     );
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
@@ -284,7 +279,7 @@ const CourseAccess: React.FC = () => {
         </div>
 
         {/* Not Logged In */}
-        {!isLoggedIn && (
+        {!isAuthenticated && (
           <div className="container mx-auto px-4 py-12">
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-6 text-center">
@@ -293,16 +288,39 @@ const CourseAccess: React.FC = () => {
                 <p className="text-muted-foreground mb-4">
                   برای دسترسی به محتوای دوره باید وارد شوید
                 </p>
-                <Button onClick={() => window.location.href = '/hub/messenger'}>
+                <Button onClick={() => setShowAuth(true)}>
                   ورود / ثبت‌نام
                 </Button>
               </CardContent>
             </Card>
+            
+            {showAuth && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-background rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+                  <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">ورود / ثبت‌نام</h2>
+                    <Button variant="ghost" size="sm" onClick={() => setShowAuth(false)}>
+                      ✕
+                    </Button>
+                  </div>
+                  <div className="p-4">
+                    <MessengerAuth onAuthenticated={(token, name, user) => {
+                      login(user, token);
+                      setShowAuth(false);
+                      toast({
+                        title: "ورود موفق",
+                        description: `خوش آمدید ${name}!`
+                      });
+                    }} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Logged In but Not Enrolled */}
-        {isLoggedIn && !enrollment && (
+        {isAuthenticated && !enrollment && (
           <div className="container mx-auto px-4 py-12">
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-6 text-center">
@@ -323,7 +341,7 @@ const CourseAccess: React.FC = () => {
         )}
 
         {/* Enrolled - Show Course Content */}
-        {isLoggedIn && enrollment && (
+        {isAuthenticated && enrollment && (
           <div className="flex h-[calc(100vh-140px)]">
             {/* Sidebar - Course Navigation */}
             <div className="w-80 bg-card border-r overflow-y-auto">

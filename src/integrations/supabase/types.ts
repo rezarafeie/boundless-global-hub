@@ -667,6 +667,7 @@ export type Database = {
           admin_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          chat_user_id: number | null
           course_id: string
           created_at: string
           email: string
@@ -692,6 +693,7 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          chat_user_id?: number | null
           course_id: string
           created_at?: string
           email: string
@@ -717,6 +719,7 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          chat_user_id?: number | null
           course_id?: string
           created_at?: string
           email?: string
@@ -739,6 +742,13 @@ export type Database = {
           zarinpal_ref_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "enrollments_chat_user_id_fkey"
+            columns: ["chat_user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enrollments_course_id_fkey"
             columns: ["course_id"]

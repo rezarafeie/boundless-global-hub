@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
 
@@ -22,6 +23,7 @@ interface VerificationResult {
 const EnrollSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const courseSlug = searchParams.get('course');
   const email = searchParams.get('email');
@@ -32,6 +34,26 @@ const EnrollSuccess: React.FC = () => {
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
+
+  // Update enrollment with chat_user_id when user is authenticated
+  useEffect(() => {
+    if (user && result?.success && result?.enrollment) {
+      updateEnrollmentWithChatUser();
+    }
+  }, [user, result]);
+
+  const updateEnrollmentWithChatUser = async () => {
+    if (!user || !result?.enrollment) return;
+    
+    try {
+      await supabase
+        .from('enrollments')
+        .update({ chat_user_id: user.id })
+        .eq('id', result.enrollment.id);
+    } catch (error) {
+      console.error('Error updating enrollment with chat_user_id:', error);
+    }
+  };
 
   useEffect(() => {
     if (authority && enrollmentId && status === 'OK') {
