@@ -27,6 +27,7 @@ export class EnhancedPushNotificationService {
   async ensureOneSignalLoaded(): Promise<boolean> {
     // Check if OneSignal is already loaded
     if (typeof window.OneSignal !== 'undefined') {
+      console.log('🔔 [Enhanced] OneSignal already loaded');
       return true;
     }
 
@@ -114,6 +115,9 @@ export class EnhancedPushNotificationService {
 
             await OneSignal.init(config);
 
+            // Wait for OneSignal to be fully ready
+            await this.waitForOneSignalReady(OneSignal);
+
             console.log('🔔 [Enhanced] OneSignal initialized successfully');
             this.isInitialized = true;
             clearTimeout(timeout);
@@ -157,6 +161,38 @@ export class EnhancedPushNotificationService {
       };
 
       checkOneSignal();
+    });
+  }
+
+  private async waitForOneSignalReady(OneSignal: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const maxWaitTime = 10000; // 10 seconds
+      const checkInterval = 200; // 200ms
+      let elapsed = 0;
+
+      const checkReady = async () => {
+        try {
+          // Try to access OneSignal User API to ensure it's ready
+          if (OneSignal.User && OneSignal.User.PushSubscription) {
+            console.log('🔔 [Enhanced] OneSignal User API is ready');
+            resolve();
+            return;
+          }
+        } catch (error) {
+          console.log('🔔 [Enhanced] OneSignal not fully ready yet:', error);
+        }
+
+        elapsed += checkInterval;
+        if (elapsed >= maxWaitTime) {
+          console.warn('🔔 [Enhanced] OneSignal readiness timeout, proceeding anyway');
+          resolve(); // Don't reject, just proceed
+          return;
+        }
+
+        setTimeout(checkReady, checkInterval);
+      };
+
+      checkReady();
     });
   }
 
@@ -221,23 +257,43 @@ export class EnhancedPushNotificationService {
   private async requestIOSPermission(): Promise<boolean> {
     console.log('🔔 [Enhanced] Using iOS-specific permission request...');
     
-    // For iOS, we need to use native browser API as OneSignal has limitations
-    if ('Notification' in window) {
-      console.log('🔔 [Enhanced] Requesting native browser notification permission for iOS...');
-      const permission = await Notification.requestPermission();
-      console.log('🔔 [Enhanced] iOS native permission result:', permission);
-      
-      if (permission === 'granted') {
-        // Try to get OneSignal subscription after native permission
-        try {
-          await window.OneSignal.User.PushSubscription.optIn();
-          const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
-          return optedIn;
-        } catch (error) {
-          console.log('🔔 [Enhanced] OneSignal opt-in failed on iOS, but native permission granted');
-          return true; // Native permission is granted, that's what matters for iOS
+    try {
+      // For iOS PWA, try OneSignal first
+      if (this.deviceInfo.isPWA) {
+        console.log('🔔 [Enhanced] iOS PWA detected, trying OneSignal opt-in...');
+        await window.OneSignal.User.PushSubscription.optIn();
+        
+        // Wait for subscription to process
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
+        if (optedIn) {
+          console.log('✅ [Enhanced] iOS PWA OneSignal subscription successful');
+          return true;
         }
       }
+      
+      // Fallback to native browser API
+      if ('Notification' in window) {
+        console.log('🔔 [Enhanced] Requesting native browser notification permission for iOS...');
+        const permission = await Notification.requestPermission();
+        console.log('🔔 [Enhanced] iOS native permission result:', permission);
+        
+        if (permission === 'granted') {
+          // Try to get OneSignal subscription after native permission
+          try {
+            await window.OneSignal.User.PushSubscription.optIn();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
+            return optedIn;
+          } catch (error) {
+            console.log('🔔 [Enhanced] OneSignal opt-in failed on iOS, but native permission granted');
+            return true; // Native permission is granted, that's what matters for iOS
+          }
+        }
+      }
+    } catch (error) {
+      console.error('🔔 [Enhanced] iOS permission request failed:', error);
     }
     
     return false;
@@ -248,7 +304,12 @@ export class EnhancedPushNotificationService {
     
     try {
       // Try OneSignal direct opt-in first
+      console.log('🔔 [Enhanced] Attempting OneSignal opt-in for Android...');
       await window.OneSignal.User.PushSubscription.optIn();
+      
+      // Wait for subscription to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const result = await window.OneSignal.User.PushSubscription.optedIn;
       console.log('🔔 [Enhanced] Android OneSignal opt-in result:', result);
       
@@ -261,9 +322,22 @@ export class EnhancedPushNotificationService {
     
     // Fallback to native browser notification
     if ('Notification' in window) {
+      console.log('🔔 [Enhanced] Trying native notification permission for Android...');
       const permission = await Notification.requestPermission();
       console.log('🔔 [Enhanced] Android native permission result:', permission);
-      return permission === 'granted';
+      
+      if (permission === 'granted') {
+        // Try OneSignal again after native permission
+        try {
+          await window.OneSignal.User.PushSubscription.optIn();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const optedIn = await window.OneSignal.User.PushSubscription.optedIn;
+          return optedIn;
+        } catch (error) {
+          console.log('🔔 [Enhanced] OneSignal still failed, but native permission granted');
+          return true;
+        }
+      }
     }
     
     return false;
@@ -274,6 +348,7 @@ export class EnhancedPushNotificationService {
     
     try {
       // Use OneSignal Slidedown for desktop
+      console.log('🔔 [Enhanced] Attempting OneSignal slidedown for desktop...');
       await window.OneSignal.Slidedown.promptPush();
       console.log('🔔 [Enhanced] Desktop slidedown permission prompt triggered');
       
@@ -292,11 +367,25 @@ export class EnhancedPushNotificationService {
     
     // Fallback to direct opt-in
     try {
+      console.log('🔔 [Enhanced] Attempting direct opt-in for desktop...');
       await window.OneSignal.User.PushSubscription.optIn();
+      
+      // Wait for subscription to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const result = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 [Enhanced] Desktop direct opt-in result:', result);
       return result;
     } catch (error) {
       console.log('🔔 [Enhanced] Desktop direct opt-in failed:', error);
+    }
+    
+    // Final fallback to native browser API
+    if ('Notification' in window) {
+      console.log('🔔 [Enhanced] Trying native notification permission for desktop...');
+      const permission = await Notification.requestPermission();
+      console.log('🔔 [Enhanced] Desktop native permission result:', permission);
+      return permission === 'granted';
     }
     
     return false;
@@ -305,13 +394,16 @@ export class EnhancedPushNotificationService {
   async getSubscription(): Promise<string | null> {
     try {
       if (!this.isInitialized || !window.OneSignal) {
+        console.log('🔔 [Enhanced] OneSignal not initialized for subscription check');
         return null;
       }
 
       const isSubscribed = await window.OneSignal.User.PushSubscription.optedIn;
+      console.log('🔔 [Enhanced] Subscription check - opted in:', isSubscribed);
       
       if (isSubscribed) {
         const subscriptionId = await window.OneSignal.User.PushSubscription.id;
+        console.log('🔔 [Enhanced] OneSignal subscription ID:', subscriptionId ? 'found' : 'null');
         return subscriptionId;
       }
       
@@ -325,13 +417,16 @@ export class EnhancedPushNotificationService {
   async isSubscriptionValid(): Promise<boolean> {
     try {
       if (!this.isInitialized || !window.OneSignal) {
+        console.log('🔔 [Enhanced] OneSignal not ready for subscription validation');
         return false;
       }
 
       const isOptedIn = await window.OneSignal.User.PushSubscription.optedIn;
       const subscriptionId = await window.OneSignal.User.PushSubscription.id;
       
-      return isOptedIn && !!subscriptionId;
+      const isValid = isOptedIn && !!subscriptionId;
+      console.log('🔔 [Enhanced] Subscription validity check:', { isOptedIn, hasId: !!subscriptionId, isValid });
+      return isValid;
     } catch (error) {
       console.error('❌ [Enhanced] Error checking subscription validity:', error);
       return false;
@@ -340,13 +435,18 @@ export class EnhancedPushNotificationService {
 
   async getSubscriptionStatus(userId: number): Promise<{ isSubscribed: boolean; hasValidToken: boolean }> {
     try {
+      console.log('🔔 [Enhanced] Getting subscription status for user:', userId);
+      
       const subscriptionId = await this.getSubscription();
       const isValid = await this.isSubscriptionValid();
       
-      return {
+      const status = {
         isSubscribed: !!subscriptionId,
         hasValidToken: isValid
       };
+      
+      console.log('🔔 [Enhanced] Subscription status:', status);
+      return status;
     } catch (error) {
       console.error('❌ [Enhanced] Error getting subscription status:', error);
       return { isSubscribed: false, hasValidToken: false };
@@ -360,9 +460,22 @@ export class EnhancedPushNotificationService {
       const success = await this.requestPermissionWithUserGesture();
       
       if (success) {
+        // Wait longer for subscription to be fully established
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
         const subscriptionId = await this.getSubscription();
         console.log('🔔 [Enhanced] Subscription ID obtained:', subscriptionId ? 'success' : 'failed');
-        return !!subscriptionId;
+        
+        if (subscriptionId) {
+          console.log('✅ [Enhanced] Subscription process completed successfully');
+          return true;
+        } else {
+          console.warn('⚠️ [Enhanced] Permission granted but no subscription ID found');
+          // Try one more time after a delay
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const retrySubscriptionId = await this.getSubscription();
+          return !!retrySubscriptionId;
+        }
       }
       
       return false;

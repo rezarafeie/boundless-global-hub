@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { messengerService, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
@@ -51,6 +52,9 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
       console.log('🔔 [Enhanced Hook] Checking subscription status...');
       
       try {
+        // Initialize OneSignal first
+        await enhancedPushNotificationService.initOneSignal();
+        
         const subscriptionStatus = await enhancedPushNotificationService.getSubscriptionStatus(currentUser.id);
         
         console.log('🔔 [Enhanced Hook] Subscription status:', subscriptionStatus);
@@ -200,6 +204,9 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
         await supabase.rpc('set_session_context', { session_token: sessionToken });
       }
       
+      // Initialize OneSignal first
+      await enhancedPushNotificationService.initOneSignal();
+      
       // Request permission using enhanced service
       console.log('🔔 [Enhanced Hook] Requesting enhanced subscription...');
       const success = await enhancedPushNotificationService.subscribe(currentUser.id);
@@ -207,8 +214,23 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
       console.log('🔔 [Enhanced Hook] Permission request result:', success);
       
       if (success) {
-        // Get the subscription ID
-        const subscriptionId = await enhancedPushNotificationService.getSubscription();
+        // Wait a moment for OneSignal to process the subscription
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Get the subscription ID with retries
+        let subscriptionId = null;
+        let attempts = 0;
+        const maxAttempts = 5;
+        
+        while (!subscriptionId && attempts < maxAttempts) {
+          subscriptionId = await enhancedPushNotificationService.getSubscription();
+          if (!subscriptionId) {
+            console.log(`🔔 [Enhanced Hook] Attempt ${attempts + 1}: No subscription ID yet, waiting...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            attempts++;
+          }
+        }
+        
         console.log('🔔 [Enhanced Hook] Obtained subscription ID:', subscriptionId);
         
         if (subscriptionId) {
@@ -238,7 +260,7 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
             return false;
           }
         } else {
-          console.error('🔔 [Enhanced Hook] No subscription ID obtained');
+          console.error('🔔 [Enhanced Hook] No subscription ID obtained after retries');
           return false;
         }
       }
@@ -327,7 +349,8 @@ export const useEnhancedNotificationService = ({ currentUser, sessionToken }: En
 
     try {
       if (message.room_id) {
-        const rooms = await messengerService.getRooms(sessionToken!);
+        // Fixed: Remove sessionToken parameter from getRooms call
+        const rooms = await messengerService.getRooms();
         const hasAccess = rooms.some(room => room.id === message.room_id);
         
         if (hasAccess) {

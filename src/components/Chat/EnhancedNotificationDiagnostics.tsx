@@ -20,11 +20,15 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
   const [diagnostics, setDiagnostics] = useState<any>({
     deviceInfo: null,
     oneSignalReady: false,
+    oneSignalLoaded: false,
+    oneSignalInitialized: false,
     permission: 'default',
     subscription: false,
+    subscriptionId: null,
     tokenSaved: false,
     lastTestResult: null,
-    databaseToken: null
+    databaseToken: null,
+    initializationError: null
   });
 
   const [testing, setTesting] = useState(false);
@@ -37,14 +41,38 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       // Get enhanced device info
       const deviceInfo = enhancedPushNotificationService.getDeviceInfo();
       
+      // Check OneSignal loading
+      const oneSignalLoaded = typeof window.OneSignal !== 'undefined';
+      
+      // Check OneSignal initialization
+      const oneSignalInitialized = enhancedPushNotificationService['isInitialized'];
+      
+      // Try to initialize OneSignal
+      let initializationError = null;
+      try {
+        if (deviceInfo.supportsWebPush) {
+          await enhancedPushNotificationService.initOneSignal();
+        }
+      } catch (error) {
+        initializationError = error.message;
+        console.error('OneSignal initialization failed:', error);
+      }
+      
       // Check OneSignal readiness
-      const oneSignalReady = enhancedPushNotificationService['isInitialized'] && !!window.OneSignal;
+      const oneSignalReady = oneSignalInitialized && !!window.OneSignal;
       
       // Check permission
       const permission = 'Notification' in window ? Notification.permission : 'unavailable';
       
       // Check subscription
-      const subscription = await enhancedPushNotificationService.isSubscriptionValid();
+      let subscription = false;
+      let subscriptionId = null;
+      try {
+        subscription = await enhancedPushNotificationService.isSubscriptionValid();
+        subscriptionId = await enhancedPushNotificationService.getSubscription();
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+      }
       
       // Check if token is saved in database
       let databaseToken = null;
@@ -70,11 +98,15 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       
       setDiagnostics({
         deviceInfo,
+        oneSignalLoaded,
+        oneSignalInitialized,
         oneSignalReady,
         permission,
         subscription,
+        subscriptionId,
         tokenSaved,
         databaseToken,
+        initializationError,
         lastTestResult: diagnostics.lastTestResult
       });
       
@@ -131,6 +163,38 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
       setDiagnostics(prev => ({
         ...prev,
         lastTestResult: { success: false, error: error.message }
+      }));
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const testPermissionRequest = async () => {
+    setTesting(true);
+    
+    try {
+      console.log('🔔 Testing permission request...');
+      const success = await enhancedPushNotificationService.requestPermissionWithUserGesture();
+      
+      setDiagnostics(prev => ({
+        ...prev,
+        lastTestResult: { 
+          success, 
+          error: success ? null : 'Permission request failed',
+          type: 'permission_test'
+        }
+      }));
+      
+      // Refresh diagnostics after permission test
+      setTimeout(() => {
+        runDiagnostics();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error testing permission request:', error);
+      setDiagnostics(prev => ({
+        ...prev,
+        lastTestResult: { success: false, error: error.message, type: 'permission_test' }
       }));
     } finally {
       setTesting(false);
@@ -196,6 +260,19 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
         )}
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Initialization Error */}
+        {diagnostics.initializationError && (
+          <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle className="h-4 w-4 text-red-600" />
+              <span className="font-semibold text-red-800">خطای راه‌اندازی</span>
+            </div>
+            <p className="text-sm text-red-700">
+              {diagnostics.initializationError}
+            </p>
+          </div>
+        )}
+
         {/* Device Capabilities */}
         {deviceInfo && (
           <div>
@@ -223,6 +300,74 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
             </div>
           </div>
         )}
+
+        {/* OneSignal Status */}
+        <div>
+          <h4 className="font-semibold mb-3">وضعیت OneSignal</h4>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span>SDK بارگذاری شده:</span>
+              <div className="flex items-center gap-2">
+                <StatusIcon status={diagnostics.oneSignalLoaded} />
+                <span>{diagnostics.oneSignalLoaded ? 'بله' : 'خیر'}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span>راه‌اندازی شده:</span>
+              <div className="flex items-center gap-2">
+                <StatusIcon status={diagnostics.oneSignalInitialized} />
+                <span>{diagnostics.oneSignalInitialized ? 'بله' : 'خیر'}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span>آماده به کار:</span>
+              <div className="flex items-center gap-2">
+                <StatusIcon status={diagnostics.oneSignalReady} />
+                <span>{diagnostics.oneSignalReady ? 'آماده' : 'آماده نیست'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* System Status */}
+        <div className="space-y-4">
+          <h4 className="font-semibold mb-3">وضعیت سیستم</h4>
+          
+          <div className="flex items-center justify-between">
+            <span>مجوز:</span>
+            <PermissionBadge permission={diagnostics.permission} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span>اشتراک:</span>
+            <div className="flex items-center gap-2">
+              <StatusIcon status={diagnostics.subscription} />
+              <span>{diagnostics.subscription ? 'فعال' : 'غیر فعال'}</span>
+            </div>
+          </div>
+
+          {diagnostics.subscriptionId && (
+            <div className="text-xs text-gray-600">
+              <span>Subscription ID: {diagnostics.subscriptionId.substring(0, 20)}...</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <span>ذخیره در دیتابیس:</span>
+            <div className="flex items-center gap-2">
+              <StatusIcon status={diagnostics.tokenSaved} />
+              <span>{diagnostics.tokenSaved ? 'بله' : 'خیر'}</span>
+            </div>
+          </div>
+
+          {diagnostics.databaseToken && (
+            <div className="text-xs text-gray-600">
+              <span>DB Token: {diagnostics.databaseToken.substring(0, 20)}...</span>
+            </div>
+          )}
+        </div>
 
         {/* Limitations & Recommendations */}
         {deviceInfo && (deviceInfo.limitations.length > 0 || deviceInfo.recommendations.length > 0) && (
@@ -262,40 +407,6 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
           </div>
         )}
 
-        {/* System Status */}
-        <div className="space-y-4">
-          <h4 className="font-semibold mb-3">وضعیت سیستم</h4>
-          
-          <div className="flex items-center justify-between">
-            <span>آماده‌سازی OneSignal:</span>
-            <div className="flex items-center gap-2">
-              <StatusIcon status={diagnostics.oneSignalReady} />
-              <span className="text-sm">{diagnostics.oneSignalReady ? 'آماده' : 'آماده نیست'}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>مجوز:</span>
-            <PermissionBadge permission={diagnostics.permission} />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>اشتراک:</span>
-            <div className="flex items-center gap-2">
-              <StatusIcon status={diagnostics.subscription} />
-              <span className="text-sm">{diagnostics.subscription ? 'فعال' : 'غیر فعال'}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span>ذخیره در دیتابیس:</span>
-            <div className="flex items-center gap-2">
-              <StatusIcon status={diagnostics.tokenSaved} />
-              <span className="text-sm">{diagnostics.tokenSaved ? 'بله' : 'خیر'}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Mobile App Recommendation */}
         {deviceInfo && deviceInfo.isMobile && !deviceInfo.supportsWebPush && (
           <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
@@ -313,7 +424,9 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
         {/* Test Results */}
         {diagnostics.lastTestResult && (
           <div className="border rounded-lg p-4">
-            <h4 className="font-semibold mb-2">نتیجه آخرین تست:</h4>
+            <h4 className="font-semibold mb-2">
+              نتیجه آخرین تست {diagnostics.lastTestResult.type === 'permission_test' ? '(درخواست مجوز)' : '(ارسال اعلان)'}:
+            </h4>
             <div className="flex items-center gap-2">
               {diagnostics.lastTestResult.success ? (
                 <CheckCircle className="h-4 w-4 text-green-500" />
@@ -328,21 +441,33 @@ const EnhancedNotificationDiagnostics: React.FC<EnhancedNotificationDiagnosticsP
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button 
             onClick={runDiagnostics}
             disabled={refreshing}
             variant="outline"
-            className="flex-1"
+            className="flex-1 min-w-0"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'در حال بررسی...' : 'بررسی مجدد'}
           </Button>
           
+          {deviceInfo?.supportsWebPush && (
+            <Button 
+              onClick={testPermissionRequest}
+              disabled={testing}
+              variant="secondary"
+              className="flex-1 min-w-0"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              {testing ? 'تست مجوز...' : 'تست مجوز'}
+            </Button>
+          )}
+          
           <Button 
             onClick={sendTestNotification}
             disabled={testing || !diagnostics.tokenSaved || !deviceInfo?.supportsWebPush}
-            className="flex-1"
+            className="flex-1 min-w-0"
           >
             <Bell className="h-4 w-4 mr-2" />
             {testing ? 'در حال ارسال...' : 'ارسال تست'}
