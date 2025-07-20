@@ -475,6 +475,98 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          price: number
+          redirect_url: string | null
+          slug: string
+          title: string
+          updated_at: string
+          woocommerce_product_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          price?: number
+          redirect_url?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          woocommerce_product_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          price?: number
+          redirect_url?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          woocommerce_product_id?: number | null
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          payment_amount: number
+          payment_status: string
+          phone: string
+          updated_at: string
+          woocommerce_order_id: number | null
+          zarinpal_authority: string | null
+          zarinpal_ref_id: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          payment_amount: number
+          payment_status?: string
+          phone: string
+          updated_at?: string
+          woocommerce_order_id?: number | null
+          zarinpal_authority?: string | null
+          zarinpal_ref_id?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          payment_amount?: number
+          payment_status?: string
+          phone?: string
+          updated_at?: string
+          woocommerce_order_id?: number | null
+          zarinpal_authority?: string | null
+          zarinpal_ref_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_settings: {
         Row: {
           id: number
