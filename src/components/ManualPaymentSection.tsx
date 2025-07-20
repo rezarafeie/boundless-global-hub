@@ -209,7 +209,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
 
       console.log('🔗 Public URL generated:', publicUrl);
 
-      // Step 5: Create enrollment record
+      // Step 5: Create enrollment record using edge function
       setProgress(80);
       setCurrentStep('ثبت اطلاعات پرداخت...');
       
@@ -219,26 +219,53 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
         payment_amount: course.price,
-        payment_status: 'pending',
         payment_method: 'manual',
-        manual_payment_status: 'pending' as const,
+        manual_payment_status: 'pending',
         receipt_url: publicUrl
       };
 
       console.log('💾 Creating enrollment with data:', enrollmentData);
 
-      const { data: createdEnrollment, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .insert(enrollmentData)
-        .select()
-        .single();
+      // Try edge function first
+      let createdEnrollment;
+      try {
+        console.log('🔧 Attempting edge function call...');
+        const { data: functionResult, error: functionError } = await supabase.functions
+          .invoke('create-enrollment', {
+            body: enrollmentData
+          });
 
-      if (enrollmentError) {
-        console.error('❌ Enrollment creation error:', enrollmentError);
-        throw new Error(`خطا در ثبت اطلاعات: ${enrollmentError.message}`);
+        if (functionError) {
+          console.error('❌ Edge function error:', functionError);
+          throw functionError;
+        }
+
+        if (!functionResult?.success) {
+          console.error('❌ Edge function returned error:', functionResult);
+          throw new Error(functionResult?.error || 'Edge function failed');
+        }
+
+        createdEnrollment = functionResult.enrollment;
+        console.log('✅ Enrollment created via edge function:', createdEnrollment);
+
+      } catch (functionError) {
+        console.warn('⚠️ Edge function failed, trying direct insert:', functionError);
+        
+        // Fallback to direct insert
+        const { data: directResult, error: directError } = await supabase
+          .from('enrollments')
+          .insert(enrollmentData)
+          .select()
+          .single();
+
+        if (directError) {
+          console.error('❌ Direct insert also failed:', directError);
+          throw new Error(`خطا در ثبت اطلاعات: ${directError.message}`);
+        }
+
+        createdEnrollment = directResult;
+        console.log('✅ Enrollment created via direct insert:', createdEnrollment);
       }
-
-      console.log('✅ Enrollment created successfully:', createdEnrollment);
 
       // Step 6: Complete
       setProgress(100);
