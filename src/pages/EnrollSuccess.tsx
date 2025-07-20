@@ -34,7 +34,12 @@ const EnrollSuccess: React.FC = () => {
 
   useEffect(() => {
     if (authority && enrollmentId && status === 'OK') {
-      verifyPayment();
+      // Check if this is a manual payment that's already approved
+      if (authority === 'MANUAL_PAYMENT') {
+        handleManualPaymentSuccess();
+      } else {
+        verifyPayment();
+      }
     } else {
       setVerifying(false);
       setResult({
@@ -43,6 +48,59 @@ const EnrollSuccess: React.FC = () => {
       });
     }
   }, [authority, enrollmentId, status]);
+
+  const handleManualPaymentSuccess = async () => {
+    try {
+      setVerifying(true);
+      
+      // Fetch enrollment and course data
+      const { data: enrollment, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses (
+            title,
+            slug,
+            redirect_url
+          )
+        `)
+        .eq('id', enrollmentId)
+        .single();
+
+      if (enrollmentError) throw enrollmentError;
+
+      // Check if enrollment is actually approved
+      if (enrollment.manual_payment_status === 'approved' && enrollment.payment_status === 'completed') {
+        setResult({
+          success: true,
+          refId: 'MANUAL_PAYMENT_APPROVED',
+          course: enrollment.courses,
+          enrollment: enrollment,
+          woocommerceOrderId: enrollment.woocommerce_order_id
+        });
+        
+        toast({
+          title: "✅ پرداخت تایید شد",
+          description: "ثبت‌نام شما با موفقیت انجام شد و توسط ادمین تایید شده است",
+        });
+      } else {
+        throw new Error('Manual payment not approved yet');
+      }
+    } catch (error) {
+      console.error('Manual payment verification error:', error);
+      setResult({
+        success: false,
+        error: 'پرداخت هنوز تایید نشده است'
+      });
+      toast({
+        title: "انتظار تایید",
+        description: "پرداخت شما هنوز توسط ادمین تایید نشده است",
+        variant: "destructive"
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const verifyPayment = async () => {
     try {
