@@ -55,16 +55,34 @@ const Enroll: React.FC = () => {
   // Auto-fill form data when user is authenticated and has required data
   useEffect(() => {
     if (isAuthenticated && user) {
+      console.log('🔄 Auto-filling enrollment form for logged in user:', user.name);
+      
+      // Clean phone number - remove country code prefixes
+      let cleanPhone = '';
+      if (user.phone) {
+        cleanPhone = user.phone
+          .replace(/^(\+98|98|0)/, '') // Remove +98, 98, or 0 prefix
+          .replace(/\D/g, ''); // Remove any non-digit characters
+      }
+      
       setFormData(prev => ({
         ...prev,
-        firstName: user.firstName || prev.firstName,
-        lastName: user.lastName || prev.lastName,
+        firstName: user.firstName || user.name?.split(' ')[0] || prev.firstName,
+        lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || prev.lastName,
         email: user.email || prev.email,
-        phone: user.phone ? user.phone.replace(/^(\+98|98|0)/, '') : prev.phone,
-        countryCode: user.countryCode || prev.countryCode
+        phone: cleanPhone || prev.phone,
+        countryCode: user.countryCode || '+98'
       }));
+
+      // Show success message when auto-filling
+      if (user.firstName || user.lastName || user.email || user.phone) {
+        toast({
+          title: "✅ اطلاعات تکمیل شد",
+          description: `خوش آمدید ${user.name}! فرم با اطلاعات حساب کاربری شما تکمیل شد.`,
+        });
+      }
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, toast]);
 
   const fetchCourse = async () => {
     try {
@@ -306,57 +324,106 @@ const Enroll: React.FC = () => {
                     <User className="h-6 w-6 text-primary" />
                   </div>
                   ثبت‌نام در دوره
+                  {isAuthenticated && user && (
+                    <Badge variant="secondary" className="bg-green-500/10 text-green-700 border-green-500/20">
+                      <User className="h-3 w-3 ml-1" />
+                      وارد شده
+                    </Badge>
+                  )}
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  اطلاعات خود را وارد کنید و روش پرداخت را انتخاب کنید
+                  {isAuthenticated && user ? (
+                    <>اطلاعات شما از حساب کاربری تکمیل شد. در صورت نیاز می‌توانید ویرایش کنید.</>
+                  ) : (
+                    <>اطلاعات خود را وارد کنید و روش پرداخت را انتخاب کنید</>
+                  )}
                 </p>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* User Login Status */}
+                  {!isAuthenticated && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                        <User className="h-4 w-4" />
+                        <span className="text-sm font-medium">
+                          برای تکمیل خودکار فرم، ابتدا 
+                          <Button 
+                            variant="link" 
+                            className="px-1 h-auto text-blue-700 dark:text-blue-300 underline"
+                            onClick={() => window.location.href = '/auth'}
+                          >
+                            وارد شوید
+                          </Button>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Personal Information */}
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="firstName" className="text-sm font-medium">نام</Label>
+                        <Label htmlFor="firstName" className="text-sm font-medium">
+                          نام
+                          {isAuthenticated && user?.firstName && (
+                            <span className="text-green-600 text-xs mr-1">(تکمیل شده)</span>
+                          )}
+                        </Label>
                         <Input
                           id="firstName"
                           type="text"
                           value={formData.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
                           placeholder="علی"
-                          className="h-12 text-base"
+                          className={`h-12 text-base ${isAuthenticated && user?.firstName ? 'bg-green-50 dark:bg-green-900/10 border-green-300' : ''}`}
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="lastName" className="text-sm font-medium">نام خانوادگی</Label>
+                        <Label htmlFor="lastName" className="text-sm font-medium">
+                          نام خانوادگی
+                          {isAuthenticated && user?.lastName && (
+                            <span className="text-green-600 text-xs mr-1">(تکمیل شده)</span>
+                          )}
+                        </Label>
                         <Input
                           id="lastName"
                           type="text"
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
                           placeholder="احمدی"
-                          className="h-12 text-base"
+                          className={`h-12 text-base ${isAuthenticated && user?.lastName ? 'bg-green-50 dark:bg-green-900/10 border-green-300' : ''}`}
                           required
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium">ایمیل</Label>
+                      <Label htmlFor="email" className="text-sm font-medium">
+                        ایمیل
+                        {isAuthenticated && user?.email && (
+                          <span className="text-green-600 text-xs mr-1">(تکمیل شده)</span>
+                        )}
+                      </Label>
                       <Input
                         id="email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
                         placeholder="example@email.com"
-                        className="h-12 text-base"
+                        className={`h-12 text-base ${isAuthenticated && user?.email ? 'bg-green-50 dark:bg-green-900/10 border-green-300' : ''}`}
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-sm font-medium">شماره تلفن</Label>
+                      <Label htmlFor="phone" className="text-sm font-medium">
+                        شماره تلفن
+                        {isAuthenticated && user?.phone && (
+                          <span className="text-green-600 text-xs mr-1">(تکمیل شده)</span>
+                        )}
+                      </Label>
                       <div className="flex border border-input rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background" dir="ltr">
                         <Select 
                           value={formData.countryCode} 
@@ -384,7 +451,7 @@ const Enroll: React.FC = () => {
                             handleInputChange('phone', cleanValue);
                           }}
                           placeholder="912345678"
-                          className="flex-1 h-12 text-base border-0 rounded-none focus-visible:ring-0"
+                          className={`flex-1 h-12 text-base border-0 rounded-none focus-visible:ring-0 ${isAuthenticated && user?.phone ? 'bg-green-50 dark:bg-green-900/10' : ''}`}
                           dir="ltr"
                           required
                         />
