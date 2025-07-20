@@ -7,7 +7,7 @@ import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw } from 'lucide-r
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
-import RafieiPlayerSection from '@/components/RafieiPlayerSection';
+import StartCourseSection from '@/components/StartCourseSection';
 
 interface VerificationResult {
   success: boolean;
@@ -277,27 +277,12 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* Rafiei Player Section */}
-                {result.course?.is_spotplayer_enabled && (
-                  <RafieiPlayerSection 
-                    enrollment={result.enrollment}
-                    course={result.course}
-                  />
-                )}
-
-                {/* Action Buttons */}
-                {result.course?.woocommerce_create_access !== false && (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      onClick={handleEnterCourse}
-                      className="flex-1 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground py-6"
-                      size="lg"
-                    >
-                      <ExternalLink className="h-5 w-5 mr-2" />
-                      ورود به دوره
-                    </Button>
-                  </div>
-                )}
+                {/* Start Course Section */}
+                <StartCourseSection 
+                  enrollment={result.enrollment}
+                  course={result.course}
+                  onEnterCourse={handleEnterCourse}
+                />
 
                 {/* Additional Info */}
                 <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">

@@ -107,7 +107,7 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
           .eq('id', enrollment.id);
         
         toast({
-          title: "لایسنس رفیعی پلیر ایجاد شد",
+          title: "لایسنس و شروع آموزش ایجاد شد",
           description: "لایسنس شما با موفقیت ایجاد شد و آماده استفاده است.",
         });
       } else {
@@ -222,7 +222,7 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
               size="lg"
             >
               <Play className="ml-2 h-5 w-5" />
-              🎬 ورود به رفیعی پلیر
+              🎬 ورود به رفیعی پلیر و شروع آموزش
               <ExternalLink className="mr-2 h-4 w-4" />
             </Button>
           </div>
@@ -240,7 +240,7 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
             ) : (
               <>
                 <Download className="ml-2 h-4 w-4" />
-                ایجاد لایسنس رفیعی پلیر
+                ایجاد لایسنس و شروع آموزش
               </>
             )}
           </Button>
