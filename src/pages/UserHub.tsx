@@ -37,14 +37,14 @@ const UserHub: React.FC = () => {
           <div className="flex items-center gap-4">
             <Avatar className="w-16 h-16">
               <AvatarFallback className="text-xl font-bold bg-blue-100 text-blue-600">
-                {getInitials(user.full_name)}
+                {getInitials(user.name)}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                خوش آمدید، {user.first_name}
+                خوش آمدید، {user.firstName}
               </h1>
-              <p className="text-gray-600">شناسه کاربری: {user.user_id}</p>
+              <p className="text-gray-600">شناسه کاربری: {user.id}</p>
             </div>
           </div>
           <Button onClick={handleLogout} variant="outline" className="gap-2">
@@ -86,14 +86,15 @@ const UserHub: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium">تاریخ عضویت</p>
                   <p className="text-sm text-gray-600">
-                    {new Date(user.created_at).toLocaleDateString('fa-IR')}
+                    {user.messengerData?.created_at ? new Date(user.messengerData.created_at).toLocaleDateString('fa-IR') : 
+                     user.academyData?.created_at ? new Date(user.academyData.created_at).toLocaleDateString('fa-IR') : 'نامشخص'}
                   </p>
                 </div>
               </div>
               
               <div className="pt-4 border-t">
-                <Badge variant={user.is_approved ? "default" : "secondary"}>
-                  {user.is_approved ? 'تأیید شده' : 'در انتظار تأیید'}
+                <Badge variant={user.messengerData?.is_approved || user.isAcademyUser ? "default" : "secondary"}>
+                  {user.messengerData?.is_approved || user.isAcademyUser ? 'تأیید شده' : 'در انتظار تأیید'}
                 </Badge>
               </div>
               

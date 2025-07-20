@@ -48,7 +48,7 @@ const EnrollSuccess: React.FC = () => {
     try {
       await supabase
         .from('enrollments')
-        .update({ chat_user_id: user.id })
+        .update({ chat_user_id: parseInt(user.id) })
         .eq('id', result.enrollment.id);
     } catch (error) {
       console.error('Error updating enrollment with chat_user_id:', error);
