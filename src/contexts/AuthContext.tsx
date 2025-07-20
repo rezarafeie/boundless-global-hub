@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { messengerService, MessengerUser } from '@/lib/messengerService';
 import { supabase } from '@/integrations/supabase/client';
+import { getCookie, setCookie, deleteCookie } from '@/lib/cookieUtils';
 
 interface AuthContextType {
   user: MessengerUser | null;
@@ -74,12 +75,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for stored session on mount
     const initializeAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('session_token');
-        const storedUser = localStorage.getItem('current_user');
+        const storedToken = getCookie('session_token');
+        const storedUser = getCookie('current_user');
         
         if (storedToken && storedUser) {
           try {
-            const parsedUser = JSON.parse(storedUser);
+            const parsedUser = JSON.parse(decodeURIComponent(storedUser));
             // Validate the session with the server
             const isValid = await messengerService.validateSession(storedToken);
             if (isValid) {
@@ -87,19 +88,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setToken(storedToken);
             } else {
               // Clear invalid session
-              localStorage.removeItem('session_token');
-              localStorage.removeItem('current_user');
+              deleteCookie('session_token');
+              deleteCookie('current_user');
             }
           } catch (parseError) {
             console.error('Error parsing stored user:', parseError);
-            localStorage.removeItem('session_token');
-            localStorage.removeItem('current_user');
+            deleteCookie('session_token');
+            deleteCookie('current_user');
           }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        localStorage.removeItem('session_token');
-        localStorage.removeItem('current_user');
+        deleteCookie('session_token');
+        deleteCookie('current_user');
       } finally {
         setIsLoading(false);
       }
@@ -111,8 +112,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = (user: MessengerUser, token: string) => {
     setUser(user);
     setToken(token);
-    localStorage.setItem('session_token', token);
-    localStorage.setItem('current_user', JSON.stringify(user));
+    setCookie('session_token', token, 30); // Expires in 30 days
+    setCookie('current_user', encodeURIComponent(JSON.stringify(user)), 30);
   };
 
   const logout = async () => {
@@ -125,15 +126,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setUser(null);
       setToken(null);
-      localStorage.removeItem('session_token');
-      localStorage.removeItem('current_user');
+      deleteCookie('session_token');
+      deleteCookie('current_user');
     }
   };
 
   const updateUser = (updatedUser: MessengerUser) => {
     setUser(updatedUser);
     if (token) {
-      localStorage.setItem('current_user', JSON.stringify(updatedUser));
+      setCookie('current_user', encodeURIComponent(JSON.stringify(updatedUser)), 30);
     }
   };
 

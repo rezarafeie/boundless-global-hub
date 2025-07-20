@@ -77,3 +77,8 @@ export const cookieUtils = {
     }
   }
 };
+
+// Export individual functions for easier use
+export const getCookie = cookieUtils.getCookie;
+export const setCookie = cookieUtils.setCookie;
+export const deleteCookie = cookieUtils.deleteCookie;

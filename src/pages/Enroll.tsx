@@ -10,6 +10,7 @@ import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, 
 import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import ManualPaymentSection from '@/components/ManualPaymentSection';
 
@@ -27,6 +28,7 @@ interface Course {
 const Enroll: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const courseSlug = searchParams.get('course');
 
   const [course, setCourse] = useState<Course | null>(null);
@@ -49,6 +51,20 @@ const Enroll: React.FC = () => {
       setLoading(false);
     }
   }, [courseSlug]);
+
+  // Auto-fill form data when user is authenticated and has required data
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.first_name || prev.firstName,
+        lastName: user.last_name || prev.lastName,
+        email: user.email || prev.email,
+        phone: user.phone ? user.phone.replace(/^(\+98|98|0)/, '') : prev.phone,
+        countryCode: user.country_code || prev.countryCode
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   const fetchCourse = async () => {
     try {
