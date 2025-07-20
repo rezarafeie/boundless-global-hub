@@ -263,7 +263,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
   const getStepTitle = () => {
     switch (currentStep) {
-      case 'phone': return 'ورود به پیام‌رسان';
+      case 'phone': return 'ورود به آکادمی رفیعی';
       case 'password': return isLogin ? 'ورود' : 'ایجاد رمز عبور';
       case 'name': return 'نام شما';
       case 'username': return 'انتخاب نام کاربری';
@@ -328,7 +328,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         <CardHeader className="text-center pb-8">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
-              <MessageCircle className="w-10 h-10 text-primary-foreground" />
+              <User className="w-10 h-10 text-primary-foreground" />
             </div>
           </div>
           <CardTitle className="text-2xl font-normal text-foreground">{getStepTitle()}</CardTitle>

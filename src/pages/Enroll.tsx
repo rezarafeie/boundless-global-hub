@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap } from 'lucide-react';
+import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -36,7 +38,8 @@ const Enroll: React.FC = () => {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    phone: '',
+    countryCode: '+98'
   });
 
   useEffect(() => {
@@ -135,7 +138,8 @@ const Enroll: React.FC = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
-          phone: formData.phone
+          phone: formData.phone,
+          countryCode: formData.countryCode
         }
       });
 
@@ -337,15 +341,38 @@ const Enroll: React.FC = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="phone" className="text-sm font-medium">شماره تلفن</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder="09123456789"
-                        className="h-12 text-base"
-                        required
-                      />
+                      <div className="flex border border-input rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                        <Select 
+                          value={formData.countryCode} 
+                          onValueChange={(value) => handleInputChange('countryCode', value)}
+                        >
+                          <SelectTrigger className="w-24 border-0 border-r border-input rounded-none bg-transparent focus:ring-0 px-2">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getCountryCodeOptions().map((country) => (
+                              <SelectItem key={country.code} value={country.code}>
+                                {country.flag} {country.code}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => {
+                            // Remove any non-digit characters and prevent starting with 0 or +
+                            let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                            cleanValue = cleanValue.replace(/^[0+]+/, '');
+                            handleInputChange('phone', cleanValue);
+                          }}
+                          placeholder="912345678"
+                          className="flex-1 h-12 text-base border-0 rounded-none focus-visible:ring-0"
+                          dir="ltr"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
 

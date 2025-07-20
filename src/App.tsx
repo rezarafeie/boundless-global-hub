@@ -10,6 +10,7 @@ import { shouldShowMessengerOnly } from "./utils/subdomainDetection";
 
 // Import all pages
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -134,6 +135,7 @@ const App = () => {
                   <Routes>
                     {/* Main pages */}
                     <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/blog" element={<Blog />} />
