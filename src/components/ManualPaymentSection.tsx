@@ -440,7 +440,16 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
 
             {/* Submit Button */}
             <Button
-              onClick={submitManualPayment}
+              onClick={() => {
+                console.log('🔘 Submit button clicked!');
+                console.log('📊 Current state:', {
+                  uploading,
+                  validationErrorsLength: validationErrors.length,
+                  hasFile: !!uploadedFile,
+                  formData
+                });
+                submitManualPayment();
+              }}
               disabled={uploading || validationErrors.length > 0}
               className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90"
               size="lg"
