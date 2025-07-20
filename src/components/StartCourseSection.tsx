@@ -153,29 +153,29 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 w-full overflow-hidden">
       {/* Main Start Course Header */}
       <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-blue-950/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-primary" />
+        <CardHeader className="px-4 md:px-6">
+          <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <GraduationCap className="h-4 w-4 md:h-6 md:w-6 text-primary" />
             </div>
-            🚀 شروع دوره آموزشی
+            <span className="break-words">🚀 شروع دوره آموزشی</span>
           </CardTitle>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm md:text-base">
             دوره شما فعال شده است. می‌توانید از طریق یکی از روش‌های زیر به آموزش‌ها دسترسی پیدا کنید
           </p>
         </CardHeader>
       </Card>
 
       {/* Access Types Grid */}
-      <div className="grid gap-4 md:gap-6">
+      <div className="space-y-4 md:space-y-6 w-full">
         {accessTypes.map((accessType) => {
           if (!accessType.enabled) return null;
           
           return (
-            <div key={accessType.id}>
+            <div key={accessType.id} className="w-full">
               {/* Rafiei Player - Special integrated section */}
               {accessType.id === 'rafiei-player' ? (
                 <RafieiPlayerSection 
@@ -185,33 +185,35 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
               ) : (
                 /* Other access types - Regular cards */
                 <Card 
-                  className={`${getColorClasses(accessType.color, 'border')} ${getColorClasses(accessType.color, 'bg')} border-2`}
+                  className={`${getColorClasses(accessType.color, 'border')} ${getColorClasses(accessType.color, 'bg')} border-2 w-full overflow-hidden`}
                 >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 ${getColorClasses(accessType.color, 'bg')} rounded-xl flex items-center justify-center border ${getColorClasses(accessType.color, 'border')}`}>
-                          <accessType.icon className={`h-6 w-6 ${getColorClasses(accessType.color, 'text')}`} />
+                  <CardHeader className="px-4 md:px-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                        <div className={`w-10 h-10 md:w-12 md:h-12 ${getColorClasses(accessType.color, 'bg')} rounded-xl flex items-center justify-center border ${getColorClasses(accessType.color, 'border')} flex-shrink-0`}>
+                          <accessType.icon className={`h-5 w-5 md:h-6 md:w-6 ${getColorClasses(accessType.color, 'text')}`} />
                         </div>
-                        <div>
-                          <CardTitle className={`${getColorClasses(accessType.color, 'text')} text-lg`}>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className={`${getColorClasses(accessType.color, 'text')} text-base md:text-lg break-words`}>
                             {accessType.title}
                           </CardTitle>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs md:text-sm text-muted-foreground break-words">
                             {accessType.description}
                           </p>
                         </div>
                       </div>
-                      {getStatusBadge(accessType.status)}
+                      <div className="flex-shrink-0">
+                        {getStatusBadge(accessType.status)}
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 px-4 md:px-6">
                     {/* Features List */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {accessType.features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm">
-                          <CheckCircle className={`h-4 w-4 ${getColorClasses(accessType.color, 'text')}`} />
-                          <span className="text-muted-foreground">{feature}</span>
+                        <div key={index} className="flex items-center gap-2 text-xs md:text-sm">
+                          <CheckCircle className={`h-3 w-3 md:h-4 md:w-4 ${getColorClasses(accessType.color, 'text')} flex-shrink-0`} />
+                          <span className="text-muted-foreground break-words">{feature}</span>
                         </div>
                       ))}
                     </div>
@@ -220,24 +222,24 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
               {accessType.id === 'woocommerce' && accessType.status === 'active' && (
                 <Button 
                   onClick={onEnterCourse}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-sm md:text-base"
                   size="lg"
                 >
-                  <ExternalLink className="ml-2 h-5 w-5" />
-                  ورود به دوره - سیستم قدیمی
-                  <ArrowRight className="mr-2 h-4 w-4" />
+                  <ExternalLink className="ml-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+                  <span className="break-words">ورود به دوره - سیستم قدیمی</span>
+                  <ArrowRight className="mr-2 h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                 </Button>
               )}
 
               {accessType.id === 'academy' && accessType.status === 'active' && (
                 <Button 
                   onClick={() => window.location.href = `/access?course=${course?.slug}`}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm md:text-base"
                   size="lg"
                 >
-                  <GraduationCap className="ml-2 h-5 w-5" />
-                  ورود به آکادمی جدید
-                  <ArrowRight className="mr-2 h-4 w-4" />
+                  <GraduationCap className="ml-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+                  <span className="break-words">ورود به آکادمی جدید</span>
+                  <ArrowRight className="mr-2 h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                 </Button>
               )}
                   </CardContent>
@@ -250,11 +252,13 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
 
         {/* Course Action Links - Support, Telegram, Gifts */}
         {course && enrollment && (
-          <CourseActionLinks 
-            course={course}
-            enrollment={enrollment}
-            userEmail={userEmail || enrollment?.email}
-          />
+          <div className="w-full">
+            <CourseActionLinks 
+              course={course}
+              enrollment={enrollment}
+              userEmail={userEmail || enrollment?.email}
+            />
+          </div>
         )}
       </div>
     </div>
