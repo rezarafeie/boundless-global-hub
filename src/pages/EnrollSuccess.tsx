@@ -57,8 +57,11 @@ const EnrollSuccess: React.FC = () => {
 
   useEffect(() => {
     if (authority && enrollmentId && status === 'OK') {
-      // Check if this is a manual payment that's already approved
-      if (authority === 'MANUAL_PAYMENT') {
+      // Check if this is a free course
+      if (authority === 'FREE_COURSE') {
+        handleFreeCourseSuccess();
+      } else if (authority === 'MANUAL_PAYMENT') {
+        // Check if this is a manual payment that's already approved
         handleManualPaymentSuccess();
       } else {
         verifyPayment();
@@ -71,6 +74,61 @@ const EnrollSuccess: React.FC = () => {
       });
     }
   }, [authority, enrollmentId, status]);
+
+  const handleFreeCourseSuccess = async () => {
+    try {
+      setVerifying(true);
+      
+      // Fetch enrollment and course data
+      const { data: enrollment, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses (
+            title,
+            slug,
+            redirect_url,
+            is_spotplayer_enabled,
+            spotplayer_course_id,
+            woocommerce_create_access,
+            support_link,
+            telegram_channel_link,
+            gifts_link,
+            enable_course_access
+          )
+        `)
+        .eq('id', enrollmentId)
+        .single();
+
+      if (enrollmentError) throw enrollmentError;
+
+      // Set result for free course
+      setResult({
+        success: true,
+        refId: 'FREE_COURSE',
+        course: enrollment.courses,
+        enrollment: enrollment
+      });
+      
+      toast({
+        title: "✅ ثبت‌نام رایگان موفق",
+        description: "ثبت‌نام شما در دوره رایگان با موفقیت انجام شد",
+      });
+    } catch (error) {
+      console.error('Free course verification error:', error);
+      setResult({
+        success: false,
+        error: 'خطا در تایید ثبت‌نام رایگان'
+      });
+      toast({
+        title: "خطا",
+        description: "خطا در تایید ثبت‌نام رایگان",
+        variant: "destructive"
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleManualPaymentSuccess = async () => {
     try {
@@ -232,7 +290,25 @@ const EnrollSuccess: React.FC = () => {
                   <h3 className="font-semibold text-green-800 dark:text-green-400 mb-3">جزئیات پرداخت</h3>
                   <div className="space-y-2 text-sm">
                     {/* Show different details based on payment type */}
-                    {result.refId === 'MANUAL_PAYMENT_APPROVED' ? (
+                    {result.refId === 'FREE_COURSE' ? (
+                      // Free course details
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">نوع دوره:</span>
+                          <span className="font-medium text-green-600">رایگان</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">زمان ثبت‌نام:</span>
+                          <span className="font-medium">{result.enrollment?.created_at ? new Intl.DateTimeFormat('fa-IR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
+                        </div>
+                      </>
+                    ) : result.refId === 'MANUAL_PAYMENT_APPROVED' ? (
                       // Manual payment details
                       <>
                         <div className="flex justify-between">

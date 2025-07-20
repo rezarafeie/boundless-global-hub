@@ -58,6 +58,21 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   
   const accessTypes = [
     {
+      id: 'academy',
+      title: 'دسترسی فوری به دروس',
+      description: 'پلتفرم جامع آموزش آنلاین',
+      icon: GraduationCap,
+      enabled: hasAcademyAccess,
+      status: hasAcademyAccess ? 'active' : 'coming-soon',
+      color: 'green',
+      features: [
+        'محتوای درس‌ها',
+        'ویدیو و فایل‌ها',
+        'سیستم یادگیری مدرن',
+        'دسترسی کامل آنلاین'
+      ]
+    },
+    {
       id: 'rafiei-player',
       title: 'رفیعی پلیر',
       description: 'دانلود و تماشای آفلاین',
@@ -85,21 +100,6 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
         'محتوای کامل دوره',
         'پشتیبانی مستقیم',
         'بروزرسانی‌های خودکار'
-      ]
-    },
-    {
-      id: 'academy',
-      title: 'آکادمی رفیعی جدید',
-      description: 'پلتفرم جامع آموزش آنلاین',
-      icon: GraduationCap,
-      enabled: hasAcademyAccess,
-      status: hasAcademyAccess ? 'active' : 'coming-soon',
-      color: 'green',
-      features: [
-        'محتوای درس‌ها',
-        'ویدیو و فایل‌ها',
-        'سیستم یادگیری مدرن',
-        'دسترسی کامل آنلاین'
       ]
     }
   ];

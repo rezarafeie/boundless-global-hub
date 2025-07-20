@@ -166,26 +166,81 @@ const Enroll: React.FC = () => {
     setSubmitting(true);
     
     try {
-      const response = await supabase.functions.invoke('zarinpal-request', {
-        body: {
-          courseSlug: course.slug,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+      // If course is free (price is 0), create enrollment directly without payment
+      if (course.price === 0) {
+        const enrollmentData = {
+          course_id: course.id,
+          full_name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           phone: formData.phone,
-          countryCode: formData.countryCode
+          country_code: formData.countryCode,
+          payment_amount: 0,
+          payment_method: 'free',
+          payment_status: 'completed', // Set as completed for free courses
+          chat_user_id: user?.id ? parseInt(user.id) : null
+        };
+
+        console.log('Creating free enrollment:', enrollmentData);
+
+        const { data: edgeResult, error: edgeError } = await supabase.functions
+          .invoke('create-enrollment', {
+            body: enrollmentData
+          });
+
+        if (edgeError) {
+          console.warn('Edge function failed for free course, trying direct insert:', edgeError);
+          
+          // Fallback to direct insert
+          const { data: directResult, error: directError } = await supabase
+            .from('enrollments')
+            .insert(enrollmentData)
+            .select()
+            .single();
+
+          if (directError) {
+            throw directError;
+          }
+
+          console.log('Free enrollment created via direct insert:', directResult);
+          
+          // Redirect to success page for free course
+          const successUrl = `/enroll/success?course=${course.slug}&email=${formData.email}&enrollment=${directResult.id}&status=OK&Authority=FREE_COURSE`;
+          window.location.href = successUrl;
+          return;
+        } else {
+          console.log('Free enrollment created via edge function:', edgeResult.enrollment);
+          
+          // Redirect to success page for free course
+          const enrollmentId = edgeResult.enrollment?.id;
+          if (enrollmentId) {
+            const successUrl = `/enroll/success?course=${course.slug}&email=${formData.email}&enrollment=${enrollmentId}&status=OK&Authority=FREE_COURSE`;
+            window.location.href = successUrl;
+            return;
+          }
         }
-      });
-
-      if (response.error) throw response.error;
-
-      const { data } = response;
-      
-      if (data.success) {
-        // Redirect to Zarinpal payment
-        window.location.href = data.paymentUrl;
       } else {
-        throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');
+        // Paid course - proceed with Zarinpal payment
+        const response = await supabase.functions.invoke('zarinpal-request', {
+          body: {
+            courseSlug: course.slug,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            countryCode: formData.countryCode
+          }
+        });
+
+        if (response.error) throw response.error;
+
+        const { data } = response;
+        
+        if (data.success) {
+          // Redirect to Zarinpal payment
+          window.location.href = data.paymentUrl;
+        } else {
+          throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');
+        }
       }
     } catch (error) {
       console.error('Payment request error:', error);
