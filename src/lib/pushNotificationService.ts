@@ -67,7 +67,7 @@ export const pushNotificationService = {
               
               console.log('🔔 [OneSignal] Device detection:', { isMobile, isIOS, isAndroid });
 
-              const initConfig = {
+              const initConfig: any = {
                 appId: "e221c080-7853-46e5-ba40-93796318d1a0",
                 allowLocalhostAsSecureOrigin: true,
                 serviceWorkerPath: '/OneSignalSDKWorker.js',
