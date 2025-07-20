@@ -387,34 +387,61 @@ const EnrollSuccess: React.FC = () => {
                   userEmail={email || ''}
                 />
 
-                {/* Support Section */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                  <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3 flex items-center gap-2">
+                {/* Support Section - Enhanced with clickable links */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 md:p-6 border border-blue-200 dark:border-blue-800 shadow-sm">
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2 text-lg">
                     <MessageSquare className="h-5 w-5" />
                     پشتیبانی و ارتباط با ما
                   </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <Send className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                      <div>
+                  <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-3">
+                    {/* Telegram */}
+                    <a 
+                      href="https://t.me/rafieiacademy" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 bg-white/70 dark:bg-black/30 rounded-xl hover:bg-white dark:hover:bg-black/40 transition-all duration-200 border border-blue-100 dark:border-blue-900 hover:shadow-md group"
+                    >
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Send className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-blue-700 dark:text-blue-300">تلگرام</p>
-                        <p className="text-sm text-muted-foreground">@rafieiacademy</p>
+                        <p className="text-sm text-muted-foreground truncate">@rafieiacademy</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                      <div>
+                      <ExternalLink className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+
+                    {/* Rafiei Messenger */}
+                    <a 
+                      href="https://academy.rafiei.co/messenger" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 bg-white/70 dark:bg-black/30 rounded-xl hover:bg-white dark:hover:bg-black/40 transition-all duration-200 border border-blue-100 dark:border-blue-900 hover:shadow-md group"
+                    >
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-blue-700 dark:text-blue-300">رفیعی مسنجر</p>
-                        <p className="text-sm text-muted-foreground">پیام رسان اختصاصی آکادمی</p>
+                        <p className="text-sm text-muted-foreground">پیام رسان آکادمی</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
-                      <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                      <div>
+                      <ExternalLink className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+
+                    {/* Phone */}
+                    <a 
+                      href="tel:02128427131" 
+                      className="flex items-center gap-3 p-4 bg-white/70 dark:bg-black/30 rounded-xl hover:bg-white dark:hover:bg-black/40 transition-all duration-200 border border-blue-100 dark:border-blue-900 hover:shadow-md group"
+                    >
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-blue-700 dark:text-blue-300">تماس تلفنی</p>
-                        <p className="text-sm text-muted-foreground">021-28427131</p>
+                        <p className="text-sm text-muted-foreground" dir="ltr">021-28427131</p>
                       </div>
-                    </div>
+                      <Phone className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
                   </div>
                 </div>
               </CardContent>
