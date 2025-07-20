@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import EnrollHeader from '@/components/Layout/EnrollHeader';
+import MainLayout from '@/components/Layout/MainLayout';
 
 const EnrollPending: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -96,22 +96,20 @@ const EnrollPending: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-        <EnrollHeader title="بررسی وضعیت پرداخت" />
+      <MainLayout>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-md mx-auto text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
           </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   if (!enrollmentData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-        <EnrollHeader title="خطا" />
+      <MainLayout>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-md mx-auto text-center">
             <XCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
@@ -120,7 +118,7 @@ const EnrollPending: React.FC = () => {
             <Button onClick={() => navigate('/enroll')}>بازگشت به صفحه ثبت‌نام</Button>
           </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
@@ -139,9 +137,7 @@ const EnrollPending: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <EnrollHeader title="در انتظار تایید پرداخت" />
-      
+    <MainLayout>
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto">
           
@@ -269,7 +265,7 @@ const EnrollPending: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

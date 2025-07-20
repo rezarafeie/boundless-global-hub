@@ -1,11 +1,9 @@
 import React from 'react';
-import EnrollHeader from '@/components/Layout/EnrollHeader';
+import MainLayout from '@/components/Layout/MainLayout';
 
 const EnrollReject: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <EnrollHeader showBackButton={false} title="پرداخت ناموفق" />
-      
+    <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto text-center">
           <div className="text-6xl mb-4">❌</div>
@@ -15,7 +13,7 @@ const EnrollReject: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

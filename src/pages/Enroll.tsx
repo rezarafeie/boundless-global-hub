@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import EnrollHeader from '@/components/Layout/EnrollHeader';
+import MainLayout from '@/components/Layout/MainLayout';
 import ManualPaymentSection from '@/components/ManualPaymentSection';
 
 interface Course {
@@ -189,10 +189,7 @@ const Enroll: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <EnrollHeader />
-
-      {/* Main Content */}
+    <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
@@ -372,7 +369,7 @@ const Enroll: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

@@ -12,7 +12,7 @@ import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Pho
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import EnrollHeader from '@/components/Layout/EnrollHeader';
+import MainLayout from '@/components/Layout/MainLayout';
 
 interface Course {
   id: string;
@@ -340,21 +340,19 @@ const EnrollAdmin: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-        <EnrollHeader title="مدیریت ثبت‌نام‌ها" />
+      <MainLayout>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">در حال بارگذاری...</p>
           </div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <EnrollHeader title="پنل مدیریت" />
+    <MainLayout>
       
       <div className="flex h-screen pt-16">
         {/* Sidebar */}
@@ -956,7 +954,7 @@ const EnrollAdmin: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </MainLayout>
   );
 };
 

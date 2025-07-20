@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import PurpleLoader from "@/components/PurpleLoader";
-import EnrollHeader from "@/components/Layout/EnrollHeader";
+import Header from "@/components/Layout/Header";
 
 interface IframeModalProps {
   isOpen: boolean;
@@ -111,7 +111,7 @@ const IframeModal: React.FC<IframeModalProps> = ({
     <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
       {/* Header */}
       <div className="flex-shrink-0">
-        <EnrollHeader showBackButton={false} />
+        <Header />
       </div>
       
       {/* Close Button */}

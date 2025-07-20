@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import EnrollHeader from '@/components/Layout/EnrollHeader';
+import MainLayout from '@/components/Layout/MainLayout';
 
 interface VerificationResult {
   success: boolean;
@@ -159,37 +159,36 @@ const EnrollSuccess: React.FC = () => {
 
   if (verifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-purple-600" />
-              <h2 className="text-xl font-semibold mb-2">در حال تایید پرداخت</h2>
-              <p className="text-muted-foreground">
-                لطفا صبر کنید، پرداخت شما در حال تایید است...
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+                <h2 className="text-xl font-semibold mb-2">در حال تایید پرداخت</h2>
+                <p className="text-muted-foreground">
+                  لطفا صبر کنید، پرداخت شما در حال تایید است...
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      <EnrollHeader showBackButton={false} />
-
-      {/* Main Content */}
+    <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {result?.success ? (
             // Success State
-            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="bg-card/80 backdrop-blur-sm border shadow-xl">
               <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
-                <CardTitle className="text-2xl text-green-700 mb-2">
+                <CardTitle className="text-2xl text-green-700 dark:text-green-400 mb-2">
                   🎉 ثبت‌نام موفقیت‌آمیز!
                 </CardTitle>
                 <p className="text-muted-foreground">
@@ -199,8 +198,8 @@ const EnrollSuccess: React.FC = () => {
               
               <CardContent className="space-y-6">
                 {/* Payment Details */}
-                <div className="bg-green-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-green-800 mb-3">جزئیات پرداخت</h3>
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <h3 className="font-semibold text-green-800 dark:text-green-400 mb-3">جزئیات پرداخت</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">کد رهگیری:</span>
@@ -221,8 +220,8 @@ const EnrollSuccess: React.FC = () => {
 
                 {/* Course Details */}
                 {result.course && (
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-blue-800 mb-3">دوره ثبت‌نام شده</h3>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{result.course.title}</h4>
@@ -230,7 +229,7 @@ const EnrollSuccess: React.FC = () => {
                           {result.course.description}
                         </p>
                       </div>
-                      <Badge className="bg-blue-100 text-blue-700">
+                      <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
                         فعال
                       </Badge>
                     </div>
@@ -241,7 +240,7 @@ const EnrollSuccess: React.FC = () => {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     onClick={handleEnterCourse}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-6"
+                    className="flex-1 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground py-6"
                     size="lg"
                   >
                     <ExternalLink className="h-5 w-5 mr-2" />
@@ -250,9 +249,9 @@ const EnrollSuccess: React.FC = () => {
                 </div>
 
                 {/* Additional Info */}
-                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                  <h3 className="font-semibold text-amber-800 mb-2">اطلاعات مهم</h3>
-                  <ul className="text-sm text-amber-700 space-y-1">
+                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+                  <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-2">اطلاعات مهم</h3>
+                  <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
                     <li>• اطلاعات دسترسی به ایمیل شما ارسال شده است</li>
                     <li>• در صورت بروز مشکل با پشتیبانی تماس بگیرید</li>
                     <li>• کد رهگیری را برای پیگیری نگه دارید</li>
@@ -262,12 +261,12 @@ const EnrollSuccess: React.FC = () => {
             </Card>
           ) : (
             // Error State
-            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <Card className="bg-card/80 backdrop-blur-sm border shadow-xl">
               <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <XCircle className="h-8 w-8 text-red-600" />
+                <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                  <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
-                <CardTitle className="text-2xl text-red-700 mb-2">
+                <CardTitle className="text-2xl text-red-700 dark:text-red-400 mb-2">
                   خطا در پرداخت
                 </CardTitle>
                 <p className="text-muted-foreground">
@@ -276,9 +275,9 @@ const EnrollSuccess: React.FC = () => {
               </CardHeader>
               
               <CardContent>
-                <div className="bg-red-50 rounded-lg p-4 mb-6">
-                  <h3 className="font-semibold text-red-800 mb-2">دلایل احتمالی:</h3>
-                  <ul className="text-sm text-red-700 space-y-1">
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 mb-6 border border-red-200 dark:border-red-800">
+                  <h3 className="font-semibold text-red-800 dark:text-red-400 mb-2">دلایل احتمالی:</h3>
+                  <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
                     <li>• لغو پرداخت توسط کاربر</li>
                     <li>• عدم موجودی کافی</li>
                     <li>• خطا در درگاه پرداخت</li>
@@ -297,13 +296,13 @@ const EnrollSuccess: React.FC = () => {
                   </Button>
                   <Button
                     onClick={() => window.history.back()}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                    className="flex-1 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground"
                   >
                     بازگشت
                   </Button>
                 </div>
 
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                   <p className="font-medium mb-1">نیاز به کمک؟</p>
                   <p>
                     در صورت برداشت وجه، لطفا با کد رهگیری با پشتیبانی تماس بگیرید.
@@ -314,7 +313,7 @@ const EnrollSuccess: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
