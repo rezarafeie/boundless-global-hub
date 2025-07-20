@@ -23,8 +23,9 @@ const EnrollSuccess: React.FC = () => {
   
   const courseSlug = searchParams.get('course');
   const email = searchParams.get('email');
-  const authority = searchParams.get('authority');
-  const status = searchParams.get('status');
+  // Handle both 'Authority' (capital A from Zarinpal) and 'authority' (lowercase)
+  const authority = searchParams.get('Authority') || searchParams.get('authority');
+  const status = searchParams.get('Status') || searchParams.get('status');
   const enrollmentId = searchParams.get('enrollment');
 
   const [verifying, setVerifying] = useState(true);
