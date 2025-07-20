@@ -715,6 +715,59 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_codes: {
+        Row: {
+          code: string
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          percentage: number
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          percentage: number
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          percentage?: number
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_codes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           admin_notes: string | null

@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import ManualPaymentSection from '@/components/ManualPaymentSection';
 import { TetherlandService } from '@/lib/tetherlandService';
+import DiscountSection from '@/components/DiscountSection';
 
 interface Course {
   id: string;
@@ -41,6 +42,8 @@ const Enroll: React.FC = () => {
   const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
+  const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -255,10 +258,12 @@ const Enroll: React.FC = () => {
         }
       } else {
         // Paid course - proceed with Zarinpal payment
-        // Use the calculated final price for dollar courses
-        const paymentAmount = course.use_dollar_price && finalRialPrice 
+        // Use the calculated final price for dollar courses, then apply discount if any
+        let basePrice = course.use_dollar_price && finalRialPrice 
           ? finalRialPrice 
           : course.price;
+        
+        const paymentAmount = discountedPrice !== null ? discountedPrice : basePrice;
           
         const response = await supabase.functions.invoke('zarinpal-request', {
           body: {
@@ -367,11 +372,21 @@ const Enroll: React.FC = () => {
                         <span className="text-lg font-medium">قیمت دوره:</span>
                         <div className="text-left">
                           <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                            {course.use_dollar_price && finalRialPrice 
-                              ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                              : formatPrice(course.price)
+                            {discountedPrice !== null 
+                              ? formatPrice(discountedPrice)
+                              : course.use_dollar_price && finalRialPrice 
+                                ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                                : formatPrice(course.price)
                             }
                           </span>
+                          {discountAmount > 0 && (
+                            <div className="text-sm text-muted-foreground line-through mt-1">
+                              {course.use_dollar_price && finalRialPrice 
+                                ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                                : formatPrice(course.price)
+                              }
+                            </div>
+                          )}
                         </div>
                       </div>
                       

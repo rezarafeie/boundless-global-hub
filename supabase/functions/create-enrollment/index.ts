@@ -92,68 +92,59 @@ Deno.serve(async (req) => {
 
     console.log('✅ Enrollment created successfully:', createdEnrollment);
 
-    // If enrollment is successful (completed payment), send webhook
-    if (createdEnrollment.payment_status === 'completed' || createdEnrollment.payment_status === 'success') {
-      try {
-        // Get course details
-        const { data: courseData } = await supabase
-          .from('courses')
+    // FORCE send webhook for ALL successful enrollments (regardless of payment status)
+    try {
+      // Get course details
+      const { data: courseData } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', course_id)
+        .single();
+
+      // Get user details if chat_user_id exists
+      let userData = null;
+      if (resolvedChatUserId) {
+        const { data: userInfo } = await supabase
+          .from('chat_users')
           .select('*')
-          .eq('id', course_id)
+          .eq('id', resolvedChatUserId)
           .single();
+        userData = userInfo;
+      }
 
-        // Get user details if chat_user_id exists
-        let userData = null;
-        if (resolvedChatUserId) {
-          const { data: userInfo } = await supabase
-            .from('chat_users')
-            .select('*')
-            .eq('id', resolvedChatUserId)
-            .single();
-          userData = userInfo;
-        }
+      console.log('📤 FORCE sending enrollment webhook for ALL enrollments...');
 
-        // Send webhook
-        const webhookPayload = {
-          enrollment: createdEnrollment,
-          user: userData || {
+      // Call webhook directly to Make.com - FORCE call for all enrollments
+      const webhookResponse = await fetch('https://hook.us1.make.com/m9ita6qaswo7ysgx0c4vy1c34kl0x9ij', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event_type: 'course_enrollment_created',
+          user_data: userData || {
             name: full_name,
             email: email,
-            phone: phone
+            phone: phone,
+            country_code: body.country_code
           },
-          course: courseData
-        };
+          course_data: courseData,
+          enrollment_data: createdEnrollment,
+          payment_status: createdEnrollment.payment_status,
+          manual_payment_status: createdEnrollment.manual_payment_status,
+          payment_method: createdEnrollment.payment_method
+        }),
+      });
 
-        console.log('📤 Sending enrollment webhook...');
-
-        // Call webhook directly to Make.com
-        const webhookResponse = await fetch('https://hook.us1.make.com/m9ita6qaswo7ysgx0c4vy1c34kl0x9ij', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            timestamp: new Date().toISOString(),
-            event_type: 'course_enrollment_success',
-            user_data: userData || {
-              name: full_name,
-              email: email,
-              phone: phone
-            },
-            course_data: courseData,
-            enrollment_data: createdEnrollment
-          }),
-        });
-
-        if (webhookResponse.ok) {
-          console.log('✅ Webhook sent successfully!');
-        } else {
-          console.error('❌ Webhook failed:', webhookResponse.status, await webhookResponse.text());
-        }
-      } catch (webhookError) {
-        console.error('❌ Webhook error (non-blocking):', webhookError);
-        // Don't fail the enrollment if webhook fails
+      if (webhookResponse.ok) {
+        console.log('✅ Webhook sent successfully for enrollment:', createdEnrollment.id);
+      } else {
+        console.error('❌ Webhook failed:', webhookResponse.status, await webhookResponse.text());
       }
+    } catch (webhookError) {
+      console.error('❌ Webhook error (non-blocking):', webhookError);
+      // Don't fail the enrollment if webhook fails
     }
 
     return new Response(
