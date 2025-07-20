@@ -456,17 +456,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2 space-x-reverse pt-4">
-                <Checkbox
-                  id="boundless"
-                  checked={isBoundlessStudent}
-                  onCheckedChange={(checked) => setIsBoundlessStudent(checked as boolean)}
-                />
-                <Label htmlFor="boundless" className="text-sm text-muted-foreground">
-                  من دانشجوی دوره بدون مرز هستم
-                </Label>
-              </div>
-
               <div className="flex gap-3 mt-8">
                 <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal">ادامه</Button>
                 <Button 
