@@ -70,6 +70,7 @@ interface CourseLesson {
   course_id: string;
   created_at: string;
   updated_at: string;
+  section_ids?: string[]; // For multiple section support
 }
 
 interface Course {
@@ -212,15 +213,25 @@ const CourseContentManagement: React.FC = () => {
       if (sectionsError) throw sectionsError;
       setSections(sectionsData || []);
 
-      // Fetch lessons
+      // Fetch lessons with their section relationships
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('course_lessons')
-        .select('*')
+        .select(`
+          *,
+          lesson_sections!inner(section_id)
+        `)
         .eq('course_id', courseId)
         .order('order_index');
 
       if (lessonsError) throw lessonsError;
-      setLessons(lessonsData || []);
+      
+      // Process lessons to include section_ids array
+      const processedLessons = (lessonsData || []).map(lesson => ({
+        ...lesson,
+        section_ids: lesson.lesson_sections?.map(ls => ls.section_id) || [lesson.section_id].filter(Boolean)
+      }));
+      
+      setLessons(processedLessons);
 
     } catch (error) {
       console.error('Error fetching course data:', error);
@@ -325,22 +336,39 @@ const CourseContentManagement: React.FC = () => {
     setShowSectionModal(true);
   };
 
-  const handleEditLesson = (lesson: CourseLesson) => {
-    setEditingLesson(lesson);
-    setLessonForm({
-      title: lesson.title,
-      content: lesson.content,
-      video_url: lesson.video_url || '',
-      file_url: lesson.file_url || '',
-      section_ids: [lesson.section_id],
-      duration: lesson.duration || 15
-    });
-    
-    // Detect if it's an embed code or URL
-    const videoUrl = lesson.video_url || '';
-    setVideoInputMode(videoUrl.includes('<') && videoUrl.includes('>') ? 'embed' : 'url');
-    
-    setShowLessonModal(true);
+  const handleEditLesson = async (lesson: CourseLesson) => {
+    try {
+      // Fetch current section relationships for this lesson
+      const { data: lessonSections, error } = await supabase
+        .from('lesson_sections')
+        .select('section_id')
+        .eq('lesson_id', lesson.id);
+
+      if (error) throw error;
+
+      setEditingLesson(lesson);
+      setLessonForm({
+        title: lesson.title,
+        content: lesson.content,
+        video_url: lesson.video_url || '',
+        file_url: lesson.file_url || '',
+        section_ids: lessonSections?.map(ls => ls.section_id) || [lesson.section_id].filter(Boolean),
+        duration: lesson.duration || 15
+      });
+      
+      // Detect if it's an embed code or URL
+      const videoUrl = lesson.video_url || '';
+      setVideoInputMode(videoUrl.includes('<') && videoUrl.includes('>') ? 'embed' : 'url');
+      
+      setShowLessonModal(true);
+    } catch (error) {
+      console.error('Error fetching lesson sections:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری اطلاعات درس",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSaveSection = async () => {
@@ -418,46 +446,71 @@ const CourseContentManagement: React.FC = () => {
     try {
       if (editingLesson) {
         // Update existing lesson
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('course_lessons')
           .update({
             title: lessonForm.title.trim(),
             content: lessonForm.content.trim(),
             video_url: lessonForm.video_url.trim() || null,
             file_url: lessonForm.file_url.trim() || null,
-            section_id: lessonForm.section_ids[0], // Keep first section for main lesson
             duration: lessonForm.duration
           })
           .eq('id', editingLesson.id);
         
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        // Update section relationships
+        // First delete existing relationships
+        const { error: deleteError } = await supabase
+          .from('lesson_sections')
+          .delete()
+          .eq('lesson_id', editingLesson.id);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new relationships
+        const lessonSectionInserts = lessonForm.section_ids.map(sectionId => ({
+          lesson_id: editingLesson.id,
+          section_id: sectionId
+        }));
+
+        const { error: insertError } = await supabase
+          .from('lesson_sections')
+          .insert(lessonSectionInserts);
+
+        if (insertError) throw insertError;
         
         toast({ title: "درس با موفقیت به‌روزرسانی شد" });
       } else {
-        // Create new lessons for each selected section
-        const lessonsToInsert = [];
-        
-        for (const sectionId of lessonForm.section_ids) {
-          const sectionLessons = lessons.filter(l => l.section_id === sectionId);
-          const nextOrderIndex = Math.max(...sectionLessons.map(l => l.order_index), 0) + 1;
-          
-          lessonsToInsert.push({
+        // Create new lesson
+        const { data: newLesson, error: lessonError } = await supabase
+          .from('course_lessons')
+          .insert({
             title: lessonForm.title.trim(),
             content: lessonForm.content.trim(),
             video_url: lessonForm.video_url.trim() || null,
             file_url: lessonForm.file_url.trim() || null,
-            section_id: sectionId,
             course_id: courseId,
-            order_index: nextOrderIndex,
+            section_id: lessonForm.section_ids[0], // Keep for backward compatibility
+            order_index: 0, // Will be updated by ordering logic
             duration: lessonForm.duration
-          });
-        }
+          })
+          .select()
+          .single();
         
-        const { error } = await supabase
-          .from('course_lessons')
-          .insert(lessonsToInsert);
-        
-        if (error) throw error;
+        if (lessonError) throw lessonError;
+
+        // Insert lesson-section relationships
+        const lessonSectionInserts = lessonForm.section_ids.map(sectionId => ({
+          lesson_id: newLesson.id,
+          section_id: sectionId
+        }));
+
+        const { error: insertError } = await supabase
+          .from('lesson_sections')
+          .insert(lessonSectionInserts);
+
+        if (insertError) throw insertError;
         
         toast({ 
           title: lessonForm.section_ids.length > 1 
@@ -911,7 +964,9 @@ const SortableSection: React.FC<{
     transition,
   };
 
-  const sectionLessons = lessons.filter(l => l.section_id === section.id);
+  const sectionLessons = lessons.filter(l => 
+    l.section_ids?.includes(section.id) || l.section_id === section.id
+  );
 
   return (
     <Card ref={setNodeRef} style={style}>
@@ -1282,48 +1337,36 @@ const SortableLesson: React.FC<{
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="lesson-sections">
-                    بخش‌ها {!editingLesson && "(می‌توانید چندین بخش انتخاب کنید)"}
+                    بخش‌ها (می‌توانید چندین بخش انتخاب کنید)
                   </Label>
-                  {editingLesson ? (
-                    <select
-                      id="lesson-sections"
-                      value={lessonForm.section_ids[0] || ''}
-                      onChange={(e) => setLessonForm(prev => ({ ...prev, section_ids: [e.target.value] }))}
-                      className="w-full p-2 border rounded-md"
-                      required
-                    >
-                      <option value="">انتخاب بخش</option>
-                      {sections.map(section => (
-                        <option key={section.id} value={section.id}>
-                          {section.title}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
-                      {sections.map(section => (
-                        <label key={section.id} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={lessonForm.section_ids.includes(section.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setLessonForm(prev => ({ 
-                                  ...prev, 
-                                  section_ids: [...prev.section_ids, section.id] 
-                                }));
-                              } else {
-                                setLessonForm(prev => ({ 
-                                  ...prev, 
-                                  section_ids: prev.section_ids.filter(id => id !== section.id) 
-                                }));
-                              }
-                            }}
-                            className="rounded"
-                          />
-                          <span className="text-sm">{section.title}</span>
-                        </label>
-                      ))}
+                  <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
+                    {sections.map(section => (
+                      <label key={section.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={lessonForm.section_ids.includes(section.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setLessonForm(prev => ({ 
+                                ...prev, 
+                                section_ids: [...prev.section_ids, section.id] 
+                              }));
+                            } else {
+                              setLessonForm(prev => ({ 
+                                ...prev, 
+                                section_ids: prev.section_ids.filter(id => id !== section.id) 
+                              }));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{section.title}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {lessonForm.section_ids.length > 0 && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      انتخاب شده: {lessonForm.section_ids.length} بخش
                     </div>
                   )}
                 </div>

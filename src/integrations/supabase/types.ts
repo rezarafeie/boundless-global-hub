@@ -1016,6 +1016,42 @@ export type Database = {
           },
         ]
       }
+      lesson_sections: {
+        Row: {
+          created_at: string | null
+          id: string
+          lesson_id: string
+          section_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lesson_id: string
+          section_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lesson_id?: string
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_sections_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "course_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_sections_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "course_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       license_errors: {
         Row: {
           api_response: string | null
