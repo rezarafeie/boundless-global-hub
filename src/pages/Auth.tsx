@@ -143,6 +143,7 @@ const Auth: React.FC = () => {
           onAuthenticated={handleAuthenticated} 
           prefillData={googleUserData || undefined}
           linkingEmail={linkingEmail}
+          isAcademyAuth={true}
         />
       </div>
     </div>

@@ -25,11 +25,12 @@ interface UnifiedMessengerAuthProps {
     lastName?: string;
   };
   linkingEmail?: string | null;
+  isAcademyAuth?: boolean; // Add flag to distinguish academy vs messenger auth
 }
 
 type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking' | 'name-confirm';
 
-const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail }) => {
+const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail, isAcademyAuth = false }) => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -45,6 +46,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameError, setUsernameError] = useState('');
+  const [emailChecking, setEmailChecking] = useState(false);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [emailError, setEmailError] = useState('');
   const [existingUser, setExistingUser] = useState<MessengerUser | null>(null);
   const [isLogin, setIsLogin] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -180,6 +184,65 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       setUsernameAvailable(false);
     } finally {
       setUsernameChecking(false);
+    }
+  };
+
+  const checkEmailAvailability = async (email: string) => {
+    if (!email) {
+      setEmailAvailable(null);
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('ایمیل وارد شده معتبر نیست');
+      setEmailAvailable(false);
+      return;
+    }
+
+    setEmailChecking(true);
+    setEmailError('');
+    
+    try {
+      // Check both academy and chat users tables for duplicate email
+      const { data: academyUser } = await supabase
+        .from('academy_users')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      const { data: chatUser } = await supabase
+        .from('chat_users')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      const isAvailable = !academyUser && !chatUser;
+      setEmailAvailable(isAvailable);
+      
+      if (!isAvailable) {
+        setEmailError('این ایمیل قبلاً استفاده شده است');
+      }
+    } catch (error) {
+      // If both queries fail (no results), email is available
+      setEmailAvailable(true);
+    } finally {
+      setEmailChecking(false);
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    const lowerValue = value.toLowerCase();
+    setEmail(lowerValue);
+    setEmailAvailable(null);
+    setEmailError('');
+
+    if (lowerValue && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lowerValue)) {
+      const timeoutId = setTimeout(() => {
+        checkEmailAvailability(lowerValue);
+      }, 500);
+      return () => clearTimeout(timeoutId);
     }
   };
 
@@ -404,7 +467,54 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       return;
     }
 
-    setCurrentStep('username');
+    // Check if email is available
+    if (!emailAvailable) {
+      toast({
+        title: 'خطا',
+        description: 'ایمیل انتخاب شده معتبر نیست یا قبلاً استفاده شده است',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // For academy auth, skip username step and register directly
+    if (isAcademyAuth) {
+      setLoading(true);
+      try {
+        // Register academy user without username
+        const result = await messengerService.registerWithPassword({
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          phone: phoneNumber,
+          countryCode: countryCode,
+          password: password,
+          email: email.trim(),
+          isBoundlessStudent: isBoundlessStudent,
+          firstName: firstName.trim(),
+          lastName: lastName.trim()
+        });
+
+        // Check if user needs approval
+        if (!result.user.is_approved) {
+          setCurrentStep('pending');
+          return;
+        }
+
+        // User is auto-approved, proceed to login
+        onAuthenticated(result.session_token, result.user.name, result.user);
+      } catch (error: any) {
+        console.error('Registration error:', error);
+        toast({
+          title: 'خطا در ثبت نام',
+          description: error.message || 'لطفاً دوباره تلاش کنید',
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // For messenger auth, continue to username step
+      setCurrentStep('username');
+    }
   };
 
   const handleUsernameSubmit = async (e: React.FormEvent) => {
@@ -687,9 +797,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
   const getStepTitle = () => {
     switch (currentStep) {
-      case 'phone': return 'ورود به آکادمی رفیعی';
+      case 'phone': return isAcademyAuth ? 'ورود به آکادمی رفیعی' : 'ورود به پیام رسان رفیعی';
       case 'password': return isLogin ? 'ورود' : 'ایجاد رمز عبور';
-      case 'name': return 'نام شما';
+      case 'name': return 'اطلاعات شما';
       case 'username': return 'انتخاب نام کاربری';
       case 'pending': return 'در انتظار تایید';
       case 'otp-link': return 'تأیید شماره تلفن';
@@ -703,7 +813,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     switch (currentStep) {
       case 'phone': return 'شماره تلفن خود را وارد کنید';
       case 'password': return isLogin ? 'رمز عبور خود را وارد کنید' : 'رمز عبور خود را انتخاب کنید';
-      case 'name': return 'نام و نام خانوادگی خود را وارد کنید';
+      case 'name': return 'نام، نام خانوادگی و ایمیل خود را وارد کنید';
       case 'username': return 'یک نام کاربری منحصر به فرد انتخاب کنید';
       case 'pending': return 'حساب شما ثبت شد و در انتظار تایید مدیریت است';
       case 'otp-link': return 'کد تأیید ارسال شد';
@@ -926,21 +1036,48 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               </div>
               
               <div className="space-y-2">
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ایمیل"
-                  required
-                  dir="ltr"
-                  className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
-                />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    placeholder="ایمیل"
+                    required
+                    dir="ltr"
+                    className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 pl-8 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+                  />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                    {emailChecking ? (
+                      <div className="w-4 h-4 border-2 border-muted border-t-foreground rounded-full animate-spin" />
+                    ) : emailAvailable === true ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : emailAvailable === false ? (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    ) : null}
+                  </div>
+                </div>
+                {emailError && (
+                  <p className="text-sm text-destructive">{emailError}</p>
+                )}
               </div>
             </div>
             
             <div className="flex gap-3 mt-8">
-              <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal">ادامه</Button>
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                disabled={loading || (email && !emailAvailable)}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {isAcademyAuth ? 'در حال ثبت نام...' : 'ادامه'}
+                  </>
+                ) : (
+                  isAcademyAuth ? 'ثبت نام' : 'ادامه'
+                )}
+              </Button>
               <Button 
                 type="button" 
                 variant="ghost" 
