@@ -49,8 +49,8 @@ export function UserCRM({ userId }: UserCRMProps) {
     } catch (error) {
       console.error('Error fetching CRM notes:', error);
       toast({
-        title: "Error",
-        description: "Failed to load CRM notes.",
+        title: "خطا",
+        description: "خطا در بارگذاری یادداشت‌های CRM.",
         variant: "destructive"
       });
     } finally {
@@ -68,14 +68,14 @@ export function UserCRM({ userId }: UserCRMProps) {
           user_id: userId,
           type: newNote.type,
           content: newNote.content,
-          created_by: 'Admin' // You might want to get this from current user context
+          created_by: 'مدیر' // You might want to get this from current user context
         });
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "CRM note added successfully."
+        title: "موفق",
+        description: "یادداشت CRM با موفقیت اضافه شد."
       });
 
       setNewNote({ type: 'note', content: '' });
@@ -84,8 +84,8 @@ export function UserCRM({ userId }: UserCRMProps) {
     } catch (error) {
       console.error('Error adding CRM note:', error);
       toast({
-        title: "Error",
-        description: "Failed to add CRM note.",
+        title: "خطا",
+        description: "خطا در افزودن یادداشت CRM.",
         variant: "destructive"
       });
     }
@@ -101,16 +101,16 @@ export function UserCRM({ userId }: UserCRMProps) {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "CRM note deleted successfully."
+        title: "موفق",
+        description: "یادداشت CRM با موفقیت حذف شد."
       });
 
       fetchNotes();
     } catch (error) {
       console.error('Error deleting CRM note:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete CRM note.",
+        title: "خطا",
+        description: "خطا در حذف یادداشت CRM.",
         variant: "destructive"
       });
     }
@@ -119,11 +119,11 @@ export function UserCRM({ userId }: UserCRMProps) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'call':
-        return <Phone className="w-4 h-4" />;
+        return <Phone className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'message':
-        return <MessageSquare className="w-4 h-4" />;
+        return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />;
       default:
-        return <FileText className="w-4 h-4" />;
+        return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
     }
   };
 
@@ -133,7 +133,14 @@ export function UserCRM({ userId }: UserCRMProps) {
       call: 'secondary',
       message: 'outline'
     };
-    return <Badge variant={variants[type] || 'default'}>{type.toUpperCase()}</Badge>;
+    
+    const typeLabels: Record<string, string> = {
+      note: 'یادداشت',
+      call: 'تماس',
+      message: 'پیام'
+    };
+    
+    return <Badge variant={variants[type] || 'default'} className="text-xs">{typeLabels[type] || type}</Badge>;
   };
 
   const formatDate = (dateString: string) => {
@@ -163,137 +170,180 @@ export function UserCRM({ userId }: UserCRMProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            CRM Activity ({filteredNotes.length})
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="note">Notes</SelectItem>
-                <SelectItem value="call">Calls</SelectItem>
-                <SelectItem value="message">Messages</SelectItem>
-              </SelectContent>
-            </Select>
-            <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Note
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add CRM Note</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="type">Type</Label>
-                    <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="note">Note</SelectItem>
-                        <SelectItem value="call">Call Log</SelectItem>
-                        <SelectItem value="message">Message</SelectItem>
-                      </SelectContent>
-                    </Select>
+    <div dir="rtl">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+              فعالیت‌های CRM ({filteredNotes.length})
+            </CardTitle>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="فیلتر" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه انواع</SelectItem>
+                  <SelectItem value="note">یادداشت‌ها</SelectItem>
+                  <SelectItem value="call">تماس‌ها</SelectItem>
+                  <SelectItem value="message">پیام‌ها</SelectItem>
+                </SelectContent>
+              </Select>
+              <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2" size="sm">
+                    <Plus className="w-4 h-4" />
+                    افزودن یادداشت
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4" dir="rtl">
+                    <div>
+                      <Label htmlFor="type">نوع</Label>
+                      <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="note">یادداشت</SelectItem>
+                          <SelectItem value="call">گزارش تماس</SelectItem>
+                          <SelectItem value="message">پیام</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="content">محتوا</Label>
+                      <Textarea
+                        id="content"
+                        placeholder="محتوای یادداشت خود را وارد کنید..."
+                        value={newNote.content}
+                        onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsAddingNote(false)}>
+                        لغو
+                      </Button>
+                      <Button onClick={addNote}>
+                        افزودن یادداشت
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="content">Content</Label>
-                    <Textarea
-                      id="content"
-                      placeholder="Enter your note content..."
-                      value={newNote.content}
-                      onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                      rows={4}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsAddingNote(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={addNote}>
-                      Add Note
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {filteredNotes.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No CRM activities found.
-            {filterType !== 'all' && (
-              <p className="mt-2">
-                Try changing the filter or{' '}
-                <Button variant="link" onClick={() => setFilterType('all')} className="p-0 h-auto">
-                  view all activities
-                </Button>
-              </p>
-            )}
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Content</TableHead>
-                <TableHead>Created By</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredNotes.map((note) => (
-                <TableRow key={note.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getTypeIcon(note.type)}
-                      {getTypeBadge(note.type)}
+        </CardHeader>
+        <CardContent>
+          {filteredNotes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              هیچ فعالیت CRM یافت نشد.
+              {filterType !== 'all' && (
+                <p className="mt-2">
+                  فیلتر را تغییر دهید یا{' '}
+                  <Button variant="link" onClick={() => setFilterType('all')} className="p-0 h-auto">
+                    همه فعالیت‌ها را مشاهده کنید
+                  </Button>
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-0">
+              {/* Mobile Card View */}
+              <div className="block sm:hidden space-y-4">
+                {filteredNotes.map((note) => (
+                  <Card key={note.id} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {getTypeIcon(note.type)}
+                          {getTypeBadge(note.type)}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteNote(note.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <p className="text-sm leading-relaxed">{note.content}</p>
+                        
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(note.created_at)}
+                          </div>
+                          <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
+                        </div>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-md">
-                      <p className="text-sm leading-relaxed">{note.content}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{note.created_by}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{formatDate(note.created_at)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteNote(note.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">نوع</TableHead>
+                      <TableHead className="text-right">محتوا</TableHead>
+                      <TableHead className="text-right">ایجاد شده توسط</TableHead>
+                      <TableHead className="text-right">تاریخ</TableHead>
+                      <TableHead className="text-right">عملیات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredNotes.map((note) => (
+                      <TableRow key={note.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getTypeIcon(note.type)}
+                            {getTypeBadge(note.type)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-md">
+                            <p className="text-sm leading-relaxed">{note.content}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                            <span className="text-sm">{formatDate(note.created_at)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteNote(note.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
