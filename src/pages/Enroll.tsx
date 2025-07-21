@@ -17,6 +17,8 @@ import { TetherlandService } from '@/lib/tetherlandService';
 import DiscountSection from '@/components/DiscountSection';
 import { IPDetectionService } from '@/lib/ipDetectionService';
 import EnrollmentCountdown from '@/components/EnrollmentCountdown';
+import SaleBadge from '@/components/SaleBadge';
+import SaleCountdownTimer from '@/components/SaleCountdownTimer';
 
 interface Course {
   id: string;
@@ -26,6 +28,9 @@ interface Course {
   price: number;
   use_dollar_price: boolean;
   usd_price: number | null;
+  is_sale_enabled: boolean;
+  sale_price: number | null;
+  sale_expires_at: string | null;
   redirect_url: string;
   is_spotplayer_enabled: boolean;
   spotplayer_course_id: string | null;
@@ -48,6 +53,8 @@ const Enroll: React.FC = () => {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [isIranianIP, setIsIranianIP] = useState<boolean | null>(null);
   const [showVPNWarning, setShowVPNWarning] = useState(false);
+  const [salePrice, setSalePrice] = useState<number | null>(null);
+  const [isOnSale, setIsOnSale] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -58,7 +65,7 @@ const Enroll: React.FC = () => {
   });
 
   // Calculate if the course is free (either original price is 0 or 100% discount)
-  const isFree = course?.price === 0 || discountedPrice === 0;
+  const isFree = course?.price === 0 || discountedPrice === 0 || salePrice === 0;
 
   useEffect(() => {
     if (courseSlug) {
@@ -106,6 +113,41 @@ const Enroll: React.FC = () => {
       fetchExchangeRateForCourse(course.usd_price);
     }
   }, [course]);
+
+  // Check if course is on sale and calculate sale price
+  useEffect(() => {
+    if (course) {
+      const now = new Date();
+      const saleExpiry = course.sale_expires_at ? new Date(course.sale_expires_at) : null;
+      const isSaleActive = course.is_sale_enabled && 
+                          course.sale_price !== null && 
+                          saleExpiry && 
+                          now < saleExpiry;
+      
+      setIsOnSale(isSaleActive);
+      
+      if (isSaleActive) {
+        if (course.use_dollar_price && course.sale_price) {
+          // For dollar courses, convert sale price to rial
+          fetchSaleExchangeRate(course.sale_price);
+        } else {
+          setSalePrice(course.sale_price);
+        }
+      } else {
+        setSalePrice(null);
+      }
+    }
+  }, [course]);
+
+  const fetchSaleExchangeRate = async (salePriceUSD: number) => {
+    try {
+      const rialAmount = await TetherlandService.convertUSDToIRR(salePriceUSD);
+      setSalePrice(rialAmount);
+    } catch (error) {
+      console.error('Error fetching sale exchange rate:', error);
+      setSalePrice(course?.sale_price || null);
+    }
+  };
 
   // Check user's IP location for VPN warning
   useEffect(() => {
@@ -283,12 +325,18 @@ const Enroll: React.FC = () => {
         }
       } else {
         // Paid course - proceed with Zarinpal payment
-        // Use the calculated final price for dollar courses, then apply discount if any
+        // Use sale price if available, otherwise use calculated price for dollar courses or regular price
         let basePrice = course.use_dollar_price && finalRialPrice 
           ? finalRialPrice 
           : course.price;
         
-        const paymentAmount = discountedPrice !== null ? discountedPrice : basePrice;
+        // Priority: Sale price > Discount price > Base price
+        let paymentAmount = basePrice;
+        if (isOnSale && salePrice !== null) {
+          paymentAmount = salePrice;
+        } else if (discountedPrice !== null) {
+          paymentAmount = discountedPrice;
+        }
           
         const response = await supabase.functions.invoke('zarinpal-request', {
           body: {
@@ -395,36 +443,57 @@ const Enroll: React.FC = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl blur-xl"></div>
                   <div className="relative p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-medium">قیمت دوره:</span>
-                        <div className="text-left">
-                          {isFree ? (
-                            <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                              رایگان
-                            </span>
-                          ) : (
-                            <>
-                              <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                                 {discountedPrice !== null 
-                                   ? formatPrice(discountedPrice)
-                                   : course.use_dollar_price && finalRialPrice 
-                                     ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                     : formatPrice(course.price)
-                                 }
-                              </span>
-                              {discountAmount > 0 && (
-                                 <div className="text-sm text-muted-foreground line-through mt-1">
-                                   {course.use_dollar_price && finalRialPrice 
-                                     ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                     : formatPrice(course.price)
-                                   }
+                     <div className="space-y-3">
+                       <div className="flex items-center justify-between">
+                         <span className="text-lg font-medium">قیمت دوره:</span>
+                         <div className="text-left">
+                           {/* Sale Badge */}
+                           {isOnSale && salePrice !== null && !isFree && (
+                             <div className="mb-2">
+                               <SaleBadge
+                                 originalPrice={course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price}
+                                 salePrice={salePrice}
+                                 className="mb-1"
+                               />
+                             </div>
+                           )}
+                           
+                           {isFree ? (
+                             <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                               رایگان
+                             </span>
+                           ) : (
+                             <>
+                               <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                                  {isOnSale && salePrice !== null
+                                    ? formatPrice(salePrice)
+                                    : discountedPrice !== null 
+                                      ? formatPrice(discountedPrice)
+                                      : course.use_dollar_price && finalRialPrice 
+                                        ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                        : formatPrice(course.price)
+                                  }
+                               </span>
+                               {/* Show original price if on sale or discounted */}
+                               {(isOnSale && salePrice !== null || discountAmount > 0) && (
+                                  <div className="text-sm text-muted-foreground line-through mt-1">
+                                    {course.use_dollar_price && finalRialPrice 
+                                      ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                      : formatPrice(course.price)
+                                    }
+                                  </div>
+                               )}
+                               
+                               {/* Sale Price in USD if applicable */}
+                               {isOnSale && course.use_dollar_price && course.sale_price && (
+                                 <div className="text-sm text-red-600 dark:text-red-400 mt-1">
+                                   قیمت حراج: {TetherlandService.formatUSDAmount(course.sale_price)}
                                  </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
+                               )}
+                             </>
+                           )}
+                         </div>
+                       </div>
                       
                       {/* Dollar Price Information - Only show for paid courses */}
                       {!isFree && course.use_dollar_price && course.usd_price && (
@@ -456,9 +525,16 @@ const Enroll: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </div>
-                
-                {/* Rafiei Player Special Feature */}
+                 </div>
+
+                 {/* Sale Countdown Timer */}
+                 {isOnSale && course.sale_expires_at && (
+                   <SaleCountdownTimer 
+                     endDate={new Date(course.sale_expires_at)}
+                   />
+                 )}
+                 
+                 {/* Rafiei Player Special Feature */}
                 {course.is_spotplayer_enabled && (
                   <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border-2 border-emerald-200 dark:border-emerald-800">
                     <div className="flex items-center gap-3 mb-3">
