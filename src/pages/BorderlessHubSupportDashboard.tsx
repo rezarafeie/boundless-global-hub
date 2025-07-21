@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import MainLayout from '@/components/Layout/MainLayout';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -273,6 +273,12 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     new Set(conversations.flatMap(conv => conv.tag_list || []))
   );
 
+  const getAvatarColor = (name: string) => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
   const filteredConversations = conversations.filter(conv => {
     const matchesSearch = searchTerm === '' || 
       conv.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -288,352 +294,273 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <MainLayout>
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-          <div className="text-center">
-            <Headphones className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
-            <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پنل پشتیبانی...</p>
-          </div>
+      <div className="flex h-screen bg-white dark:bg-slate-800 items-center justify-center">
+        <div className="text-center">
+          <Headphones className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-600 dark:text-slate-400">در حال بارگذاری پنل پشتیبانی...</p>
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
   if (!currentUser || (!forceAccess && !currentUser.is_support_agent && !currentUser.is_messenger_admin)) {
     return (
-      <MainLayout>
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-          <Card className="w-full max-w-md p-6 text-center">
-            <Headphones className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-              دسترسی غیرمجاز
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-4">
-              شما دسترسی به پنل پشتیبانی ندارید.
-            </p>
-          </Card>
+      <div className="flex h-screen bg-white dark:bg-slate-800 items-center justify-center">
+        <div className="text-center p-6">
+          <Headphones className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+            دسترسی غیرمجاز
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400">
+            شما دسترسی به پنل پشتیبانی ندارید.
+          </p>
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Mobile Header */}
-        <div className="md:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center justify-between">
-            {!showConversationList && selectedConversation ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={handleBackToList}>
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <div className="flex-1 text-center">
-                  <h3 className="font-semibold text-slate-900 dark:text-white">
-                    {selectedConversation.user?.name || 'کاربر نامشخص'}
-                  </h3>
-                </div>
-                <div></div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <Headphones className="w-6 h-6 text-blue-600" />
-                  <h1 className="text-lg font-bold text-slate-800 dark:text-white">
-                    پنل پشتیبانی
-                  </h1>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => setShowStartChatModal(true)}
-                    size="sm"
-                    variant="default"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    onClick={fetchConversations} 
-                    disabled={refreshing}
-                    variant="ghost"
-                    size="sm"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden md:block bg-white dark:bg-slate-800 shadow-sm border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Headphones className="w-8 h-8 text-blue-600" />
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                    پنل پشتیبانی
-                  </h1>
-                  <p className="text-slate-600 dark:text-slate-300 text-sm">
-                    مدیریت درخواست‌های پشتیبانی و پاسخگویی به کاربران
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setShowStartChatModal(true)}
-                  variant="default"
-                  size="sm"
-                >
-                  <UserPlus className="w-4 h-4 ml-1" />
-                  شروع گفتگوی جدید
-                </Button>
-                <Button 
-                  onClick={fetchConversations} 
-                  disabled={refreshing}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  {refreshing ? 'در حال بروزرسانی...' : 'بروزرسانی'}
-                </Button>
+    <div className="flex h-screen bg-white dark:bg-slate-800 overflow-hidden">
+      {/* Left sidebar - hide on mobile when chat is selected */}
+      <div className={`${!showConversationList ? 'hidden' : ''} md:flex w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-slate-700 flex-col`}>
+        {/* Header */}
+        <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Headphones className="w-6 h-6 text-blue-600" />
+              <div>
+                <h1 className="text-lg font-bold text-slate-800 dark:text-white">
+                  پنل پشتیبانی
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {conversations.length} گفتگو
+                </p>
               </div>
             </div>
             
-            {/* Stats */}
-            {conversations.length > 0 && (
-              <div className="mt-4 flex gap-4 text-sm">
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                  کل گفتگوها: {conversations.length}
-                </span>
-                <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full">
-                  باز: {conversations.filter(c => c.status === 'open').length}
-                </span>
-                <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full">
-                  خوانده نشده: {conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)}
-                </span>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowStartChatModal(true)}
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+              >
+                <UserPlus className="w-4 h-4" />
+              </Button>
+              <Button 
+                onClick={fetchConversations} 
+                disabled={refreshing}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="جستجو در گفتگوها..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10 text-sm"
+              dir="rtl"
+            />
+          </div>
+
+          {/* Simple filter tabs */}
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStatusFilter('all')}
+              className="flex-1 h-8 text-xs"
+            >
+              همه
+            </Button>
+            <Button
+              variant={statusFilter === 'open' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStatusFilter('open')}
+              className="flex-1 h-8 text-xs"
+            >
+              باز
+            </Button>
+            <Button
+              variant={statusFilter === 'assigned' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStatusFilter('assigned')}
+              className="flex-1 h-8 text-xs"
+            >
+              در بررسی
+            </Button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Conversations List */}
-          <div className={`
-            ${showConversationList ? 'flex' : 'hidden'} 
-            md:flex flex-col w-full md:w-1/3 lg:w-1/4 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
-          `}>
-            {/* Search and Filters */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-              <div className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="جستجو در گفتگوها..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="وضعیت" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                      <SelectItem value="open">باز</SelectItem>
-                      <SelectItem value="assigned">در حال بررسی</SelectItem>
-                      <SelectItem value="resolved">حل شده</SelectItem>
-                      <SelectItem value="closed">بسته</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اولویت" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه اولویت‌ها</SelectItem>
-                      <SelectItem value="low">کم</SelectItem>
-                      <SelectItem value="normal">عادی</SelectItem>
-                      <SelectItem value="high">بالا</SelectItem>
-                      <SelectItem value="urgent">فوری</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={tagFilter} onValueChange={setTagFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="تگ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه تگ‌ها</SelectItem>
-                      {allTags.map(tag => (
-                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredConversations.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-sm text-slate-500 mb-2">
+                  {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'نتیجه‌ای یافت نشد'}
+                </p>
               </div>
             </div>
-
-            {/* Conversations with Fixed Height and Scrolling */}
-            <div className="flex-1 overflow-hidden">
-              <div className="h-full overflow-y-auto">
-                {filteredConversations.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 mb-2">
-                      {conversations.length === 0 ? 'هیچ گفتگوی پشتیبانی یافت نشد' : 'نتیجه‌ای یافت نشد'}
-                    </p>
-                    <p className="text-sm text-slate-400">
-                      {conversations.length === 0 ? 'هنوز هیچ درخواست پشتیبانی ارسال نشده است' : 'فیلتر جستجو را تغییر دهید'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-2">
-                    {filteredConversations.map((conversation) => (
-                      <div
-                        key={conversation.id}
-                        onClick={() => handleConversationSelect(conversation)}
-                        className={`p-4 mb-2 rounded-lg cursor-pointer transition-colors ${
-                          selectedConversation?.id === conversation.id
-                            ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                            : 'hover:bg-slate-50 dark:hover:bg-slate-700'
-                        }`}
+          ) : (
+            <div className="p-2" dir="rtl">
+              {filteredConversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  onClick={() => handleConversationSelect(conversation)}
+                  className={`flex items-center gap-3 p-3 mb-2 rounded-lg cursor-pointer transition-colors ${
+                    selectedConversation?.id === conversation.id
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <div className="relative">
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback 
+                        className="text-white font-medium text-sm"
+                        style={{ backgroundColor: getAvatarColor(conversation.user?.name || 'کاربر') }}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(conversation.status)}
-                            <span className="font-medium text-sm">
-                              {conversation.user?.name || 'کاربر نامشخص'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {conversation.unread_count > 0 && (
-                              <Badge variant="destructive" className="text-xs">
-                                {conversation.unread_count}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 mb-2">
-                          {getStatusBadge(conversation.status)}
-                          {getPriorityBadge(conversation.priority)}
-                          <Badge variant="outline" className="text-xs">
-                            {conversation.thread_type?.display_name}
-                          </Badge>
-                        </div>
-                        
-                        {/* Display Tags */}
-                        {conversation.tag_list && conversation.tag_list.length > 0 && (
-                          <div className="mb-2">
-                            <ConversationTags 
-                              tags={conversation.tag_list}
-                              onTagsChange={(newTags) => handleTagsChange(conversation.id, newTags)}
-                              editable={false}
-                            />
-                          </div>
-                        )}
-                        
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {conversation.user?.phone}
-                        </div>
-                        
-                        <div className="text-xs text-slate-400 mt-1">
-                          {new Date(conversation.last_message_at).toLocaleDateString('fa-IR')}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Chat Area */}
-          <div className={`
-            ${!showConversationList ? 'flex' : 'hidden'} 
-            md:flex flex-col flex-1 bg-white dark:bg-slate-800
-          `}>
-            {selectedConversation ? (
-              <div className="flex flex-col h-full">
-                {/* Chat Header with Tags */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="md:hidden">
-                        <Button variant="ghost" size="sm" onClick={handleBackToList}>
-                          <ArrowLeft className="w-5 h-5" />
-                        </Button>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-white">
-                          {selectedConversation.user?.name || 'کاربر نامشخص'}
-                        </h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {selectedConversation.user?.phone}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          Conv ID: {selectedConversation.id} | User ID: {selectedConversation.user_id || selectedConversation.user?.id}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(selectedConversation.status)}
-                      {getPriorityBadge(selectedConversation.priority)}
-                    </div>
+                        {(conversation.user?.name || 'ک').charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {conversation.status === 'open' && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+                    )}
                   </div>
                   
-                  {/* Editable Tags */}
-                  <div className="mt-3">
-                    <ConversationTags 
-                      tags={selectedConversation.tag_list || []}
-                      onTagsChange={(newTags) => handleTagsChange(selectedConversation.id, newTags)}
-                      editable={true}
-                    />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium truncate text-right">
+                        {conversation.user?.name || 'کاربر نامشخص'}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {conversation.unread_count > 0 && (
+                          <div className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                            {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
+                          </div>
+                        )}
+                        <span className="text-xs text-slate-400">
+                          {new Date(conversation.last_message_at).toLocaleTimeString('fa-IR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 text-right flex-1 truncate">
+                        {conversation.user?.phone}
+                      </p>
+                      <div className="flex gap-1">
+                        {conversation.priority !== 'normal' && (
+                          <Badge variant="outline" className="text-xs h-5 px-1">
+                            {conversation.priority === 'high' ? 'بالا' : 
+                             conversation.priority === 'urgent' ? 'فوری' : 
+                             conversation.priority === 'low' ? 'کم' : conversation.priority}
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs h-5 px-1">
+                          {conversation.thread_type?.display_name || 'عادی'}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right chat view - show on mobile when chat is selected */}
+      <div className={`${showConversationList ? 'hidden' : ''} md:flex flex-1 bg-slate-50 dark:bg-slate-900 min-h-0`}>
+        {selectedConversation ? (
+          <div className="flex flex-col w-full h-full">
+            {/* Chat Header */}
+            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="sm" onClick={handleBackToList} className="md:hidden">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
                 
-                {/* Chat Content */}
-                <div className="flex-1 overflow-hidden">
-                  <SupportChatView
-                    supportRoom={{
-                      id: selectedConversation.thread_type_id?.toString() || '1',
-                      name: selectedConversation.thread_type?.display_name || 'پشتیبانی',
-                      description: 'گفتگوی پشتیبانی',
-                      type: selectedConversation.thread_type_id === 2 ? 'boundless_support' : 'academy_support',
-                      icon: <MessageCircle className="w-4 h-4" />,
-                      isPermanent: true
-                    }}
-                    currentUser={currentUser}
-                    sessionToken={localStorage.getItem('messenger_session_token') || ''}
-                    onBack={handleBackToList}
-                    conversationId={selectedConversation.id}
-                    recipientUserId={selectedConversation.user_id || selectedConversation.user?.id}
+                <Avatar className="w-10 h-10">
+                  <AvatarFallback 
+                    className="text-white font-medium"
+                    style={{ backgroundColor: getAvatarColor(selectedConversation.user?.name || 'کاربر') }}
+                  >
+                    {(selectedConversation.user?.name || 'ک').charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1">
+                  <h3 className="font-medium text-slate-900 dark:text-white">
+                    {selectedConversation.user?.name || 'کاربر نامشخص'}
+                  </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {selectedConversation.user?.phone}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(selectedConversation.status)}
+                  {selectedConversation.priority !== 'normal' && getPriorityBadge(selectedConversation.priority)}
+                </div>
+              </div>
+              
+              {/* Tags */}
+              {selectedConversation.tag_list && selectedConversation.tag_list.length > 0 && (
+                <div className="mt-3">
+                  <ConversationTags 
+                    tags={selectedConversation.tag_list}
+                    onTagsChange={(newTags) => handleTagsChange(selectedConversation.id, newTags)}
+                    editable={true}
                   />
                 </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-500 dark:text-slate-400">
-                    یک گفتگو را انتخاب کنید
-                  </p>
-                  <p className="text-xs text-slate-400 mt-2">
-                    برای مشاهده پیام‌ها، یک گفتگو انتخاب کنید
-                  </p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+            
+            {/* Chat Content */}
+            <div className="flex-1 overflow-hidden">
+              <SupportChatView
+                supportRoom={{
+                  id: selectedConversation.thread_type_id?.toString() || '1',
+                  name: selectedConversation.thread_type?.display_name || 'پشتیبانی',
+                  description: 'گفتگوی پشتیبانی',
+                  type: selectedConversation.thread_type_id === 2 ? 'boundless_support' : 'academy_support',
+                  icon: <MessageCircle className="w-4 h-4" />,
+                  isPermanent: true
+                }}
+                currentUser={currentUser}
+                sessionToken={localStorage.getItem('messenger_session_token') || ''}
+                onBack={handleBackToList}
+                conversationId={selectedConversation.id}
+                recipientUserId={selectedConversation.user_id || selectedConversation.user?.id}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">
+                یک گفتگو را انتخاب کنید
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
+                برای مشاهده پیام‌ها، یک گفتگو انتخاب کنید
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Start Chat Modal */}
@@ -644,7 +571,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
         sessionToken={localStorage.getItem('messenger_session_token') || ''}
         currentUser={currentUser}
       />
-    </MainLayout>
+    </div>
   );
 };
 
