@@ -29,7 +29,7 @@ class UnifiedAuthService {
   async findUserByCredentials(phone: string, email?: string, countryCode?: string): Promise<UnifiedUser | null> {
     try {
       // Check messenger users first
-      const messengerUser = await messengerService.getUserByPhone(phone);
+      const messengerUser = await messengerService.getUserByPhone(phone, countryCode || '+98');
       
       // Check academy users
       const { data: academyUser } = await supabase
@@ -140,7 +140,7 @@ class UnifiedAuthService {
         name: fullName,
         phone,
         countryCode,
-        // username: username || `user_${phone.slice(-6)}`,
+        username: username || `user_${phone.slice(-6)}`,
         password,
         email,
         isBoundlessStudent: false,
@@ -348,7 +348,7 @@ class UnifiedAuthService {
   async logout(sessionToken: string): Promise<void> {
     try {
       // Deactivate messenger session
-      await messengerService.logout(sessionToken);
+      await messengerService.deactivateSession(sessionToken);
       
       // Deactivate unified session
       await supabase

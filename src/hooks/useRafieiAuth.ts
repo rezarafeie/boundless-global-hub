@@ -3,10 +3,9 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MessengerUser } from '@/lib/messengerService';
 import { UnifiedUser } from '@/lib/unifiedAuthService';
-import { RafieiUser } from '@/lib/rafieiAuth';
 
 interface UseRafieiAuthOptions {
-  onSuccess?: (user: RafieiUser, token: string) => void;
+  onSuccess?: (user: UnifiedUser | MessengerUser, token: string) => void;
   enrollmentMode?: boolean;
   redirectAfterAuth?: string;
 }
@@ -17,7 +16,7 @@ export const useRafieiAuth = (options: UseRafieiAuthOptions = {}) => {
 
   const openAuth = useCallback(() => {
     if (isAuthenticated) {
-      options.onSuccess?.(user! as any, '');
+      options.onSuccess?.(user! as UnifiedUser | MessengerUser, '');
       return;
     }
     setIsAuthOpen(true);
@@ -27,8 +26,8 @@ export const useRafieiAuth = (options: UseRafieiAuthOptions = {}) => {
     setIsAuthOpen(false);
   }, []);
 
-  const handleAuthSuccess = useCallback((user: RafieiUser, token: string) => {
-    login(user as MessengerUser, token);
+  const handleAuthSuccess = useCallback((user: MessengerUser, token: string) => {
+    login(user, token);
     setIsAuthOpen(false);
     options.onSuccess?.(user, token);
   }, [login, options]);

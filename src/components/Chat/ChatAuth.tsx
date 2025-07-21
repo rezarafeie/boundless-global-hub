@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { chatUserService } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, Clock, CheckCircle, User, Phone, Loader2 } from 'lucide-react';
-import { farsiToEnglishNumbers } from '@/utils/farsiUtils';
 
 interface ChatAuthProps {
   onAuthenticated: (sessionToken: string, userName: string) => void;
@@ -209,10 +208,7 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
               <Input
                 id="phone"
                 value={phone}
-                onChange={(e) => {
-                  const convertedValue = farsiToEnglishNumbers(e.target.value);
-                  setPhone(convertedValue);
-                }}
+                onChange={(e) => setPhone(e.target.value)}
                 placeholder="09xxxxxxxxx"
                 className="h-12 bg-gray-50 dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-400 focus:border-blue-500 dark:focus:border-blue-400 rounded-2xl px-4"
                 required

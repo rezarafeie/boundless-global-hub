@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { messengerService, type MessengerUser } from './messengerService';
+import { type MessengerUser } from './messengerService';
 
 export interface PrivateMessage {
   id: number;
@@ -43,13 +43,7 @@ export const privateMessageService = {
         return null;
       }
 
-      if (data && data.other_user) {
-        return {
-          ...data,
-          other_user: messengerService.mapUserData(data.other_user)
-        } as PrivateConversation;
-      }
-      return data as PrivateConversation || null;
+      return data || null;
     } catch (error) {
       console.error('Error fetching conversation:', error);
       return null;
@@ -322,7 +316,7 @@ export const privateMessageService = {
         return [];
       }
 
-      return (data || []).map(user => messengerService.mapUserData(user));
+      return data || [];
     } catch (error) {
       console.error('Error searching users:', error);
       return [];
@@ -353,7 +347,7 @@ export const privateMessageService = {
         throw error;
       }
 
-      return (data || []).map(user => messengerService.mapUserData(user));
+      return data || [];
     } catch (error) {
       console.error('Error in exact search:', error);
       return [];

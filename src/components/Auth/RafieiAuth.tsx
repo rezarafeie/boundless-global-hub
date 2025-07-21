@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { rafieiAuth, RafieiUser } from '@/lib/rafieiAuth';
 import { toast } from 'sonner';
-import { farsiToEnglishNumbers } from '@/utils/farsiUtils';
 
 interface RafieiAuthProps {
   onSuccess?: (user: RafieiUser, token: string) => void;
@@ -142,15 +141,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
       return;
     }
 
-    // Validate email format if provided
-    if (registrationData.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(registrationData.email)) {
-        toast.error('لطفاً ایمیل معتبری وارد کنید');
-        return;
-      }
-    }
-
     // Validate phone for Iranian numbers if country detection is needed
     if (registrationData.phone) {
       try {
@@ -184,11 +174,7 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
       onSuccess?.(result.user, result.session_token);
     } catch (error: any) {
       console.error('Registration error:', error);
-      if (error.message?.includes('ایمیل قبلاً استفاده شده')) {
-        toast.error('این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید');
-      } else {
-        toast.error(error.message || 'خطا در ثبت‌نام');
-      }
+      toast.error(error.message || 'خطا در ثبت‌نام');
     } finally {
       setLoading(false);
     }
@@ -245,12 +231,7 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                     type="text"
                     placeholder="example@email.com یا 09123456789"
                     value={authState.identifier}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Convert Farsi numbers to English for phone inputs
-                      const convertedValue = value.includes('@') ? value : farsiToEnglishNumbers(value);
-                      setAuthState(prev => ({ ...prev, identifier: convertedValue }));
-                    }}
+                    onChange={(e) => setAuthState(prev => ({ ...prev, identifier: e.target.value }))}
                     required
                     className="text-right"
                     dir="ltr"
@@ -360,13 +341,10 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                         type="tel"
                         placeholder="09123456789"
                         value={authState.registrationData.phone || ''}
-                        onChange={(e) => {
-                          const convertedValue = farsiToEnglishNumbers(e.target.value);
-                          setAuthState(prev => ({
-                            ...prev,
-                            registrationData: { ...prev.registrationData, phone: convertedValue }
-                          }));
-                        }}
+                        onChange={(e) => setAuthState(prev => ({
+                          ...prev,
+                          registrationData: { ...prev.registrationData, phone: e.target.value }
+                        }))}
                         required
                         className="text-right"
                         dir="ltr"

@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Messenger from '@/components/Chat/Messenger';
 import { Card, CardContent } from '@/components/ui/card';
 import { WifiOff, MessageCircle, Users } from 'lucide-react';
@@ -8,7 +7,6 @@ import { useEnhancedNotificationService } from '@/hooks/useEnhancedNotificationS
 import EnhancedNotificationPermissionBanner from '@/components/Chat/EnhancedNotificationPermissionBanner';
 import AddToHomeScreenBanner from '@/components/Chat/AddToHomeScreenBanner';
 import EnhancedNotificationDiagnostics from '@/components/Chat/EnhancedNotificationDiagnostics';
-import RealtimeDebugPanel from '@/components/Chat/RealtimeDebugPanel';
 import { isMessengerSubdomain } from '@/utils/subdomainDetection';
 
 interface MessengerPageProps {
@@ -20,7 +18,6 @@ interface MessengerPageProps {
 
 const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate, isOffline = false, onLogout }) => {
   const sessionToken = localStorage.getItem('messenger_session_token');
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Initialize enhanced notification service for this page
   const {
@@ -38,9 +35,6 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
 
   // Show notification diagnostics in development mode or when debug=true
   const showDiagnostics = process.env.NODE_ENV === 'development' || window.location.search.includes('debug=true');
-  
-  // Show realtime debug panel when debug=true
-  const showRealtimeDebug = window.location.search.includes('debug=true');
 
   return (
     <div className="h-full overflow-hidden">
@@ -65,14 +59,6 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
             sessionToken={sessionToken}
           />
         </div>
-      )}
-      
-      {/* Show realtime debug panel when debug mode is enabled */}
-      {showRealtimeDebug && (
-        <RealtimeDebugPanel
-          isVisible={showDebugPanel}
-          onToggle={() => setShowDebugPanel(!showDebugPanel)}
-        />
       )}
       
       <Messenger 

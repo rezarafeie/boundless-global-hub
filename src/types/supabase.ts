@@ -28,10 +28,6 @@ export interface ChatTopic {
   id: number;
   title: string;
   description: string;
-  icon: string;
-  order_index: number;
-  room_id: number | null;
-  section_id: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -76,13 +72,12 @@ export interface ChatTopicInsert {
 export interface ChatRoom {
   id: number;
   name: string;
-  type: 'group' | 'channel' | 'direct';
+  type: string;
   description: string | null;
   avatar_url: string | null;
   is_active: boolean;
   is_super_group: boolean;
   is_boundless_only: boolean;
-  is_public?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -132,8 +127,6 @@ export interface MessengerMessage {
   reply_to_message_id: number | null;
   forwarded_from_message_id: number | null;
   created_at: string;
-  sender: MessengerUser;
-  failed?: boolean;
 }
 
 export interface PrivateMessage {
@@ -154,10 +147,9 @@ export interface PrivateConversation {
   id: number;
   user1_id: number;
   user2_id: number;
-  created_at: string | null;
-  updated_at: string | null;
+  created_at: string;
+  updated_at: string;
   last_message_at: string | null;
-  other_user: MessengerUser;
 }
 
 export interface AdminSettings {
