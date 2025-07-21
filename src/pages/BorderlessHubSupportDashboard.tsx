@@ -14,6 +14,7 @@ import { supportMessageService } from '@/lib/supportMessageService';
 import SupportChatView from '@/components/Chat/SupportChatView';
 import SupportStartChatModal from '@/components/Chat/SupportStartChatModal';
 import ConversationTags from '@/components/Chat/ConversationTags';
+import UserProfilePopup from '@/components/Chat/UserProfilePopup';
 
 interface ConversationWithUser {
   id: number;
@@ -50,6 +51,8 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showConversationList, setShowConversationList] = useState(true);
   const [showStartChatModal, setShowStartChatModal] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const checkSupportAccess = async () => {
     try {
@@ -198,6 +201,16 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const handleBackToList = () => {
     setShowConversationList(true);
     setSelectedConversation(null);
+  };
+
+  const handleUserNameClick = (userId: number) => {
+    setSelectedUserId(userId.toString());
+    setShowUserProfile(true);
+  };
+
+  const handleCloseUserProfile = () => {
+    setShowUserProfile(false);
+    setSelectedUserId(null);
   };
 
   const handleTagsChange = async (conversationId: number, newTags: string[]) => {
@@ -503,7 +516,10 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 </Avatar>
                 
                 <div className="flex-1">
-                  <h3 className="font-medium text-slate-900 dark:text-white">
+                  <h3 
+                    className="font-medium text-slate-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    onClick={() => selectedConversation.user?.id && handleUserNameClick(selectedConversation.user.id)}
+                  >
                     {selectedConversation.user?.name || 'کاربر نامشخص'}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -570,6 +586,13 @@ const BorderlessHubSupportDashboard: React.FC = () => {
         onUserSelect={handleStartNewChat}
         sessionToken={localStorage.getItem('messenger_session_token') || ''}
         currentUser={currentUser}
+      />
+
+      {/* User Profile Popup */}
+      <UserProfilePopup
+        isOpen={showUserProfile}
+        onClose={handleCloseUserProfile}
+        userId={selectedUserId}
       />
     </div>
   );
