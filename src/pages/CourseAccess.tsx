@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
+import CourseNotifications from '@/components/Course/CourseNotifications';
 
 interface Course {
   id: string;
@@ -455,6 +456,10 @@ const CourseAccess: React.FC = () => {
         {/* Enrolled - Show Course Content */}
         {isAuthenticated && enrollment && (
           <>
+            {/* Course Notifications Section */}
+            <div className="container mx-auto px-4 py-4">
+              <CourseNotifications courseId={course.id} />
+            </div>
             {/* Mobile Lesson View */}
             {isMobile && showMobileLessonView && selectedLesson ? (
               <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

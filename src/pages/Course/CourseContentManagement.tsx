@@ -7,9 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Save, X, ExternalLink, Code, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Save, X, ExternalLink, Code, Eye, Bell, Edit2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { courseNotificationService } from '@/lib/courseNotificationService';
+import type { Notification, NotificationInsert } from '@/types/notifications';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DialogFooter } from '@/components/ui/dialog';
 import MainLayout from '@/components/Layout/MainLayout';
 import {
   DndContext,
@@ -101,6 +108,22 @@ const CourseContentManagement: React.FC = () => {
   });
   const [videoInputMode, setVideoInputMode] = useState<'url' | 'embed'>('url');
 
+  // Notification management state
+  const [courseNotifications, setCourseNotifications] = useState<Notification[]>([]);
+  const [showNotificationForm, setShowNotificationForm] = useState(false);
+  const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
+  const [notificationForm, setNotificationForm] = useState({
+    title: '',
+    message: '',
+    color: '#3B82F6',
+    link: '',
+    notification_type: 'banner' as 'banner' | 'floating' | 'popup',
+    is_active: false,
+    priority: 1,
+    start_date: '',
+    end_date: ''
+  });
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -115,9 +138,28 @@ const CourseContentManagement: React.FC = () => {
     }
   }, [courseId]);
 
+  const loadCourseNotifications = async () => {
+    if (!courseId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setCourseNotifications((data || []) as Notification[]);
+    } catch (error) {
+      console.error('Error loading course notifications:', error);
+    }
+  };
+
   const fetchCourseData = async () => {
     setLoading(true);
     try {
+      await loadCourseNotifications();
       // Fetch course info
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
@@ -566,7 +608,133 @@ const CourseContentManagement: React.FC = () => {
     }
   };
 
-// Video Embed Component
+  // Notification management functions
+  const handleCreateNotification = async () => {
+    if (!courseId) return;
+    
+    try {
+      const notificationData: Omit<NotificationInsert, 'course_id'> = {
+        title: notificationForm.title,
+        message: notificationForm.message,
+        color: notificationForm.color,
+        link: notificationForm.link || null,
+        notification_type: notificationForm.notification_type,
+        is_active: notificationForm.is_active,
+        priority: notificationForm.priority,
+        start_date: notificationForm.start_date || null,
+        end_date: notificationForm.end_date || null
+      };
+
+      await courseNotificationService.createCourseNotification(courseId, notificationData);
+      await loadCourseNotifications();
+      setShowNotificationForm(false);
+      resetNotificationForm();
+      
+      toast({
+        title: "موفقیت",
+        description: "اعلان جدید ایجاد شد"
+      });
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در ایجاد اعلان",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateNotification = async () => {
+    if (!editingNotification) return;
+    
+    try {
+      const updates: Partial<NotificationInsert> = {
+        title: notificationForm.title,
+        message: notificationForm.message,
+        color: notificationForm.color,
+        link: notificationForm.link || null,
+        notification_type: notificationForm.notification_type,
+        is_active: notificationForm.is_active,
+        priority: notificationForm.priority,
+        start_date: notificationForm.start_date || null,
+        end_date: notificationForm.end_date || null
+      };
+
+      await courseNotificationService.updateCourseNotification(editingNotification.id, updates);
+      await loadCourseNotifications();
+      setShowNotificationForm(false);
+      setEditingNotification(null);
+      resetNotificationForm();
+      
+      toast({
+        title: "موفقیت",
+        description: "اعلان به‌روزرسانی شد"
+      });
+    } catch (error) {
+      console.error('Error updating notification:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در به‌روزرسانی اعلان",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId: number) => {
+    try {
+      await courseNotificationService.deleteCourseNotification(notificationId);
+      await loadCourseNotifications();
+      
+      toast({
+        title: "موفقیت",
+        description: "اعلان حذف شد"
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در حذف اعلان",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const resetNotificationForm = () => {
+    setNotificationForm({
+      title: '',
+      message: '',
+      color: '#3B82F6',
+      link: '',
+      notification_type: 'banner',
+      is_active: false,
+      priority: 1,
+      start_date: '',
+      end_date: ''
+    });
+  };
+
+  const openNotificationForm = (notification?: Notification) => {
+    if (notification) {
+      setEditingNotification(notification);
+      setNotificationForm({
+        title: notification.title,
+        message: notification.message,
+        color: notification.color,
+        link: notification.link || '',
+        notification_type: notification.notification_type as 'banner' | 'floating' | 'popup',
+        is_active: notification.is_active,
+        priority: notification.priority,
+        start_date: notification.start_date ? notification.start_date.split('T')[0] : '',
+        end_date: notification.end_date ? notification.end_date.split('T')[0] : ''
+      });
+    } else {
+      setEditingNotification(null);
+      resetNotificationForm();
+    }
+    setShowNotificationForm(true);
+  };
+
+  // Video Embed Component
 const VideoEmbed: React.FC<{ embedCode: string; className?: string }> = ({ embedCode, className = "" }) => {
   // Check if it's HTML embed code (contains < and >)
   const isHtmlEmbed = embedCode.includes('<') && embedCode.includes('>');
@@ -1075,7 +1243,14 @@ const SortableLesson: React.FC<{
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <Tabs defaultValue="content" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="content">محتوای دوره</TabsTrigger>
+            <TabsTrigger value="title-groups">گروه‌های عنوان</TabsTrigger>
+            <TabsTrigger value="notifications">اعلان‌های دوره</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="content" className="space-y-6">
           {titleGroups.length === 0 && sections.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
@@ -1191,7 +1366,282 @@ const SortableLesson: React.FC<{
               )}
             </div>
           )}
-        </div>
+          </TabsContent>
+
+          {/* Title Groups Tab */}
+          <TabsContent value="title-groups" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">گروه‌های عنوان</h3>
+                <p className="text-muted-foreground text-sm">
+                  عناوین سازمان‌دهنده برای گروه‌بندی بخش‌های دوره
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {titleGroups.map((group) => (
+                <Card key={group.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{group.icon}</span>
+                      <div>
+                        <h4 className="font-semibold">{group.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          ترتیب: {group.order_index}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditTitleGroup(group)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTitleGroup(group.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              {titleGroups.length === 0 && (
+                <Card className="p-8 text-center">
+                  <h4 className="font-semibold mb-2">هیچ گروه عنوانی وجود ندارد</h4>
+                  <p className="text-muted-foreground text-sm">
+                    اولین گروه عنوان را ایجاد کنید
+                  </p>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Course Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">اعلان‌های دوره</h3>
+                <p className="text-muted-foreground text-sm">
+                  اعلان‌هایی که در صفحه دسترسی دوره نمایش داده می‌شوند
+                </p>
+              </div>
+              <Button 
+                onClick={() => openNotificationForm()}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                افزودن اعلان جدید
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {courseNotifications.map((notification) => (
+                <Card key={notification.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold">{notification.title}</h4>
+                        <Badge 
+                          variant={notification.is_active ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {notification.is_active ? 'فعال' : 'غیرفعال'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {notification.notification_type === 'banner' && 'بنر'}
+                          {notification.notification_type === 'floating' && 'شناور'}
+                          {notification.notification_type === 'popup' && 'پاپ‌آپ'}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground text-sm mb-2">
+                        {notification.message}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>اولویت: {notification.priority}</span>
+                        {notification.start_date && (
+                          <span>شروع: {new Date(notification.start_date).toLocaleDateString('fa-IR')}</span>
+                        )}
+                        {notification.end_date && (
+                          <span>پایان: {new Date(notification.end_date).toLocaleDateString('fa-IR')}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-border"
+                        style={{ backgroundColor: notification.color }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openNotificationForm(notification)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteNotification(notification.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              {courseNotifications.length === 0 && (
+                <Card className="p-8 text-center">
+                  <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h4 className="font-semibold mb-2">هیچ اعلانی وجود ندارد</h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    اولین اعلان دوره را ایجاد کنید
+                  </p>
+                  <Button onClick={() => openNotificationForm()}>
+                    افزودن اعلان جدید
+                  </Button>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Notification Form Dialog */}
+        <Dialog open={showNotificationForm} onOpenChange={setShowNotificationForm}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingNotification ? 'ویرایش اعلان' : 'افزودن اعلان جدید'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="notification-title">عنوان اعلان</Label>
+                  <Input
+                    id="notification-title"
+                    value={notificationForm.title}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="مثال: اپدیت جدید اضافه شد"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notification-type">نوع اعلان</Label>
+                  <Select 
+                    value={notificationForm.notification_type} 
+                    onValueChange={(value: 'banner' | 'floating' | 'popup') => 
+                      setNotificationForm(prev => ({ ...prev, notification_type: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="banner">بنر</SelectItem>
+                      <SelectItem value="floating">شناور</SelectItem>
+                      <SelectItem value="popup">پاپ‌آپ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="notification-message">متن اعلان</Label>
+                <Textarea
+                  id="notification-message"
+                  value={notificationForm.message}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="توضیحات کامل اعلان..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="notification-color">رنگ اعلان</Label>
+                  <Input
+                    id="notification-color"
+                    type="color"
+                    value={notificationForm.color}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, color: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notification-priority">اولویت</Label>
+                  <Input
+                    id="notification-priority"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={notificationForm.priority}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, priority: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
+                <div className="flex items-center space-x-2 pt-6">
+                  <Switch
+                    id="notification-active"
+                    checked={notificationForm.is_active}
+                    onCheckedChange={(checked) => setNotificationForm(prev => ({ ...prev, is_active: checked }))}
+                  />
+                  <Label htmlFor="notification-active">فعال</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="notification-start">تاریخ شروع (اختیاری)</Label>
+                  <Input
+                    id="notification-start"
+                    type="date"
+                    value={notificationForm.start_date}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, start_date: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notification-end">تاریخ پایان (اختیاری)</Label>
+                  <Input
+                    id="notification-end"
+                    type="date"
+                    value={notificationForm.end_date}
+                    onChange={(e) => setNotificationForm(prev => ({ ...prev, end_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="notification-link">لینک (اختیاری)</Label>
+                <Input
+                  id="notification-link"
+                  value={notificationForm.link}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, link: e.target.value }))}
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNotificationForm(false)}>
+                انصراف
+              </Button>
+              <Button 
+                onClick={editingNotification ? handleUpdateNotification : handleCreateNotification}
+                disabled={!notificationForm.title || !notificationForm.message}
+              >
+                {editingNotification ? 'به‌روزرسانی' : 'ایجاد'} اعلان
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
