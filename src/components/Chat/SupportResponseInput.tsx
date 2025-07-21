@@ -35,11 +35,7 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
       );
 
       setMessage('');
-      
-      // Refresh messages immediately
-      setTimeout(() => {
-        onMessageSent();
-      }, 500);
+      onMessageSent();
       
       toast({
         title: 'پاسخ ارسال شد',
