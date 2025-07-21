@@ -10,13 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
 import DiscountManagement from '@/components/Admin/DiscountManagement';
 import CourseManagement from '@/components/Admin/CourseManagement';
+import { WebhookManagement } from '@/components/Admin/WebhookManagement';
 import { 
   sendEnrollmentManualPaymentApproved, 
   sendEnrollmentManualPaymentRejected,
@@ -73,13 +74,13 @@ const EnrollAdmin: React.FC = () => {
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks'>('dashboard');
 
   useEffect(() => {
     // Check for tab parameter and set active view
     const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses'].includes(tab)) {
-      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses');
+    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks'].includes(tab)) {
+      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks');
     }
     
     Promise.all([fetchEnrollments(), fetchCourses()]);
@@ -342,6 +343,11 @@ const EnrollAdmin: React.FC = () => {
       id: 'courses',
       label: 'مدیریت دوره‌ها',
       icon: BookOpen,
+    },
+    {
+      id: 'webhooks',
+      label: 'وب‌هوک‌ها',
+      icon: Webhook,
     },
   ];
 
@@ -651,6 +657,17 @@ const EnrollAdmin: React.FC = () => {
             {activeView === 'courses' && (
               <div className="space-y-6">
                 <CourseManagement />
+              </div>
+            )}
+
+            {/* Webhooks View */}
+            {activeView === 'webhooks' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold">مدیریت وب‌هوک‌ها</h1>
+                  <p className="text-muted-foreground mt-2">مدیریت و نظارت بر وب‌هوک‌های سیستم</p>
+                </div>
+                <WebhookManagement />
               </div>
             )}
           </div>
