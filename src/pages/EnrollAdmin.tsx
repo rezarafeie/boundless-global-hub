@@ -25,6 +25,7 @@ import {
   sendEnrollmentManualPaymentSubmitted
 } from '@/lib/enrollmentWebhookService';
 import { DataImportSection } from '@/components/admin/DataImportSection';
+import UsersOverview from './UsersOverview';
 
 interface Course {
   id: string;
@@ -709,19 +710,7 @@ const EnrollAdmin: React.FC = () => {
             {/* Users View */}
             {activeView === 'users' && (
               <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold">مدیریت کاربران</h1>
-                  <p className="text-muted-foreground mt-2">مدیریت کاربران، پروفایل‌ها و فعالیت‌ها</p>
-                </div>
-                <div className="text-center">
-                  <Button 
-                    onClick={() => window.location.href = '/enroll/admin/users'}
-                    className="inline-flex items-center gap-2"
-                  >
-                    <Users className="h-5 w-5" />
-                    رفتن به صفحه مدیریت کاربران
-                  </Button>
-                </div>
+                <UsersOverview />
               </div>
             )}
           </div>
