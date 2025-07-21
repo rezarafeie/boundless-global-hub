@@ -11,6 +11,25 @@ import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Save, X } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 
 interface CourseSection {
   id: string;
@@ -65,6 +84,14 @@ const CourseContentManagement: React.FC = () => {
     file_url: '',
     section_id: ''
   });
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (courseId) {
@@ -322,6 +349,251 @@ const CourseContentManagement: React.FC = () => {
     }
   };
 
+  // Drag end handlers
+  const handleSectionDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = sections.findIndex(section => section.id === active.id);
+      const newIndex = sections.findIndex(section => section.id === over.id);
+
+      const newSections = arrayMove(sections, oldIndex, newIndex);
+      setSections(newSections);
+
+      // Update order in database
+      try {
+        const updates = newSections.map((section, index) => ({
+          id: section.id,
+          order_index: index + 1
+        }));
+
+        for (const update of updates) {
+          await supabase
+            .from('course_sections')
+            .update({ order_index: update.order_index })
+            .eq('id', update.id);
+        }
+
+        toast({ title: "ترتیب بخش‌ها به‌روزرسانی شد" });
+      } catch (error) {
+        console.error('Error updating section order:', error);
+        toast({
+          title: "خطا",
+          description: "خطا در به‌روزرسانی ترتیب بخش‌ها",
+          variant: "destructive"
+        });
+        // Revert the change
+        fetchCourseData();
+      }
+    }
+  };
+
+  const handleLessonDragEnd = async (event: DragEndEvent, sectionId: string) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const sectionLessons = lessons.filter(l => l.section_id === sectionId);
+      const oldIndex = sectionLessons.findIndex(lesson => lesson.id === active.id);
+      const newIndex = sectionLessons.findIndex(lesson => lesson.id === over.id);
+
+      const newSectionLessons = arrayMove(sectionLessons, oldIndex, newIndex);
+      
+      // Update lessons state
+      const updatedLessons = lessons.map(lesson => {
+        if (lesson.section_id === sectionId) {
+          const newLesson = newSectionLessons.find(nl => nl.id === lesson.id);
+          return newLesson || lesson;
+        }
+        return lesson;
+      });
+      setLessons(updatedLessons);
+
+      // Update order in database
+      try {
+        const updates = newSectionLessons.map((lesson, index) => ({
+          id: lesson.id,
+          order_index: index + 1
+        }));
+
+        for (const update of updates) {
+          await supabase
+            .from('course_lessons')
+            .update({ order_index: update.order_index })
+            .eq('id', update.id);
+        }
+
+        toast({ title: "ترتیب دروس به‌روزرسانی شد" });
+      } catch (error) {
+        console.error('Error updating lesson order:', error);
+        toast({
+          title: "خطا",
+          description: "خطا در به‌روزرسانی ترتیب دروس",
+          variant: "destructive"
+        });
+        // Revert the change
+        fetchCourseData();
+      }
+    }
+  };
+
+// Sortable Section Component
+const SortableSection: React.FC<{ 
+  section: CourseSection; 
+  lessons: CourseLesson[];
+  onEditSection: (section: CourseSection) => void;
+  onDeleteSection: (sectionId: string) => void;
+  onEditLesson: (lesson: CourseLesson) => void;
+  onDeleteLesson: (lessonId: string) => void;
+  onLessonDragEnd: (event: DragEndEvent, sectionId: string) => void;
+}> = ({ section, lessons, onEditSection, onDeleteSection, onEditLesson, onDeleteLesson, onLessonDragEnd }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: section.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const sectionLessons = lessons.filter(l => l.section_id === section.id);
+
+  return (
+    <Card ref={setNodeRef} style={style}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <GripVertical 
+              className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" 
+              {...attributes}
+              {...listeners}
+            />
+            {section.title}
+          </CardTitle>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEditSection(section)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onDeleteSection(section.id)}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {sectionLessons.length === 0 ? (
+          <p className="text-muted-foreground text-center py-4">
+            هنوز درسی در این بخش ایجاد نشده است
+          </p>
+        ) : (
+          <DndContext
+            sensors={useSensors(
+              useSensor(PointerSensor),
+              useSensor(KeyboardSensor, {
+                coordinateGetter: sortableKeyboardCoordinates,
+              })
+            )}
+            collisionDetection={closestCenter}
+            onDragEnd={(event) => onLessonDragEnd(event, section.id)}
+          >
+            <SortableContext 
+              items={sectionLessons.map(l => l.id)} 
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {sectionLessons.map(lesson => (
+                  <SortableLesson
+                    key={lesson.id}
+                    lesson={lesson}
+                    onEdit={onEditLesson}
+                    onDelete={onDeleteLesson}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Sortable Lesson Component
+const SortableLesson: React.FC<{
+  lesson: CourseLesson;
+  onEdit: (lesson: CourseLesson) => void;
+  onDelete: (lessonId: string) => void;
+}> = ({ lesson, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: lesson.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+    >
+      <div className="flex items-center gap-2">
+        <GripVertical 
+          className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" 
+          {...attributes}
+          {...listeners}
+        />
+        <span className="font-medium">{lesson.title}</span>
+        {lesson.video_url && (
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            ویدیو
+          </span>
+        )}
+        {lesson.file_url && (
+          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+            فایل
+          </span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onEdit(lesson)}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onDelete(lesson.id)}
+          className="text-red-600 hover:text-red-700"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
   if (loading) {
     return (
       <MainLayout>
@@ -489,87 +761,28 @@ const CourseContentManagement: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            sections.map(section => {
-              const sectionLessons = lessons.filter(l => l.section_id === section.id);
-              
-              return (
-                <Card key={section.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        {section.title}
-                      </CardTitle>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditSection(section)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteSection(section.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {sectionLessons.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">
-                        هنوز درسی در این بخش ایجاد نشده است
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {sectionLessons.map(lesson => (
-                          <div
-                            key={lesson.id}
-                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                          >
-                            <div className="flex items-center gap-2">
-                              <GripVertical className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{lesson.title}</span>
-                              {lesson.video_url && (
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                  ویدیو
-                                </span>
-                              )}
-                              {lesson.file_url && (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                  فایل
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditLesson(lesson)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteLesson(lesson.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSectionDragEnd}
+            >
+              <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-6">
+                  {sections.map(section => (
+                    <SortableSection
+                      key={section.id}
+                      section={section}
+                      lessons={lessons}
+                      onEditSection={handleEditSection}
+                      onDeleteSection={handleDeleteSection}
+                      onEditLesson={handleEditLesson}
+                      onDeleteLesson={handleDeleteLesson}
+                      onLessonDragEnd={handleLessonDragEnd}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>
