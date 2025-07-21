@@ -150,35 +150,73 @@ export function WebhookManagement() {
   };
 
   const handleSave = async () => {
+    console.log('Starting handleSave with formData:', formData);
+    
+    // Validate required fields
+    if (!formData.name || !formData.url || !formData.event_type) {
+      toast({
+        title: 'خطا',
+        description: 'لطفاً تمام فیلدهای الزامی را پر کنید',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(formData.url);
+    } catch {
+      toast({
+        title: 'خطا',
+        description: 'آدرس URL معتبر نیست',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setLoading(true);
     try {
+      console.log('Attempting to save webhook...');
+      
       if (selectedWebhook) {
+        console.log('Updating existing webhook:', selectedWebhook.id);
         // Update existing webhook
         const { error } = await supabase
           .from('webhook_configurations')
           .update(formData)
           .eq('id', selectedWebhook.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Webhook updated successfully');
         toast({ title: 'موفقیت', description: 'وب‌هوک با موفقیت به‌روزرسانی شد' });
       } else {
+        console.log('Creating new webhook...');
         // Create new webhook
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('webhook_configurations')
-          .insert(formData);
+          .insert(formData)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        console.log('Webhook created successfully:', data);
         toast({ title: 'موفقیت', description: 'وب‌هوک جدید با موفقیت ایجاد شد' });
       }
 
-      fetchWebhooks();
+      await fetchWebhooks();
       setIsCreateModalOpen(false);
       setIsEditModalOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Save error:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در ذخیره وب‌هوک',
+        description: `خطا در ذخیره وب‌هوک: ${error.message || error}`,
         variant: 'destructive'
       });
     } finally {
