@@ -14,7 +14,10 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  Clock,
+  PlayCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -432,23 +435,33 @@ const CourseAccess: React.FC = () => {
         {isAuthenticated && enrollment && (
           <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)]">
             {/* Mobile Course Navigation Header */}
-            <div className="lg:hidden bg-card border-b p-4">
+            <div className="lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 p-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">محتوای دوره</h3>
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">محتوای دوره</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {sections.length} بخش
+                  </p>
+                </div>
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                   {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
                 </Badge>
               </div>
             </div>
 
             {/* Sidebar - Course Navigation */}
-            <div className="w-full lg:w-80 bg-card lg:border-l overflow-y-auto lg:max-h-[calc(100vh-140px)]">
-              <div className="p-4 lg:p-6">
-                <div className="hidden lg:flex items-center justify-between mb-6">
-                  <h3 className="font-semibold text-xl">محتوای دوره</h3>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
-                  </Badge>
+            <div className="w-full lg:w-96 bg-white dark:bg-gray-950 lg:border-l border-gray-200 dark:border-gray-800 overflow-y-auto lg:max-h-[calc(100vh-140px)]">
+              <div className="p-6">
+                <div className="hidden lg:flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="font-bold text-2xl text-gray-900 dark:text-gray-100">محتوای دوره</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
+                      {sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {sections.length} بخش
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <BookOpen className="h-6 w-6 text-white" />
+                  </div>
                 </div>
                 
                 {sections.length === 0 ? (
@@ -460,92 +473,138 @@ const CourseAccess: React.FC = () => {
                     <p className="text-muted-foreground text-sm">محتوای دوره به زودی اضافه خواهد شد</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <Accordion type="multiple" className="space-y-2">
                     {sections.map((section, sectionIndex) => (
-                      <div key={section.id} className="border rounded-lg overflow-hidden bg-background">
-                        <div className="p-4 bg-muted/30 border-b">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-foreground">{section.title}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {section.lessons.length} درس
-                            </Badge>
+                      <AccordionItem 
+                        key={section.id} 
+                        value={section.id}
+                        className="border rounded-xl bg-white dark:bg-gray-900 shadow-sm overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 [&[data-state=open]]:bg-gray-50 dark:[&[data-state=open]]:bg-gray-800">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <BookOpen className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="text-right">
+                                <h4 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                                  {section.title}
+                                </h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  {section.lessons.length} درس
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 px-3 py-1">
+                                {section.lessons.length} درس
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
-                        <div className="divide-y">
-                          {section.lessons.map((lesson, lessonIndex) => {
-                            const isSelected = selectedLesson?.id === lesson.id;
-                            const lessonNumber = sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
-                            
-                            return (
-                              <button
-                                key={lesson.id}
-                                onClick={() => setSelectedLesson(lesson)}
-                                className={`w-full text-right p-4 transition-all duration-200 hover:bg-muted/50 group ${
-                                  isSelected 
-                                    ? 'bg-primary/5 border-l-4 border-primary' 
-                                    : 'border-l-4 border-transparent'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                        </AccordionTrigger>
+                        <AccordionContent className="px-0 pb-0">
+                          <div className="border-t border-gray-100 dark:border-gray-800">
+                            {section.lessons.map((lesson, lessonIndex) => {
+                              const isSelected = selectedLesson?.id === lesson.id;
+                              const lessonNumber = sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
+                              
+                              return (
+                                <button
+                                  key={lesson.id}
+                                  onClick={() => setSelectedLesson(lesson)}
+                                  className={`w-full text-right px-6 py-4 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800 group border-b border-gray-50 dark:border-gray-800 last:border-b-0 ${
                                     isSelected 
-                                      ? 'bg-primary text-primary-foreground' 
-                                      : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
-                                  }`}>
-                                    {lessonNumber}
-                                  </div>
-                                  <div className="flex-1 text-right">
-                                    <h5 className={`font-medium text-sm leading-tight ${
-                                      isSelected ? 'text-primary' : 'text-foreground'
-                                    }`}>
-                                      {lesson.title}
-                                    </h5>
-                                    <div className="flex items-center gap-2 mt-1">
+                                      ? 'bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500' 
+                                      : 'border-l-4 border-transparent'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                                        isSelected 
+                                          ? 'bg-blue-500 text-white' 
+                                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                      }`}>
+                                        {lessonNumber}
+                                      </div>
                                       {lesson.video_url && (
-                                        <div className="flex items-center gap-1">
-                                          <Play className="h-3 w-3 text-muted-foreground" />
-                                          <span className="text-xs text-muted-foreground">ویدیو</span>
-                                        </div>
-                                      )}
-                                      {lesson.file_url && (
-                                        <div className="flex items-center gap-1">
-                                          <FileText className="h-3 w-3 text-muted-foreground" />
-                                          <span className="text-xs text-muted-foreground">فایل</span>
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                          isSelected 
+                                            ? 'bg-blue-100 dark:bg-blue-900' 
+                                            : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                        }`}>
+                                          <PlayCircle className={`h-4 w-4 ${
+                                            isSelected ? 'text-blue-600' : 'text-gray-500 group-hover:text-blue-600'
+                                          }`} />
                                         </div>
                                       )}
                                     </div>
+                                    <div className="flex-1 text-right">
+                                      <h5 className={`font-medium text-base leading-tight mb-1 ${
+                                        isSelected 
+                                          ? 'text-blue-700 dark:text-blue-300' 
+                                          : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300'
+                                      }`}>
+                                        {lesson.title}
+                                      </h5>
+                                      <div className="flex items-center gap-4 justify-end">
+                                        {lesson.video_url && (
+                                          <div className="flex items-center gap-2">
+                                            <Play className="h-3 w-3 text-gray-400" />
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">ویدیو</span>
+                                          </div>
+                                        )}
+                                        {lesson.file_url && (
+                                          <div className="flex items-center gap-2">
+                                            <Download className="h-3 w-3 text-gray-400" />
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">فایل</span>
+                                          </div>
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-3 w-3 text-gray-400" />
+                                          <span className="text-xs text-gray-500 dark:text-gray-400">15 دقیقه</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ChevronRight className={`h-5 w-5 transition-all duration-200 ${
+                                      isSelected 
+                                        ? 'text-blue-500 rotate-90' 
+                                        : 'text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1'
+                                    }`} />
                                   </div>
-                                  <ChevronRight className={`h-4 w-4 transition-transform ${
-                                    isSelected ? 'text-primary rotate-90' : 'text-muted-foreground'
-                                  }`} />
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
                     ))}
-                  </div>
+                  </Accordion>
                 )}
               </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
               {selectedLesson ? (
-                <div className="p-4 lg:p-8">
+                <div className="p-6 lg:p-10">
                   {renderLessonContent(selectedLesson)}
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full p-8">
-                  <div className="text-center max-w-md">
-                    <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                      <BookOpen className="h-10 w-10 text-muted-foreground" />
+                  <div className="text-center max-w-lg">
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                      <BookOpen className="h-12 w-12 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-4">درسی انتخاب نشده</h3>
-                    <p className="text-muted-foreground text-lg">
-                      از فهرست کناری درسی را انتخاب کنید تا شروع کنید
+                    <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">شروع یادگیری</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
+                      از منوی کناری یک درس انتخاب کنید و آموزش خود را آغاز کنید
                     </p>
+                    <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
+                      <p className="text-blue-700 dark:text-blue-300 text-sm">
+                        💡 نکته: می‌توانید با کلیک بر روی هر بخش، فهرست درس‌های آن را مشاهده کنید
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
