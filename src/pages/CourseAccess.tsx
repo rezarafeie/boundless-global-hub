@@ -13,7 +13,8 @@ import {
   ChevronRight,
   CheckCircle,
   AlertCircle,
-  X
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -176,6 +177,44 @@ const CourseAccess: React.FC = () => {
     }
   };
 
+  // Video Embed Component - Same as in CourseContentManagement
+  const VideoEmbed: React.FC<{ embedCode: string; className?: string }> = ({ embedCode, className = "" }) => {
+    // Check if it's HTML embed code (contains < and >)
+    const isHtmlEmbed = embedCode.includes('<') && embedCode.includes('>');
+    
+    if (isHtmlEmbed) {
+      // Create a unique container ID for each embed to avoid conflicts
+      const containerId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      React.useEffect(() => {
+        const container = document.getElementById(containerId);
+        if (container) {
+          // Clear any existing content
+          container.innerHTML = '';
+          // Set the HTML content which will execute any scripts
+          container.innerHTML = embedCode;
+        }
+      }, [embedCode, containerId]);
+      
+      return <div id={containerId} className={`video-embed-container ${className}`} />;
+    } else {
+      // Treat as regular URL
+      return (
+        <div className={`${className}`}>
+          <a 
+            href={embedCode} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+          >
+            <ExternalLink className="h-4 w-4" />
+            مشاهده ویدیو
+          </a>
+        </div>
+      );
+    }
+  };
+
   const renderLessonContent = (lesson: Lesson) => {
     return (
       <div className="max-w-4xl mx-auto space-y-8">
@@ -191,14 +230,8 @@ const CourseAccess: React.FC = () => {
         {/* Video Section */}
         {lesson.video_url && (
           <div className="relative">
-            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border">
-              <iframe
-                src={lesson.video_url}
-                className="w-full h-full"
-                allowFullScreen
-                title={lesson.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
+            <div className="bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border p-4">
+              <VideoEmbed embedCode={lesson.video_url} className="w-full" />
             </div>
           </div>
         )}
