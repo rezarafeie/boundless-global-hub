@@ -56,7 +56,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     sessionToken,
     isOffline,
     onConversationsUpdate: setConversations,
-    onRoomsUpdate: setRooms
+    onRoomsUpdate: setRooms,
+    onSupportConversationsUpdate: setSupportConversations
   });
 
   const loadData = async () => {
