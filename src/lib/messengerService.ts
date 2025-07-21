@@ -61,6 +61,29 @@ export interface MessageData {
   sender?: MessengerUser;
 }
 
+export interface MessengerMessage extends MessageData {
+  sender_name?: string;
+}
+
+export interface AdminSettings {
+  id: number;
+  manual_approval_enabled: boolean;
+  updated_at: string;
+}
+
+export interface ChatTopic {
+  id: number;
+  title: string;
+  description?: string;
+  room_id?: number;
+  section_id?: number;
+  icon?: string;
+  is_active: boolean;
+  order_index?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CreateRoomData {
   name: string;
   description?: string;
@@ -75,6 +98,8 @@ export interface RegistrationData {
   email?: string;
   firstName?: string;
   lastName?: string;
+  username?: string;
+  isBoundlessStudent?: boolean;
 }
 
 export interface LoginResult {
@@ -252,7 +277,11 @@ class MessengerService {
     }
   }
 
-  private mapUserData(userData: any): MessengerUser {
+  public mapUserData(userData: any): MessengerUser {
+    // Ensure role is properly typed
+    const validRoles: ('user' | 'admin' | 'support')[] = ['user', 'admin', 'support'];
+    const role = validRoles.includes(userData.role) ? userData.role : 'user';
+    
     return {
       id: userData.id,
       name: userData.name,
@@ -268,7 +297,7 @@ class MessengerService {
       created_at: userData.created_at,
       updated_at: userData.updated_at,
       last_seen: userData.last_seen,
-      role: userData.role || 'user',
+      role: role as 'user' | 'admin' | 'support',
       email: userData.email || null,
       user_id: userData.user_id,
       first_name: userData.first_name,
@@ -465,14 +494,17 @@ class MessengerService {
         return [];
       }
 
-      return (data || []).reverse();
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: msg.sender ? this.mapUserData(msg.sender) : undefined
+      })).reverse();
     } catch (error) {
       console.error('Error in getMessages:', error);
       return [];
     }
   }
 
-  async getOrCreateChatUser(email: string): Promise<MessengerUser> {
+  async getOrCreateChatUser(email: string, sessionToken?: string): Promise<MessengerUser> {
     try {
       // First check if user exists by email
       const { data: existingUser, error: fetchError } = await supabase
@@ -524,6 +556,411 @@ class MessengerService {
       }
     } catch (error) {
       console.error('Error in updateNotificationSettings:', error);
+      throw error;
+    }
+  }
+
+  // Admin methods
+  async getAdminSettings(): Promise<AdminSettings> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error fetching admin settings:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getAdminSettings:', error);
+      throw error;
+    }
+  }
+
+  async updateAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update(settings)
+        .eq('id', 1);
+
+      if (error) {
+        console.error('Error updating admin settings:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateAdminSettings:', error);
+      throw error;
+    }
+  }
+
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all users:', error);
+        return [];
+      }
+
+      return (data || []).map(user => this.mapUserData(user));
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      return [];
+    }
+  }
+
+  async getAllMessages(): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all messages:', error);
+        return [];
+      }
+
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: msg.sender ? this.mapUserData(msg.sender) : undefined,
+        sender_name: msg.sender?.name
+      }));
+    } catch (error) {
+      console.error('Error in getAllMessages:', error);
+      return [];
+    }
+  }
+
+  async deleteMessage(messageId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('messenger_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteMessage:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUser:', error);
+      throw error;
+    }
+  }
+
+  async updateUserRole(userId: number, updates: Record<string, any>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserRole:', error);
+      throw error;
+    }
+  }
+
+  async getTopics(): Promise<ChatTopic[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching topics:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getTopics:', error);
+      return [];
+    }
+  }
+
+  async createTopic(topicData: { title: string; description?: string; room_id?: number; section_id?: number; icon?: string; order_index?: number; }): Promise<ChatTopic> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .insert(topicData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating topic:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in createTopic:', error);
+      throw error;
+    }
+  }
+
+  async updateTopic(topicId: number, updates: Partial<ChatTopic>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .update(updates)
+        .eq('id', topicId);
+
+      if (error) {
+        console.error('Error updating topic:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateTopic:', error);
+      throw error;
+    }
+  }
+
+  async deleteTopic(topicId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .update({ is_active: false })
+        .eq('id', topicId);
+
+      if (error) {
+        console.error('Error deleting topic:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteTopic:', error);
+      throw error;
+    }
+  }
+
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update(updates)
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error updating room:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateRoom:', error);
+      throw error;
+    }
+  }
+
+  async deleteRoom(roomId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update({ is_active: false })
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error deleting room:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteRoom:', error);
+      throw error;
+    }
+  }
+
+  async getSupportMessages(conversationId: number): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(*)
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching support messages:', error);
+        return [];
+      }
+
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: msg.sender ? this.mapUserData(msg.sender) : undefined,
+        sender_name: msg.sender?.name
+      }));
+    } catch (error) {
+      console.error('Error in getSupportMessages:', error);
+      return [];
+    }
+  }
+
+  async sendSupportMessage(messageData: {
+    sender_id: number;
+    message: string;
+    conversation_id: number;
+    media_url?: string;
+    message_type?: string;
+  }): Promise<MessageData> {
+    return this.sendMessage({
+      ...messageData,
+      recipient_id: 1 // Support agent
+    });
+  }
+
+  async getUserById(userId: number): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user by ID:', error);
+        return null;
+      }
+
+      return this.mapUserData(data);
+    } catch (error) {
+      console.error('Error in getUserById:', error);
+      return null;
+    }
+  }
+
+  async getRoomById(roomId: number): Promise<ChatRoom | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching room by ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getRoomById:', error);
+      return null;
+    }
+  }
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('session_token', sessionToken);
+
+      if (error) {
+        console.error('Error deactivating session:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deactivateSession:', error);
+      throw error;
+    }
+  }
+
+  async checkUsernameUniqueness(username: string, excludeUserId?: number): Promise<boolean> {
+    try {
+      let query = supabase
+        .from('chat_users')
+        .select('id')
+        .eq('username', username);
+
+      if (excludeUserId) {
+        query = query.neq('id', excludeUserId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error checking username uniqueness:', error);
+        return false;
+      }
+
+      return !data || data.length === 0;
+    } catch (error) {
+      console.error('Error in checkUsernameUniqueness:', error);
+      return false;
+    }
+  }
+
+  async updateUserProfile(userId: number, updates: Partial<MessengerUser>): Promise<MessengerUser> {
+    await this.updateUser(userId, updates);
+    const updatedUser = await this.getUserById(userId);
+    if (!updatedUser) {
+      throw new Error('کاربر یافت نشد');
+    }
+    return updatedUser;
+  }
+
+  async changePassword(currentUser: MessengerUser, oldPassword: string, newPassword: string): Promise<void> {
+    const userId = currentUser.id;
+    try {
+      // First verify the old password
+      const user = await this.getUserById(userId);
+      if (!user || !user.password_hash) {
+        throw new Error('کاربر یافت نشد یا رمز عبور تنظیم نشده');
+      }
+
+      const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password_hash);
+      if (!isOldPasswordValid) {
+        throw new Error('رمز عبور قبلی اشتباه است');
+      }
+
+      // Hash the new password
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+      // Update the password
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ password_hash: newPasswordHash })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error changing password:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in changePassword:', error);
       throw error;
     }
   }
