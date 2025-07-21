@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
 import DiscountManagement from '@/components/Admin/DiscountManagement';
+import CourseManagement from '@/components/Admin/CourseManagement';
 
 interface Course {
   id: string;
@@ -614,120 +615,7 @@ const EnrollAdmin: React.FC = () => {
             {/* Courses View */}
             {activeView === 'courses' && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold">مدیریت دوره‌ها</h1>
-                    <p className="text-muted-foreground mt-2">ایجاد و ویرایش دوره‌های آموزشی</p>
-                  </div>
-                  <Button onClick={handleCreateCourse}>
-                    <Plus className="h-4 w-4 ml-2" />
-                    دوره جدید
-                  </Button>
-                </div>
-
-                {/* Course Management */}
-                <Card>
-                  <CardContent className="p-6">
-                    {courses.length === 0 ? (
-                      <div className="text-center py-12">
-                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-lg font-medium text-muted-foreground">هیچ دوره‌ای یافت نشد</p>
-                        <Button onClick={handleCreateCourse} className="mt-4">
-                          <Plus className="h-4 w-4 ml-2" />
-                          اولین دوره را ایجاد کنید
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>عنوان دوره</TableHead>
-                              <TableHead>اسلاگ</TableHead>
-                              <TableHead>قیمت</TableHead>
-                              <TableHead>کاربران ثبت‌نام شده</TableHead>
-                              <TableHead>وضعیت</TableHead>
-                              <TableHead>SpotPlayer</TableHead>
-                              <TableHead>لینک ثبت‌نام</TableHead>
-                              <TableHead>عملیات</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {courses.map((course) => (
-                              <TableRow key={course.id}>
-                                <TableCell>
-                                  <div>
-                                    <div className="font-medium">{course.title}</div>
-                                    <div className="text-sm text-muted-foreground truncate max-w-xs">
-                                      {course.description}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <code className="text-sm bg-muted px-2 py-1 rounded">{course.slug}</code>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-mono">{formatPrice(course.price)}</div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-medium">{getEnrolledUsersCount(course.id)}</span>
-                                    <span className="text-sm text-muted-foreground">کاربر</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant={course.is_active ? "default" : "secondary"}>
-                                    {course.is_active ? "فعال" : "غیرفعال"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {course.is_spotplayer_enabled ? (
-                                    <div className="flex items-center gap-1">
-                                      <Play className="h-3 w-3 text-green-600" />
-                                      <Badge variant="outline" className="text-green-600 border-green-600">
-                                        فعال
-                                      </Badge>
-                                    </div>
-                                  ) : (
-                                    <Badge variant="secondary">غیرفعال</Badge>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    asChild
-                                  >
-                                    <a 
-                                      href={`/enroll?course=${course.slug}`} 
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                      ثبت‌نام
-                                    </a>
-                                  </Button>
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditCourse(course)}
-                                  >
-                                    <Edit className="h-4 w-4 ml-1" />
-                                    ویرایش
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <CourseManagement />
               </div>
             )}
           </div>
