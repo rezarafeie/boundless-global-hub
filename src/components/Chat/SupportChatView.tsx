@@ -56,6 +56,10 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       const conversationMessages = await supportMessageService.getConversationMessages(conversationId);
       console.log('Loaded messages:', conversationMessages.length);
       setMessages(conversationMessages);
+      
+      // Mark messages as read when chat is opened
+      await supportMessageService.markMessagesAsRead(conversationId);
+      console.log('Messages marked as read for conversation:', conversationId);
     } catch (error) {
       console.error('Error loading conversation messages:', error);
       toast({

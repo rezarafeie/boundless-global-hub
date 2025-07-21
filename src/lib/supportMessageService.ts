@@ -189,6 +189,24 @@ class SupportMessageService {
     return data;
   }
 
+  // Mark support messages as read when chat is opened
+  async markMessagesAsRead(conversationId: number): Promise<void> {
+    console.log('Marking messages as read for conversation:', conversationId);
+    
+    const { error } = await supabase
+      .from('messenger_messages')
+      .update({ unread_by_support: false })
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', 1); // Only mark user messages as read, not support messages
+
+    if (error) {
+      console.error('Error marking messages as read:', error);
+      throw error;
+    }
+
+    console.log('Messages marked as read for conversation:', conversationId);
+  }
+
   // Get all support conversations (for dashboard)
   async getAllConversations(): Promise<any[]> {
     console.log('Loading all support conversations...');
