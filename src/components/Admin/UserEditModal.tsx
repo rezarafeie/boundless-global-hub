@@ -150,7 +150,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor="role">نقش کاربر</Label>
-              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: 'user' | 'admin' | 'support') => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="نقش را انتخاب کنید" />
                 </SelectTrigger>
