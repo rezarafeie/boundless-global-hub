@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { courseSlug, firstName, lastName, email, phone } = await req.json();
+    const { courseSlug, firstName, lastName, email, phone, countryCode, customAmount } = await req.json();
 
     // Get course details
     const { data: course, error: courseError } = await supabase
@@ -30,6 +30,9 @@ serve(async (req) => {
       );
     }
 
+    // Use custom amount if provided (for discounts), otherwise use course price
+    const paymentAmount = customAmount || course.price;
+
     // Create enrollment record
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('enrollments')
@@ -38,7 +41,8 @@ serve(async (req) => {
         full_name: `${firstName} ${lastName}`,
         email: email,
         phone: phone,
-        payment_amount: course.price,
+        country_code: countryCode || '+98',
+        payment_amount: paymentAmount,
         payment_status: 'pending'
       })
       .select()
@@ -65,7 +69,7 @@ serve(async (req) => {
 
     const zarinpalPayload = {
       merchant_id: merchantId,
-      amount: Math.round(course.price * 10), // Convert to Rials (multiply by 10)
+      amount: Math.round(paymentAmount * 10), // Convert to Rials (multiply by 10) - use final amount after discount
       callback_url: callbackUrl,
       description: `خرید دوره: ${course.title}`,
       metadata: {

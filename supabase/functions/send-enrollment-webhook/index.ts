@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const WEBHOOK_URL = "https://hook.us1.make.com/m9ita6qaswo7ysgx0c4vy1c34kl0x9ij"
+const WEBHOOK_URL = "https://rafeie.app.n8n.cloud/webhook/b6bacc41-19f5-4def-8408-1c5537049969"
 
 serve(async (req) => {
   const { method } = req

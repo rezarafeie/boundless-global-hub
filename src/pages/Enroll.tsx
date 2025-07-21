@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap, DollarSign } from 'lucide-react';
+import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap, DollarSign, AlertTriangle, Wifi } from 'lucide-react';
 import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ import MainLayout from '@/components/Layout/MainLayout';
 import ManualPaymentSection from '@/components/ManualPaymentSection';
 import { TetherlandService } from '@/lib/tetherlandService';
 import DiscountSection from '@/components/DiscountSection';
+import { IPDetectionService } from '@/lib/ipDetectionService';
 
 interface Course {
   id: string;
@@ -44,6 +45,8 @@ const Enroll: React.FC = () => {
   const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [isIranianIP, setIsIranianIP] = useState<boolean | null>(null);
+  const [showVPNWarning, setShowVPNWarning] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -99,6 +102,24 @@ const Enroll: React.FC = () => {
       fetchExchangeRateForCourse(course.usd_price);
     }
   }, [course]);
+
+  // Check user's IP location for VPN warning
+  useEffect(() => {
+    const checkIPLocation = async () => {
+      try {
+        const isIranian = await IPDetectionService.isIranianIP();
+        setIsIranianIP(isIranian);
+        setShowVPNWarning(!isIranian && paymentMethod === 'zarinpal');
+      } catch (error) {
+        console.error('Failed to detect IP location:', error);
+        // Default to showing warning for safety
+        setIsIranianIP(false);
+        setShowVPNWarning(paymentMethod === 'zarinpal');
+      }
+    };
+
+    checkIPLocation();
+  }, [paymentMethod]);
 
   const fetchExchangeRateForCourse = async (usdAmount: number) => {
     setLoadingExchangeRate(true);
@@ -625,29 +646,49 @@ const Enroll: React.FC = () => {
                     />
                   )}
 
-                  {/* Submit Button - Only for Zarinpal */}
-                  {paymentMethod === 'zarinpal' && (
-                    <Button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                      disabled={submitting}
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="h-6 w-6 animate-spin ml-2" />
-                          در حال پردازش...
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="h-6 w-6 ml-2" />
-                          پرداخت آنلاین {course.use_dollar_price && finalRialPrice 
-                            ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                            : formatPrice(course.price)
-                          }
-                        </>
-                      )}
-                    </Button>
-                  )}
+                   {/* VPN Warning for non-Iranian IPs */}
+                   {showVPNWarning && paymentMethod === 'zarinpal' && (
+                     <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                       <div className="flex items-start gap-3">
+                         <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                         <div className="space-y-2">
+                           <div className="flex items-center gap-2">
+                             <Wifi className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                             <h4 className="font-medium text-orange-800 dark:text-orange-200">توجه به کاربران VPN</h4>
+                           </div>
+                           <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
+                             درگاه شاپرک (زرین‌پال) با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.
+                           </p>
+                         </div>
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Submit Button - Only for Zarinpal */}
+                   {paymentMethod === 'zarinpal' && (
+                     <Button
+                       type="submit"
+                       className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                       disabled={submitting}
+                     >
+                       {submitting ? (
+                         <>
+                           <Loader2 className="h-6 w-6 animate-spin ml-2" />
+                           در حال پردازش...
+                         </>
+                       ) : (
+                         <>
+                           <CreditCard className="h-6 w-6 ml-2" />
+                           پرداخت آنلاین {discountedPrice !== null 
+                             ? formatPrice(discountedPrice)
+                             : course.use_dollar_price && finalRialPrice 
+                               ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                               : formatPrice(course.price)
+                           }
+                         </>
+                       )}
+                     </Button>
+                   )}
                 </form>
 
                 {/* Security Note */}
