@@ -424,13 +424,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           const { unifiedAuthService } = await import('@/lib/unifiedAuthService');
           const authResult = await unifiedAuthService.authenticateUser(phoneNumber, password, countryCode);
           
-          if (authResult && authResult.user) {
-            console.log('✅ Academy authentication successful');
-            result = { session_token: authResult.sessionToken };
-          } else {
-            console.log('❌ Academy authentication failed');
-            result = null;
-          }
+          console.log('✅ Academy authentication successful');
+          result = { session_token: authResult.sessionToken };
         } else {
           // Use messenger service for messenger authentication
           console.log('💬 Messenger login attempt for:', phoneNumber);

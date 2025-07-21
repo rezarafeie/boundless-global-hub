@@ -95,19 +95,27 @@ class UnifiedAuthService {
             password: password
           });
 
-          if (!authError && authData.user) {
+          if (authError) {
+            if (authError.message.includes('Invalid login credentials')) {
+              throw new Error('رمز عبور اشتباه است');
+            } else {
+              throw new Error(authError.message || 'خطا در احراز هویت');
+            }
+          }
+
+          if (authData.user) {
             passwordValid = true;
             // Create session for academy user
             sessionToken = await this.createUnifiedSession(user);
           }
-        } catch (authError) {
+        } catch (authError: any) {
           console.error('Academy auth error:', authError);
-          // Password validation failed - passwordValid remains false
+          throw authError; // Re-throw to be caught by the component
         }
       }
 
       if (!passwordValid) {
-        return null;
+        throw new Error('رمز عبور اشتباه است');
       }
 
       return {
@@ -115,9 +123,9 @@ class UnifiedAuthService {
         sessionToken,
         isNewUser: false
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error authenticating user:', error);
-      return null;
+      throw error; // Re-throw to let component handle specific error messages
     }
   }
 
