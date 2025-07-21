@@ -16,6 +16,7 @@ import {
 import { courseNotificationService } from '@/lib/courseNotificationService';
 import type { Notification } from '@/types/notifications';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CourseNotificationsProps {
   courseId: string;
@@ -23,11 +24,17 @@ interface CourseNotificationsProps {
 }
 
 const CourseNotifications: React.FC<CourseNotificationsProps> = ({ courseId, className = "" }) => {
+  const { isAuthenticated, user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<number>>(new Set());
 
+  // Only proceed if user is authenticated
   useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setLoading(false);
+      return;
+    }
     const loadNotifications = async () => {
       try {
         const data = await courseNotificationService.getCourseNotifications(courseId);
@@ -73,7 +80,7 @@ const CourseNotifications: React.FC<CourseNotificationsProps> = ({ courseId, cla
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [courseId]);
+  }, [courseId, isAuthenticated, user]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -108,6 +115,11 @@ const CourseNotifications: React.FC<CourseNotificationsProps> = ({ courseId, cla
   const visibleNotifications = notifications.filter(
     notif => !dismissedNotifications.has(notif.id)
   );
+
+  // Don't render anything if user is not authenticated
+  if (!isAuthenticated || !user) {
+    return null;
+  }
 
   if (loading) {
     return (
