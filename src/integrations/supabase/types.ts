@@ -1931,9 +1931,41 @@ export type Database = {
         Args: { user_name: string }
         Returns: string
       }
+      get_user_courses_by_phone: {
+        Args: { user_phone: string }
+        Returns: {
+          enrollment_id: string
+          course_id: string
+          course_title: string
+          course_description: string
+          course_price: number
+          course_redirect_url: string
+          enrollment_date: string
+          payment_status: string
+          payment_amount: number
+          spotplayer_license_key: string
+          spotplayer_license_url: string
+          spotplayer_license_id: string
+        }[]
+      }
       get_user_from_session: {
         Args: { session_token_param: string }
         Returns: number
+      }
+      get_user_licenses_by_phone: {
+        Args: { user_phone: string }
+        Returns: {
+          license_id: string
+          course_id: string
+          course_title: string
+          license_key: string
+          license_data: Json
+          license_status: string
+          created_at: string
+          expires_at: string
+          activated_at: string
+          enrollment_id: string
+        }[]
       }
       get_user_support_rooms: {
         Args: { user_id_param: number }

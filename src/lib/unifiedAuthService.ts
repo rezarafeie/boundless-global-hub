@@ -12,6 +12,7 @@ export interface UnifiedUser {
   phone: string;
   countryCode: string;
   username?: string;
+  password_hash?: string;
   isAcademyUser: boolean;
   isMessengerUser: boolean;
   messengerData?: MessengerUser;
@@ -52,6 +53,7 @@ class UnifiedAuthService {
         phone: messengerUser?.phone || academyUser?.phone || phone,
         countryCode: messengerUser?.country_code || countryCode || '+98',
         username: messengerUser?.username,
+        password_hash: messengerUser?.password_hash,
         isAcademyUser: !!academyUser,
         isMessengerUser: !!messengerUser,
         messengerData: messengerUser || undefined,
