@@ -52,7 +52,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [pinnedMessage, setPinnedMessage] = useState<any>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<MessengerUser | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,100 +60,39 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
-  // Enhanced real-time subscription for messages
+  // Real-time subscription for messages
   useEffect(() => {
     if (!selectedRoom && !selectedUser) return;
     
-    console.log('🔄 Setting up real-time subscriptions for:', {
-      room: selectedRoom?.id,
-      user: selectedUser?.id,
-      topic: selectedTopic?.id,
-      currentUser: currentUser.id
-    });
-    
     const channels: any[] = [];
-    setConnectionStatus('connecting');
     
     // Subscribe to messenger messages for room chats
     if (selectedRoom) {
-      let filter = `room_id=eq.${selectedRoom.id}`;
-      
-      // For super groups, also filter by topic if selected
-      if (selectedRoom.is_super_group && selectedTopic) {
-        filter += ` AND topic_id=eq.${selectedTopic.id}`;
-      }
-      
-      console.log('📡 Room subscription filter:', filter);
-      
       const roomMessagesChannel = supabase
-        .channel(`room_messages_${selectedRoom.id}_${selectedTopic?.id || 'all'}`)
+        .channel(`room_messages_${selectedRoom.id}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'messenger_messages',
-            filter
+            filter: `room_id=eq.${selectedRoom.id}`
           },
-          async (payload) => {
-            console.log('📨 New room message received:', payload);
+          (payload) => {
+            console.log('New room message received:', payload);
+            // Add the new message to the current messages
             const newMessage = payload.new as any;
-            
-            // Fetch complete sender data
-            try {
-              const senderData = await supabase
-                .from('chat_users')
-                .select('*')
-                .eq('id', newMessage.sender_id)
-                .single();
-              
-              const completeMessage: MessengerMessage = {
-                ...newMessage,
-                sender: senderData.data || { 
-                  id: newMessage.sender_id,
-                  name: 'Unknown', 
-                  phone: '',
-                  is_approved: false,
-                  is_messenger_admin: false,
-                  is_support_agent: false,
-                  bedoun_marz: false,
-                  bedoun_marz_approved: false,
-                  bedoun_marz_request: false,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  last_seen: new Date().toISOString(),
-                  role: 'user' as const,
-                  email: null,
-                  user_id: null,
-                  first_name: null,
-                  last_name: null,
-                  full_name: null,
-                  country_code: null,
-                  signup_source: null,
-                  bio: null,
-                  notification_enabled: true,
-                  notification_token: null,
-                  password_hash: null,
-                  avatar_url: null,
-                  username: null
-                }
-              };
-              
-              setMessages(prev => {
-                // Avoid duplicates
-                const exists = prev.find(msg => msg.id === completeMessage.id);
-                if (!exists) {
-                  console.log('✅ Adding new room message to state');
-                  return [...prev, completeMessage];
-                }
-                console.log('⚠️ Duplicate room message ignored');
-                return prev;
-              });
-              
-              setConnectionStatus('connected');
-            } catch (error) {
-              console.error('❌ Error fetching sender data:', error);
-            }
+            setMessages(prev => {
+              // Avoid duplicates
+              const exists = prev.find(msg => msg.id === newMessage.id);
+              if (!exists) {
+                return [...prev, {
+                  ...newMessage,
+                  sender: { name: 'Unknown', phone: '' } // Will be updated by avatar fetch
+                }];
+              }
+              return prev;
+            });
           }
         )
         .subscribe();
@@ -163,8 +101,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
     // Subscribe to private messages for private chats
     if (selectedUser && selectedUser.id !== 1) {
-      console.log('📡 Setting up private message subscription for user:', selectedUser.id);
-      
       const privateMessagesChannel = supabase
         .channel(`private_messages_user_${selectedUser.id}`)
         .on(
@@ -175,39 +111,33 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             table: 'private_messages'
           },
           async (payload) => {
-            console.log('📨 New private message received:', payload);
+            console.log('New private message received:', payload);
             const newMessage = payload.new as any;
             
             // Check if this message belongs to current conversation
-            try {
-              const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
-              if (conversation && 
-                  ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
-                   (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
-                
-                const completeMessage: MessengerMessage = {
-                  ...newMessage,
-                  room_id: undefined,
-                  media_url: newMessage.media_url,
-                  message_type: newMessage.message_type || 'text',
-                  media_content: newMessage.media_content,
-                  sender: newMessage.sender_id === currentUser.id ? currentUser : selectedUser
-                };
-                
-                setMessages(prev => {
-                  const exists = prev.find(msg => msg.id === newMessage.id);
-                  if (!exists) {
-                    console.log('✅ Adding new private message to state');
-                    return [...prev, completeMessage];
-                  }
-                  console.log('⚠️ Duplicate private message ignored');
-                  return prev;
-                });
-                
-                setConnectionStatus('connected');
-              }
-            } catch (error) {
-              console.error('❌ Error processing private message:', error);
+            const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
+            if (conversation && 
+                ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
+                 (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
+              
+              setMessages(prev => {
+                // Avoid duplicates
+                const exists = prev.find(msg => msg.id === newMessage.id);
+                if (!exists) {
+                  return [...prev, {
+                    ...newMessage,
+                    room_id: undefined,
+                    media_url: newMessage.media_url,
+                    message_type: newMessage.message_type || 'text',
+                    media_content: newMessage.media_content,
+                    sender: {
+                      name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+                      phone: ''
+                    }
+                  }];
+                }
+                return prev;
+              });
             }
           }
         )
@@ -217,8 +147,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
     // Subscribe to support messages (messenger_messages with recipient_id = 1)
     if (selectedUser && selectedUser.id === 1) {
-      console.log('📡 Setting up support message subscription for user:', currentUser.id);
-      
       const supportMessagesChannel = supabase
         .channel(`support_messages_${currentUser.id}`)
         .on(
@@ -229,67 +157,23 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             table: 'messenger_messages',
             filter: `recipient_id=eq.1`
           },
-          async (payload) => {
-            console.log('📨 New support message received:', payload);
+          (payload) => {
+            console.log('New support message received:', payload);
             const newMessage = payload.new as any;
             
             // Only add if it's from or to the current user
-            if (newMessage.sender_id === currentUser.id || 
-                (newMessage.conversation_id && newMessage.conversation_id === currentUser.id)) {
-              
-              try {
-                const senderData = await supabase
-                  .from('chat_users')
-                  .select('*')
-                  .eq('id', newMessage.sender_id)
-                  .single();
-                
-                const completeMessage: MessengerMessage = {
-                  ...newMessage,
-                  sender: senderData.data || { 
-                    id: newMessage.sender_id,
-                    name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', 
-                    phone: '',
-                    is_approved: false,
-                    is_messenger_admin: false,
-                    is_support_agent: true,
-                    bedoun_marz: false,
-                    bedoun_marz_approved: false,
-                    bedoun_marz_request: false,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    last_seen: new Date().toISOString(),
-                    role: 'support' as const,
-                    email: null,
-                    user_id: null,
-                    first_name: null,
-                    last_name: null,
-                    full_name: null,
-                    country_code: null,
-                    signup_source: null,
-                    bio: null,
-                    notification_enabled: true,
-                    notification_token: null,
-                    password_hash: null,
-                    avatar_url: null,
-                    username: null
-                  }
-                };
-                
-                setMessages(prev => {
-                  const exists = prev.find(msg => msg.id === newMessage.id);
-                  if (!exists) {
-                    console.log('✅ Adding new support message to state');
-                    return [...prev, completeMessage];
-                  }
-                  console.log('⚠️ Duplicate support message ignored');
-                  return prev;
-                });
-                
-                setConnectionStatus('connected');
-              } catch (error) {
-                console.error('❌ Error fetching support sender data:', error);
-              }
+            if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
+              setMessages(prev => {
+                // Avoid duplicates
+                const exists = prev.find(msg => msg.id === newMessage.id);
+                if (!exists) {
+                  return [...prev, {
+                    ...newMessage,
+                    sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' }
+                  }];
+                }
+                return prev;
+              });
             }
           }
         )
@@ -297,23 +181,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       channels.push(supportMessagesChannel);
     }
 
-    // Set connection status based on subscription status
-    setTimeout(() => {
-      if (channels.length > 0) {
-        setConnectionStatus('connected');
-        console.log('✅ Real-time subscriptions established');
-      }
-    }, 1000);
-
     // Cleanup function
     return () => {
-      console.log('🧹 Cleaning up real-time subscriptions');
       channels.forEach(channel => {
         supabase.removeChannel(channel);
       });
-      setConnectionStatus('disconnected');
     };
-  }, [selectedRoom?.id, selectedUser?.id, currentUser.id, selectedTopic?.id]);
+  }, [selectedRoom?.id, selectedUser?.id, currentUser.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -352,16 +226,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const loadMessages = async () => {
     try {
       setLoading(true);
-      console.log('📥 Loading messages for:', {
-        room: selectedRoom?.id,
-        user: selectedUser?.id,
-        topic: selectedTopic?.id,
-        isSuper: selectedRoom?.is_super_group
-      });
-      
       let roomMessages: MessengerMessage[] = [];
       
       if (selectedRoom) {
+        console.log('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
+        console.log('Is super group:', selectedRoom.is_super_group);
         // For super groups, topic is required
         if (selectedRoom.is_super_group) {
           roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
@@ -385,16 +254,18 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             media_url: msg.media_url,
             message_type: msg.message_type || 'text',
             media_content: msg.media_content,
-            sender: msg.sender_id === currentUser.id ? currentUser : selectedUser,
-            sender_name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name
-          })) as MessengerMessage[];
+            sender: {
+              name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+              phone: ''
+            }
+          }));
         }
       }
       
-      console.log('✅ Loaded messages:', roomMessages.length);
+      console.log('Loaded messages:', roomMessages);
       setMessages(roomMessages);
     } catch (error) {
-      console.error('❌ Error loading messages:', error);
+      console.error('Error loading messages:', error);
       toast({
         title: 'خطا',
         description: 'خطا در بارگذاری پیام‌ها',
@@ -430,18 +301,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       message_type: media ? 'media' : 'text',
       topic_id: selectedTopic?.id,
       conversation_id: null,
-      sender: currentUser,
-      is_read: false,
-      recipient_id: null,
-      unread_by_support: false,
-      reply_to_message_id: null,
-      forwarded_from_message_id: null
+      sender: { name: currentUser.name, phone: currentUser.phone }
     };
 
     try {
       setSending(true);
-      console.log('📤 Sending message:', { text: messageText, media: !!media });
-      
       setMessages(prev => [...prev, optimisticMessage]);
       
       // If it's a media message, set message text to empty if no text provided
@@ -456,25 +320,26 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }) : null;
       
       if (selectedRoom) {
-        await messengerService.sendMessage({
-          sender_id: currentUser.id,
-          message,
-          room_id: selectedRoom.id,
-          topic_id: selectedTopic?.id,
-          media_url: mediaUrl,
-          message_type: mediaType
-        });
+        await messengerService.sendMessage(
+          selectedRoom.id, 
+          currentUser.id, 
+          message, 
+          selectedTopic?.id,
+          mediaUrl,
+          mediaType,
+          mediaContent
+        );
       } else if (selectedUser) {
         // Check if it's support conversation
         if (selectedUser.id === 1) {
           // Send as support message via messenger service with recipient_id
-          await messengerService.sendSupportMessage({
-            sender_id: currentUser.id,
+          await messengerService.sendSupportMessage(
+            currentUser.id,
             message,
-            conversation_id: currentUser.id,
-            media_url: mediaUrl,
-            message_type: mediaType
-          });
+            mediaUrl,
+            mediaType,
+            mediaContent
+          );
         } else {
           // For private messages, use the private message service directly with media support
           await privateMessageService.sendMessage(
@@ -489,14 +354,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }
 
       setNewMessage('');
-      console.log('✅ Message sent successfully');
-      
       // Remove optimistic message once real-time update comes in
       setTimeout(() => {
         setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
-      }, 2000);
+      }, 1000);
     } catch (error) {
-      console.error('❌ Error sending message:', error);
+      console.error('Error sending message:', error);
       // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
       toast({
@@ -585,7 +448,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header with Connection Status */}
+      {/* Header */}
       <div className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
@@ -626,11 +489,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
             </h3>
             
-            {/* Connection Status Indicator */}
-            <div className={`w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-green-500' : 
-              connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
-            }`} title={`اتصال: ${connectionStatus}`} />
           </div>
           {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>

@@ -112,7 +112,7 @@ const MessengerProfile: React.FC = () => {
         username: formData.username,
         bio: formData.bio,
         notification_enabled: formData.notification_enabled
-      });
+      }, currentUser.id);
 
       setCurrentUser(updatedUser);
       toast.success('پروفایل با موفقیت به‌روزرسانی شد');
@@ -141,7 +141,7 @@ const MessengerProfile: React.FC = () => {
       const sessionToken = localStorage.getItem('messenger_session_token');
       if (!sessionToken) return;
 
-      await messengerService.changePassword(passwordData.currentPassword, passwordData.newPassword);
+      await messengerService.changePassword(sessionToken, passwordData.currentPassword, passwordData.newPassword);
       
       setPasswordData({
         currentPassword: '',
@@ -218,7 +218,7 @@ const MessengerProfile: React.FC = () => {
       // Update user profile with new avatar URL
       const updatedUser = await messengerService.updateUserProfile(sessionToken, {
         avatar_url: publicUrl
-      });
+      }, currentUser.id);
 
       setCurrentUser(updatedUser);
       toast.dismiss(loadingToast);
