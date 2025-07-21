@@ -10,12 +10,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from '@/components/ui/sidebar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CheckCircle, XCircle, Eye, Search, Filter, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import DiscountManagement from '@/components/Admin/DiscountManagement';
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import CourseManagement from '@/components/Admin/CourseManagement';
@@ -387,48 +401,6 @@ const EnrollAdmin: React.FC = () => {
     }
   };
 
-  const sidebarItems = [
-    {
-      id: 'dashboard',
-      label: 'داشبورد',
-      icon: BarChart3,
-    },
-    {
-      id: 'enrollments',
-      label: 'مدیریت ثبت‌نام‌ها',
-      icon: CreditCard,
-    },
-    {
-      id: 'data-import',
-      label: 'وارد کردن داده',
-      icon: Upload,
-    },
-    {
-      id: 'discounts',
-      label: 'کدهای تخفیف',
-      icon: DollarSign,
-    },
-    {
-      id: 'courses',
-      label: 'مدیریت دوره‌ها',
-      icon: BookOpen,
-    },
-    {
-      id: 'users',
-      label: 'مدیریت کاربران',
-      icon: Users,
-    },
-    {
-      id: 'reports',
-      label: 'گزارش آمار',
-      icon: TrendingUp,
-    },
-    {
-      id: 'webhooks',
-      label: 'وب‌هوک‌ها',
-      icon: Webhook,
-    },
-  ];
 
   if (loading) {
     return (
@@ -445,55 +417,23 @@ const EnrollAdmin: React.FC = () => {
 
   return (
     <MainLayout>
-      
-      <div className="flex h-screen pt-16">
-        {/* Sidebar */}
-        <div className="w-64 bg-card border-r border-border flex-shrink-0 hidden md:block">
-          <div className="p-4">
-            <nav className="space-y-2">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveView(item.id as any)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                    activeView === item.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-          <nav className="flex justify-around py-2">
-            {sidebarItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id as any)}
-                className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors",
-                  activeView === item.id
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="text-xs">{item.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto pb-20 md:pb-0">
-          <div className="container mx-auto px-4 md:px-6 py-8">
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full pt-16">
+          {/* Admin Sidebar */}
+          <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+          
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
+            {/* Header with Sidebar Trigger */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+              <div className="flex items-center justify-between p-4">
+                <SidebarTrigger />
+                <h1 className="text-xl font-semibold">پنل مدیریت</h1>
+                <div></div> {/* Spacer for centering */}
+              </div>
+            </div>
+            
+            <div className="container mx-auto px-4 md:px-6 py-8">
             
             {/* Dashboard View */}
             {activeView === 'dashboard' && (
@@ -909,9 +849,10 @@ const EnrollAdmin: React.FC = () => {
                 <UsersOverview />
               </div>
             )}
-          </div>
+            </div>
+            </main>
         </div>
-      </div>
+      </SidebarProvider>
 
       {/* Enrollment Details Modal */}
       <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
