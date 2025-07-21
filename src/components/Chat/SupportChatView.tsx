@@ -108,16 +108,16 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
           messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender_id === 1 ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender_id === 1 ? 'justify-end' : 'justify-start'} w-full`}
             >
               <div
-                className={`max-w-[70%] rounded-lg p-3 ${
+                className={`max-w-[85%] sm:max-w-[70%] rounded-lg p-3 break-words overflow-hidden ${
                   message.sender_id === 1
                     ? 'bg-blue-500 text-white'
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-xs font-medium">
                     {message.sender?.name || (message.sender_id === 1 ? 'پشتیبانی' : 'کاربر')}
                   </span>
@@ -128,16 +128,18 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                     })}
                   </span>
                 </div>
-                <p className="text-sm">{message.message}</p>
+                <div className="text-sm break-words overflow-wrap-anywhere">
+                  {message.message}
+                </div>
                 
                 {/* Media content */}
                 {message.media_url && (
-                  <div className="mt-2">
+                  <div className="mt-2 w-full overflow-hidden">
                     <MediaMessage
                       url={message.media_url}
                       type={message.message_type || 'file'}
                       name={message.media_content || 'فایل'}
-                      className="max-w-full"
+                      className="w-full max-w-full"
                     />
                   </div>
                 )}

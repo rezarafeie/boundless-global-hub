@@ -70,20 +70,20 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isImageFile(type)) {
     return (
-      <div className={cn("w-full max-w-[280px]", className)}>
+      <div className={cn("w-full max-w-[250px] sm:max-w-[280px]", className)}>
         <img
           src={url}
           alt={fileName}
           className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-48 w-full object-cover"
           onClick={() => setShowFullImage(true)}
         />
-        <div className="flex justify-between items-center mt-1">
-          <span className="text-xs text-slate-500 truncate">{fileName}</span>
+        <div className="flex justify-between items-center mt-1 gap-2">
+          <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="h-6 w-6 p-0"
+            className="h-6 w-6 p-0 flex-shrink-0"
           >
             <Download className="w-3 h-3" />
           </Button>
@@ -92,7 +92,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
         {/* Full image modal */}
         {showFullImage && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
             onClick={() => setShowFullImage(false)}
           >
             <img
@@ -108,7 +108,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isVideoFile(type)) {
     return (
-      <div className={cn("w-full max-w-[280px]", className)}>
+      <div className={cn("w-full max-w-[250px] sm:max-w-[280px]", className)}>
         <video
           controls
           className="rounded-lg max-h-48 w-full object-cover"
@@ -117,9 +117,9 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
           <source src={url} type={type} />
           مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
         </video>
-        <div className="flex justify-between items-center mt-1">
-          <span className="text-xs text-slate-500 truncate">{fileName}</span>
-          {fileSize && <span className="text-xs text-slate-400">{fileSize}</span>}
+        <div className="flex justify-between items-center mt-1 gap-2">
+          <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
+          {fileSize && <span className="text-xs text-slate-400 flex-shrink-0">{fileSize}</span>}
         </div>
       </div>
     );
@@ -135,17 +135,17 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
       
       return (
         <React.Suspense fallback={
-          <Card className={cn("p-2 min-w-[200px] max-w-[240px]", className)}>
+          <Card className={cn("p-2 min-w-[180px] max-w-[220px] w-full", className)}>
             <div className="flex items-center gap-2">
-              <Music className="w-5 h-5 text-blue-500" />
-              <span className="text-sm">در حال بارگذاری...</span>
+              <Music className="w-5 h-5 text-blue-500 flex-shrink-0" />
+              <span className="text-sm truncate">در حال بارگذاری...</span>
             </div>
           </Card>
         }>
           <VoiceMessagePlayer
             url={url}
             fileName={fileName}
-            className={className}
+            className={cn("max-w-full w-full", className)}
           />
         </React.Suspense>
       );
@@ -173,7 +173,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
         
         <audio
           controls
-          className="w-full mt-2"
+          className="w-full mt-2 max-w-full"
           preload="metadata"
         >
           <source src={url} type={type} />
