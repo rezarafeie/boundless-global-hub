@@ -151,7 +151,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
           خدمات اختصاصی که برای این دوره در نظر گرفته شده است
         </p>
       </CardHeader>
-      <CardContent className="space-y-3 p-4">
+      <CardContent className="space-y-3 p-3 sm:p-4">
         <div className="space-y-3">
           {availableActions.map((action) => {
             const colors = getColorClasses(action.color);
@@ -160,30 +160,32 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
             return (
               <div 
                 key={action.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800 min-w-0"
+                className="flex flex-col gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800 w-full overflow-hidden"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex items-start gap-3 w-full">
                   <div className={`w-10 h-10 ${colors.badgeBg} rounded-lg flex items-center justify-center border ${colors.border} flex-shrink-0`}>
                     <action.icon className={`h-5 w-5 ${colors.text}`} />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-orange-700 dark:text-orange-300 flex flex-col sm:flex-row sm:items-center gap-2 text-sm sm:text-base">
-                      <span className="truncate">{action.title}</span>
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <div className="flex flex-col gap-1">
+                      <h4 className="font-semibold text-orange-700 dark:text-orange-300 text-sm sm:text-base break-words">
+                        {action.title}
+                      </h4>
                       {isClicked && (
-                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 text-xs self-start">
+                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 text-xs w-fit">
                           <CheckCircle className="h-3 w-3 ml-1" />
                           انجام شد
                         </Badge>
                       )}
-                    </h4>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground break-words">
                       {action.description}
                     </p>
                   </div>
                 </div>
                 <Button
                   onClick={() => handleActionClick(action.url!, action.id as 'support' | 'telegram' | 'gifts')}
-                  className={`bg-gradient-to-r ${colors.bg} ${colors.hoverBg} text-white flex-shrink-0 text-xs sm:text-sm`}
+                  className={`bg-gradient-to-r ${colors.bg} ${colors.hoverBg} text-white w-full sm:w-auto flex-shrink-0 text-xs sm:text-sm mt-2 sm:mt-0`}
                   size="sm"
                 >
                   <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
