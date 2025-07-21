@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Eye, Calendar, Phone, Mail, User, Users, UserCheck, Clock, MessageSquare } from 'lucide-react';
+import { Search, Eye, Calendar, Phone, Mail, User, Users, UserCheck, Clock, MessageSquare, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -154,7 +154,15 @@ export default function UsersOverview() {
   return (
     <div className="container mx-auto p-6" dir="rtl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">مدیریت کاربران</h1>
+        <div className="flex items-center gap-4">
+          <Link to="/enroll/admin">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <ArrowRight className="h-4 w-4" />
+              بازگشت
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">مدیریت کاربران</h1>
+        </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline">{filteredUsers.length} کاربر</Badge>
         </div>
