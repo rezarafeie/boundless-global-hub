@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, DollarSign, RefreshCw } from 'lucide-react';
+import { ArrowLeft, DollarSign, RefreshCw, Percent, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
@@ -20,6 +21,9 @@ interface Course {
   price: number;
   use_dollar_price: boolean;
   usd_price: number | null;
+  is_sale_enabled: boolean;
+  sale_price: number | null;
+  sale_expires_at: string | null;
   woocommerce_product_id: number | null;
   redirect_url: string | null;
   is_active: boolean;
@@ -28,6 +32,10 @@ interface Course {
   create_test_license?: boolean;
   woocommerce_create_access?: boolean;
   use_landing_page_merge?: boolean;
+  enable_course_access?: boolean;
+  support_link?: string | null;
+  telegram_channel_link?: string | null;
+  gifts_link?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +55,9 @@ const CourseEdit: React.FC = () => {
     price: '',
     use_dollar_price: false,
     usd_price: '',
+    is_sale_enabled: false,
+    sale_price: '',
+    sale_expires_at: '',
     woocommerce_product_id: '',
     redirect_url: '',
     is_active: true,
@@ -54,7 +65,11 @@ const CourseEdit: React.FC = () => {
     is_spotplayer_enabled: false,
     create_test_license: false,
     woocommerce_create_access: true,
-    use_landing_page_merge: false
+    use_landing_page_merge: false,
+    enable_course_access: false,
+    support_link: '',
+    telegram_channel_link: '',
+    gifts_link: ''
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -95,6 +110,9 @@ const CourseEdit: React.FC = () => {
         price: data.price.toString(),
         use_dollar_price: data.use_dollar_price || false,
         usd_price: data.usd_price?.toString() || '',
+        is_sale_enabled: data.is_sale_enabled || false,
+        sale_price: data.sale_price?.toString() || '',
+        sale_expires_at: data.sale_expires_at ? new Date(data.sale_expires_at).toISOString().slice(0, 16) : '',
         woocommerce_product_id: data.woocommerce_product_id?.toString() || '',
         redirect_url: data.redirect_url || '',
         is_active: data.is_active,
@@ -102,7 +120,11 @@ const CourseEdit: React.FC = () => {
         is_spotplayer_enabled: data.is_spotplayer_enabled || false,
         create_test_license: data.create_test_license || false,
         woocommerce_create_access: data.woocommerce_create_access !== false,
-        use_landing_page_merge: data.use_landing_page_merge || false
+        use_landing_page_merge: data.use_landing_page_merge || false,
+        enable_course_access: data.enable_course_access || false,
+        support_link: data.support_link || '',
+        telegram_channel_link: data.telegram_channel_link || '',
+        gifts_link: data.gifts_link || ''
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -171,6 +193,9 @@ const CourseEdit: React.FC = () => {
         price: parseFloat(formData.price),
         use_dollar_price: formData.use_dollar_price,
         usd_price: formData.use_dollar_price && formData.usd_price ? parseFloat(formData.usd_price) : null,
+        is_sale_enabled: formData.is_sale_enabled,
+        sale_price: formData.is_sale_enabled && formData.sale_price ? parseFloat(formData.sale_price) : null,
+        sale_expires_at: formData.is_sale_enabled && formData.sale_expires_at ? new Date(formData.sale_expires_at).toISOString() : null,
         woocommerce_product_id: formData.woocommerce_product_id ? parseInt(formData.woocommerce_product_id) : null,
         redirect_url: formData.redirect_url.trim() || null,
         is_active: formData.is_active,
@@ -178,7 +203,11 @@ const CourseEdit: React.FC = () => {
         is_spotplayer_enabled: formData.is_spotplayer_enabled,
         create_test_license: formData.create_test_license,
         woocommerce_create_access: formData.woocommerce_create_access,
-        use_landing_page_merge: formData.use_landing_page_merge
+        use_landing_page_merge: formData.use_landing_page_merge,
+        enable_course_access: formData.enable_course_access,
+        support_link: formData.support_link.trim() || null,
+        telegram_channel_link: formData.telegram_channel_link.trim() || null,
+        gifts_link: formData.gifts_link.trim() || null
       };
 
       const { error } = await supabase
@@ -369,6 +398,59 @@ const CourseEdit: React.FC = () => {
                     />
                   </div>
                 )}
+
+                {/* Sale Configuration */}
+                <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <h4 className="text-lg font-semibold text-orange-800 dark:text-orange-400 flex items-center gap-2">
+                    <Percent className="h-5 w-5" />
+                    تنظیمات فروش ویژه
+                  </h4>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="sale-toggle" className="text-base font-medium">
+                        فعال‌سازی فروش ویژه
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        فعال‌سازی قیمت تخفیف‌دار برای این دوره
+                      </p>
+                    </div>
+                    <Switch
+                      id="sale-toggle"
+                      checked={formData.is_sale_enabled}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, is_sale_enabled: checked }))
+                      }
+                    />
+                  </div>
+
+                  {formData.is_sale_enabled && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="sale_price">قیمت فروش ویژه (تومان) *</Label>
+                        <Input
+                          id="sale_price"
+                          type="number"
+                          value={formData.sale_price}
+                          onChange={(e) => setFormData(prev => ({ ...prev, sale_price: e.target.value }))}
+                          placeholder="1500000"
+                          required={formData.is_sale_enabled}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="sale_expires_at">تاریخ انقضای فروش ویژه *</Label>
+                        <Input
+                          id="sale_expires_at"
+                          type="datetime-local"
+                          value={formData.sale_expires_at}
+                          onChange={(e) => setFormData(prev => ({ ...prev, sale_expires_at: e.target.value }))}
+                          required={formData.is_sale_enabled}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -470,6 +552,72 @@ const CourseEdit: React.FC = () => {
                   <p className="text-sm text-muted-foreground">
                     جایگزین کردن لینک خارجی با صفحه ثبت‌نام داخلی (/enroll?course=slug)
                   </p>
+                </div>
+              </div>
+
+              {/* Course Access System */}
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">سیستم دسترسی آکادمی جدید</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="enable_course_access"
+                    checked={formData.enable_course_access}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, enable_course_access: checked }))}
+                  />
+                  <Label htmlFor="enable_course_access">فعال‌سازی سیستم دسترسی دوره</Label>
+                  <p className="text-sm text-muted-foreground">
+                    اگر فعال باشد، کاربران می‌توانند به محتوای دروس دسترسی پیدا کنند
+                  </p>
+                </div>
+              </div>
+
+              {/* Course Links */}
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">لینک‌های دوره</h3>
+                <p className="text-sm text-muted-foreground">
+                  لینک‌های اختیاری که به کاربران ثبت‌نام شده نمایش داده می‌شود
+                </p>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="support_link">لینک فعال‌سازی پشتیبانی</Label>
+                    <Input
+                      id="support_link"
+                      value={formData.support_link}
+                      onChange={(e) => setFormData(prev => ({ ...prev, support_link: e.target.value }))}
+                      placeholder="https://t.me/your_support_bot"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      لینک بات تلگرام یا سیستم پشتیبانی دوره
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="telegram_channel_link">لینک کانال تلگرام</Label>
+                    <Input
+                      id="telegram_channel_link"
+                      value={formData.telegram_channel_link}
+                      onChange={(e) => setFormData(prev => ({ ...prev, telegram_channel_link: e.target.value }))}
+                      placeholder="https://t.me/your_course_channel"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      لینک کانال تلگرام مخصوص این دوره
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="gifts_link">لینک دانلود هدایا</Label>
+                    <Input
+                      id="gifts_link"
+                      value={formData.gifts_link}
+                      onChange={(e) => setFormData(prev => ({ ...prev, gifts_link: e.target.value }))}
+                      placeholder="https://drive.google.com/your_bonus_materials"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      لینک دانلود محتوای تکمیلی و هدایای دوره
+                    </p>
+                  </div>
                 </div>
               </div>
 
