@@ -646,7 +646,7 @@ const EnrollAdmin: React.FC = () => {
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => window.open(`/enroll/admin/enrollments/${enrollment.id}`, '_blank')}
+                                        onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
                                       >
                                         <ExternalLink className="h-4 w-4 ml-1" />
                                         جزئیات
@@ -700,7 +700,7 @@ const EnrollAdmin: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     className="flex-1 text-xs"
-                                    onClick={() => window.open(`/enroll/admin/enrollments/${enrollment.id}`, '_blank')}
+                                    onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
                                   >
                                     <ExternalLink className="h-3 w-3 ml-1" />
                                     جزئیات

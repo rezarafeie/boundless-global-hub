@@ -191,7 +191,7 @@ export function UserEnrollments({ userId }: UserEnrollmentsProps) {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(`/enroll/admin/enrollments/${enrollment.id}`, '_blank')}
+                            onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
                           >
                             <ExternalLink className="h-4 w-4 ml-1" />
                             جزئیات
@@ -261,7 +261,7 @@ export function UserEnrollments({ userId }: UserEnrollmentsProps) {
                           variant="outline"
                           size="sm"
                           className="w-full text-xs"
-                          onClick={() => window.open(`/enroll/admin/enrollments/${enrollment.id}`, '_blank')}
+                          onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
                         >
                           <ExternalLink className="h-3 w-3 ml-1" />
                           مشاهده جزئیات کامل
