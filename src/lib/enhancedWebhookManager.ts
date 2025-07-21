@@ -7,7 +7,9 @@ export type WebhookEventType =
   | 'enrollment_manual_payment_approved'
   | 'enrollment_manual_payment_rejected'
   | 'user_created'
-  | 'email_linked_existing_account';
+  | 'email_linked_existing_account'
+  | 'sso_access_link_generated'
+  | 'rafiei_player_license_generated';
 
 interface WebhookPayload {
   event_type: WebhookEventType;
@@ -205,6 +207,22 @@ class EnhancedWebhookManager {
       event_type: 'email_linked_existing_account',
       timestamp: new Date().toISOString(),
       data: { user, enrollment }
+    });
+  }
+
+  async sendSSOAccessLinkGenerated(enrollment: any, user: any, course: any, ssoTokens: any) {
+    await this.sendWebhook('sso_access_link_generated', {
+      event_type: 'sso_access_link_generated',
+      timestamp: new Date().toISOString(),
+      data: { enrollment, user, course, sso_tokens: ssoTokens }
+    });
+  }
+
+  async sendRafieiPlayerLicenseGenerated(enrollment: any, user: any, course: any, license: any) {
+    await this.sendWebhook('rafiei_player_license_generated', {
+      event_type: 'rafiei_player_license_generated',
+      timestamp: new Date().toISOString(),
+      data: { enrollment, user, course, license }
     });
   }
 }

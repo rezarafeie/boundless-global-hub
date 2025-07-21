@@ -56,3 +56,11 @@ export const sendUserCreated = async (user: any) => {
 export const sendEmailLinkedExistingAccount = async (user: any, enrollment: any) => {
   await enhancedWebhookManager.sendEmailLinkedExistingAccount(user, enrollment);
 };
+
+export const sendSSOAccessLinkGenerated = async (enrollment: any, user: any, course: any, ssoTokens: any) => {
+  await enhancedWebhookManager.sendSSOAccessLinkGenerated(enrollment, user, course, ssoTokens);
+};
+
+export const sendRafieiPlayerLicenseGenerated = async (enrollment: any, user: any, course: any, license: any) => {
+  await enhancedWebhookManager.sendRafieiPlayerLicenseGenerated(enrollment, user, course, license);
+};

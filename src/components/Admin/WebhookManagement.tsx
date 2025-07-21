@@ -21,7 +21,9 @@ const WEBHOOK_EVENTS = [
   { value: 'enrollment_manual_payment_approved', label: 'تایید پرداخت دستی' },
   { value: 'enrollment_manual_payment_rejected', label: 'رد پرداخت دستی' },
   { value: 'user_created', label: 'کاربر جدید' },
-  { value: 'email_linked_existing_account', label: 'لینک ایمیل به حساب موجود' }
+  { value: 'email_linked_existing_account', label: 'لینک ایمیل به حساب موجود' },
+  { value: 'sso_access_link_generated', label: 'تولید لینک دسترسی SSO' },
+  { value: 'rafiei_player_license_generated', label: 'تولید لایسنس پلیر رفیعی' }
 ];
 
 const DEFAULT_BODY_TEMPLATE = {
@@ -44,7 +46,9 @@ const DEFAULT_BODY_TEMPLATE = {
     payment_status: '{{data.enrollment.payment_status}}',
     payment_amount: '{{data.enrollment.payment_amount}}',
     created_at: '{{data.enrollment.created_at}}'
-  }
+  },
+  sso_tokens: '{{data.sso_tokens}}',
+  license: '{{data.license}}'
 };
 
 interface WebhookConfig {
