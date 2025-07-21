@@ -48,7 +48,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Use setTimeout to ensure DOM is updated before scrolling
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const loadMessages = async () => {
