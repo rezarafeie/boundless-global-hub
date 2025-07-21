@@ -97,6 +97,16 @@ const CourseContentManagement: React.FC = () => {
   const [editingSection, setEditingSection] = useState<CourseSection | null>(null);
   const [editingLesson, setEditingLesson] = useState<CourseLesson | null>(null);
   
+  // Collapsed state for sections - start with all sections collapsed
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  
+  // Initialize collapsed sections when data loads
+  useEffect(() => {
+    if (sections.length > 0 && collapsedSections.size === 0) {
+      setCollapsedSections(new Set(sections.map(s => s.id)));
+    }
+  }, [sections]);
+  
   // Form states
   const [titleGroupForm, setTitleGroupForm] = useState({ title: '', icon: '📚' });
   const [sectionForm, setSectionForm] = useState({ title: '', title_group_id: '' });
@@ -105,7 +115,7 @@ const CourseContentManagement: React.FC = () => {
     content: '',
     video_url: '',
     file_url: '',
-    section_id: '',
+    section_ids: [] as string[],
     duration: 15
   });
   const [videoInputMode, setVideoInputMode] = useState<'url' | 'embed'>('url');
@@ -234,7 +244,7 @@ const CourseContentManagement: React.FC = () => {
       content: '',
       video_url: '',
       file_url: '',
-      section_id: '',
+      section_ids: [],
       duration: 15
     });
     setEditingLesson(null);
@@ -312,7 +322,7 @@ const CourseContentManagement: React.FC = () => {
       content: lesson.content,
       video_url: lesson.video_url || '',
       file_url: lesson.file_url || '',
-      section_id: lesson.section_id,
+      section_ids: [lesson.section_id],
       duration: lesson.duration || 15
     });
     
@@ -386,10 +396,10 @@ const CourseContentManagement: React.FC = () => {
   };
 
   const handleSaveLesson = async () => {
-    if (!lessonForm.title.trim() || !lessonForm.section_id) {
+    if (!lessonForm.title.trim() || lessonForm.section_ids.length === 0) {
       toast({
         title: "خطا",
-        description: "عنوان درس و انتخاب بخش الزامی است",
+        description: "عنوان درس و انتخاب حداقل یک بخش الزامی است",
         variant: "destructive"
       });
       return;
@@ -405,7 +415,7 @@ const CourseContentManagement: React.FC = () => {
             content: lessonForm.content.trim(),
             video_url: lessonForm.video_url.trim() || null,
             file_url: lessonForm.file_url.trim() || null,
-            section_id: lessonForm.section_id,
+            section_id: lessonForm.section_ids[0], // Keep first section for main lesson
             duration: lessonForm.duration
           })
           .eq('id', editingLesson.id);
@@ -414,26 +424,36 @@ const CourseContentManagement: React.FC = () => {
         
         toast({ title: "درس با موفقیت به‌روزرسانی شد" });
       } else {
-        // Create new lesson
-        const sectionLessons = lessons.filter(l => l.section_id === lessonForm.section_id);
-        const nextOrderIndex = Math.max(...sectionLessons.map(l => l.order_index), 0) + 1;
+        // Create new lessons for each selected section
+        const lessonsToInsert = [];
         
-        const { error } = await supabase
-          .from('course_lessons')
-          .insert({
+        for (const sectionId of lessonForm.section_ids) {
+          const sectionLessons = lessons.filter(l => l.section_id === sectionId);
+          const nextOrderIndex = Math.max(...sectionLessons.map(l => l.order_index), 0) + 1;
+          
+          lessonsToInsert.push({
             title: lessonForm.title.trim(),
             content: lessonForm.content.trim(),
             video_url: lessonForm.video_url.trim() || null,
             file_url: lessonForm.file_url.trim() || null,
-            section_id: lessonForm.section_id,
+            section_id: sectionId,
             course_id: courseId,
             order_index: nextOrderIndex,
             duration: lessonForm.duration
           });
+        }
+        
+        const { error } = await supabase
+          .from('course_lessons')
+          .insert(lessonsToInsert);
         
         if (error) throw error;
         
-        toast({ title: "درس جدید با موفقیت ایجاد شد" });
+        toast({ 
+          title: lessonForm.section_ids.length > 1 
+            ? `درس جدید در ${lessonForm.section_ids.length} بخش ایجاد شد` 
+            : "درس جدید با موفقیت ایجاد شد" 
+        });
       }
 
       setShowLessonModal(false);
@@ -863,7 +883,9 @@ const SortableSection: React.FC<{
   onEditLesson: (lesson: CourseLesson) => void;
   onDeleteLesson: (lessonId: string) => void;
   onLessonDragEnd: (event: DragEndEvent, sectionId: string) => void;
-}> = ({ section, lessons, onEditSection, onDeleteSection, onEditLesson, onDeleteLesson, onLessonDragEnd }) => {
+  isCollapsed: boolean;
+  onToggleCollapse: (sectionId: string) => void;
+}> = ({ section, lessons, onEditSection, onDeleteSection, onEditLesson, onDeleteLesson, onLessonDragEnd, isCollapsed, onToggleCollapse }) => {
   const {
     attributes,
     listeners,
@@ -881,17 +903,27 @@ const SortableSection: React.FC<{
 
   return (
     <Card ref={setNodeRef} style={style}>
-      <CardHeader>
+      <CardHeader 
+        className="cursor-pointer" 
+        onClick={() => onToggleCollapse(section.id)}
+      >
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <GripVertical 
               className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" 
               {...attributes}
               {...listeners}
+              onClick={(e) => e.stopPropagation()}
             />
+            <span className="mr-2">
+              {isCollapsed ? '▶' : '▼'}
+            </span>
             {section.title}
+            <Badge variant="secondary" className="text-xs">
+              {sectionLessons.length} درس
+            </Badge>
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
             <Button
               size="sm"
               variant="outline"
@@ -910,40 +942,42 @@ const SortableSection: React.FC<{
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {sectionLessons.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">
-            هنوز درسی در این بخش ایجاد نشده است
-          </p>
-        ) : (
-          <DndContext
-            sensors={useSensors(
-              useSensor(PointerSensor),
-              useSensor(KeyboardSensor, {
-                coordinateGetter: sortableKeyboardCoordinates,
-              })
-            )}
-            collisionDetection={closestCenter}
-            onDragEnd={(event) => onLessonDragEnd(event, section.id)}
-          >
-            <SortableContext 
-              items={sectionLessons.map(l => l.id)} 
-              strategy={verticalListSortingStrategy}
+      {!isCollapsed && (
+        <CardContent>
+          {sectionLessons.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">
+              هنوز درسی در این بخش ایجاد نشده است
+            </p>
+          ) : (
+            <DndContext
+              sensors={useSensors(
+                useSensor(PointerSensor),
+                useSensor(KeyboardSensor, {
+                  coordinateGetter: sortableKeyboardCoordinates,
+                })
+              )}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => onLessonDragEnd(event, section.id)}
             >
-              <div className="space-y-3">
-                {sectionLessons.map(lesson => (
-                  <SortableLesson
-                    key={lesson.id}
-                    lesson={lesson}
-                    onEdit={onEditLesson}
-                    onDelete={onDeleteLesson}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        )}
-      </CardContent>
+              <SortableContext 
+                items={sectionLessons.map(l => l.id)} 
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {sectionLessons.map(lesson => (
+                    <SortableLesson
+                      key={lesson.id}
+                      lesson={lesson}
+                      onEdit={onEditLesson}
+                      onDelete={onDeleteLesson}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 };
@@ -1183,21 +1217,51 @@ const SortableLesson: React.FC<{
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="lesson-section">بخش</Label>
-                  <select
-                    id="lesson-section"
-                    value={lessonForm.section_id}
-                    onChange={(e) => setLessonForm(prev => ({ ...prev, section_id: e.target.value }))}
-                    className="w-full p-2 border rounded-md"
-                    required
-                  >
-                    <option value="">انتخاب بخش</option>
-                    {sections.map(section => (
-                      <option key={section.id} value={section.id}>
-                        {section.title}
-                      </option>
-                    ))}
-                  </select>
+                  <Label htmlFor="lesson-sections">
+                    بخش‌ها {!editingLesson && "(می‌توانید چندین بخش انتخاب کنید)"}
+                  </Label>
+                  {editingLesson ? (
+                    <select
+                      id="lesson-sections"
+                      value={lessonForm.section_ids[0] || ''}
+                      onChange={(e) => setLessonForm(prev => ({ ...prev, section_ids: [e.target.value] }))}
+                      className="w-full p-2 border rounded-md"
+                      required
+                    >
+                      <option value="">انتخاب بخش</option>
+                      {sections.map(section => (
+                        <option key={section.id} value={section.id}>
+                          {section.title}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
+                      {sections.map(section => (
+                        <label key={section.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={lessonForm.section_ids.includes(section.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setLessonForm(prev => ({ 
+                                  ...prev, 
+                                  section_ids: [...prev.section_ids, section.id] 
+                                }));
+                              } else {
+                                setLessonForm(prev => ({ 
+                                  ...prev, 
+                                  section_ids: prev.section_ids.filter(id => id !== section.id) 
+                                }));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{section.title}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="lesson-title">عنوان درس</Label>
@@ -1343,6 +1407,16 @@ const SortableLesson: React.FC<{
                                 onEditLesson={handleEditLesson}
                                 onDeleteLesson={handleDeleteLesson}
                                 onLessonDragEnd={handleLessonDragEnd}
+                                isCollapsed={collapsedSections.has(section.id)}
+                                onToggleCollapse={(sectionId) => {
+                                  const newCollapsed = new Set(collapsedSections);
+                                  if (newCollapsed.has(sectionId)) {
+                                    newCollapsed.delete(sectionId);
+                                  } else {
+                                    newCollapsed.add(sectionId);
+                                  }
+                                  setCollapsedSections(newCollapsed);
+                                }}
                               />
                             ))}
                           </SortableContext>
@@ -1376,6 +1450,16 @@ const SortableLesson: React.FC<{
                           onEditLesson={handleEditLesson}
                           onDeleteLesson={handleDeleteLesson}
                           onLessonDragEnd={handleLessonDragEnd}
+                          isCollapsed={collapsedSections.has(section.id)}
+                          onToggleCollapse={(sectionId) => {
+                            const newCollapsed = new Set(collapsedSections);
+                            if (newCollapsed.has(sectionId)) {
+                              newCollapsed.delete(sectionId);
+                            } else {
+                              newCollapsed.add(sectionId);
+                            }
+                            setCollapsedSections(newCollapsed);
+                          }}
                         />
                       ))}
                     </SortableContext>
