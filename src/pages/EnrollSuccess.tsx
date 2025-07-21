@@ -365,11 +365,30 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Required Activations Warning */}
+
+                {/* Course Details */}
+                {result.course && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{result.course.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {result.course.description}
+                        </p>
+                      </div>
+                      <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                        فعال
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Required Activations at Top Priority */}
                 {result.course && (result.course.support_activation_required || result.course.telegram_activation_required) && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800 mb-6">
                     <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
-                      ⚠️ فعال‌سازی‌های ضروری
+                      ⚠️ فعال‌سازی‌های مهم
                     </h3>
                     <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
                       برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را انجام دهید:
@@ -387,24 +406,6 @@ const EnrollSuccess: React.FC = () => {
                           <span>عضویت در کانال تلگرام (اجباری)</span>
                         </div>
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Course Details */}
-                {result.course && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{result.course.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {result.course.description}
-                        </p>
-                      </div>
-                      <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-                        فعال
-                      </Badge>
                     </div>
                   </div>
                 )}

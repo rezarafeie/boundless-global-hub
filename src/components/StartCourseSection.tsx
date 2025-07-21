@@ -374,18 +374,24 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       </div>
 
                       {/* Action Button */}
-                      {accessType.id === 'academy' && accessType.status === 'active' && (
+                      {accessType.id === 'academy' && (
                         <Button 
                           onClick={() => {
-                            const ssoUrl = getSSOUrl('academy');
-                            if (ssoUrl) {
-                              window.open(ssoUrl, '_blank');
-                            } else {
-                              window.location.href = `/access?course=${course?.slug}`;
+                            if (accessType.status === 'active') {
+                              const ssoUrl = getSSOUrl('academy');
+                              if (ssoUrl) {
+                                window.open(ssoUrl, '_blank');
+                              } else {
+                                window.location.href = `/access?course=${course?.slug}`;
+                              }
                             }
                           }}
-                          disabled={loadingSSO}
-                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
+                          disabled={loadingSSO || accessType.status === 'blocked'}
+                          className={`w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] ${
+                            accessType.status === 'blocked' 
+                              ? 'bg-gray-400 text-gray-600 opacity-50 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white'
+                          }`}
                           size="lg"
                         >
                           {loadingSSO ? (
@@ -423,18 +429,24 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                         </div>
                       )}
 
-                      {accessType.id === 'woocommerce' && accessType.status === 'active' && (
+                      {accessType.id === 'woocommerce' && (
                         <Button 
                           onClick={() => {
-                            const ssoUrl = getSSOUrl('woocommerce');
-                            if (ssoUrl) {
-                              window.open(ssoUrl, '_blank');
-                            } else {
-                              onEnterCourse();
+                            if (accessType.status === 'active') {
+                              const ssoUrl = getSSOUrl('woocommerce');
+                              if (ssoUrl) {
+                                window.open(ssoUrl, '_blank');
+                              } else {
+                                onEnterCourse();
+                              }
                             }
                           }}
-                          disabled={loadingSSO}
-                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
+                          disabled={loadingSSO || accessType.status === 'blocked'}
+                          className={`w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] ${
+                            accessType.status === 'blocked' 
+                              ? 'bg-gray-400 text-gray-600 opacity-50 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white'
+                          }`}
                           size="lg"
                         >
                           {loadingSSO ? (
