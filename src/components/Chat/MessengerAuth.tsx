@@ -370,6 +370,15 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('خطا', {
+        description: 'لطفاً ایمیل معتبری وارد کنید'
+      });
+      return;
+    }
+
     if (!formData.username || !usernameAvailable) {
       toast.error('خطا', {
         description: 'لطفاً نام کاربری معتبری انتخاب کنید'
@@ -394,7 +403,14 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       });
 
       if (result.error) {
-        throw new Error(result.error.message || 'خطا در ثبت نام');
+        if (result.error.message?.includes('ایمیل قبلاً استفاده شده')) {
+          toast.error('خطا', {
+            description: 'این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید'
+          });
+        } else {
+          throw new Error(result.error.message || 'خطا در ثبت نام');
+        }
+        return;
       }
 
       // Update username since it's now required

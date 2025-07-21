@@ -929,6 +929,21 @@ export const messengerService = {
     }
   },
 
+  // Check if email is already used
+  async isEmailUsed(email: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return !!data;
+  },
+
   // Extended registerWithPassword that takes an object with user details
   async registerWithPassword(userData: {
     name: string;
@@ -943,6 +958,14 @@ export const messengerService = {
   }): Promise<AuthResult> {
     try {
       const { name, phone, countryCode, password, email, username, firstName, lastName, isBoundlessStudent } = userData;
+      
+      // Check if email is already used
+      if (email) {
+        const emailExists = await this.isEmailUsed(email);
+        if (emailExists) {
+          return { user: null, error: { message: 'این ایمیل قبلاً استفاده شده است' } };
+        }
+      }
       
       // Check if user already exists
       const existingUser = await this.getUserByPhone(phone, countryCode);

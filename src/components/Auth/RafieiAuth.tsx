@@ -142,6 +142,15 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
       return;
     }
 
+    // Validate email format if provided
+    if (registrationData.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(registrationData.email)) {
+        toast.error('لطفاً ایمیل معتبری وارد کنید');
+        return;
+      }
+    }
+
     // Validate phone for Iranian numbers if country detection is needed
     if (registrationData.phone) {
       try {
@@ -175,7 +184,11 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
       onSuccess?.(result.user, result.session_token);
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error(error.message || 'خطا در ثبت‌نام');
+      if (error.message?.includes('ایمیل قبلاً استفاده شده')) {
+        toast.error('این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید');
+      } else {
+        toast.error(error.message || 'خطا در ثبت‌نام');
+      }
     } finally {
       setLoading(false);
     }

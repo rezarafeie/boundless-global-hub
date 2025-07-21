@@ -116,6 +116,21 @@ class RafieiAuthService {
     return data;
   }
 
+  // Check if email is already used
+  async isEmailUsed(email: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('chat_users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return !!data;
+  }
+
   // Register new user
   async registerUser(userData: {
     email?: string;
@@ -125,6 +140,13 @@ class RafieiAuthService {
     password: string;
     signupSource?: string;
   }): Promise<{ user: RafieiUser; session_token: string }> {
+    // Check if email is already used
+    if (userData.email) {
+      const emailExists = await this.isEmailUsed(userData.email);
+      if (emailExists) {
+        throw new Error('این ایمیل قبلاً استفاده شده است');
+      }
+    }
     const normalizedPhone = this.normalizePhone(userData.phone);
     const userId = await this.generateUniqueUserId();
     const countryCode = await this.detectCountryCode(userData.phone);
