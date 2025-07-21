@@ -530,7 +530,7 @@ const CourseAccess: React.FC = () => {
                             value={section.id}
                             className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
                           >
-                            <AccordionTrigger className="px-5 py-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-950/50 dark:hover:to-purple-950/50 transition-all duration-300 [&[data-state=open]]:bg-gradient-to-r [&[data-state=open]]:from-blue-50 [&[data-state=open]]:to-purple-50 dark:[&[data-state=open]]:from-blue-950/50 dark:[&[data-state=open]]:to-purple-950/50">
+                            <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
                               <div className="flex items-center justify-between w-full pr-3">
                                 <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
@@ -560,25 +560,25 @@ const CourseAccess: React.FC = () => {
                                     <button
                                       key={lesson.id}
                                       onClick={() => handleLessonSelect(lesson)}
-                                      className={`w-full text-right px-5 py-3 transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 dark:hover:from-gray-800 dark:hover:to-blue-950/30 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
+                                      className={`w-full text-right px-5 py-3 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
                                         isSelected 
-                                          ? 'bg-gradient-to-r from-blue-50 via-purple-50 to-indigo-50 dark:from-blue-950/40 dark:via-purple-950/40 dark:to-indigo-950/40 border-l-4 border-gradient-to-b from-blue-500 to-purple-600' 
-                                          : 'border-l-4 border-transparent hover:border-l-4 hover:border-gradient-to-b hover:from-blue-300 hover:to-purple-400'
+                                          ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500' 
+                                          : 'border-l-4 border-transparent hover:border-l-4 hover:border-blue-300'
                                       }`}
                                     >
                                       <div className="flex items-center gap-3">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                                           isSelected 
-                                            ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg scale-110' 
-                                            : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-600 dark:text-gray-300 group-hover:from-blue-100 group-hover:to-purple-100 dark:group-hover:from-blue-900 dark:group-hover:to-purple-900 group-hover:scale-105 shadow-md'
+                                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-110' 
+                                            : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-600 dark:text-gray-300 group-hover:from-blue-100 group-hover:to-blue-200 dark:group-hover:from-blue-900 dark:group-hover:to-blue-800 group-hover:scale-105 shadow-md'
                                         }`}>
                                           {lessonNumber}
                                         </div>
                                         {lesson.video_url && (
                                           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
                                             isSelected 
-                                              ? 'bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 shadow-lg' 
-                                              : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 group-hover:from-blue-100 group-hover:to-purple-100 dark:group-hover:from-blue-900 dark:group-hover:to-purple-900 shadow-sm'
+                                              ? 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 shadow-lg' 
+                                              : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 group-hover:from-blue-100 group-hover:to-blue-200 dark:group-hover:from-blue-900 dark:group-hover:to-blue-800 shadow-sm'
                                           }`}>
                                             <Play className={`h-3 w-3 transition-colors duration-300 ${
                                               isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400'
