@@ -16,6 +16,7 @@ import ManualPaymentSection from '@/components/ManualPaymentSection';
 import { TetherlandService } from '@/lib/tetherlandService';
 import DiscountSection from '@/components/DiscountSection';
 import { IPDetectionService } from '@/lib/ipDetectionService';
+import EnrollmentCountdown from '@/components/EnrollmentCountdown';
 
 interface Course {
   id: string;
@@ -366,19 +367,49 @@ const Enroll: React.FC = () => {
                     <Star className="h-5 w-5 text-yellow-500 fill-current" />
                     <Star className="h-5 w-5 text-yellow-500 fill-current" />
                   </div>
-                   <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                    دوره آنلاین
-                  </Badge>
-                  {course.is_spotplayer_enabled && (
-                    <Badge variant="default" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg">
-                      <Zap className="h-3 w-3 ml-1" />
-                      Rafiei Player Support
+                  {/* Desktop badges */}
+                  <div className="hidden md:flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                      دوره آنلاین
                     </Badge>
-                  )}
+                    {course.is_spotplayer_enabled && (
+                      <Badge variant="default" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg">
+                        <Zap className="h-3 w-3 ml-1" />
+                        Rafiei Player Support
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <CardTitle className="text-3xl mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  {course.title}
-                </CardTitle>
+                <div className="flex items-center justify-between mb-6">
+                  <CardTitle className="text-3xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {course.title}
+                  </CardTitle>
+                  <EnrollmentCountdown 
+                    onTimeUp={() => {
+                      toast({
+                        title: "⏰ زمان ثبت‌نام به پایان رسید",
+                        description: "لطفا صفحه را بروزرسانی کنید و مجددا تلاش کنید",
+                        variant: "destructive"
+                      });
+                    }}
+                    className="hidden md:flex"
+                  />
+                </div>
+
+                {/* Mobile countdown */}
+                <div className="md:hidden mb-4 flex justify-center">
+                  <div className="bg-gradient-to-r from-primary/10 to-blue-50/50 dark:from-primary/10 dark:to-blue-950/20 border border-primary/20 rounded-lg px-3 py-2">
+                    <EnrollmentCountdown 
+                      onTimeUp={() => {
+                        toast({
+                          title: "⏰ زمان ثبت‌نام به پایان رسید",
+                          description: "لطفا صفحه را بروزرسانی کنید و مجددا تلاش کنید",
+                          variant: "destructive"
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
                 <p className="text-muted-foreground leading-relaxed text-lg">
                   {course.description}
                 </p>

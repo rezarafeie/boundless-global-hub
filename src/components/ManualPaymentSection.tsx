@@ -257,7 +257,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       console.error('❌ Manual payment submission error:', error);
       toast({
         title: "خطا در ثبت",
-        description: "خطا در ثبت پرداخت دستی. لطفا مجددا تلاش کنید.",
+        description: "خطا در ثبت کارت به کارت. لطفا مجددا تلاش کنید.",
         variant: "destructive"
       });
     } finally {
@@ -295,7 +295,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
               className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
             >
               <div className="text-right">
-                <div className="font-medium text-foreground text-right">پرداخت دستی</div>
+                <div className="font-medium text-foreground text-right">کارت به کارت</div>
                 <div className="text-sm text-muted-foreground text-right">واریز به حساب و آپلود رسید</div>
               </div>
               <FileText className="h-5 w-5 text-primary" />
@@ -440,7 +440,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
             ) : (
               <>
                 <FileText className="h-6 w-6 ml-2" />
-                ثبت پرداخت دستی
+                ثبت کارت به کارت
               </>
             )}
           </Button>
@@ -452,7 +452,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                 <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">راهنمای پرداخت دستی</h4>
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">راهنمای کارت به کارت</h4>
                 <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                   <li>• مبلغ را به حساب مشخص شده واریز کنید</li>
                   <li>• رسید پرداخت را آپلود کنید</li>
