@@ -61,6 +61,9 @@ interface Enrollment {
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  zarinpal_ref_id?: string | null;
+  zarinpal_authority?: string | null;
+  woocommerce_order_id?: number | null;
   courses: {
     title: string;
     slug: string;
@@ -184,6 +187,21 @@ const EnrollAdmin: React.FC = () => {
         return <Badge variant="secondary" className="bg-red-100 text-red-700"><XCircle className="h-3 w-3 ml-1" />رد شده</Badge>;
       default:
         return <Badge variant="secondary">نامشخص</Badge>;
+    }
+  };
+
+  const getPaymentStatusBadge = (status: string | null) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+      case 'success':
+        return <Badge variant="default" className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 ml-1" />پرداخت شده</Badge>;
+      case 'pending':
+        return <Badge variant="secondary" className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ml-1" />در انتظار پرداخت</Badge>;
+      case 'failed':
+      case 'error':
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" />ناموفق</Badge>;
+      default:
+        return <Badge variant="outline">{status || 'نامشخص'}</Badge>;
     }
   };
 
@@ -611,14 +629,15 @@ const EnrollAdmin: React.FC = () => {
                         <div className="hidden md:block overflow-x-auto">
                           <Table>
                             <TableHeader>
-                              <TableRow>
-                                <TableHead className="text-right">نام و نام خانوادگی</TableHead>
-                                <TableHead className="text-right">دوره</TableHead>
-                                <TableHead className="text-right">مبلغ</TableHead>
-                                <TableHead className="text-right">وضعیت</TableHead>
-                                <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
-                                <TableHead className="text-right">عملیات</TableHead>
-                              </TableRow>
+                            <TableRow>
+                              <TableHead className="text-right">نام و نام خانوادگی</TableHead>
+                              <TableHead className="text-right">دوره</TableHead>
+                              <TableHead className="text-right">مبلغ</TableHead>
+                              <TableHead className="text-right">وضعیت پرداخت</TableHead>
+                              <TableHead className="text-right">وضعیت بررسی</TableHead>
+                              <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
+                              <TableHead className="text-right">عملیات</TableHead>
+                            </TableRow>
                             </TableHeader>
                             <TableBody>
                               {enrollments.map((enrollment) => (
@@ -634,6 +653,9 @@ const EnrollAdmin: React.FC = () => {
                                   </TableCell>
                                   <TableCell>
                                     <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {getPaymentStatusBadge(enrollment.payment_status)}
                                   </TableCell>
                                   <TableCell>
                                     {getStatusBadge(enrollment.manual_payment_status)}
@@ -677,7 +699,10 @@ const EnrollAdmin: React.FC = () => {
                                     <h4 className="font-medium text-sm">{enrollment.full_name}</h4>
                                     <p className="text-xs text-muted-foreground">{enrollment.email}</p>
                                   </div>
-                                  {getStatusBadge(enrollment.manual_payment_status)}
+                                  <div className="space-y-1">
+                                    {getPaymentStatusBadge(enrollment.payment_status)}
+                                    {getStatusBadge(enrollment.manual_payment_status)}
+                                  </div>
                                 </div>
                                 
                                 <div className="space-y-2">
@@ -857,6 +882,53 @@ const EnrollAdmin: React.FC = () => {
                 </div>
               )}
 
+              {/* Payment Details */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">جزئیات پرداخت</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>وضعیت پرداخت</Label>
+                    <div className="flex items-center gap-2">
+                      {getPaymentStatusBadge(selectedEnrollment.payment_status)}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>روش پرداخت</Label>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <span className="text-sm">{selectedEnrollment.payment_method || 'نامشخص'}</span>
+                    </div>
+                  </div>
+                  
+                  {selectedEnrollment.zarinpal_ref_id && (
+                    <div className="space-y-2">
+                      <Label>کد رهگیری زرین‌پال</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-mono">{selectedEnrollment.zarinpal_ref_id}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEnrollment.zarinpal_authority && (
+                    <div className="space-y-2">
+                      <Label>Authority زرین‌پال</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-mono">{selectedEnrollment.zarinpal_authority}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEnrollment.woocommerce_order_id && (
+                    <div className="space-y-2">
+                      <Label>شناسه سفارش ووکامرس</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-mono">{selectedEnrollment.woocommerce_order_id}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Admin Notes */}
               <div className="space-y-2">
                 <Label htmlFor="notes">یادداشت مدیر</Label>
@@ -871,7 +943,7 @@ const EnrollAdmin: React.FC = () => {
 
               {/* Current Status */}
               <div className="flex items-center gap-4">
-                <Label>وضعیت فعلی:</Label>
+                <Label>وضعیت بررسی فعلی:</Label>
                 {getStatusBadge(selectedEnrollment.manual_payment_status)}
               </div>
 
