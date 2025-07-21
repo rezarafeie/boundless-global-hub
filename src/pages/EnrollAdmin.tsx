@@ -187,7 +187,7 @@ const EnrollAdmin: React.FC = () => {
       case 'rejected':
         return <Badge variant="secondary" className="bg-red-100 text-red-700"><XCircle className="h-3 w-3 ml-1" />رد شده</Badge>;
       default:
-        return <Badge variant="secondary">نامشخص</Badge>;
+        return null; // Don't show badge for null/unknown manual payment status
     }
   };
 
@@ -202,7 +202,7 @@ const EnrollAdmin: React.FC = () => {
       case 'error':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" />ناموفق</Badge>;
       default:
-        return <Badge variant="outline">{status || 'نامشخص'}</Badge>;
+        return <Badge variant="outline">{status || 'در انتظار'}</Badge>;
     }
   };
 
