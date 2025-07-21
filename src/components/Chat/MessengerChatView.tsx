@@ -136,7 +136,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               const filteredMessages = prev.filter(msg => 
                 !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
                   msg.message === newMessage.message && 
-                  Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 10000)
+                  Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
               );
               
               // Check if real message already exists
@@ -182,7 +182,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                   const filteredMessages = prev.filter(msg => 
                     !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
                       msg.message === newMessage.message &&
-                      Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 10000)
+                      Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
                   );
                   
                   // Check if real message already exists
@@ -448,12 +448,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       setNewMessage('');
       
-      // Don't remove optimistic message immediately - let real-time update handle it
-      // Set a longer timeout as fallback in case real-time doesn't work
+      // Quick removal of optimistic message with fallback
       setTimeout(() => {
         setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
         debugLog('Removed optimistic message after fallback timeout:', tempId);
-      }, 30000); // 30 seconds fallback
+      }, 5000); // 5 seconds fallback for faster UI updates
       
     } catch (error) {
       debugLog('Error sending message:', error);

@@ -64,12 +64,23 @@ export const privateMessageService = {
   async getUserConversations(userId: number, sessionToken: string): Promise<PrivateConversation[]> {
     try {
       console.log('Fetching conversations for user:', userId);
+      
+      // Single optimized query with all required data
       const { data, error } = await supabase
         .from('private_conversations')
         .select(`
           *,
-          user1:chat_users!private_conversations_user1_id_fkey (*),
-          user2:chat_users!private_conversations_user2_id_fkey (*)
+          user1:chat_users!private_conversations_user1_id_fkey (id, name, username, phone, avatar_url),
+          user2:chat_users!private_conversations_user2_id_fkey (id, name, username, phone, avatar_url),
+          last_message:private_messages!private_messages_conversation_id_fkey (
+            id,
+            message,
+            created_at,
+            sender_id,
+            message_type,
+            media_url,
+            is_read
+          )
         `)
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order('last_message_at', { ascending: false });
@@ -81,23 +92,30 @@ export const privateMessageService = {
 
       console.log('Fetched conversations:', data?.length || 0);
 
-      // Process conversations to get the "other user" and add message details
-      const conversationsWithDetails = await Promise.all(
-        data.map(async (conversation: any) => {
-          // Determine the other user (not the current user)
-          const otherUser = conversation.user1_id === userId ? conversation.user2 : conversation.user1;
-          
-          const lastMessage = await this.getLastMessage(conversation.id);
-          const unreadCount = await this.getUnreadMessagesCount(conversation.id, userId);
-          
-          return {
-            ...conversation,
-            other_user: otherUser,
-            last_message: lastMessage,
-            unread_count: unreadCount,
-          };
-        })
-      );
+      // Process conversations efficiently without additional queries
+      const conversationsWithDetails = data.map((conversation: any) => {
+        // Determine the other user (not the current user)
+        const otherUser = conversation.user1_id === userId ? conversation.user2 : conversation.user1;
+        
+        // Get the most recent message from the last_message array
+        const lastMessage = conversation.last_message?.length > 0 
+          ? conversation.last_message.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0]
+          : null;
+
+        // Calculate unread count efficiently (messages not sent by current user and not read)
+        const unreadCount = conversation.last_message?.filter((msg: any) => 
+          msg.sender_id !== userId && !msg.is_read
+        ).length || 0;
+        
+        return {
+          ...conversation,
+          other_user: otherUser,
+          last_message: lastMessage,
+          unread_count: unreadCount,
+        };
+      });
 
       console.log('Processed conversations with details:', conversationsWithDetails.length);
       return conversationsWithDetails;
@@ -162,11 +180,11 @@ export const privateMessageService = {
     }
   },
 
-  async getMessages(conversationId: number, sessionToken?: string): Promise<PrivateMessage[]> {
+  async getConversationMessages(conversationId: number, sessionToken?: string): Promise<PrivateMessage[]> {
     try {
       debugLog('Fetching messages for conversation:', conversationId, 'with session:', sessionToken ? 'provided' : 'none');
       
-      // Set session context if provided
+      // Set session context if provided (for RLS)
       if (sessionToken) {
         try {
           await supabase.rpc('set_session_context', { session_token: sessionToken });
@@ -526,9 +544,6 @@ export const privateMessageService = {
     }
   },
 
-  async getConversationMessages(conversationId: number, sessionToken?: string): Promise<PrivateMessage[]> {
-    return this.getMessages(conversationId, sessionToken);
-  },
 
   async markConversationAsRead(conversationId: number, userId: number): Promise<void> {
     try {

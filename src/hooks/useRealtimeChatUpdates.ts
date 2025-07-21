@@ -5,6 +5,18 @@ import { privateMessageService } from '@/lib/privateMessageService';
 import { messengerService } from '@/lib/messengerService';
 import type { MessengerUser, ChatRoom } from '@/lib/messengerService';
 
+// Simple debounce function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 interface UseRealtimeChatUpdatesProps {
   currentUser: MessengerUser;
   sessionToken: string;
@@ -21,36 +33,47 @@ export const useRealtimeChatUpdates = ({
   onRoomsUpdate
 }: UseRealtimeChatUpdatesProps) => {
 
-  const refreshConversations = useCallback(async () => {
-    if (isOffline || !currentUser) return;
-    
-    try {
-      const conversationsData = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
-      onConversationsUpdate(conversationsData);
+  // Debounced refresh functions to prevent excessive API calls
+  const debouncedConversationsRefresh = useCallback(
+    debounce(async () => {
+      if (isOffline || !currentUser) return;
       
-      // Update cache
-      localStorage.setItem('cached_conversations', JSON.stringify(conversationsData));
-      console.log('Conversations refreshed:', conversationsData.length);
-    } catch (error) {
-      console.error('Error refreshing conversations:', error);
-    }
-  }, [currentUser, sessionToken, isOffline, onConversationsUpdate]);
+      try {
+        const conversationsData = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
+        onConversationsUpdate(conversationsData);
+        
+        // Update cache
+        localStorage.setItem('cached_conversations', JSON.stringify(conversationsData));
+        console.log('Conversations refreshed:', conversationsData.length);
+      } catch (error) {
+        console.error('Error refreshing conversations:', error);
+      }
+    }, 300), // 300ms debounce
+    [currentUser, sessionToken, isOffline, onConversationsUpdate]
+  );
 
-  const refreshRooms = useCallback(async () => {
-    if (isOffline || !currentUser) return;
-    
-    try {
-      const roomsData = await messengerService.getRooms();
-      const activeRooms = roomsData.filter(room => room.is_active);
-      onRoomsUpdate(activeRooms);
+  const debouncedRoomsRefresh = useCallback(
+    debounce(async () => {
+      if (isOffline || !currentUser) return;
       
-      // Update cache
-      localStorage.setItem('cached_rooms', JSON.stringify(activeRooms));
-      console.log('Rooms refreshed:', activeRooms.length);
-    } catch (error) {
-      console.error('Error refreshing rooms:', error);
-    }
-  }, [isOffline, onRoomsUpdate]);
+      try {
+        const roomsData = await messengerService.getRooms();
+        const activeRooms = roomsData.filter(room => room.is_active);
+        onRoomsUpdate(activeRooms);
+        
+        // Update cache
+        localStorage.setItem('cached_rooms', JSON.stringify(activeRooms));
+        console.log('Rooms refreshed:', activeRooms.length);
+      } catch (error) {
+        console.error('Error refreshing rooms:', error);
+      }
+    }, 300), // 300ms debounce
+    [isOffline, onRoomsUpdate]
+  );
+
+  // Legacy functions for backward compatibility
+  const refreshConversations = debouncedConversationsRefresh;
+  const refreshRooms = debouncedRoomsRefresh;
 
   useEffect(() => {
     if (isOffline || !currentUser || !sessionToken) return;
@@ -72,7 +95,7 @@ export const useRealtimeChatUpdates = ({
           if (newConv && typeof newConv === 'object' && 
               ((newConv as any).user1_id === currentUser.id || (newConv as any).user2_id === currentUser.id)) {
             console.log('Conversation change detected, refreshing...');
-            refreshConversations();
+            debouncedConversationsRefresh();
           }
         }
       )
@@ -96,7 +119,7 @@ export const useRealtimeChatUpdates = ({
               if (conversation && 
                   (conversation.user1_id === currentUser.id || conversation.user2_id === currentUser.id)) {
                 console.log('Private message affecting current user, refreshing conversations...');
-                refreshConversations();
+                debouncedConversationsRefresh();
               }
             } catch (error) {
               console.error('Error checking conversation for message update:', error);
@@ -123,7 +146,7 @@ export const useRealtimeChatUpdates = ({
               newMessage.recipient_id === currentUser.id ||
               newMessage.room_id) {
             console.log('Messenger message detected, refreshing rooms...');
-            refreshRooms();
+            debouncedRoomsRefresh();
           }
         }
       )
@@ -141,7 +164,7 @@ export const useRealtimeChatUpdates = ({
         },
         (payload) => {
           console.log('Room change detected, refreshing rooms...');
-          refreshRooms();
+          debouncedRoomsRefresh();
         }
       )
       .subscribe();
@@ -160,7 +183,7 @@ export const useRealtimeChatUpdates = ({
           const conversation = payload.new || payload.old;
           if (conversation && (conversation as any).user_id === currentUser.id) {
             console.log('Support conversation change detected, refreshing conversations...');
-            refreshConversations();
+            debouncedConversationsRefresh();
           }
         }
       )
@@ -173,7 +196,7 @@ export const useRealtimeChatUpdates = ({
       supabase.removeChannel(roomsChannel);
       supabase.removeChannel(supportConversationsChannel);
     };
-  }, [currentUser, sessionToken, isOffline, refreshConversations, refreshRooms]);
+  }, [currentUser, sessionToken, isOffline, debouncedConversationsRefresh, debouncedRoomsRefresh]);
 
   return {
     refreshConversations,
