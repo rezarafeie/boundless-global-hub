@@ -418,19 +418,20 @@ const EnrollAdmin: React.FC = () => {
 
   return (
     <MainLayout>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          {/* Admin Sidebar - Only shown on desktop */}
+      <div className="flex min-h-screen w-full">
+        {/* Desktop Sidebar - Always visible */}
+        <div className="hidden lg:block">
           <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
-          
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto bg-background">
-            {/* Mobile Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
-              <div className="flex items-center justify-end p-4">
-                <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
-              </div>
+        </div>
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto bg-background">
+          {/* Mobile Header */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
+            <div className="flex items-center justify-start px-4 py-3">
+              <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
             </div>
+          </div>
             
             <div className="container mx-auto px-4 md:px-6 py-6 max-w-none">
             
@@ -849,11 +850,10 @@ const EnrollAdmin: React.FC = () => {
               </div>
             )}
             </div>
-            </main>
+          </main>
         </div>
-      </SidebarProvider>
 
-      {/* Enrollment Details Modal */}
+        {/* Enrollment Details Modal */}
       <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1018,7 +1018,6 @@ const EnrollAdmin: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-
     </MainLayout>
   );
 };
