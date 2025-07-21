@@ -666,6 +666,7 @@ export type Database = {
           updated_at: string
           usd_price: number | null
           use_dollar_price: boolean
+          use_landing_page_merge: boolean
           woocommerce_create_access: boolean | null
           woocommerce_product_id: number | null
         }
@@ -688,6 +689,7 @@ export type Database = {
           updated_at?: string
           usd_price?: number | null
           use_dollar_price?: boolean
+          use_landing_page_merge?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }
@@ -710,6 +712,7 @@ export type Database = {
           updated_at?: string
           usd_price?: number | null
           use_dollar_price?: boolean
+          use_landing_page_merge?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }

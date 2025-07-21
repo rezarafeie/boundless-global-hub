@@ -12,6 +12,7 @@ const PassiveIncomePage = () => {
       benefitTwo="راه‌اندازی سیستم‌های درآمدزا بدون حضور مستمر"
       iconType="book"
       iframeUrl="https://rafeie.com/daramad"
+      courseSlug="passive-income"
     />
   );
 };

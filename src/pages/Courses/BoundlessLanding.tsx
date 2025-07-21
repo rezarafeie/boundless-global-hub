@@ -39,12 +39,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import SectionTitle from "@/components/SectionTitle";
 import InstructorProfile from "@/components/InstructorProfile";
 import AparatPlayer from "@/components/AparatPlayer";
+import { useCourseSettings } from "@/hooks/useCourseSettings";
 
 const BoundlessLanding = () => {
   const [showIframeModal, setShowIframeModal] = useState(false);
   const [currentHeadline, setCurrentHeadline] = useState({ title: "", subtitle: "" });
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
+  const { getEnrollUrl } = useCourseSettings('boundless');
 
   // Set countdown to ۱۷ ژوئن، ساعت ۱۲ ظهر (June 17th, 12:00 PM - 2025)
   const countdownEndDate = new Date(2025, 5, 17, 12, 0, 0);
@@ -186,7 +188,15 @@ const BoundlessLanding = () => {
   ];
 
   const handleEnrollClick = () => {
-    window.open('https://auth.rafiei.co/?add-to-cart=5311', '_blank');
+    const enrollUrl = getEnrollUrl('boundless', 'https://auth.rafiei.co/?add-to-cart=5311');
+    
+    if (enrollUrl.startsWith('/')) {
+      // Internal URL - navigate directly
+      window.location.href = enrollUrl;
+    } else {
+      // External URL - open in new tab
+      window.open(enrollUrl, '_blank');
+    }
   };
 
   const handleStudentLoginClick = () => {

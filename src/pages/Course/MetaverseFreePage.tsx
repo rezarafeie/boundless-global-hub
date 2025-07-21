@@ -12,6 +12,7 @@ const MetaverseFreePage = () => {
       benefitTwo="آشنایی با فرصت‌های کسب‌وکار در فضای مجازی"
       iconType="message"
       iframeUrl="https://rafeie.com/start"
+      courseSlug="metaverse"
     />
   );
 };

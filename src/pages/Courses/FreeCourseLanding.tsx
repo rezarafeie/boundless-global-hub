@@ -28,6 +28,7 @@ import {
 import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
 import IframeModal from "@/components/IframeModal";
+import { useCourseSettings } from "@/hooks/useCourseSettings";
 
 interface FreeCourseLandingProps {
   title: string;
@@ -37,6 +38,7 @@ interface FreeCourseLandingProps {
   benefitTwo: string;
   iconType: "book" | "graduation" | "message";
   iframeUrl: string;
+  courseSlug?: string; // Optional course slug for merge functionality
 }
 
 const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
@@ -46,9 +48,11 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
   benefitOne,
   benefitTwo,
   iconType,
-  iframeUrl
+  iframeUrl,
+  courseSlug
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { getEnrollUrl } = useCourseSettings(courseSlug || '');
   
   // Set countdown target for 7 days from now
   const targetDate = new Date();
@@ -69,7 +73,24 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
   };
 
   const handleStartCourse = () => {
-    setIsModalOpen(true);
+    if (courseSlug) {
+      const enrollUrl = getEnrollUrl(courseSlug, iframeUrl);
+      
+      if (enrollUrl.startsWith('/')) {
+        // Internal URL - navigate directly
+        window.location.href = enrollUrl;
+      } else {
+        // External URL - open modal or new tab
+        if (enrollUrl === iframeUrl) {
+          setIsModalOpen(true);
+        } else {
+          window.open(enrollUrl, '_blank');
+        }
+      }
+    } else {
+      // Default behavior - open modal
+      setIsModalOpen(true);
+    }
   };
 
   const containerVariants = {

@@ -28,6 +28,7 @@ interface Course {
   is_spotplayer_enabled?: boolean;
   create_test_license?: boolean;
   woocommerce_create_access?: boolean;
+  use_landing_page_merge?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -64,7 +65,8 @@ const CourseManagement: React.FC = () => {
     spotplayer_course_id: '',
     is_spotplayer_enabled: false,
     create_test_license: false,
-    woocommerce_create_access: true
+    woocommerce_create_access: true,
+    use_landing_page_merge: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -169,7 +171,8 @@ const CourseManagement: React.FC = () => {
       spotplayer_course_id: '',
       is_spotplayer_enabled: false,
       create_test_license: false,
-      woocommerce_create_access: true
+      woocommerce_create_access: true,
+      use_landing_page_merge: false
     });
     setSelectedCourse(null);
     setExchangeRate(null);
@@ -191,7 +194,8 @@ const CourseManagement: React.FC = () => {
       spotplayer_course_id: course.spotplayer_course_id || '',
       is_spotplayer_enabled: course.is_spotplayer_enabled || false,
       create_test_license: course.create_test_license || false,
-      woocommerce_create_access: course.woocommerce_create_access !== false
+      woocommerce_create_access: course.woocommerce_create_access !== false,
+      use_landing_page_merge: course.use_landing_page_merge || false
     });
     
     // If editing a dollar-priced course, fetch the exchange rate
@@ -228,7 +232,8 @@ const CourseManagement: React.FC = () => {
         spotplayer_course_id: formData.spotplayer_course_id.trim() || null,
         is_spotplayer_enabled: formData.is_spotplayer_enabled,
         create_test_license: formData.create_test_license,
-        woocommerce_create_access: formData.woocommerce_create_access
+        woocommerce_create_access: formData.woocommerce_create_access,
+        use_landing_page_merge: formData.use_landing_page_merge
       };
 
       if (selectedCourse) {
@@ -537,6 +542,23 @@ const CourseManagement: React.FC = () => {
                   <Label htmlFor="woocommerce_create_access">ایجاد دسترسی در WooCommerce</Label>
                   <p className="text-sm text-muted-foreground">
                     در صورت غیرفعال بودن، دکمه دسترسی به دوره حذف می‌شود
+                  </p>
+                </div>
+              </div>
+
+              {/* Landing Page Merge Section */}
+              <div className="border-t pt-4 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">تنظیمات صفحه فرود</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="use_landing_page_merge"
+                    checked={formData.use_landing_page_merge}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, use_landing_page_merge: checked }))}
+                  />
+                  <Label htmlFor="use_landing_page_merge">ادغام دکمه شروع دوره</Label>
+                  <p className="text-sm text-muted-foreground">
+                    جایگزین کردن لینک خارجی با صفحه ثبت‌نام داخلی (/enroll?course=slug)
                   </p>
                 </div>
               </div>

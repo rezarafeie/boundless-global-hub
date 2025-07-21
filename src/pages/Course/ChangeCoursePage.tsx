@@ -12,6 +12,7 @@ const ChangeCoursePage = () => {
       benefitTwo="ایجاد برنامه‌ای مشخص برای رسیدن به اهداف"
       iconType="book"
       iframeUrl="https://rafeie.com/taghir"
+      courseSlug="change"
     />
   );
 };
