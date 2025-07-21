@@ -64,6 +64,7 @@ serve(async (req) => {
     let chatType = 'unknown';
     let chatName = '';
     let topicName = '';
+    let receiverEmail = '';
 
     if (messageData.room_id) {
       chatType = 'group';
@@ -90,17 +91,41 @@ serve(async (req) => {
     } else if (messageData.recipient_id) {
       chatType = 'private';
       
-      // Get recipient name
+      // Get recipient name and email
       const { data: recipientData } = await supabase
         .from('chat_users')
-        .select('name')
+        .select('name, email')
         .eq('id', messageData.recipient_id)
         .single();
       
       chatName = recipientData?.name || 'Unknown User';
+      receiverEmail = recipientData?.email || '';
     } else if (messageData.conversation_id) {
       chatType = 'support';
       chatName = 'Support';
+      
+      // For support conversations, get receiver email based on conversation type
+      if (messageData.sender_id === 1) {
+        // Message from support to user - get user email
+        const { data: conversationData } = await supabase
+          .from('support_conversations')
+          .select('user_id')
+          .eq('id', messageData.conversation_id)
+          .single();
+        
+        if (conversationData) {
+          const { data: userData } = await supabase
+            .from('chat_users')
+            .select('email')
+            .eq('id', conversationData.user_id)
+            .single();
+          
+          receiverEmail = userData?.email || '';
+        }
+      } else {
+        // Message from user to support - receiver is support (no specific email)
+        receiverEmail = 'support@company.com'; // or leave empty
+      }
     }
 
     // Get webhook configurations for message_sent event
@@ -137,7 +162,8 @@ serve(async (req) => {
           message_content: messageData.message,
           sender_name: senderData.name || 'Unknown',
           sender_phone: senderData.phone || '',
-          sender_email: senderData.email || '', // Added email field
+          sender_email: senderData.email || '',
+          receiver_email: receiverEmail || '',
           chat_type: chatType,
           chat_name: chatName,
           topic_name: topicName,
