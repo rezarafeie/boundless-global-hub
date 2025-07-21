@@ -35,6 +35,8 @@ interface ManualPaymentSectionProps {
   selectedMethod: 'zarinpal' | 'manual';
   finalRialPrice?: number | null; // For dollar-priced courses
   discountedPrice?: number | null; // For discounted price
+  salePrice?: number | null; // For sale price
+  isOnSale?: boolean; // Sale status
 }
 
 const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
@@ -44,6 +46,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   selectedMethod,
   finalRialPrice,
   discountedPrice,
+  salePrice,
+  isOnSale,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -191,8 +195,21 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       console.log('🔗 Public URL generated:', publicUrl);
 
       // Create enrollment with uploaded receipt
-      // Use discounted price if available, then finalRialPrice for dollar courses, fallback to course.price
-      const paymentAmount = discountedPrice !== null ? discountedPrice : (finalRialPrice || course.price);
+      // PRIORITY: Sale price > Discount price > Final Rial price (for USD) > Course price
+      let paymentAmount = course.price;
+      
+      if (isOnSale && salePrice !== null) {
+        paymentAmount = salePrice;
+        console.log('🏷️ MANUAL PAYMENT - Using SALE PRICE:', salePrice);
+      } else if (discountedPrice !== null) {
+        paymentAmount = discountedPrice;
+        console.log('🎯 MANUAL PAYMENT - Using DISCOUNT PRICE:', discountedPrice);
+      } else if (finalRialPrice) {
+        paymentAmount = finalRialPrice;
+        console.log('💱 MANUAL PAYMENT - Using FINAL RIAL PRICE:', finalRialPrice);
+      } else {
+        console.log('💰 MANUAL PAYMENT - Using BASE PRICE:', course.price);
+      }
       
       const enrollmentData = {
         course_id: course.id,
@@ -314,11 +331,13 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                  <div className="flex items-center justify-between">
                    <span>مبلغ قابل پرداخت:</span>
                    <span className="text-xl">
-                     {discountedPrice !== null 
-                       ? formatPrice(discountedPrice)
-                       : finalRialPrice 
-                         ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                         : formatPrice(course.price)
+                     {isOnSale && salePrice !== null
+                       ? formatPrice(salePrice)
+                       : discountedPrice !== null 
+                         ? formatPrice(discountedPrice)
+                         : finalRialPrice 
+                           ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                           : formatPrice(course.price)
                      }
                    </span>
                  </div>

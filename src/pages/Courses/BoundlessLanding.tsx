@@ -118,64 +118,6 @@ const BoundlessLanding = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch course data for sale information
-  useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('courses')
-          .select('*')
-          .eq('slug', 'boundless')
-          .eq('is_active', true)
-          .single();
-
-        if (data) {
-          setCourse(data);
-          
-          // Check if course is on sale
-          const now = new Date();
-          const saleExpiry = data.sale_expires_at ? new Date(data.sale_expires_at) : null;
-          const isSaleActive = data.is_sale_enabled && 
-                              data.sale_price !== null && 
-                              saleExpiry && 
-                              now < saleExpiry;
-          
-          setIsOnSale(isSaleActive);
-          
-          if (isSaleActive && data.sale_price) {
-            if (data.use_dollar_price) {
-              // Convert sale price from USD to IRR
-              try {
-                const rialAmount = await TetherlandService.convertUSDToIRR(data.sale_price);
-                setSalePrice(rialAmount);
-              } catch (error) {
-                console.error('Error converting sale price:', error);
-                setSalePrice(data.sale_price);
-              }
-            } else {
-              setSalePrice(data.sale_price);
-            }
-          }
-
-          // Get final price in rial for dollar courses
-          if (data.use_dollar_price && data.usd_price) {
-            try {
-              const rialAmount = await TetherlandService.convertUSDToIRR(data.usd_price);
-              setFinalRialPrice(rialAmount);
-            } catch (error) {
-              console.error('Error converting USD price:', error);
-              setFinalRialPrice(data.price);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching course:', error);
-      }
-    };
-
-    fetchCourse();
-  }, []);
-
   const courseContent = [
     { title: "نگرش بدون مرز", icon: Globe },
     { title: "دراپ‌شیپینگ", icon: DollarSign },

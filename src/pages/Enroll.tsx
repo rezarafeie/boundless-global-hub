@@ -325,17 +325,22 @@ const Enroll: React.FC = () => {
         }
       } else {
         // Paid course - proceed with Zarinpal payment
-        // Use sale price if available, otherwise use calculated price for dollar courses or regular price
+        // CRITICAL: Always prioritize sale price when active
         let basePrice = course.use_dollar_price && finalRialPrice 
           ? finalRialPrice 
           : course.price;
         
-        // Priority: Sale price > Discount price > Base price
         let paymentAmount = basePrice;
+        
+        // PRIORITY ORDER: Sale price FIRST, then discount, then base
         if (isOnSale && salePrice !== null) {
           paymentAmount = salePrice;
+          console.log('🏷️ SALE ACTIVE - Using sale price for payment:', salePrice);
         } else if (discountedPrice !== null) {
           paymentAmount = discountedPrice;
+          console.log('🎯 Using discount price for payment:', discountedPrice);
+        } else {
+          console.log('💰 Using base price for payment:', basePrice);
         }
           
         const response = await supabase.functions.invoke('zarinpal-request', {
@@ -773,6 +778,8 @@ const Enroll: React.FC = () => {
                         selectedMethod={paymentMethod}
                         finalRialPrice={finalRialPrice}
                         discountedPrice={discountedPrice}
+                        salePrice={salePrice}
+                        isOnSale={isOnSale}
                       />
 
                       {/* Discount Section - Only show for paid courses */}
