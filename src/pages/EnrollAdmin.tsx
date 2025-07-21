@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ import {
   sendEnrollmentManualPaymentRejected,
   sendEnrollmentManualPaymentSubmitted
 } from '@/lib/enrollmentWebhookService';
+import { DataImportSection } from '@/components/admin/DataImportSection';
 
 interface Course {
   id: string;
@@ -75,13 +76,13 @@ const EnrollAdmin: React.FC = () => {
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import'>('dashboard');
 
   useEffect(() => {
     // Check for tab parameter and set active view
     const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks', 'reports'].includes(tab)) {
-      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports');
+    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks', 'reports', 'data-import'].includes(tab)) {
+      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import');
     }
     
     Promise.all([fetchEnrollments(), fetchCourses()]);
@@ -334,6 +335,11 @@ const EnrollAdmin: React.FC = () => {
       id: 'enrollments',
       label: 'مدیریت ثبت‌نام‌ها',
       icon: CreditCard,
+    },
+    {
+      id: 'data-import',
+      label: 'وارد کردن داده',
+      icon: Upload,
     },
     {
       id: 'discounts',
@@ -670,6 +676,17 @@ const EnrollAdmin: React.FC = () => {
             {activeView === 'reports' && (
               <div className="space-y-6">
                 <AnalyticsReports />
+              </div>
+            )}
+
+            {/* Data Import View */}
+            {activeView === 'data-import' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold">وارد کردن داده</h1>
+                  <p className="text-muted-foreground mt-2">وارد کردن کاربران از فایل CSV و اختصاص دسترسی به دوره‌ها</p>
+                </div>
+                <DataImportSection />
               </div>
             )}
 

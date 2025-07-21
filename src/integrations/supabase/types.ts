@@ -1022,6 +1022,44 @@ export type Database = {
           },
         ]
       }
+      import_logs: {
+        Row: {
+          course_id: string
+          created_at: string
+          existing_users_updated: number
+          id: string
+          new_users_created: number
+          total_rows: number
+          uploaded_by: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          existing_users_updated?: number
+          id?: string
+          new_users_created?: number
+          total_rows?: number
+          uploaded_by: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          existing_users_updated?: number
+          id?: string
+          new_users_created?: number
+          total_rows?: number
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_sections: {
         Row: {
           created_at: string | null
