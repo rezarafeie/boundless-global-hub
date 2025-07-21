@@ -65,7 +65,7 @@ serve(async (req) => {
       );
     }
 
-    const callbackUrl = `https://f1b84616-3d17-49e3-9831-9bf37bdf8198.lovableproject.com/enroll/success?course=${courseSlug}&email=${encodeURIComponent(email)}&enrollment=${enrollment.id}`;
+    const callbackUrl = `https://academy.rafiei.co/enroll/success?course=${courseSlug}&email=${encodeURIComponent(email)}&enrollment=${enrollment.id}`;
 
     const zarinpalPayload = {
       merchant_id: merchantId,
