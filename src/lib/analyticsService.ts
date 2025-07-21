@@ -1,3 +1,4 @@
+
 // Service for handling real Lovable analytics data
 export const parseRealAnalyticsData = (analyticsString: string) => {
   try {
@@ -155,6 +156,7 @@ export const readProjectAnalytics = async (
       granularity
     });
     
+    console.log('✅ Real analytics data received successfully');
     return analyticsData;
   } catch (error) {
     console.error('❌ Error fetching real analytics data:', error);
