@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Save, X, ExternalLink, Code, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -84,6 +84,7 @@ const CourseContentManagement: React.FC = () => {
     file_url: '',
     section_id: ''
   });
+  const [videoInputMode, setVideoInputMode] = useState<'url' | 'embed'>('url');
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -179,6 +180,11 @@ const CourseContentManagement: React.FC = () => {
       file_url: lesson.file_url || '',
       section_id: lesson.section_id
     });
+    
+    // Detect if it's an embed code or URL
+    const videoUrl = lesson.video_url || '';
+    setVideoInputMode(videoUrl.includes('<') && videoUrl.includes('>') ? 'embed' : 'url');
+    
     setShowLessonModal(true);
   };
 
@@ -436,6 +442,113 @@ const CourseContentManagement: React.FC = () => {
     }
   };
 
+// Video Embed Component
+const VideoEmbed: React.FC<{ embedCode: string; className?: string }> = ({ embedCode, className = "" }) => {
+  // Check if it's HTML embed code (contains < and >)
+  const isHtmlEmbed = embedCode.includes('<') && embedCode.includes('>');
+  
+  if (isHtmlEmbed) {
+    // Sanitize and render HTML embed code
+    return (
+      <div 
+        className={`video-embed ${className}`}
+        dangerouslySetInnerHTML={{ __html: embedCode }}
+      />
+    );
+  } else {
+    // Treat as regular URL
+    return (
+      <div className={`${className}`}>
+        <a 
+          href={embedCode} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+        >
+          <ExternalLink className="h-4 w-4" />
+          مشاهده ویدیو
+        </a>
+      </div>
+    );
+  }
+};
+
+// Video Input Component
+const VideoInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  mode: 'url' | 'embed';
+  onModeChange: (mode: 'url' | 'embed') => void;
+}> = ({ value, onChange, mode, onModeChange }) => {
+  const [showPreview, setShowPreview] = useState(false);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Label>ویدیو درس</Label>
+        <div className="flex bg-muted rounded-lg p-1">
+          <Button
+            type="button"
+            variant={mode === 'url' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onModeChange('url')}
+            className="text-xs"
+          >
+            <ExternalLink className="h-3 w-3 ml-1" />
+            لینک
+          </Button>
+          <Button
+            type="button"
+            variant={mode === 'embed' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onModeChange('embed')}
+            className="text-xs"
+          >
+            <Code className="h-3 w-3 ml-1" />
+            کد جاسازی
+          </Button>
+        </div>
+      </div>
+
+      {mode === 'url' ? (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="https://example.com/video.mp4"
+        />
+      ) : (
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder='<div id="49476976912"><script type="text/JavaScript" src="https://www.aparat.com/embed/i6095n5?data[rnddiv]=49476976912&data[responsive]=yes"></script></div>'
+          rows={4}
+        />
+      )}
+
+      {value && (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPreview(!showPreview)}
+          >
+            <Eye className="h-4 w-4 ml-1" />
+            {showPreview ? 'مخفی کردن پیش‌نمایش' : 'نمایش پیش‌نمایش'}
+          </Button>
+        </div>
+      )}
+
+      {showPreview && value && (
+        <div className="border rounded-lg p-4 bg-muted/50">
+          <h4 className="font-medium mb-2">پیش‌نمایش:</h4>
+          <VideoEmbed embedCode={value} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Sortable Section Component
 const SortableSection: React.FC<{ 
   section: CourseSection; 
@@ -553,27 +666,44 @@ const SortableLesson: React.FC<{
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+      className="flex items-start justify-between p-4 bg-muted/50 rounded-lg space-y-2"
     >
-      <div className="flex items-center gap-2">
-        <GripVertical 
-          className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" 
-          {...attributes}
-          {...listeners}
-        />
-        <span className="font-medium">{lesson.title}</span>
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <GripVertical 
+            className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" 
+            {...attributes}
+            {...listeners}
+          />
+          <span className="font-medium">{lesson.title}</span>
+          {lesson.video_url && (
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              ویدیو
+            </span>
+          )}
+          {lesson.file_url && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+              فایل
+            </span>
+          )}
+        </div>
+        
+        {/* Show video embed if exists */}
         {lesson.video_url && (
-          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-            ویدیو
-          </span>
+          <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <VideoEmbed embedCode={lesson.video_url} />
+          </div>
         )}
-        {lesson.file_url && (
-          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-            فایل
-          </span>
+        
+        {/* Show lesson content preview if exists */}
+        {lesson.content && (
+          <div className="mt-2 text-sm text-muted-foreground">
+            <p className="truncate">{lesson.content.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
+          </div>
         )}
       </div>
-      <div className="flex gap-2">
+      
+      <div className="flex gap-2 flex-shrink-0 self-start">
         <Button
           size="sm"
           variant="outline"
@@ -715,15 +845,12 @@ const SortableLesson: React.FC<{
                     rows={6}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lesson-video">لینک ویدیو</Label>
-                  <Input
-                    id="lesson-video"
-                    value={lessonForm.video_url}
-                    onChange={(e) => setLessonForm(prev => ({ ...prev, video_url: e.target.value }))}
-                    placeholder="https://example.com/video.mp4"
-                  />
-                </div>
+                <VideoInput
+                  value={lessonForm.video_url}
+                  onChange={(value) => setLessonForm(prev => ({ ...prev, video_url: value }))}
+                  mode={videoInputMode}
+                  onModeChange={setVideoInputMode}
+                />
                 <div>
                   <Label htmlFor="lesson-file">لینک فایل</Label>
                   <Input
