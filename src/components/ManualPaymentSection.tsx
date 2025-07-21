@@ -34,6 +34,7 @@ interface ManualPaymentSectionProps {
   onPaymentMethodChange: (method: 'zarinpal' | 'manual') => void;
   selectedMethod: 'zarinpal' | 'manual';
   finalRialPrice?: number | null; // For dollar-priced courses
+  discountedPrice?: number | null; // For discounted price
 }
 
 const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
@@ -42,6 +43,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   onPaymentMethodChange,
   selectedMethod,
   finalRialPrice,
+  discountedPrice,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -189,8 +191,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       console.log('🔗 Public URL generated:', publicUrl);
 
       // Create enrollment with uploaded receipt
-      // Use finalRialPrice for dollar courses, fallback to course.price
-      const paymentAmount = finalRialPrice || course.price;
+      // Use discounted price if available, then finalRialPrice for dollar courses, fallback to course.price
+      const paymentAmount = discountedPrice !== null ? discountedPrice : (finalRialPrice || course.price);
       
       const enrollmentData = {
         course_id: course.id,
@@ -309,15 +311,17 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
           <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
             <CardHeader>
               <CardTitle className="text-amber-800 dark:text-amber-200 text-lg space-y-2">
-                <div className="flex items-center justify-between">
-                  <span>مبلغ قابل پرداخت:</span>
-                  <span className="text-xl">
-                    {finalRialPrice 
-                      ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                      : formatPrice(course.price)
-                    }
-                  </span>
-                </div>
+                 <div className="flex items-center justify-between">
+                   <span>مبلغ قابل پرداخت:</span>
+                   <span className="text-xl">
+                     {discountedPrice !== null 
+                       ? formatPrice(discountedPrice)
+                       : finalRialPrice 
+                         ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                         : formatPrice(course.price)
+                     }
+                   </span>
+                 </div>
                 
                 {/* Show USD price if available */}
                 {course.use_dollar_price && course.usd_price && (

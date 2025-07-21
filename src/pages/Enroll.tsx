@@ -629,6 +629,7 @@ const Enroll: React.FC = () => {
                   onPaymentMethodChange={setPaymentMethod}
                   selectedMethod={paymentMethod}
                   finalRialPrice={finalRialPrice}
+                  discountedPrice={discountedPrice}
                 />
 
                   {/* Discount Section */}
