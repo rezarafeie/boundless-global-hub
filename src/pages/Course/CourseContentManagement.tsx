@@ -31,11 +31,22 @@ import {
   CSS,
 } from '@dnd-kit/utilities';
 
+interface CourseTitleGroup {
+  id: string;
+  title: string;
+  icon: string;
+  order_index: number;
+  course_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface CourseSection {
   id: string;
   title: string;
   order_index: number;
   course_id: string;
+  title_group_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -65,18 +76,22 @@ const CourseContentManagement: React.FC = () => {
   const { toast } = useToast();
   
   const [course, setCourse] = useState<Course | null>(null);
+  const [titleGroups, setTitleGroups] = useState<CourseTitleGroup[]>([]);
   const [sections, setSections] = useState<CourseSection[]>([]);
   const [lessons, setLessons] = useState<CourseLesson[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Modal states
+  const [showTitleGroupModal, setShowTitleGroupModal] = useState(false);
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
+  const [editingTitleGroup, setEditingTitleGroup] = useState<CourseTitleGroup | null>(null);
   const [editingSection, setEditingSection] = useState<CourseSection | null>(null);
   const [editingLesson, setEditingLesson] = useState<CourseLesson | null>(null);
   
   // Form states
-  const [sectionForm, setSectionForm] = useState({ title: '' });
+  const [titleGroupForm, setTitleGroupForm] = useState({ title: '', icon: '📚' });
+  const [sectionForm, setSectionForm] = useState({ title: '', title_group_id: '' });
   const [lessonForm, setLessonForm] = useState({
     title: '',
     content: '',
@@ -112,6 +127,16 @@ const CourseContentManagement: React.FC = () => {
 
       if (courseError) throw courseError;
       setCourse(courseData);
+
+      // Fetch title groups
+      const { data: titleGroupsData, error: titleGroupsError } = await supabase
+        .from('course_title_groups')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_index');
+
+      if (titleGroupsError) throw titleGroupsError;
+      setTitleGroups(titleGroupsData || []);
 
       // Fetch sections
       const { data: sectionsData, error: sectionsError } = await supabase
@@ -149,8 +174,13 @@ const CourseContentManagement: React.FC = () => {
     navigate('/enroll/admin?tab=courses');
   };
 
+  const resetTitleGroupForm = () => {
+    setTitleGroupForm({ title: '', icon: '📚' });
+    setEditingTitleGroup(null);
+  };
+
   const resetSectionForm = () => {
-    setSectionForm({ title: '' });
+    setSectionForm({ title: '', title_group_id: '' });
     setEditingSection(null);
   };
 
@@ -165,9 +195,68 @@ const CourseContentManagement: React.FC = () => {
     setEditingLesson(null);
   };
 
+  const handleSaveTitleGroup = async () => {
+    try {
+      if (editingTitleGroup) {
+        // Update existing title group
+        const { error } = await supabase
+          .from('course_title_groups')
+          .update({
+            title: titleGroupForm.title.trim(),
+            icon: titleGroupForm.icon
+          })
+          .eq('id', editingTitleGroup.id);
+        
+        if (error) throw error;
+        
+        toast({ title: "عنوان با موفقیت ویرایش شد" });
+      } else {
+        // Create new title group
+        const { data: existingGroups } = await supabase
+          .from('course_title_groups')
+          .select('order_index')
+          .eq('course_id', courseId)
+          .order('order_index', { ascending: false })
+          .limit(1);
+
+        const nextOrderIndex = existingGroups?.[0]?.order_index + 1 || 0;
+
+        const { error } = await supabase
+          .from('course_title_groups')
+          .insert({
+            course_id: courseId,
+            title: titleGroupForm.title.trim(),
+            icon: titleGroupForm.icon,
+            order_index: nextOrderIndex
+          });
+        
+        if (error) throw error;
+        
+        toast({ title: "عنوان جدید با موفقیت ایجاد شد" });
+      }
+
+      setShowTitleGroupModal(false);
+      resetTitleGroupForm();
+      fetchCourseData();
+    } catch (error) {
+      console.error('Error saving title group:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در ذخیره عنوان",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditTitleGroup = (titleGroup: CourseTitleGroup) => {
+    setEditingTitleGroup(titleGroup);
+    setTitleGroupForm({ title: titleGroup.title, icon: titleGroup.icon });
+    setShowTitleGroupModal(true);
+  };
+
   const handleEditSection = (section: CourseSection) => {
     setEditingSection(section);
-    setSectionForm({ title: section.title });
+    setSectionForm({ title: section.title, title_group_id: section.title_group_id || '' });
     setShowSectionModal(true);
   };
 
@@ -203,20 +292,32 @@ const CourseContentManagement: React.FC = () => {
         // Update existing section
         const { error } = await supabase
           .from('course_sections')
-          .update({ title: sectionForm.title.trim() })
+          .update({
+            title: sectionForm.title.trim(),
+            title_group_id: sectionForm.title_group_id || null
+          })
           .eq('id', editingSection.id);
         
         if (error) throw error;
         
-        toast({ title: "بخش با موفقیت به‌روزرسانی شد" });
+        toast({ title: "بخش با موفقیت ویرایش شد" });
       } else {
         // Create new section
-        const nextOrderIndex = Math.max(...sections.map(s => s.order_index), 0) + 1;
+        const { data: existingSections } = await supabase
+          .from('course_sections')
+          .select('order_index')
+          .eq('course_id', courseId)
+          .order('order_index', { ascending: false })
+          .limit(1);
+
+        const nextOrderIndex = existingSections?.[0]?.order_index + 1 || 0;
+
         const { error } = await supabase
           .from('course_sections')
           .insert({
-            title: sectionForm.title.trim(),
             course_id: courseId,
+            title: sectionForm.title.trim(),
+            title_group_id: sectionForm.title_group_id || null,
             order_index: nextOrderIndex
           });
         
@@ -295,6 +396,29 @@ const CourseContentManagement: React.FC = () => {
       toast({
         title: "خطا",
         description: "خطا در ذخیره درس",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteTitleGroup = async (titleGroupId: string) => {
+    if (!confirm('آیا از حذف این عنوان و تمام بخش‌های آن اطمینان دارید؟')) return;
+
+    try {
+      const { error } = await supabase
+        .from('course_title_groups')
+        .delete()
+        .eq('id', titleGroupId);
+
+      if (error) throw error;
+      
+      toast({ title: "عنوان حذف شد" });
+      fetchCourseData();
+    } catch (error) {
+      console.error('Error deleting title group:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در حذف عنوان",
         variant: "destructive"
       });
     }
@@ -765,6 +889,59 @@ const SortableLesson: React.FC<{
 
         {/* Action Buttons */}
         <div className="flex gap-4 mb-6">
+          <Dialog open={showTitleGroupModal} onOpenChange={setShowTitleGroupModal}>
+            <DialogTrigger asChild>
+              <Button onClick={resetTitleGroupForm} className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="h-4 w-4 ml-2" />
+                افزودن عنوان جدید
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingTitleGroup ? 'ویرایش عنوان' : 'افزودن عنوان جدید'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="titlegroup-title">عنوان</Label>
+                  <Input
+                    id="titlegroup-title"
+                    value={titleGroupForm.title}
+                    onChange={(e) => setTitleGroupForm({ ...titleGroupForm, title: e.target.value })}
+                    placeholder="مثال: هدایای دوره"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="titlegroup-icon">آیکون</Label>
+                  <div className="flex gap-2 mt-2">
+                    {['📚', '🎁', '💎', '🏆', '⭐', '🔥', '💡', '🎯', '🚀', '🌟'].map((icon) => (
+                      <Button
+                        key={icon}
+                        type="button"
+                        variant={titleGroupForm.icon === icon ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTitleGroupForm({ ...titleGroupForm, icon })}
+                        className="text-lg h-10 w-10 p-0"
+                      >
+                        {icon}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowTitleGroupModal(false)}>
+                    لغو
+                  </Button>
+                  <Button onClick={handleSaveTitleGroup}>
+                    <Save className="h-4 w-4 ml-2" />
+                    ذخیره
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={showSectionModal} onOpenChange={setShowSectionModal}>
             <DialogTrigger asChild>
               <Button onClick={resetSectionForm}>
@@ -780,11 +957,27 @@ const SortableLesson: React.FC<{
               </DialogHeader>
               <div className="space-y-4">
                 <div>
+                  <Label htmlFor="section-titlegroup">عنوان والد (اختیاری)</Label>
+                  <select
+                    id="section-titlegroup"
+                    value={sectionForm.title_group_id}
+                    onChange={(e) => setSectionForm({ ...sectionForm, title_group_id: e.target.value })}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">بدون عنوان والد</option>
+                    {titleGroups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.icon} {group.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <Label htmlFor="section-title">عنوان بخش</Label>
                   <Input
                     id="section-title"
                     value={sectionForm.title}
-                    onChange={(e) => setSectionForm({ title: e.target.value })}
+                    onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })}
                     placeholder="عنوان بخش را وارد کنید"
                   />
                 </div>
@@ -883,40 +1076,120 @@ const SortableLesson: React.FC<{
 
         {/* Content */}
         <div className="space-y-6">
-          {sections.length === 0 ? (
+          {titleGroups.length === 0 && sections.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
                 <p className="text-muted-foreground">
-                  هنوز بخشی برای این دوره ایجاد نشده است
+                  هنوز محتوایی برای این دوره ایجاد نشده است
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  با کلیک روی "افزودن بخش جدید" شروع کنید
+                  با کلیک روی "افزودن عنوان جدید" یا "افزودن بخش جدید" شروع کنید
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleSectionDragEnd}
-            >
-              <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-6">
-                  {sections.map(section => (
-                    <SortableSection
-                      key={section.id}
-                      section={section}
-                      lessons={lessons}
-                      onEditSection={handleEditSection}
-                      onDeleteSection={handleDeleteSection}
-                      onEditLesson={handleEditLesson}
-                      onDeleteLesson={handleDeleteLesson}
-                      onLessonDragEnd={handleLessonDragEnd}
-                    />
-                  ))}
+            <div className="space-y-8">
+              {/* Title Groups with their sections */}
+              {titleGroups.map(titleGroup => {
+                const groupSections = sections.filter(s => s.title_group_id === titleGroup.id);
+                return (
+                  <div key={titleGroup.id} className="space-y-4">
+                    {/* Title Group Header */}
+                    <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{titleGroup.icon}</span>
+                            <div>
+                              <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">
+                                {titleGroup.title}
+                              </h2>
+                              <p className="text-sm text-muted-foreground">
+                                {groupSections.length} بخش در این عنوان
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditTitleGroup(titleGroup)}
+                              className="text-purple-600 hover:text-purple-700"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteTitleGroup(titleGroup.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </Card>
+
+                    {/* Sections under this title group */}
+                    {groupSections.length > 0 && (
+                      <div className="space-y-4 ml-8">
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleSectionDragEnd}
+                        >
+                          <SortableContext items={groupSections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                            {groupSections.map(section => (
+                              <SortableSection
+                                key={section.id}
+                                section={section}
+                                lessons={lessons}
+                                onEditSection={handleEditSection}
+                                onDeleteSection={handleDeleteSection}
+                                onEditLesson={handleEditLesson}
+                                onDeleteLesson={handleDeleteLesson}
+                                onLessonDragEnd={handleLessonDragEnd}
+                              />
+                            ))}
+                          </SortableContext>
+                        </DndContext>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Sections without title groups */}
+              {sections.filter(s => !s.title_group_id).length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-muted-foreground">سایر بخش‌ها</h3>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleSectionDragEnd}
+                  >
+                    <SortableContext 
+                      items={sections.filter(s => !s.title_group_id).map(s => s.id)} 
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {sections.filter(s => !s.title_group_id).map(section => (
+                        <SortableSection
+                          key={section.id}
+                          section={section}
+                          lessons={lessons}
+                          onEditSection={handleEditSection}
+                          onDeleteSection={handleDeleteSection}
+                          onEditLesson={handleEditLesson}
+                          onDeleteLesson={handleDeleteLesson}
+                          onLessonDragEnd={handleLessonDragEnd}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
                 </div>
-              </SortableContext>
-            </DndContext>
+              )}
+            </div>
           )}
         </div>
       </div>

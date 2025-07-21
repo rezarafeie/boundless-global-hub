@@ -672,6 +672,7 @@ export type Database = {
           id: string
           order_index: number
           title: string
+          title_group_id: string | null
           updated_at: string
         }
         Insert: {
@@ -680,6 +681,7 @@ export type Database = {
           id?: string
           order_index: number
           title: string
+          title_group_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -688,11 +690,60 @@ export type Database = {
           id?: string
           order_index?: number
           title?: string
+          title_group_id?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "course_sections_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_sections_title_group_id_fkey"
+            columns: ["title_group_id"]
+            isOneToOne: false
+            referencedRelation: "course_title_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_title_groups: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_title_groups_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
