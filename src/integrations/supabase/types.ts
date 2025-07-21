@@ -655,9 +655,12 @@ export type Database = {
           gifts_link: string | null
           id: string
           is_active: boolean
+          is_sale_enabled: boolean | null
           is_spotplayer_enabled: boolean | null
           price: number
           redirect_url: string | null
+          sale_expires_at: string | null
+          sale_price: number | null
           slug: string
           spotplayer_course_id: string | null
           support_link: string | null
@@ -678,9 +681,12 @@ export type Database = {
           gifts_link?: string | null
           id?: string
           is_active?: boolean
+          is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
           price?: number
           redirect_url?: string | null
+          sale_expires_at?: string | null
+          sale_price?: number | null
           slug: string
           spotplayer_course_id?: string | null
           support_link?: string | null
@@ -701,9 +707,12 @@ export type Database = {
           gifts_link?: string | null
           id?: string
           is_active?: boolean
+          is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
           price?: number
           redirect_url?: string | null
+          sale_expires_at?: string | null
+          sale_price?: number | null
           slug?: string
           spotplayer_course_id?: string | null
           support_link?: string | null
