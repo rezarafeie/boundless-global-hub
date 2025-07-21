@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { farsiToEnglishNumbers } from '@/utils/farsiUtils';
+import { normalizePhone, generatePhoneSearchFormats, formatPhoneForDisplay } from '@/utils/phoneUtils';
 
 interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -50,15 +50,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   useEffect(() => {
     setAuthError('');
   }, [currentStep]);
-
-  // Format phone number for API call
-  const formatPhoneForAPI = (phone: string, countryCode: string) => {
-    if (countryCode === '+98') {
-      return `${countryCode}${phone}`;
-    } else {
-      return `00${countryCode.slice(1)}${phone}`;
-    }
-  };
 
   const validateUsername = (value: string) => {
     const regex = /^[a-z0-9_]{3,20}$/;
@@ -125,23 +116,32 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      // Check if user already exists
-      const formattedPhone = formatPhoneForAPI(formData.phone, formData.countryCode);
-      console.log('Checking if user exists for phone:', formattedPhone);
-      const userExists = await messengerService.getUserByPhone(formattedPhone);
+      console.log('🔍 Checking if user exists for phone input:', formData.phone, 'with country code:', formData.countryCode);
       
-      setFormattedPhoneNumber(formattedPhone);
+      // Normalize the phone input
+      const normalized = normalizePhone(formData.phone, formData.countryCode);
+      console.log('📱 Normalized phone:', normalized);
+      
+      // Set the formatted phone for display and API calls
+      const displayPhone = formatPhoneForDisplay(normalized.phone, normalized.countryCode);
+      setFormattedPhoneNumber(displayPhone);
+      console.log('📞 Display phone set to:', displayPhone);
+      
+      // Check if user already exists using enhanced search
+      const userExists = await messengerService.getUserByPhone(formData.phone);
+      console.log('👤 User search result:', userExists ? `Found: ${userExists.name}` : 'Not found');
       
       if (userExists) {
+        console.log('✅ Existing user found, redirecting to login');
         setExistingUser(userExists);
         setCurrentStep('login');
       } else {
+        console.log('📝 New user, sending OTP');
         // Send OTP for new user
-        console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
         const { data, error } = await supabase.functions.invoke('send-otp', {
           body: {
-            phone: formData.phone,
-            countryCode: formData.countryCode
+            phone: normalized.phone,
+            countryCode: normalized.countryCode
           }
         });
 
@@ -152,7 +152,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
         console.log('OTP Response:', data);
         if (data.success) {
-          setFormattedPhoneNumber(data.formattedPhone);
           setCurrentStep('otp');
           toast.success('کد تأیید ارسال شد', {
             description: 'کد ۴ رقمی به شماره شما ارسال شد'
@@ -181,21 +180,21 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      console.log('Attempting login with password for:', formattedPhoneNumber);
+      console.log('🔐 Attempting login with password for user:', existingUser?.name);
       const result = await messengerService.loginWithPassword(
-        formattedPhoneNumber,
+        formData.phone, // Use original phone input for search
         formData.password
       );
 
       console.log('Login result:', result);
 
-      if (result.error) {
+      if (!result.success || result.error) {
         console.log('Login failed with error:', result.error);
-        setAuthError('رمز عبور اشتباه است. لطفاً دوباره تلاش کنید');
+        setAuthError(result.error || 'خطا در ورود');
         return;
       }
 
-      if (!result.user) {
+      if (!result.user || !result.session_token) {
         setAuthError('خطا در ورود. لطفاً دوباره تلاش کنید');
         return;
       }
@@ -207,7 +206,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         setCurrentStep('email-collection');
       } else {
         console.log('Login successful, user has email');
-        onAuthenticated(result.session_token || 'default_session', result.user.name || '', result.user);
+        onAuthenticated(result.session_token, result.user.name || '', result.user);
       }
       
     } catch (error: any) {
@@ -223,11 +222,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setAuthError('');
     
     try {
-      console.log('Sending OTP for login to:', formattedPhoneNumber);
+      console.log('Sending OTP for login to phone:', formData.phone);
+      const normalized = normalizePhone(formData.phone, formData.countryCode);
+      
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: {
-          phone: formData.phone,
-          countryCode: formData.countryCode
+          phone: normalized.phone,
+          countryCode: normalized.countryCode
         }
       });
 
@@ -396,23 +397,23 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     try {
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
       
-      // Register user with the formatted phone number
+      // Normalize phone for storage
+      const normalized = normalizePhone(formData.phone, formData.countryCode);
+      
+      // Register user with normalized phone
       const result = await messengerService.registerWithPassword({
         name: fullName,
-        phone: formattedPhoneNumber,
-        countryCode: '+98',
+        phone: normalized.phone, // Store normalized phone
+        country_code: normalized.countryCode, // Store country code separately
         password: formData.password,
         email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        full_name: fullName
       });
 
-      if (result.error) {
-        if (result.error.message?.includes('ایمیل قبلاً استفاده شده')) {
-          setAuthError('این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید');
-        } else {
-          setAuthError(result.error.message || 'خطا در ثبت نام');
-        }
+      if (!result.success || result.error) {
+        setAuthError(result.error || 'خطا در ثبت نام');
         return;
       }
 

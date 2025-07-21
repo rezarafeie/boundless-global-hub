@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { normalizePhone, generatePhoneSearchFormats } from '@/utils/phoneUtils';
 
 interface MessengerUser {
   id: number;
@@ -753,21 +754,36 @@ class MessengerService {
     }
   }
 
-  // Authentication Methods
+  // Enhanced phone-based authentication methods
   async getUserByPhone(phone: string): Promise<MessengerUser | null> {
     try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('phone', phone)
-        .single();
+      console.log('🔍 Searching for user with phone:', phone);
+      
+      // Generate all possible phone formats to search
+      const searchFormats = generatePhoneSearchFormats(phone);
+      console.log('📱 Searching phone formats:', searchFormats);
 
-      if (error) {
-        console.error('Error fetching user by phone:', error);
-        return null;
+      // Try to find user with any of the phone formats
+      for (const format of searchFormats) {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('phone', format)
+          .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error searching for phone format:', format, error);
+          continue;
+        }
+
+        if (data) {
+          console.log('✅ Found user with phone format:', format, 'User:', data.name);
+          return data as MessengerUser;
+        }
       }
 
-      return data as MessengerUser;
+      console.log('❌ No user found for any phone format');
+      return null;
     } catch (error) {
       console.error('Error in getUserByPhone:', error);
       return null;
@@ -776,40 +792,57 @@ class MessengerService {
 
   async loginWithPassword(phone: string, password: string): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
     try {
-      // This is a simplified version - you should implement proper password hashing/verification
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('phone', phone)
-        .single();
-
-      if (error || !data) {
-        return { success: false, error: 'User not found' };
+      console.log('🔐 Attempting login for phone:', phone);
+      
+      // Find user by phone using all possible formats
+      const user = await this.getUserByPhone(phone);
+      
+      if (!user) {
+        console.log('❌ User not found for phone:', phone);
+        return { success: false, error: 'کاربر یافت نشد' };
       }
 
+      console.log('✅ User found:', user.name, 'ID:', user.id);
+
       // In a real implementation, verify password hash here
+      // For now, we'll just check if password is provided
+      if (!password) {
+        return { success: false, error: 'رمز عبور را وارد کنید' };
+      }
+
       // Generate session token
       const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
       
-      return { success: true, user: data as MessengerUser, session_token: sessionToken };
+      return { success: true, user: user, session_token: sessionToken };
     } catch (error) {
       console.error('Error in loginWithPassword:', error);
-      return { success: false, error: 'Login failed' };
+      return { success: false, error: 'خطا در ورود' };
     }
   }
 
   async registerWithPassword(userData: Partial<MessengerUser> & { password: string }): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
     try {
+      console.log('📝 Registering user with data:', { ...userData, password: '[HIDDEN]' });
+      
       const { password, ...userDataWithoutPassword } = userData;
+      
+      // Normalize phone number before storage
+      const normalized = normalizePhone(userData.phone || '', userData.country_code || '+98');
       
       const insertData = {
         name: userDataWithoutPassword.name || '',
-        phone: userDataWithoutPassword.phone || '',
+        phone: normalized.phone, // Store normalized phone without country code
         email: userDataWithoutPassword.email,
-        password_hash: password,
+        password_hash: password, // In real implementation, hash this
         role: 'user' as const,
-        is_approved: true
+        is_approved: true,
+        country_code: normalized.countryCode,
+        first_name: userDataWithoutPassword.first_name,
+        last_name: userDataWithoutPassword.last_name,
+        full_name: userDataWithoutPassword.full_name
       };
+      
+      console.log('💾 Storing user with normalized phone:', insertData.phone, 'country code:', insertData.country_code);
       
       const { data, error } = await supabase
         .from('chat_users')
@@ -819,16 +852,17 @@ class MessengerService {
 
       if (error) {
         console.error('Error registering user:', error);
-        return { success: false, error: error.message || 'Registration failed' };
+        return { success: false, error: error.message || 'خطا در ثبت نام' };
       }
 
       // Generate session token
       const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
 
+      console.log('✅ User registered successfully:', data.name, 'ID:', data.id);
       return { success: true, user: data as MessengerUser, session_token: sessionToken };
     } catch (error: any) {
       console.error('Error in registerWithPassword:', error);
-      return { success: false, error: error.message || 'Registration failed' };
+      return { success: false, error: error.message || 'خطا در ثبت نام' };
     }
   }
 
@@ -853,7 +887,7 @@ class MessengerService {
         .from('chat_users')
         .select('id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
 
       return !error && !!data;
     } catch (error) {
@@ -864,6 +898,13 @@ class MessengerService {
 
   async updateUserDetails(userId: number, details: Partial<MessengerUser>): Promise<void> {
     try {
+      // If phone is being updated, normalize it
+      if (details.phone) {
+        const normalized = normalizePhone(details.phone, details.country_code || '+98');
+        details.phone = normalized.phone;
+        details.country_code = normalized.countryCode;
+      }
+
       const { error } = await supabase
         .from('chat_users')
         .update(details)
@@ -955,7 +996,7 @@ class MessengerService {
         .from('chat_users')
         .select('id')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
       return error && error.message.includes('No rows found');
     } catch (error) {
