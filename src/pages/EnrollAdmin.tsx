@@ -427,18 +427,8 @@ const EnrollAdmin: React.FC = () => {
           <main className="flex-1 overflow-auto bg-background">
             {/* Mobile Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
-              <div className="flex items-center justify-between p-4">
-                <div></div> {/* Spacer */}
+              <div className="flex items-center justify-end p-4">
                 <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
-              </div>
-            </div>
-            
-            {/* Desktop Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b hidden lg:block">
-              <div className="flex items-center justify-between p-4">
-                <SidebarTrigger className="rounded-xl hover:bg-muted/80" />
-                <div></div> {/* Spacer for centering */}
-                <div></div> {/* Spacer for centering */}
               </div>
             </div>
             

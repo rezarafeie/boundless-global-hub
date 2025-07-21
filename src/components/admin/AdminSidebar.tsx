@@ -7,7 +7,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -64,57 +63,28 @@ const sidebarItems = [
 
 // Desktop Sidebar Component
 function DesktopSidebar({ activeView, onViewChange }: AdminSidebarProps) {
-  const { state } = useSidebar();
-  const collapsed = state === 'collapsed';
-
   return (
-    <Sidebar 
-      className={cn(
-        "border-r bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
-      )} 
-      collapsible="icon"
-    >
-      <SidebarContent className="pt-4">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-2">
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton 
-                    asChild
-                    className={cn(
-                      "group relative w-full justify-start rounded-xl border-0 px-3 py-3 text-sm font-medium transition-all duration-200 hover:scale-[1.02]",
-                      activeView === item.id
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90"
-                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                    )}
-                  >
-                    <button 
-                      onClick={() => onViewChange(item.id as any)}
-                      className="flex w-full items-center gap-3"
-                    >
-                      <item.icon 
-                        className={cn(
-                          "h-5 w-5 transition-transform group-hover:scale-110",
-                          collapsed ? "mx-auto" : ""
-                        )} 
-                      />
-                      {!collapsed && (
-                        <span className="truncate">{item.label}</span>
-                      )}
-                      {activeView === item.id && !collapsed && (
-                        <div className="mr-auto h-2 w-2 rounded-full bg-primary-foreground/80" />
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+    <div className="w-64 h-full bg-background border-l border-border">
+      <div className="p-4">
+        <nav className="space-y-2">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onViewChange(item.id as any)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                activeView === item.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
   );
 }
 
@@ -141,14 +111,14 @@ function MobileMenu({ activeView, onViewChange }: AdminSidebarProps) {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-64 p-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/95"
+        className="w-64 p-0 bg-background border-l"
       >
         <div className="flex items-center justify-end p-4 border-b">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setOpen(false)}
-            className="rounded-full"
+            className="rounded-lg"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -160,17 +130,14 @@ function MobileMenu({ activeView, onViewChange }: AdminSidebarProps) {
                 key={item.id}
                 onClick={() => handleItemClick(item.id)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:scale-[1.02]",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   activeView === item.id
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-4 w-4" />
                 <span>{item.label}</span>
-                {activeView === item.id && (
-                  <div className="mr-auto h-2 w-2 rounded-full bg-primary-foreground/80" />
-                )}
               </button>
             ))}
           </nav>
