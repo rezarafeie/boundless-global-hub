@@ -7,11 +7,7 @@ export type ChatUser = {
   id: number;
   name: string;
   phone: string;
-  email?: string;
-  username?: string;
   is_approved: boolean;
-  user_id?: string;
-  password_hash?: string;
   created_at: string;
   updated_at: string;
 };
@@ -24,34 +20,6 @@ export type UserSession = {
   last_activity: string;
   created_at: string;
 };
-
-export interface UserCourse {
-  enrollment_id: string;
-  course_id: string;
-  course_title: string;
-  course_description?: string;
-  course_price: number;
-  course_redirect_url?: string;
-  enrollment_date: string;
-  payment_status: string;
-  payment_amount: number;
-  spotplayer_license_key?: string;
-  spotplayer_license_url?: string;
-  spotplayer_license_id?: string;
-}
-
-export interface UserLicense {
-  license_id: string;
-  course_id: string;
-  course_title: string;
-  license_key?: string;
-  license_data?: any;
-  license_status: string;
-  created_at: string;
-  expires_at?: string;
-  activated_at?: string;
-  enrollment_id?: string;
-}
 
 // Helper functions for database operations
 export const announcementsService = {
@@ -427,26 +395,5 @@ export const liveService = {
     
     if (error) throw error;
     return data as LiveSettings;
-  }
-};
-
-// User Courses Service
-export const userCoursesService = {
-  async getCoursesByPhone(phone: string): Promise<UserCourse[]> {
-    const { data, error } = await supabase.rpc('get_user_courses_by_phone', {
-      user_phone: phone
-    });
-    
-    if (error) throw error;
-    return data || [];
-  },
-
-  async getLicensesByPhone(phone: string): Promise<UserLicense[]> {
-    const { data, error } = await supabase.rpc('get_user_licenses_by_phone', {
-      user_phone: phone
-    });
-    
-    if (error) throw error;
-    return data || [];
   }
 };
