@@ -1058,7 +1058,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   </div>
                 </div>
                 {emailError && (
-                  <p className="text-sm text-destructive">{emailError}</p>
+                  <div className="space-y-1">
+                    <p className="text-sm text-destructive">{emailError}</p>
+                    {emailAvailable === false && (
+                      <p className="text-sm text-blue-600 cursor-pointer hover:underline">
+                        اگر این ایمیل برای شماست وارد شوید
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -1067,7 +1074,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               <Button 
                 type="submit" 
                 className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
-                disabled={loading || (email && !emailAvailable)}
+                disabled={loading || (email && emailAvailable === false)}
               >
                 {loading ? (
                   <>

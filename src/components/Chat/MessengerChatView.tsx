@@ -305,7 +305,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       let roomMessages: MessengerMessage[] = [];
       
       if (selectedRoom) {
-        debugLog('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
+        debugLog('Loading messages for room:', selectedRoom.id);
         if (selectedRoom.is_super_group) {
           roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
         } else {
@@ -316,7 +316,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           debugLog('Loading support messages for user:', currentUser.id);
           roomMessages = await messengerService.getSupportMessages(currentUser.id);
         } else {
-          debugLog('Loading private messages between:', currentUser.id, 'and', selectedUser.id);
+          debugLog('Loading private messages between users');
           const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
           const privateMessages = await privateMessageService.getConversationMessages(conversationId);
           
