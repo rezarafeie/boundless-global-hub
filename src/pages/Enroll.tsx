@@ -406,20 +406,20 @@ const Enroll: React.FC = () => {
                           ) : (
                             <>
                               <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                                {discountedPrice !== null 
-                                  ? formatPrice(discountedPrice)
-                                  : course.use_dollar_price && finalRialPrice 
-                                    ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                                    : formatPrice(course.price)
-                                }
+                                 {discountedPrice !== null 
+                                   ? formatPrice(discountedPrice)
+                                   : course.use_dollar_price && finalRialPrice 
+                                     ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                     : formatPrice(course.price)
+                                 }
                               </span>
                               {discountAmount > 0 && (
-                                <div className="text-sm text-muted-foreground line-through mt-1">
-                                  {course.use_dollar_price && finalRialPrice 
-                                    ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                                    : formatPrice(course.price)
-                                  }
-                                </div>
+                                 <div className="text-sm text-muted-foreground line-through mt-1">
+                                   {course.use_dollar_price && finalRialPrice 
+                                     ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                     : formatPrice(course.price)
+                                   }
+                                 </div>
                               )}
                             </>
                           )}
@@ -440,10 +440,10 @@ const Enroll: React.FC = () => {
                           </div>
                           
                           {exchangeRate && (
-                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                              <span>نرخ تبدیل:</span>
-                              <span>{TetherlandService.formatIRRAmount(exchangeRate)} ریال</span>
-                            </div>
+                             <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                               <span>نرخ تبدیل:</span>
+                               <span>{TetherlandService.formatIRRAmount(exchangeRate)} تومان</span>
+                             </div>
                           )}
                           
                           {loadingExchangeRate && (
@@ -711,8 +711,8 @@ const Enroll: React.FC = () => {
                         />
                       )}
 
-                      {/* VPN Warning for non-Iranian IPs */}
-                      {showVPNWarning && paymentMethod === 'zarinpal' && (
+                       {/* VPN Warning for non-Iranian IPs */}
+                       {showVPNWarning && paymentMethod === 'zarinpal' && isIranianIP === false && (
                         <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                           <div className="flex items-start gap-3">
                             <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
