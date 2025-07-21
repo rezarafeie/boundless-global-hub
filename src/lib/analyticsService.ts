@@ -171,11 +171,12 @@ function getDaysBetween(startDate: Date, endDate: Date): Date[] {
   return dates;
 }
 
-// Real-time analytics simulation based on real data patterns
+// Current visitors estimation based on real patterns (no real-time data available)
 export const getCurrentVisitors = (totalVisitors: number): number => {
-  // Estimate current visitors as 1-3% of daily average
-  const dailyAvg = totalVisitors / 7;
-  return Math.floor((dailyAvg * 0.02) + Math.random() * (dailyAvg * 0.01)) || 5;
+  // More realistic estimate: 0.1-0.3% of weekly visitors might be online now
+  const weeklyTotal = totalVisitors;
+  const estimatedCurrent = Math.floor(weeklyTotal * 0.002) + Math.floor(Math.random() * 3);
+  return Math.max(estimatedCurrent, 1);
 };
 
 // Export the parsing and conversion functions
