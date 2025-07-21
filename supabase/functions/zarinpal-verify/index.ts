@@ -124,6 +124,56 @@ serve(async (req) => {
         }
       }
 
+      // Send webhook for successful payment
+      try {
+        const webhookPayload = {
+          event_type: 'enrollment_paid_successful',
+          timestamp: new Date().toISOString(),
+          data: {
+            enrollment: enrollment,
+            user: enrollment.chat_users || { 
+              name: enrollment.full_name,
+              email: enrollment.email,
+              phone: enrollment.phone 
+            },
+            course: enrollment.courses,
+            payment: {
+              amount: enrollment.payment_amount,
+              ref_id: zarinpalData.data.ref_id,
+              authority: authority,
+              method: 'zarinpal'
+            }
+          }
+        };
+
+        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-enrollment-webhook`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            eventType: 'enrollment_paid_successful',
+            payload: webhookPayload
+          })
+        });
+
+        console.log('Payment success webhook sent successfully');
+      } catch (webhookError) {
+        console.error('Failed to send payment success webhook:', webhookError);
+        // Don't fail the payment if webhook fails
+      }
+
+      // Create SpotPlayer license if needed
+      if (enrollment.courses.is_spotplayer_enabled) {
+        try {
+          await createSpotPlayerLicense(enrollment, enrollmentId);
+        } catch (licenseError) {
+          console.error('SpotPlayer license creation failed:', licenseError);
+          // Don't fail the payment if license creation fails
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: true,

@@ -119,6 +119,54 @@ serve(async (req) => {
 
     console.log('Successfully created SpotPlayer license and updated enrollment');
 
+    // Send webhook for Rafiei Player license generation
+    try {
+      const { data: enrollmentData } = await supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses (*),
+          chat_users:chat_user_id (*)
+        `)
+        .eq('id', enrollmentId)
+        .single();
+
+      if (enrollmentData) {
+        const webhookPayload = {
+          event_type: 'rafiei_player_license_generated',
+          timestamp: new Date().toISOString(),
+          data: {
+            enrollment: enrollmentData,
+            user: enrollmentData.chat_users,
+            course: enrollmentData.courses,
+            license: {
+              id: spotPlayerData._id,
+              key: spotPlayerData.key,
+              url: fullVideoUrl
+            }
+          }
+        };
+
+        // Send webhook using enhanced webhook manager
+        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-enrollment-webhook`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            eventType: 'rafiei_player_license_generated',
+            payload: webhookPayload
+          })
+        });
+
+        console.log('Rafiei Player license webhook sent successfully');
+      }
+    } catch (webhookError) {
+      console.error('Failed to send Rafiei Player license webhook:', webhookError);
+      // Don't fail the license creation if webhook fails
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

@@ -112,36 +112,37 @@ Deno.serve(async (req) => {
         userData = userInfo;
       }
 
-      console.log('📤 FORCE sending enrollment webhook for ALL enrollments...');
+      console.log('📤 Sending enrollment webhook using enhanced webhook manager...');
 
-      // Call webhook directly to Make.com - FORCE call for all enrollments
-      const webhookResponse = await fetch('https://hook.us1.make.com/m9ita6qaswo7ysgx0c4vy1c34kl0x9ij', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          event_type: 'course_enrollment_created',
-          user_data: userData || {
+      // Use the enhanced webhook manager
+      const webhookPayload = {
+        event_type: 'enrollment_created',
+        timestamp: new Date().toISOString(),
+        data: {
+          enrollment: createdEnrollment,
+          user: userData || {
             name: full_name,
             email: email,
             phone: phone,
             country_code: body.country_code
           },
-          course_data: courseData,
-          enrollment_data: createdEnrollment,
-          payment_status: createdEnrollment.payment_status,
-          manual_payment_status: createdEnrollment.manual_payment_status,
-          payment_method: createdEnrollment.payment_method
-        }),
+          course: courseData
+        }
+      };
+
+      await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          eventType: 'enrollment_created',
+          payload: webhookPayload
+        })
       });
 
-      if (webhookResponse.ok) {
-        console.log('✅ Webhook sent successfully for enrollment:', createdEnrollment.id);
-      } else {
-        console.error('❌ Webhook failed:', webhookResponse.status, await webhookResponse.text());
-      }
+      console.log('✅ Webhook sent successfully for enrollment:', createdEnrollment.id);
     } catch (webhookError) {
       console.error('❌ Webhook error (non-blocking):', webhookError);
       // Don't fail the enrollment if webhook fails
