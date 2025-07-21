@@ -1,12 +1,12 @@
-// @ts-nocheck
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Send, Loader2, Headphones, MessageSquare } from 'lucide-react';
-import { MessengerUser, MessengerMessage } from '@/lib/messengerService';
-import { privateMessageService } from '@/lib/privateMessageService';
+import { MessengerUser } from '@/lib/messengerService';
+import { supportMessageService, type SupportMessage } from '@/lib/supportMessageService';
 import { useToast } from '@/hooks/use-toast';
 
 interface MessengerSupportRoom {
@@ -23,7 +23,7 @@ interface SupportChatViewProps {
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
-  conversationId?: number; // Add conversation ID as optional prop
+  conversationId?: number;
 }
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
@@ -34,17 +34,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   conversationId: propConversationId
 }) => {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(propConversationId || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Get support user ID based on room type
-  const getSupportUserId = () => {
-    return supportRoom.type === 'academy_support' ? 999997 : 999998;
-  };
 
   useEffect(() => {
     loadMessages();
@@ -59,17 +54,17 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       setLoading(true);
       console.log('Loading support messages for room:', supportRoom.type, 'current user:', currentUser.id);
       
-      const supportUserId = getSupportUserId();
+      // Determine thread type based on support room
+      const threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
       
-      // Get or create conversation with support user
+      // Get or create conversation
       let activeConversationId = propConversationId;
       
       if (!activeConversationId) {
-        console.log('Creating/getting conversation between:', currentUser.id, 'and', supportUserId);
-        activeConversationId = await privateMessageService.getOrCreateConversation(
+        console.log('Creating/getting conversation for user:', currentUser.id, 'thread type:', threadTypeId);
+        activeConversationId = await supportMessageService.getOrCreateUserConversation(
           currentUser.id,
-          supportUserId,
-          sessionToken
+          threadTypeId
         );
         console.log('Got conversation ID:', activeConversationId);
       }
@@ -78,7 +73,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       
       // Load messages from the conversation
       console.log('Loading messages for conversation:', activeConversationId);
-      const conversationMessages = await privateMessageService.getConversationMessages(activeConversationId, sessionToken);
+      const conversationMessages = await supportMessageService.getConversationMessages(activeConversationId);
       console.log('Loaded messages:', conversationMessages.length);
       setMessages(conversationMessages);
     } catch (error) {
@@ -109,13 +104,11 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
     try {
       setSending(true);
-      console.log('Sending message to conversation:', conversationId);
+      console.log('Sending user message to support conversation:', conversationId);
       
-      await privateMessageService.sendMessage(
-        conversationId,
+      await supportMessageService.sendUserMessage(
         currentUser.id,
-        newMessage.trim(),
-        sessionToken
+        newMessage.trim()
       );
 
       setNewMessage('');

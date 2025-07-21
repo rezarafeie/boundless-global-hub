@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft, Plus, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
-import { privateMessageService } from '@/lib/privateMessageService';
+import { supportMessageService } from '@/lib/supportMessageService';
 import SupportChatView from '@/components/Chat/SupportChatView';
 import SupportStartChatModal from '@/components/Chat/SupportStartChatModal';
 import ConversationTags from '@/components/Chat/ConversationTags';
@@ -92,12 +92,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       setRefreshing(true);
       console.log('Fetching support conversations...');
       
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) {
-        throw new Error('Session token not found');
-      }
-
-      const conversationsData = await privateMessageService.getSupportConversations(sessionToken);
+      const conversationsData = await supportMessageService.getAllConversations();
       
       console.log('Support conversations loaded:', conversationsData.length);
       setConversations(conversationsData);
@@ -140,19 +135,15 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     try {
       if (!currentUser) return;
       
-      const sessionToken = localStorage.getItem('messenger_session_token');
-      if (!sessionToken) return;
-
       console.log('Creating new support conversation with user:', user.id);
       
-      // Determine support user ID based on user's boundless status
-      const supportUserId = user.bedoun_marz || user.bedoun_marz_approved ? 999998 : 999997;
+      // Determine thread type based on user's boundless status
+      const threadTypeId = user.bedoun_marz || user.bedoun_marz_approved ? 2 : 1;
       
-      // Create conversation between the selected user and appropriate support
-      const conversationId = await privateMessageService.getOrCreateConversation(
+      // Create conversation for the selected user
+      const conversationId = await supportMessageService.getOrCreateUserConversation(
         user.id,
-        supportUserId,
-        sessionToken
+        threadTypeId
       );
 
       console.log('New conversation created:', conversationId);
@@ -214,7 +205,6 @@ const BorderlessHubSupportDashboard: React.FC = () => {
       }
 
       // TODO: Here you would typically call an API to update tags in the database
-      // For now, we'll just update the local state
       console.log('Tags updated for conversation', conversationId, ':', newTags);
       
     } catch (error) {
