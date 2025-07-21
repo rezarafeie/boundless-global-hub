@@ -97,6 +97,8 @@ import MessengerProfile from "./pages/MessengerProfile";
 
 // Import the new component
 import CourseContentManagement from "./pages/Course/CourseContentManagement";
+import CourseCreate from "./pages/Admin/CourseCreate";
+import CourseEdit from "./pages/Admin/CourseEdit";
 
 const queryClient = new QueryClient();
 
@@ -159,6 +161,8 @@ const App = () => {
                     <Route path="/enroll/success" element={<EnrollSuccess />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollAdmin />} />
+                    <Route path="/admin/course/create" element={<CourseCreate />} />
+                    <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
