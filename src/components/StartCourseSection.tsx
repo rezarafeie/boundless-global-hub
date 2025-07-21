@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +9,12 @@ import {
   GraduationCap,
   ArrowRight,
   CheckCircle,
-  Clock
+  Clock,
+  Key,
+  Loader2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import CourseActionLinks from './CourseActionLinks';
 import RafieiPlayerSection from './RafieiPlayerSection';
 
@@ -45,16 +49,26 @@ interface StartCourseSectionProps {
   userEmail?: string;
 }
 
+interface SSOToken {
+  type: string;
+  token: string;
+  url: string;
+}
+
 const StartCourseSection: React.FC<StartCourseSectionProps> = ({ 
   enrollment, 
   course, 
   onEnterCourse,
   userEmail 
 }) => {
+  const { toast } = useToast();
+  const [ssoTokens, setSsoTokens] = useState<SSOToken[]>([]);
+  const [loadingSSO, setLoadingSSO] = useState(false);
+
   // Determine available access types
   const hasRafieiPlayer = course?.is_spotplayer_enabled;
   const hasWooCommerce = course?.woocommerce_create_access !== false;
-  const hasAcademyAccess = course?.enable_course_access; // Now enabled based on course setting
+  const hasAcademyAccess = course?.enable_course_access;
   
   const accessTypes = [
     {
@@ -85,6 +99,55 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       color: 'blue'
     }
   ];
+
+  // Generate SSO tokens when component mounts
+  useEffect(() => {
+    if (enrollment && course && userEmail && (hasAcademyAccess || hasWooCommerce)) {
+      generateSSOTokens();
+    }
+  }, [enrollment?.id, course?.slug, userEmail, hasAcademyAccess, hasWooCommerce]);
+
+  const generateSSOTokens = async () => {
+    if (!enrollment || !userEmail) return;
+
+    try {
+      setLoadingSSO(true);
+      console.log('Generating SSO tokens for enrollment:', enrollment.id);
+
+      const response = await supabase.functions.invoke('generate-sso-tokens', {
+        body: {
+          enrollmentId: enrollment.id,
+          userEmail: userEmail
+        }
+      });
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      const { data } = response;
+      if (data.success && data.tokens) {
+        setSsoTokens(data.tokens);
+        console.log('SSO tokens generated successfully:', data.tokens);
+      } else {
+        throw new Error(data.error || 'Failed to generate SSO tokens');
+      }
+    } catch (error) {
+      console.error('Error generating SSO tokens:', error);
+      toast({
+        title: "خطا در تولید لینک‌های ورود خودکار",
+        description: "از لینک‌های معمولی استفاده خواهد شد",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingSSO(false);
+    }
+  };
+
+  const getSSOUrl = (type: string) => {
+    const token = ssoTokens.find(t => t.type === type);
+    return token?.url;
+  };
 
   const getColorClasses = (color: string, variant: 'bg' | 'text' | 'border') => {
     const colorMap = {
@@ -211,14 +274,39 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       {/* Action Button */}
                       {accessType.id === 'academy' && accessType.status === 'active' && (
                         <Button 
-                          onClick={() => window.location.href = `/access?course=${course?.slug}`}
+                          onClick={() => {
+                            const ssoUrl = getSSOUrl('academy');
+                            if (ssoUrl) {
+                              window.open(ssoUrl, '_blank');
+                            } else {
+                              window.location.href = `/access?course=${course?.slug}`;
+                            }
+                          }}
+                          disabled={loadingSSO}
                           className="w-full h-12 sm:h-14 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
                           size="lg"
                         >
-                          <GraduationCap className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          {loadingSSO ? (
+                            <Loader2 className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 animate-spin flex-shrink-0" />
+                          ) : getSSOUrl('academy') ? (
+                            <Key className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          ) : (
+                            <GraduationCap className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          )}
                           <span className="flex-1 text-center">
-                            <span className="hidden sm:inline">🚀 ورود به سیستم آموزشی آنلاین</span>
-                            <span className="sm:hidden">🚀 سیستم آموزشی</span>
+                            {loadingSSO ? (
+                              <span>در حال تولید لینک ورود...</span>
+                            ) : getSSOUrl('academy') ? (
+                              <>
+                                <span className="hidden sm:inline">🔐 ورود خودکار به سیستم آموزشی</span>
+                                <span className="sm:hidden">🔐 ورود خودکار</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="hidden sm:inline">🚀 ورود به سیستم آموزشی آنلاین</span>
+                                <span className="sm:hidden">🚀 سیستم آموزشی</span>
+                              </>
+                            )}
                           </span>
                           <ArrowRight className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Button>
@@ -226,14 +314,39 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
 
                       {accessType.id === 'woocommerce' && accessType.status === 'active' && (
                         <Button 
-                          onClick={onEnterCourse}
+                          onClick={() => {
+                            const ssoUrl = getSSOUrl('woocommerce');
+                            if (ssoUrl) {
+                              window.open(ssoUrl, '_blank');
+                            } else {
+                              onEnterCourse();
+                            }
+                          }}
+                          disabled={loadingSSO}
                           className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
                           size="lg"
                         >
-                          <ExternalLink className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          {loadingSSO ? (
+                            <Loader2 className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 animate-spin flex-shrink-0" />
+                          ) : getSSOUrl('woocommerce') ? (
+                            <Key className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          ) : (
+                            <ExternalLink className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          )}
                           <span className="flex-1 text-center">
-                            <span className="hidden sm:inline">⚡ ورود به دوره - سیستم قدیمی</span>
-                            <span className="sm:hidden">⚡ سیستم قدیمی</span>
+                            {loadingSSO ? (
+                              <span>در حال تولید لینک ورود...</span>
+                            ) : getSSOUrl('woocommerce') ? (
+                              <>
+                                <span className="hidden sm:inline">🔐 ورود خودکار - سیستم قدیمی</span>
+                                <span className="sm:hidden">🔐 ورود خودکار</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="hidden sm:inline">⚡ ورود به دوره - سیستم قدیمی</span>
+                                <span className="sm:hidden">⚡ سیستم قدیمی</span>
+                              </>
+                            )}
                           </span>
                           <ArrowRight className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Button>

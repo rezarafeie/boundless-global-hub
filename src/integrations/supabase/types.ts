@@ -1440,6 +1440,53 @@ export type Database = {
           },
         ]
       }
+      sso_tokens: {
+        Row: {
+          course_slug: string
+          created_at: string
+          enrollment_id: string | null
+          expires_at: string
+          id: string
+          token: string
+          type: string
+          used: boolean
+          used_at: string | null
+          user_email: string
+        }
+        Insert: {
+          course_slug: string
+          created_at?: string
+          enrollment_id?: string | null
+          expires_at?: string
+          id?: string
+          token: string
+          type: string
+          used?: boolean
+          used_at?: string | null
+          user_email: string
+        }
+        Update: {
+          course_slug?: string
+          created_at?: string
+          enrollment_id?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+          type?: string
+          used?: boolean
+          used_at?: string | null
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sso_tokens_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_agent_assignments: {
         Row: {
           agent_id: number | null
@@ -1893,6 +1940,10 @@ export type Database = {
         Args: { data: string }
         Returns: string
       }
+      cleanup_expired_sso_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_inactive_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1931,9 +1982,41 @@ export type Database = {
         Args: { user_name: string }
         Returns: string
       }
+      get_user_courses_by_phone: {
+        Args: { user_phone: string }
+        Returns: {
+          enrollment_id: string
+          course_id: string
+          course_title: string
+          course_description: string
+          course_price: number
+          course_redirect_url: string
+          enrollment_date: string
+          payment_status: string
+          payment_amount: number
+          spotplayer_license_key: string
+          spotplayer_license_url: string
+          spotplayer_license_id: string
+        }[]
+      }
       get_user_from_session: {
         Args: { session_token_param: string }
         Returns: number
+      }
+      get_user_licenses_by_phone: {
+        Args: { user_phone: string }
+        Returns: {
+          license_id: string
+          course_id: string
+          course_title: string
+          license_key: string
+          license_data: Json
+          license_status: string
+          created_at: string
+          expires_at: string
+          activated_at: string
+          enrollment_id: string
+        }[]
       }
       get_user_support_rooms: {
         Args: { user_id_param: number }
