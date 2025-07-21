@@ -738,15 +738,14 @@ const EnrollAdmin: React.FC = () => {
                         <div className="hidden md:block overflow-x-auto">
                           <Table>
                             <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-right">نام و نام خانوادگی</TableHead>
-                              <TableHead className="text-right">دوره</TableHead>
-                              <TableHead className="text-right">مبلغ</TableHead>
-                              <TableHead className="text-right">وضعیت پرداخت</TableHead>
-                              <TableHead className="text-right">وضعیت بررسی</TableHead>
-                              <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
-                              <TableHead className="text-right">عملیات</TableHead>
-                            </TableRow>
+                             <TableRow>
+                               <TableHead className="text-right">نام و نام خانوادگی</TableHead>
+                               <TableHead className="text-right">دوره</TableHead>
+                               <TableHead className="text-right">مبلغ</TableHead>
+                               <TableHead className="text-right">وضعیت پرداخت</TableHead>
+                               <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
+                               <TableHead className="text-right">عملیات</TableHead>
+                             </TableRow>
                             </TableHeader>
                             <TableBody>
                               {filteredEnrollments.map((enrollment) => (
@@ -763,15 +762,12 @@ const EnrollAdmin: React.FC = () => {
                                   <TableCell>
                                     <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
                                   </TableCell>
-                                  <TableCell>
-                                    {getPaymentStatusBadge(enrollment.payment_status)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {getStatusBadge(enrollment.manual_payment_status)}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="text-sm">{formatDate(enrollment.created_at)}</div>
-                                  </TableCell>
+                                   <TableCell>
+                                     {getPaymentStatusBadge(enrollment.payment_status)}
+                                   </TableCell>
+                                   <TableCell>
+                                     <div className="text-sm">{formatDate(enrollment.created_at)}</div>
+                                   </TableCell>
                                   <TableCell>
                                     <div className="flex gap-2 flex-wrap">
                                       <Button
