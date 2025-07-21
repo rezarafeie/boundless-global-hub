@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageCircle, User, Phone, AtSign, Check, ArrowRight } from 'lucide-react';
+import { MessageCircle, User, Phone, AtSign, Check, ArrowRight, AlertCircle } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [loading, setLoading] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
+  const [authError, setAuthError] = useState('');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -43,6 +45,11 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameError, setUsernameError] = useState('');
+
+  // Clear errors when step changes
+  useEffect(() => {
+    setAuthError('');
+  }, [currentStep]);
 
   // Format phone number for API call
   const formatPhoneForAPI = (phone: string, countryCode: string) => {
@@ -108,11 +115,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     
     if (!formData.phone.trim()) {
-      toast.error('خطا', {
-        description: 'لطفاً شماره تلفن را وارد کنید'
-      });
+      setAuthError('لطفاً شماره تلفن را وارد کنید');
       return;
     }
 
@@ -122,7 +128,6 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       // Check if user already exists
       const formattedPhone = formatPhoneForAPI(formData.phone, formData.countryCode);
       console.log('Checking if user exists for phone:', formattedPhone);
-      console.log('Original phone input:', formData.phone, 'Country code:', formData.countryCode);
       const userExists = await messengerService.getUserByPhone(formattedPhone);
       
       setFormattedPhoneNumber(formattedPhone);
@@ -158,9 +163,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       }
     } catch (error: any) {
       console.error('Error in phone submit:', error);
-      toast.error('خطا', {
-        description: error.message || 'لطفاً دوباره تلاش کنید'
-      });
+      setAuthError(error.message || 'خطا در بررسی شماره تلفن. لطفاً دوباره تلاش کنید');
     } finally {
       setLoading(false);
     }
@@ -168,17 +171,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     
     if (!formData.password.trim()) {
-      toast.error('خطا', {
-        description: 'لطفاً رمز عبور را وارد کنید'
-      });
+      setAuthError('لطفاً رمز عبور را وارد کنید');
       return;
     }
 
     setLoading(true);
     
     try {
+      console.log('Attempting login with password for:', formattedPhoneNumber);
       const result = await messengerService.loginWithPassword(
         formattedPhoneNumber,
         formData.password
@@ -187,26 +190,29 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       console.log('Login result:', result);
 
       if (result.error) {
-        console.log('Login failed, showing error toast');
-        toast.error('خطا در ورود', {
-          description: 'رمز عبور اشتباه است'
-        });
+        console.log('Login failed with error:', result.error);
+        setAuthError('رمز عبور اشتباه است. لطفاً دوباره تلاش کنید');
         return;
       }
 
-      // Check if user has email before completing login
-      if (result.user && !result.user.email) {
+      if (!result.user) {
+        setAuthError('خطا در ورود. لطفاً دوباره تلاش کنید');
+        return;
+      }
+
+      // Check if user needs email
+      if (!result.user.email) {
+        console.log('User does not have email, requesting email collection');
         setExistingUser(result.user);
         setCurrentStep('email-collection');
       } else {
-        onAuthenticated(result.session_token || 'default_session', result.user?.name || '', result.user!);
+        console.log('Login successful, user has email');
+        onAuthenticated(result.session_token || 'default_session', result.user.name || '', result.user);
       }
       
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error('خطا در ورود', {
-        description: error.message || 'رمز عبور اشتباه است'
-      });
+      setAuthError('خطا در ورود. لطفاً دوباره تلاش کنید');
     } finally {
       setLoading(false);
     }
@@ -214,6 +220,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
   const handleLoginByOTP = async () => {
     setOtpSending(true);
+    setAuthError('');
     
     try {
       console.log('Sending OTP for login to:', formattedPhoneNumber);
@@ -240,9 +247,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       }
     } catch (error: any) {
       console.error('Error sending OTP for login:', error);
-      toast.error('خطا', {
-        description: error.message || 'خطا در ارسال کد تأیید'
-      });
+      setAuthError(error.message || 'خطا در ارسال کد تأیید');
     } finally {
       setOtpSending(false);
     }
@@ -252,6 +257,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     if (code.length !== 4) return;
 
     setLoading(true);
+    setAuthError('');
     
     try {
       const { data, error } = await supabase.functions.invoke('verify-otp', {
@@ -272,27 +278,25 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         // OTP verified, check if user has email before completing login
         if (existingUser) {
           if (!existingUser.email) {
-            // User doesn't have email, ask for it
+            console.log('User verified but needs email');
             setCurrentStep('email-collection');
           } else {
-            // User has email, proceed with login
+            console.log('User verified and has email, proceeding with login');
             const sessionToken = await messengerService.createSession(existingUser.id);
             onAuthenticated(sessionToken, existingUser.name, existingUser);
           }
+        } else {
+          setAuthError('خطا در تأیید هویت کاربر');
         }
       } else {
-        console.log('Login OTP verification failed, showing error toast');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
+        console.log('Login OTP verification failed');
+        setAuthError('کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید');
         setOtpCode('');
         return;
       }
     } catch (error: any) {
       console.error('Error verifying login OTP:', error);
-      toast.error('خطا در تأیید کد', {
-        description: error.message || 'کد وارد شده اشتباه است'
-      });
+      setAuthError('خطا در تأیید کد. لطفاً دوباره تلاش کنید');
       setOtpCode('');
     } finally {
       setLoading(false);
@@ -303,6 +307,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     if (code.length !== 4) return;
 
     setLoading(true);
+    setAuthError('');
     
     try {
       const { data, error } = await supabase.functions.invoke('verify-otp', {
@@ -325,18 +330,14 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
           description: 'اکنون رمز عبور خود را تعیین کنید'
         });
       } else {
-        console.log('OTP verification failed, showing error toast');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
+        console.log('OTP verification failed');
+        setAuthError('کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید');
         setOtpCode('');
         return;
       }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
-      toast.error('خطا در تأیید کد', {
-        description: error.message || 'کد وارد شده اشتباه است'
-      });
+      setAuthError('خطا در تأیید کد. لطفاً دوباره تلاش کنید');
       setOtpCode('');
     } finally {
       setLoading(false);
@@ -354,11 +355,10 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     
     if (!formData.password.trim() || formData.password.length < 6) {
-      toast.error('خطا', {
-        description: 'رمز عبور باید حداقل ۶ کاراکتر باشد'
-      });
+      setAuthError('رمز عبور باید حداقل ۶ کاراکتر باشد');
       return;
     }
 
@@ -367,34 +367,27 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
   const handleUserInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('خطا', {
-        description: 'لطفاً نام و نام خانوادگی را وارد کنید'
-      });
+      setAuthError('لطفاً نام و نام خانوادگی را وارد کنید');
       return;
     }
 
     if (!formData.email.trim()) {
-      toast.error('خطا', {
-        description: 'لطفاً ایمیل را وارد کنید'
-      });
+      setAuthError('لطفاً ایمیل را وارد کنید');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error('خطا', {
-        description: 'لطفاً ایمیل معتبری وارد کنید'
-      });
+      setAuthError('لطفاً ایمیل معتبری وارد کنید');
       return;
     }
 
     if (!formData.username || !usernameAvailable) {
-      toast.error('خطا', {
-        description: 'لطفاً نام کاربری معتبری انتخاب کنید'
-      });
+      setAuthError('لطفاً نام کاربری معتبری انتخاب کنید');
       return;
     }
 
@@ -416,11 +409,9 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
       if (result.error) {
         if (result.error.message?.includes('ایمیل قبلاً استفاده شده')) {
-          toast.error('خطا', {
-            description: 'این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید'
-          });
+          setAuthError('این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید');
         } else {
-          throw new Error(result.error.message || 'خطا در ثبت نام');
+          setAuthError(result.error.message || 'خطا در ثبت نام');
         }
         return;
       }
@@ -439,9 +430,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error('خطا در ثبت نام', {
-        description: error.message || 'لطفاً دوباره تلاش کنید'
-      });
+      setAuthError('خطا در ثبت نام. لطفاً دوباره تلاش کنید');
     } finally {
       setLoading(false);
     }
@@ -449,20 +438,17 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
 
   const handleEmailCollection = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     
     if (!formData.email.trim()) {
-      toast.error('خطا', {
-        description: 'لطفاً ایمیل را وارد کنید'
-      });
+      setAuthError('لطفاً ایمیل را وارد کنید');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error('خطا', {
-        description: 'لطفاً ایمیل معتبری وارد کنید'
-      });
+      setAuthError('لطفاً ایمیل معتبری وارد کنید');
       return;
     }
 
@@ -472,9 +458,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       // Check if email is already used by another user
       const emailExists = await messengerService.isEmailUsed(formData.email);
       if (emailExists) {
-        toast.error('خطا', {
-          description: 'این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید'
-        });
+        setAuthError('این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید');
         return;
       }
 
@@ -486,18 +470,19 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         // Complete login
         const sessionToken = await messengerService.createSession(existingUser.id);
         onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+      } else {
+        setAuthError('خطا در تأیید هویت کاربر');
       }
     } catch (error: any) {
       console.error('Error updating email:', error);
-      toast.error('خطا', {
-        description: error.message || 'خطا در بروزرسانی ایمیل'
-      });
+      setAuthError('خطا در بروزرسانی ایمیل. لطفاً دوباره تلاش کنید');
     } finally {
       setLoading(false);
     }
   };
 
   const handleBack = () => {
+    setAuthError('');
     if (currentStep === 'login' || currentStep === 'login-otp') {
       setCurrentStep('phone');
       setExistingUser(null);
@@ -555,6 +540,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               </div>
             </div>
 
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
+
             <Button 
               type="submit" 
               className="w-full h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
@@ -589,6 +581,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>
+
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
 
             <div className="space-y-3">
               <div className="flex gap-3">
@@ -662,6 +661,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               </InputOTP>
             </div>
 
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button 
                 type="button" 
@@ -682,7 +688,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               </Button>
             </div>
           </div>
-         );
+        );
 
       case 'login-otp':
         return (
@@ -726,6 +732,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               </InputOTP>
             </div>
 
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button 
                 type="button" 
@@ -763,6 +776,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>
+
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Button 
@@ -848,6 +868,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
               )}
             </div>
 
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Button 
@@ -894,6 +920,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
             </div>
+
+            {authError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-destructive" />
+                <p className="text-sm text-destructive">{authError}</p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Button 

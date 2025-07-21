@@ -1,31 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
-import { enhancedWebhookManager } from './enhancedWebhookManager';
-
-// Helper function to get user from session
-async function getUserFromSession(sessionToken: string): Promise<number | null> {
-  try {
-    const { data, error } = await supabase
-      .from('user_sessions')
-      .select('user_id')
-      .eq('session_token', sessionToken)
-      .eq('is_active', true)
-      .single();
-
-    if (error || !data) return null;
-    return data.user_id;
-  } catch (error) {
-    console.error('Error getting user from session:', error);
-    return null;
-  }
-}
 
 export interface MessengerUser {
   id: number;
   name: string;
+  phone: string;
   username?: string;
   avatar_url?: string;
-  phone: string;
   is_approved: boolean;
   is_messenger_admin: boolean;
   is_support_agent: boolean;
@@ -35,269 +16,272 @@ export interface MessengerUser {
   created_at: string;
   updated_at: string;
   last_seen: string;
-  role: string;
-  email: string | null;
-  user_id: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  full_name: string | null;
-  country_code: string | null;
-  signup_source: string | null;
-  bio: string | null;
-  notification_enabled: boolean | null;
-  notification_token: string | null;
-  password_hash: string | null;
+  role: 'user' | 'admin' | 'support';
+  email?: string | null;
+  user_id?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  full_name?: string | null;
+  country_code?: string | null;
+  signup_source?: string | null;
+  bio?: string | null;
+  notification_enabled: boolean;
+  notification_token?: string | null;
+  password_hash?: string | null;
 }
 
 export interface ChatRoom {
   id: number;
-  created_at: string;
   name: string;
-  description: string | null;
-  avatar_url: string | null;
+  description?: string;
   type: string;
   is_active: boolean;
-  is_boundless_only: boolean;
-  is_super_group: boolean;
+  avatar_url?: string;
+  created_at: string;
   updated_at: string;
+  is_super_group?: boolean;
+  is_boundless_only?: boolean;
 }
 
-export interface MessengerMessage {
+export interface MessageData {
   id: number;
-  created_at: string;
-  room_id: number;
   sender_id: number;
   message: string;
-  topic_id?: number;
+  room_id?: number;
+  recipient_id?: number;
   conversation_id?: number;
+  topic_id?: number;
+  created_at: string;
   media_url?: string;
   message_type?: string;
   media_content?: string;
-  sender?: {
-    name: string;
-    phone: string;
-  };
+  reply_to_message_id?: number;
+  forwarded_from_message_id?: number;
+  is_read?: boolean;
+  sender?: MessengerUser;
 }
 
-export interface AdminSettings {
-  id: number;
-  manual_approval_enabled: boolean;
-  updated_at: string;
+export interface CreateRoomData {
+  name: string;
+  description?: string;
+  type: string;
 }
 
-interface ValidationResult {
-  valid: boolean;
+export interface RegistrationData {
+  name: string;
+  phone: string;
+  countryCode: string;
+  password: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface LoginResult {
   user?: MessengerUser;
-}
-
-interface AuthResult {
-  user: MessengerUser | null;
-  error: any;
   session_token?: string;
+  error?: any;
 }
 
-export const messengerService = {
-  async getUsers(): Promise<MessengerUser[]> {
+class MessengerService {
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
     try {
-      const { data, error } = await supabase
+      console.log('Looking up user by phone:', phone);
+      
+      // First try to find a user with email (prioritize users with email)
+      const { data: userWithEmail, error: emailError } = await supabase
         .from('chat_users')
         .select('*')
-        .eq('is_approved', true);
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
-    }
-  },
-
-  async getAllUsers(): Promise<MessengerUser[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching all users:', error);
-      return [];
-    }
-  },
-
-  async getUserById(userId: number): Promise<MessengerUser | null> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('id', userId)
+        .eq('phone', phone)
+        .not('email', 'is', null)
         .single();
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching user by ID:', error);
-      return null;
-    }
-  },
-
-  async getUserByPhone(phone: string, countryCode?: string): Promise<MessengerUser | null> {
-    try {
-      console.log('getUserByPhone: Starting search for phone:', phone, 'with country code:', countryCode);
-      
-      // Create multiple phone number formats to search for
-      const phoneFormats = [
-        phone, // Original format
-        phone.replace(/^\+98/, ''), // Without country code
-        phone.replace(/^\+98/, '0'), // With leading zero
-        phone.replace(/^\+989/, '09'), // Direct conversion from +989 to 09
-      ];
-      
-      // If countryCode is provided, also try with it
-      if (countryCode && !phone.includes(countryCode)) {
-        phoneFormats.push(countryCode + phone);
-        phoneFormats.push(countryCode + phone.replace(/^0/, ''));
+      if (!emailError && userWithEmail) {
+        console.log('Found user with email:', userWithEmail.email);
+        return this.mapUserData(userWithEmail);
       }
-      
-      // Remove duplicates
-      const uniqueFormats = [...new Set(phoneFormats)];
-      console.log('getUserByPhone: Trying these phone formats:', uniqueFormats);
-      
-      // Try each format until we find a user
-      for (const format of uniqueFormats) {
-        console.log('getUserByPhone: Checking format:', format);
-        const { data, error } = await supabase
-          .from('chat_users')
-          .select('*')
-          .eq('phone', format)
-          .maybeSingle();
 
-        if (error) {
-          console.error('Database error for format', format, ':', error);
-          continue; // Try next format
-        }
-        
-        if (data) {
-          console.log('getUserByPhone: SUCCESS! Found user with format:', format, 'User:', data.name);
-          return data;
-        } else {
-          console.log('getUserByPhone: No user found with format:', format);
-        }
-      }
-      
-      console.log('getUserByPhone: FINAL RESULT - No user found with any format');
-      return null;
-    } catch (error) {
-      console.error('Error fetching user by phone:', error);
-      return null;
-    }
-  },
-
-  async getOrCreateChatUser(phone: string): Promise<MessengerUser | null> {
-    try {
-      let { data: existingUsers, error: selectError } = await supabase
+      // If no user with email found, look for any user with this phone
+      const { data: anyUser, error: anyError } = await supabase
         .from('chat_users')
         .select('*')
-        .eq('phone', phone);
+        .eq('phone', phone)
+        .single();
 
-      if (selectError) {
-        console.error('Error checking existing user:', selectError);
+      if (anyError && anyError.code !== 'PGRST116') {
+        console.error('Error finding user by phone:', anyError);
         return null;
       }
 
-      if (existingUsers && existingUsers.length > 0) {
-        return existingUsers[0];
+      if (anyUser) {
+        console.log('Found user without email preference');
+        return this.mapUserData(anyUser);
       }
 
-      const { data: newUserData, error: insertError } = await supabase
-        .from('chat_users')
-        .insert([{ phone: phone, name: phone, is_approved: true }])
-        .select('*')
-        .single();
-
-      if (insertError) {
-        console.error('Error creating new user:', insertError);
-        return null;
-      }
-
-      return newUserData;
+      console.log('No user found with phone:', phone);
+      return null;
     } catch (error) {
-      console.error('Error in getOrCreateChatUser:', error);
+      console.error('Error in getUserByPhone:', error);
       return null;
     }
-  },
+  }
 
-  async login(phone: string): Promise<AuthResult> {
+  async loginWithPassword(phone: string, password: string): Promise<LoginResult> {
     try {
-      const user = await this.getOrCreateChatUser(phone);
-      if (!user) {
-        return { user: null, error: 'Failed to create or retrieve user' };
-      }
-      const sessionToken = await this.createSession(user.id);
-      return { user: user, error: null, session_token: sessionToken };
-    } catch (error) {
-      console.error('Login error:', error);
-      return { user: null, error: error };
-    }
-  },
-
-  async signup(phone: string): Promise<AuthResult> {
-    try {
-      const user = await this.getOrCreateChatUser(phone);
-      if (!user) {
-        return { user: null, error: 'Failed to create or retrieve user' };
-      }
-      const sessionToken = await this.createSession(user.id);
-      return { user: user, error: null, session_token: sessionToken };
-    } catch (error) {
-      console.error('Signup error:', error);
-      return { user: null, error: error };
-    }
-  },
-
-  async authenticateUser(phone: string, password: string): Promise<AuthResult> {
-    try {
-      const user = await this.getUserByPhone(phone);
-      if (!user) {
-        return { user: null, error: 'User not found' };
-      }
-      const sessionToken = await this.createSession(user.id);
-      return { user: user, error: null, session_token: sessionToken };
-    } catch (error) {
-      console.error('Authentication error:', error);
-      return { user: null, error: error };
-    }
-  },
-
-  async loginWithPassword(phone: string, password: string): Promise<AuthResult> {
-    try {
-      // First get user by phone (without password comparison)
-      const user = await this.getUserByPhone(phone);
+      console.log('Attempting login for phone:', phone);
       
-      if (!user || !user.password_hash) {
-        console.error('User not found or no password set');
-        return { user: null, error: { message: 'کاربر یافت نشد یا رمز عبور تنظیم نشده است' } };
+      const user = await this.getUserByPhone(phone);
+      if (!user) {
+        console.log('User not found for phone:', phone);
+        return { error: { message: 'کاربری با این شماره تلفن یافت نشد' } };
       }
 
-      // Compare the password with the stored hash
+      if (!user.password_hash) {
+        console.log('User has no password hash');
+        return { error: { message: 'رمز عبور تنظیم نشده است' } };
+      }
+
+      console.log('Comparing passwords...');
       const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       
       if (!isPasswordValid) {
-        console.error('Invalid password for user:', user.phone);
-        return { user: null, error: { message: 'رمز عبور اشتباه است' } };
+        console.log('Invalid password for user:', user.id);
+        return { error: { message: 'رمز عبور اشتباه است' } };
       }
 
-      // Password is correct, create session
+      console.log('Password valid, creating session...');
       const sessionToken = await this.createSession(user.id);
-      return { user: user, error: null, session_token: sessionToken };
+      
+      return {
+        user,
+        session_token: sessionToken
+      };
     } catch (error) {
-      console.error('Login error:', error);
-      return { user: null, error: error };
+      console.error('Error in loginWithPassword:', error);
+      return { error: { message: 'خطا در ورود' } };
     }
-  },
+  }
 
+  async registerWithPassword(data: RegistrationData): Promise<LoginResult> {
+    try {
+      console.log('Attempting registration for phone:', data.phone);
+      
+      // Check if user already exists
+      const existingUser = await this.getUserByPhone(data.phone);
+      if (existingUser) {
+        return { error: { message: 'کاربری با این شماره تلفن قبلاً ثبت‌نام کرده است' } };
+      }
+
+      // Check if email is already used (if provided)
+      if (data.email) {
+        const emailExists = await this.isEmailUsed(data.email);
+        if (emailExists) {
+          return { error: { message: 'ایمیل قبلاً استفاده شده است' } };
+        }
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(data.password, 10);
+
+      // Create user with email set to NULL if not provided
+      const { data: newUser, error } = await supabase
+        .from('chat_users')
+        .insert({
+          name: data.name,
+          phone: data.phone,
+          country_code: data.countryCode,
+          password_hash: passwordHash,
+          email: data.email || null,
+          first_name: data.firstName || null,
+          last_name: data.lastName || null,
+          full_name: data.name,
+          is_approved: true,
+          role: 'user',
+          signup_source: 'messenger'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating user:', error);
+        return { error };
+      }
+
+      const user = this.mapUserData(newUser);
+      const sessionToken = await this.createSession(user.id);
+
+      return {
+        user,
+        session_token: sessionToken
+      };
+    } catch (error) {
+      console.error('Error in registerWithPassword:', error);
+      return { error: { message: 'خطا در ثبت‌نام' } };
+    }
+  }
+
+  async isEmailUsed(email: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      return !error && !!data;
+    } catch (error) {
+      console.error('Error checking email usage:', error);
+      return false;
+    }
+  }
+
+  async updateUserDetails(userId: number, updates: Partial<{ email: string; username: string; name: string }>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user details:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserDetails:', error);
+      throw error;
+    }
+  }
+
+  private mapUserData(userData: any): MessengerUser {
+    return {
+      id: userData.id,
+      name: userData.name,
+      phone: userData.phone,
+      username: userData.username,
+      avatar_url: userData.avatar_url,
+      is_approved: userData.is_approved || false,
+      is_messenger_admin: userData.is_messenger_admin || false,
+      is_support_agent: userData.is_support_agent || false,
+      bedoun_marz: userData.bedoun_marz || false,
+      bedoun_marz_approved: userData.bedoun_marz_approved || false,
+      bedoun_marz_request: userData.bedoun_marz_request || false,
+      created_at: userData.created_at,
+      updated_at: userData.updated_at,
+      last_seen: userData.last_seen,
+      role: userData.role || 'user',
+      email: userData.email || null,
+      user_id: userData.user_id,
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      full_name: userData.full_name,
+      country_code: userData.country_code,
+      signup_source: userData.signup_source,
+      bio: userData.bio,
+      notification_enabled: userData.notification_enabled !== false,
+      notification_token: userData.notification_token,
+      password_hash: userData.password_hash
+    };
+  }
 
   async createSession(userId: number): Promise<string> {
     try {
@@ -312,709 +296,237 @@ export const messengerService = {
           last_activity: new Date().toISOString()
         });
 
-      if (error) throw error;
-      return sessionToken;
-    } catch (error) {
-      console.error('Error creating session:', error);
-      throw error;
-    }
-  },
-
-  async getRooms(): Promise<ChatRoom[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      const rooms = data || [];
-      
-      return rooms;
-    } catch (error) {
-      console.error('Error fetching rooms:', error);
-      return [];
-    }
-  },
-
-  async getRoomById(roomId: number): Promise<ChatRoom | null> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .eq('id', roomId)
-        .single();
-
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching room by ID:', error);
-      return null;
-    }
-  },
-
-  async getMessages(roomId: number, topicId?: number): Promise<MessengerMessage[]> {
-    try {
-      let query = supabase
-        .from('messenger_messages')
-        .select(`
-          id,
-          created_at,
-          room_id,
-          sender_id,
-          message,
-          topic_id,
-          media_url,
-          message_type,
-          media_content,
-          conversation_id,
-          sender:chat_users!messenger_messages_sender_id_fkey (
-            name,
-            phone
-          )
-        `)
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
-
-      if (topicId) {
-        query = query.eq('topic_id', topicId);
-      } else {
-        query = query.is('topic_id', null);
+      if (error) {
+        console.error('Error creating session:', error);
+        throw error;
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data || [];
+      return sessionToken;
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      return [];
-    }
-  },
-
-  async getAllMessages(): Promise<MessengerMessage[]> {
-    try {
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey (
-            name,
-            phone
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching all messages:', error);
-      return [];
-    }
-  },
-
-  async sendMessage(
-    roomId: number, 
-    senderId: number, 
-    message: string, 
-    topicId?: number,
-    mediaUrl?: string,
-    mediaType?: string,
-    mediaContent?: string
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('messenger_messages')
-        .insert({
-          room_id: roomId,
-          sender_id: senderId,
-          message,
-          topic_id: topicId,
-          media_url: mediaUrl,
-          message_type: mediaType,
-          media_content: mediaContent
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in createSession:', error);
       throw error;
     }
-  },
-
-  async sendSupportMessage(
-    senderId: number,
-    message: string,
-    mediaUrl?: string,
-    mediaType?: string,
-    mediaContent?: string
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('messenger_messages')
-        .insert({
-          sender_id: senderId,
-          recipient_id: 1, // Support user ID
-          message: message,
-          media_url: mediaUrl,
-          message_type: mediaType,
-          media_content: mediaContent
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error sending support message:', error);
-      throw error;
-    }
-  },
-
-  async getSupportMessages(userId: number): Promise<MessengerMessage[]> {
-    try {
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .select(`
-          *,
-          sender:chat_users!messenger_messages_sender_id_fkey(name, phone)
-        `)
-        .or(`and(sender_id.eq.${userId},recipient_id.eq.1),and(sender_id.eq.1,recipient_id.eq.${userId})`)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching support messages:', error);
-      return [];
-    }
-  },
-
-  async sendPrivateMessageWithMedia(
-    senderId: number,
-    recipientId: number,
-    message: string,
-    mediaUrl?: string,
-    mediaType?: string,
-    mediaContent?: string
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('messenger_messages')
-        .insert({
-          sender_id: senderId,
-          recipient_id: recipientId,
-          message: message,
-          media_url: mediaUrl,
-          message_type: mediaType,
-          media_content: mediaContent
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error sending private message with media:', error);
-      throw error;
-    }
-  },
-
-  async deleteMessage(messageId: number): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('messenger_messages')
-        .delete()
-        .eq('id', messageId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      throw error;
-    }
-  },
+  }
 
   async validateSession(sessionToken: string): Promise<MessengerUser | null> {
     try {
-      console.log('🔍 MessengerService: Validating session:', sessionToken.substring(0, 10) + '...');
-      
       const { data, error } = await supabase
         .from('user_sessions')
         .select(`
-          *,
-          chat_users!user_sessions_user_id_fkey (*)
+          user_id,
+          is_active,
+          last_activity,
+          chat_users (*)
         `)
         .eq('session_token', sessionToken)
         .eq('is_active', true)
         .single();
 
-      if (error || !data) {
-        console.log('❌ MessengerService: No session data found');
+      if (error || !data || !data.chat_users) {
         return null;
       }
-      
-      // Check if session is still valid (24 hours)
-      const sessionAge = new Date().getTime() - new Date(data.last_activity).getTime();
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      const isValid = sessionAge < twentyFourHours;
-      
-      if (!isValid) {
-        console.log('❌ MessengerService: Session expired');
-        // Deactivate expired session
+
+      // Check if session is still valid (within 24 hours)
+      const lastActivity = new Date(data.last_activity);
+      const now = new Date();
+      const timeDiff = now.getTime() - lastActivity.getTime();
+      const hoursDiff = timeDiff / (1000 * 3600);
+
+      if (hoursDiff > 24) {
+        // Session expired
         await supabase
           .from('user_sessions')
           .update({ is_active: false })
           .eq('session_token', sessionToken);
         return null;
       }
-      
-      // Update last activity to keep session alive
+
+      // Update last activity
       await supabase
         .from('user_sessions')
-        .update({ 
-          last_activity: new Date().toISOString() 
-        })
+        .update({ last_activity: new Date().toISOString() })
         .eq('session_token', sessionToken);
-      
-      console.log('✅ MessengerService: Session valid for user:', data.chat_users?.name);
-      return data.chat_users || null;
+
+      return this.mapUserData(data.chat_users);
     } catch (error) {
-      console.error('💥 MessengerService: Error validating session:', error);
+      console.error('Error validating session:', error);
       return null;
     }
-  },
+  }
 
-  async updateUser(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean; is_approved?: boolean; }): Promise<void> {
+  async getRooms(): Promise<ChatRoom[]> {
     try {
-      const { error } = await supabase
-        .from('chat_users')
-        .update(updates)
-        .eq('id', userId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  },
-
-  async updateUserRole(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean; is_approved?: boolean; }): Promise<void> {
-    return this.updateUser(userId, updates);
-  },
-
-  async updateUserProfile(sessionToken: string, updates: Partial<MessengerUser>, userId?: number): Promise<MessengerUser> {
-    let targetUserId = userId;
-    if (!targetUserId) {
-      targetUserId = await getUserFromSession(sessionToken);
-      if (!targetUserId) {
-        throw new Error('نشست نامعتبر است');
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('chat_users')
-      .update(updates)
-      .eq('id', targetUserId)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error('خطا در به‌روزرسانی پروفایل');
-    }
-
-    return data;
-  },
-
-  async checkUsernameUniqueness(username: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .select('id')
-      .eq('username', username)
-      .limit(1);
-
-    if (error) {
-      throw new Error('خطا در بررسی نام کاربری');
-    }
-
-    return data.length === 0;
-  },
-
-  async changePassword(sessionToken: string, currentPassword: string, newPassword: string): Promise<void> {
-    const userIdFromSession = await getUserFromSession(sessionToken);
-    if (!userIdFromSession) {
-      throw new Error('نشست نامعتبر است');
-    }
-
-    // Get current user with password hash
-    const { data: userData, error: userError } = await supabase
-      .from('chat_users')
-      .select('password_hash')
-      .eq('id', userIdFromSession)
-      .single();
-
-    if (userError || !userData) {
-      throw new Error('کاربر پیدا نشد');
-    }
-
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, userData.password_hash);
-    if (!isCurrentPasswordValid) {
-      throw new Error('Current password is incorrect');
-    }
-
-    // Hash new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    const { error: updateError } = await supabase
-      .from('chat_users')
-      .update({ password_hash: hashedNewPassword })
-      .eq('id', userIdFromSession);
-
-    if (updateError) {
-      throw new Error('خطا در تغییر رمز عبور');
-    }
-  },
-
-  async updateUserDetails(userId: number, updates: { name?: string; bio?: string; [key: string]: any }): Promise<MessengerUser> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .update(updates)
-      .eq('id', userId)
-      .select('*')
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
-    try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chat_rooms')
-        .update(updates)
-        .eq('id', roomId);
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching rooms:', error);
+        return [];
+      }
+
+      return data || [];
     } catch (error) {
-      console.error('Error updating room:', error);
+      console.error('Error in getRooms:', error);
+      return [];
+    }
+  }
+
+  async createRoom(roomData: CreateRoomData): Promise<ChatRoom> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .insert({
+          name: roomData.name,
+          description: roomData.description,
+          type: roomData.type,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating room:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in createRoom:', error);
       throw error;
     }
-  },
+  }
 
-  async getTopics(roomId?: number): Promise<any[]> {
+  async sendMessage(messageData: {
+    sender_id: number;
+    message: string;
+    room_id?: number;
+    recipient_id?: number;
+    conversation_id?: number;
+    topic_id?: number;
+    media_url?: string;
+    message_type?: string;
+    reply_to_message_id?: number;
+  }): Promise<MessageData> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .insert({
+          sender_id: messageData.sender_id,
+          message: messageData.message,
+          room_id: messageData.room_id,
+          recipient_id: messageData.recipient_id,
+          conversation_id: messageData.conversation_id,
+          topic_id: messageData.topic_id,
+          media_url: messageData.media_url,
+          message_type: messageData.message_type || 'text',
+          reply_to_message_id: messageData.reply_to_message_id
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in sendMessage:', error);
+      throw error;
+    }
+  }
+
+  async getMessages(roomId?: number, topicId?: number, limit: number = 50): Promise<MessageData[]> {
     try {
       let query = supabase
-        .from('chat_topics')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey(*)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       if (roomId) {
         query = query.eq('room_id', roomId);
       }
 
+      if (topicId) {
+        query = query.eq('topic_id', topicId);
+      }
+
       const { data, error } = await query;
 
-      if (error) throw error;
-      return data || [];
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return [];
+      }
+
+      return (data || []).reverse();
     } catch (error) {
-      console.error('Error fetching topics:', error);
+      console.error('Error in getMessages:', error);
       return [];
     }
-  },
+  }
 
-  async createTopic(topicData: any): Promise<void> {
+  async getOrCreateChatUser(email: string): Promise<MessengerUser> {
     try {
-      const { error } = await supabase
-        .from('chat_topics')
-        .insert(topicData);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error creating topic:', error);
-      throw error;
-    }
-  },
-
-  async createRoom(roomData: any): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('chat_rooms')
-        .insert(roomData);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error creating room:', error);
-      throw error;
-    }
-  },
-
-  async updateTopic(topicId: number, updates: any): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('chat_topics')
-        .update(updates)
-        .eq('id', topicId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating topic:', error);
-      throw error;
-    }
-  },
-
-  async deleteTopic(topicId: number): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('chat_topics')
-        .delete()
-        .eq('id', topicId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error deleting topic:', error);
-      throw error;
-    }
-  },
-
-  async deleteRoom(roomId: number): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('chat_rooms')
-        .delete()
-        .eq('id', roomId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error deleting room:', error);
-      throw error;
-    }
-  },
-
-  async getAdminSettings(): Promise<AdminSettings> {
-    try {
-      const { data, error } = await supabase
-        .from('admin_settings')
+      // First check if user exists by email
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('chat_users')
         .select('*')
+        .eq('email', email)
         .single();
 
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching admin settings:', error);
-      throw error;
-    }
-  },
-
-  async updateAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('admin_settings')
-        .update(settings)
-        .eq('id', 1);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating admin settings:', error);
-      throw error;
-    }
-  },
-
-  async checkUsernameAvailability(username: string, currentUserId?: number): Promise<boolean> {
-    try {
-      let query = supabase
-        .from('chat_users')
-        .select('id')
-        .eq('username', username);
-
-      if (currentUserId) {
-        query = query.neq('id', currentUserId);
+      if (existingUser && !fetchError) {
+        return this.mapUserData(existingUser);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      return !data || data.length === 0;
-    } catch (error) {
-      console.error('Error checking username availability:', error);
-      throw error;
-    }
-  },
-
-  async searchUsersByUsername(username: string): Promise<MessengerUser[]> {
-    try {
-      const { data, error } = await supabase
+      // Create new user if not found
+      const { data: newUser, error: createError } = await supabase
         .from('chat_users')
-        .select('*')
-        .ilike('username', `%${username}%`)
-        .eq('is_approved', true)
-        .limit(10);
+        .insert({
+          name: email.split('@')[0],
+          email: email,
+          phone: '',
+          is_approved: true,
+          role: 'user',
+          signup_source: 'unified_auth'
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error searching users by username:', error);
-      return [];
-    }
-  },
-
-  async sendPrivateMessage(senderId: number, recipientId: number, message: string): Promise<void> {
-    try {
-      console.log(`Sending private message from ${senderId} to ${recipientId}: ${message}`);
-    } catch (error) {
-      console.error('Error sending private message:', error);
-      throw error;
-    }
-  },
-
-  async getConversations(userId: number): Promise<any[]> {
-    try {
-      console.log(`Fetching conversations for user ID: ${userId}`);
-      return [];
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      throw error;
-    }
-  },
-
-  async updateNotificationSettings(userId: number, enabled: boolean, token?: string): Promise<void> {
-    try {
-      const updates: any = { notification_enabled: enabled };
-      if (token) {
-        updates.notification_token = token;
+      if (createError) {
+        console.error('Error creating chat user:', createError);
+        throw createError;
       }
-      
-      const { error } = await supabase
-        .from('chat_users')
-        .update(updates)
-        .eq('id', userId);
 
-      if (error) throw error;
+      return this.mapUserData(newUser);
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      console.error('Error in getOrCreateChatUser:', error);
       throw error;
     }
-  },
+  }
 
-  async updateUserPassword(userId: number, newPassword: string): Promise<{ error: any }> {
+  async updateNotificationSettings(userId: number, enabled: boolean): Promise<void> {
     try {
-      // Hash the new password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-      
       const { error } = await supabase
         .from('chat_users')
-        .update({ password_hash: hashedPassword })
+        .update({ notification_enabled: enabled })
         .eq('id', userId);
 
       if (error) {
-        console.error('Error updating password:', error);
-        return { error };
+        console.error('Error updating notification settings:', error);
+        throw error;
       }
-
-      return { error: null };
     } catch (error) {
-      console.error('Error updating user password:', error);
-      return { error };
-    }
-  },
-
-  async deactivateSession(sessionToken: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('user_sessions')
-        .update({ is_active: false })
-        .eq('session_token', sessionToken);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error deactivating session:', error);
+      console.error('Error in updateNotificationSettings:', error);
       throw error;
     }
-  },
+  }
+}
 
-  // Check if email is already used
-  async isEmailUsed(email: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('chat_users')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
-
-    return !!data;
-  },
-
-  // Extended registerWithPassword that takes an object with user details
-  async registerWithPassword(userData: {
-    name: string;
-    phone: string;
-    countryCode: string;
-    password: string;
-    email?: string;
-    username?: string;
-    firstName?: string;
-    lastName?: string;
-    isBoundlessStudent?: boolean;
-  }): Promise<AuthResult> {
-    try {
-      const { name, phone, countryCode, password, email, username, firstName, lastName, isBoundlessStudent } = userData;
-      
-      // Check if email is already used
-      if (email) {
-        const emailExists = await this.isEmailUsed(email);
-        if (emailExists) {
-          return { user: null, error: { message: 'این ایمیل قبلاً استفاده شده است' } };
-        }
-      }
-      
-      // Check if user already exists
-      const existingUser = await this.getUserByPhone(phone, countryCode);
-      if (existingUser) {
-        return { user: null, error: { message: 'کاربر با این شماره تلفن قبلاً ثبت نام کرده است' } };
-      }
-
-      // Hash the password before storing
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-      
-      const { data: newUserData, error: insertError } = await supabase
-        .from('chat_users')
-        .insert([{ 
-          phone: phone, 
-          name: name,
-          email: email,
-          first_name: firstName,
-          last_name: lastName,
-          username: username,
-          country_code: countryCode,
-          password_hash: hashedPassword,
-          bedoun_marz: isBoundlessStudent || false,
-          is_approved: true 
-        }])
-        .select('*')
-        .single();
-
-      if (insertError) {
-        console.error('Error creating new user:', insertError);
-        return { user: null, error: insertError };
-      }
-
-      // Send user_created webhook
-      try {
-        console.log('📤 Sending user_created webhook for new user:', newUserData.name);
-        await enhancedWebhookManager.sendUserCreated(newUserData);
-        console.log('✅ User_created webhook sent successfully');
-      } catch (webhookError) {
-        console.error('⚠️ Failed to send user_created webhook:', webhookError);
-        // Don't fail user registration due to webhook errors
-      }
-
-      const sessionToken = await this.createSession(newUserData.id);
-      return { user: newUserData, error: null, session_token: sessionToken };
-    } catch (error) {
-      console.error('Registration error:', error);
-      return { user: null, error: error };
-    }
-  },
-
-};
+export const messengerService = new MessengerService();
