@@ -606,54 +606,120 @@ const EnrollAdmin: React.FC = () => {
                         <p className="text-lg font-medium text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>نام و نام خانوادگی</TableHead>
-                              <TableHead>دوره</TableHead>
-                              <TableHead>مبلغ</TableHead>
-                              <TableHead>وضعیت</TableHead>
-                              <TableHead>تاریخ ثبت‌نام</TableHead>
-                              <TableHead>عملیات</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {enrollments.map((enrollment) => (
-                              <TableRow key={enrollment.id}>
-                                <TableCell>
+                      <>
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-right">نام و نام خانوادگی</TableHead>
+                                <TableHead className="text-right">دوره</TableHead>
+                                <TableHead className="text-right">مبلغ</TableHead>
+                                <TableHead className="text-right">وضعیت</TableHead>
+                                <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
+                                <TableHead className="text-right">عملیات</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {enrollments.map((enrollment) => (
+                                <TableRow key={enrollment.id}>
+                                  <TableCell>
+                                    <div>
+                                      <div className="font-medium">{enrollment.full_name}</div>
+                                      <div className="text-sm text-muted-foreground">{enrollment.email}</div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(enrollment.manual_payment_status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-sm">{formatDate(enrollment.created_at)}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex gap-2 flex-wrap">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => window.open(`/enroll/admin/enrollments/${enrollment.id}`, '_blank')}
+                                      >
+                                        <ExternalLink className="h-4 w-4 ml-1" />
+                                        جزئیات
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleViewDetails(enrollment)}
+                                      >
+                                        <Eye className="h-4 w-4 ml-1" />
+                                        مشاهده
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="md:hidden space-y-4">
+                          {enrollments.map((enrollment) => (
+                            <Card key={enrollment.id} className="p-4">
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-start">
                                   <div>
-                                    <div className="font-medium">{enrollment.full_name}</div>
-                                    <div className="text-sm text-muted-foreground">{enrollment.email}</div>
+                                    <h4 className="font-medium text-sm">{enrollment.full_name}</h4>
+                                    <p className="text-xs text-muted-foreground">{enrollment.email}</p>
                                   </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
-                                </TableCell>
-                                <TableCell>
                                   {getStatusBadge(enrollment.manual_payment_status)}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="text-sm">{formatDate(enrollment.created_at)}</div>
-                                </TableCell>
-                                <TableCell>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-muted-foreground">دوره:</span>
+                                    <span className="text-xs font-medium">{enrollment.courses?.title || 'نامشخص'}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-muted-foreground">مبلغ:</span>
+                                    <span className="text-xs font-mono">{formatPrice(enrollment.payment_amount)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-xs text-muted-foreground">تاریخ:</span>
+                                    <span className="text-xs">{formatDate(enrollment.created_at)}</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex gap-2 pt-2">
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="flex-1 text-xs"
+                                    onClick={() => window.open(`/enroll/admin/enrollments/${enrollment.id}`, '_blank')}
+                                  >
+                                    <ExternalLink className="h-3 w-3 ml-1" />
+                                    جزئیات
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 text-xs"
                                     onClick={() => handleViewDetails(enrollment)}
                                   >
-                                    <Eye className="h-4 w-4 ml-1" />
+                                    <Eye className="h-3 w-3 ml-1" />
                                     مشاهده
                                   </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
