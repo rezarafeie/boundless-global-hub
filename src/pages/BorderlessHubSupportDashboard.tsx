@@ -135,6 +135,14 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     initialize();
   }, [forceAccess]);
 
+  // Auto-update status to "assigned" when opening a chat
+  useEffect(() => {
+    if (selectedConversation && selectedConversation.status === 'open') {
+      console.log('Auto-updating status to assigned for conversation:', selectedConversation.id);
+      handleStatusChange(selectedConversation.id, 'assigned');
+    }
+  }, [selectedConversation?.id]);
+
   const handleStartNewChat = async (user: MessengerUser) => {
     try {
       if (!currentUser) return;
@@ -287,9 +295,8 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     const statusMap = {
       open: { label: 'باز', variant: 'destructive' as const },
       assigned: { label: 'در بررسی', variant: 'default' as const },
-      resolved: { label: 'حل شده', variant: 'secondary' as const },
-      closed: { label: 'بسته', variant: 'outline' as const },
-      completed: { label: 'تکمیل', variant: 'secondary' as const }
+      resolved: { label: 'تکمیل', variant: 'secondary' as const },
+      closed: { label: 'بسته', variant: 'outline' as const }
     };
     
     const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.open;
@@ -442,9 +449,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
               در بررسی
             </Button>
             <Button
-              variant={statusFilter === 'completed' ? 'default' : 'ghost'}
+              variant={statusFilter === 'resolved' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setStatusFilter('completed')}
+              onClick={() => setStatusFilter('resolved')}
               className="flex-1 h-8 text-xs"
             >
               تکمیل
@@ -572,11 +579,11 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                   {selectedConversation.priority !== 'normal' && getPriorityBadge(selectedConversation.priority)}
                   
                   {/* Complete button */}
-                  {selectedConversation.status !== 'completed' && (
+                  {selectedConversation.status !== 'resolved' && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleStatusChange(selectedConversation.id, 'completed')}
+                      onClick={() => handleStatusChange(selectedConversation.id, 'resolved')}
                       className="h-8 px-2"
                     >
                       <Check className="w-4 h-4" />
