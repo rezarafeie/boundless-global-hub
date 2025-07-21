@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +46,20 @@ const BoundlessLanding = () => {
   const [currentHeadline, setCurrentHeadline] = useState({ title: "", subtitle: "" });
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
-  const { getEnrollUrl } = useCourseSettings('boundless');
+  const { courseSettings, loading: courseSettingsLoading } = useCourseSettings('boundless');
+  
+  // Memoize the enrollment URL
+  const enrollmentUrl = useMemo(() => {
+    if (courseSettingsLoading) {
+      return 'https://auth.rafiei.co/?add-to-cart=5311'; // Default while loading
+    }
+    
+    if (courseSettings?.use_landing_page_merge) {
+      return '/enroll?course=boundless';
+    }
+    
+    return 'https://auth.rafiei.co/?add-to-cart=5311';
+  }, [courseSettings, courseSettingsLoading]);
 
   // Set countdown to ۱۷ ژوئن، ساعت ۱۲ ظهر (June 17th, 12:00 PM - 2025)
   const countdownEndDate = new Date(2025, 5, 17, 12, 0, 0);
@@ -188,14 +201,12 @@ const BoundlessLanding = () => {
   ];
 
   const handleEnrollClick = () => {
-    const enrollUrl = getEnrollUrl('boundless', 'https://auth.rafiei.co/?add-to-cart=5311');
-    
-    if (enrollUrl.startsWith('/')) {
+    if (enrollmentUrl.startsWith('/')) {
       // Internal URL - navigate directly
-      window.location.href = enrollUrl;
+      window.location.href = enrollmentUrl;
     } else {
       // External URL - open in new tab
-      window.open(enrollUrl, '_blank');
+      window.open(enrollmentUrl, '_blank');
     }
   };
 

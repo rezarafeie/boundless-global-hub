@@ -38,9 +38,15 @@ export const useCourseSettings = (courseSlug: string) => {
   }, [courseSlug]);
 
   const getEnrollUrl = (courseSlug: string, defaultUrl: string) => {
+    if (loading) {
+      // Still loading, return default URL for now
+      return defaultUrl;
+    }
+    
     if (courseSettings?.use_landing_page_merge) {
       return `/enroll?course=${courseSlug}`;
     }
+    
     return defaultUrl;
   };
 
