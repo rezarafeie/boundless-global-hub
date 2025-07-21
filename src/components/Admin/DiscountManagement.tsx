@@ -101,7 +101,7 @@ const DiscountManagement: React.FC = () => {
     setFormData({
       code: discount.code,
       percentage: discount.percentage.toString(),
-      course_id: discount.course_id || '',
+      course_id: discount.course_id || 'all',
       max_uses: discount.max_uses?.toString() || '',
       valid_from: discount.valid_from ? discount.valid_from.split('T')[0] : '',
       valid_until: discount.valid_until ? discount.valid_until.split('T')[0] : '',
@@ -136,7 +136,7 @@ const DiscountManagement: React.FC = () => {
       code: formData.code.trim().toUpperCase(),
       percentage,
       is_active: formData.is_active,
-      course_id: formData.course_id || null,
+      course_id: formData.course_id === 'all' || !formData.course_id ? null : formData.course_id,
       max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
       valid_from: formData.valid_from ? new Date(formData.valid_from).toISOString() : null,
       valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
@@ -310,7 +310,7 @@ const DiscountManagement: React.FC = () => {
                     <SelectValue placeholder="همه دوره‌ها" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">همه دوره‌ها</SelectItem>
+                    <SelectItem value="all">همه دوره‌ها</SelectItem>
                     {courses.map((course) => (
                       <SelectItem key={course.id} value={course.id}>
                         {course.title}
