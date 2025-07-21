@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, DollarSign, RefreshCw, Percent, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,9 +21,6 @@ interface Course {
   price: number;
   use_dollar_price: boolean;
   usd_price: number | null;
-  is_sale_enabled: boolean;
-  sale_price: number | null;
-  sale_expires_at: string | null;
   is_active: boolean;
   redirect_url: string | null;
   spotplayer_course_id: string | null;
@@ -51,9 +48,6 @@ const CourseManagement: React.FC = () => {
     price: 0,
     use_dollar_price: false,
     usd_price: 0,
-    is_sale_enabled: false,
-    sale_price: 0,
-    sale_expires_at: '',
     redirect_url: '',
     spotplayer_course_id: '',
     is_spotplayer_enabled: false,
@@ -136,9 +130,6 @@ const CourseManagement: React.FC = () => {
           price: data.price,
           use_dollar_price: data.use_dollar_price || false,
           usd_price: data.usd_price || 0,
-          is_sale_enabled: data.is_sale_enabled || false,
-          sale_price: data.sale_price || 0,
-          sale_expires_at: data.sale_expires_at ? new Date(data.sale_expires_at).toISOString().slice(0, 16) : '',
           redirect_url: data.redirect_url || '',
           spotplayer_course_id: data.spotplayer_course_id || '',
           is_spotplayer_enabled: data.is_spotplayer_enabled || false,
@@ -178,9 +169,6 @@ const CourseManagement: React.FC = () => {
         price: courseForm.price,
         use_dollar_price: courseForm.use_dollar_price,
         usd_price: courseForm.use_dollar_price ? courseForm.usd_price : null,
-        is_sale_enabled: courseForm.is_sale_enabled,
-        sale_price: courseForm.is_sale_enabled ? courseForm.sale_price : null,
-        sale_expires_at: courseForm.is_sale_enabled && courseForm.sale_expires_at ? new Date(courseForm.sale_expires_at).toISOString() : null,
         redirect_url: courseForm.redirect_url,
         spotplayer_course_id: courseForm.spotplayer_course_id,
         is_spotplayer_enabled: courseForm.is_spotplayer_enabled,
@@ -388,59 +376,6 @@ const CourseManagement: React.FC = () => {
                   />
                 </div>
               )}
-
-              {/* Sale Configuration */}
-              <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <h4 className="text-lg font-semibold text-orange-800 dark:text-orange-400 flex items-center gap-2">
-                  <Percent className="h-5 w-5" />
-                  تنظیمات فروش ویژه
-                </h4>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="sale-toggle" className="text-base font-medium">
-                      فعال‌سازی فروش ویژه
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      فعال‌سازی قیمت تخفیف‌دار برای این دوره
-                    </p>
-                  </div>
-                  <Switch
-                    id="sale-toggle"
-                    checked={courseForm.is_sale_enabled}
-                    onCheckedChange={(checked) => 
-                      setCourseForm(prev => ({ ...prev, is_sale_enabled: checked }))
-                    }
-                  />
-                </div>
-
-                {courseForm.is_sale_enabled && (
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="sale_price">قیمت فروش ویژه (تومان) *</Label>
-                      <Input
-                        id="sale_price"
-                        type="number"
-                        value={courseForm.sale_price}
-                        onChange={(e) => setCourseForm(prev => ({ ...prev, sale_price: Number(e.target.value) }))}
-                        placeholder="1500000"
-                        required={courseForm.is_sale_enabled}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="sale_expires_at">تاریخ انقضای فروش ویژه *</Label>
-                      <Input
-                        id="sale_expires_at"
-                        type="datetime-local"
-                        value={courseForm.sale_expires_at}
-                        onChange={(e) => setCourseForm(prev => ({ ...prev, sale_expires_at: e.target.value }))}
-                        required={courseForm.is_sale_enabled}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="space-y-2">

@@ -3,8 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import RandomHeadlineGenerator from './RandomHeadlineGenerator';
-import SaleBadge from './SaleBadge';
-import SaleCountdownTimer from './SaleCountdownTimer';
 
 export interface HeroProps {
   title?: string;
@@ -13,10 +11,6 @@ export interface HeroProps {
   ctaLink?: string;
   backgroundType?: 'default' | 'glow';
   glowTheme?: 'blue' | 'purple' | 'pink';
-  showSale?: boolean;
-  originalPrice?: number;
-  salePrice?: number;
-  saleExpiresAt?: string;
 }
 
 const Hero: React.FC<HeroProps> = ({ 
@@ -25,11 +19,7 @@ const Hero: React.FC<HeroProps> = ({
   ctaText,
   ctaLink,
   backgroundType = 'default',
-  glowTheme = 'blue',
-  showSale = false,
-  originalPrice,
-  salePrice,
-  saleExpiresAt
+  glowTheme = 'blue'
 }) => {
   const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -41,12 +31,6 @@ const Hero: React.FC<HeroProps> = ({
   if (!mounted) {
     return null;
   }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
-  };
-
-  const isSaleActive = showSale && originalPrice && salePrice && saleExpiresAt && new Date(saleExpiresAt) > new Date();
 
   return (
     <section className="relative min-h-[70vh] bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 flex items-center justify-center overflow-hidden">
@@ -104,33 +88,6 @@ const Hero: React.FC<HeroProps> = ({
                 )}
               </motion.div>
             </div>
-
-            {/* Sale Information */}
-            {isSaleActive && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="space-y-4"
-              >
-                <div className="flex justify-center">
-                  <SaleBadge originalPrice={originalPrice!} salePrice={salePrice!} />
-                </div>
-                
-                <div className="flex flex-col items-center gap-2">
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {formatPrice(salePrice!)}
-                    </span>
-                    <span className="text-lg text-muted-foreground line-through">
-                      {formatPrice(originalPrice!)}
-                    </span>
-                  </div>
-                  
-                  <SaleCountdownTimer expiresAt={saleExpiresAt!} />
-                </div>
-              </motion.div>
-            )}
 
             {/* CTA Button */}
             {ctaText && ctaLink && (
