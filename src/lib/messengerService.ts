@@ -75,14 +75,14 @@ export interface ChatTopic {
 export interface ChatRoom {
   id: number;
   name: string;
-  description: string; // Made required to match usage
+  description: string;
   type: string;
   is_active: boolean;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
   is_super_group?: boolean;
-  is_boundless_only?: boolean;
+  is_boundless_only: boolean; // Made required to match usage
 }
 
 export interface CreateRoomData {
@@ -399,7 +399,8 @@ class MessengerService {
 
       return (data || []).map(room => ({
         ...room,
-        description: room.description || '' // Ensure description is never null/undefined
+        description: room.description || '',
+        is_boundless_only: room.is_boundless_only || false
       }));
     } catch (error) {
       console.error('Error in getRooms:', error);

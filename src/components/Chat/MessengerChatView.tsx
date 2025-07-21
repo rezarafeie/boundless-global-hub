@@ -254,11 +254,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             media_url: msg.media_url,
             message_type: msg.message_type || 'text',
             media_content: msg.media_content,
-            sender: {
-              name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-              phone: ''
-            }
-          }));
+            sender: msg.sender_id === currentUser.id ? currentUser : selectedUser,
+            sender_name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name
+          })) as MessengerMessage[];
         }
       }
       
@@ -301,7 +299,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       message_type: media ? 'media' : 'text',
       topic_id: selectedTopic?.id,
       conversation_id: null,
-      sender: { name: currentUser.name, phone: currentUser.phone }
+      sender: currentUser
     };
 
     try {
@@ -320,26 +318,25 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }) : null;
       
       if (selectedRoom) {
-        await messengerService.sendMessage(
-          selectedRoom.id, 
-          currentUser.id, 
-          message, 
-          selectedTopic?.id,
-          mediaUrl,
-          mediaType,
-          mediaContent
-        );
+        await messengerService.sendMessage({
+          sender_id: currentUser.id,
+          message,
+          room_id: selectedRoom.id,
+          topic_id: selectedTopic?.id,
+          media_url: mediaUrl,
+          message_type: mediaType
+        });
       } else if (selectedUser) {
         // Check if it's support conversation
         if (selectedUser.id === 1) {
           // Send as support message via messenger service with recipient_id
-          await messengerService.sendSupportMessage(
-            currentUser.id,
+          await messengerService.sendSupportMessage({
+            sender_id: currentUser.id,
             message,
-            mediaUrl,
-            mediaType,
-            mediaContent
-          );
+            conversation_id: currentUser.id,
+            media_url: mediaUrl,
+            message_type: mediaType
+          });
         } else {
           // For private messages, use the private message service directly with media support
           await privateMessageService.sendMessage(
