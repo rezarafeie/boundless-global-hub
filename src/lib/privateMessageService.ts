@@ -2,6 +2,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { type MessengerUser } from './messengerService';
 
+// Debug logging function
+const debugLog = (...args: any[]) => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('debug') === 'true') {
+    console.log('[PrivateMessageService]', ...args);
+  }
+};
+
 export interface PrivateMessage {
   id: number;
   created_at: string;
@@ -154,9 +162,20 @@ export const privateMessageService = {
     }
   },
 
-  async getMessages(conversationId: number): Promise<PrivateMessage[]> {
+  async getMessages(conversationId: number, sessionToken?: string): Promise<PrivateMessage[]> {
     try {
-      console.log('Fetching messages for conversation:', conversationId);
+      debugLog('Fetching messages for conversation:', conversationId, 'with session:', sessionToken ? 'provided' : 'none');
+      
+      // Set session context if provided
+      if (sessionToken) {
+        try {
+          await supabase.rpc('set_session_context', { session_token: sessionToken });
+          debugLog('Session context set successfully');
+        } catch (sessionError) {
+          console.error('Failed to set session context:', sessionError);
+        }
+      }
+      
       const { data, error } = await supabase
         .from('private_messages')
         .select(`
@@ -177,20 +196,32 @@ export const privateMessageService = {
 
       if (error) {
         console.error('Error fetching messages:', error);
+        debugLog('SQL Error details:', error);
         return [];
       }
 
-      console.log('Fetched messages:', data?.length || 0);
+      debugLog('Successfully fetched messages:', data?.length || 0);
       return data || [];
     } catch (error) {
       console.error('Error fetching messages:', error);
+      debugLog('Fetch error details:', error);
       return [];
     }
   },
 
-  async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<PrivateMessage | null> {
+  async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string, sessionToken?: string): Promise<PrivateMessage | null> {
     try {
-      console.log('Sending private message from', senderId, 'to', recipientId);
+      debugLog('Sending private message from', senderId, 'to', recipientId, 'with session:', sessionToken ? 'provided' : 'none');
+      
+      // Set session context if provided
+      if (sessionToken) {
+        try {
+          await supabase.rpc('set_session_context', { session_token: sessionToken });
+          debugLog('Session context set for message sending');
+        } catch (sessionError) {
+          console.error('Failed to set session context for sending:', sessionError);
+        }
+      }
       
       // Get or create conversation first with enhanced error handling
       const conversationId = await this.getOrCreateConversation(senderId, recipientId);
@@ -200,7 +231,7 @@ export const privateMessageService = {
         throw new Error('Failed to create conversation');
       }
 
-      console.log('Using conversation ID:', conversationId);
+      debugLog('Using conversation ID:', conversationId);
 
       const { data, error } = await supabase
         .from('private_messages')
@@ -218,10 +249,11 @@ export const privateMessageService = {
 
       if (error) {
         console.error('Error sending message:', error);
+        debugLog('Message insert error details:', error);
         throw error;
       }
 
-      console.log('Message sent successfully:', data.id);
+      debugLog('Message sent successfully:', data.id);
 
       // Update last_message_at in private_conversations table
       const { error: updateError } = await supabase
@@ -494,8 +526,8 @@ export const privateMessageService = {
     }
   },
 
-  async getConversationMessages(conversationId: number): Promise<PrivateMessage[]> {
-    return this.getMessages(conversationId);
+  async getConversationMessages(conversationId: number, sessionToken?: string): Promise<PrivateMessage[]> {
+    return this.getMessages(conversationId, sessionToken);
   },
 
   async markConversationAsRead(conversationId: number, userId: number): Promise<void> {

@@ -318,7 +318,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         } else {
           debugLog('Loading private messages between users');
           const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
-          const privateMessages = await privateMessageService.getConversationMessages(conversationId);
+          const privateMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
           
           roomMessages = privateMessages.map(msg => ({
             ...msg,
@@ -439,7 +439,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             message,
             mediaUrl,
             mediaType,
-            mediaContent
+            mediaContent,
+            sessionToken
           );
           debugLog('Private message sent successfully');
         }
