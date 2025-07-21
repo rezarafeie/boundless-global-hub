@@ -375,19 +375,32 @@ export const privateMessageService = {
     }
   },
 
-  async searchUsers(searchTerm: string): Promise<MessengerUser[]> {
+  async searchUsers(searchTerm: string, sessionToken?: string): Promise<MessengerUser[]> {
     try {
+      console.log('Searching users with term:', searchTerm);
+      
+      // Set session context if provided
+      if (sessionToken) {
+        try {
+          await supabase.rpc('set_session_context', { session_token: sessionToken });
+        } catch (sessionError) {
+          console.error('Failed to set session context for search:', sessionError);
+        }
+      }
+
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .limit(10);
+        .or(`name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%`)
+        .eq('is_approved', true)
+        .limit(20);
 
       if (error) {
         console.error('Search error:', error);
         return [];
       }
 
+      console.log('Search results found:', data?.length || 0);
       return data || [];
     } catch (error) {
       console.error('Error searching users:', error);
