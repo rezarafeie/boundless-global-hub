@@ -175,7 +175,7 @@ const CourseAccess: React.FC = () => {
 
   const fetchCourseContent = async (courseId: string) => {
     try {
-      // Fetch title groups, sections, and lessons in a hierarchical structure
+      // Fetch title groups with sections and their lessons via junction table
       const { data: titleGroupsData, error: titleGroupsError } = await supabase
         .from('course_title_groups')
         .select(`
@@ -188,14 +188,16 @@ const CourseAccess: React.FC = () => {
             title,
             order_index,
             title_group_id,
-            course_lessons (
-              id,
-              title,
-              content,
-              video_url,
-              file_url,
-              duration,
-              order_index
+            lesson_sections (
+              course_lessons (
+                id,
+                title,
+                content,
+                video_url,
+                file_url,
+                duration,
+                order_index
+              )
             )
           )
         `)
@@ -205,7 +207,7 @@ const CourseAccess: React.FC = () => {
 
       if (titleGroupsError) throw titleGroupsError;
 
-      // Fetch sections that are not part of any title group
+      // Fetch sections that are not part of any title group with their lessons via junction table
       const { data: orphanSectionsData, error: orphanSectionsError } = await supabase
         .from('course_sections')
         .select(`
@@ -213,14 +215,16 @@ const CourseAccess: React.FC = () => {
           title,
           order_index,
           title_group_id,
-          course_lessons (
-            id,
-            title,
-            content,
-            video_url,
-            file_url,
-            duration,
-            order_index
+          lesson_sections (
+            course_lessons (
+              id,
+              title,
+              content,
+              video_url,
+              file_url,
+              duration,
+              order_index
+            )
           )
         `)
         .eq('course_id', courseId)
@@ -235,7 +239,9 @@ const CourseAccess: React.FC = () => {
         sections: (group.course_sections || [])
           .map(section => ({
             ...section,
-            lessons: (section.course_lessons || [])
+            lessons: (section.lesson_sections || [])
+              .map(ls => ls.course_lessons)
+              .filter(lesson => lesson !== null)
               .sort((a, b) => a.order_index - b.order_index)
           }))
           .sort((a, b) => a.order_index - b.order_index)
@@ -244,7 +250,9 @@ const CourseAccess: React.FC = () => {
       // Transform orphan sections data
       const formattedOrphanSections = (orphanSectionsData || []).map(section => ({
         ...section,
-        lessons: (section.course_lessons || [])
+        lessons: (section.lesson_sections || [])
+          .map(ls => ls.course_lessons)
+          .filter(lesson => lesson !== null)
           .sort((a, b) => a.order_index - b.order_index)
       })).sort((a, b) => a.order_index - b.order_index);
 
