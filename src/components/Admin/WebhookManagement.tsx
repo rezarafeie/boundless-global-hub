@@ -105,9 +105,20 @@ export function WebhookManagement() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching webhooks:', error);
+        toast({
+          title: 'خطا',
+          description: `خطا در بارگیری وب‌هوک‌ها: ${error.message}`,
+          variant: 'destructive'
+        });
+        return;
+      }
+      
+      console.log('Fetched webhooks:', data);
       setWebhooks(data || []);
     } catch (error) {
+      console.error('Unexpected error:', error);
       toast({
         title: 'خطا',
         description: 'خطا در بارگیری وب‌هوک‌ها',
@@ -298,48 +309,66 @@ export function WebhookManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {webhooks.map((webhook) => (
-                    <TableRow key={webhook.id}>
-                      <TableCell>{webhook.name}</TableCell>
-                      <TableCell className="max-w-xs truncate">{webhook.url}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {WEBHOOK_EVENTS.find(e => e.value === webhook.event_type)?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={webhook.is_active ? "default" : "secondary"}>
-                          {webhook.is_active ? 'فعال' : 'غیرفعال'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
+                  {webhooks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <div className="flex flex-col items-center gap-2">
+                          <Plus className="w-8 h-8 text-muted-foreground" />
+                          <p className="text-muted-foreground">هیچ وب‌هوکی تعریف نشده است</p>
+                          <Button 
+                            variant="outline" 
                             size="sm"
-                            onClick={() => handleTest(webhook)}
-                            disabled={loading}
+                            onClick={() => setIsCreateModalOpen(true)}
                           >
-                            <Send className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openEditModal(webhook)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(webhook.id!)}
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            افزودن اولین وب‌هوک
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    webhooks.map((webhook) => (
+                      <TableRow key={webhook.id}>
+                        <TableCell>{webhook.name}</TableCell>
+                        <TableCell className="max-w-xs truncate">{webhook.url}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {WEBHOOK_EVENTS.find(e => e.value === webhook.event_type)?.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={webhook.is_active ? "default" : "secondary"}>
+                            {webhook.is_active ? 'فعال' : 'غیرفعال'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTest(webhook)}
+                              disabled={loading}
+                            >
+                              <Send className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditModal(webhook)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(webhook.id!)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
