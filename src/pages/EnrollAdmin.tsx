@@ -76,13 +76,13 @@ const EnrollAdmin: React.FC = () => {
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users'>('dashboard');
 
   useEffect(() => {
     // Check for tab parameter and set active view
     const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks', 'reports', 'data-import'].includes(tab)) {
-      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import');
+    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks', 'reports', 'data-import', 'users'].includes(tab)) {
+      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users');
     }
     
     Promise.all([fetchEnrollments(), fetchCourses()]);
@@ -350,6 +350,11 @@ const EnrollAdmin: React.FC = () => {
       id: 'courses',
       label: 'مدیریت دوره‌ها',
       icon: BookOpen,
+    },
+    {
+      id: 'users',
+      label: 'مدیریت کاربران',
+      icon: Users,
     },
     {
       id: 'reports',
@@ -698,6 +703,25 @@ const EnrollAdmin: React.FC = () => {
                   <p className="text-muted-foreground mt-2">مدیریت و نظارت بر وب‌هوک‌های سیستم</p>
                 </div>
                 <WebhookManagement />
+              </div>
+            )}
+
+            {/* Users View */}
+            {activeView === 'users' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold">مدیریت کاربران</h1>
+                  <p className="text-muted-foreground mt-2">مدیریت کاربران، پروفایل‌ها و فعالیت‌ها</p>
+                </div>
+                <div className="text-center">
+                  <Button 
+                    onClick={() => window.location.href = '/enroll/admin/users'}
+                    className="inline-flex items-center gap-2"
+                  >
+                    <Users className="h-5 w-5" />
+                    رفتن به صفحه مدیریت کاربران
+                  </Button>
+                </div>
               </div>
             )}
           </div>
