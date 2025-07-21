@@ -68,7 +68,7 @@ class SupportMessageService {
   ): Promise<void> {
     console.log('Sending support message to user:', { recipientUserId, conversationId, message });
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('messenger_messages')
       .insert({
         sender_id: 1, // Support sender ID
@@ -79,12 +79,15 @@ class SupportMessageService {
         media_content: mediaContent,
         room_id: null,
         conversation_id: conversationId
-      });
+      })
+      .select();
 
     if (error) {
       console.error('Error sending support message:', error);
       throw error;
     }
+
+    console.log('Support message sent successfully:', data);
   }
 
   // Get messages for a support conversation
