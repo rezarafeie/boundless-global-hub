@@ -52,6 +52,11 @@ class EnhancedWebhookManager {
     try {
       const webhooks = await this.getActiveWebhooks(eventType);
       
+      if (webhooks.length === 0) {
+        console.log(`No active webhooks found for event type: ${eventType}`);
+        return;
+      }
+      
       for (const webhook of webhooks) {
         await this.executeWebhook(webhook, payload);
       }
@@ -195,11 +200,36 @@ class EnhancedWebhookManager {
   }
 
   async sendUserCreated(user: any) {
-    await this.sendWebhook('user_created', {
-      event_type: 'user_created',
-      timestamp: new Date().toISOString(),
-      data: { user }
-    });
+    try {
+      console.log('📤 EnhancedWebhookManager: Sending user_created webhook for:', user.name);
+      
+      // Try direct webhook sending first
+      await this.sendWebhook('user_created', {
+        event_type: 'user_created',
+        timestamp: new Date().toISOString(),
+        data: { user }
+      });
+      
+      // Also call the edge function as backup/alternative method
+      try {
+        const { error: functionError } = await supabase.functions.invoke('send-user-webhook', {
+          body: {
+            user,
+            eventType: 'user_created'
+          }
+        });
+        
+        if (functionError) {
+          console.error('Edge function error for user_created webhook:', functionError);
+        }
+      } catch (edgeFunctionError) {
+        console.error('Failed to call edge function for user_created webhook:', edgeFunctionError);
+      }
+      
+    } catch (error) {
+      console.error('Failed to send user_created webhook:', error);
+      throw error;
+    }
   }
 
   async sendEmailLinkedExistingAccount(user: any, enrollment: any) {

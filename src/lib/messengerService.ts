@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import bcrypt from 'bcryptjs';
+import { enhancedWebhookManager } from './enhancedWebhookManager';
 
 // Helper function to get user from session
 async function getUserFromSession(sessionToken: string): Promise<number | null> {
@@ -974,6 +974,16 @@ export const messengerService = {
       if (insertError) {
         console.error('Error creating new user:', insertError);
         return { user: null, error: insertError };
+      }
+
+      // Send user_created webhook
+      try {
+        console.log('📤 Sending user_created webhook for new user:', newUserData.name);
+        await enhancedWebhookManager.sendUserCreated(newUserData);
+        console.log('✅ User_created webhook sent successfully');
+      } catch (webhookError) {
+        console.error('⚠️ Failed to send user_created webhook:', webhookError);
+        // Don't fail user registration due to webhook errors
       }
 
       const sessionToken = await this.createSession(newUserData.id);
