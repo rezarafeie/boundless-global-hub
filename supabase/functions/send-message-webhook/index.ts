@@ -64,7 +64,6 @@ serve(async (req) => {
     let chatType = 'unknown';
     let chatName = '';
     let topicName = '';
-    let receiverEmail = '';
 
     if (messageData.room_id) {
       chatType = 'group';
@@ -91,59 +90,17 @@ serve(async (req) => {
     } else if (messageData.recipient_id) {
       chatType = 'private';
       
-      // Get recipient name and email - prefer user with email if multiple exist
+      // Get recipient name
       const { data: recipientData } = await supabase
         .from('chat_users')
-        .select('name, email, phone')
+        .select('name')
         .eq('id', messageData.recipient_id)
         .single();
       
       chatName = recipientData?.name || 'Unknown User';
-      receiverEmail = recipientData?.email || '';
-      
-      // If no email found, try to find a user with the same phone but with email
-      if (!receiverEmail && recipientData?.phone) {
-        const normalizedPhone = recipientData.phone.replace(/^0/, ''); // Remove leading 0
-        
-        const { data: alternateUser } = await supabase
-          .from('chat_users')
-          .select('email')
-          .or(`phone.eq.${recipientData.phone},phone.eq.${normalizedPhone},phone.eq.0${normalizedPhone}`)
-          .not('email', 'is', null)
-          .limit(1)
-          .single();
-        
-        if (alternateUser?.email) {
-          receiverEmail = alternateUser.email;
-          console.log(`📧 Found alternate user email for phone ${recipientData.phone}: ${receiverEmail}`);
-        }
-      }
     } else if (messageData.conversation_id) {
       chatType = 'support';
       chatName = 'Support';
-      
-      // For support conversations, get receiver email based on conversation type
-      if (messageData.sender_id === 1) {
-        // Message from support to user - get user email
-        const { data: conversationData } = await supabase
-          .from('support_conversations')
-          .select('user_id')
-          .eq('id', messageData.conversation_id)
-          .single();
-        
-        if (conversationData) {
-          const { data: userData } = await supabase
-            .from('chat_users')
-            .select('email')
-            .eq('id', conversationData.user_id)
-            .single();
-          
-          receiverEmail = userData?.email || '';
-        }
-      } else {
-        // Message from user to support - receiver is support (no specific email)
-        receiverEmail = 'support@company.com'; // or leave empty
-      }
     }
 
     // Get webhook configurations for message_sent event
@@ -180,8 +137,7 @@ serve(async (req) => {
           message_content: messageData.message,
           sender_name: senderData.name || 'Unknown',
           sender_phone: senderData.phone || '',
-          sender_email: senderData.email || '',
-          receiver_email: receiverEmail || '',
+          sender_email: senderData.email || '', // Added email field
           chat_type: chatType,
           chat_name: chatName,
           topic_name: topicName,
