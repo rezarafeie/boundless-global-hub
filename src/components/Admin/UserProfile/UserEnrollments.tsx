@@ -82,13 +82,13 @@ export function UserEnrollments({ userId }: UserEnrollmentsProps) {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'success':
-        return <Badge variant="default">Paid</Badge>;
+        return <Badge variant="default" className="text-xs">پرداخت شده</Badge>;
       case 'pending':
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary" className="text-xs">در انتظار</Badge>;
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
+        return <Badge variant="destructive" className="text-xs">ناموفق</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-xs">{status}</Badge>;
     }
   };
 
@@ -113,81 +113,85 @@ export function UserEnrollments({ userId }: UserEnrollmentsProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5" />
-          Course Enrollments ({enrollments.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {enrollments.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No enrollments found for this user.
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Course</TableHead>
-                <TableHead>Enrollment Date</TableHead>
-                <TableHead>Payment Amount</TableHead>
-                <TableHead>Payment Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Transaction ID</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {enrollments.map((enrollment) => (
-                <TableRow key={enrollment.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{enrollment.course_title || 'Unknown Course'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Course Price: {formatPrice(enrollment.course_price || 0)} تومان
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      {formatDate(enrollment.created_at)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-muted-foreground" />
-                      {formatPrice(enrollment.payment_amount)} تومان
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {enrollment.payment_method || 'N/A'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {getPaymentStatusBadge(enrollment.payment_status)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {enrollment.zarinpal_ref_id ? (
-                        <p>Ref: {enrollment.zarinpal_ref_id}</p>
-                      ) : (
-                        <p className="text-muted-foreground">N/A</p>
-                      )}
-                      {enrollment.zarinpal_authority && (
-                        <p className="text-xs text-muted-foreground">
-                          Auth: {enrollment.zarinpal_authority.slice(0, 10)}...
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+    <div dir="rtl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+            ثبت‌نام در دوره‌ها ({enrollments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {enrollments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              هیچ ثبت‌نامی برای این کاربر یافت نشد.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">دوره</TableHead>
+                    <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
+                    <TableHead className="text-right">مبلغ پرداختی</TableHead>
+                    <TableHead className="text-right">روش پرداخت</TableHead>
+                    <TableHead className="text-right">وضعیت</TableHead>
+                    <TableHead className="text-right">شناسه تراکنش</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {enrollments.map((enrollment) => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-sm">{enrollment.course_title || 'دوره نامشخص'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            قیمت دوره: {formatPrice(enrollment.course_price || 0)} تومان
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                          <span className="text-sm">{formatDate(enrollment.created_at)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                          <span className="text-sm">{formatPrice(enrollment.payment_amount)} تومان</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {enrollment.payment_method === 'zarinpal' ? 'زرین‌پال' : enrollment.payment_method || 'نامشخص'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getPaymentStatusBadge(enrollment.payment_status)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs">
+                          {enrollment.zarinpal_ref_id ? (
+                            <p>مرجع: {enrollment.zarinpal_ref_id}</p>
+                          ) : (
+                            <p className="text-muted-foreground">نامشخص</p>
+                          )}
+                          {enrollment.zarinpal_authority && (
+                            <p className="text-xs text-muted-foreground">
+                              Auth: {enrollment.zarinpal_authority.slice(0, 10)}...
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
