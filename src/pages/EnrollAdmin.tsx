@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Search, Filter, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -204,6 +205,48 @@ const EnrollAdmin: React.FC = () => {
         return <Badge variant="outline">{status || 'نامشخص'}</Badge>;
     }
   };
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
+  const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>([]);
+
+  // Filter enrollments based on search and filters
+  useEffect(() => {
+    let filtered = enrollments;
+
+    // Text search
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(enrollment => 
+        enrollment.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enrollment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        enrollment.phone.includes(searchTerm) ||
+        enrollment.courses?.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'payment_pending') {
+        filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'pending');
+      } else if (statusFilter === 'payment_completed') {
+        filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'completed' || e.payment_status?.toLowerCase() === 'success');
+      } else if (statusFilter === 'manual_pending') {
+        filtered = filtered.filter(e => e.manual_payment_status === 'pending');
+      } else if (statusFilter === 'manual_approved') {
+        filtered = filtered.filter(e => e.manual_payment_status === 'approved');
+      } else if (statusFilter === 'manual_rejected') {
+        filtered = filtered.filter(e => e.manual_payment_status === 'rejected');
+      }
+    }
+
+    // Course filter
+    if (courseFilter !== 'all') {
+      filtered = filtered.filter(e => e.course_id === courseFilter);
+    }
+
+    setFilteredEnrollments(filtered);
+  }, [enrollments, searchTerm, statusFilter, courseFilter]);
 
   const handleViewDetails = (enrollment: Enrollment) => {
     setSelectedEnrollment(enrollment);
@@ -559,7 +602,7 @@ const EnrollAdmin: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
-                          <p className="text-2xl font-bold">{enrollments.length}</p>
+                          <p className="text-2xl font-bold">{filteredEnrollments.length}</p>
                         </div>
                         <User className="h-8 w-8 text-primary" />
                       </div>
@@ -572,7 +615,7 @@ const EnrollAdmin: React.FC = () => {
                         <div>
                           <p className="text-sm text-muted-foreground">در انتظار تایید</p>
                           <p className="text-2xl font-bold text-amber-600">
-                            {enrollments.filter(e => e.manual_payment_status === 'pending').length}
+                            {filteredEnrollments.filter(e => e.manual_payment_status === 'pending').length}
                           </p>
                         </div>
                         <Clock className="h-8 w-8 text-amber-600" />
@@ -586,7 +629,7 @@ const EnrollAdmin: React.FC = () => {
                         <div>
                           <p className="text-sm text-muted-foreground">تایید شده</p>
                           <p className="text-2xl font-bold text-green-600">
-                            {enrollments.filter(e => e.manual_payment_status === 'approved').length}
+                            {filteredEnrollments.filter(e => e.manual_payment_status === 'approved').length}
                           </p>
                         </div>
                         <CheckCircle className="h-8 w-8 text-green-600" />
@@ -600,7 +643,7 @@ const EnrollAdmin: React.FC = () => {
                         <div>
                           <p className="text-sm text-muted-foreground">رد شده</p>
                           <p className="text-2xl font-bold text-red-600">
-                            {enrollments.filter(e => e.manual_payment_status === 'rejected').length}
+                            {filteredEnrollments.filter(e => e.manual_payment_status === 'rejected').length}
                           </p>
                         </div>
                         <XCircle className="h-8 w-8 text-red-600" />
@@ -618,10 +661,76 @@ const EnrollAdmin: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {enrollments.length === 0 ? (
+                    {/* Search and Filters */}
+                    <div className="mb-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="جستجو بر اساس نام، ایمیل، شماره تلفن یا دوره..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pr-10"
+                          />
+                        </div>
+                        
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="w-full sm:w-48">
+                            <SelectValue placeholder="فیلتر وضعیت" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                            <SelectItem value="payment_pending">در انتظار پرداخت</SelectItem>
+                            <SelectItem value="payment_completed">پرداخت شده</SelectItem>
+                            <SelectItem value="manual_pending">در انتظار بررسی</SelectItem>
+                            <SelectItem value="manual_approved">تایید شده</SelectItem>
+                            <SelectItem value="manual_rejected">رد شده</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        <Select value={courseFilter} onValueChange={setCourseFilter}>
+                          <SelectTrigger className="w-full sm:w-48">
+                            <SelectValue placeholder="فیلتر دوره" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">همه دوره‌ها</SelectItem>
+                            {courses.map((course) => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Filter className="h-4 w-4" />
+                        <span>نمایش {filteredEnrollments.length} از {enrollments.length} ثبت‌نام</span>
+                        {(searchTerm || statusFilter !== 'all' || courseFilter !== 'all') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSearchTerm('');
+                              setStatusFilter('all');
+                              setCourseFilter('all');
+                            }}
+                          >
+                            پاک کردن فیلترها
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {filteredEnrollments.length === 0 ? (
                       <div className="text-center py-12">
                         <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-lg font-medium text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
+                        <p className="text-lg font-medium text-muted-foreground">
+                          {searchTerm || statusFilter !== 'all' || courseFilter !== 'all' 
+                            ? 'هیچ ثبت‌نامی با این فیلترها یافت نشد' 
+                            : 'هیچ ثبت‌نامی یافت نشد'
+                          }
+                        </p>
                       </div>
                     ) : (
                       <>
@@ -640,7 +749,7 @@ const EnrollAdmin: React.FC = () => {
                             </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {enrollments.map((enrollment) => (
+                              {filteredEnrollments.map((enrollment) => (
                                 <TableRow key={enrollment.id}>
                                   <TableCell>
                                     <div>
@@ -691,7 +800,7 @@ const EnrollAdmin: React.FC = () => {
 
                         {/* Mobile Cards */}
                         <div className="md:hidden space-y-4">
-                          {enrollments.map((enrollment) => (
+                          {filteredEnrollments.map((enrollment) => (
                             <Card key={enrollment.id} className="p-4">
                               <div className="space-y-3">
                                 <div className="flex justify-between items-start">
