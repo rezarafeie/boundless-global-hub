@@ -52,6 +52,10 @@ Deno.serve(async (req) => {
       return 'sso_' + crypto.randomUUID().replace(/-/g, '') + '_' + Date.now()
     }
 
+    // Get the current domain from the request
+    const origin = req.headers.get('origin') || 'https://f1b84616-3d17-49e3-9831-9bf37bdf8198.lovableproject.com'
+    console.log('Using origin for SSO URLs:', origin)
+
     const tokens: { type: string; token: string; url: string }[] = []
 
     // Generate academy SSO token if enabled
@@ -76,7 +80,7 @@ Deno.serve(async (req) => {
       tokens.push({
         type: 'academy',
         token: academyToken,
-        url: `https://academy.rafiei.co/sso-access?token=${academyToken}`
+        url: `${origin}/sso-access?token=${academyToken}`
       })
 
       console.log('Created academy SSO token:', academyToken)
@@ -104,7 +108,7 @@ Deno.serve(async (req) => {
       tokens.push({
         type: 'woocommerce',
         token: woocommerceToken,
-        url: `https://auth.rafiei.co/sso-login?token=${woocommerceToken}`
+        url: `${origin}/sso-login?token=${woocommerceToken}`
       })
 
       console.log('Created WooCommerce SSO token:', woocommerceToken)

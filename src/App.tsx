@@ -31,6 +31,10 @@ import EnrollmentAdmin from "./pages/EnrollmentAdmin";
 import CourseManagement from "./pages/Course/CourseManagement";
 import CourseAccess from "./pages/CourseAccess";
 
+// SSO pages
+import SSOAccess from "./pages/SSOAccess";
+import SSOLogin from "./pages/SSOLogin";
+
 // Course pages
 import MetaverseLanding from "./pages/Courses/MetaverseLanding";
 import InstagramLanding from "./pages/Courses/InstagramLanding";
@@ -158,6 +162,10 @@ const App = () => {
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
+                    
+                    {/* SSO Access routes */}
+                    <Route path="/sso-access" element={<SSOAccess />} />
+                    <Route path="/sso-login" element={<SSOLogin />} />
                     
                     {/* Course Access */}
                     <Route path="/access" element={<CourseAccess />} />
