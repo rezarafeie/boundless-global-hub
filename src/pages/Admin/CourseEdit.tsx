@@ -479,6 +479,15 @@ const CourseEdit: React.FC = () => {
                   </div>
                 )}
 
+                {!formData.enable_course_access && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <h4 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2">مدیریت محتوا غیرفعال</h4>
+                    <p className="text-sm text-muted-foreground">
+                      برای دسترسی به سیستم مدیریت محتوای دوره (درس‌ها و بخش‌ها)، ابتدا سوئیچ "فعال‌سازی سیستم دسترسی دوره" را روشن کنید.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="support_link">لینک پشتیبانی</Label>
