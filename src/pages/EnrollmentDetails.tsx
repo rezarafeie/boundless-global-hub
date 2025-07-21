@@ -125,7 +125,9 @@ const EnrollmentDetails: React.FC = () => {
       }
 
       // Check if user has access to this enrollment
+      const isAdmin = user?.messengerData?.is_messenger_admin || false;
       const hasAccess = 
+        isAdmin || // Admin can see all enrollments
         data.email === user?.email || 
         data.phone === user?.phone ||
         data.chat_user_id === parseInt(user?.id || '0');
