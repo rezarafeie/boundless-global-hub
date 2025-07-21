@@ -428,7 +428,7 @@ const EnrollAdmin: React.FC = () => {
             {/* Mobile Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
               <div className="flex items-center justify-between p-4">
-                <h1 className="text-lg font-semibold">پنل مدیریت</h1>
+                <div></div> {/* Spacer */}
                 <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
               </div>
             </div>
@@ -437,7 +437,7 @@ const EnrollAdmin: React.FC = () => {
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b hidden lg:block">
               <div className="flex items-center justify-between p-4">
                 <SidebarTrigger className="rounded-xl hover:bg-muted/80" />
-                <h1 className="text-xl font-semibold">پنل مدیریت</h1>
+                <div></div> {/* Spacer for centering */}
                 <div></div> {/* Spacer for centering */}
               </div>
             </div>

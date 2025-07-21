@@ -143,8 +143,7 @@ function MobileMenu({ activeView, onViewChange }: AdminSidebarProps) {
         side="right" 
         className="w-64 p-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/95"
       >
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">منوی مدیریت</h2>
+        <div className="flex items-center justify-end p-4 border-b">
           <Button
             variant="ghost"
             size="icon"
