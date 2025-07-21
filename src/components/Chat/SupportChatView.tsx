@@ -1,29 +1,30 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Send, Loader2, Headphones, MessageSquare } from 'lucide-react';
-import { MessengerUser } from '@/lib/messengerService';
-import { supportMessageService, type SupportMessage } from '@/lib/supportMessageService';
+import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supportMessageService } from '@/lib/supportMessageService';
+import type { MessengerUser } from '@/lib/messengerService';
+import type { SupportMessage } from '@/lib/supportMessageService';
+import SupportResponseInput from './SupportResponseInput';
 
-interface MessengerSupportRoom {
+interface SupportRoom {
   id: string;
   name: string;
   description: string;
-  type: 'academy_support' | 'boundless_support';
+  type: string;
   icon: React.ReactNode;
-  isPermanent: true;
+  isPermanent: boolean;
 }
 
 interface SupportChatViewProps {
-  supportRoom: MessengerSupportRoom;
+  supportRoom: SupportRoom;
   currentUser: MessengerUser;
   sessionToken: string;
   onBack: () => void;
-  conversationId?: number;
+  conversationId: number;
+  recipientUserId?: number;
 }
 
 const SupportChatView: React.FC<SupportChatViewProps> = ({
@@ -31,56 +32,35 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   currentUser,
   sessionToken,
   onBack,
-  conversationId: propConversationId
+  conversationId,
+  recipientUserId
 }) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [conversationId, setConversationId] = useState<number | null>(propConversationId || null);
+  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadMessages();
-  }, [supportRoom.id, propConversationId]);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   const loadMessages = async () => {
+    if (!conversationId) return;
+    
     try {
-      setLoading(true);
-      console.log('Loading support messages for room:', supportRoom.type, 'current user:', currentUser.id);
-      
-      // Determine thread type based on support room
-      const threadTypeId = supportRoom.type === 'boundless_support' ? 2 : 1;
-      
-      // Get or create conversation
-      let activeConversationId = propConversationId;
-      
-      if (!activeConversationId) {
-        console.log('Creating/getting conversation for user:', currentUser.id, 'thread type:', threadTypeId);
-        activeConversationId = await supportMessageService.getOrCreateUserConversation(
-          currentUser.id,
-          threadTypeId
-        );
-        console.log('Got conversation ID:', activeConversationId);
-      }
-      
-      setConversationId(activeConversationId);
-      
-      // Load messages from the conversation
-      console.log('Loading messages for conversation:', activeConversationId);
-      const conversationMessages = await supportMessageService.getConversationMessages(activeConversationId);
+      console.log('Loading messages for conversation:', conversationId);
+      const conversationMessages = await supportMessageService.getConversationMessages(conversationId);
       console.log('Loaded messages:', conversationMessages.length);
       setMessages(conversationMessages);
     } catch (error) {
-      console.error('Error loading support messages:', error);
+      console.error('Error loading conversation messages:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌های پشتیبانی',
+        description: 'خطا در بارگذاری پیام‌ها',
         variant: 'destructive',
       });
     } finally {
@@ -88,165 +68,81 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const sendMessage = async () => {
-    if (!newMessage.trim() || sending || !conversationId) {
-      console.log('Cannot send message:', { 
-        hasMessage: !!newMessage.trim(), 
-        sending, 
-        conversationId 
-      });
-      return;
+  useEffect(() => {
+    if (conversationId) {
+      loadMessages();
     }
+  }, [conversationId]);
 
-    try {
-      setSending(true);
-      console.log('Sending user message to support conversation:', conversationId);
-      
-      await supportMessageService.sendUserMessage(
-        currentUser.id,
-        newMessage.trim()
-      );
-
-      setNewMessage('');
-      await loadMessages();
-      
-      toast({
-        title: 'پیام ارسال شد',
-        description: 'پیام شما به تیم پشتیبانی ارسال شد',
-      });
-    } catch (error) {
-      console.error('Error sending support message:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در ارسال پیام به پشتیبانی',
-        variant: 'destructive',
-      });
-    } finally {
-      setSending(false);
-    }
+  const handleMessageSent = () => {
+    console.log('Message sent, refreshing conversation messages');
+    loadMessages();
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const getAvatarColor = (name: string) => {
-    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
-  return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <button
-          onClick={onBack}
-          className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        
-        <Avatar className="w-10 h-10">
-          <AvatarFallback 
-            style={{ backgroundColor: getAvatarColor(supportRoom.name) }}
-            className="text-white font-medium"
-          >
-            {supportRoom.type === 'academy_support' ? '🎓' : '🌐'}
-          </AvatarFallback>
-        </Avatar>
-        
-        <div className="flex-1">
-          <h3 className="font-semibold text-slate-900 dark:text-white">{supportRoom.name}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{supportRoom.description}</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="flex items-center gap-1">
-            {supportRoom.type === 'academy_support' ? (
-              <MessageSquare className="w-3 h-3" />
-            ) : (
-              <Headphones className="w-3 h-3" />
-            )}
-            پشتیبانی
-          </Badge>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-500">در حال بارگذاری گفتگو...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Messages */}
+  return (
+    <div className="flex flex-col h-full bg-white dark:bg-slate-800">
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-2" />
-              <p className="text-slate-500 dark:text-slate-400">در حال بارگذاری پیام‌ها...</p>
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="text-6xl mb-4">
-                {supportRoom.type === 'academy_support' ? '🎓' : '🌐'}
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                خوش آمدید به {supportRoom.name}
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-4">
-                {supportRoom.description}
-              </p>
-              <p className="text-sm text-slate-400">
-                سوال یا مشکل خود را مطرح کنید، تیم پشتیبانی در اسرع وقت پاسخ خواهد داد.
-              </p>
-            </div>
+        {messages.length === 0 ? (
+          <div className="text-center py-8">
+            <MessageCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">هنوز پیامی در این گفتگو وجود ندارد</p>
           </div>
         ) : (
           messages.map((message) => (
-            <div key={message.id} className="flex items-start gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback 
-                  style={{ backgroundColor: getAvatarColor(message.sender?.name || 'U') }}
-                  className="text-white font-medium text-xs"
-                >
-                  {message.sender_id === currentUser.id ? (
-                    currentUser.name.charAt(0)
-                  ) : (
-                    supportRoom.type === 'academy_support' ? '🎓' : '🌐'
-                  )}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0">
+            <div
+              key={message.id}
+              className={`flex ${message.sender_id === 1 ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[70%] rounded-lg p-3 ${
+                  message.sender_id === 1
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
+                }`}
+              >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm text-slate-900 dark:text-white">
-                    {message.sender_id === currentUser.id ? 'شما' : supportRoom.name}
+                  <span className="text-xs font-medium">
+                    {message.sender?.name || (message.sender_id === 1 ? 'پشتیبانی' : 'کاربر')}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs opacity-75">
                     {new Date(message.created_at).toLocaleTimeString('fa-IR', {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
                   </span>
-                  {message.sender_id === currentUser.id && (
-                    <Badge variant="outline" className="text-xs">شما</Badge>
-                  )}
                 </div>
+                <p className="text-sm">{message.message}</p>
                 
-                <div className={`p-3 rounded-lg ${
-                  message.sender_id === currentUser.id 
-                    ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800' 
-                    : 'bg-slate-50 dark:bg-slate-700'
-                }`}>
-                  <p className="text-slate-900 dark:text-white whitespace-pre-wrap">
-                    {message.message}
-                  </p>
-                </div>
+                {/* Media content */}
+                {message.media_url && (
+                  <div className="mt-2">
+                    {message.message_type === 'image' && (
+                      <img 
+                        src={message.media_url} 
+                        alt="تصویر پیام" 
+                        className="max-w-full rounded-lg"
+                      />
+                    )}
+                    {message.message_type === 'voice' && (
+                      <audio controls className="max-w-full">
+                        <source src={message.media_url} type="audio/mpeg" />
+                        مرورگر شما از پخش صوت پشتیبانی نمی‌کند.
+                      </audio>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))
@@ -254,32 +150,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="پیام خود را برای پشتیبانی بنویسید..."
-            className="flex-1"
-            disabled={sending || !conversationId}
-          />
-          <Button 
-            onClick={sendMessage} 
-            disabled={!newMessage.trim() || sending || !conversationId}
-          >
-            {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-        <p className="text-xs text-slate-500 mt-2">
-          تیم پشتیبانی معمولاً در کمتر از ۲۴ ساعت پاسخ می‌دهند
-        </p>
-      </div>
+      {/* Response Input */}
+      <SupportResponseInput
+        conversationId={conversationId}
+        recipientUserId={recipientUserId || 0}
+        onMessageSent={handleMessageSent}
+      />
     </div>
   );
 };

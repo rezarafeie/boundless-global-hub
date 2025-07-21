@@ -23,6 +23,7 @@ interface ConversationWithUser {
   thread_type_id: number;
   tag_list: string[];
   unread_count: number;
+  user_id: number;
   user?: {
     id: number;
     name: string;
@@ -177,7 +178,19 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   };
 
   const handleConversationSelect = (conversation: ConversationWithUser) => {
-    console.log('Selecting conversation:', conversation.id);
+    console.log('Selecting conversation:', {
+      conversationId: conversation.id,
+      userId: conversation.user_id,
+      userFromNestedObject: conversation.user?.id,
+      userPhone: conversation.user?.phone,
+      userName: conversation.user?.name
+    });
+    
+    // Ensure we have the correct user_id
+    if (!conversation.user_id && conversation.user?.id) {
+      conversation.user_id = conversation.user.id;
+    }
+    
     setSelectedConversation(conversation);
     setShowConversationList(false);
   };
@@ -566,6 +579,9 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                           {selectedConversation.user?.phone}
                         </p>
+                        <p className="text-xs text-slate-400">
+                          Conv ID: {selectedConversation.id} | User ID: {selectedConversation.user_id || selectedConversation.user?.id}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -599,6 +615,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                     sessionToken={localStorage.getItem('messenger_session_token') || ''}
                     onBack={handleBackToList}
                     conversationId={selectedConversation.id}
+                    recipientUserId={selectedConversation.user_id || selectedConversation.user?.id}
                   />
                 </div>
               </div>

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupportMessage {
@@ -192,6 +191,8 @@ class SupportMessageService {
 
   // Get all support conversations (for dashboard)
   async getAllConversations(): Promise<any[]> {
+    console.log('Loading all support conversations...');
+    
     const { data, error } = await supabase
       .from('support_conversations')
       .select(`
@@ -213,11 +214,24 @@ class SupportMessageService {
       throw error;
     }
 
-    return data?.map(conv => ({
-      ...conv,
-      user: conv.chat_users,
-      unread_count: 0 // TODO: Implement unread count
-    })) || [];
+    console.log('Raw conversation data:', data);
+
+    const mappedData = data?.map(conv => {
+      console.log('Processing conversation:', {
+        id: conv.id,
+        user_id: conv.user_id,
+        chat_users: conv.chat_users
+      });
+
+      return {
+        ...conv,
+        user: conv.chat_users,
+        unread_count: 0 // TODO: Implement unread count
+      };
+    }) || [];
+
+    console.log('Mapped conversation data:', mappedData);
+    return mappedData;
   }
 }
 

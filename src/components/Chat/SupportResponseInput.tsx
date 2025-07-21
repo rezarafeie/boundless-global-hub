@@ -24,9 +24,40 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
   const sendResponse = async () => {
     if (!message.trim() || sending) return;
 
+    // Validation and logging
+    console.log('Sending support response with parameters:', {
+      conversationId,
+      recipientUserId,
+      messageLength: message.trim().length
+    });
+
+    if (!recipientUserId || recipientUserId === 0) {
+      console.error('Invalid recipientUserId:', recipientUserId);
+      toast({
+        title: 'خطا',
+        description: 'شناسه کاربر نامعتبر است',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!conversationId || conversationId === 0) {
+      console.error('Invalid conversationId:', conversationId);
+      toast({
+        title: 'خطا',
+        description: 'شناسه گفتگو نامعتبر است',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setSending(true);
-      console.log('Sending support response:', { conversationId, recipientUserId, message });
+      console.log('Calling sendSupportMessage with:', {
+        recipientUserId,
+        message: message.trim(),
+        conversationId
+      });
       
       await supportMessageService.sendSupportMessage(
         recipientUserId,
@@ -43,7 +74,7 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
       
       toast({
         title: 'پاسخ ارسال شد',
-        description: 'پاسخ شما به کاربر ارسال شد',
+        description: `پاسخ شما به کاربر ${recipientUserId} ارسال شد`,
       });
     } catch (error) {
       console.error('Error sending support response:', error);
@@ -87,7 +118,7 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
         </Button>
       </div>
       <p className="text-xs text-slate-500 mt-2">
-        پاسخ شما به کاربر ارسال خواهد شد
+        پاسخ شما به کاربر {recipientUserId} در گفتگو {conversationId} ارسال خواهد شد
       </p>
     </div>
   );
