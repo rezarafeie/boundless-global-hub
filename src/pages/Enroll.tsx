@@ -11,6 +11,7 @@ import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
 import MainLayout from '@/components/Layout/MainLayout';
 import ManualPaymentSection from '@/components/ManualPaymentSection';
 import { TetherlandService } from '@/lib/tetherlandService';
@@ -39,7 +40,7 @@ interface Course {
 const Enroll: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
   const courseSlug = searchParams.get('course');
 
   const [course, setCourse] = useState<Course | null>(null);

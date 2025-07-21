@@ -7,6 +7,7 @@ import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
 
@@ -23,7 +24,7 @@ interface VerificationResult {
 const EnrollSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   
   const courseSlug = searchParams.get('course');
   const email = searchParams.get('email');
@@ -34,13 +35,65 @@ const EnrollSuccess: React.FC = () => {
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
+  const [authenticating, setAuthenticating] = useState(false);
 
-  // Update enrollment with chat_user_id when user is authenticated
+  // Auto-authenticate user after successful enrollment
   useEffect(() => {
-    if (user && result?.success && result?.enrollment) {
-      updateEnrollmentWithChatUser();
+    if (result?.success && result?.enrollment && !user && !authenticating) {
+      handleAutoAuthentication();
     }
-  }, [user, result]);
+  }, [result, user, authenticating]);
+
+  const handleAutoAuthentication = async () => {
+    if (!result?.enrollment) return;
+    
+    try {
+      setAuthenticating(true);
+      console.log('🔐 Starting auto-authentication for enrollment:', result.enrollment.id);
+      
+      // Extract enrollment data for authentication
+      const enrollmentAuthData: EnrollmentAuthData = {
+        firstName: result.enrollment.full_name?.split(' ')[0] || '',
+        lastName: result.enrollment.full_name?.split(' ').slice(1).join(' ') || '',
+        email: result.enrollment.email || email || '',
+        phone: result.enrollment.phone || '',
+        countryCode: result.enrollment.country_code || '+98'
+      };
+      
+      // Attempt automatic authentication
+      const authResult = await enrollmentAuthService.createAndLoginAfterEnrollment(
+        enrollmentAuthData,
+        result.enrollment
+      );
+      
+      if (authResult.success && authResult.user && authResult.token) {
+        console.log('✅ Auto-authentication successful');
+        
+        // Store persistent session
+        enrollmentAuthService.storePersistentSession(authResult.user, authResult.token);
+        
+        // Log in user through auth context
+        login(authResult.user, authResult.token);
+        
+        toast({
+          title: 'ورود موفق',
+          description: authResult.isNewUser 
+            ? 'حساب کاربری شما ایجاد و وارد شدید' 
+            : 'با موفقیت وارد شدید',
+          variant: 'default',
+        });
+        
+      } else {
+        console.warn('Auto-authentication failed:', authResult.error);
+        // Don't show error to user, as manual login is still available
+      }
+    } catch (error) {
+      console.error('Error during auto-authentication:', error);
+      // Don't show error to user, as manual login is still available
+    } finally {
+      setAuthenticating(false);
+    }
+  };
 
   const updateEnrollmentWithChatUser = async () => {
     if (!user || !result?.enrollment) return;
