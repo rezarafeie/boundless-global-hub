@@ -44,6 +44,8 @@ interface StartCourseSectionProps {
     gifts_link?: string | null;
     enable_course_access?: boolean;
     slug?: string;
+    support_activation_required?: boolean;
+    telegram_activation_required?: boolean;
   } | undefined;
   onEnterCourse: () => void;
   userEmail?: string;

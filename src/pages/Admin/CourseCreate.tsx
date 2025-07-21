@@ -37,7 +37,9 @@ const CourseCreate: React.FC = () => {
     enable_course_access: false,
     support_link: '',
     telegram_channel_link: '',
-    gifts_link: ''
+    gifts_link: '',
+    support_activation_required: false,
+    telegram_activation_required: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -117,7 +119,9 @@ const CourseCreate: React.FC = () => {
         enable_course_access: formData.enable_course_access,
         support_link: formData.support_link.trim() || null,
         telegram_channel_link: formData.telegram_channel_link.trim() || null,
-        gifts_link: formData.gifts_link.trim() || null
+        gifts_link: formData.gifts_link.trim() || null,
+        support_activation_required: formData.support_activation_required,
+        telegram_activation_required: formData.telegram_activation_required
       };
 
       const { error } = await supabase
@@ -400,6 +404,34 @@ const CourseCreate: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, gifts_link: e.target.value }))}
                     placeholder="https://example.com/gifts"
                   />
+                </div>
+
+                {/* Required Activations Section */}
+                <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <h4 className="font-medium text-orange-800 dark:text-orange-400 mb-3">فعال‌سازی‌های اجباری</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    در صورت فعال بودن، کاربران تا زمان فعال‌سازی این بخش‌ها نمی‌توانند به محتوای دوره دسترسی داشته باشند.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="support_activation_required"
+                        checked={formData.support_activation_required}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, support_activation_required: checked }))}
+                      />
+                      <Label htmlFor="support_activation_required">فعال‌سازی پشتیبانی اجباری</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="telegram_activation_required"
+                        checked={formData.telegram_activation_required}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, telegram_activation_required: checked }))}
+                      />
+                      <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -94,7 +94,9 @@ const EnrollSuccess: React.FC = () => {
             support_link,
             telegram_channel_link,
             gifts_link,
-            enable_course_access
+            enable_course_access,
+            support_activation_required,
+            telegram_activation_required
           )
         `)
         .eq('id', enrollmentId)
@@ -149,7 +151,9 @@ const EnrollSuccess: React.FC = () => {
             support_link,
             telegram_channel_link,
             gifts_link,
-            enable_course_access
+            enable_course_access,
+            support_activation_required,
+            telegram_activation_required
           )
         `)
         .eq('id', enrollmentId)
@@ -360,6 +364,32 @@ const EnrollSuccess: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Required Activations Warning */}
+                {result.course && (result.course.support_activation_required || result.course.telegram_activation_required) && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800 mb-6">
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
+                      ⚠️ فعال‌سازی‌های ضروری
+                    </h3>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                      برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را انجام دهید:
+                    </p>
+                    <div className="space-y-2">
+                      {result.course.support_activation_required && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                          <span>فعال‌سازی پشتیبانی (اجباری)</span>
+                        </div>
+                      )}
+                      {result.course.telegram_activation_required && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                          <span>عضویت در کانال تلگرام (اجباری)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Course Details */}
                 {result.course && (

@@ -771,7 +771,9 @@ export type Database = {
           sale_price: number | null
           slug: string
           spotplayer_course_id: string | null
+          support_activation_required: boolean | null
           support_link: string | null
+          telegram_activation_required: boolean | null
           telegram_channel_link: string | null
           title: string
           updated_at: string
@@ -797,7 +799,9 @@ export type Database = {
           sale_price?: number | null
           slug: string
           spotplayer_course_id?: string | null
+          support_activation_required?: boolean | null
           support_link?: string | null
+          telegram_activation_required?: boolean | null
           telegram_channel_link?: string | null
           title: string
           updated_at?: string
@@ -823,7 +827,9 @@ export type Database = {
           sale_price?: number | null
           slug?: string
           spotplayer_course_id?: string | null
+          support_activation_required?: boolean | null
           support_link?: string | null
+          telegram_activation_required?: boolean | null
           telegram_channel_link?: string | null
           title?: string
           updated_at?: string
