@@ -38,14 +38,13 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
+  const [supportConversations, setSupportConversations] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showStartChatModal, setShowStartChatModal] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-
-  // Remove duplicate notification service - handled by MessengerPage
 
   useEffect(() => {
     loadData();
@@ -69,19 +68,23 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         // Load cached data when offline
         const cachedRooms = JSON.parse(localStorage.getItem('cached_rooms') || '[]');
         const cachedConversations = JSON.parse(localStorage.getItem('cached_conversations') || '[]');
+        const cachedSupportConversations = JSON.parse(localStorage.getItem('cached_support_conversations') || '[]');
         
         console.log('Loading cached data (offline mode)');
         setRooms(cachedRooms);
         setConversations(cachedConversations);
+        setSupportConversations(cachedSupportConversations);
       } else {
         // Load from server when online
-        const [roomsData, conversationsData] = await Promise.all([
+        const [roomsData, conversationsData, supportConversationsData] = await Promise.all([
           messengerService.getRooms(),
-          privateMessageService.getUserConversations(currentUser.id, sessionToken)
+          privateMessageService.getUserConversations(currentUser.id, sessionToken),
+          messengerService.getConversations(currentUser.id)
         ]);
 
         console.log('Loaded rooms:', roomsData);
         console.log('Loaded conversations:', conversationsData);
+        console.log('Loaded support conversations:', supportConversationsData);
 
         // Show all active rooms - no filtering
         const activeRooms = roomsData.filter(room => room.is_active);
@@ -89,9 +92,11 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         // Cache the data for offline use
         localStorage.setItem('cached_rooms', JSON.stringify(activeRooms));
         localStorage.setItem('cached_conversations', JSON.stringify(conversationsData));
+        localStorage.setItem('cached_support_conversations', JSON.stringify(supportConversationsData));
         
         setRooms(activeRooms);
         setConversations(conversationsData);
+        setSupportConversations(supportConversationsData);
       }
     } catch (error) {
       console.error('Error loading messenger data:', error);
@@ -99,11 +104,13 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
       // Fallback to cached data on error
       const cachedRooms = JSON.parse(localStorage.getItem('cached_rooms') || '[]');
       const cachedConversations = JSON.parse(localStorage.getItem('cached_conversations') || '[]');
+      const cachedSupportConversations = JSON.parse(localStorage.getItem('cached_support_conversations') || '[]');
       
-      if (cachedRooms.length > 0 || cachedConversations.length > 0) {
+      if (cachedRooms.length > 0 || cachedConversations.length > 0 || cachedSupportConversations.length > 0) {
         console.log('Loading cached data as fallback');
         setRooms(cachedRooms);
         setConversations(cachedConversations);
+        setSupportConversations(cachedSupportConversations);
       }
     } finally {
       setLoading(false);
@@ -115,10 +122,27 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     if (!sessionToken) return;
     
     try {
-      const freshConversations = await privateMessageService.getUserConversations(currentUser.id, sessionToken);
+      const [freshConversations, freshSupportConversations] = await Promise.all([
+        privateMessageService.getUserConversations(currentUser.id, sessionToken),
+        messengerService.getConversations(currentUser.id)
+      ]);
       setConversations(freshConversations);
+      setSupportConversations(freshSupportConversations);
     } catch (error) {
       console.error('Error updating conversations:', error);
+    }
+  };
+
+  // Update the refresh function to include support conversations
+  const refreshSupportConversations = async () => {
+    if (!currentUser || isOffline) return;
+    
+    try {
+      const freshSupportConversations = await messengerService.getConversations(currentUser.id);
+      setSupportConversations(freshSupportConversations);
+      localStorage.setItem('cached_support_conversations', JSON.stringify(freshSupportConversations));
+    } catch (error) {
+      console.error('Error refreshing support conversations:', error);
     }
   };
 
@@ -131,6 +155,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     conv.other_user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.other_user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.other_user?.phone?.includes(searchTerm)
+  );
+
+  const filteredSupportConversations = supportConversations.filter(conv =>
+    conv.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getAvatarColor = (name: string) => {
@@ -150,6 +178,42 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     setTimeout(() => {
       refreshConversations();
     }, 500);
+  };
+
+  const handleSupportConversationSelect = (supportConv: any) => {
+    // Create a support user object for consistency
+    const supportUser = {
+      id: 1,
+      name: 'پشتیبانی',
+      username: 'support',
+      phone: '',
+      is_approved: true,
+      is_support_agent: true,
+      is_messenger_admin: false,
+      bedoun_marz: false,
+      bedoun_marz_approved: false,
+      bedoun_marz_request: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_seen: new Date().toISOString(),
+      role: 'support',
+      email: null,
+      user_id: null,
+      first_name: null,
+      last_name: null,
+      full_name: null,
+      country_code: null,
+      signup_source: null,
+      bio: null,
+      notification_enabled: true,
+      notification_token: null,
+      password_hash: null,
+      avatar_url: null
+    };
+    
+    // Pass the conversation_id as a property on the user object for support conversations
+    supportUser.conversation_id = supportConv.conversation_id;
+    onUserSelect(supportUser);
   };
 
   return (
@@ -191,7 +255,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10 text-sm"
             dir="rtl"
-            disabled={isOffline && (!conversations.length && !rooms.length)}
+            disabled={isOffline && (!conversations.length && !rooms.length && !supportConversations.length)}
           />
         </div>
         
@@ -237,8 +301,163 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             </div>
           ) : (
             <>
-              {/* All Chats */}
-              {(activeTab === 'all' || activeTab === 'groups') && filteredRooms.length > 0 && (
+              {/* All Chats - Show everything */}
+              {activeTab === 'all' && (
+                <>
+                  {/* Support Conversations */}
+                  {filteredSupportConversations.length > 0 && (
+                    <div className="mb-4">
+                      {filteredSupportConversations.map((supportConv) => (
+                        <div
+                          key={`support-${supportConv.id}`}
+                          onClick={() => handleSupportConversationSelect(supportConv)}
+                          className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback 
+                              style={{ backgroundColor: '#3B82F6' }}
+                              className="text-white font-medium"
+                            >
+                              <Headphones className="w-5 h-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium truncate text-right">{supportConv.name}</p>
+                              <div className="flex items-center gap-2">
+                                {supportConv.unread_count > 0 && (
+                                  <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                                    {supportConv.unread_count > 99 ? "99+" : supportConv.unread_count}
+                                  </div>
+                                )}
+                                {supportConv.last_message_time && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(supportConv.last_message_time).toLocaleTimeString("fa-IR", {
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-right truncate">
+                              {supportConv.last_message || "گفتگوی پشتیبانی"}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Group Rooms */}
+                  {filteredRooms.length > 0 && (
+                    <div className="mb-4">
+                      {filteredRooms.map((room) => (
+                        <div
+                          key={room.id}
+                          onClick={() => onRoomSelect(room)}
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                            selectedRoom?.id === room.id
+                              ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                              : 'hover:bg-muted'
+                          }`}
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={room.avatar_url} alt={room.name} />
+                            <AvatarFallback 
+                              style={{ backgroundColor: getAvatarColor(room.name) }}
+                              className="text-white font-medium"
+                            >
+                              {room.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium truncate text-right">{room.name}</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  گروه
+                                </span>
+                              </div>
+                            </div>
+                            {room.description && (
+                              <p className="text-xs text-muted-foreground truncate text-right">
+                                {room.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Private Conversations */}
+                  {filteredConversations.length > 0 && (
+                    <div className="mb-4">
+                      {filteredConversations.map((conversation) => (
+                        <div
+                          key={conversation.id}
+                          onClick={() => {
+                            onUserSelect(conversation.other_user);
+                            // Mark conversation as read when opened
+                            if (conversation.unread_count && conversation.unread_count > 0) {
+                              privateMessageService.markMessagesAsRead(conversation.id, currentUser.id);
+                              // Update conversations to remove unread count
+                              setTimeout(() => updateConversationsList(), 100);
+                            }
+                          }}
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors relative ${
+                            selectedUser?.id === conversation.other_user?.id
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                              : 'hover:bg-muted'
+                          }`}
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage 
+                              src={conversation.other_user?.avatar_url} 
+                              alt={conversation.other_user?.name}
+                            />
+                            <AvatarFallback 
+                              style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
+                              className="text-white font-medium"
+                            >
+                              {conversation.other_user?.name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-medium truncate text-right">
+                                {conversation.other_user?.name || "کاربر نامشخص"}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                {conversation.unread_count > 0 && (
+                                  <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                                    {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
+                                  </div>
+                                )}
+                                {conversation.last_message && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(conversation.last_message.created_at).toLocaleTimeString("fa-IR", {
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-right truncate">
+                              {conversation.last_message?.message || "آخرین پیام..."}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Group Rooms Tab */}
+              {activeTab === 'groups' && filteredRooms.length > 0 && (
                 <div className="mb-4">
                   {filteredRooms.map((room) => (
                     <div
@@ -279,8 +498,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                 </div>
               )}
 
-              {/* Private Conversations */}
-              {(activeTab === 'all' || activeTab === 'personal') && filteredConversations.length > 0 && (
+              {/* Private Conversations Tab */}
+              {activeTab === 'personal' && filteredConversations.length > 0 && (
                 <div className="mb-4">
                   {filteredConversations.map((conversation) => (
                     <div
@@ -342,66 +561,110 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                 </div>
               )}
 
-              {/* Support Conversations */}
-              {(activeTab === 'all' || activeTab === 'support') && (
+              {/* Support Conversations Tab */}
+              {activeTab === 'support' && (
                 <div className="mb-4">
-                  <div
-                    onClick={() => {
-                      const supportUser = {
-                        id: 1,
-                        name: 'پشتیبانی',
-                        username: 'support',
-                        phone: '',
-                        is_approved: true,
-                        is_support_agent: true,
-                        is_messenger_admin: false,
-                        bedoun_marz: false,
-                        bedoun_marz_approved: false,
-                        bedoun_marz_request: false,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        last_seen: new Date().toISOString(),
-                        role: 'support',
-                        email: null,
-                        user_id: null,
-                        first_name: null,
-                        last_name: null,
-                        full_name: null,
-                        country_code: null,
-                        signup_source: null,
-                        bio: null,
-                        notification_enabled: true,
-                        notification_token: null,
-                        password_hash: null,
-                        avatar_url: null
-                      };
-                      onUserSelect(supportUser);
-                    }}
-                    className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
-                  >
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback 
-                        style={{ backgroundColor: '#3B82F6' }}
-                        className="text-white font-medium"
+                  {filteredSupportConversations.length > 0 ? (
+                    filteredSupportConversations.map((supportConv) => (
+                      <div
+                        key={`support-${supportConv.id}`}
+                        onClick={() => handleSupportConversationSelect(supportConv)}
+                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
                       >
-                        <Headphones className="w-5 h-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 text-right">
-                      <p className="text-sm font-medium">پشتیبانی</p>
-                      <p className="text-xs text-muted-foreground text-right">
-                        راهنمایی و پشتیبانی
-                      </p>
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback 
+                            style={{ backgroundColor: '#3B82F6' }}
+                            className="text-white font-medium"
+                          >
+                            <Headphones className="w-5 h-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium truncate text-right">{supportConv.name}</p>
+                            <div className="flex items-center gap-2">
+                              {supportConv.unread_count > 0 && (
+                                <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                                  {supportConv.unread_count > 99 ? "99+" : supportConv.unread_count}
+                                </div>
+                              )}
+                              {supportConv.last_message_time && (
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(supportConv.last_message_time).toLocaleTimeString("fa-IR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-right truncate">
+                            {supportConv.last_message || "گفتگوی پشتیبانی"}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    // Fallback: Show the static support entry if no support conversations exist
+                    <div
+                      onClick={() => {
+                        const supportUser = {
+                          id: 1,
+                          name: 'پشتیبانی',
+                          username: 'support',
+                          phone: '',
+                          is_approved: true,
+                          is_support_agent: true,
+                          is_messenger_admin: false,
+                          bedoun_marz: false,
+                          bedoun_marz_approved: false,
+                          bedoun_marz_request: false,
+                          created_at: new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                          last_seen: new Date().toISOString(),
+                          role: 'support',
+                          email: null,
+                          user_id: null,
+                          first_name: null,
+                          last_name: null,
+                          full_name: null,
+                          country_code: null,
+                          signup_source: null,
+                          bio: null,
+                          notification_enabled: true,
+                          notification_token: null,
+                          password_hash: null,
+                          avatar_url: null
+                        };
+                        onUserSelect(supportUser);
+                      }}
+                      className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback 
+                          style={{ backgroundColor: '#3B82F6' }}
+                          className="text-white font-medium"
+                        >
+                          <Headphones className="w-5 h-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-right">
+                        <p className="text-sm font-medium">پشتیبانی</p>
+                        <p className="text-xs text-muted-foreground text-right">
+                          راهنمایی و پشتیبانی
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
               {/* No Results */}
               {!loading && (
-                (activeTab === 'all' && filteredRooms.length === 0 && filteredConversations.length === 0) ||
+                (activeTab === 'all' && filteredRooms.length === 0 && filteredConversations.length === 0 && filteredSupportConversations.length === 0) ||
                 (activeTab === 'groups' && filteredRooms.length === 0) ||
-                (activeTab === 'personal' && filteredConversations.length === 0)
+                (activeTab === 'personal' && filteredConversations.length === 0) ||
+                (activeTab === 'support' && filteredSupportConversations.length === 0)
               ) && (
                 <div className="flex items-center justify-center py-8 px-4">
                   <div className="text-center">
@@ -447,7 +710,6 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         sessionToken={sessionToken}
         currentUser={currentUser}
       />
-
     </div>
   );
 };

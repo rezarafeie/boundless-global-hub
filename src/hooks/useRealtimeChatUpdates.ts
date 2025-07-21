@@ -23,6 +23,7 @@ interface UseRealtimeChatUpdatesProps {
   isOffline: boolean;
   onConversationsUpdate: (conversations: any[]) => void;
   onRoomsUpdate: (rooms: ChatRoom[]) => void;
+  onSupportConversationsUpdate?: (conversations: any[]) => void;
 }
 
 export const useRealtimeChatUpdates = ({
@@ -30,7 +31,8 @@ export const useRealtimeChatUpdates = ({
   sessionToken,
   isOffline,
   onConversationsUpdate,
-  onRoomsUpdate
+  onRoomsUpdate,
+  onSupportConversationsUpdate
 }: UseRealtimeChatUpdatesProps) => {
 
   // Debounced refresh functions to prevent excessive API calls
@@ -71,9 +73,28 @@ export const useRealtimeChatUpdates = ({
     [isOffline, onRoomsUpdate]
   );
 
+  const debouncedSupportConversationsRefresh = useCallback(
+    debounce(async () => {
+      if (isOffline || !currentUser || !onSupportConversationsUpdate) return;
+      
+      try {
+        const supportConversationsData = await messengerService.getConversations(currentUser.id);
+        onSupportConversationsUpdate(supportConversationsData);
+        
+        // Update cache
+        localStorage.setItem('cached_support_conversations', JSON.stringify(supportConversationsData));
+        console.log('Support conversations refreshed:', supportConversationsData.length);
+      } catch (error) {
+        console.error('Error refreshing support conversations:', error);
+      }
+    }, 300), // 300ms debounce
+    [currentUser, isOffline, onSupportConversationsUpdate]
+  );
+
   // Legacy functions for backward compatibility
   const refreshConversations = debouncedConversationsRefresh;
   const refreshRooms = debouncedRoomsRefresh;
+  const refreshSupportConversations = debouncedSupportConversationsRefresh;
 
   useEffect(() => {
     if (isOffline || !currentUser || !sessionToken) return;
@@ -148,6 +169,13 @@ export const useRealtimeChatUpdates = ({
             console.log('Messenger message detected, refreshing rooms...');
             debouncedRoomsRefresh();
           }
+          
+          // Check if this is a support message affecting current user
+          if (newMessage.conversation_id && 
+              (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id)) {
+            console.log('Support message detected, refreshing support conversations...');
+            debouncedSupportConversationsRefresh();
+          }
         }
       )
       .subscribe();
@@ -182,8 +210,8 @@ export const useRealtimeChatUpdates = ({
         (payload) => {
           const conversation = payload.new || payload.old;
           if (conversation && (conversation as any).user_id === currentUser.id) {
-            console.log('Support conversation change detected, refreshing conversations...');
-            debouncedConversationsRefresh();
+            console.log('Support conversation change detected, refreshing support conversations...');
+            debouncedSupportConversationsRefresh();
           }
         }
       )
@@ -196,10 +224,11 @@ export const useRealtimeChatUpdates = ({
       supabase.removeChannel(roomsChannel);
       supabase.removeChannel(supportConversationsChannel);
     };
-  }, [currentUser, sessionToken, isOffline, debouncedConversationsRefresh, debouncedRoomsRefresh]);
+  }, [currentUser, sessionToken, isOffline, debouncedConversationsRefresh, debouncedRoomsRefresh, debouncedSupportConversationsRefresh]);
 
   return {
     refreshConversations,
-    refreshRooms
+    refreshRooms,
+    refreshSupportConversations
   };
 };
