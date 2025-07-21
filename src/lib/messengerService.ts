@@ -55,11 +55,11 @@ interface ChatRoom {
   description: string;
   avatar_url: string | null;
   is_active: boolean;
-  is_public: boolean;
+  is_public?: boolean;
   type: 'group' | 'channel' | 'direct';
   is_super_group: boolean;
-  is_boundless_only?: boolean;
-  updated_at?: string;
+  is_boundless_only: boolean;
+  updated_at: string;
 }
 
 interface AdminSettings {
@@ -696,15 +696,11 @@ class MessengerService {
     }
   }
 
-  async updateUserRole(userId: number, role: string, isAdmin: boolean = false, isSupport: boolean = false): Promise<void> {
+  async updateUserRole(userId: number, updates: Partial<MessengerUser>): Promise<void> {
     try {
       const { error } = await supabase
         .from('chat_users')
-        .update({ 
-          role: role as 'user' | 'admin' | 'moderator' | 'support',
-          is_messenger_admin: isAdmin,
-          is_support_agent: isSupport
-        })
+        .update(updates)
         .eq('id', userId);
 
       if (error) {
@@ -778,7 +774,7 @@ class MessengerService {
     }
   }
 
-  async loginWithPassword(phone: string, password: string): Promise<{ success: boolean; user?: MessengerUser; error?: string }> {
+  async loginWithPassword(phone: string, password: string): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
     try {
       // This is a simplified version - you should implement proper password hashing/verification
       const { data, error } = await supabase
@@ -792,7 +788,10 @@ class MessengerService {
       }
 
       // In a real implementation, verify password hash here
-      return { success: true, user: data as MessengerUser };
+      // Generate session token
+      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      
+      return { success: true, user: data as MessengerUser, session_token: sessionToken };
     } catch (error) {
       console.error('Error in loginWithPassword:', error);
       return { success: false, error: 'Login failed' };
@@ -833,11 +832,15 @@ class MessengerService {
     }
   }
 
-  async createSession(userId: number, sessionToken: string): Promise<void> {
+  async createSession(userId: number): Promise<string> {
     try {
-      // Implementation would depend on your session table structure
-      // This is a placeholder
+      // Generate session token
+      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      
+      // In a real implementation, store this in user_sessions table
       console.log('Creating session for user:', userId, 'with token:', sessionToken);
+      
+      return sessionToken;
     } catch (error) {
       console.error('Error in createSession:', error);
       throw error;
