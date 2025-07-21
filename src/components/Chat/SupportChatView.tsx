@@ -44,16 +44,28 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  };
+
+  const scrollToBottomInstant = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'instant', block: 'end' });
+    }
   };
 
   useEffect(() => {
-    // Use setTimeout to ensure DOM is updated before scrolling
-    const timer = setTimeout(() => {
-      scrollToBottom();
-    }, 100);
-    
-    return () => clearTimeout(timer);
+    // For initial load, scroll instantly without animation
+    if (messages.length > 0) {
+      scrollToBottomInstant();
+      // Then add a small delay for smooth scroll to ensure everything is rendered
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
   }, [messages]);
 
   const loadMessages = async () => {
