@@ -30,18 +30,6 @@ export interface MessengerUser {
   password_hash?: string | null;
 }
 
-export interface ChatRoom {
-  id: number;
-  name: string;
-  description?: string;
-  type: string;
-  is_active: boolean;
-  avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-  is_super_group?: boolean;
-  is_boundless_only?: boolean;
-}
 
 export interface MessageData {
   id: number;
@@ -74,7 +62,7 @@ export interface AdminSettings {
 export interface ChatTopic {
   id: number;
   title: string;
-  description?: string;
+  description: string; // Made required to match usage
   room_id?: number;
   section_id?: number;
   icon?: string;
@@ -82,6 +70,19 @@ export interface ChatTopic {
   order_index?: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface ChatRoom {
+  id: number;
+  name: string;
+  description: string; // Made required to match usage
+  type: string;
+  is_active: boolean;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+  is_super_group?: boolean;
+  is_boundless_only?: boolean;
 }
 
 export interface CreateRoomData {
@@ -396,7 +397,10 @@ class MessengerService {
         return [];
       }
 
-      return data || [];
+      return (data || []).map(room => ({
+        ...room,
+        description: room.description || '' // Ensure description is never null/undefined
+      }));
     } catch (error) {
       console.error('Error in getRooms:', error);
       return [];
@@ -706,7 +710,10 @@ class MessengerService {
         return [];
       }
 
-      return data || [];
+      return (data || []).map(topic => ({
+        ...topic,
+        description: topic.description || '' // Ensure description is never null/undefined
+      }));
     } catch (error) {
       console.error('Error in getTopics:', error);
       return [];
