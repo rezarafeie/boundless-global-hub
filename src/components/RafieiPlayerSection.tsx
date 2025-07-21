@@ -148,28 +148,52 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
   };
 
   return (
-    <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-            <Play className="h-5 w-5" />
+    <Card className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-purple-50/80 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-purple-950/40 backdrop-blur-sm">
+      {/* Gradient Border Effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10" />
+      
+      <CardHeader className="relative">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <CardTitle className="flex items-center gap-3 text-purple-700 dark:text-purple-300 text-xl md:text-2xl font-bold">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 flex items-center justify-center border-2 border-purple-200 dark:border-purple-700">
+              <Play className="h-6 w-6" />
+            </div>
             رفیعی پلیر
           </CardTitle>
-          <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700">
-            <Download className="h-3 w-3 ml-1" />
-            دانلود دائمی
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700 text-sm px-3 py-1">
+              <Download className="h-4 w-4 ml-1" />
+              دانلود دائمی
+            </Badge>
+            <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700 text-sm px-3 py-1">
+              کیفیت عالی
+            </Badge>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-          <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2">مزایای رفیعی پلیر:</h4>
-          <ul className="text-sm text-purple-600 dark:text-purple-400 space-y-1">
-            <li>• دانلود دوره برای تماشای آفلاین</li>
-            <li>• دسترسی دائمی و بدون انقضا</li>
-            <li>• کیفیت تصویر عالی</li>
-            <li>• پشتیبانی از تمامی پلتفرم‌ها</li>
-          </ul>
+      <CardContent className="relative space-y-6">
+        <div className="bg-white/80 dark:bg-black/30 rounded-2xl p-6 border border-purple-100 dark:border-purple-800 shadow-lg backdrop-blur-sm">
+          <h4 className="text-lg font-bold text-purple-700 dark:text-purple-300 mb-4 flex items-center gap-2">
+            ⭐ مزایای رفیعی پلیر
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-sm">دانلود دوره برای تماشای آفلاین</span>
+            </div>
+            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-sm">دسترسی دائمی و بدون انقضا</span>
+            </div>
+            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-sm">کیفیت تصویر عالی</span>
+            </div>
+            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-sm">پشتیبانی از تمامی پلتفرم‌ها</span>
+            </div>
+          </div>
         </div>
 
         {licenseData?.license_key ? (
@@ -218,29 +242,29 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
 
             <Button 
               onClick={handlePlayerClick}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-600 dark:hover:to-pink-600"
+              className="w-full h-14 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 text-base font-semibold"
               size="lg"
             >
-              <Play className="ml-2 h-5 w-5" />
-              🎬 ورود به رفیعی پلیر و شروع آموزش
-              <ExternalLink className="mr-2 h-4 w-4" />
+              <Play className="ml-3 h-5 w-5" />
+              <span className="flex-1 text-center">🎬 ورود به رفیعی پلیر و شروع آموزش</span>
+              <ExternalLink className="mr-3 h-4 w-4" />
             </Button>
           </div>
         ) : (
           <Button 
             onClick={createLicense}
             disabled={isCreatingLicense}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-600 dark:hover:to-pink-600 text-white"
+            className="w-full h-14 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 text-base font-semibold disabled:opacity-50"
           >
             {isCreatingLicense ? (
               <>
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                در حال ایجاد لایسنس...
+                <Loader2 className="ml-3 h-5 w-5 animate-spin" />
+                <span className="flex-1 text-center">در حال ایجاد لایسنس...</span>
               </>
             ) : (
               <>
-                <Download className="ml-2 h-4 w-4" />
-                ایجاد لایسنس و شروع آموزش
+                <Download className="ml-3 h-5 w-5" />
+                <span className="flex-1 text-center">🚀 ایجاد لایسنس و شروع آموزش</span>
               </>
             )}
           </Button>

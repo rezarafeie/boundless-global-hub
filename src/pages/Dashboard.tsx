@@ -162,81 +162,69 @@ const Dashboard = () => {
   const fetchCourseLicenses = async () => {
     if (!user?.id) return;
     
-    // Try to fetch both course_licenses and academy_users tables
-    const [courseLicensesResult, academyUsersResult] = await Promise.all([
-      supabase
-        .from('course_licenses')
-        .select('*')
-        .eq('user_id', user.id),
-      supabase
-        .from('academy_users')
-        .select('id')
-        .eq('id', user.id)
-        .single()
-    ]);
-
-    let allLicenses: any[] = [];
-
-    // Add course_licenses if found
-    if (courseLicensesResult.data && !courseLicensesResult.error) {
-      allLicenses = [...courseLicensesResult.data];
-    } else {
-      console.log('No course_licenses found or error:', courseLicensesResult.error);
-    }
-
-    // If user exists in academy_users, also fetch from enrollments table for Rafiei licenses
-    if (academyUsersResult.data && !academyUsersResult.error) {
-      const { data: enrollmentLicenses } = await supabase
+    try {
+      // First get enrollments with Rafiei player licenses for this user
+      const { data: enrollmentsData, error: enrollmentsError } = await supabase
         .from('enrollments')
-        .select('id, course_id, spotplayer_license_key, spotplayer_license_id, created_at, payment_status')
-        .eq('chat_user_id', parseInt(user.id))
+        .select(`
+          id,
+          course_id,
+          spotplayer_license_id,
+          spotplayer_license_key,
+          spotplayer_license_url,
+          created_at,
+          courses (
+            id,
+            title,
+            slug,
+            description
+          )
+        `)
+        .eq('chat_user_id', user.id)
         .not('spotplayer_license_key', 'is', null);
 
-      if (enrollmentLicenses) {
-        // Convert enrollment licenses to course license format
-        const convertedLicenses = enrollmentLicenses.map(enrollment => ({
-          id: enrollment.id,
-          course_id: enrollment.course_id,
-          license_key: enrollment.spotplayer_license_key,
-          license_data: { spotplayer_id: enrollment.spotplayer_license_id },
-          status: enrollment.payment_status === 'completed' ? 'active' : 'pending',
-          created_at: enrollment.created_at,
-          expires_at: null,
-          activated_at: enrollment.payment_status === 'completed' ? enrollment.created_at : null
-        }));
-        
-        allLicenses = [...allLicenses, ...convertedLicenses];
+      if (enrollmentsError) {
+        console.error('Error fetching enrollments:', enrollmentsError);
       }
+
+      // Transform enrollment data to license format
+      const rafieiLicenses = enrollmentsData?.map(enrollment => ({
+        id: enrollment.id,
+        user_id: user.id,
+        course_id: enrollment.course_id,
+        license_key: enrollment.spotplayer_license_key,
+        license_data: {
+          license_id: enrollment.spotplayer_license_id,
+          license_url: enrollment.spotplayer_license_url
+        },
+        status: 'active',
+        created_at: enrollment.created_at,
+        course: enrollment.courses
+      })) || [];
+
+      // Also try to fetch from course_licenses table
+      const [courseLicensesResult, academyUsersResult] = await Promise.all([
+        supabase
+          .from('course_licenses')
+          .select('*')
+          .eq('user_id', user.id),
+        supabase
+          .from('academy_users')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+      ]);
+
+      // Combine both types of licenses
+      const allLicenses = [
+        ...rafieiLicenses,
+        ...(courseLicensesResult.data || [])
+      ];
+
+      setCourseLicenses(allLicenses);
+    } catch (error) {
+      console.error('Error in fetchCourseLicenses:', error);
     }
-
-    if (allLicenses.length === 0) {
-      setCourseLicenses([]);
-      return;
-    }
-
-    // Fetch course details separately
-    const courseIds = [...new Set(allLicenses.map(license => license.course_id))];
-    const { data: coursesData } = await supabase
-      .from('courses')
-      .select('id, title')
-      .in('id', courseIds);
-
-    const licenses: CourseLicense[] = allLicenses.map(license => {
-      const course = coursesData?.find(c => c.id === license.course_id);
-      return {
-        id: license.id,
-        course_id: license.course_id,
-        course_title: course?.title || 'Unknown Course',
-        license_key: license.license_key,
-        license_data: license.license_data,
-        status: license.status,
-        created_at: license.created_at,
-        expires_at: license.expires_at,
-        activated_at: license.activated_at
-      };
-    });
-
-    setCourseLicenses(licenses);
   };
 
   const fetchPaymentHistory = async () => {

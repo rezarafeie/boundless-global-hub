@@ -39,7 +39,7 @@ const DiscountSection: React.FC<DiscountSectionProps> = ({
       const { data, error: fetchError } = await supabase
         .from('discount_codes')
         .select('*')
-        .eq('code', discountCode.trim())
+        .ilike('code', discountCode.trim().toLowerCase())
         .eq('is_active', true)
         .single();
 
