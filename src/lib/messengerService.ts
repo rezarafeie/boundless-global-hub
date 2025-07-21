@@ -901,13 +901,13 @@ export const messengerService = {
             .limit(1)
             .single();
 
-          // Get unread count (messages from support to user that are unread)
+          // Get unread count (messages from support that user hasn't read)
           const { count: unreadCount } = await supabase
             .from('messenger_messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conv.id)
             .eq('sender_id', 1) // Messages from support
-            .eq('is_read', false);
+            .eq('is_read', false); // Not read by user
 
           return {
             id: conv.id,

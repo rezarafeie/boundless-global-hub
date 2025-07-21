@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SupportMessage {
@@ -193,15 +194,28 @@ class SupportMessageService {
   async markMessagesAsRead(conversationId: number): Promise<void> {
     console.log('Marking messages as read for conversation:', conversationId);
     
-    const { error } = await supabase
+    // Mark user messages as read by support
+    const { error: supportReadError } = await supabase
       .from('messenger_messages')
       .update({ unread_by_support: false })
       .eq('conversation_id', conversationId)
-      .neq('sender_id', 1); // Only mark user messages as read, not support messages
+      .neq('sender_id', 1); // Only mark user messages as read by support
 
-    if (error) {
-      console.error('Error marking messages as read:', error);
-      throw error;
+    if (supportReadError) {
+      console.error('Error marking user messages as read by support:', supportReadError);
+      throw supportReadError;
+    }
+
+    // Mark support messages as read by user
+    const { error: userReadError } = await supabase
+      .from('messenger_messages')
+      .update({ is_read: true })
+      .eq('conversation_id', conversationId)
+      .eq('sender_id', 1); // Only mark support messages as read by user
+
+    if (userReadError) {
+      console.error('Error marking support messages as read by user:', userReadError);
+      throw userReadError;
     }
 
     console.log('Messages marked as read for conversation:', conversationId);
