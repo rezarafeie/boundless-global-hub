@@ -347,6 +347,47 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_sections: {
+        Row: {
+          created_at: string | null
+          icon: string | null
+          id: number
+          is_active: boolean
+          order_index: number
+          room_id: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          icon?: string | null
+          id?: number
+          is_active?: boolean
+          order_index?: number
+          room_id?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          icon?: string | null
+          id?: number
+          is_active?: boolean
+          order_index?: number
+          room_id?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sections_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_topics: {
         Row: {
           created_at: string | null
@@ -354,7 +395,9 @@ export type Database = {
           icon: string | null
           id: number
           is_active: boolean
+          order_index: number | null
           room_id: number | null
+          section_id: number | null
           title: string
           updated_at: string | null
         }
@@ -364,7 +407,9 @@ export type Database = {
           icon?: string | null
           id?: number
           is_active?: boolean
+          order_index?: number | null
           room_id?: number | null
+          section_id?: number | null
           title: string
           updated_at?: string | null
         }
@@ -374,7 +419,9 @@ export type Database = {
           icon?: string | null
           id?: number
           is_active?: boolean
+          order_index?: number | null
           room_id?: number | null
+          section_id?: number | null
           title?: string
           updated_at?: string | null
         }
@@ -384,6 +431,13 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_topics_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sections"
             referencedColumns: ["id"]
           },
         ]
