@@ -422,10 +422,20 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           // Use unified auth service for academy authentication
           console.log('🎓 Academy login attempt for:', phoneNumber);
           const { unifiedAuthService } = await import('@/lib/unifiedAuthService');
-          const authResult = await unifiedAuthService.authenticateUser(phoneNumber, password, countryCode);
           
-          console.log('✅ Academy authentication successful');
-          result = { session_token: authResult.sessionToken };
+          try {
+            const authResult = await unifiedAuthService.authenticateUser(phoneNumber, password, countryCode);
+            console.log('✅ Academy authentication successful');
+            result = { session_token: authResult.sessionToken };
+          } catch (authError: any) {
+            console.error('Academy auth error:', authError);
+            toast({
+              title: 'خطا',
+              description: authError.message || 'رمز عبور اشتباه است',
+              variant: 'destructive'
+            });
+            return;
+          }
         } else {
           // Use messenger service for messenger authentication
           console.log('💬 Messenger login attempt for:', phoneNumber);
