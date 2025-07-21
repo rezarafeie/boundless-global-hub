@@ -533,9 +533,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                              conversation.priority === 'low' ? 'کم' : conversation.priority}
                           </Badge>
                         )}
-                        <Badge variant="outline" className="text-xs h-5 px-1">
-                          {conversation.thread_type?.display_name || 'عادی'}
-                        </Badge>
+                        {getStatusBadge(conversation.status)}
                       </div>
                     </div>
                   </div>
