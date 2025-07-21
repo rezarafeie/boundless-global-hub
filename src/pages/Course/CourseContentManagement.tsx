@@ -448,13 +448,20 @@ const VideoEmbed: React.FC<{ embedCode: string; className?: string }> = ({ embed
   const isHtmlEmbed = embedCode.includes('<') && embedCode.includes('>');
   
   if (isHtmlEmbed) {
-    // Sanitize and render HTML embed code
-    return (
-      <div 
-        className={`video-embed ${className}`}
-        dangerouslySetInnerHTML={{ __html: embedCode }}
-      />
-    );
+    // Create a unique container ID for each embed to avoid conflicts
+    const containerId = `video-embed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    React.useEffect(() => {
+      const container = document.getElementById(containerId);
+      if (container) {
+        // Clear any existing content
+        container.innerHTML = '';
+        // Set the HTML content which will execute any scripts
+        container.innerHTML = embedCode;
+      }
+    }, [embedCode, containerId]);
+    
+    return <div id={containerId} className={`video-embed-container ${className}`} />;
   } else {
     // Treat as regular URL
     return (
