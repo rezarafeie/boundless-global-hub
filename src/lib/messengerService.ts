@@ -866,7 +866,67 @@ export const messengerService = {
   async getConversations(userId: number): Promise<any[]> {
     try {
       console.log(`Fetching conversations for user ID: ${userId}`);
-      return [];
+      
+      // Fetch support conversations for this user
+      const { data: conversations, error } = await supabase
+        .from('support_conversations')
+        .select(`
+          id,
+          user_id,
+          status,
+          priority,
+          thread_type_id,
+          created_at,
+          last_message_at,
+          tags,
+          tag_list
+        `)
+        .eq('user_id', userId)
+        .order('last_message_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        throw error;
+      }
+
+      // Get the latest message and unread count for each conversation
+      const conversationsWithDetails = await Promise.all(
+        (conversations || []).map(async (conv) => {
+          // Get latest message
+          const { data: latestMessage } = await supabase
+            .from('messenger_messages')
+            .select('message, created_at, sender_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          // Get unread count (messages from support to user that are unread)
+          const { count: unreadCount } = await supabase
+            .from('messenger_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('sender_id', 1) // Messages from support
+            .eq('is_read', false);
+
+          return {
+            id: conv.id,
+            type: 'support',
+            name: 'پشتیبانی',
+            avatar_url: null,
+            last_message: latestMessage?.message || '',
+            last_message_time: latestMessage?.created_at || conv.last_message_at,
+            unread_count: unreadCount || 0,
+            conversation_id: conv.id,
+            user_id: conv.user_id,
+            status: conv.status,
+            priority: conv.priority
+          };
+        })
+      );
+
+      console.log(`Found ${conversationsWithDetails.length} conversations for user ${userId}`);
+      return conversationsWithDetails;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       throw error;
