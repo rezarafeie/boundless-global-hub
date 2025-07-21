@@ -1058,14 +1058,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   </div>
                 </div>
                 {emailError && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-destructive">{emailError}</p>
-                    {emailAvailable === false && (
-                      <p className="text-sm text-blue-600 cursor-pointer hover:underline">
-                        اگر این ایمیل برای شماست وارد شوید
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-sm text-destructive">{emailError}</p>
                 )}
               </div>
             </div>
