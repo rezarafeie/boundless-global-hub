@@ -380,36 +380,9 @@ const Enroll: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center justify-between mb-6">
-                  <CardTitle className="text-3xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    {course.title}
-                  </CardTitle>
-                  <EnrollmentCountdown 
-                    onTimeUp={() => {
-                      toast({
-                        title: "⏰ زمان ثبت‌نام به پایان رسید",
-                        description: "لطفا صفحه را بروزرسانی کنید و مجددا تلاش کنید",
-                        variant: "destructive"
-                      });
-                    }}
-                    className="hidden md:flex"
-                  />
-                </div>
-
-                {/* Mobile countdown */}
-                <div className="md:hidden mb-4 flex justify-center">
-                  <div className="bg-gradient-to-r from-primary/10 to-blue-50/50 dark:from-primary/10 dark:to-blue-950/20 border border-primary/20 rounded-lg px-3 py-2">
-                    <EnrollmentCountdown 
-                      onTimeUp={() => {
-                        toast({
-                          title: "⏰ زمان ثبت‌نام به پایان رسید",
-                          description: "لطفا صفحه را بروزرسانی کنید و مجددا تلاش کنید",
-                          variant: "destructive"
-                        });
-                      }}
-                    />
-                  </div>
-                </div>
+                <CardTitle className="text-3xl mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {course.title}
+                </CardTitle>
                 <p className="text-muted-foreground leading-relaxed text-lg">
                   {course.description}
                 </p>
@@ -734,16 +707,31 @@ const Enroll: React.FC = () => {
                    )}
                 </form>
 
-                {/* Security Note */}
-                <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-primary">پرداخت امن</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    تمامی پرداخت‌ها از طریق درگاه‌های امن و معتبر انجام می‌شود. اطلاعات شما محفوظ است.
-                  </p>
-                </div>
+                 {/* Security Note */}
+                 <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                   <div className="flex items-center gap-2 mb-2">
+                     <Shield className="h-5 w-5 text-primary" />
+                     <span className="font-medium text-primary">پرداخت امن</span>
+                   </div>
+                   <p className="text-sm text-muted-foreground">
+                     تمامی پرداخت‌ها از طریق درگاه‌های امن و معتبر انجام می‌شود. اطلاعات شما محفوظ است.
+                   </p>
+                 </div>
+
+                 {/* Enrollment Countdown */}
+                 <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+                   <div className="flex items-center justify-center">
+                     <EnrollmentCountdown 
+                       onTimeUp={() => {
+                         toast({
+                           title: "⏰ زمان ثبت‌نام به پایان رسید",
+                           description: "لطفا صفحه را بروزرسانی کنید و مجددا تلاش کنید",
+                           variant: "destructive"
+                         });
+                       }}
+                     />
+                   </div>
+                 </div>
               </CardContent>
             </Card>
           </div>
