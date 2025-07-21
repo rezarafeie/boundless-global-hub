@@ -13,6 +13,7 @@ export interface RafieiUser {
   country_code: string;
   signup_source: string;
   is_approved: boolean;
+  password_hash?: string;
   created_at: string;
   updated_at: string;
 }
@@ -213,7 +214,7 @@ class RafieiAuthService {
     if (error) throw error;
   }
 
-  // Send SMS OTP (placeholder for FarazSMS integration)
+  // Send SMS OTP using existing edge function
   async sendSMSOTP(phone: string): Promise<void> {
     const normalizedPhone = this.normalizePhone(phone);
     
@@ -223,10 +224,65 @@ class RafieiAuthService {
       throw new Error('ارسال پیامک به این کشور در حال حاضر امکان‌پذیر نیست، از ورود با ایمیل استفاده کنید');
     }
 
-    // TODO: Integrate with FarazSMS API
-    console.log(`Sending SMS OTP to ${normalizedPhone}`);
-    // This would call FarazSMS API
-    throw new Error('سرویس پیامک موقتاً در دسترس نیست، از ورود با ایمیل استفاده کنید');
+    // Call the existing send-otp edge function
+    const { data, error } = await supabase.functions.invoke('send-otp', {
+      body: { 
+        phone: normalizedPhone,
+        countryCode: '+98'
+      }
+    });
+
+    if (error) {
+      throw new Error(error.message || 'خطا در ارسال کد تأیید');
+    }
+
+    return data;
+  }
+
+  // Verify OTP using existing edge function
+  async verifyOTP(phone: string, otpCode: string): Promise<void> {
+    const normalizedPhone = this.normalizePhone(phone);
+    
+    const { data, error } = await supabase.functions.invoke('verify-otp', {
+      body: { 
+        phone: normalizedPhone,
+        otpCode: otpCode
+      }
+    });
+
+    if (error || !data.success) {
+      throw new Error(data?.error || 'کد تأیید نامعتبر است');
+    }
+  }
+
+  // Set password for existing user
+  async setPasswordForUser(identifier: string, password: string): Promise<{ user: RafieiUser; session_token: string }> {
+    const type = this.detectInputType(identifier);
+    const normalizedIdentifier = type === 'phone' ? this.normalizePhone(identifier) : identifier.toLowerCase();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const { data: user, error } = await supabase
+      .from('chat_users')
+      .update({ password_hash: hashedPassword })
+      .eq(type, normalizedIdentifier)
+      .select()
+      .single();
+
+    if (error || !user) {
+      throw new Error('خطا در تنظیم رمز عبور');
+    }
+
+    // Create session
+    const session_token = this.generateSessionToken();
+    await supabase
+      .from('user_sessions')
+      .insert({
+        user_id: user.id,
+        session_token: session_token,
+        is_active: true
+      });
+
+    return { user, session_token };
   }
 
   // Generate session token
