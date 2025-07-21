@@ -827,11 +827,13 @@ const Enroll: React.FC = () => {
                           ) : (
                             <>
                               <CreditCard className="h-6 w-6 ml-2" />
-                              پرداخت آنلاین {discountedPrice !== null 
-                                ? formatPrice(discountedPrice)
-                                : course.use_dollar_price && finalRialPrice 
-                                  ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
-                                  : formatPrice(course.price)
+                              پرداخت آنلاین {isOnSale && salePrice !== null
+                                ? formatPrice(salePrice)
+                                : discountedPrice !== null 
+                                  ? formatPrice(discountedPrice)
+                                  : course.use_dollar_price && finalRialPrice 
+                                    ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                                    : formatPrice(course.price)
                               }
                             </>
                           )}

@@ -59,6 +59,13 @@ const CourseAccess: React.FC = () => {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
   
+  // Function to replace user template variables in content
+  const replaceUserTemplate = (content: string): string => {
+    if (!content || !user) return content;
+    
+    return content.replace(/\[current_user_display_name\]/g, user.firstName || user.name || 'کاربر گرامی');
+  };
+  
   const courseSlug = searchParams.get('course');
   
   const [course, setCourse] = useState<Course | null>(null);
@@ -248,8 +255,8 @@ const CourseAccess: React.FC = () => {
                     <FileText className="h-5 w-5 text-primary" />
                     توضیحات درس
                   </h3>
-                  <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
-                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                   <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
+                    <div dangerouslySetInnerHTML={{ __html: replaceUserTemplate(lesson.content) }} />
                   </div>
                 </CardContent>
               </Card>
