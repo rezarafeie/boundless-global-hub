@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,13 +14,13 @@ interface Course {
   id: string;
   title: string;
   slug: string;
+  price: number;
 }
 
 interface ImportResult {
   totalRows: number;
-  newUsersCreated: number;
-  existingUsersUpdated: number;
-  enrollmentsAdded: number;
+  newEnrollmentsCreated: number;
+  existingEnrollments: number;
 }
 
 interface CSVRow {
@@ -46,7 +47,7 @@ export function DataImportSection() {
     try {
       const { data, error } = await supabase
         .from('courses')
-        .select('id, title, slug')
+        .select('id, title, slug, price')
         .eq('is_active', true)
         .order('title');
 
@@ -100,7 +101,7 @@ export function DataImportSection() {
         };
         
         // Basic validation
-        if (row.email && row.phone) {
+        if (row.email && row.phone && row.first_name && row.last_name) {
           rows.push(row);
         }
       }
@@ -110,70 +111,60 @@ export function DataImportSection() {
   };
 
   const processImport = async (csvRows: CSVRow[], courseId: string): Promise<ImportResult> => {
-    let newUsersCreated = 0;
-    let existingUsersUpdated = 0;
-    let enrollmentsAdded = 0;
+    let newEnrollmentsCreated = 0;
+    let existingEnrollments = 0;
+
+    // Get course details for payment amount
+    const course = courses.find(c => c.id === courseId);
+    if (!course) {
+      throw new Error('دوره انتخاب شده یافت نشد');
+    }
 
     for (const row of csvRows) {
       try {
-        // Check if user exists by email or phone
-        const { data: existingUsers, error: userCheckError } = await supabase
-          .from('academy_users')
-          .select('id, email, phone')
-          .or(`email.eq.${row.email},phone.eq.${row.phone}`);
-
-        if (userCheckError) throw userCheckError;
-
-        let userId: string;
-
-        if (existingUsers && existingUsers.length > 0) {
-          // User exists
-          userId = existingUsers[0].id;
-          existingUsersUpdated++;
-        } else {
-          // Create new user
-          const { data: newUser, error: createUserError } = await supabase
-            .from('academy_users')
-            .insert({
-              first_name: row.first_name,
-              last_name: row.last_name,
-              email: row.email,
-              phone: row.phone,
-              role: 'student'
-            })
-            .select('id')
-            .single();
-
-          if (createUserError) throw createUserError;
-          userId = newUser.id;
-          newUsersCreated++;
-        }
-
-        // Check if already enrolled
+        // Check if enrollment already exists for this email/phone and course
         const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
-          .from('academy_enrollments')
+          .from('enrollments')
           .select('id')
-          .eq('user_id', userId)
           .eq('course_id', courseId)
-          .single();
+          .or(`email.eq.${row.email},phone.eq.${row.phone}`)
+          .maybeSingle();
 
-        if (enrollmentCheckError && enrollmentCheckError.code !== 'PGRST116') {
-          throw enrollmentCheckError;
+        if (enrollmentCheckError) {
+          console.error(`Error checking enrollment for ${row.email}:`, enrollmentCheckError);
+          continue;
         }
 
-        if (!existingEnrollment) {
-          // Create enrollment
-          const { error: enrollError } = await supabase
-            .from('academy_enrollments')
-            .insert({
-              user_id: userId,
-              course_id: courseId,
-              status: 'enrolled'
-            });
-
-          if (enrollError) throw enrollError;
-          enrollmentsAdded++;
+        if (existingEnrollment) {
+          // Enrollment already exists
+          existingEnrollments++;
+          console.log(`Enrollment already exists for ${row.email}`);
+          continue;
         }
+
+        // Create new enrollment
+        const fullName = `${row.first_name} ${row.last_name}`.trim();
+        
+        const { error: enrollmentError } = await supabase
+          .from('enrollments')
+          .insert({
+            course_id: courseId,
+            full_name: fullName,
+            email: row.email,
+            phone: row.phone,
+            payment_status: 'completed',
+            payment_amount: course.price,
+            payment_method: 'manual_import',
+            country_code: '+98'
+          });
+
+        if (enrollmentError) {
+          console.error(`Error creating enrollment for ${row.email}:`, enrollmentError);
+          continue;
+        }
+
+        newEnrollmentsCreated++;
+        console.log(`Successfully created enrollment for ${row.email}`);
 
       } catch (error) {
         console.error(`Error processing user ${row.email}:`, error);
@@ -183,9 +174,8 @@ export function DataImportSection() {
 
     return {
       totalRows: csvRows.length,
-      newUsersCreated,
-      existingUsersUpdated,
-      enrollmentsAdded
+      newEnrollmentsCreated,
+      existingEnrollments
     };
   };
 
@@ -206,6 +196,8 @@ export function DataImportSection() {
         throw new Error('هیچ داده معتبری در فایل یافت نشد');
       }
 
+      console.log(`Processing ${csvRows.length} rows for course ${selectedCourse}`);
+
       // Process import
       const result = await processImport(csvRows, selectedCourse);
 
@@ -213,16 +205,16 @@ export function DataImportSection() {
       await supabase
         .from('import_logs')
         .insert({
-          uploaded_by: 'admin', // You might want to get actual admin ID
+          uploaded_by: 'admin',
           course_id: selectedCourse,
           total_rows: result.totalRows,
-          new_users_created: result.newUsersCreated,
-          existing_users_updated: result.existingUsersUpdated
+          new_users_created: result.newEnrollmentsCreated,
+          existing_users_updated: result.existingEnrollments
         });
 
       // Show success message
       toast.success(
-        `✅ ${result.totalRows} کاربر پردازش شد، ${result.newUsersCreated} کاربر جدید ایجاد شد، ${result.enrollmentsAdded} ثبت‌نام انجام شد`
+        `✅ ${result.totalRows} کاربر پردازش شد، ${result.newEnrollmentsCreated} ثبت‌نام جدید ایجاد شد، ${result.existingEnrollments} ثبت‌نام موجود بود`
       );
 
       // Reset form
@@ -250,7 +242,7 @@ export function DataImportSection() {
             وارد کردن کاربران از فایل CSV
           </CardTitle>
           <CardDescription>
-            فایل CSV خود را بارگذاری کنید و دوره مورد نظر را برای اختصاص دسترسی انتخاب کنید
+            فایل CSV خود را بارگذاری کنید و دوره مورد نظر را برای ثبت‌نام انتخاب کنید
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -279,7 +271,7 @@ export function DataImportSection() {
               <SelectContent>
                 {courses.map((course) => (
                   <SelectItem key={course.id} value={course.id}>
-                    {course.title}
+                    {course.title} - {course.price.toLocaleString()} تومان
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -292,7 +284,7 @@ export function DataImportSection() {
             disabled={!csvFile || !selectedCourse || isImporting}
             className="w-full"
           >
-            {isImporting ? 'در حال پردازش...' : 'وارد کردن کاربران و اختصاص دسترسی'}
+            {isImporting ? 'در حال پردازش...' : 'وارد کردن کاربران و ثبت‌نام در دوره'}
           </Button>
         </CardContent>
       </Card>
