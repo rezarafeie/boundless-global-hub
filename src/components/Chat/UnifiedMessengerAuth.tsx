@@ -12,7 +12,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { MessageCircle, Phone, User, Lock, AtSign, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import useGoogleAuthSettings from '@/hooks/useGoogleAuthSettings';
@@ -28,10 +28,9 @@ interface UnifiedMessengerAuthProps {
   isAcademyAuth?: boolean; // Add flag to distinguish academy vs messenger auth
 }
 
-type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking' | 'name-confirm';
+type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking' | 'name-confirm' | 'success';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail, isAcademyAuth = false }) => {
-  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+98');
@@ -264,11 +263,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!phoneNumber.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'شماره تلفن را وارد کنید',
-        variant: 'destructive'
-      });
+      toast.error('شماره تلفن را وارد کنید');
       return;
     }
 
@@ -313,8 +308,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
           if (data.success) {
             setCurrentStep('otp-link');
-            toast({
-              title: 'کد تأیید ارسال شد',
+            toast.success('کد تأیید ارسال شد', {
               description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
             });
           } else {
@@ -369,8 +363,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
           if (data.success) {
             setCurrentStep('otp-link');
-            toast({
-              title: 'کد تأیید ارسال شد',
+            toast.success('کد تأیید ارسال شد', {
               description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
             });
           } else {
@@ -387,11 +380,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }
     } catch (error) {
       console.error('Error checking phone:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بررسی شماره تلفن',
-        variant: 'destructive'
-      });
+      toast.error('خطا در بررسی شماره تلفن');
       // If error, assume new user
       setIsLogin(false);
       setCurrentStep('password');
@@ -404,11 +393,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!password.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'رمز عبور را وارد کنید',
-        variant: 'destructive'
-      });
+      toast.error('رمز عبور را وارد کنید');
       return;
     }
 
@@ -429,11 +414,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             result = { session_token: authResult.sessionToken };
           } catch (authError: any) {
             console.error('Academy auth error:', authError);
-            toast({
-              title: 'خطا',
-              description: authError.message || 'رمز عبور اشتباه است',
-              variant: 'destructive'
-            });
+            toast.error(authError.message || 'رمز عبور اشتباه است');
             return;
           }
         } else {
@@ -449,19 +430,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           }
           onAuthenticated(result.session_token, existingUser.name, existingUser);
         } else {
-          toast({
-            title: 'خطا',
-            description: 'رمز عبور اشتباه است',
-            variant: 'destructive'
-          });
+          toast.error('رمز عبور اشتباه است');
         }
       } catch (error: any) {
         console.error('Login error:', error);
-        toast({
-          title: 'خطا در ورود',
-          description: error.message || 'رمز عبور اشتباه است',
-          variant: 'destructive'
-        });
+        toast.error(error.message || 'رمز عبور اشتباه است');
       } finally {
         setLoading(false);
       }
@@ -475,30 +448,18 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!firstName.trim() || !lastName.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'نام و نام خانوادگی را وارد کنید',
-        variant: 'destructive'
-      });
+      toast.error('نام و نام خانوادگی را وارد کنید');
       return;
     }
 
     if (!email.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'ایمیل را وارد کنید',
-        variant: 'destructive'
-      });
+      toast.error('ایمیل را وارد کنید');
       return;
     }
 
     // Check if email is available
     if (!emailAvailable) {
-      toast({
-        title: 'خطا',
-        description: 'ایمیل انتخاب شده معتبر نیست یا قبلاً استفاده شده است',
-        variant: 'destructive'
-      });
+      toast.error('ایمیل انتخاب شده معتبر نیست یا قبلاً استفاده شده است');
       return;
     }
 
@@ -528,11 +489,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         onAuthenticated(result.session_token, result.user.name, result.user);
       } catch (error: any) {
         console.error('Registration error:', error);
-        toast({
-          title: 'خطا در ثبت نام',
-          description: error.message || 'لطفاً دوباره تلاش کنید',
-          variant: 'destructive'
-        });
+        toast.error(error.message || 'لطفاً دوباره تلاش کنید');
       } finally {
         setLoading(false);
       }
@@ -546,20 +503,12 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!username.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'نام کاربری را وارد کنید',
-        variant: 'destructive'
-      });
+      toast.error('نام کاربری را وارد کنید');
       return;
     }
 
     if (!usernameAvailable) {
-      toast({
-        title: 'خطا',
-        description: 'نام کاربری انتخاب شده معتبر نیست',
-        variant: 'destructive'
-      });
+      toast.error('نام کاربری انتخاب شده معتبر نیست');
       return;
     }
 
@@ -589,11 +538,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       onAuthenticated(result.session_token, result.user.name, result.user);
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast({
-        title: 'خطا در ثبت نام',
-        description: error.message || 'لطفاً دوباره تلاش کنید',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'لطفاً دوباره تلاش کنید');
     } finally {
       setLoading(false);
     }
@@ -639,27 +584,20 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         }
         
         setCurrentStep('name-confirm');
-        toast({
-          title: 'کد تأیید شد',
+        toast.success('کد تأیید شد', {
           description: 'اطلاعات خود را بررسی و تأیید کنید'
         });
       } else {
         console.log('❌ OTP verification failed');
-        toast({
-          title: 'کد اشتباه است',
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید',
-          variant: 'destructive'
+        toast.error('کد اشتباه است', {
+          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
         });
         setOtpCode('');
         return;
       }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
-      toast({
-        title: 'خطا در تأیید کد',
-        description: error.message || 'کد وارد شده اشتباه است',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'کد وارد شده اشتباه است');
       setOtpCode('');
     } finally {
       setLoading(false);
@@ -671,11 +609,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!firstName.trim() || !lastName.trim()) {
-      toast({
-        title: 'خطا',
-        description: 'نام و نام خانوادگی را وارد کنید',
-        variant: 'destructive'
-      });
+      toast.error('نام و نام خانوادگی را وارد کنید');
       return;
     }
 
@@ -730,10 +664,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         full_name: `${firstNameToLink} ${lastNameToLink}`
       };
 
-      toast({
-        title: 'موفقیت آمیز',
-        description: 'حساب Google شما با موفقیت ربط داده شد'
-      });
+      toast.success('حساب Google شما با موفقیت ربط داده شد');
 
       console.log('🎉 Linking successful, showing success...');
       setCurrentStep('success');
@@ -744,11 +675,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }, 2000);
     } catch (error: any) {
       console.error('Error in name confirmation:', error);
-      toast({
-        title: 'خطا در ربط حساب',
-        description: error.message || 'لطفاً دوباره تلاش کنید',
-        variant: 'destructive'
-      });
+      toast.error(error.message || 'لطفاً دوباره تلاش کنید');
     } finally {
       setLoading(false);
     }
@@ -769,10 +696,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         const session = await messengerService.createSession(user.id);
         onAuthenticated(session.session_token, user.name, user);
       } else {
-        toast({
-          title: 'هنوز تایید نشده',
-          description: 'حساب شما هنوز توسط مدیریت تایید نشده است',
-        });
+        toast.info('حساب شما هنوز توسط مدیریت تایید نشده است');
       }
     } catch (error) {
       console.error('Error checking approval:', error);
@@ -799,22 +723,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
       if (error) {
         console.error('Google auth error:', error);
-        toast({
-          title: "خطا در ورود",
-          description: "خطا در ورود با Google. لطفا دوباره تلاش کنید.",
-          variant: "destructive"
-        });
+        toast.error('خطا در ورود با Google. لطفا دوباره تلاش کنید.');
       } else {
         console.log('✅ Google auth initiated successfully');
         // The redirect will handle the rest
       }
     } catch (error) {
       console.error('Google auth error:', error);
-      toast({
-        title: "خطا در ورود",
-        description: "خطا در ورود با Google. لطفا دوباره تلاش کنید.",
-        variant: "destructive"
-      });
+      toast.error('خطا در ورود با Google. لطفا دوباره تلاش کنید.');
     } finally {
       setGoogleLoading(false);
     }
