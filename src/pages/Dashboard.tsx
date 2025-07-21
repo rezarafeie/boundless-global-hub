@@ -324,16 +324,8 @@ const Dashboard = () => {
       console.error('Error logging course click:', error);
     }
 
-    // Navigate to course
-    if (course.redirect_url) {
-      window.open(course.redirect_url, '_blank');
-    } else {
-      toast({
-        title: 'خطا',
-        description: 'لینک دسترسی به دوره یافت نشد',
-        variant: 'destructive'
-      });
-    }
+    // Navigate to enrollment details page
+    navigate(`/enroll/details?id=${course.enrollment_id}`);
   };
 
   const copyLicenseKey = async (licenseKey: string) => {
@@ -667,7 +659,7 @@ const Dashboard = () => {
                         disabled={course.payment_status !== 'success' && course.payment_status !== 'completed'}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        ورود به دوره
+                        مشاهده جزئیات
                       </Button>
                     </CardContent>
                   </Card>

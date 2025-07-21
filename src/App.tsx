@@ -28,6 +28,7 @@ import EnrollPending from "./pages/EnrollPending";
 import EnrollAdmin from "./pages/EnrollAdmin";
 import EnrollReject from "./pages/EnrollReject";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
+import EnrollmentDetails from "./pages/EnrollmentDetails";
 import CourseManagement from "./pages/Course/CourseManagement";
 import CourseAccess from "./pages/CourseAccess";
 
@@ -159,6 +160,7 @@ const App = () => {
                     {/* Enrollment pages */}
                     <Route path="/enroll" element={<Enroll />} />
                     <Route path="/enroll/success" element={<EnrollSuccess />} />
+                    <Route path="/enroll/details" element={<EnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
