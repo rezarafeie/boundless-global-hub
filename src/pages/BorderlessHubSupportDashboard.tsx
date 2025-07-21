@@ -139,7 +139,10 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   useEffect(() => {
     if (selectedConversation && selectedConversation.status === 'open') {
       console.log('Auto-updating status to assigned for conversation:', selectedConversation.id);
-      handleStatusChange(selectedConversation.id, 'assigned');
+      // Add a small delay to avoid conflicts
+      setTimeout(() => {
+        handleStatusChange(selectedConversation.id, 'assigned');
+      }, 500);
     }
   }, [selectedConversation?.id]);
 
@@ -223,6 +226,7 @@ const BorderlessHubSupportDashboard: React.FC = () => {
 
   const handleStatusChange = async (conversationId: number, newStatus: string) => {
     try {
+      console.log('Attempting to change status:', { conversationId, newStatus });
       await supportMessageService.updateConversationStatus(conversationId, newStatus);
       
       // Update local state
