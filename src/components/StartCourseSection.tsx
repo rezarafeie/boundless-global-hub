@@ -135,24 +135,24 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="w-full min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 overflow-hidden">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl min-w-0">
         {/* Modern Header - Mobile First */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-full border border-primary/20 mb-6 shadow-lg backdrop-blur-sm">
-            <GraduationCap className="h-6 w-6 text-primary flex-shrink-0" />
-            <span className="text-lg font-bold text-primary">🎯 دوره شما آماده است!</span>
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-full border border-primary/20 mb-4 sm:mb-6 shadow-lg backdrop-blur-sm">
+            <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+            <span className="text-sm sm:text-lg font-bold text-primary">🎯 دوره شما آماده است!</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 sm:mb-4 px-2">
             شروع یادگیری از همین الان
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
+          <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-4">
             دوره شما با موفقیت فعال شد. از طریق روش‌های زیر می‌توانید به آموزش‌ها دسترسی پیدا کنید
           </p>
         </div>
 
         {/* Access Types - Responsive Grid */}
-        <div className="grid gap-6 lg:gap-8 max-w-5xl mx-auto">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-4xl mx-auto px-2">
           {accessTypes.map((accessType, index) => {
             if (!accessType.enabled) return null;
             
@@ -171,7 +171,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                   </div>
                 ) : (
                   /* Modern Clean Cards - Fully Responsive */
-                  <Card className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90">
+                  <Card className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90 w-full min-w-0">
                     {/* Gradient Border Effect */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${
                       accessType.color === 'green' ? 'from-green-500/20 to-emerald-500/20' :
@@ -179,7 +179,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       'from-purple-500/20 to-pink-500/20'
                     } opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                     
-                    <CardContent className="relative p-6 md:p-8">
+                    <CardContent className="relative p-4 sm:p-6 md:p-8 min-w-0">
                       {/* Header Section */}
                       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -212,24 +212,30 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       {accessType.id === 'academy' && accessType.status === 'active' && (
                         <Button 
                           onClick={() => window.location.href = `/access?course=${course?.slug}`}
-                          className="w-full h-14 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 border-0 text-base font-semibold group-hover:scale-[1.02]"
+                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
                           size="lg"
                         >
-                          <GraduationCap className="ml-3 h-5 w-5 flex-shrink-0" />
-                          <span className="flex-1 text-center">🚀 ورود به سیستم آموزشی آنلاین</span>
-                          <ArrowRight className="mr-3 h-4 w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
+                          <GraduationCap className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          <span className="flex-1 text-center">
+                            <span className="hidden sm:inline">🚀 ورود به سیستم آموزشی آنلاین</span>
+                            <span className="sm:hidden">🚀 سیستم آموزشی</span>
+                          </span>
+                          <ArrowRight className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       )}
 
                       {accessType.id === 'woocommerce' && accessType.status === 'active' && (
                         <Button 
                           onClick={onEnterCourse}
-                          className="w-full h-14 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 border-0 text-base font-semibold group-hover:scale-[1.02]"
+                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
                           size="lg"
                         >
-                          <ExternalLink className="ml-3 h-5 w-5 flex-shrink-0" />
-                          <span className="flex-1 text-center">⚡ ورود به دوره - سیستم قدیمی</span>
-                          <ArrowRight className="mr-3 h-4 w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
+                          <ExternalLink className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                          <span className="flex-1 text-center">
+                            <span className="hidden sm:inline">⚡ ورود به دوره - سیستم قدیمی</span>
+                            <span className="sm:hidden">⚡ سیستم قدیمی</span>
+                          </span>
+                          <ArrowRight className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       )}
                     </CardContent>
