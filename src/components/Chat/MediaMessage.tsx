@@ -70,24 +70,26 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isImageFile(type)) {
     return (
-      <div className={cn("w-full max-w-[200px] sm:max-w-[250px]", className)}>
-        <img
-          src={url}
-          alt={fileName}
-          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-40 sm:max-h-48 w-full object-cover"
-          onClick={() => setShowFullImage(true)}
-          style={{ maxWidth: '100%', height: 'auto' }}
-        />
-        <div className="flex justify-between items-center mt-1 gap-2">
-          <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDownload}
-            className="h-6 w-6 p-0 flex-shrink-0"
-          >
-            <Download className="w-3 h-3" />
-          </Button>
+      <div className={cn("w-full overflow-hidden", className)} style={{ maxWidth: '100%' }}>
+        <div className="max-w-[180px] sm:max-w-[200px] w-full">
+          <img
+            src={url}
+            alt={fileName}
+            className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity w-full h-auto object-cover max-h-32 sm:max-h-40"
+            onClick={() => setShowFullImage(true)}
+            style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+          />
+          <div className="flex justify-between items-center mt-1 gap-1 overflow-hidden">
+            <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDownload}
+              className="h-5 w-5 p-0 flex-shrink-0"
+            >
+              <Download className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
 
         {/* Full image modal */}
@@ -109,19 +111,21 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isVideoFile(type)) {
     return (
-      <div className={cn("w-full max-w-[200px] sm:max-w-[250px]", className)}>
-        <video
-          controls
-          className="rounded-lg max-h-40 sm:max-h-48 w-full object-cover"
-          preload="metadata"
-          style={{ maxWidth: '100%', height: 'auto' }}
-        >
-          <source src={url} type={type} />
-          مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
-        </video>
-        <div className="flex justify-between items-center mt-1 gap-2">
-          <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
-          {fileSize && <span className="text-xs text-slate-400 flex-shrink-0">{fileSize}</span>}
+      <div className={cn("w-full overflow-hidden", className)} style={{ maxWidth: '100%' }}>
+        <div className="max-w-[180px] sm:max-w-[200px] w-full">
+          <video
+            controls
+            className="rounded-lg w-full h-auto object-cover max-h-32 sm:max-h-40"
+            preload="metadata"
+            style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+          >
+            <source src={url} type={type} />
+            مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+          </video>
+          <div className="flex justify-between items-center mt-1 gap-1 overflow-hidden">
+            <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
+            {fileSize && <span className="text-xs text-slate-400 flex-shrink-0">{fileSize}</span>}
+          </div>
         </div>
       </div>
     );
@@ -154,22 +158,22 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
     }
     
     return (
-      <Card className={cn("p-3 max-w-full w-full", className)}>
-        <div className="flex items-center gap-3">
+      <Card className={cn("p-2 w-full overflow-hidden", className)} style={{ maxWidth: '100%' }}>
+        <div className="flex items-center gap-2 overflow-hidden">
           <div className="flex-shrink-0">
-            <Music className="w-6 h-6 text-blue-500" />
+            <Music className="w-5 h-5 text-blue-500" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             <p className="text-sm font-medium truncate">{fileName}</p>
-            {fileSize && <p className="text-xs text-slate-500">{fileSize}</p>}
+            {fileSize && <p className="text-xs text-slate-500 truncate">{fileSize}</p>}
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="h-8 w-8 p-0 flex-shrink-0"
+            className="h-6 w-6 p-0 flex-shrink-0"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3 h-3" />
           </Button>
         </div>
         
@@ -177,6 +181,7 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
           controls
           className="w-full mt-2 max-w-full"
           preload="metadata"
+          style={{ maxWidth: '100%', width: '100%' }}
         >
           <source src={url} type={type} />
           مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
@@ -187,14 +192,14 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   // For PDF and other files
   return (
-    <Card className={cn("p-3 max-w-full w-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors", className)}>
-      <div className="flex items-center gap-3">
+    <Card className={cn("p-2 w-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors overflow-hidden", className)} style={{ maxWidth: '100%' }}>
+      <div className="flex items-center gap-2 overflow-hidden">
         <div className="flex-shrink-0">
           {getFileIcon()}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           <p className="text-sm font-medium truncate">{fileName}</p>
-          {fileSize && <p className="text-xs text-slate-500">{fileSize}</p>}
+          {fileSize && <p className="text-xs text-slate-500 truncate">{fileSize}</p>}
         </div>
         <div className="flex gap-1 flex-shrink-0">
           {isPDFFile(type) && (
@@ -202,20 +207,20 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => window.open(url, '_blank')}
-              className="h-8 w-8 p-0"
+              className="h-6 w-6 p-0"
               title="مشاهده"
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3 h-3" />
             </Button>
           )}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 p-0"
             title="دانلود"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3 h-3" />
           </Button>
         </div>
       </div>
