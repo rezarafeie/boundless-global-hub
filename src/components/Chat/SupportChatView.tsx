@@ -8,6 +8,7 @@ import type { MessengerUser } from '@/lib/messengerService';
 import type { SupportMessage } from '@/lib/supportMessageService';
 import SupportResponseInput from './SupportResponseInput';
 import MediaMessage from './MediaMessage';
+import UserProfilePopup from './UserProfilePopup';
 
 interface SupportRoom {
   id: string;
@@ -38,6 +39,8 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const { toast } = useToast();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -81,6 +84,16 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   const handleMessageSent = () => {
     console.log('Message sent, refreshing conversation messages');
     loadMessages();
+  };
+
+  const handleUserNameClick = (userId: number) => {
+    setSelectedUserId(userId.toString());
+    setShowUserProfile(true);
+  };
+
+  const handleCloseUserProfile = () => {
+    setShowUserProfile(false);
+    setSelectedUserId(null);
   };
 
   if (loading) {
@@ -131,7 +144,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                     className="flex items-center gap-2 mb-1 flex-wrap text-xs overflow-hidden"
                     style={{ maxWidth: '100%' }}
                   >
-                    <span className="font-medium truncate flex-1 min-w-0">
+                    <span 
+                      className={`font-medium truncate flex-1 min-w-0 ${
+                        message.sender_id !== 1 ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors' : ''
+                      }`}
+                      onClick={() => message.sender_id !== 1 && handleUserNameClick(message.sender_id)}
+                    >
                       {message.sender?.name || (message.sender_id === 1 ? 'پشتیبانی' : 'کاربر')}
                     </span>
                     <span className="opacity-75 flex-shrink-0">
@@ -186,6 +204,13 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
           onMessageSent={handleMessageSent}
         />
       </div>
+
+      {/* User Profile Popup */}
+      <UserProfilePopup
+        isOpen={showUserProfile}
+        onClose={handleCloseUserProfile}
+        userId={selectedUserId}
+      />
     </div>
   );
 };
