@@ -55,6 +55,10 @@ class SupportMessageService {
       console.error('Error sending user message to support:', error);
       throw error;
     }
+
+    // Auto-update conversation status to "open" when user sends a new message
+    // This will be handled by database triggers, but we can also do it here as backup
+    console.log('User message sent successfully - status should be updated to "open" by trigger');
   }
 
   // Send a message from support to user
@@ -87,7 +91,14 @@ class SupportMessageService {
       throw error;
     }
 
-    console.log('Support message sent successfully:', data);
+    // Update conversation status to "assigned" when support sends a message
+    try {
+      await this.updateConversationStatus(conversationId, 'assigned');
+      console.log('Support message sent and status updated to "assigned"');
+    } catch (statusError) {
+      console.warn('Could not update conversation status:', statusError);
+      // Don't throw here as the message was sent successfully
+    }
   }
 
   // Get messages for a support conversation
@@ -219,6 +230,26 @@ class SupportMessageService {
     }
 
     console.log('Messages marked as read for conversation:', conversationId);
+  }
+
+  // Update conversation status
+  async updateConversationStatus(conversationId: number, status: string): Promise<void> {
+    console.log('Updating conversation status:', { conversationId, status });
+    
+    const { error } = await supabase
+      .from('support_conversations')
+      .update({ 
+        status: status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', conversationId);
+
+    if (error) {
+      console.error('Error updating conversation status:', error);
+      throw error;
+    }
+
+    console.log('Conversation status updated successfully');
   }
 
   // Get all support conversations (for dashboard)

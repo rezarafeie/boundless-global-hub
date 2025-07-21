@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft, Plus, UserPlus } from 'lucide-react';
+import { Headphones, Search, MessageCircle, RefreshCw, AlertCircle, CheckCircle, Archive, Clock, Tag, ArrowLeft, Plus, UserPlus, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { supportMessageService } from '@/lib/supportMessageService';
@@ -213,6 +213,36 @@ const BorderlessHubSupportDashboard: React.FC = () => {
     setSelectedUserId(null);
   };
 
+  const handleStatusChange = async (conversationId: number, newStatus: string) => {
+    try {
+      await supportMessageService.updateConversationStatus(conversationId, newStatus);
+      
+      // Update local state
+      setConversations(prev => prev.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, status: newStatus }
+          : conv
+      ));
+      
+      // Update selected conversation if it's the current one
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+      
+      toast({
+        title: 'موفق',
+        description: 'وضعیت گفتگو بروزرسانی شد',
+      });
+    } catch (error) {
+      console.error('Error updating conversation status:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در بروزرسانی وضعیت',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleTagsChange = async (conversationId: number, newTags: string[]) => {
     try {
       // Update local state immediately
@@ -256,9 +286,10 @@ const BorderlessHubSupportDashboard: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const statusMap = {
       open: { label: 'باز', variant: 'destructive' as const },
-      assigned: { label: 'در حال بررسی', variant: 'default' as const },
+      assigned: { label: 'در بررسی', variant: 'default' as const },
       resolved: { label: 'حل شده', variant: 'secondary' as const },
-      closed: { label: 'بسته', variant: 'outline' as const }
+      closed: { label: 'بسته', variant: 'outline' as const },
+      completed: { label: 'تکمیل', variant: 'secondary' as const }
     };
     
     const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.open;
@@ -410,6 +441,14 @@ const BorderlessHubSupportDashboard: React.FC = () => {
             >
               در بررسی
             </Button>
+            <Button
+              variant={statusFilter === 'completed' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setStatusFilter('completed')}
+              className="flex-1 h-8 text-xs"
+            >
+              تکمیل
+            </Button>
           </div>
         </div>
 
@@ -455,12 +494,13 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                       <p className="text-sm font-medium truncate text-right">
                         {conversation.user?.name || 'کاربر نامشخص'}
                       </p>
-                      <div className="flex items-center gap-2">
-                        {conversation.unread_count > 0 && (
-                          <div className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                            {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
-                          </div>
-                        )}
+                       <div className="flex items-center gap-2">
+                         {/* Only show red dot for "open" status conversations */}
+                         {conversation.unread_count > 0 && conversation.status === 'open' && (
+                           <div className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
+                             {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
+                           </div>
+                         )}
                         <span className="text-xs text-slate-400">
                           {new Date(conversation.last_message_at).toLocaleTimeString('fa-IR', {
                             hour: '2-digit',
@@ -530,6 +570,18 @@ const BorderlessHubSupportDashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   {getStatusBadge(selectedConversation.status)}
                   {selectedConversation.priority !== 'normal' && getPriorityBadge(selectedConversation.priority)}
+                  
+                  {/* Complete button */}
+                  {selectedConversation.status !== 'completed' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStatusChange(selectedConversation.id, 'completed')}
+                      className="h-8 px-2"
+                    >
+                      <Check className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               
