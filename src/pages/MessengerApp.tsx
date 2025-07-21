@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import MessengerPage from './hub/messenger';
 import MessengerAuth from '@/components/Chat/MessengerAuth';
+import UsernameSetupModal from '@/components/Chat/UsernameSetupModal';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { ReplyProvider } from '@/contexts/ReplyContext';
@@ -256,6 +257,19 @@ const MessengerApp = () => {
           isOffline={isOfflineMode}
           onLogout={handleLogout}
         />
+        {/* Username setup modal - shown if user doesn't have username */}
+        {!isOfflineMode && currentUser && !currentUser.username && (
+          <UsernameSetupModal 
+            isOpen={true}
+            onClose={() => {}}
+            onUsernameSet={(username) => {
+              const updatedUser = { ...currentUser, username };
+              handleUserUpdate(updatedUser);
+            }}
+            sessionToken={unifiedToken || localStorage.getItem('messenger_session_token') || ''}
+            userId={currentUser.id}
+          />
+        )}
       </div>
     </ReplyProvider>
   );

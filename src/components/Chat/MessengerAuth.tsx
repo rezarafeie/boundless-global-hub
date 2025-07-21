@@ -12,6 +12,7 @@ import { privateMessageService } from '@/lib/privateMessageService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
+import { farsiToEnglishNumbers } from '@/utils/farsiUtils';
 
 interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -459,7 +460,9 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => {
-                    let cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                    // Convert Farsi numbers to English first
+                    let cleanValue = farsiToEnglishNumbers(e.target.value);
+                    cleanValue = cleanValue.replace(/[^0-9]/g, '');
                     cleanValue = cleanValue.replace(/^[0+]+/, '');
                     setFormData(prev => ({ ...prev, phone: cleanValue }));
                   }}

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { rafieiAuth, RafieiUser } from '@/lib/rafieiAuth';
 import { toast } from 'sonner';
+import { farsiToEnglishNumbers } from '@/utils/farsiUtils';
 
 interface RafieiAuthProps {
   onSuccess?: (user: RafieiUser, token: string) => void;
@@ -231,7 +232,12 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                     type="text"
                     placeholder="example@email.com یا 09123456789"
                     value={authState.identifier}
-                    onChange={(e) => setAuthState(prev => ({ ...prev, identifier: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Convert Farsi numbers to English for phone inputs
+                      const convertedValue = value.includes('@') ? value : farsiToEnglishNumbers(value);
+                      setAuthState(prev => ({ ...prev, identifier: convertedValue }));
+                    }}
                     required
                     className="text-right"
                     dir="ltr"
@@ -341,10 +347,13 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                         type="tel"
                         placeholder="09123456789"
                         value={authState.registrationData.phone || ''}
-                        onChange={(e) => setAuthState(prev => ({
-                          ...prev,
-                          registrationData: { ...prev.registrationData, phone: e.target.value }
-                        }))}
+                        onChange={(e) => {
+                          const convertedValue = farsiToEnglishNumbers(e.target.value);
+                          setAuthState(prev => ({
+                            ...prev,
+                            registrationData: { ...prev.registrationData, phone: convertedValue }
+                          }));
+                        }}
                         required
                         className="text-right"
                         dir="ltr"
