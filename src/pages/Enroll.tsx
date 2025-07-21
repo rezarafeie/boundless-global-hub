@@ -461,18 +461,6 @@ const Enroll: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Discount Section */}
-            {course && course.price > 0 && (
-              <DiscountSection
-                courseId={course.id}
-                originalPrice={finalRialPrice || course.price}
-                onDiscountApplied={(discountAmount, finalPrice) => {
-                  setDiscountAmount(discountAmount);
-                  setDiscountedPrice(finalPrice);
-                }}
-              />
-            )}
-
             {/* Registration Form */}
             <Card className="order-1 lg:order-2 bg-card/60 backdrop-blur-sm border-0 shadow-2xl">
               <CardHeader>
@@ -624,6 +612,18 @@ const Enroll: React.FC = () => {
                   selectedMethod={paymentMethod}
                   finalRialPrice={finalRialPrice}
                 />
+
+                  {/* Discount Section */}
+                  {course && course.price > 0 && (
+                    <DiscountSection
+                      courseId={course.id}
+                      originalPrice={finalRialPrice || course.price}
+                      onDiscountApplied={(discountAmount, finalPrice) => {
+                        setDiscountAmount(discountAmount);
+                        setDiscountedPrice(finalPrice);
+                      }}
+                    />
+                  )}
 
                   {/* Submit Button - Only for Zarinpal */}
                   {paymentMethod === 'zarinpal' && (
