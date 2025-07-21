@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Tag, CheckCircle, XCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Tag, CheckCircle, XCircle, Percent } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +20,7 @@ const DiscountSection: React.FC<DiscountSectionProps> = ({
   onDiscountApplied
 }) => {
   const { toast } = useToast();
+  const [showDiscountField, setShowDiscountField] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -141,94 +143,120 @@ const DiscountSection: React.FC<DiscountSectionProps> = ({
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
   };
 
+  const handleCheckboxChange = (checked: boolean) => {
+    setShowDiscountField(checked);
+    if (!checked) {
+      // Reset discount when unchecking
+      if (appliedDiscount) {
+        removeDiscount();
+      }
+      setDiscountCode('');
+      setError('');
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="p-4 bg-muted/30 rounded-lg border">
-        <Label className="text-base font-medium mb-3 flex items-center gap-2">
+    <div className="space-y-3">
+      {/* Compact Checkbox Toggle */}
+      <div className="flex items-center space-x-2 space-x-reverse">
+        <Checkbox 
+          id="discount-checkbox"
+          checked={showDiscountField}
+          onCheckedChange={handleCheckboxChange}
+        />
+        <Label 
+          htmlFor="discount-checkbox" 
+          className="text-sm font-medium cursor-pointer flex items-center gap-2"
+        >
           <Tag className="h-4 w-4" />
-          کد تخفیف (اختیاری)
+          کد تخفیف دارم
         </Label>
-        
-        {!appliedDiscount ? (
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="کد تخفیف خود را وارد کنید"
-                value={discountCode}
-                onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                className="flex-1"
-                disabled={loading}
-              />
-              <Button
-                type="button"
-                onClick={validateDiscountCode}
-                disabled={loading || !discountCode.trim()}
-                className="min-w-[100px]"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'اعمال'
-                )}
-              </Button>
-            </div>
-            
-            {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <XCircle className="h-4 w-4" />
-                {error}
+      </div>
+
+      {/* Compact Discount Field */}
+      {showDiscountField && (
+        <div className="p-3 bg-muted/20 rounded-lg border border-muted space-y-2">
+          {!appliedDiscount ? (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="کد تخفیف"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                  className="flex-1 h-8 text-sm"
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  onClick={validateDiscountCode}
+                  disabled={loading || !discountCode.trim()}
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                >
+                  {loading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    'اعمال'
+                  )}
+                </Button>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <div>
-                  <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
+              
+              {error && (
+                <div className="flex items-center gap-1 text-xs text-destructive">
+                  <XCircle className="h-3 w-3" />
+                  {error}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 text-xs">
                     {appliedDiscount.code}
                   </Badge>
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                    {appliedDiscount.percentage}% تخفیف اعمال شد
-                  </p>
+                  <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <Percent className="h-3 w-3" />
+                    {appliedDiscount.percentage}%
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeDiscount}
+                  className="h-6 px-2 text-xs text-green-600 hover:text-green-700 dark:text-green-400"
+                >
+                  حذف
+                </Button>
+              </div>
+              
+              <div className="text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">قیمت اصلی:</span>
+                  <span className="line-through text-muted-foreground">
+                    {formatPrice(originalPrice)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">تخفیف:</span>
+                  <span className="text-green-600 dark:text-green-400">
+                    -{formatPrice(appliedDiscount.discountAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between font-medium text-sm border-t pt-1">
+                  <span>قیمت نهایی:</span>
+                  <span className="text-primary">
+                    {formatPrice(appliedDiscount.finalPrice)}
+                  </span>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={removeDiscount}
-                className="text-green-600 hover:text-green-700 dark:text-green-400"
-              >
-                حذف
-              </Button>
             </div>
-            
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">قیمت اصلی:</span>
-                <span className="line-through text-muted-foreground">
-                  {formatPrice(originalPrice)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">مبلغ تخفیف:</span>
-                <span className="text-green-600 dark:text-green-400">
-                  -{formatPrice(appliedDiscount.discountAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between font-medium text-lg border-t pt-2">
-                <span>قیمت نهایی:</span>
-                <span className="text-primary">
-                  {formatPrice(appliedDiscount.finalPrice)}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

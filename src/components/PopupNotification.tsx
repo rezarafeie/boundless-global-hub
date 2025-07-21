@@ -29,6 +29,11 @@ const PopupNotification = () => {
     .sort((a, b) => b.priority - a.priority);
 
   useEffect(() => {
+    if (popupNotifications.length === 0) {
+      setVisibleNotifications([]);
+      return;
+    }
+
     // Show popup notifications one by one with delay
     popupNotifications.forEach((notification, index) => {
       setTimeout(() => {
