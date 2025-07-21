@@ -101,6 +101,10 @@ import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
 import CourseEdit from "./pages/Admin/CourseEdit";
 
+// User Management components
+import UsersOverview from "./pages/UsersOverview";
+import UserProfile from "./pages/UserProfile";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -168,6 +172,10 @@ const App = () => {
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
+                    
+                    {/* User Management routes */}
+                    <Route path="/enroll/admin/users" element={<UsersOverview />} />
+                    <Route path="/enroll/admin/users/:userId" element={<UserProfile />} />
                     
                     {/* SSO Access routes */}
                     <Route path="/sso-access" element={<SSOAccess />} />

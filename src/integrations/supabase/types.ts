@@ -841,6 +841,36 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          type: string
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          type: string
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          type?: string
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
       discount_codes: {
         Row: {
           code: string
@@ -2059,6 +2089,30 @@ export type Database = {
           is_active?: boolean | null
           is_boundless_only?: boolean | null
           name?: string
+        }
+        Relationships: []
+      }
+      user_activity_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          reference: string | null
+          user_id: number
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          reference?: string | null
+          user_id: number
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          reference?: string | null
+          user_id?: number
         }
         Relationships: []
       }
