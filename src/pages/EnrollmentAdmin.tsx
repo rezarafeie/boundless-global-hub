@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, BarChart3, Settings } from 'lucide-react';
+import { BookOpen, Users, BarChart3, Settings, Webhook } from 'lucide-react';
 import CourseManagement from '@/components/Admin/CourseManagement';
+import { WebhookManagement } from '@/components/Admin/WebhookManagement';
 
 const EnrollmentAdmin: React.FC = () => {
   return (
@@ -20,7 +21,7 @@ const EnrollmentAdmin: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-5 bg-white/70 backdrop-blur-sm">
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">دوره‌ها</span>
@@ -28,6 +29,10 @@ const EnrollmentAdmin: React.FC = () => {
             <TabsTrigger value="enrollments" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">ثبت‌نام‌ها</span>
+            </TabsTrigger>
+            <TabsTrigger value="webhooks" className="flex items-center gap-2">
+              <Webhook className="h-4 w-4" />
+              <span className="hidden sm:inline">وب‌هوک‌ها</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -55,6 +60,14 @@ const EnrollmentAdmin: React.FC = () => {
                     گزارش ثبت‌نام‌ها در بخش مدیریت دوره‌ها قابل مشاهده است
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="webhooks" className="space-y-6">
+            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+              <CardContent className="p-6">
+                <WebhookManagement />
               </CardContent>
             </Card>
           </TabsContent>

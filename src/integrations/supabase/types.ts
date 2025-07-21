@@ -2104,6 +2104,97 @@ export type Database = {
           },
         ]
       }
+      webhook_configurations: {
+        Row: {
+          body_template: Json | null
+          created_at: string
+          created_by: number | null
+          event_type: string
+          headers: Json | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          body_template?: Json | null
+          created_at?: string
+          created_by?: number | null
+          event_type: string
+          headers?: Json | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          body_template?: Json | null
+          created_at?: string
+          created_by?: number | null
+          event_type?: string
+          headers?: Json | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_configurations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          sent_at: string
+          success: boolean
+          webhook_config_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          sent_at?: string
+          success?: boolean
+          webhook_config_id: string
+        }
+        Update: {
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          sent_at?: string
+          success?: boolean
+          webhook_config_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_config_id_fkey"
+            columns: ["webhook_config_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2323,6 +2414,14 @@ export type Database = {
         | "urgent"
         | "follow_up"
       transaction_status: "success" | "pending" | "failed"
+      webhook_event_type:
+        | "enrollment_created"
+        | "enrollment_paid_successful"
+        | "enrollment_manual_payment_submitted"
+        | "enrollment_manual_payment_approved"
+        | "enrollment_manual_payment_rejected"
+        | "user_created"
+        | "email_linked_existing_account"
     }
     CompositeTypes: {
       http_header: {
@@ -2482,6 +2581,15 @@ export const Constants = {
         "follow_up",
       ],
       transaction_status: ["success", "pending", "failed"],
+      webhook_event_type: [
+        "enrollment_created",
+        "enrollment_paid_successful",
+        "enrollment_manual_payment_submitted",
+        "enrollment_manual_payment_approved",
+        "enrollment_manual_payment_rejected",
+        "user_created",
+        "email_linked_existing_account",
+      ],
     },
   },
 } as const

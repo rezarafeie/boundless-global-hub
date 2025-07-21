@@ -17,6 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
 import DiscountManagement from '@/components/Admin/DiscountManagement';
 import CourseManagement from '@/components/Admin/CourseManagement';
+import { 
+  sendEnrollmentManualPaymentApproved, 
+  sendEnrollmentManualPaymentRejected,
+  sendEnrollmentManualPaymentSubmitted
+} from '@/lib/enrollmentWebhookService';
 
 interface Course {
   id: string;
@@ -212,6 +217,21 @@ const EnrollAdmin: React.FC = () => {
 
       if (updateError) throw updateError;
 
+      // Get course data for webhook
+      const course = courses.find(c => c.id === selectedEnrollment.course_id);
+      const user = {
+        name: selectedEnrollment.full_name,
+        email: selectedEnrollment.email,
+        phone: selectedEnrollment.phone
+      };
+
+      // Send webhook for manual payment approval
+      try {
+        await sendEnrollmentManualPaymentApproved(selectedEnrollment, user, course);
+      } catch (webhookError) {
+        console.warn('Webhook call failed:', webhookError);
+      }
+
       // Call WooCommerce API (similar to successful Zarinpal payment)
       try {
         const { error: wooError } = await supabase.functions.invoke('zarinpal-verify', {
@@ -266,6 +286,21 @@ const EnrollAdmin: React.FC = () => {
         .eq('id', selectedEnrollment.id);
 
       if (error) throw error;
+
+      // Get course data for webhook
+      const course = courses.find(c => c.id === selectedEnrollment.course_id);
+      const user = {
+        name: selectedEnrollment.full_name,
+        email: selectedEnrollment.email,
+        phone: selectedEnrollment.phone
+      };
+
+      // Send webhook for manual payment rejection
+      try {
+        await sendEnrollmentManualPaymentRejected(selectedEnrollment, user, course);
+      } catch (webhookError) {
+        console.warn('Webhook call failed:', webhookError);
+      }
 
       toast({
         title: "❌ رد شد",
