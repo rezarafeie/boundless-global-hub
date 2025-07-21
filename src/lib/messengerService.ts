@@ -810,9 +810,18 @@ class MessengerService {
         return { success: false, error: 'رمز عبور را وارد کنید' };
       }
 
-      // Generate session token
-      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      // Create session in database and get token
+      const sessionToken = await this.createSession(user.id);
       
+      // Store session in localStorage and cookies for persistence
+      localStorage.setItem('messenger_session_token', sessionToken);
+      localStorage.setItem('messenger_user', JSON.stringify(user));
+      
+      // Also set in cookies for cross-tab compatibility
+      document.cookie = `messenger_session_token=${sessionToken}; path=/; max-age=${30 * 24 * 60 * 60}`; // 30 days
+      document.cookie = `messenger_user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=${30 * 24 * 60 * 60}`;
+      
+      console.log('✅ Login successful, session saved to localStorage and cookies');
       return { success: true, user: user, session_token: sessionToken };
     } catch (error) {
       console.error('Error in loginWithPassword:', error);
@@ -825,38 +834,60 @@ class MessengerService {
       console.log('📝 Registering user with data:', { ...userData, password: '[HIDDEN]' });
       
       const { password, ...userDataWithoutPassword } = userData;
+
+      // Normalize phone number
+      const normalized = normalizePhone(userDataWithoutPassword.phone || '', userDataWithoutPassword.country_code || '+98');
       
-      // Normalize phone number before storage
-      const normalized = normalizePhone(userData.phone || '', userData.country_code || '+98');
-      
-      const insertData = {
-        name: userDataWithoutPassword.name || '',
-        phone: normalized.phone, // Store normalized phone without country code
-        email: userDataWithoutPassword.email,
-        password_hash: password, // In real implementation, hash this
-        role: 'user' as const,
-        is_approved: true,
-        country_code: normalized.countryCode,
-        first_name: userDataWithoutPassword.first_name,
-        last_name: userDataWithoutPassword.last_name,
-        full_name: userDataWithoutPassword.full_name
-      };
-      
-      console.log('💾 Storing user with normalized phone:', insertData.phone, 'country code:', insertData.country_code);
-      
+      // Check if user already exists
+      const existingUser = await this.getUserByPhone(normalized.phone);
+      if (existingUser) {
+        return { success: false, error: 'این شماره قبلاً ثبت شده است' };
+      }
+
+      // Generate unique user ID
+      const uniqueUserId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
       const { data, error } = await supabase
         .from('chat_users')
-        .insert([insertData])
-        .select('*')
+        .insert({
+          name: userDataWithoutPassword.name || '',
+          phone: normalized.phone,
+          country_code: normalized.countryCode,
+          password_hash: password,
+          user_id: uniqueUserId,
+          is_approved: true,
+          email: userDataWithoutPassword.email,
+          first_name: userDataWithoutPassword.first_name,
+          last_name: userDataWithoutPassword.last_name,
+          full_name: userDataWithoutPassword.full_name,
+          role: 'user',
+          is_messenger_admin: false,
+          is_support_agent: false,
+          bedoun_marz: false,
+          bedoun_marz_approved: false,
+          bedoun_marz_request: false,
+          notification_enabled: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
         .single();
 
       if (error) {
         console.error('Error registering user:', error);
-        return { success: false, error: error.message || 'خطا در ثبت نام' };
+        throw error;
       }
 
-      // Generate session token
-      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      // Create session
+      const sessionToken = await this.createSession(data.id);
+      
+      // Store session in localStorage and cookies for persistence
+      localStorage.setItem('messenger_session_token', sessionToken);
+      localStorage.setItem('messenger_user', JSON.stringify(data));
+      
+      // Also set in cookies for cross-tab compatibility
+      document.cookie = `messenger_session_token=${sessionToken}; path=/; max-age=${30 * 24 * 60 * 60}`; // 30 days
+      document.cookie = `messenger_user=${encodeURIComponent(JSON.stringify(data))}; path=/; max-age=${30 * 24 * 60 * 60}`;
 
       console.log('✅ User registered successfully:', data.name, 'ID:', data.id);
       return { success: true, user: data as MessengerUser, session_token: sessionToken };
@@ -871,13 +902,28 @@ class MessengerService {
       // Generate session token
       const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
       
-      // In a real implementation, store this in user_sessions table
-      console.log('Creating session for user:', userId, 'with token:', sessionToken);
+      // Store session in user_sessions table for persistence
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: userId,
+          session_token: sessionToken,
+          is_active: true,
+          last_activity: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error storing session in database:', error);
+        // Continue anyway, session will be temporary
+      } else {
+        console.log('✅ Session stored in database successfully');
+      }
       
       return sessionToken;
     } catch (error) {
       console.error('Error in createSession:', error);
-      throw error;
+      // Still return a token even if database storage fails
+      return Math.random().toString(36).substring(2) + Date.now().toString(36);
     }
   }
 
