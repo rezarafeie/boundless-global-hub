@@ -509,18 +509,32 @@ const Enroll: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* User Login Status */}
                   {!isAuthenticated && (
-                    <div className="text-center">
-                      <Button 
-                        variant="link" 
-                        className="text-sm text-muted-foreground hover:text-primary"
-                        onClick={() => {
-                          const currentUrl = window.location.pathname + window.location.search;
-                          window.location.href = `/auth?redirect=${encodeURIComponent(currentUrl)}`;
-                        }}
-                      >
-                        حساب کاربری دارید؟ وارد شوید
-                      </Button>
-                    </div>
+                    <Card className="bg-gradient-to-r from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-blue-950/20 border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-sm text-primary">حساب کاربری دارید؟</h4>
+                              <p className="text-xs text-muted-foreground">برای تکمیل سریع‌تر فرم وارد شوید</p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
+                            onClick={() => {
+                              const currentUrl = window.location.pathname + window.location.search;
+                              window.location.href = `/auth?redirect=${encodeURIComponent(currentUrl)}`;
+                            }}
+                          >
+                            ورود
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
 
                   {/* Personal Information */}

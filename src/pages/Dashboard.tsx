@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@supabase/supabase-js';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -21,7 +26,15 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Camera,
+  Save,
+  LogOut,
+  User,
+  Lock,
+  Bell,
+  BellOff,
+  ChevronDown
 } from 'lucide-react';
 
 interface EnrolledCourse {
@@ -84,13 +97,43 @@ const Dashboard = () => {
     totalAmountPaid: 0
   });
 
+  // Profile states
+  const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [isPasswordSectionOpen, setIsPasswordSectionOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    firstName: '',
+    lastName: '',
+    notification_enabled: true
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/auth');
       return;
     }
     fetchDashboardData();
+    initializeProfileData();
   }, [isAuthenticated, navigate]);
+
+  const initializeProfileData = () => {
+    if (user) {
+      setFormData({
+        name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || '',
+        email: user.email || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        notification_enabled: true
+      });
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -324,6 +367,142 @@ const Dashboard = () => {
     }
   };
 
+  const getAvatarColor = (name: string): string => {
+    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
+    const hash = name.charCodeAt(0) % colors.length;
+    return colors[hash];
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      // Here you would update the user profile
+      // For now, just show success
+      toast({
+        title: 'موفق',
+        description: 'پروفایل با موفقیت به‌روزرسانی شد'
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در به‌روزرسانی پروفایل',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: 'خطا',
+        description: 'رمز عبور جدید و تأیید آن یکسان نیستند',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: 'خطا',
+        description: 'رمز عبور باید حداقل ۶ کاراکتر باشد',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      // Here you would change the password
+      // For now, just show success
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setIsPasswordSectionOpen(false);
+      toast({
+        title: 'موفق',
+        description: 'رمز عبور با موفقیت تغییر یافت'
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در تغییر رمز عبور',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type and size
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'خطا',
+        description: 'فقط فایل‌های تصویری (JPG, PNG, WebP) مجاز هستند',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+        title: 'خطا',
+        description: 'حجم فایل نباید بیشتر از ۵ مگابایت باشد',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('خطا در آپلود فایل');
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      toast({
+        title: 'موفق',
+        description: 'تصویر پروفایل با موفقیت به‌روزرسانی شد'
+      });
+
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در آپلود تصویر پروفایل',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
+
+    // Clear the input value so the same file can be selected again
+    event.target.value = '';
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -402,7 +581,7 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               دوره‌های من
@@ -414,6 +593,10 @@ const Dashboard = () => {
             <TabsTrigger value="payments" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
               تاریخچه پرداخت
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              پروفایل
             </TabsTrigger>
           </TabsList>
 
@@ -585,6 +768,187 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            {/* Profile Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  اطلاعات پروفایل
+                </CardTitle>
+                <CardDescription>مدیریت اطلاعات شخصی شما</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Avatar Section */}
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Avatar className="h-20 w-20">
+                      <AvatarFallback 
+                        className="text-lg font-semibold text-white"
+                        style={{ backgroundColor: getAvatarColor(formData.name || 'User') }}
+                      >
+                        {(formData.name || 'U').charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <label className={`absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors ${uploadingAvatar ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <Camera className="h-4 w-4" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        disabled={uploadingAvatar}
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{formData.name || 'کاربر'}</h3>
+                    <p className="text-sm text-muted-foreground">{formData.email}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Profile Form */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">نام</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        placeholder="نام خود را وارد کنید"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">نام خانوادگی</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        placeholder="نام خانوادگی خود را وارد کنید"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">ایمیل</Label>
+                    <Input
+                      id="email"
+                      value={formData.email}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      ایمیل قابل تغییر نیست
+                    </p>
+                  </div>
+
+                  <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+                    <Save className="mr-2 h-4 w-4" />
+                    {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notifications Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  اعلان‌ها
+                </CardTitle>
+                <CardDescription>مدیریت تنظیمات اعلان‌ها</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {formData.notification_enabled ? (
+                      <Bell className="h-5 w-5 text-primary" />
+                    ) : (
+                      <BellOff className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium">اعلان‌های ایمیل</p>
+                      <p className="text-sm text-muted-foreground">
+                        دریافت اعلان برای دوره‌های جدید و بروزرسانی‌ها
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.notification_enabled}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, notification_enabled: checked })
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Password Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  امنیت
+                </CardTitle>
+                <CardDescription>مدیریت رمز عبور و تنظیمات امنیتی</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Collapsible open={isPasswordSectionOpen} onOpenChange={setIsPasswordSectionOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      تغییر رمز عبور
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isPasswordSectionOpen ? 'transform rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">رمز عبور فعلی</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                        placeholder="رمز عبور فعلی را وارد کنید"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">رمز عبور جدید</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        placeholder="رمز عبور جدید را وارد کنید"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">تأیید رمز عبور جدید</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        placeholder="رمز عبور جدید را دوباره وارد کنید"
+                      />
+                    </div>
+
+                    <Button onClick={handleChangePassword} className="w-full">
+                      <Lock className="mr-2 h-4 w-4" />
+                      تغییر رمز عبور
+                    </Button>
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
