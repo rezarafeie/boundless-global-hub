@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Eye, Calendar, Phone, Mail, User } from 'lucide-react';
+import { Search, Eye, Calendar, Phone, Mail, User, Users, UserCheck, Clock, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,18 +19,39 @@ interface User {
   is_messenger_admin: boolean;
   bedoun_marz_approved: boolean;
   signup_source: string;
+  last_seen: string;
+}
+
+interface UserStats {
+  total: number;
+  approved: number;
+  admins: number;
+  boundless: number;
+  todayRegistrations: number;
+  activeToday: number;
+  totalCrmNotes: number;
 }
 
 export default function UsersOverview() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [stats, setStats] = useState<UserStats>({
+    total: 0,
+    approved: 0,
+    admins: 0,
+    boundless: 0,
+    todayRegistrations: 0,
+    activeToday: 0,
+    totalCrmNotes: 0
+  });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBy, setFilterBy] = useState('all');
 
   useEffect(() => {
     fetchUsers();
+    fetchStats();
   }, []);
 
   useEffect(() => {
@@ -41,7 +62,7 @@ export default function UsersOverview() {
     try {
       const { data, error } = await supabase
         .from('chat_users')
-        .select('id, name, email, phone, created_at, is_approved, is_messenger_admin, bedoun_marz_approved, signup_source')
+        .select('id, name, email, phone, created_at, is_approved, is_messenger_admin, bedoun_marz_approved, signup_source, last_seen')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -50,6 +71,37 @@ export default function UsersOverview() {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get user counts
+      const { data: allUsers } = await supabase.from('chat_users').select('*');
+      const approved = allUsers?.filter(u => u.is_approved).length || 0;
+      const admins = allUsers?.filter(u => u.is_messenger_admin).length || 0;
+      const boundless = allUsers?.filter(u => u.bedoun_marz_approved).length || 0;
+      const todayRegistrations = allUsers?.filter(u => u.created_at?.startsWith(today)).length || 0;
+      const activeToday = allUsers?.filter(u => u.last_seen?.startsWith(today)).length || 0;
+
+      // Get CRM notes count
+      const { count: crmCount } = await supabase
+        .from('crm_notes')
+        .select('*', { count: 'exact', head: true });
+
+      setStats({
+        total: allUsers?.length || 0,
+        approved,
+        admins,
+        boundless,
+        todayRegistrations,
+        activeToday,
+        totalCrmNotes: crmCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
   };
 
@@ -73,13 +125,14 @@ export default function UsersOverview() {
 
   const getStatusBadges = (user: User) => {
     const badges = [];
-    if (user.is_approved) badges.push(<Badge key="approved" variant="default">Approved</Badge>);
-    if (user.is_messenger_admin) badges.push(<Badge key="admin" variant="destructive">Admin</Badge>);
-    if (user.bedoun_marz_approved) badges.push(<Badge key="boundless" variant="secondary">Boundless</Badge>);
+    if (user.is_approved) badges.push(<Badge key="approved" variant="default">تایید شده</Badge>);
+    if (user.is_messenger_admin) badges.push(<Badge key="admin" variant="destructive">ادمین</Badge>);
+    if (user.bedoun_marz_approved) badges.push(<Badge key="boundless" variant="secondary">بدون مرز</Badge>);
     return badges;
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'نامشخص';
     return new Date(dateString).toLocaleDateString('fa-IR');
   };
 
@@ -89,22 +142,69 @@ export default function UsersOverview() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px]" dir="rtl">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading users...</p>
+          <p className="text-muted-foreground">در حال بارگذاری کاربران...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6" dir="rtl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
+        <h1 className="text-3xl font-bold">مدیریت کاربران</h1>
         <div className="flex items-center gap-4">
-          <Badge variant="outline">{filteredUsers.length} Users</Badge>
+          <Badge variant="outline">{filteredUsers.length} کاربر</Badge>
         </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">کل کاربران</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total.toLocaleString('fa-IR')}</div>
+            <p className="text-xs text-muted-foreground">تعداد کل ثبت‌نام‌ها</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">کاربران تایید شده</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.approved.toLocaleString('fa-IR')}</div>
+            <p className="text-xs text-muted-foreground">{Math.round((stats.approved/stats.total)*100)}% از کل</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ثبت‌نام امروز</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.todayRegistrations.toLocaleString('fa-IR')}</div>
+            <p className="text-xs text-muted-foreground">کاربران جدید امروز</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">فعالیت CRM</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalCrmNotes.toLocaleString('fa-IR')}</div>
+            <p className="text-xs text-muted-foreground">کل یادداشت‌های CRM</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filters */}
@@ -112,14 +212,14 @@ export default function UsersOverview() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="w-5 h-5" />
-            Search & Filter
+            جستجو و فیلتر
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search by name, email, or phone..."
+                placeholder="جستجو بر اساس نام، ایمیل یا تلفن..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -127,13 +227,13 @@ export default function UsersOverview() {
             </div>
             <Select value={filterBy} onValueChange={setFilterBy}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="فیلتر بر اساس وضعیت" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="approved">Approved Only</SelectItem>
-                <SelectItem value="admin">Admins Only</SelectItem>
-                <SelectItem value="boundless">Boundless Only</SelectItem>
+                <SelectItem value="all">همه کاربران</SelectItem>
+                <SelectItem value="approved">فقط تایید شده‌ها</SelectItem>
+                <SelectItem value="admin">فقط ادمین‌ها</SelectItem>
+                <SelectItem value="boundless">فقط بدون مرز</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -145,20 +245,20 @@ export default function UsersOverview() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
-            Users ({filteredUsers.length})
+            کاربران ({filteredUsers.length.toLocaleString('fa-IR')})
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Full Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Registration Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">شناسه</TableHead>
+                <TableHead className="text-right">نام کامل</TableHead>
+                <TableHead className="text-right">ایمیل</TableHead>
+                <TableHead className="text-right">تلفن</TableHead>
+                <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
+                <TableHead className="text-right">وضعیت</TableHead>
+                <TableHead className="text-right">عملیات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,7 +276,7 @@ export default function UsersOverview() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-muted-foreground" />
-                      {user.email || 'N/A'}
+                      {user.email || 'ندارد'}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -204,7 +304,7 @@ export default function UsersOverview() {
                       className="flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
-                      View Profile
+                      مشاهده پروفایل
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -214,7 +314,7 @@ export default function UsersOverview() {
 
           {filteredUsers.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              No users found matching your criteria.
+              کاربری با معیارهای انتخابی شما یافت نشد.
             </div>
           )}
         </CardContent>
