@@ -358,6 +358,15 @@ const CourseCreate: React.FC = () => {
                   <Label htmlFor="enable_course_access">فعال‌سازی سیستم دسترسی دوره</Label>
                 </div>
 
+                {formData.enable_course_access && (
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2">مدیریت محتوای دوره</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      برای افزودن درس‌ها و بخش‌های دوره، ابتدا دوره را ذخیره کنید.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="support_link">لینک پشتیبانی</Label>
