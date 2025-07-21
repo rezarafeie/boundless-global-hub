@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, Clock, BookOpen, Trophy, Target, Zap, Star } from 'lucide-react';
@@ -24,7 +23,7 @@ interface CourseData {
 }
 
 const BoundlessLanding: React.FC = () => {
-  const { courseSettings, courseSettingsLoading } = useCourseSettings();
+  const { courseSettings, loading: courseSettingsLoading } = useCourseSettings('boundless');
   const [courseData, setCourseData] = useState<CourseData | null>(null);
   const [loading, setLoading] = useState(true);
 
