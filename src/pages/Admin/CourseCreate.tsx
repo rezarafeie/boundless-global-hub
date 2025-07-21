@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift } from 'lucide-react';
+import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
@@ -325,6 +325,20 @@ const CourseCreate: React.FC = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Course Content Management Section */}
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  مدیریت محتوای دوره
+                </h3>
+                
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-blue-800 dark:text-blue-400 text-sm">
+                    پس از ایجاد دوره، می‌توانید از بخش "مدیریت محتوای دوره" برای افزودن فصل‌ها، درس‌ها و محتوای آموزشی استفاده کنید.
+                  </p>
                 </div>
               </div>
 

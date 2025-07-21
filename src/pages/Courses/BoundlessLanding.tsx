@@ -47,10 +47,6 @@ const BoundlessLanding = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
   const { courseSettings, loading: courseSettingsLoading } = useCourseSettings('boundless');
-  const [course, setCourse] = useState<any>(null);
-  const [isOnSale, setIsOnSale] = useState(false);
-  const [salePrice, setSalePrice] = useState<number | null>(null);
-  const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
   
   // Memoize the enrollment URL
   const enrollmentUrl = useMemo(() => {
