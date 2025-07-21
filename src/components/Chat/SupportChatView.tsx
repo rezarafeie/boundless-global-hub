@@ -98,7 +98,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-800">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <MessageCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
@@ -108,29 +108,39 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
           messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender_id === 1 ? 'justify-end' : 'justify-start'} w-full`}
+              className={`flex ${message.sender_id === 1 ? 'justify-end' : 'justify-start'} w-full px-1`}
             >
               <div
-                className={`max-w-[85%] sm:max-w-[70%] rounded-lg p-3 break-words overflow-hidden ${
+                className={`max-w-[90%] sm:max-w-[85%] md:max-w-[75%] rounded-lg p-2 sm:p-3 break-words overflow-hidden ${
                   message.sender_id === 1
                     ? 'bg-blue-500 text-white'
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
                 }`}
+                style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
               >
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-xs font-medium">
+                <div className="flex items-center gap-2 mb-1 flex-wrap text-xs">
+                  <span className="font-medium">
                     {message.sender?.name || (message.sender_id === 1 ? 'پشتیبانی' : 'کاربر')}
                   </span>
-                  <span className="text-xs opacity-75">
+                  <span className="opacity-75">
                     {new Date(message.created_at).toLocaleTimeString('fa-IR', {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
                   </span>
                 </div>
-                <div className="text-sm break-words overflow-wrap-anywhere">
-                  {message.message}
-                </div>
+                {message.message && (
+                  <div 
+                    className="text-sm leading-relaxed"
+                    style={{ 
+                      wordBreak: 'break-word', 
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'pre-wrap'
+                    }}
+                  >
+                    {message.message}
+                  </div>
+                )}
                 
                 {/* Media content */}
                 {message.media_url && (

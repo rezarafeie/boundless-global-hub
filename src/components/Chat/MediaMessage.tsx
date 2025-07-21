@@ -70,12 +70,13 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isImageFile(type)) {
     return (
-      <div className={cn("w-full max-w-[250px] sm:max-w-[280px]", className)}>
+      <div className={cn("w-full max-w-[200px] sm:max-w-[250px]", className)}>
         <img
           src={url}
           alt={fileName}
-          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-48 w-full object-cover"
+          className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-40 sm:max-h-48 w-full object-cover"
           onClick={() => setShowFullImage(true)}
+          style={{ maxWidth: '100%', height: 'auto' }}
         />
         <div className="flex justify-between items-center mt-1 gap-2">
           <span className="text-xs text-slate-500 truncate flex-1 min-w-0">{fileName}</span>
@@ -108,11 +109,12 @@ const MediaMessage: React.FC<MediaMessageProps> = ({
 
   if (isVideoFile(type)) {
     return (
-      <div className={cn("w-full max-w-[250px] sm:max-w-[280px]", className)}>
+      <div className={cn("w-full max-w-[200px] sm:max-w-[250px]", className)}>
         <video
           controls
-          className="rounded-lg max-h-48 w-full object-cover"
+          className="rounded-lg max-h-40 sm:max-h-48 w-full object-cover"
           preload="metadata"
+          style={{ maxWidth: '100%', height: 'auto' }}
         >
           <source src={url} type={type} />
           مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
