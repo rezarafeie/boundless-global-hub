@@ -204,7 +204,7 @@ class SupportMessageService {
         last_message_at,
         tags,
         tag_list,
-        chat_users!inner(id, name, phone)
+        chat_users!support_conversations_user_id_fkey(id, name, phone)
       `)
       .order('last_message_at', { ascending: false });
 
