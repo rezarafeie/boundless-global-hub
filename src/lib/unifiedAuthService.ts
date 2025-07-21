@@ -86,16 +86,23 @@ class UnifiedAuthService {
         }
       }
 
-      // If not authenticated via messenger, check academy password
+      // If not authenticated via messenger, check academy password using Supabase Auth
       if (!passwordValid && user.isAcademyUser && user.academyData) {
-        // Academy users use Supabase Auth - we need to implement this
-        // For now, we'll create a basic password check
-        if (user.academyData.password_hash) {
-          passwordValid = await bcrypt.compare(password, user.academyData.password_hash);
-          if (passwordValid) {
+        try {
+          // Academy users authenticate through Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: password
+          });
+
+          if (!authError && authData.user) {
+            passwordValid = true;
             // Create session for academy user
             sessionToken = await this.createUnifiedSession(user);
           }
+        } catch (authError) {
+          console.error('Academy auth error:', authError);
+          // Password validation failed - passwordValid remains false
         }
       }
 
