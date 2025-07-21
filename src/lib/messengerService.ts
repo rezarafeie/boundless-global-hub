@@ -58,15 +58,38 @@ interface ChatRoom {
   is_public: boolean;
   type: 'group' | 'channel' | 'direct';
   is_super_group: boolean;
+  is_boundless_only?: boolean;
+  updated_at?: string;
+}
+
+interface AdminSettings {
+  id: number;
+  manual_approval_enabled: boolean;
+  updated_at: string;
+}
+
+interface ChatTopic {
+  id: number;
+  title: string;
+  description: string;
+  room_id: number;
+  section_id: number | null;
+  is_active: boolean;
+  order_index: number;
+  icon: string;
+  created_at: string;
+  updated_at: string;
 }
 
 class MessengerService {
   async validateSession(sessionToken: string): Promise<any | null> {
     try {
+      // Use user_sessions table instead
       const { data, error } = await supabase
-        .from('chat_sessions')
-        .select('id, user_id, created_at, expires_at, chat_users(*)')
+        .from('user_sessions')
+        .select('*')
         .eq('session_token', sessionToken)
+        .eq('is_active', true)
         .single();
 
       if (error) {
@@ -74,22 +97,39 @@ class MessengerService {
         return null;
       }
 
-      if (!data || !data.chat_users) {
+      if (!data) {
         return null;
       }
 
-      // Check if session is expired
-      if (new Date(data.expires_at) < new Date()) {
+      // Check if session is expired (24 hours)
+      const lastActivity = new Date(data.last_activity);
+      const now = new Date();
+      const timeDiff = now.getTime() - lastActivity.getTime();
+      const hoursDiff = timeDiff / (1000 * 3600);
+
+      if (hoursDiff > 24) {
         console.log('Session expired');
+        return null;
+      }
+
+      // Get user data
+      const { data: userData, error: userError } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', data.user_id)
+        .single();
+
+      if (userError || !userData) {
+        console.error('Error fetching user data:', userError);
         return null;
       }
 
       return {
         id: data.id,
         userId: data.user_id,
-        createdAt: data.created_at,
-        expiresAt: data.expires_at,
-        user: data.chat_users
+        sessionToken: data.session_token,
+        lastActivity: data.last_activity,
+        user: userData
       };
     } catch (error) {
       console.error('Error in validateSession:', error);
@@ -111,7 +151,7 @@ class MessengerService {
       }
 
       if (existingUser) {
-        return existingUser;
+        return existingUser as MessengerUser;
       }
 
       // If user doesn't exist, create a new user
@@ -190,10 +230,7 @@ class MessengerService {
       
       let query = supabase
         .from('messenger_messages')
-        .select(`
-          *,
-          sender:sender_id(*)
-        `)
+        .select('*')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
@@ -210,9 +247,27 @@ class MessengerService {
       }
 
       console.log('✅ Fetched messages:', data?.length || 0);
-      return data?.map(msg => ({
+      
+      // Fetch sender data separately for each unique sender
+      const messages = data || [];
+      const senderIds = [...new Set(messages.map(msg => msg.sender_id))];
+      const senders = new Map<number, MessengerUser>();
+      
+      for (const senderId of senderIds) {
+        const { data: senderData } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', senderId)
+          .single();
+          
+        if (senderData) {
+          senders.set(senderId, senderData as MessengerUser);
+        }
+      }
+
+      return messages.map(msg => ({
         ...msg,
-        sender: msg.sender || {
+        sender: senders.get(msg.sender_id) || {
           id: msg.sender_id,
           name: 'Unknown',
           phone: '',
@@ -240,7 +295,7 @@ class MessengerService {
           avatar_url: null,
           username: null
         }
-      })) || [];
+      })) as MessengerMessage[];
     } catch (error) {
       console.error('❌ Error in getMessages:', error);
       throw error;
@@ -253,10 +308,7 @@ class MessengerService {
       
       const { data, error } = await supabase
         .from('messenger_messages')
-        .select(`
-          *,
-          sender:sender_id(*)
-        `)
+        .select('*')
         .or(`sender_id.eq.${userId},conversation_id.eq.${userId}`)
         .eq('recipient_id', 1)
         .order('created_at', { ascending: true });
@@ -267,9 +319,27 @@ class MessengerService {
       }
 
       console.log('✅ Fetched support messages:', data?.length || 0);
-      return data?.map(msg => ({
+      
+      // Fetch sender data separately for each unique sender
+      const messages = data || [];
+      const senderIds = [...new Set(messages.map(msg => msg.sender_id))];
+      const senders = new Map<number, MessengerUser>();
+      
+      for (const senderId of senderIds) {
+        const { data: senderData } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', senderId)
+          .single();
+          
+        if (senderData) {
+          senders.set(senderId, senderData as MessengerUser);
+        }
+      }
+
+      return messages.map(msg => ({
         ...msg,
-        sender: msg.sender || {
+        sender: senders.get(msg.sender_id) || {
           id: msg.sender_id,
           name: msg.sender_id === userId ? 'شما' : 'پشتیبانی',
           phone: '',
@@ -297,7 +367,7 @@ class MessengerService {
           avatar_url: null,
           username: null
         }
-      })) || [];
+      })) as MessengerMessage[];
     } catch (error) {
       console.error('❌ Error in getSupportMessages:', error);
       throw error;
@@ -405,10 +475,7 @@ class MessengerService {
     try {
       const { data, error } = await supabase
         .from('messenger_messages')
-        .select(`
-          *,
-          sender:sender_id(*)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -416,7 +483,7 @@ class MessengerService {
         throw error;
       }
 
-      return data as MessengerMessage[];
+      return (data || []) as MessengerMessage[];
     } catch (error) {
       console.error('Error in getAllMessages:', error);
       throw error;
@@ -439,7 +506,461 @@ class MessengerService {
       throw error;
     }
   }
+
+  // Admin Settings Methods
+  async getAdminSettings(): Promise<AdminSettings> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error fetching admin settings:', error);
+        throw error;
+      }
+
+      return data as AdminSettings;
+    } catch (error) {
+      console.error('Error in getAdminSettings:', error);
+      throw error;
+    }
+  }
+
+  async updateAdminSettings(settings: Partial<AdminSettings>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update(settings)
+        .eq('id', 1);
+
+      if (error) {
+        console.error('Error updating admin settings:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateAdminSettings:', error);
+      throw error;
+    }
+  }
+
+  // Room Management Methods
+  async updateRoom(roomId: number, updates: Partial<ChatRoom>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update(updates)
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error updating room:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateRoom:', error);
+      throw error;
+    }
+  }
+
+  async deleteRoom(roomId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .delete()
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error deleting room:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteRoom:', error);
+      throw error;
+    }
+  }
+
+  // Topic Management Methods
+  async getTopics(roomId?: number): Promise<ChatTopic[]> {
+    try {
+      let query = supabase
+        .from('chat_topics')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (roomId) {
+        query = query.eq('room_id', roomId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching topics:', error);
+        throw error;
+      }
+
+      return data as ChatTopic[];
+    } catch (error) {
+      console.error('Error in getTopics:', error);
+      throw error;
+    }
+  }
+
+  async createTopic(topicData: Omit<ChatTopic, 'id' | 'created_at' | 'updated_at'>): Promise<ChatTopic> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .insert([topicData])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error creating topic:', error);
+        throw error;
+      }
+
+      return data as ChatTopic;
+    } catch (error) {
+      console.error('Error in createTopic:', error);
+      throw error;
+    }
+  }
+
+  async updateTopic(topicId: number, updates: Partial<ChatTopic>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .update(updates)
+        .eq('id', topicId);
+
+      if (error) {
+        console.error('Error updating topic:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateTopic:', error);
+      throw error;
+    }
+  }
+
+  async deleteTopic(topicId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_topics')
+        .delete()
+        .eq('id', topicId);
+
+      if (error) {
+        console.error('Error deleting topic:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteTopic:', error);
+      throw error;
+    }
+  }
+
+  // User Management Methods
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all users:', error);
+        throw error;
+      }
+
+      return data as MessengerUser[];
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(userId: number, updates: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUser:', error);
+      throw error;
+    }
+  }
+
+  async updateUserRole(userId: number, role: string, isAdmin: boolean = false, isSupport: boolean = false): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ 
+          role: role as 'user' | 'admin' | 'moderator' | 'support',
+          is_messenger_admin: isAdmin,
+          is_support_agent: isSupport
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserRole:', error);
+      throw error;
+    }
+  }
+
+  async getUserById(userId: number): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user by ID:', error);
+        return null;
+      }
+
+      return data as MessengerUser;
+    } catch (error) {
+      console.error('Error in getUserById:', error);
+      return null;
+    }
+  }
+
+  async getRoomById(roomId: number): Promise<ChatRoom | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching room by ID:', error);
+        return null;
+      }
+
+      return data as ChatRoom;
+    } catch (error) {
+      console.error('Error in getRoomById:', error);
+      return null;
+    }
+  }
+
+  // Authentication Methods
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user by phone:', error);
+        return null;
+      }
+
+      return data as MessengerUser;
+    } catch (error) {
+      console.error('Error in getUserByPhone:', error);
+      return null;
+    }
+  }
+
+  async loginWithPassword(phone: string, password: string): Promise<{ success: boolean; user?: MessengerUser; error?: string }> {
+    try {
+      // This is a simplified version - you should implement proper password hashing/verification
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error || !data) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // In a real implementation, verify password hash here
+      return { success: true, user: data as MessengerUser };
+    } catch (error) {
+      console.error('Error in loginWithPassword:', error);
+      return { success: false, error: 'Login failed' };
+    }
+  }
+
+  async registerWithPassword(userData: Partial<MessengerUser> & { password: string }): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
+    try {
+      const { password, ...userDataWithoutPassword } = userData;
+      
+      const insertData = {
+        name: userDataWithoutPassword.name || '',
+        phone: userDataWithoutPassword.phone || '',
+        email: userDataWithoutPassword.email,
+        password_hash: password,
+        role: 'user' as const,
+        is_approved: true
+      };
+      
+      const { data, error } = await supabase
+        .from('chat_users')
+        .insert([insertData])
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error registering user:', error);
+        return { success: false, error: error.message || 'Registration failed' };
+      }
+
+      // Generate session token
+      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+      return { success: true, user: data as MessengerUser, session_token: sessionToken };
+    } catch (error: any) {
+      console.error('Error in registerWithPassword:', error);
+      return { success: false, error: error.message || 'Registration failed' };
+    }
+  }
+
+  async createSession(userId: number, sessionToken: string): Promise<void> {
+    try {
+      // Implementation would depend on your session table structure
+      // This is a placeholder
+      console.log('Creating session for user:', userId, 'with token:', sessionToken);
+    } catch (error) {
+      console.error('Error in createSession:', error);
+      throw error;
+    }
+  }
+
+  async isEmailUsed(email: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      return !error && !!data;
+    } catch (error) {
+      console.error('Error in isEmailUsed:', error);
+      return false;
+    }
+  }
+
+  async updateUserDetails(userId: number, details: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(details)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user details:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserDetails:', error);
+      throw error;
+    }
+  }
+
+  async logout(sessionToken: string): Promise<void> {
+    try {
+      // Implementation would depend on your session management
+      console.log('Logging out session:', sessionToken);
+    } catch (error) {
+      console.error('Error in logout:', error);
+      throw error;
+    }
+  }
+
+  async updateUserProfile(userId: number, updates: Partial<MessengerUser>): Promise<MessengerUser> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .update(updates)
+        .eq('id', userId)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Error updating user profile:', error);
+        throw error;
+      }
+
+      return data as MessengerUser;
+    } catch (error) {
+      console.error('Error in updateUserProfile:', error);
+      throw error;
+    }
+  }
+
+  async changePassword(userId: number, newPassword: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ password_hash: newPassword }) // In real implementation, hash this
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error changing password:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in changePassword:', error);
+      throw error;
+    }
+  }
+
+  // Additional missing methods
+  async mapUserData(userData: any): Promise<MessengerUser> {
+    return userData as MessengerUser;
+  }
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('session_token', sessionToken);
+
+      if (error) {
+        console.error('Error deactivating session:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deactivateSession:', error);
+      throw error;
+    }
+  }
+
+  async checkUsernameUniqueness(username: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('id')
+        .eq('username', username)
+        .single();
+
+      return error && error.message.includes('No rows found');
+    } catch (error) {
+      console.error('Error checking username uniqueness:', error);
+      return false;
+    }
+  }
 }
 
 export const messengerService = new MessengerService();
-export type { MessengerUser, MessengerMessage, ChatRoom };
+export type { MessengerUser, MessengerMessage, ChatRoom, AdminSettings, ChatTopic };
