@@ -17,7 +17,7 @@ import {
   Tablet
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { parseRealAnalyticsData, getDeviceNameInPersian, getCountryNameInPersian, getSourceNameInPersian, calculatePercentages, getCurrentVisitors } from '@/lib/analyticsService';
+import { parseRealAnalyticsData, getDeviceNameInPersian, getCountryNameInPersian, getSourceNameInPersian, calculatePercentages, getCurrentVisitors, readProjectAnalytics } from '@/lib/analyticsService';
 
 interface AnalyticsData {
   currentVisitors: number;
@@ -58,9 +58,13 @@ const AnalyticsReports: React.FC = () => {
 
       console.log('📊 Requesting analytics for:', { startDateStr, endDateStr });
 
-      // Here we would normally call the read_project_analytics function
-      // For now, let's use the real data we got from the API call
-      const realAnalyticsString = `3592 visitors [{2025-07-14 255} {2025-07-15 383} {2025-07-16 426} {2025-07-17 382} {2025-07-18 565} {2025-07-19 673} {2025-07-20 529} {2025-07-21 379}] 52969 pageviews [{2025-07-14 851} {2025-07-15 6978} {2025-07-16 13771} {2025-07-17 4179} {2025-07-18 13549} {2025-07-19 4453} {2025-07-20 6999} {2025-07-21 2189}] 14.75 pageviewsPerVisit [{2025-07-14 3.34} {2025-07-15 18.22} {2025-07-16 32.33} {2025-07-17 10.94} {2025-07-18 23.98} {2025-07-19 6.62} {2025-07-20 13.23} {2025-07-21 5.78}] 310 sessionDuration [{2025-07-14 455.321568627451} {2025-07-15 355.56657963446474} {2025-07-16 354.48591549295776} {2025-07-17 298.5471204188482} {2025-07-18 277.4088495575221} {2025-07-19 240.43982169390787} {2025-07-20 307.413988657845} {2025-07-21 189.00263852242745}] 58 bounceRate [{2025-07-14 55} {2025-07-15 61} {2025-07-16 60} {2025-07-17 62} {2025-07-18 60} {2025-07-19 56} {2025-07-20 59} {2025-07-21 53}] page [{/courses/boundless 1244} {/telegram 515} {/course/boundless-taste 467} {/start 421} {/ 346} {/daramad 256} {/start/ 192} {/course/access/passive-income 184} {/hub/messenger 135} {/courses 115}] source [{l.instagram.com 2063} {Direct 1300} {auth.rafiei.co 756} {google.com 140} {instagram.com 130} {facebook.com 38} {com.google.android.googlequicksearchbox 18} {sep.shaparak.ir 5} {meta.com 5} {preview--boundless-global-hub.lovable.app 4}] device [{mobile-android 2563} {mobile-ios 656} {desktop 328} {bot 35}] country [{IR 3132} {US 183} {AF 64} {CA 36} {TR 31} {Unknown 27} {DE 22} {SE 14} {CN 7} {OM 6}]`;
+      // Fetch real analytics data using Lovable analytics API
+      const analyticsData = await readProjectAnalytics(startDateStr, endDateStr, 'daily');
+      
+      // The analytics data comes as a structured string that needs to be parsed
+      const realAnalyticsString = analyticsData?.toString() || '';
+      
+      console.log('📈 Raw analytics response:', realAnalyticsString);
 
       // Parse the real analytics data
       const realData = parseRealAnalyticsData(realAnalyticsString);
@@ -187,6 +191,7 @@ const AnalyticsReports: React.FC = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLastUpdated(new Date());
     }
   };
 
