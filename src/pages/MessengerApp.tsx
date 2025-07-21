@@ -8,6 +8,7 @@ import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 import { ReplyProvider } from '@/contexts/ReplyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { SessionStorage } from '@/lib/sessionStorage';
 
 const MessengerApp = () => {
   const [loading, setLoading] = useState(true);
@@ -49,9 +50,9 @@ const MessengerApp = () => {
         return;
       }
 
-      // Check for local messenger session as fallback
-      const token = localStorage.getItem('messenger_session_token');
-      if (!token) {
+      // Check for local messenger session using SessionStorage
+      const messengerSession = SessionStorage.getSession();
+      if (!messengerSession) {
         setShowAuth(true);
         setLoading(false);
         return;
@@ -64,12 +65,12 @@ const MessengerApp = () => {
 
       try {
         const user = await Promise.race([
-          messengerService.validateSession(token),
+          messengerService.validateSession(messengerSession.sessionToken),
           timeoutPromise
         ]) as MessengerUser | null;
 
         if (!user) {
-          localStorage.removeItem('messenger_session_token');
+          SessionStorage.clearSession();
           setShowAuth(true);
           setLoading(false);
           return;
@@ -77,14 +78,14 @@ const MessengerApp = () => {
 
         // Convert messenger user to unified user and sync with AuthContext
         console.log('Found valid messenger session, syncing with unified auth');
-        login(user, token);
+        login(user, messengerSession.sessionToken);
         setForceOffline(false);
       } catch (connectionError) {
         console.log('Connection failed, checking if we have a valid token for offline mode');
         
         // If we have a token but can't connect, try to use cached user data
-        if (token) {
-          console.log('Using offline mode with existing token');
+        if (messengerSession.sessionToken) {
+          console.log('Using offline mode with existing session');
           const mockUser: MessengerUser = {
             id: 0,
             name: 'کاربر آفلاین',
@@ -113,7 +114,7 @@ const MessengerApp = () => {
             password_hash: null,
             avatar_url: null
           };
-          login(mockUser, token);
+          login(mockUser, messengerSession.sessionToken);
           setForceOffline(true);
         } else {
           // No token, show auth
@@ -122,8 +123,8 @@ const MessengerApp = () => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      const token = localStorage.getItem('messenger_session_token');
-      if (!token) {
+      const messengerSession = SessionStorage.getSession();
+      if (!messengerSession) {
         setShowAuth(true);
       } else {
         console.log('Keeping session in offline mode due to error');
@@ -155,7 +156,7 @@ const MessengerApp = () => {
           password_hash: null,
           avatar_url: null
         };
-        login(mockUser, token);
+        login(mockUser, messengerSession.sessionToken);
         setForceOffline(true);
       }
     } finally {
@@ -166,8 +167,8 @@ const MessengerApp = () => {
   const handleAuthenticated = (newSessionToken: string, userName: string, user: MessengerUser) => {
     console.log('📱 MessengerApp: User authenticated:', userName);
     
-    // Store in localStorage for messenger compatibility
-    localStorage.setItem('messenger_session_token', newSessionToken);
+    // Save session using SessionStorage utility
+    SessionStorage.saveSession(newSessionToken, user);
     
     // Sync with unified auth system
     login(user, newSessionToken);
@@ -179,14 +180,13 @@ const MessengerApp = () => {
   const handleUserUpdate = (updatedUser: MessengerUser) => {
     console.log('📱 MessengerApp: Updating user data');
     // Update both local state and unified auth
-    const token = unifiedToken || localStorage.getItem('messenger_session_token') || '';
+    const token = unifiedToken || SessionStorage.getSession()?.sessionToken || '';
     login(updatedUser, token);
   };
 
   const handleLogout = async () => {
     console.log('📱 MessengerApp: Logging out...');
     // Clear both local session and unified session
-    localStorage.removeItem('messenger_session_token');
     await logout();
     setShowAuth(true);
     setForceOffline(false);
@@ -266,7 +266,7 @@ const MessengerApp = () => {
               const updatedUser = { ...currentUser, username };
               handleUserUpdate(updatedUser);
             }}
-            sessionToken={unifiedToken || localStorage.getItem('messenger_session_token') || ''}
+            sessionToken={unifiedToken || SessionStorage.getSession()?.sessionToken || ''}
             userId={currentUser.id}
           />
         )}

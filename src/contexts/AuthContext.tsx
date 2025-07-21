@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { messengerService, MessengerUser } from '@/lib/messengerService';
 import { unifiedAuthService, UnifiedUser } from '@/lib/unifiedAuthService';
 import { supabase } from '@/integrations/supabase/client';
-import { getCookie, setCookie, deleteCookie } from '@/lib/cookieUtils';
+import { SessionStorage } from '@/lib/sessionStorage';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -65,7 +65,7 @@ const normalizePhone = (phone: string): string[] => {
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  console.log('AuthProvider rendering...');
+  console.log('🔄 AuthProvider rendering...');
   const [user, setUser] = useState<UnifiedUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         );
 
-        // Check for existing session
+        // Check for existing Supabase session first
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           console.log('🔄 Found existing Supabase session');
@@ -100,85 +100,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return () => subscription.unsubscribe();
         }
 
-        
-        // Check all possible authentication sources
-        const cookieToken = getCookie('session_token');
-        const cookieUser = getCookie('current_user');
-        const localStorageToken = localStorage.getItem('messenger_session_token');
-        
-        console.log('📁 Found auth data:', {
-          cookieToken: cookieToken ? 'Yes' : 'No',
-          cookieUser: cookieUser ? 'Yes' : 'No',
-          localStorageToken: localStorageToken ? 'Yes' : 'No'
-        });
-
-        // Try to restore from cookies first (most reliable)
-        if (cookieToken && cookieUser) {
-          console.log('🍪 Attempting to restore from cookies...');
+        // Check for messenger session using SessionStorage utility
+        const messengerSession = SessionStorage.getSession();
+        if (messengerSession) {
+          console.log('🔄 Found existing messenger session');
+          
           try {
-            const parsedUser = JSON.parse(decodeURIComponent(cookieUser));
-            console.log('👤 Parsed user from cookie:', parsedUser.name);
-            
-            // Validate the session
-            const validatedUser = await unifiedAuthService.validateSession(cookieToken);
+            // Validate the session with the server
+            const validatedUser = await messengerService.validateSession(messengerSession.sessionToken);
             
             if (validatedUser) {
-              console.log('✅ Cookie session validated successfully');
-              setUser(validatedUser);
-              setToken(cookieToken);
-              
-              // Ensure localStorage is also synced
-              if (validatedUser.isMessengerUser) {
-                localStorage.setItem('messenger_session_token', cookieToken);
-              }
-              return () => subscription.unsubscribe();
-            } else {
-              console.log('❌ Cookie session validation failed');
-              // Clear invalid cookies
-              deleteCookie('session_token');
-              deleteCookie('current_user');
-            }
-          } catch (parseError) {
-            console.error('❌ Error parsing stored user from cookies:', parseError);
-            deleteCookie('session_token');
-            deleteCookie('current_user');
-          }
-        }
-
-        // If no valid cookie session, try localStorage token
-        if (localStorageToken) {
-          console.log('💾 Attempting to restore from localStorage...');
-          try {
-            const messengerUser = await messengerService.validateSession(localStorageToken);
-            
-            if (messengerUser) {
-              console.log('✅ LocalStorage session validated successfully');
-              const unifiedUser = convertToUnifiedUser(messengerUser);
+              console.log('✅ Messenger session validated successfully');
+              const unifiedUser = convertToUnifiedUser(validatedUser);
               setUser(unifiedUser);
-              setToken(localStorageToken);
+              setToken(messengerSession.sessionToken);
               
-              // Sync to cookies for cross-system compatibility
-              setCookie('session_token', localStorageToken, 30);
-              setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
+              // Refresh session expiration
+              SessionStorage.refreshSession();
               return () => subscription.unsubscribe();
             } else {
-              console.log('❌ LocalStorage session validation failed');
-              localStorage.removeItem('messenger_session_token');
+              console.log('❌ Messenger session validation failed');
+              SessionStorage.clearSession();
             }
           } catch (error) {
-            console.log('❌ LocalStorage session validation error:', error);
-            localStorage.removeItem('messenger_session_token');
+            console.log('❌ Messenger session validation error:', error);
+            SessionStorage.clearSession();
           }
         }
         
-        console.log('🚫 No valid session found anywhere');
+        console.log('🚫 No valid session found');
         return () => subscription.unsubscribe();
       } catch (error) {
         console.error('💥 Critical error during auth initialization:', error);
         // Clean up everything on critical error
-        deleteCookie('session_token');
-        deleteCookie('current_user');
-        localStorage.removeItem('messenger_session_token');
+        SessionStorage.clearSession();
       } finally {
         setIsLoading(false);
         console.log('🏁 Auth initialization complete');
@@ -221,10 +176,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(unifiedUser);
       setToken(sessionToken);
       
-      // Store in both systems for compatibility
-      setCookie('session_token', sessionToken, 30);
-      setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
-      
       console.log('✅ Supabase auth processed successfully');
     } catch (error) {
       console.error('❌ Error processing Supabase auth:', error);
@@ -257,13 +208,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(unifiedUser);
     setToken(tokenData);
     
-    // Store in both systems for maximum compatibility
-    console.log('💾 Storing session data...');
-    setCookie('session_token', tokenData, 30);
-    setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
-    
-    // Always store in localStorage for messenger compatibility
-    localStorage.setItem('messenger_session_token', tokenData);
+    // For messenger users, save to SessionStorage
+    if (unifiedUser.isMessengerUser && unifiedUser.messengerData) {
+      SessionStorage.saveSession(tokenData, unifiedUser.messengerData);
+    }
     
     console.log('✅ Login successful for:', unifiedUser.name);
   };
@@ -272,41 +220,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('🚪 Logout initiated');
     try {
       if (token) {
-        await unifiedAuthService.logout(token);
-        console.log('📡 Server logout completed');
+        // Try to logout from server
+        try {
+          await messengerService.logout(token);
+          console.log('📡 Server logout completed');
+        } catch (error) {
+          console.error('❌ Server logout error:', error);
+        }
       }
       
       // Sign out from Supabase
       await supabase.auth.signOut();
     } catch (error) {
-      console.error('❌ Server logout error:', error);
+      console.error('❌ Logout error:', error);
     } finally {
       // Clear all auth data
       setUser(null);
       setToken(null);
       
-      // Delete all cookies
-      deleteCookie('session_token');
-      deleteCookie('current_user');
-      deleteCookie('rafiei-dismissed-floating');
-      deleteCookie('rafiei-dismissed-popup');
+      // Clear session storage
+      SessionStorage.clearSession();
       
       // Clear all localStorage items
-      localStorage.removeItem('messenger_session_token');
       localStorage.clear();
       
       // Clear sessionStorage
       sessionStorage.clear();
       
-      console.log('🧹 All auth data, cookies, and sessions cleared');
+      console.log('🧹 All auth data and sessions cleared');
     }
   };
 
   const updateUser = (updatedUser: UnifiedUser | MessengerUser) => {
     const unifiedUser = 'isMessengerUser' in updatedUser ? updatedUser : convertToUnifiedUser(updatedUser);
     setUser(unifiedUser);
-    if (token) {
-      setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
+    
+    // Update session storage if it's a messenger user
+    if (token && unifiedUser.isMessengerUser && unifiedUser.messengerData) {
+      SessionStorage.saveSession(token, unifiedUser.messengerData);
     }
   };
 

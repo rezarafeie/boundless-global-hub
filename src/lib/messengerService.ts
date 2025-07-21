@@ -1,66 +1,227 @@
 import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone, generatePhoneSearchFormats } from '@/utils/phoneUtils';
 import type { ChatRoom, MessengerUser, MessengerMessage, ChatTopic, AdminSettings } from '@/types/supabase';
+import { SessionStorage } from '@/lib/sessionStorage';
 
 // Export the types for external use
 export type { ChatRoom, MessengerUser, MessengerMessage, ChatTopic, AdminSettings };
 
 class MessengerService {
-  async validateSession(sessionToken: string): Promise<any | null> {
+  async validateSession(sessionToken: string): Promise<MessengerUser | null> {
     try {
-      // Use user_sessions table instead
-      const { data, error } = await supabase
+      console.log('🔍 Validating session token:', sessionToken.substring(0, 8) + '...');
+      
+      // Use user_sessions table for validation
+      const { data: sessionData, error: sessionError } = await supabase
         .from('user_sessions')
         .select('*')
         .eq('session_token', sessionToken)
         .eq('is_active', true)
         .single();
 
-      if (error) {
-        console.error('Error validating session:', error);
-        return null;
-      }
-
-      if (!data) {
+      if (sessionError || !sessionData) {
+        console.log('❌ Session not found or inactive');
         return null;
       }
 
       // Check if session is expired (24 hours)
-      const lastActivity = new Date(data.last_activity);
+      const lastActivity = new Date(sessionData.last_activity);
       const now = new Date();
       const timeDiff = now.getTime() - lastActivity.getTime();
       const hoursDiff = timeDiff / (1000 * 3600);
 
       if (hoursDiff > 24) {
-        console.log('Session expired');
+        console.log('❌ Session expired');
+        // Deactivate expired session
+        await supabase
+          .from('user_sessions')
+          .update({ is_active: false })
+          .eq('id', sessionData.id);
         return null;
       }
+
+      // Update last activity
+      await supabase
+        .from('user_sessions')
+        .update({ last_activity: now.toISOString() })
+        .eq('id', sessionData.id);
 
       // Get user data
       const { data: userData, error: userError } = await supabase
         .from('chat_users')
         .select('*')
-        .eq('id', data.user_id)
+        .eq('id', sessionData.user_id)
         .single();
 
       if (userError || !userData) {
-        console.error('Error fetching user data:', userError);
+        console.error('❌ Error fetching user data:', userError);
         return null;
       }
 
-      return {
-        id: data.id,
-        userId: data.user_id,
-        sessionToken: data.session_token,
-        lastActivity: data.last_activity,
-        user: userData
-      };
+      console.log('✅ Session validated successfully for user:', userData.name);
+      return userData as MessengerUser;
     } catch (error) {
-      console.error('Error in validateSession:', error);
+      console.error('❌ Error in validateSession:', error);
       return null;
     }
   }
 
+  async createSession(userId: number): Promise<string> {
+    try {
+      // Generate session token
+      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      
+      console.log('🔑 Creating session for user:', userId);
+      
+      // Deactivate any existing sessions for this user
+      await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('user_id', userId);
+
+      // Store session in user_sessions table
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert({
+          user_id: userId,
+          session_token: sessionToken,
+          is_active: true,
+          last_activity: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('❌ Error storing session in database:', error);
+        // Continue anyway, session will be temporary
+      } else {
+        console.log('✅ Session stored in database successfully');
+      }
+      
+      return sessionToken;
+    } catch (error) {
+      console.error('❌ Error in createSession:', error);
+      // Still return a token even if database storage fails
+      return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
+  }
+
+  async loginWithPassword(phone: string, password: string): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
+    try {
+      console.log('🔐 Attempting login for phone:', phone);
+      
+      // Find user by phone using all possible formats
+      const user = await this.getUserByPhone(phone);
+      
+      if (!user) {
+        console.log('❌ User not found for phone:', phone);
+        return { success: false, error: 'کاربر یافت نشد' };
+      }
+
+      console.log('✅ User found:', user.name, 'ID:', user.id);
+
+      // In a real implementation, verify password hash here
+      if (!password) {
+        return { success: false, error: 'رمز عبور را وارد کنید' };
+      }
+
+      // Create session in database and get token
+      const sessionToken = await this.createSession(user.id);
+      
+      // Save session using the unified storage utility
+      SessionStorage.saveSession(sessionToken, user);
+      
+      console.log('✅ Login successful, session saved');
+      return { success: true, user: user, session_token: sessionToken };
+    } catch (error) {
+      console.error('❌ Error in loginWithPassword:', error);
+      return { success: false, error: 'خطا در ورود' };
+    }
+  }
+
+  async registerWithPassword(userData: Partial<MessengerUser> & { password: string }): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
+    try {
+      console.log('📝 Registering user with data:', { ...userData, password: '[HIDDEN]' });
+      
+      const { password, ...userDataWithoutPassword } = userData;
+
+      // Normalize phone number
+      const normalized = normalizePhone(userDataWithoutPassword.phone || '', userDataWithoutPassword.country_code || '+98');
+      
+      // Check if user already exists
+      const existingUser = await this.getUserByPhone(normalized.phone);
+      if (existingUser) {
+        return { success: false, error: 'این شماره قبلاً ثبت شده است' };
+      }
+
+      // Generate unique user ID
+      const uniqueUserId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+      const { data, error } = await supabase
+        .from('chat_users')
+        .insert({
+          name: userDataWithoutPassword.name || '',
+          phone: normalized.phone,
+          country_code: normalized.countryCode,
+          password_hash: password,
+          user_id: uniqueUserId,
+          is_approved: true,
+          email: userDataWithoutPassword.email,
+          first_name: userDataWithoutPassword.first_name,
+          last_name: userDataWithoutPassword.last_name,
+          full_name: userDataWithoutPassword.full_name,
+          role: 'user',
+          is_messenger_admin: false,
+          is_support_agent: false,
+          bedoun_marz: false,
+          bedoun_marz_approved: false,
+          bedoun_marz_request: false,
+          notification_enabled: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error registering user:', error);
+        throw error;
+      }
+
+      // Create session
+      const sessionToken = await this.createSession(data.id);
+      
+      // Save session using the unified storage utility
+      SessionStorage.saveSession(sessionToken, data as MessengerUser);
+
+      console.log('✅ User registered successfully:', data.name, 'ID:', data.id);
+      return { success: true, user: data as MessengerUser, session_token: sessionToken };
+    } catch (error: any) {
+      console.error('❌ Error in registerWithPassword:', error);
+      return { success: false, error: error.message || 'خطا در ثبت نام' };
+    }
+  }
+
+  async logout(sessionToken: string): Promise<void> {
+    try {
+      console.log('🚪 Logging out session:', sessionToken.substring(0, 8) + '...');
+      
+      // Deactivate session in database
+      await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('session_token', sessionToken);
+      
+      // Clear session from storage
+      SessionStorage.clearSession();
+      
+      console.log('✅ Logout completed');
+    } catch (error) {
+      console.error('❌ Error in logout:', error);
+      // Still clear local session even if database update fails
+      SessionStorage.clearSession();
+    }
+  }
+
+  
   async getOrCreateChatUser(email: string): Promise<MessengerUser> {
     try {
       // Check if user exists
@@ -226,102 +387,6 @@ class MessengerService {
     }
   }
 
-  async getSupportMessages(userId: number): Promise<MessengerMessage[]> {
-    try {
-      console.log('📥 Fetching support messages for user:', userId);
-      
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .select('*')
-        .or(`sender_id.eq.${userId},conversation_id.eq.${userId}`)
-        .eq('recipient_id', 1)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('❌ Error fetching support messages:', error);
-        throw error;
-      }
-
-      console.log('✅ Fetched support messages:', data?.length || 0);
-      
-      // Fetch sender data separately for each unique sender
-      const messages = data || [];
-      const senderIds = [...new Set(messages.map(msg => msg.sender_id))];
-      const senders = new Map<number, MessengerUser>();
-      
-      for (const senderId of senderIds) {
-        const { data: senderData } = await supabase
-          .from('chat_users')
-          .select('*')
-          .eq('id', senderId)
-          .single();
-          
-        if (senderData) {
-          senders.set(senderId, senderData as MessengerUser);
-        }
-      }
-
-      return messages.map(msg => ({
-        ...msg,
-        sender: senders.get(msg.sender_id) || {
-          id: msg.sender_id,
-          name: msg.sender_id === userId ? 'شما' : 'پشتیبانی',
-          phone: '',
-          is_approved: msg.sender_id === 1,
-          is_messenger_admin: false,
-          is_support_agent: msg.sender_id === 1,
-          bedoun_marz: false,
-          bedoun_marz_approved: false,
-          bedoun_marz_request: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_seen: new Date().toISOString(),
-          role: msg.sender_id === 1 ? 'support' as const : 'user' as const,
-          email: null,
-          user_id: null,
-          first_name: null,
-          last_name: null,
-          full_name: null,
-          country_code: null,
-          signup_source: null,
-          bio: null,
-          notification_enabled: true,
-          notification_token: null,
-          password_hash: null,
-          avatar_url: null,
-          username: null
-        }
-      })) as MessengerMessage[];
-    } catch (error) {
-      console.error('❌ Error in getSupportMessages:', error);
-      throw error;
-    }
-  }
-
-  async createRoom(roomData: {
-    name: string;
-    description: string;
-    type: 'group' | 'channel' | 'direct';
-  }): Promise<ChatRoom> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .insert([roomData])
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error creating room:', error);
-        throw error;
-      }
-
-      return data as ChatRoom;
-    } catch (error) {
-      console.error('Error in createRoom:', error);
-      throw error;
-    }
-  }
-
   async getRooms(): Promise<ChatRoom[]> {
     try {
       const { data, error } = await supabase
@@ -346,93 +411,38 @@ class MessengerService {
     }
   }
 
-  async updateNotificationSettings(userId: number, enabled: boolean): Promise<void> {
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
     try {
-      const { error } = await supabase
-        .from('chat_users')
-        .update({ notification_enabled: enabled })
-        .eq('id', userId);
+      console.log('🔍 Searching for user with phone:', phone);
+      
+      // Generate all possible phone formats to search
+      const searchFormats = generatePhoneSearchFormats(phone);
+      console.log('📱 Searching phone formats:', searchFormats);
 
-      if (error) {
-        console.error('Error updating notification settings:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error in updateNotificationSettings:', error);
-      throw error;
-    }
-  }
+      // Try to find user with any of the phone formats
+      for (const format of searchFormats) {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('phone', format)
+          .maybeSingle();
 
-  async sendSupportMessage(messageData: {
-    sender_id: number;
-    message: string;
-    conversation_id: number;
-    media_url?: string | null;
-    message_type?: string | null;
-  }): Promise<any> {
-    try {
-      const { sender_id, message, conversation_id, media_url, message_type } = messageData;
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error searching for phone format:', format, error);
+          continue;
+        }
 
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .insert([
-          {
-            sender_id: sender_id,
-            message: message,
-            conversation_id: conversation_id,
-            recipient_id: 1, // Support recipient ID
-            media_url: media_url || null,
-            message_type: message_type || 'text'
-          }
-        ])
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error sending support message:', error);
-        throw error;
+        if (data) {
+          console.log('✅ Found user with phone format:', format, 'User:', data.name);
+          return data as MessengerUser;
+        }
       }
 
-      return data;
+      console.log('❌ No user found for any phone format');
+      return null;
     } catch (error) {
-      console.error('Error in sendSupportMessage:', error);
-      throw error;
-    }
-  }
-
-  async getAllMessages(): Promise<MessengerMessage[]> {
-    try {
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching all messages:', error);
-        throw error;
-      }
-
-      return (data || []) as MessengerMessage[];
-    } catch (error) {
-      console.error('Error in getAllMessages:', error);
-      throw error;
-    }
-  }
-
-  async deleteMessage(messageId: number): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('messenger_messages')
-        .delete()
-        .eq('id', messageId);
-
-      if (error) {
-        console.error('Error deleting message:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error in deleteMessage:', error);
-      throw error;
+      console.error('Error in getUserByPhone:', error);
+      return null;
     }
   }
 
@@ -683,190 +693,95 @@ class MessengerService {
   }
 
   // Enhanced phone-based authentication methods
-  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+  
+
+  async sendSupportMessage(messageData: {
+    sender_id: number;
+    message: string;
+    conversation_id: number;
+    media_url?: string | null;
+    message_type?: string | null;
+  }): Promise<any> {
     try {
-      console.log('🔍 Searching for user with phone:', phone);
-      
-      // Generate all possible phone formats to search
-      const searchFormats = generatePhoneSearchFormats(phone);
-      console.log('📱 Searching phone formats:', searchFormats);
-
-      // Try to find user with any of the phone formats
-      for (const format of searchFormats) {
-        const { data, error } = await supabase
-          .from('chat_users')
-          .select('*')
-          .eq('phone', format)
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error searching for phone format:', format, error);
-          continue;
-        }
-
-        if (data) {
-          console.log('✅ Found user with phone format:', format, 'User:', data.name);
-          return data as MessengerUser;
-        }
-      }
-
-      console.log('❌ No user found for any phone format');
-      return null;
-    } catch (error) {
-      console.error('Error in getUserByPhone:', error);
-      return null;
-    }
-  }
-
-  async loginWithPassword(phone: string, password: string): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
-    try {
-      console.log('🔐 Attempting login for phone:', phone);
-      
-      // Find user by phone using all possible formats
-      const user = await this.getUserByPhone(phone);
-      
-      if (!user) {
-        console.log('❌ User not found for phone:', phone);
-        return { success: false, error: 'کاربر یافت نشد' };
-      }
-
-      console.log('✅ User found:', user.name, 'ID:', user.id);
-
-      // In a real implementation, verify password hash here
-      // For now, we'll just check if password is provided
-      if (!password) {
-        return { success: false, error: 'رمز عبور را وارد کنید' };
-      }
-
-      // Create session in database and get token
-      const sessionToken = await this.createSession(user.id);
-      
-      // Store session in localStorage and cookies for persistence
-      localStorage.setItem('messenger_session_token', sessionToken);
-      localStorage.setItem('messenger_user', JSON.stringify(user));
-      
-      // Also set in cookies for cross-tab compatibility
-      document.cookie = `messenger_session_token=${sessionToken}; path=/; max-age=${30 * 24 * 60 * 60}`; // 30 days
-      document.cookie = `messenger_user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=${30 * 24 * 60 * 60}`;
-      
-      console.log('✅ Login successful, session saved to localStorage and cookies');
-      return { success: true, user: user, session_token: sessionToken };
-    } catch (error) {
-      console.error('Error in loginWithPassword:', error);
-      return { success: false, error: 'خطا در ورود' };
-    }
-  }
-
-  async registerWithPassword(userData: Partial<MessengerUser> & { password: string }): Promise<{ success: boolean; user?: MessengerUser; error?: string; session_token?: string }> {
-    try {
-      console.log('📝 Registering user with data:', { ...userData, password: '[HIDDEN]' });
-      
-      const { password, ...userDataWithoutPassword } = userData;
-
-      // Normalize phone number
-      const normalized = normalizePhone(userDataWithoutPassword.phone || '', userDataWithoutPassword.country_code || '+98');
-      
-      // Check if user already exists
-      const existingUser = await this.getUserByPhone(normalized.phone);
-      if (existingUser) {
-        return { success: false, error: 'این شماره قبلاً ثبت شده است' };
-      }
-
-      // Generate unique user ID
-      const uniqueUserId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      const { sender_id, message, conversation_id, media_url, message_type } = messageData;
 
       const { data, error } = await supabase
-        .from('chat_users')
-        .insert({
-          name: userDataWithoutPassword.name || '',
-          phone: normalized.phone,
-          country_code: normalized.countryCode,
-          password_hash: password,
-          user_id: uniqueUserId,
-          is_approved: true,
-          email: userDataWithoutPassword.email,
-          first_name: userDataWithoutPassword.first_name,
-          last_name: userDataWithoutPassword.last_name,
-          full_name: userDataWithoutPassword.full_name,
-          role: 'user',
-          is_messenger_admin: false,
-          is_support_agent: false,
-          bedoun_marz: false,
-          bedoun_marz_approved: false,
-          bedoun_marz_request: false,
-          notification_enabled: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
+        .from('messenger_messages')
+        .insert([
+          {
+            sender_id: sender_id,
+            message: message,
+            conversation_id: conversation_id,
+            recipient_id: 1, // Support recipient ID
+            media_url: media_url || null,
+            message_type: message_type || 'text'
+          }
+        ])
+        .select('*')
         .single();
 
       if (error) {
-        console.error('Error registering user:', error);
+        console.error('Error sending support message:', error);
         throw error;
       }
 
-      // Create session
-      const sessionToken = await this.createSession(data.id);
-      
-      // Store session in localStorage and cookies for persistence
-      localStorage.setItem('messenger_session_token', sessionToken);
-      localStorage.setItem('messenger_user', JSON.stringify(data));
-      
-      // Also set in cookies for cross-tab compatibility
-      document.cookie = `messenger_session_token=${sessionToken}; path=/; max-age=${30 * 24 * 60 * 60}`; // 30 days
-      document.cookie = `messenger_user=${encodeURIComponent(JSON.stringify(data))}; path=/; max-age=${30 * 24 * 60 * 60}`;
-
-      console.log('✅ User registered successfully:', data.name, 'ID:', data.id);
-      return { success: true, user: data as MessengerUser, session_token: sessionToken };
-    } catch (error: any) {
-      console.error('Error in registerWithPassword:', error);
-      return { success: false, error: error.message || 'خطا در ثبت نام' };
-    }
-  }
-
-  async createSession(userId: number): Promise<string> {
-    try {
-      // Generate session token
-      const sessionToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      
-      // Store session in user_sessions table for persistence
-      const { error } = await supabase
-        .from('user_sessions')
-        .insert({
-          user_id: userId,
-          session_token: sessionToken,
-          is_active: true,
-          last_activity: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error storing session in database:', error);
-        // Continue anyway, session will be temporary
-      } else {
-        console.log('✅ Session stored in database successfully');
-      }
-      
-      return sessionToken;
+      return data;
     } catch (error) {
-      console.error('Error in createSession:', error);
-      // Still return a token even if database storage fails
-      return Math.random().toString(36).substring(2) + Date.now().toString(36);
+      console.error('Error in sendSupportMessage:', error);
+      throw error;
     }
   }
 
-  async isEmailUsed(email: string): Promise<boolean> {
+  async getAllMessages(): Promise<MessengerMessage[]> {
     try {
       const { data, error } = await supabase
-        .from('chat_users')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
+        .from('messenger_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      return !error && !!data;
+      if (error) {
+        console.error('Error fetching all messages:', error);
+        throw error;
+      }
+
+      return (data || []) as MessengerMessage[];
     } catch (error) {
-      console.error('Error in isEmailUsed:', error);
-      return false;
+      console.error('Error in getAllMessages:', error);
+      throw error;
+    }
+  }
+
+  async deleteMessage(messageId: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('messenger_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteMessage:', error);
+      throw error;
+    }
+  }
+
+  async updateNotificationSettings(userId: number, enabled: boolean): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ notification_enabled: enabled })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating notification settings:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateNotificationSettings:', error);
+      throw error;
     }
   }
 
@@ -890,16 +805,6 @@ class MessengerService {
       }
     } catch (error) {
       console.error('Error in updateUserDetails:', error);
-      throw error;
-    }
-  }
-
-  async logout(sessionToken: string): Promise<void> {
-    try {
-      // Implementation would depend on your session management
-      console.log('Logging out session:', sessionToken);
-    } catch (error) {
-      console.error('Error in logout:', error);
       throw error;
     }
   }
