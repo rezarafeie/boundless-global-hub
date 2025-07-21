@@ -77,6 +77,27 @@ const CourseAccess: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileLessonView, setShowMobileLessonView] = useState(false);
+
+  // Check if mobile on resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle lesson selection for mobile
+  const handleLessonSelect = (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+    if (isMobile) {
+      setShowMobileLessonView(true);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -433,183 +454,194 @@ const CourseAccess: React.FC = () => {
 
         {/* Enrolled - Show Course Content */}
         {isAuthenticated && enrollment && (
-          <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)]">
-            {/* Mobile Course Navigation Header */}
-            <div className="lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">محتوای دوره</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {sections.length} بخش
-                  </p>
-                </div>
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                  {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
-                </Badge>
-              </div>
-            </div>
-
-            {/* Sidebar - Course Navigation */}
-            <div className="w-full lg:w-96 bg-white dark:bg-gray-950 lg:border-l border-gray-200 dark:border-gray-800 overflow-y-auto lg:max-h-[calc(100vh-140px)]">
-              <div className="p-6">
-                <div className="hidden lg:flex items-center justify-between mb-8">
-                  <div>
-                    <h3 className="font-bold text-2xl text-gray-900 dark:text-gray-100">محتوای دوره</h3>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">
-                      {sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {sections.length} بخش
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                
-                {sections.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <BookOpen className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h4 className="font-medium text-lg mb-2">هنوز درسی اضافه نشده</h4>
-                    <p className="text-muted-foreground text-sm">محتوای دوره به زودی اضافه خواهد شد</p>
-                  </div>
-                ) : (
-                  <Accordion type="multiple" className="space-y-2">
-                    {sections.map((section, sectionIndex) => (
-                      <AccordionItem 
-                        key={section.id} 
-                        value={section.id}
-                        className="border rounded-xl bg-white dark:bg-gray-900 shadow-sm overflow-hidden"
-                      >
-                        <AccordionTrigger className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 [&[data-state=open]]:bg-gray-50 dark:[&[data-state=open]]:bg-gray-800">
-                          <div className="flex items-center justify-between w-full pr-4">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <BookOpen className="h-5 w-5 text-primary" />
-                              </div>
-                              <div className="text-right">
-                                <h4 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                                  {section.title}
-                                </h4>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                  {section.lessons.length} درس
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 px-3 py-1">
-                                {section.lessons.length} درس
-                              </Badge>
-                            </div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-0 pb-0">
-                          <div className="border-t border-gray-100 dark:border-gray-800">
-                            {section.lessons.map((lesson, lessonIndex) => {
-                              const isSelected = selectedLesson?.id === lesson.id;
-                              const lessonNumber = sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
-                              
-                              return (
-                                <button
-                                  key={lesson.id}
-                                  onClick={() => setSelectedLesson(lesson)}
-                                  className={`w-full text-right px-6 py-4 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800 group border-b border-gray-50 dark:border-gray-800 last:border-b-0 ${
-                                    isSelected 
-                                      ? 'bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500' 
-                                      : 'border-l-4 border-transparent'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-3">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                                        isSelected 
-                                          ? 'bg-blue-500 text-white' 
-                                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
-                                      }`}>
-                                        {lessonNumber}
-                                      </div>
-                                      {lesson.video_url && (
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                          isSelected 
-                                            ? 'bg-blue-100 dark:bg-blue-900' 
-                                            : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
-                                        }`}>
-                                          <PlayCircle className={`h-4 w-4 ${
-                                            isSelected ? 'text-blue-600' : 'text-gray-500 group-hover:text-blue-600'
-                                          }`} />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex-1 text-right">
-                                      <h5 className={`font-medium text-base leading-tight mb-1 ${
-                                        isSelected 
-                                          ? 'text-blue-700 dark:text-blue-300' 
-                                          : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300'
-                                      }`}>
-                                        {lesson.title}
-                                      </h5>
-                                      <div className="flex items-center gap-4 justify-end">
-                                        {lesson.video_url && (
-                                          <div className="flex items-center gap-2">
-                                            <Play className="h-3 w-3 text-gray-400" />
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">ویدیو</span>
-                                          </div>
-                                        )}
-                                        {lesson.file_url && (
-                                          <div className="flex items-center gap-2">
-                                            <Download className="h-3 w-3 text-gray-400" />
-                                            <span className="text-xs text-gray-500 dark:text-gray-400">فایل</span>
-                                          </div>
-                                        )}
-                                        <div className="flex items-center gap-2">
-                                          <Clock className="h-3 w-3 text-gray-400" />
-                                          <span className="text-xs text-gray-500 dark:text-gray-400">15 دقیقه</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <ChevronRight className={`h-5 w-5 transition-all duration-200 ${
-                                      isSelected 
-                                        ? 'text-blue-500 rotate-90' 
-                                        : 'text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1'
-                                    }`} />
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                )}
-              </div>
-            </div>
-
-            {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-              {selectedLesson ? (
-                <div className="p-6 lg:p-10">
-                  {renderLessonContent(selectedLesson)}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full p-8">
-                  <div className="text-center max-w-lg">
-                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-2xl flex items-center justify-center mx-auto mb-8">
-                      <BookOpen className="h-12 w-12 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <h3 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">شروع یادگیری</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed">
-                      از منوی کناری یک درس انتخاب کنید و آموزش خود را آغاز کنید
-                    </p>
-                    <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
-                      <p className="text-blue-700 dark:text-blue-300 text-sm">
-                        💡 نکته: می‌توانید با کلیک بر روی هر بخش، فهرست درس‌های آن را مشاهده کنید
+          <>
+            {/* Mobile Lesson View */}
+            {isMobile && showMobileLessonView && selectedLesson ? (
+              <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+                {/* Mobile Lesson Header */}
+                <div className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 p-4 sticky top-0 z-10">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowMobileLessonView(false)}
+                      className="p-2"
+                    >
+                      <ChevronRight className="h-5 w-5 rotate-180" />
+                    </Button>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        {selectedLesson.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {course?.title}
                       </p>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
+                
+                {/* Mobile Lesson Content */}
+                <div className="p-4">
+                  {renderLessonContent(selectedLesson)}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col lg:flex-row min-h-[calc(100vh-140px)]">
+                {/* Mobile Course Navigation Header */}
+                <div className="lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">فهرست دروس</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sidebar - Course Navigation */}
+                <div className="w-full lg:w-80 bg-white dark:bg-gray-950 lg:border-l border-gray-200 dark:border-gray-800 overflow-y-auto lg:max-h-[calc(100vh-140px)]">
+                  <div className="p-4">
+                    <div className="hidden lg:flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">محتوای دوره</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
+                        </p>
+                      </div>
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <BookOpen className="h-4 w-4 text-white" />
+                      </div>
+                    </div>
+                
+                    {sections.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <BookOpen className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <h4 className="font-medium mb-1">هنوز درسی اضافه نشده</h4>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs">محتوای دوره به زودی اضافه خواهد شد</p>
+                      </div>
+                    ) : (
+                      <Accordion type="multiple" className="space-y-1">
+                        {sections.map((section, sectionIndex) => (
+                          <AccordionItem 
+                            key={section.id} 
+                            value={section.id}
+                            className="border rounded-lg bg-gray-50 dark:bg-gray-900 overflow-hidden"
+                          >
+                            <AccordionTrigger className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 [&[data-state=open]]:bg-gray-100 dark:[&[data-state=open]]:bg-gray-800">
+                              <div className="flex items-center justify-between w-full pr-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                    <BookOpen className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                  <div className="text-right">
+                                    <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                      {section.title}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <Badge variant="secondary" className="bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 px-2 py-0 text-xs">
+                                  {section.lessons.length}
+                                </Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-0 pb-0">
+                              <div className="border-t border-gray-200 dark:border-gray-700">
+                                {section.lessons.map((lesson, lessonIndex) => {
+                                  const isSelected = selectedLesson?.id === lesson.id;
+                                  const lessonNumber = sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
+                                  
+                                  return (
+                                    <button
+                                      key={lesson.id}
+                                      onClick={() => handleLessonSelect(lesson)}
+                                      className={`w-full text-right px-3 py-2 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
+                                        isSelected 
+                                          ? 'bg-blue-50 dark:bg-blue-950/30 border-l-2 border-blue-500' 
+                                          : 'border-l-2 border-transparent'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                                          isSelected 
+                                            ? 'bg-blue-500 text-white' 
+                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                        }`}>
+                                          {lessonNumber}
+                                        </div>
+                                        {lesson.video_url && (
+                                          <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                            isSelected 
+                                              ? 'bg-blue-100 dark:bg-blue-900' 
+                                              : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                          }`}>
+                                            <Play className={`h-2 w-2 ${
+                                              isSelected ? 'text-blue-600' : 'text-gray-500 group-hover:text-blue-600'
+                                            }`} />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex-1 text-right">
+                                        <h5 className={`font-medium text-xs leading-tight mb-1 ${
+                                          isSelected 
+                                            ? 'text-blue-700 dark:text-blue-300' 
+                                            : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300'
+                                        }`}>
+                                          {lesson.title}
+                                        </h5>
+                                        <div className="flex items-center gap-2 justify-end">
+                                          {lesson.video_url && (
+                                            <span className="text-xs text-gray-400">ویدیو</span>
+                                          )}
+                                          {lesson.file_url && (
+                                            <span className="text-xs text-gray-400">فایل</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <ChevronRight className={`h-3 w-3 transition-all duration-200 ${
+                                        isSelected 
+                                          ? 'text-blue-500 rotate-90' 
+                                          : 'text-gray-400 group-hover:text-blue-500'
+                                      }`} />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desktop Main Content Area */}
+                {!isMobile && (
+                  <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                    {selectedLesson ? (
+                      <div className="p-4 lg:p-6">
+                        {renderLessonContent(selectedLesson)}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full p-6">
+                        <div className="text-center max-w-md">
+                          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">شروع یادگیری</h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                            از منوی کناری یک درس انتخاب کنید
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </MainLayout>
