@@ -91,15 +91,33 @@ serve(async (req) => {
     } else if (messageData.recipient_id) {
       chatType = 'private';
       
-      // Get recipient name and email
+      // Get recipient name and email - prefer user with email if multiple exist
       const { data: recipientData } = await supabase
         .from('chat_users')
-        .select('name, email')
+        .select('name, email, phone')
         .eq('id', messageData.recipient_id)
         .single();
       
       chatName = recipientData?.name || 'Unknown User';
       receiverEmail = recipientData?.email || '';
+      
+      // If no email found, try to find a user with the same phone but with email
+      if (!receiverEmail && recipientData?.phone) {
+        const normalizedPhone = recipientData.phone.replace(/^0/, ''); // Remove leading 0
+        
+        const { data: alternateUser } = await supabase
+          .from('chat_users')
+          .select('email')
+          .or(`phone.eq.${recipientData.phone},phone.eq.${normalizedPhone},phone.eq.0${normalizedPhone}`)
+          .not('email', 'is', null)
+          .limit(1)
+          .single();
+        
+        if (alternateUser?.email) {
+          receiverEmail = alternateUser.email;
+          console.log(`📧 Found alternate user email for phone ${recipientData.phone}: ${receiverEmail}`);
+        }
+      }
     } else if (messageData.conversation_id) {
       chatType = 'support';
       chatName = 'Support';
