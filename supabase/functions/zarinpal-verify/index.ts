@@ -1,5 +1,6 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { supabase } from "../_shared/supabase.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,12 +16,24 @@ serve(async (req) => {
   try {
     const { authority, enrollmentId, manualApproval } = await req.json();
 
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
     // Get enrollment details
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('enrollments')
       .select(`
         *,
-        courses (*)
+        courses (*),
+        chat_users:chat_user_id (*)
       `)
       .eq('id', enrollmentId)
       .single();
@@ -52,6 +65,46 @@ serve(async (req) => {
           console.error('WooCommerce order creation failed:', wooError);
           // Don't fail the whole process if WooCommerce fails
         }
+      }
+
+      // Send manual payment approved webhook
+      try {
+        console.log('📤 Sending manual payment approved webhook...');
+        
+        const webhookPayload = {
+          event_type: 'enrollment_manual_payment_approved',
+          timestamp: new Date().toISOString(),
+          data: {
+            enrollment: enrollment,
+            user: enrollment.chat_users || { 
+              name: enrollment.full_name,
+              email: enrollment.email,
+              phone: enrollment.phone 
+            },
+            course: enrollment.courses
+          }
+        };
+
+        const webhookResponse = await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            eventType: 'enrollment_manual_payment_approved',
+            payload: webhookPayload
+          })
+        });
+
+        if (webhookResponse.ok) {
+          console.log('✅ Manual payment approved webhook sent successfully');
+        } else {
+          const errorText = await webhookResponse.text();
+          console.error('❌ Manual payment webhook failed:', webhookResponse.status, errorText);
+        }
+      } catch (webhookError) {
+        console.error('❌ Failed to send manual payment approved webhook:', webhookError);
       }
 
       // Return success for manual payment (don't modify payment status - admin already approved)
@@ -126,6 +179,8 @@ serve(async (req) => {
 
       // Send webhook for successful payment
       try {
+        console.log('📤 Sending enrollment_paid_successful webhook...');
+        
         const webhookPayload = {
           event_type: 'enrollment_paid_successful',
           timestamp: new Date().toISOString(),
@@ -146,10 +201,10 @@ serve(async (req) => {
           }
         };
 
-        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-enrollment-webhook`, {
+        const webhookResponse = await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -158,19 +213,43 @@ serve(async (req) => {
           })
         });
 
-        console.log('Payment success webhook sent successfully');
+        if (webhookResponse.ok) {
+          console.log('✅ Payment success webhook sent successfully');
+        } else {
+          const errorText = await webhookResponse.text();
+          console.error('❌ Payment success webhook failed:', webhookResponse.status, errorText);
+        }
       } catch (webhookError) {
-        console.error('Failed to send payment success webhook:', webhookError);
-        // Don't fail the payment if webhook fails
+        console.error('❌ Failed to send payment success webhook:', webhookError);
       }
 
       // Create SpotPlayer license if needed
       if (enrollment.courses.is_spotplayer_enabled) {
         try {
-          await createSpotPlayerLicense(enrollment, enrollmentId);
+          console.log('🎮 Creating SpotPlayer license after successful payment...');
+          
+          const licenseResponse = await fetch(`${supabaseUrl}/functions/v1/create-spotplayer-license`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              enrollmentId: enrollmentId,
+              userFullName: enrollment.full_name,
+              userPhone: enrollment.phone,
+              courseId: enrollment.course_id
+            })
+          });
+
+          if (licenseResponse.ok) {
+            console.log('✅ SpotPlayer license created after payment');
+          } else {
+            const errorText = await licenseResponse.text();
+            console.error('❌ SpotPlayer license creation failed:', errorText);
+          }
         } catch (licenseError) {
-          console.error('SpotPlayer license creation failed:', licenseError);
-          // Don't fail the payment if license creation fails
+          console.error('❌ SpotPlayer license error (non-blocking):', licenseError);
         }
       }
 
@@ -260,83 +339,5 @@ async function createWooCommerceOrder(enrollment: any): Promise<number | null> {
   } catch (error) {
     console.error('WooCommerce API error:', error);
     return null;
-  }
-}
-
-async function createSpotPlayerLicense(enrollment: any, enrollmentId: string): Promise<void> {
-  try {
-    // Check if SpotPlayer is enabled for this course
-    if (!enrollment.courses.is_spotplayer_enabled || !enrollment.courses.spotplayer_course_id) {
-      console.log('SpotPlayer not enabled for this course, skipping license creation');
-      return;
-    }
-
-    console.log('Creating SpotPlayer license for enrollment:', enrollmentId);
-
-    const spotPlayerRequestBody = {
-      test: false,
-      course: [enrollment.courses.spotplayer_course_id],
-      name: enrollment.full_name,
-      watermark: {
-        texts: [
-          {
-            text: enrollment.phone
-          }
-        ]
-      }
-    };
-
-    console.log('Sending request to SpotPlayer API:', spotPlayerRequestBody);
-
-    // Call SpotPlayer API
-    const spotPlayerResponse = await fetch('https://panel.spotplayer.ir/license/edit/', {
-      method: 'POST',
-      headers: {
-        '$API': 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==',
-        '$LEVEL': '-1',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(spotPlayerRequestBody)
-    });
-
-    if (!spotPlayerResponse.ok) {
-      const errorText = await spotPlayerResponse.text();
-      throw new Error(`SpotPlayer API error: ${spotPlayerResponse.status} - ${errorText}`);
-    }
-
-    const spotPlayerData = await spotPlayerResponse.json();
-    console.log('SpotPlayer API response:', spotPlayerData);
-
-    // Construct the full video access URL
-    const fullVideoUrl = `https://dl.spotplayer.ir${spotPlayerData.url}`;
-
-    // Update enrollment with SpotPlayer license data
-    const { error: updateError } = await supabase
-      .from('enrollments')
-      .update({
-        spotplayer_license_id: spotPlayerData._id,
-        spotplayer_license_key: spotPlayerData.key,
-        spotplayer_license_url: fullVideoUrl
-      })
-      .eq('id', enrollmentId);
-
-    if (updateError) {
-      throw new Error(`Failed to update enrollment: ${updateError.message}`);
-    }
-
-    console.log('Successfully created SpotPlayer license and updated enrollment');
-
-  } catch (error) {
-    console.error('SpotPlayer license creation error:', error);
-    
-    // Log error to license_errors table
-    await supabase
-      .from('license_errors')
-      .insert({
-        enrollment_id: enrollmentId,
-        course_id: enrollment.course_id,
-        error_message: error.message,
-        api_response: null
-      });
   }
 }

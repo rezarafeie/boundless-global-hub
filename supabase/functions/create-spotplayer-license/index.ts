@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { supabase } from "../_shared/supabase.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +30,17 @@ serve(async (req) => {
     const { enrollmentId, userFullName, userPhone, courseId }: SpotPlayerRequest = await req.json();
 
     console.log('Creating SpotPlayer license for enrollment:', enrollmentId);
+
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Get course details including SpotPlayer course ID and test license setting
     const { data: course, error: courseError } = await supabase
@@ -119,8 +130,11 @@ serve(async (req) => {
 
     console.log('Successfully created SpotPlayer license and updated enrollment');
 
-    // Send webhook for Rafiei Player license generation
+    // Send rafiei_player_license_generated webhook
     try {
+      console.log('📤 Sending rafiei_player_license_generated webhook...');
+
+      // Get updated enrollment data with related course and user info
       const { data: enrollmentData } = await supabase
         .from('enrollments')
         .select(`
@@ -137,7 +151,11 @@ serve(async (req) => {
           timestamp: new Date().toISOString(),
           data: {
             enrollment: enrollmentData,
-            user: enrollmentData.chat_users,
+            user: enrollmentData.chat_users || {
+              name: userFullName,
+              email: enrollmentData.email,
+              phone: userPhone
+            },
             course: enrollmentData.courses,
             license: {
               id: spotPlayerData._id,
@@ -147,11 +165,10 @@ serve(async (req) => {
           }
         };
 
-        // Send webhook using enhanced webhook manager
-        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-enrollment-webhook`, {
+        const webhookResponse = await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -160,11 +177,15 @@ serve(async (req) => {
           })
         });
 
-        console.log('Rafiei Player license webhook sent successfully');
+        if (webhookResponse.ok) {
+          console.log('✅ Rafiei Player license webhook sent successfully');
+        } else {
+          const errorText = await webhookResponse.text();
+          console.error('❌ Webhook failed:', webhookResponse.status, errorText);
+        }
       }
     } catch (webhookError) {
-      console.error('Failed to send Rafiei Player license webhook:', webhookError);
-      // Don't fail the license creation if webhook fails
+      console.error('❌ Failed to send Rafiei Player license webhook (non-blocking):', webhookError);
     }
 
     return new Response(
@@ -189,8 +210,15 @@ serve(async (req) => {
 
     // Try to log error to database if we have enrollment info
     try {
-      const { enrollmentId, courseId } = await req.json();
+      const body = await req.json();
+      const { enrollmentId, courseId } = body;
+      
       if (enrollmentId && courseId) {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        
         await supabase
           .from('license_errors')
           .insert({

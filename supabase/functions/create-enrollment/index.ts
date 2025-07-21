@@ -42,12 +42,21 @@ Deno.serve(async (req) => {
       payment_method,
       manual_payment_status,
       receipt_url,
-      chat_user_id
+      chat_user_id,
+      country_code,
+      payment_status
     } = body;
 
-    // Validate required fields
-    if (!course_id || !full_name || !email || !phone || !payment_amount) {
-      throw new Error('Missing required fields');
+    // Validate required fields - handle both null and undefined
+    if (!course_id || !full_name || !email || !phone || (payment_amount === null || payment_amount === undefined)) {
+      console.error('❌ Validation failed. Missing fields:', {
+        course_id: !!course_id,
+        full_name: !!full_name,
+        email: !!email,
+        phone: !!phone,
+        payment_amount: payment_amount !== null && payment_amount !== undefined
+      });
+      throw new Error('Missing required fields: course_id, full_name, email, phone, payment_amount are required');
     }
 
     console.log('✅ Validation passed, creating enrollment...');
@@ -67,6 +76,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Determine final payment status - free courses should be 'completed'
+    const finalPaymentStatus = payment_amount === 0 ? 'completed' : (payment_status || 'pending');
+
     // Create enrollment record with service role privileges
     const { data: createdEnrollment, error: enrollmentError } = await supabase
       .from('enrollments')
@@ -75,12 +87,13 @@ Deno.serve(async (req) => {
         full_name: full_name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
-        payment_amount,
-        payment_status: 'pending',
+        payment_amount: Number(payment_amount), // Ensure it's a number
+        payment_status: finalPaymentStatus,
         payment_method: payment_method || 'manual',
-        manual_payment_status: manual_payment_status || 'pending',
+        manual_payment_status: manual_payment_status || null,
         receipt_url,
-        chat_user_id: resolvedChatUserId
+        chat_user_id: resolvedChatUserId,
+        country_code: country_code || '+98'
       })
       .select()
       .single();
@@ -92,29 +105,28 @@ Deno.serve(async (req) => {
 
     console.log('✅ Enrollment created successfully:', createdEnrollment);
 
-    // FORCE send webhook for ALL successful enrollments (regardless of payment status)
-    try {
-      // Get course details
-      const { data: courseData } = await supabase
-        .from('courses')
+    // Get course details for webhook
+    const { data: courseData } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('id', course_id)
+      .single();
+
+    // Get user details if chat_user_id exists
+    let userData = null;
+    if (resolvedChatUserId) {
+      const { data: userInfo } = await supabase
+        .from('chat_users')
         .select('*')
-        .eq('id', course_id)
+        .eq('id', resolvedChatUserId)
         .single();
+      userData = userInfo;
+    }
 
-      // Get user details if chat_user_id exists
-      let userData = null;
-      if (resolvedChatUserId) {
-        const { data: userInfo } = await supabase
-          .from('chat_users')
-          .select('*')
-          .eq('id', resolvedChatUserId)
-          .single();
-        userData = userInfo;
-      }
+    // Always send enrollment_created webhook
+    try {
+      console.log('📤 Sending enrollment_created webhook...');
 
-      console.log('📤 Sending enrollment webhook using enhanced webhook manager...');
-
-      // Use the enhanced webhook manager
       const webhookPayload = {
         event_type: 'enrollment_created',
         timestamp: new Date().toISOString(),
@@ -124,13 +136,13 @@ Deno.serve(async (req) => {
             name: full_name,
             email: email,
             phone: phone,
-            country_code: body.country_code
+            country_code: country_code || '+98'
           },
           course: courseData
         }
       };
 
-      await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
+      const webhookResponse = await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseServiceKey}`,
@@ -142,10 +154,44 @@ Deno.serve(async (req) => {
         })
       });
 
-      console.log('✅ Webhook sent successfully for enrollment:', createdEnrollment.id);
+      if (webhookResponse.ok) {
+        console.log('✅ Enrollment created webhook sent successfully');
+      } else {
+        const errorText = await webhookResponse.text();
+        console.error('❌ Webhook failed:', webhookResponse.status, errorText);
+      }
     } catch (webhookError) {
       console.error('❌ Webhook error (non-blocking):', webhookError);
-      // Don't fail the enrollment if webhook fails
+    }
+
+    // For free courses (payment_amount = 0), also create SpotPlayer license if enabled
+    if (payment_amount === 0 && courseData?.is_spotplayer_enabled) {
+      try {
+        console.log('🎮 Creating SpotPlayer license for free course...');
+        
+        const licenseResponse = await fetch(`${supabaseUrl}/functions/v1/create-spotplayer-license`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            enrollmentId: createdEnrollment.id,
+            userFullName: full_name,
+            userPhone: phone,
+            courseId: course_id
+          })
+        });
+
+        if (licenseResponse.ok) {
+          console.log('✅ SpotPlayer license created for free course');
+        } else {
+          const errorText = await licenseResponse.text();
+          console.error('❌ SpotPlayer license creation failed:', errorText);
+        }
+      } catch (licenseError) {
+        console.error('❌ SpotPlayer license error (non-blocking):', licenseError);
+      }
     }
 
     return new Response(
