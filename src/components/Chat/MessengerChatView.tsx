@@ -413,9 +413,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => {
     if ((!messageText.trim() && !media) || sending) return;
 
-    // Add message optimistically to the UI first (for smoother UX)
+    // Create optimistic message that will stay visible
+    const tempId = Date.now();
     const optimisticMessage: MessengerMessage = {
-      id: Date.now(), // temporary ID
+      id: tempId,
       message: messageText || (media ? '📎 File' : ''),
       sender_id: currentUser.id,
       created_at: new Date().toISOString(),
@@ -429,10 +430,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }) : null,
       message_type: media ? 'media' : 'text',
       topic_id: selectedTopic?.id,
-      conversation_id: null,
+      conversation_id: selectedUser ? (selectedUser.id === 1 ? currentUser.id : null) : null,
       sender: currentUser,
       is_read: false,
-      recipient_id: null,
+      recipient_id: selectedUser?.id || null,
       unread_by_support: false,
       reply_to_message_id: null,
       forwarded_from_message_id: null
@@ -442,6 +443,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setSending(true);
       console.log('📤 Sending message:', { text: messageText, media: !!media });
       
+      // FORCE show message immediately in UI
       setMessages(prev => [...prev, optimisticMessage]);
       
       // If it's a media message, set message text to empty if no text provided
@@ -455,8 +457,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         type: media.type
       }) : null;
       
+      let sentMessage: any = null;
+      
       if (selectedRoom) {
-        await messengerService.sendMessage({
+        sentMessage = await messengerService.sendMessage({
           sender_id: currentUser.id,
           message,
           room_id: selectedRoom.id,
@@ -468,7 +472,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         // Check if it's support conversation
         if (selectedUser.id === 1) {
           // Send as support message via messenger service with recipient_id
-          await messengerService.sendSupportMessage({
+          sentMessage = await messengerService.sendSupportMessage({
             sender_id: currentUser.id,
             message,
             conversation_id: currentUser.id,
@@ -477,7 +481,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           });
         } else {
           // For private messages, use the private message service directly with media support
-          await privateMessageService.sendMessage(
+          sentMessage = await privateMessageService.sendMessage(
             currentUser.id,
             selectedUser.id,
             message,
@@ -491,14 +495,42 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setNewMessage('');
       console.log('✅ Message sent successfully');
       
-      // Remove optimistic message once real-time update comes in
+      // Replace optimistic message with real message if we got one back
+      if (sentMessage) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? { ...sentMessage, sender: currentUser } : msg
+        ));
+      }
+      
+      // Remove optimistic message only if real-time update brings in a newer version
+      // But keep it visible for at least 5 seconds to ensure user sees their message
       setTimeout(() => {
-        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
-      }, 2000);
+        setMessages(prev => {
+          const hasRealMessage = prev.some(msg => 
+            msg.id !== tempId && 
+            msg.sender_id === currentUser.id && 
+            Math.abs(new Date(msg.created_at).getTime() - new Date(optimisticMessage.created_at).getTime()) < 10000
+          );
+          
+          if (hasRealMessage) {
+            return prev.filter(msg => msg.id !== tempId);
+          }
+          
+          // Keep the optimistic message if no real message arrived
+          return prev;
+        });
+      }, 5000);
+      
     } catch (error) {
       console.error('❌ Error sending message:', error);
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      
+      // Mark optimistic message as failed but keep it visible with error indicator
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId 
+          ? { ...msg, failed: true, message: msg.message + ' ❌' }
+          : msg
+      ));
+      
       toast({
         title: 'خطا',
         description: 'خطا در ارسال پیام',
