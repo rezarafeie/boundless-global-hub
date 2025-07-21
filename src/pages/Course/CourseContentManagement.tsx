@@ -100,12 +100,22 @@ const CourseContentManagement: React.FC = () => {
   // Collapsed state for sections - start with all sections collapsed
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   
+  // Collapsed state for lessons - start with all lessons collapsed
+  const [collapsedLessons, setCollapsedLessons] = useState<Set<string>>(new Set());
+  
   // Initialize collapsed sections when data loads
   useEffect(() => {
     if (sections.length > 0 && collapsedSections.size === 0) {
       setCollapsedSections(new Set(sections.map(s => s.id)));
     }
   }, [sections]);
+
+  // Initialize collapsed lessons when data loads
+  useEffect(() => {
+    if (lessons.length > 0 && collapsedLessons.size === 0) {
+      setCollapsedLessons(new Set(lessons.map(l => l.id)));
+    }
+  }, [lessons]);
   
   // Form states
   const [titleGroupForm, setTitleGroupForm] = useState({ title: '', icon: '📚' });
@@ -885,7 +895,9 @@ const SortableSection: React.FC<{
   onLessonDragEnd: (event: DragEndEvent, sectionId: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: (sectionId: string) => void;
-}> = ({ section, lessons, onEditSection, onDeleteSection, onEditLesson, onDeleteLesson, onLessonDragEnd, isCollapsed, onToggleCollapse }) => {
+  collapsedLessons: Set<string>;
+  setCollapsedLessons: (collapsed: Set<string>) => void;
+}> = ({ section, lessons, onEditSection, onDeleteSection, onEditLesson, onDeleteLesson, onLessonDragEnd, isCollapsed, onToggleCollapse, collapsedLessons, setCollapsedLessons }) => {
   const {
     attributes,
     listeners,
@@ -970,6 +982,16 @@ const SortableSection: React.FC<{
                       lesson={lesson}
                       onEdit={onEditLesson}
                       onDelete={onDeleteLesson}
+                      isCollapsed={collapsedLessons.has(lesson.id)}
+                      onToggleCollapse={(lessonId) => {
+                        const newCollapsed = new Set(collapsedLessons);
+                        if (newCollapsed.has(lessonId)) {
+                          newCollapsed.delete(lessonId);
+                        } else {
+                          newCollapsed.add(lessonId);
+                        }
+                        setCollapsedLessons(newCollapsed);
+                      }}
                     />
                   ))}
                 </div>
@@ -987,7 +1009,9 @@ const SortableLesson: React.FC<{
   lesson: CourseLesson;
   onEdit: (lesson: CourseLesson) => void;
   onDelete: (lessonId: string) => void;
-}> = ({ lesson, onEdit, onDelete }) => {
+  isCollapsed: boolean;
+  onToggleCollapse: (lessonId: string) => void;
+}> = ({ lesson, onEdit, onDelete, isCollapsed, onToggleCollapse }) => {
   const {
     attributes,
     listeners,
@@ -1005,60 +1029,100 @@ const SortableLesson: React.FC<{
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-start justify-between p-4 bg-muted/50 rounded-lg space-y-2"
+      className="bg-muted/50 rounded-lg border transition-all duration-200"
     >
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-2">
+      {/* Lesson Header - Always Visible */}
+      <div 
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/70"
+        onClick={() => onToggleCollapse(lesson.id)}
+      >
+        <div className="flex items-center gap-2 flex-1">
           <GripVertical 
             className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" 
             {...attributes}
             {...listeners}
+            onClick={(e) => e.stopPropagation()}
           />
+          <span className="mr-2">
+            {isCollapsed ? '▶' : '▼'}
+          </span>
           <span className="font-medium">{lesson.title}</span>
-          {lesson.video_url && (
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              ویدیو
+          <div className="flex gap-1">
+            {lesson.video_url && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                ویدیو
+              </span>
+            )}
+            {lesson.file_url && (
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                فایل
+              </span>
+            )}
+            <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+              {lesson.duration} دقیقه
             </span>
-          )}
-          {lesson.file_url && (
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-              فایل
-            </span>
-          )}
+          </div>
         </div>
         
-        {/* Show video embed if exists */}
-        {lesson.video_url && (
-          <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <VideoEmbed embedCode={lesson.video_url} />
-          </div>
-        )}
-        
-        {/* Show lesson content preview if exists */}
-        {lesson.content && (
-          <div className="mt-2 text-sm text-muted-foreground">
-            <p className="truncate">{lesson.content.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
-          </div>
-        )}
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onEdit(lesson)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onDelete(lesson.id)}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
-      <div className="flex gap-2 flex-shrink-0 self-start">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onEdit(lesson)}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onDelete(lesson.id)}
-          className="text-red-600 hover:text-red-700"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Lesson Content - Collapsible */}
+      {!isCollapsed && (
+        <div className="px-4 pb-4 animate-accordion-down">
+          {/* Show video embed if exists */}
+          {lesson.video_url && (
+            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <VideoEmbed embedCode={lesson.video_url} />
+            </div>
+          )}
+          
+          {/* Show lesson content preview if exists */}
+          {lesson.content && (
+            <div className="mt-3 p-3 bg-background rounded-lg border">
+              <h5 className="font-medium mb-2">محتوای درس:</h5>
+              <div className="text-sm text-muted-foreground max-h-32 overflow-y-auto">
+                <div dangerouslySetInnerHTML={{ 
+                  __html: lesson.content.length > 200 
+                    ? lesson.content.substring(0, 200) + '...' 
+                    : lesson.content 
+                }} />
+              </div>
+            </div>
+          )}
+
+          {/* Show file link if exists */}
+          {lesson.file_url && (
+            <div className="mt-3 p-3 bg-background rounded-lg border">
+              <h5 className="font-medium mb-2">فایل پیوست:</h5>
+              <a 
+                href={lesson.file_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                مشاهده فایل
+              </a>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -1417,6 +1481,8 @@ const SortableLesson: React.FC<{
                                   }
                                   setCollapsedSections(newCollapsed);
                                 }}
+                                collapsedLessons={collapsedLessons}
+                                setCollapsedLessons={setCollapsedLessons}
                               />
                             ))}
                           </SortableContext>
@@ -1460,6 +1526,8 @@ const SortableLesson: React.FC<{
                             }
                             setCollapsedSections(newCollapsed);
                           }}
+                          collapsedLessons={collapsedLessons}
+                          setCollapsedLessons={setCollapsedLessons}
                         />
                       ))}
                     </SortableContext>
