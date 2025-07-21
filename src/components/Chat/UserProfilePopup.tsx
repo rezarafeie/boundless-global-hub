@@ -87,8 +87,8 @@ const UserProfilePopup: React.FC<UserProfilePopupProps> = ({ isOpen, onClose, us
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full h-full max-w-none max-h-none m-0 rounded-none border-0 p-0 bg-background">
-        <div className="h-full flex flex-col">
+      <DialogContent className="w-full h-full max-w-none max-h-none m-0 rounded-none border-0 p-0 bg-background overflow-hidden">
+        <div className="h-full flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0 flex flex-row items-center justify-between p-4 border-b">
             <DialogTitle className="text-lg font-semibold">User Profile</DialogTitle>
             <Button 
@@ -100,7 +100,7 @@ const UserProfilePopup: React.FC<UserProfilePopupProps> = ({ isOpen, onClose, us
               <X className="h-4 w-4" />
             </Button>
           </DialogHeader>
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
