@@ -16,7 +16,7 @@ interface RafieiAuthProps {
   redirectAfterAuth?: string;
 }
 
-type AuthFlow = 'initial' | 'login' | 'register' | 'otp' | 'otp_verify' | 'set_password';
+type AuthFlow = 'initial' | 'login' | 'register' | 'otp';
 
 interface AuthState {
   flow: AuthFlow;
@@ -51,8 +51,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
   
   const [loading, setLoading] = useState(false);
   const [password, setPassword] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
 
   // Check initial identifier and determine flow
   const handleInitialSubmit = async (e: React.FormEvent) => {
@@ -64,20 +62,13 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
       const result = await rafieiAuth.checkUserExists(authState.identifier);
       
       if (result.exists && result.user) {
-        // User exists - check if they have a password
-        if (!result.user.password_hash) {
-          // User exists but no password - send OTP for verification then set password
-          toast.info('کاربر شما بدون رمز عبور است. کد تأیید ارسال می‌شود');
-          await handleOTPForPasswordSetup();
-        } else {
-          // User exists with password - go to login
-          setAuthState(prev => ({
-            ...prev,
-            flow: 'login',
-            identifierType: result.type,
-            existingUser: result.user
-          }));
-        }
+        // User exists - go to login
+        setAuthState(prev => ({
+          ...prev,
+          flow: 'login',
+          identifierType: result.type,
+          existingUser: result.user
+        }));
       } else {
         // New user - go to registration
         const identifierType = rafieiAuth.detectInputType(authState.identifier);
@@ -119,27 +110,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
     }
   };
 
-  // Handle OTP for password setup
-  const handleOTPForPasswordSetup = async () => {
-    setLoading(true);
-    try {
-      if (authState.identifierType === 'email') {
-        await rafieiAuth.sendEmailOTP(authState.identifier);
-        toast.success('لینک ورود به ایمیل شما ارسال شد');
-        setAuthState(prev => ({ ...prev, flow: 'otp' }));
-      } else {
-        const result = await rafieiAuth.sendSMSOTP(authState.identifier);
-        toast.success('کد تأیید به شماره همراه شما ارسال شد');
-        setAuthState(prev => ({ ...prev, flow: 'otp_verify' }));
-      }
-    } catch (error: any) {
-      console.error('OTP error:', error);
-      toast.error(error.message || 'خطا در ارسال کد تأیید');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Handle OTP login
   const handleOTPLogin = async () => {
     setLoading(true);
@@ -156,44 +126,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
     } catch (error: any) {
       console.error('OTP error:', error);
       toast.error(error.message || 'خطا در ارسال کد تأیید');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Verify OTP for password setup
-  const handleOTPVerification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpCode.trim()) return;
-
-    setLoading(true);
-    try {
-      await rafieiAuth.verifyOTP(authState.identifier, otpCode);
-      toast.success('کد تأیید با موفقیت تأیید شد');
-      setAuthState(prev => ({ ...prev, flow: 'set_password' }));
-    } catch (error: any) {
-      console.error('OTP verification error:', error);
-      toast.error(error.message || 'کد تأیید نامعتبر است');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle setting password after OTP verification
-  const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPassword.trim()) return;
-
-    setLoading(true);
-    try {
-      const result = await rafieiAuth.setPasswordForUser(authState.identifier, newPassword);
-      rafieiAuth.setSession(result.session_token, result.user);
-      
-      toast.success('رمز عبور با موفقیت تنظیم شد و وارد شدید');
-      onSuccess?.(result.user, result.session_token);
-    } catch (error: any) {
-      console.error('Set password error:', error);
-      toast.error(error.message || 'خطا در تنظیم رمز عبور');
     } finally {
       setLoading(false);
     }
@@ -255,12 +187,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
       setPassword('');
     } else if (authState.flow === 'otp') {
       setAuthState(prev => ({ ...prev, flow: 'login' }));
-    } else if (authState.flow === 'otp_verify') {
-      setAuthState(prev => ({ ...prev, flow: 'initial' }));
-      setOtpCode('');
-    } else if (authState.flow === 'set_password') {
-      setAuthState(prev => ({ ...prev, flow: 'otp_verify' }));
-      setNewPassword('');
     }
   };
 
@@ -282,8 +208,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
             {authState.flow === 'login' && 'رمز عبور خود را وارد کنید'}
             {authState.flow === 'register' && 'اطلاعات خود را تکمیل کنید'}
             {authState.flow === 'otp' && 'کد تأیید ارسال شد'}
-            {authState.flow === 'otp_verify' && 'کد تأیید را وارد کنید'}
-            {authState.flow === 'set_password' && 'رمز عبور جدید تنظیم کنید'}
           </CardDescription>
         </CardHeader>
 
@@ -503,92 +427,6 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                     : 'کد تأیید به شماره همراه شما ارسال شد.'
                   }
                 </div>
-                
-                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
-                  <ArrowLeft className="w-4 h-4 ml-2" />
-                  بازگشت
-                </Button>
-              </motion.div>
-            )}
-
-            {/* OTP Code Input Step */}
-            {authState.flow === 'otp_verify' && (
-              <motion.div
-                key="otp_verify"
-                variants={pageVariants}
-                initial="initial"
-                animate="in"
-                exit="out"
-                className="space-y-4"
-              >
-                <div className="text-sm text-gray-600 mb-4 text-center">
-                  کد تأیید برای: <span className="font-medium">{authState.identifier}</span>
-                </div>
-                
-                <form onSubmit={handleOTPVerification} className="space-y-4">
-                  <div>
-                    <Label htmlFor="otpCode">کد تأیید</Label>
-                    <Input
-                      id="otpCode"
-                      type="text"
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
-                      placeholder="کد 4 رقمی"
-                      required
-                      className="text-center text-lg tracking-widest"
-                      maxLength={4}
-                    />
-                  </div>
-                  
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    تأیید کد
-                  </Button>
-                </form>
-                
-                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
-                  <ArrowLeft className="w-4 h-4 ml-2" />
-                  بازگشت
-                </Button>
-              </motion.div>
-            )}
-
-            {/* Set Password Step */}
-            {authState.flow === 'set_password' && (
-              <motion.div
-                key="set_password"
-                variants={pageVariants}
-                initial="initial"
-                animate="in"
-                exit="out"
-                className="space-y-4"
-              >
-                <div className="text-sm text-gray-600 mb-4 text-center">
-                  رمز عبور جدید برای: <span className="font-medium">{authState.identifier}</span>
-                </div>
-                
-                <form onSubmit={handleSetPassword} className="space-y-4">
-                  <div>
-                    <Label htmlFor="newPassword">رمز عبور جدید</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      className="text-right"
-                      minLength={6}
-                    />
-                    <div className="text-xs text-gray-500 mt-1">
-                      حداقل 6 کاراکتر
-                    </div>
-                  </div>
-                  
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    تنظیم رمز عبور
-                  </Button>
-                </form>
                 
                 <Button type="button" variant="ghost" onClick={goBack} className="w-full">
                   <ArrowLeft className="w-4 h-4 ml-2" />
