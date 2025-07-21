@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { type MessengerUser } from './messengerService';
 
@@ -29,6 +30,7 @@ export interface PrivateConversation {
 export const privateMessageService = {
   async getConversation(conversationId: number): Promise<PrivateConversation | null> {
     try {
+      console.log('Fetching conversation:', conversationId);
       const { data, error } = await supabase
         .from('private_conversations')
         .select(`
@@ -43,6 +45,7 @@ export const privateMessageService = {
         return null;
       }
 
+      console.log('Conversation fetched successfully:', data?.id);
       return data || null;
     } catch (error) {
       console.error('Error fetching conversation:', error);
@@ -52,6 +55,7 @@ export const privateMessageService = {
 
   async getUserConversations(userId: number, sessionToken: string): Promise<PrivateConversation[]> {
     try {
+      console.log('Fetching conversations for user:', userId);
       const { data, error } = await supabase
         .from('private_conversations')
         .select(`
@@ -66,6 +70,8 @@ export const privateMessageService = {
         console.error('Error fetching conversations:', error);
         return [];
       }
+
+      console.log('Fetched conversations:', data?.length || 0);
 
       // Process conversations to get the "other user" and add message details
       const conversationsWithDetails = await Promise.all(
@@ -85,6 +91,7 @@ export const privateMessageService = {
         })
       );
 
+      console.log('Processed conversations with details:', conversationsWithDetails.length);
       return conversationsWithDetails;
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -149,6 +156,7 @@ export const privateMessageService = {
 
   async getMessages(conversationId: number): Promise<PrivateMessage[]> {
     try {
+      console.log('Fetching messages for conversation:', conversationId);
       const { data, error } = await supabase
         .from('private_messages')
         .select(`
@@ -172,6 +180,7 @@ export const privateMessageService = {
         return [];
       }
 
+      console.log('Fetched messages:', data?.length || 0);
       return data || [];
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -181,13 +190,17 @@ export const privateMessageService = {
 
   async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<PrivateMessage | null> {
     try {
-      // Get or create conversation first
+      console.log('Sending private message from', senderId, 'to', recipientId);
+      
+      // Get or create conversation first with enhanced error handling
       const conversationId = await this.getOrCreateConversation(senderId, recipientId);
       
       if (!conversationId) {
         console.error('Failed to get or create conversation');
-        return null;
+        throw new Error('Failed to create conversation');
       }
+
+      console.log('Using conversation ID:', conversationId);
 
       const { data, error } = await supabase
         .from('private_messages')
@@ -205,19 +218,25 @@ export const privateMessageService = {
 
       if (error) {
         console.error('Error sending message:', error);
-        return null;
+        throw error;
       }
 
+      console.log('Message sent successfully:', data.id);
+
       // Update last_message_at in private_conversations table
-      await supabase
+      const { error: updateError } = await supabase
         .from('private_conversations')
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', conversationId);
 
+      if (updateError) {
+        console.error('Error updating conversation timestamp:', updateError);
+      }
+
       return data;
     } catch (error) {
       console.error('Error sending message:', error);
-      return null;
+      throw error;
     }
   },
 
@@ -243,6 +262,8 @@ export const privateMessageService = {
       const smallerId = Math.min(user1Id, user2Id);
       const largerId = Math.max(user1Id, user2Id);
       
+      console.log('Creating conversation between', smallerId, 'and', largerId);
+      
       const { data, error } = await supabase
         .from('private_conversations')
         .insert([{
@@ -255,13 +276,14 @@ export const privateMessageService = {
 
       if (error) {
         console.error('Error creating conversation:', error);
-        return null;
+        throw error;
       }
 
+      console.log('Conversation created successfully:', data.id);
       return data;
     } catch (error) {
       console.error('Error creating conversation:', error);
-      return null;
+      throw error;
     }
   },
 
@@ -428,25 +450,47 @@ export const privateMessageService = {
 
   async getOrCreateConversation(user1Id: number, user2Id: number): Promise<number> {
     try {
-      // First, check if conversation already exists
+      console.log('Getting or creating conversation between', user1Id, 'and', user2Id);
+      
+      // First, check if conversation already exists with proper ordering
       const { data: existingConversation, error } = await supabase
         .from('private_conversations')
         .select('id')
-        .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+        .or(`and(user1_id.eq.${Math.min(user1Id, user2Id)},user2_id.eq.${Math.max(user1Id, user2Id)})`)
         .single();
 
       if (existingConversation) {
+        console.log('Found existing conversation:', existingConversation.id);
         return existingConversation.id;
       }
 
       // If no existing conversation, create one
+      console.log('Creating new conversation...');
       const conversation = await this.createConversation(user1Id, user2Id);
-      return conversation?.id || 0;
+      if (!conversation) {
+        throw new Error('Failed to create conversation');
+      }
+      
+      console.log('Created new conversation:', conversation.id);
+      return conversation.id;
     } catch (error) {
       console.error('Error getting or creating conversation:', error);
-      // If single() fails, try to create new conversation
-      const conversation = await this.createConversation(user1Id, user2Id);
-      return conversation?.id || 0;
+      
+      // Enhanced retry logic with exponential backoff
+      if (error?.message?.includes('single() expects exactly one row')) {
+        console.log('Retrying conversation creation due to race condition...');
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
+        
+        try {
+          const conversation = await this.createConversation(user1Id, user2Id);
+          return conversation?.id || 0;
+        } catch (retryError) {
+          console.error('Retry failed:', retryError);
+          throw retryError;
+        }
+      }
+      
+      throw error;
     }
   },
 

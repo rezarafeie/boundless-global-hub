@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { privateMessageService } from '@/lib/privateMessageService';
@@ -29,6 +30,7 @@ export const useRealtimeChatUpdates = ({
       
       // Update cache
       localStorage.setItem('cached_conversations', JSON.stringify(conversationsData));
+      console.log('Conversations refreshed:', conversationsData.length);
     } catch (error) {
       console.error('Error refreshing conversations:', error);
     }
@@ -44,6 +46,7 @@ export const useRealtimeChatUpdates = ({
       
       // Update cache
       localStorage.setItem('cached_rooms', JSON.stringify(activeRooms));
+      console.log('Rooms refreshed:', activeRooms.length);
     } catch (error) {
       console.error('Error refreshing rooms:', error);
     }
@@ -52,31 +55,30 @@ export const useRealtimeChatUpdates = ({
   useEffect(() => {
     if (isOffline || !currentUser || !sessionToken) return;
 
-    console.log('Setting up realtime subscriptions for chat updates...');
+    console.log('Setting up enhanced realtime subscriptions for chat updates...');
 
-    // Subscribe to private conversations changes
+    // Subscribe to private conversations changes with better filtering
     const conversationsChannel = supabase
       .channel('private_conversations_changes')
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'private_conversations'
-          // Note: We'll filter client-side since OR filters are complex in realtime
         },
         (payload) => {
-          // Filter to only refresh if this conversation involves the current user
           const newConv = payload.new || payload.old;
           if (newConv && typeof newConv === 'object' && 
               ((newConv as any).user1_id === currentUser.id || (newConv as any).user2_id === currentUser.id)) {
+            console.log('Conversation change detected, refreshing...');
             refreshConversations();
           }
         }
       )
       .subscribe();
 
-    // Subscribe to private messages that might create new conversations
+    // Subscribe to private messages with enhanced handling
     const messagesChannel = supabase
       .channel('private_messages_changes')
       .on(
@@ -87,20 +89,24 @@ export const useRealtimeChatUpdates = ({
           table: 'private_messages'
         },
         async (payload) => {
-          // Check if this message involves the current user
           const newMessage = payload.new as any;
           if (newMessage && newMessage.conversation_id) {
-            const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
-            if (conversation && 
-                (conversation.user1_id === currentUser.id || conversation.user2_id === currentUser.id)) {
-              refreshConversations();
+            try {
+              const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
+              if (conversation && 
+                  (conversation.user1_id === currentUser.id || conversation.user2_id === currentUser.id)) {
+                console.log('Private message affecting current user, refreshing conversations...');
+                refreshConversations();
+              }
+            } catch (error) {
+              console.error('Error checking conversation for message update:', error);
             }
           }
         }
       )
       .subscribe();
 
-    // Subscribe to messenger messages for group chats
+    // Subscribe to messenger messages for group chats and support
     const messengerMessagesChannel = supabase
       .channel('messenger_messages_changes')
       .on(
@@ -111,9 +117,14 @@ export const useRealtimeChatUpdates = ({
           table: 'messenger_messages'
         },
         (payload) => {
-          // This could indicate new activity in group chats
-          // We might want to refresh rooms to update last message info
-          refreshRooms();
+          const newMessage = payload.new as any;
+          // Check if this affects the current user (sender, recipient, or in a room they're part of)
+          if (newMessage.sender_id === currentUser.id || 
+              newMessage.recipient_id === currentUser.id ||
+              newMessage.room_id) {
+            console.log('Messenger message detected, refreshing rooms...');
+            refreshRooms();
+          }
         }
       )
       .subscribe();
@@ -129,7 +140,28 @@ export const useRealtimeChatUpdates = ({
           table: 'chat_rooms'
         },
         (payload) => {
+          console.log('Room change detected, refreshing rooms...');
           refreshRooms();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to support conversations changes
+    const supportConversationsChannel = supabase
+      .channel('support_conversations_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_conversations'
+        },
+        (payload) => {
+          const conversation = payload.new || payload.old;
+          if (conversation && (conversation as any).user_id === currentUser.id) {
+            console.log('Support conversation change detected, refreshing conversations...');
+            refreshConversations();
+          }
         }
       )
       .subscribe();
@@ -139,6 +171,7 @@ export const useRealtimeChatUpdates = ({
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(messengerMessagesChannel);
       supabase.removeChannel(roomsChannel);
+      supabase.removeChannel(supportConversationsChannel);
     };
   }, [currentUser, sessionToken, isOffline, refreshConversations, refreshRooms]);
 

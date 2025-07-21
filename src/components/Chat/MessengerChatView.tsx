@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle, RefreshCw } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService, type PrivateMessage } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +34,11 @@ interface MessengerChatViewProps {
   onBackToRooms?: () => void;
 }
 
+interface OptimisticMessage extends MessengerMessage {
+  isOptimistic?: boolean;
+  tempId?: string;
+}
+
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   selectedRoom,
   selectedUser,
@@ -43,7 +49,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 }) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const [messages, setMessages] = useState<MessengerMessage[]>([]);
+  const [messages, setMessages] = useState<OptimisticMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -52,18 +58,62 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [pinnedMessage, setPinnedMessage] = useState<any>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<MessengerUser | null>(null);
+  const [messageLoadError, setMessageLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const realtimeChannelsRef = useRef<any[]>([]);
+
+  // Debug mode flag - can be enabled via URL param
+  const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
+
+  const debugLog = (message: string, data?: any) => {
+    if (debugMode) {
+      console.log(`[MessengerChat Debug] ${message}`, data);
+    }
+  };
+
+  // Enhanced conversation ID resolution with retry
+  const getOrCreateConversationId = async (user1Id: number, user2Id: number, retries = 3): Promise<number> => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const conversationId = await privateMessageService.getOrCreateConversation(user1Id, user2Id);
+        debugLog(`Conversation ID resolved: ${conversationId} (attempt ${attempt})`);
+        return conversationId;
+      } catch (error) {
+        debugLog(`Conversation ID resolution failed (attempt ${attempt}):`, error);
+        if (attempt === retries) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    throw new Error('Failed to resolve conversation ID');
+  };
 
   useEffect(() => {
     if (selectedRoom || selectedUser) {
       loadMessages();
     }
+    return () => {
+      // Cleanup optimistic messages when switching chats
+      setMessages(prev => prev.filter(msg => !msg.isOptimistic));
+    };
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
-  // Real-time subscription for messages
+  // Enhanced real-time subscription with better error handling
   useEffect(() => {
     if (!selectedRoom && !selectedUser) return;
     
+    // Cleanup previous channels
+    realtimeChannelsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    realtimeChannelsRef.current = [];
+
+    debugLog('Setting up realtime subscriptions for:', { 
+      roomId: selectedRoom?.id, 
+      userId: selectedUser?.id,
+      currentUserId: currentUser.id 
+    });
+
     const channels: any[] = [];
     
     // Subscribe to messenger messages for room chats
@@ -79,19 +129,25 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             filter: `room_id=eq.${selectedRoom.id}`
           },
           (payload) => {
-            console.log('New room message received:', payload);
-            // Add the new message to the current messages
+            debugLog('New room message received:', payload);
             const newMessage = payload.new as any;
             setMessages(prev => {
-              // Avoid duplicates
-              const exists = prev.find(msg => msg.id === newMessage.id);
+              // Remove any optimistic message with same content and replace with real message
+              const filteredMessages = prev.filter(msg => 
+                !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
+                  msg.message === newMessage.message && 
+                  Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 10000)
+              );
+              
+              // Check if real message already exists
+              const exists = filteredMessages.find(msg => msg.id === newMessage.id);
               if (!exists) {
-                return [...prev, {
+                return [...filteredMessages, {
                   ...newMessage,
-                  sender: { name: 'Unknown', phone: '' } // Will be updated by avatar fetch
+                  sender: { name: 'Unknown', phone: '' }
                 }];
               }
-              return prev;
+              return filteredMessages;
             });
           }
         )
@@ -102,7 +158,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     // Subscribe to private messages for private chats
     if (selectedUser && selectedUser.id !== 1) {
       const privateMessagesChannel = supabase
-        .channel(`private_messages_user_${selectedUser.id}`)
+        .channel(`private_messages_user_${selectedUser.id}_${currentUser.id}`)
         .on(
           'postgres_changes',
           {
@@ -111,33 +167,44 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             table: 'private_messages'
           },
           async (payload) => {
-            console.log('New private message received:', payload);
+            debugLog('New private message received:', payload);
             const newMessage = payload.new as any;
             
-            // Check if this message belongs to current conversation
-            const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
-            if (conversation && 
-                ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
-                 (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
-              
-              setMessages(prev => {
-                // Avoid duplicates
-                const exists = prev.find(msg => msg.id === newMessage.id);
-                if (!exists) {
-                  return [...prev, {
-                    ...newMessage,
-                    room_id: undefined,
-                    media_url: newMessage.media_url,
-                    message_type: newMessage.message_type || 'text',
-                    media_content: newMessage.media_content,
-                    sender: {
-                      name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-                      phone: ''
-                    }
-                  }];
-                }
-                return prev;
-              });
+            try {
+              // Enhanced conversation validation
+              const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
+              if (conversation && 
+                  ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
+                   (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
+                
+                setMessages(prev => {
+                  // Remove optimistic message and add real message
+                  const filteredMessages = prev.filter(msg => 
+                    !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
+                      msg.message === newMessage.message &&
+                      Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 10000)
+                  );
+                  
+                  // Check if real message already exists
+                  const exists = filteredMessages.find(msg => msg.id === newMessage.id);
+                  if (!exists) {
+                    return [...filteredMessages, {
+                      ...newMessage,
+                      room_id: undefined,
+                      media_url: newMessage.media_url,
+                      message_type: newMessage.message_type || 'text',
+                      media_content: newMessage.media_content,
+                      sender: {
+                        name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+                        phone: ''
+                      }
+                    }];
+                  }
+                  return filteredMessages;
+                });
+              }
+            } catch (error) {
+              debugLog('Error processing private message:', error);
             }
           }
         )
@@ -145,7 +212,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       channels.push(privateMessagesChannel);
     }
 
-    // Subscribe to support messages (messenger_messages with recipient_id = 1)
+    // Subscribe to support messages
     if (selectedUser && selectedUser.id === 1) {
       const supportMessagesChannel = supabase
         .channel(`support_messages_${currentUser.id}`)
@@ -158,21 +225,24 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             filter: `recipient_id=eq.1`
           },
           (payload) => {
-            console.log('New support message received:', payload);
+            debugLog('New support message received:', payload);
             const newMessage = payload.new as any;
             
-            // Only add if it's from or to the current user
             if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
               setMessages(prev => {
-                // Avoid duplicates
-                const exists = prev.find(msg => msg.id === newMessage.id);
+                const filteredMessages = prev.filter(msg => 
+                  !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
+                    msg.message === newMessage.message)
+                );
+                
+                const exists = filteredMessages.find(msg => msg.id === newMessage.id);
                 if (!exists) {
-                  return [...prev, {
+                  return [...filteredMessages, {
                     ...newMessage,
                     sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' }
                   }];
                 }
-                return prev;
+                return filteredMessages;
               });
             }
           }
@@ -181,11 +251,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       channels.push(supportMessagesChannel);
     }
 
+    realtimeChannelsRef.current = channels;
+
     // Cleanup function
     return () => {
       channels.forEach(channel => {
         supabase.removeChannel(channel);
       });
+      realtimeChannelsRef.current = [];
     };
   }, [selectedRoom?.id, selectedUser?.id, currentUser.id]);
 
@@ -216,22 +289,23 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         
         setUserAvatars(avatarMap);
       } catch (error) {
-        console.error('Error fetching user avatars:', error);
+        debugLog('Error fetching user avatars:', error);
       }
     };
 
     fetchUserAvatars();
   }, [messages]);
 
-  const loadMessages = async () => {
+  // Enhanced message loading with retry logic
+  const loadMessages = async (retry = false) => {
     try {
       setLoading(true);
+      setMessageLoadError(null);
+      
       let roomMessages: MessengerMessage[] = [];
       
       if (selectedRoom) {
-        console.log('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
-        console.log('Is super group:', selectedRoom.is_super_group);
-        // For super groups, topic is required
+        debugLog('Loading messages for room:', selectedRoom.id, 'topic:', selectedTopic?.id);
         if (selectedRoom.is_super_group) {
           roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
         } else {
@@ -239,15 +313,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       } else if (selectedUser) {
         if (selectedUser.id === 1) {
-          // Support conversation - get messages from messenger_messages where recipient_id = 1
+          debugLog('Loading support messages for user:', currentUser.id);
           roomMessages = await messengerService.getSupportMessages(currentUser.id);
         } else {
-          const conversationId = await privateMessageService.getOrCreateConversation(
-            currentUser.id,
-            selectedUser.id
-          );
+          debugLog('Loading private messages between:', currentUser.id, 'and', selectedUser.id);
+          const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
           const privateMessages = await privateMessageService.getConversationMessages(conversationId);
-          // Convert private messages to messenger message format
+          
           roomMessages = privateMessages.map(msg => ({
             ...msg,
             room_id: undefined,
@@ -262,31 +334,48 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
       
-      console.log('Loaded messages:', roomMessages);
+      debugLog('Loaded messages:', roomMessages.length);
       setMessages(roomMessages);
+      setRetryCount(0);
     } catch (error) {
-      console.error('Error loading messages:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری پیام‌ها',
-        variant: 'destructive',
-      });
-      setMessages([]); // Set empty array on error to prevent blank page
+      debugLog('Error loading messages:', error);
+      const errorMessage = error instanceof Error ? error.message : 'خطا در بارگذاری پیام‌ها';
+      setMessageLoadError(errorMessage);
+      
+      if (!retry && retryCount < 3) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => loadMessages(true), 2000 * (retryCount + 1));
+      } else {
+        toast({
+          title: 'خطا',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setMessages([]);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Manual refresh function
+  const handleManualRefresh = () => {
+    debugLog('Manual refresh triggered');
+    loadMessages();
   };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Enhanced message sending with better optimistic updates
   const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => {
     if ((!messageText.trim() && !media) || sending) return;
 
-    // Add message optimistically to the UI first (for smoother UX)
-    const optimisticMessage: MessengerMessage = {
-      id: Date.now(), // temporary ID
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
+    const optimisticMessage: OptimisticMessage = {
+      id: Date.now(),
+      tempId,
       message: messageText || (media ? '📎 File' : ''),
       sender_id: currentUser.id,
       created_at: new Date().toISOString(),
@@ -301,14 +390,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       message_type: media ? 'media' : 'text',
       topic_id: selectedTopic?.id,
       conversation_id: null,
-      sender: { name: currentUser.name, phone: currentUser.phone }
+      sender: { name: currentUser.name, phone: currentUser.phone },
+      isOptimistic: true
     };
 
     try {
       setSending(true);
-      setMessages(prev => [...prev, optimisticMessage]);
       
-      // If it's a media message, set message text to empty if no text provided
+      // Add optimistic message immediately
+      setMessages(prev => [...prev, optimisticMessage]);
+      debugLog('Added optimistic message:', tempId);
+      
       const message = messageText || '';
       const mediaUrl = media?.url;
       const mediaType = media?.type;
@@ -329,10 +421,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           mediaType,
           mediaContent
         );
+        debugLog('Room message sent successfully');
       } else if (selectedUser) {
-        // Check if it's support conversation
         if (selectedUser.id === 1) {
-          // Send as support message via messenger service with recipient_id
           await messengerService.sendSupportMessage(
             currentUser.id,
             message,
@@ -340,8 +431,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaType,
             mediaContent
           );
+          debugLog('Support message sent successfully');
         } else {
-          // For private messages, use the private message service directly with media support
           await privateMessageService.sendMessage(
             currentUser.id,
             selectedUser.id,
@@ -350,18 +441,23 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaType,
             mediaContent
           );
+          debugLog('Private message sent successfully');
         }
       }
 
       setNewMessage('');
-      // Remove optimistic message once real-time update comes in
+      
+      // Don't remove optimistic message immediately - let real-time update handle it
+      // Set a longer timeout as fallback in case real-time doesn't work
       setTimeout(() => {
-        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
-      }, 1000);
+        setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
+        debugLog('Removed optimistic message after fallback timeout:', tempId);
+      }, 30000); // 30 seconds fallback
+      
     } catch (error) {
-      console.error('Error sending message:', error);
+      debugLog('Error sending message:', error);
       // Remove optimistic message on error
-      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
       toast({
         title: 'خطا',
         description: 'خطا در ارسال پیام',
@@ -489,6 +585,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
             </h3>
             
+            {/* Manual refresh button for debugging */}
+            {debugMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleManualRefresh}
+                className="ml-2"
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            )}
+            
           </div>
           {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
@@ -499,142 +608,171 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </div>
       </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-             id="messages-container"
-        >
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <MessageSkeleton key={i} />
-              ))}
+      {/* Error Banner */}
+      {messageLoadError && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-700 dark:text-red-300">
+              خطا در بارگذاری پیام‌ها: {messageLoadError}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={loading}
+            >
+              تلاش مجدد
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+           id="messages-container"
+      >
+        {loading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <MessageSkeleton key={i} />
+            ))}
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 dark:text-slate-400 mb-2">
+                هنوز پیامی در این {selectedTopic ? 'موضوع' : 'گفتگو'} نیست
+              </p>
+              <p className="text-sm text-slate-400">
+                اولین نفری باشید که پیام می‌فرستد!
+              </p>
             </div>
-          ) : messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-500 dark:text-slate-400 mb-2">
-                  هنوز پیامی در این {selectedTopic ? 'موضوع' : 'گفتگو'} نیست
-                </p>
-                <p className="text-sm text-slate-400">
-                  اولین نفری باشید که پیام می‌فرستد!
-                </p>
-              </div>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isOwnMessage = message.sender_id === currentUser.id;
-              return (
-                <div key={message.id} id={`message-${message.id}`} className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                    {/* User Avatar - only show for other users' messages */}
-                    {!isOwnMessage && (
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
-                        <AvatarFallback 
-                          className="text-white font-bold text-xs"
-                          style={{ backgroundColor: getAvatarColor(message.sender?.name || 'User') }}
-                        >
-                          {(message.sender?.name || 'U').charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    
-                    <div className="flex flex-col">
-                      <div
-                        className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
-                          isOwnMessage
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md'
-                            : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
-                        }`}
+          </div>
+        ) : (
+          messages.map((message) => {
+            const isOwnMessage = message.sender_id === currentUser.id;
+            return (
+              <div key={message.tempId || message.id} id={`message-${message.id}`} className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {/* User Avatar - only show for other users' messages */}
+                  {!isOwnMessage && (
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
+                      <AvatarFallback 
+                        className="text-white font-bold text-xs"
+                        style={{ backgroundColor: getAvatarColor(message.sender?.name || 'User') }}
                       >
-                        {/* Header - show sender name only for other users */}
-                        {!isOwnMessage && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
-                              {message.sender?.name || 'نامشخص'}
-                            </span>
-                          </div>
-                        )}
-                        
-                        {/* Media content */}
-                        {message.media_url && (
-                          <div className="mb-2">
-                            <MediaMessage
-                              url={message.media_url}
-                              type={(() => {
-                                try {
-                                  return message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream';
-                                } catch {
-                                  return 'application/octet-stream';
-                                }
-                              })()}
-                              size={(() => {
-                                try {
-                                  return message.media_content ? JSON.parse(message.media_content).size : undefined;
-                                } catch {
-                                  return undefined;
-                                }
-                              })()}
-                              name={(() => {
-                                try {
-                                  return message.media_content ? JSON.parse(message.media_content).name : message.media_url.split('/').pop();
-                                } catch {
-                                  return message.media_url.split('/').pop();
-                                }
-                              })()}
-                              className="max-w-[280px]"
-                            />
-                          </div>
-                        )}
-                        
-                        {/* Message text content */}
-                        {message.message && (
-                          <p className={`text-sm leading-relaxed ${
-                            isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
-                          }`}>
-                            {message.message}
-                          </p>
-                        )}
-                        
-                        {/* Timestamp */}
-                        <div className={`flex items-center justify-end mt-1.5 text-xs ${
-                          isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
-                        }`}>
-                          <span>
-                            {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                        {(message.sender?.name || 'U').charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  
+                  <div className="flex flex-col">
+                    <div
+                      className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
+                        isOwnMessage
+                          ? `${message.isOptimistic ? 'bg-blue-400 opacity-70' : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white rounded-br-md`
+                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      {/* Sending indicator for optimistic messages */}
+                      {message.isOptimistic && (
+                        <div className="absolute -top-1 -right-1">
+                          <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+                        </div>
+                      )}
+                      
+                      {/* Header - show sender name only for other users */}
+                      {!isOwnMessage && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
+                            {message.sender?.name || 'نامشخص'}
                           </span>
                         </div>
+                      )}
+                      
+                      {/* Media content */}
+                      {message.media_url && (
+                        <div className="mb-2">
+                          <MediaMessage
+                            url={message.media_url}
+                            type={(() => {
+                              try {
+                                return message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream';
+                              } catch {
+                                return 'application/octet-stream';
+                              }
+                            })()}
+                            size={(() => {
+                              try {
+                                return message.media_content ? JSON.parse(message.media_content).size : undefined;
+                              } catch {
+                                return undefined;
+                              }
+                            })()}
+                            name={(() => {
+                              try {
+                                return message.media_content ? JSON.parse(message.media_content).name : message.media_url.split('/').pop();
+                              } catch {
+                                return message.media_url.split('/').pop();
+                              }
+                            })()}
+                            className="max-w-[280px]"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Message text content */}
+                      {message.message && (
+                        <p className={`text-sm leading-relaxed ${
+                          isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+                        }`}>
+                          {message.message}
+                        </p>
+                      )}
+                      
+                      {/* Timestamp */}
+                      <div className={`flex items-center justify-end mt-1.5 text-xs ${
+                        isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
+                      }`}>
+                        <span>
+                          {new Date(message.created_at).toLocaleTimeString('fa-IR', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                        {message.isOptimistic && (
+                          <span className="ml-1 text-xs opacity-70">در حال ارسال...</span>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+              </div>
+            );
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* Message Input */}
-        <ModernChatInput
-          onSendMessage={sendMessage}
-          disabled={sending}
-          currentUserId={currentUser.id}
-        />
+      {/* Message Input */}
+      <ModernChatInput
+        onSendMessage={sendMessage}
+        disabled={sending}
+        currentUserId={currentUser.id}
+      />
 
-        {/* User Profile Modal */}
-        <UserProfile
-          isOpen={showUserProfile}
-          onClose={() => setShowUserProfile(false)}
-          user={profileUser}
-          currentUserId={currentUser.id}
-          onStartChat={() => {
-            // Already in chat
-          }}
-        />
+      {/* User Profile Modal */}
+      <UserProfile
+        isOpen={showUserProfile}
+        onClose={() => setShowUserProfile(false)}
+        user={profileUser}
+        currentUserId={currentUser.id}
+        onStartChat={() => {
+          // Already in chat
+        }}
+      />
     </div>
   );
 };
