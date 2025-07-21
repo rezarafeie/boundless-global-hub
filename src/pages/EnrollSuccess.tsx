@@ -267,8 +267,8 @@ const EnrollSuccess: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+      <div className="container mx-auto px-4 py-8 min-w-0">
+        <div className="max-w-2xl mx-auto min-w-0">
           {result?.success ? (
             // Success State
             <Card className="bg-card/80 backdrop-blur-sm border shadow-xl">
@@ -388,27 +388,27 @@ const EnrollSuccess: React.FC = () => {
                 />
 
                 {/* Support Section - Mobile-Responsive and Clean */}
-                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 md:p-6 border border-primary/20 shadow-sm">
-                  <h3 className="font-semibold text-primary mb-4 flex items-center gap-2 text-lg">
-                    <MessageSquare className="h-5 w-5" />
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20 shadow-sm overflow-hidden">
+                  <h3 className="font-semibold text-primary mb-4 flex items-center gap-2 text-base md:text-lg">
+                    <MessageSquare className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
                     پشتیبانی و ارتباط با ما
                   </h3>
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="space-y-3 md:grid md:grid-cols-3 md:gap-3 md:space-y-0">
                     {/* Telegram */}
                     <a 
                       href="https://t.me/rafieiacademy" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 md:p-4 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group"
+                      className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0"
                     >
-                      <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Send className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                        <Send className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm md:text-base">تلگرام</p>
-                        <p className="text-xs md:text-sm text-muted-foreground truncate">@rafieiacademy</p>
+                        <p className="font-medium text-sm">تلگرام</p>
+                        <p className="text-xs text-muted-foreground truncate">@rafieiacademy</p>
                       </div>
-                      <ExternalLink className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </a>
 
                     {/* Rafiei Messenger */}
@@ -416,31 +416,31 @@ const EnrollSuccess: React.FC = () => {
                       href="https://academy.rafiei.co/messenger" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 md:p-4 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group"
+                      className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0"
                     >
-                      <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <MessageSquare className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                        <MessageSquare className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm md:text-base">رفیعی مسنجر</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">پیام رسان آکادمی</p>
+                        <p className="font-medium text-sm">رفیعی مسنجر</p>
+                        <p className="text-xs text-muted-foreground truncate">پیام رسان آکادمی</p>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </a>
 
                     {/* Phone */}
                     <a 
                       href="tel:02128427131" 
-                      className="flex items-center gap-3 p-4 bg-white/70 dark:bg-black/30 rounded-xl hover:bg-white dark:hover:bg-black/40 transition-all duration-200 border border-blue-100 dark:border-blue-900 hover:shadow-md group"
+                      className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0"
                     >
-                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                        <Phone className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-blue-700 dark:text-blue-300">تماس تلفنی</p>
-                        <p className="text-sm text-muted-foreground" dir="ltr">021-28427131</p>
+                        <p className="font-medium text-sm">تماس تلفنی</p>
+                        <p className="text-xs text-muted-foreground" dir="ltr">021-28427131</p>
                       </div>
-                      <Phone className="h-4 w-4 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </a>
                   </div>
                 </div>

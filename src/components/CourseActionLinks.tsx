@@ -151,8 +151,8 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
           خدمات اختصاصی که برای این دوره در نظر گرفته شده است
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3">
+      <CardContent className="space-y-3 p-4">
+        <div className="space-y-3">
           {availableActions.map((action) => {
             const colors = getColorClasses(action.color);
             const isClicked = clickedActions.has(action.id as 'support' | 'telegram' | 'gifts');
@@ -160,34 +160,35 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
             return (
               <div 
                 key={action.id}
-                className="flex items-center justify-between p-4 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800"
+                className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800 min-w-0"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 ${colors.badgeBg} rounded-lg flex items-center justify-center border ${colors.border}`}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className={`w-10 h-10 ${colors.badgeBg} rounded-lg flex items-center justify-center border ${colors.border} flex-shrink-0`}>
                     <action.icon className={`h-5 w-5 ${colors.text}`} />
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-2">
-                      {action.title}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-orange-700 dark:text-orange-300 flex flex-col sm:flex-row sm:items-center gap-2 text-sm sm:text-base">
+                      <span className="truncate">{action.title}</span>
                       {isClicked && (
-                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 text-xs">
+                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 text-xs self-start">
                           <CheckCircle className="h-3 w-3 ml-1" />
                           انجام شد
                         </Badge>
                       )}
                     </h4>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {action.description}
                     </p>
                   </div>
                 </div>
                 <Button
                   onClick={() => handleActionClick(action.url!, action.id as 'support' | 'telegram' | 'gifts')}
-                  className={`bg-gradient-to-r ${colors.bg} ${colors.hoverBg} text-white`}
+                  className={`bg-gradient-to-r ${colors.bg} ${colors.hoverBg} text-white flex-shrink-0 text-xs sm:text-sm`}
                   size="sm"
                 >
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                  {isClicked ? 'مراجعه مجدد' : 'فعال‌سازی'}
+                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                  <span className="hidden sm:inline">{isClicked ? 'مراجعه مجدد' : 'فعال‌سازی'}</span>
+                  <span className="sm:hidden">{isClicked ? 'مراجعه' : 'فعال'}</span>
                 </Button>
               </div>
             );
