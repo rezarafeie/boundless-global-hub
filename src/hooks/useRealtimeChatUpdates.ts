@@ -171,8 +171,7 @@ export const useRealtimeChatUpdates = ({
           }
           
           // Check if this is a support message affecting current user
-          if (newMessage.conversation_id && 
-              (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id)) {
+          if (newMessage.conversation_id) {
             console.log('Support message detected, refreshing support conversations...');
             debouncedSupportConversationsRefresh();
           }
