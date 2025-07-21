@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Play, Download, Loader2, ExternalLink, Copy, Check } from 'lucide-react';
+import { Play, Download, Loader2, ExternalLink, Copy, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,10 +26,13 @@ interface RafieiPlayerSectionProps {
     redirect_url?: string;
     is_spotplayer_enabled?: boolean;
     spotplayer_course_id?: string;
+    support_activation_required?: boolean;
+    telegram_activation_required?: boolean;
   } | undefined;
+  isRequiredActivationsCompleted?: boolean;
 }
 
-const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, course }) => {
+const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, course, isRequiredActivationsCompleted = true }) => {
   const [isCreatingLicense, setIsCreatingLicense] = useState(false);
   const [licenseData, setLicenseData] = useState<{
     license_id?: string;
@@ -196,7 +199,14 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
           </div>
         </div>
 
-        {licenseData?.license_key ? (
+        {!isRequiredActivationsCompleted ? (
+          <div className="w-full p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-center">
+            <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 mx-auto mb-2" />
+            <p className="text-red-700 dark:text-red-300 text-sm font-medium">
+              برای دسترسی ابتدا فعال‌سازی‌های بالا را انجام دهید
+            </p>
+          </div>
+        ) : licenseData?.license_key ? (
           <div className="space-y-4">
             {/* License Box */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 rounded-xl p-4 border-2 border-green-200 dark:border-green-800 shadow-sm">

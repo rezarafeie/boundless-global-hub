@@ -11,7 +11,10 @@ import {
   CheckCircle,
   Clock,
   Key,
-  Loader2
+  Loader2,
+  MessageSquare,
+  Send,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -66,6 +69,20 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   const { toast } = useToast();
   const [ssoTokens, setSsoTokens] = useState<SSOToken[]>([]);
   const [loadingSSO, setLoadingSSO] = useState(false);
+  const [supportActivated, setSupportActivated] = useState(false);
+  const [telegramActivated, setTelegramActivated] = useState(false);
+
+  // Check if required activations are completed
+  const isRequiredActivationsCompleted = () => {
+    const supportRequired = course?.support_activation_required;
+    const telegramRequired = course?.telegram_activation_required;
+    
+    if (!supportRequired && !telegramRequired) return true;
+    if (supportRequired && !supportActivated) return false;
+    if (telegramRequired && !telegramActivated) return false;
+    
+    return true;
+  };
 
   // Determine available access types
   const hasRafieiPlayer = course?.is_spotplayer_enabled;
@@ -79,7 +96,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       description: 'پلتفرم جامع آموزش آنلاین',
       icon: GraduationCap,
       enabled: hasAcademyAccess,
-      status: hasAcademyAccess ? 'active' : 'coming-soon',
+      status: hasAcademyAccess ? (isRequiredActivationsCompleted() ? 'active' : 'blocked') : 'coming-soon',
       color: 'green'
     },
     {
@@ -88,7 +105,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       description: 'دانلود و تماشای آفلاین',
       icon: Play,
       enabled: hasRafieiPlayer,
-      status: enrollment?.spotplayer_license_key ? 'active' : 'pending',
+      status: enrollment?.spotplayer_license_key ? 
+        (isRequiredActivationsCompleted() ? 'active' : 'blocked') : 'pending',
       color: 'purple'
     },
     {
@@ -188,6 +206,13 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
             نیاز به فعال‌سازی
           </Badge>
         );
+      case 'blocked':
+        return (
+          <Badge className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700">
+            <AlertTriangle className="h-3 w-3 ml-1" />
+            نیاز به فعال‌سازی
+          </Badge>
+        );
       case 'coming-soon':
         return (
           <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
@@ -197,6 +222,22 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       default:
         return null;
     }
+  };
+
+  const handleActivateSupport = () => {
+    setSupportActivated(true);
+    toast({
+      title: "فعال‌سازی پشتیبانی",
+      description: "پشتیبانی با موفقیت فعال شد!",
+    });
+  };
+
+  const handleActivateTelegram = () => {
+    setTelegramActivated(true);
+    toast({
+      title: "فعال‌سازی تلگرام",
+      description: "کانال تلگرام با موفقیت فعال شد!",
+    });
   };
 
   return (
@@ -216,6 +257,64 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           </p>
         </div>
 
+        {/* Required Activations Section - Priority 1 */}
+        {(course?.support_activation_required || course?.telegram_activation_required) && !isRequiredActivationsCompleted() && (
+          <div className="mb-8 sm:mb-12">
+            <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-amber-800 dark:text-amber-400 flex items-center gap-2 text-xl">
+                  <AlertTriangle className="h-6 w-6" />
+                  فعال‌سازی‌های ضروری
+                </CardTitle>
+                <p className="text-amber-700 dark:text-amber-300 text-sm">
+                  برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را فعال کنید:
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {course?.support_activation_required && !supportActivated && (
+                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white dark:bg-gray-900/50 rounded-lg border border-amber-200 dark:border-amber-700">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
+                        <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-amber-800 dark:text-amber-400">فعال‌سازی پشتیبانی</h4>
+                        <p className="text-sm text-amber-700 dark:text-amber-300">ارتباط با تیم پشتیبانی (اجباری)</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleActivateSupport}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      فعال‌سازی پشتیبانی
+                    </Button>
+                  </div>
+                )}
+                
+                {course?.telegram_activation_required && !telegramActivated && (
+                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white dark:bg-gray-900/50 rounded-lg border border-amber-200 dark:border-amber-700">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
+                        <Send className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-amber-800 dark:text-amber-400">عضویت در کانال تلگرام</h4>
+                        <p className="text-sm text-amber-700 dark:text-amber-300">دریافت اطلاعیه‌ها و آپدیت‌ها (اجباری)</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleActivateTelegram}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      عضویت در کانال
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Access Types - Responsive Grid */}
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-4xl mx-auto px-1">
           {accessTypes.map((accessType, index) => {
@@ -232,6 +331,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                     <RafieiPlayerSection 
                       enrollment={enrollment}
                       course={course}
+                      isRequiredActivationsCompleted={isRequiredActivationsCompleted()}
                     />
                   </div>
                 ) : (
@@ -312,6 +412,15 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                           </span>
                           <ArrowRight className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Button>
+                      )}
+
+                      {accessType.id === 'academy' && accessType.status === 'blocked' && (
+                        <div className="w-full p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-center">
+                          <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 mx-auto mb-2" />
+                          <p className="text-red-700 dark:text-red-300 text-sm font-medium">
+                            برای دسترسی ابتدا فعال‌سازی‌های بالا را انجام دهید
+                          </p>
+                        </div>
                       )}
 
                       {accessType.id === 'woocommerce' && accessType.status === 'active' && (
