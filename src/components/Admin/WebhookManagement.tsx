@@ -486,25 +486,29 @@ export function WebhookManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">نام</Label>
+              <Label htmlFor="name">نام *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="نام وب‌هوک"
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="url">URL</Label>
+              <Label htmlFor="url">URL *</Label>
               <Input
                 id="url"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                placeholder="https://example.com/webhook"
+                required
               />
             </div>
 
             <div>
-              <Label htmlFor="event_type">نوع رویداد</Label>
+              <Label htmlFor="event_type">نوع رویداد *</Label>
               <Select value={formData.event_type} onValueChange={(value) => setFormData({ ...formData, event_type: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="انتخاب رویداد" />
