@@ -500,17 +500,17 @@ const CourseAccess: React.FC = () => {
                 </div>
 
                 {/* Sidebar - Course Navigation */}
-                <div className="w-full lg:w-80 bg-white dark:bg-gray-950 lg:border-l border-gray-200 dark:border-gray-800 overflow-y-auto lg:max-h-[calc(100vh-140px)]">
-                  <div className="p-4">
-                    <div className="hidden lg:flex items-center justify-between mb-4">
+                <div className="w-full lg:w-96 bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 lg:border-l border-gray-200 dark:border-gray-800 overflow-y-auto lg:max-h-[calc(100vh-140px)] shadow-xl dark:shadow-2xl">
+                  <div className="p-6">
+                    <div className="hidden lg:flex items-center justify-between mb-6">
                       <div>
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">محتوای دوره</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
+                        <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-2">محتوای دوره</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {sections.length} بخش
                         </p>
                       </div>
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <BookOpen className="h-4 w-4 text-white" />
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                        <BookOpen className="h-6 w-6 text-white" />
                       </div>
                     </div>
                 
@@ -528,27 +528,30 @@ const CourseAccess: React.FC = () => {
                           <AccordionItem 
                             key={section.id} 
                             value={section.id}
-                            className="border rounded-lg bg-gray-50 dark:bg-gray-900 overflow-hidden"
+                            className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
                           >
-                            <AccordionTrigger className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 [&[data-state=open]]:bg-gray-100 dark:[&[data-state=open]]:bg-gray-800">
-                              <div className="flex items-center justify-between w-full pr-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                                    <BookOpen className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            <AccordionTrigger className="px-5 py-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-950/50 dark:hover:to-purple-950/50 transition-all duration-300 [&[data-state=open]]:bg-gradient-to-r [&[data-state=open]]:from-blue-50 [&[data-state=open]]:to-purple-50 dark:[&[data-state=open]]:from-blue-950/50 dark:[&[data-state=open]]:to-purple-950/50">
+                              <div className="flex items-center justify-between w-full pr-3">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                    <BookOpen className="h-5 w-5 text-white" />
                                   </div>
                                   <div className="text-right">
-                                    <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                    <h4 className="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1">
                                       {section.title}
                                     </h4>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                      {section.lessons.length} درس در این بخش
+                                    </p>
                                   </div>
                                 </div>
-                                <Badge variant="secondary" className="bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 px-2 py-0 text-xs">
+                                <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 dark:from-blue-950 dark:to-purple-950 dark:text-blue-300 px-3 py-1.5 text-sm font-medium shadow-sm">
                                   {section.lessons.length}
                                 </Badge>
                               </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-0 pb-0">
-                              <div className="border-t border-gray-200 dark:border-gray-700">
+                              <div className="border-t border-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
                                 {section.lessons.map((lesson, lessonIndex) => {
                                   const isSelected = selectedLesson?.id === lesson.id;
                                   const lessonNumber = sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
@@ -557,53 +560,63 @@ const CourseAccess: React.FC = () => {
                                     <button
                                       key={lesson.id}
                                       onClick={() => handleLessonSelect(lesson)}
-                                      className={`w-full text-right px-3 py-2 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
+                                      className={`w-full text-right px-5 py-3 transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 dark:hover:from-gray-800 dark:hover:to-blue-950/30 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
                                         isSelected 
-                                          ? 'bg-blue-50 dark:bg-blue-950/30 border-l-2 border-blue-500' 
-                                          : 'border-l-2 border-transparent'
+                                          ? 'bg-gradient-to-r from-blue-50 via-purple-50 to-indigo-50 dark:from-blue-950/40 dark:via-purple-950/40 dark:to-indigo-950/40 border-l-4 border-gradient-to-b from-blue-500 to-purple-600' 
+                                          : 'border-l-4 border-transparent hover:border-l-4 hover:border-gradient-to-b hover:from-blue-300 hover:to-purple-400'
                                       }`}
                                     >
-                                      <div className="flex items-center gap-2">
-                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                                           isSelected 
-                                            ? 'bg-blue-500 text-white' 
-                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                            ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg scale-110' 
+                                            : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-600 dark:text-gray-300 group-hover:from-blue-100 group-hover:to-purple-100 dark:group-hover:from-blue-900 dark:group-hover:to-purple-900 group-hover:scale-105 shadow-md'
                                         }`}>
                                           {lessonNumber}
                                         </div>
                                         {lesson.video_url && (
-                                          <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
                                             isSelected 
-                                              ? 'bg-blue-100 dark:bg-blue-900' 
-                                              : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
+                                              ? 'bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 shadow-lg' 
+                                              : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 group-hover:from-blue-100 group-hover:to-purple-100 dark:group-hover:from-blue-900 dark:group-hover:to-purple-900 shadow-sm'
                                           }`}>
-                                            <Play className={`h-2 w-2 ${
-                                              isSelected ? 'text-blue-600' : 'text-gray-500 group-hover:text-blue-600'
+                                            <Play className={`h-3 w-3 transition-colors duration-300 ${
+                                              isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400'
                                             }`} />
                                           </div>
                                         )}
                                       </div>
                                       <div className="flex-1 text-right">
-                                        <h5 className={`font-medium text-xs leading-tight mb-1 ${
+                                        <h5 className={`font-semibold text-sm leading-tight mb-2 transition-colors duration-300 ${
                                           isSelected 
                                             ? 'text-blue-700 dark:text-blue-300' 
                                             : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300'
                                         }`}>
                                           {lesson.title}
                                         </h5>
-                                        <div className="flex items-center gap-2 justify-end">
+                                        <div className="flex items-center gap-3 justify-end">
                                           {lesson.video_url && (
-                                            <span className="text-xs text-gray-400">ویدیو</span>
+                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30">
+                                              <Play className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                              <span className="text-xs font-medium text-green-700 dark:text-green-300">ویدیو</span>
+                                            </div>
                                           )}
                                           {lesson.file_url && (
-                                            <span className="text-xs text-gray-400">فایل</span>
+                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                                              <FileText className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                                              <span className="text-xs font-medium text-orange-700 dark:text-orange-300">فایل</span>
+                                            </div>
                                           )}
+                                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                            <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">15 دقیقه</span>
+                                          </div>
                                         </div>
                                       </div>
-                                      <ChevronRight className={`h-3 w-3 transition-all duration-200 ${
+                                      <ChevronRight className={`h-4 w-4 transition-all duration-300 ${
                                         isSelected 
-                                          ? 'text-blue-500 rotate-90' 
-                                          : 'text-gray-400 group-hover:text-blue-500'
+                                          ? 'text-blue-500 rotate-90 scale-110' 
+                                          : 'text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1'
                                       }`} />
                                     </button>
                                   );
