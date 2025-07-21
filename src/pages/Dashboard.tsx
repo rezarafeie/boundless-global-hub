@@ -475,7 +475,7 @@ const Dashboard = () => {
                       
                       <Button 
                         className="w-full" 
-                        onClick={() => navigate(`/enroll/success?course=${course.id}&enrollment=${course.enrollment_id}`)}
+                        onClick={() => handleCourseAccess(course)}
                         disabled={course.payment_status !== 'success' && course.payment_status !== 'completed'}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />

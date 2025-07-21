@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
+import DiscountManagement from '@/components/Admin/DiscountManagement';
 
 interface Course {
   id: string;
@@ -66,13 +67,13 @@ const EnrollAdmin: React.FC = () => {
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'courses'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses'>('dashboard');
 
   useEffect(() => {
     // Check for tab parameter and set active view
     const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'enrollments', 'courses'].includes(tab)) {
-      setActiveView(tab as 'dashboard' | 'enrollments' | 'courses');
+    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses'].includes(tab)) {
+      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses');
     }
     
     Promise.all([fetchEnrollments(), fetchCourses()]);
@@ -295,6 +296,11 @@ const EnrollAdmin: React.FC = () => {
       id: 'enrollments',
       label: 'مدیریت ثبت‌نام‌ها',
       icon: CreditCard,
+    },
+    {
+      id: 'discounts',
+      label: 'کدهای تخفیف',
+      icon: DollarSign,
     },
     {
       id: 'courses',
@@ -591,6 +597,17 @@ const EnrollAdmin: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {/* Discount Management View */}
+            {activeView === 'discounts' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold">مدیریت کدهای تخفیف</h1>
+                  <p className="text-muted-foreground mt-2">ایجاد و مدیریت کدهای تخفیف برای دوره‌ها</p>
+                </div>
+                <DiscountManagement />
               </div>
             )}
 
