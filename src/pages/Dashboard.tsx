@@ -84,7 +84,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const Dashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -434,6 +434,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+      toast({
+        title: 'خروج موفق',
+        description: 'شما با موفقیت خارج شدید'
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در خروج از حساب کاربری',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
@@ -771,7 +788,8 @@ const Dashboard = () => {
           </TabsContent>
 
           {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
+          <TabsContent value="profile" className="space-y-6" dir="rtl"
+            style={{ textAlign: 'right' }}>
             {/* Profile Section */}
             <Card>
               <CardHeader>
@@ -947,6 +965,27 @@ const Dashboard = () => {
                     </Button>
                   </CollapsibleContent>
                 </Collapsible>
+              </CardContent>
+            </Card>
+
+            {/* Logout Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LogOut className="h-5 w-5" />
+                  خروج از حساب کاربری
+                </CardTitle>
+                <CardDescription>خروج از حساب کاربری فعلی</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleLogout} 
+                  variant="destructive" 
+                  className="w-full"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  خروج از حساب
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
