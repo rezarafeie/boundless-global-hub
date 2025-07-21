@@ -96,8 +96,8 @@ const SSOAccess: React.FC = () => {
       setCookie('current_user', encodeURIComponent(JSON.stringify(unifiedUser)), 30);
       localStorage.setItem('messenger_session_token', sessionToken);
 
-      // Update auth context
-      login(unifiedUser, sessionToken);
+      // Update auth context  
+      login(messengerService.mapUserData(chatUser), sessionToken);
 
       // Mark token as used
       const { error: updateError } = await supabase

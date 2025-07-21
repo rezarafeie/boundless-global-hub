@@ -47,9 +47,9 @@ export const privateMessageService = {
         return {
           ...data,
           other_user: messengerService.mapUserData(data.other_user)
-        };
+        } as PrivateConversation;
       }
-      return data || null;
+      return data as PrivateConversation || null;
     } catch (error) {
       console.error('Error fetching conversation:', error);
       return null;

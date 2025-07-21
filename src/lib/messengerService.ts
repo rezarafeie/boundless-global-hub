@@ -931,16 +931,32 @@ class MessengerService {
     }
   }
 
-  async updateUserProfile(userId: number, updates: Partial<MessengerUser>): Promise<MessengerUser> {
-    await this.updateUser(userId, updates);
-    const updatedUser = await this.getUserById(userId);
+  async updateUserProfile(sessionToken: string, updates: Partial<MessengerUser>): Promise<MessengerUser> {
+    // Get current user from session
+    const currentUser = await this.validateSession(sessionToken);
+    if (!currentUser) {
+      throw new Error('Invalid session');
+    }
+    
+    await this.updateUser(currentUser.id, updates);
+    const updatedUser = await this.getUserById(currentUser.id);
     if (!updatedUser) {
       throw new Error('کاربر یافت نشد');
     }
     return updatedUser;
   }
 
-  async changePassword(currentUser: MessengerUser, oldPassword: string, newPassword: string): Promise<void> {
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    // Get current user from stored session
+    const sessionToken = localStorage.getItem('messenger_session_token');
+    if (!sessionToken) {
+      throw new Error('No session found');
+    }
+
+    const currentUser = await this.validateSession(sessionToken);
+    if (!currentUser) {
+      throw new Error('Invalid session');
+    }
     const userId = currentUser.id;
     try {
       // First verify the old password
@@ -951,7 +967,7 @@ class MessengerService {
 
       const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password_hash);
       if (!isOldPasswordValid) {
-        throw new Error('رمز عبور قبلی اشتباه است');
+        throw new Error('Current password is incorrect');
       }
 
       // Hash the new password
@@ -971,6 +987,10 @@ class MessengerService {
       console.error('Error in changePassword:', error);
       throw error;
     }
+  }
+
+  async logout(sessionToken: string): Promise<void> {
+    return this.deactivateSession(sessionToken);
   }
 }
 

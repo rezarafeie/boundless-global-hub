@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useRafieiAuth } from '@/hooks/useRafieiAuth';
+import { RafieiUser } from '@/lib/rafieiAuth';
 import RafieiAuth from '@/components/Auth/RafieiAuth';
 import { toast } from 'sonner';
 
@@ -28,7 +29,7 @@ const EnrollmentButton: React.FC<EnrollmentButtonProps> = ({
     handleAuthSuccess,
     isAuthenticated 
   } = useRafieiAuth({
-    onSuccess: (user, token) => {
+    onSuccess: (user: RafieiUser, token: string) => {
       // Continue with enrollment process
       handleEnrollment();
     },
