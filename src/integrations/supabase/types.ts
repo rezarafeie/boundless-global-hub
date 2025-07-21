@@ -569,6 +569,7 @@ export type Database = {
           content: string
           course_id: string
           created_at: string
+          duration: number | null
           file_url: string | null
           id: string
           order_index: number
@@ -581,6 +582,7 @@ export type Database = {
           content?: string
           course_id: string
           created_at?: string
+          duration?: number | null
           file_url?: string | null
           id?: string
           order_index: number
@@ -593,6 +595,7 @@ export type Database = {
           content?: string
           course_id?: string
           created_at?: string
+          duration?: number | null
           file_url?: string | null
           id?: string
           order_index?: number

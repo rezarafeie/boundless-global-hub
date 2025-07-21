@@ -36,10 +36,19 @@ interface Course {
   enable_course_access: boolean;
 }
 
+interface TitleGroup {
+  id: string;
+  title: string;
+  icon: string;
+  order_index: number;
+  sections: Section[];
+}
+
 interface Section {
   id: string;
   title: string;
   order_index: number;
+  title_group_id?: string;
   lessons: Lesson[];
 }
 
@@ -49,6 +58,7 @@ interface Lesson {
   content: string;
   video_url: string | null;
   file_url: string | null;
+  duration: number;
   order_index: number;
 }
 
@@ -73,6 +83,7 @@ const CourseAccess: React.FC = () => {
   const courseSlug = searchParams.get('course');
   
   const [course, setCourse] = useState<Course | null>(null);
+  const [titleGroups, setTitleGroups] = useState<TitleGroup[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -164,39 +175,92 @@ const CourseAccess: React.FC = () => {
 
   const fetchCourseContent = async (courseId: string) => {
     try {
-      // Fetch sections with lessons
-      const { data: sectionsData, error: sectionsError } = await supabase
+      // Fetch title groups, sections, and lessons in a hierarchical structure
+      const { data: titleGroupsData, error: titleGroupsError } = await supabase
+        .from('course_title_groups')
+        .select(`
+          id,
+          title,
+          icon,
+          order_index,
+          course_sections (
+            id,
+            title,
+            order_index,
+            title_group_id,
+            course_lessons (
+              id,
+              title,
+              content,
+              video_url,
+              file_url,
+              duration,
+              order_index
+            )
+          )
+        `)
+        .eq('course_id', courseId)
+        .eq('is_active', true)
+        .order('order_index');
+
+      if (titleGroupsError) throw titleGroupsError;
+
+      // Fetch sections that are not part of any title group
+      const { data: orphanSectionsData, error: orphanSectionsError } = await supabase
         .from('course_sections')
         .select(`
           id,
           title,
           order_index,
+          title_group_id,
           course_lessons (
             id,
             title,
             content,
             video_url,
             file_url,
+            duration,
             order_index
           )
         `)
         .eq('course_id', courseId)
+        .is('title_group_id', null)
         .order('order_index');
 
-      if (sectionsError) throw sectionsError;
+      if (orphanSectionsError) throw orphanSectionsError;
 
-      // Transform data to match our interface
-      const formattedSections = sectionsData.map(section => ({
+      // Transform title groups data
+      const formattedTitleGroups = (titleGroupsData || []).map(group => ({
+        ...group,
+        sections: (group.course_sections || [])
+          .map(section => ({
+            ...section,
+            lessons: (section.course_lessons || [])
+              .sort((a, b) => a.order_index - b.order_index)
+          }))
+          .sort((a, b) => a.order_index - b.order_index)
+      })).sort((a, b) => a.order_index - b.order_index);
+
+      // Transform orphan sections data
+      const formattedOrphanSections = (orphanSectionsData || []).map(section => ({
         ...section,
         lessons: (section.course_lessons || [])
           .sort((a, b) => a.order_index - b.order_index)
       })).sort((a, b) => a.order_index - b.order_index);
 
-      setSections(formattedSections);
+      setTitleGroups(formattedTitleGroups);
+      setSections(formattedOrphanSections);
 
       // Auto-select first lesson if available
-      if (formattedSections.length > 0 && formattedSections[0].lessons.length > 0) {
-        setSelectedLesson(formattedSections[0].lessons[0]);
+      let firstLesson = null;
+      if (formattedTitleGroups.length > 0 && formattedTitleGroups[0].sections.length > 0 && formattedTitleGroups[0].sections[0].lessons.length > 0) {
+        firstLesson = formattedTitleGroups[0].sections[0].lessons[0];
+      } else if (formattedOrphanSections.length > 0 && formattedOrphanSections[0].lessons.length > 0) {
+        firstLesson = formattedOrphanSections[0].lessons[0];
+      }
+      
+      if (firstLesson) {
+        setSelectedLesson(firstLesson);
       }
 
     } catch (error) {
@@ -497,9 +561,9 @@ const CourseAccess: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100">فهرست دروس</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {sections.reduce((total, section) => total + section.lessons.length, 0)} درس
-                      </p>
+                       <p className="text-xs text-gray-500 dark:text-gray-400">
+                         {titleGroups.reduce((total, group) => total + group.sections.reduce((sectionTotal, section) => sectionTotal + section.lessons.length, 0), 0) + sections.reduce((total, section) => total + section.lessons.length, 0)} درس
+                       </p>
                     </div>
                   </div>
                 </div>
@@ -510,16 +574,16 @@ const CourseAccess: React.FC = () => {
                     <div className="hidden lg:flex items-center justify-between mb-6">
                       <div>
                         <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-2">محتوای دوره</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {sections.length} بخش
-                        </p>
+                         <p className="text-sm text-gray-600 dark:text-gray-400">
+                           {titleGroups.reduce((total, group) => total + group.sections.reduce((sectionTotal, section) => sectionTotal + section.lessons.length, 0), 0) + sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {titleGroups.reduce((total, group) => total + group.sections.length, 0) + sections.length} بخش
+                         </p>
                       </div>
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
                         <BookOpen className="h-6 w-6 text-white" />
                       </div>
                     </div>
-                
-                    {sections.length === 0 ? (
+                 
+                    {titleGroups.length === 0 && sections.length === 0 ? (
                       <div className="text-center py-8">
                         <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
                           <BookOpen className="h-6 w-6 text-gray-400" />
@@ -529,6 +593,128 @@ const CourseAccess: React.FC = () => {
                       </div>
                     ) : (
                       <Accordion type="multiple" className="space-y-1">
+                        {/* Render Title Groups */}
+                        {titleGroups.map((titleGroup) => (
+                          <div key={titleGroup.id} className="mb-6">
+                            {/* Title Group Header */}
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 mb-3 border border-primary/20">
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">{titleGroup.icon}</span>
+                                <div>
+                                  <h3 className="font-bold text-lg text-primary">{titleGroup.title}</h3>
+                                  <p className="text-sm text-muted-foreground">
+                                    {titleGroup.sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {titleGroup.sections.length} بخش
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Sections under this title group */}
+                            {titleGroup.sections.map((section, sectionIndex) => (
+                              <AccordionItem 
+                                key={section.id} 
+                                value={section.id}
+                                className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 mb-2"
+                              >
+                                <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                  <div className="flex items-center justify-between w-full pr-3">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                        <BookOpen className="h-5 w-5 text-white" />
+                                      </div>
+                                      <div className="text-right">
+                                        <h4 className="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1">
+                                          {section.title}
+                                        </h4>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                          {section.lessons.length} درس در این بخش
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 dark:from-blue-950 dark:to-purple-950 dark:text-blue-300 px-3 py-1.5 text-sm font-medium shadow-sm">
+                                      {section.lessons.length}
+                                    </Badge>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-0 pb-0">
+                                  <div className="border-t border-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
+                                    {section.lessons.map((lesson, lessonIndex) => {
+                                      const isSelected = selectedLesson?.id === lesson.id;
+                                      const lessonNumber = titleGroups.slice(0, titleGroups.findIndex(g => g.id === titleGroup.id)).reduce((total, g) => total + g.sections.reduce((sectionTotal, s) => sectionTotal + s.lessons.length, 0), 0) + titleGroup.sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
+                                      
+                                      return (
+                                        <button
+                                          key={lesson.id}
+                                          onClick={() => handleLessonSelect(lesson)}
+                                          className={`w-full text-right px-5 py-3 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
+                                            isSelected 
+                                              ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500' 
+                                              : 'border-l-4 border-transparent hover:border-l-4 hover:border-blue-300'
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                                              isSelected 
+                                                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-110' 
+                                                : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-600 dark:text-gray-300 group-hover:from-blue-100 group-hover:to-blue-200 dark:group-hover:from-blue-900 dark:group-hover:to-blue-800 group-hover:scale-105 shadow-md'
+                                            }`}>
+                                              {lessonNumber}
+                                            </div>
+                                            {lesson.video_url && (
+                                              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                                isSelected 
+                                                  ? 'bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 shadow-lg' 
+                                                  : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 group-hover:from-blue-100 group-hover:to-blue-200 dark:group-hover:from-blue-900 dark:group-hover:to-blue-800 shadow-sm'
+                                              }`}>
+                                                <Play className={`h-3 w-3 transition-colors duration-300 ${
+                                                  isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                                }`} />
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className="flex-1 text-right">
+                                            <h5 className={`font-semibold text-sm leading-tight mb-2 transition-colors duration-300 ${
+                                              isSelected 
+                                                ? 'text-blue-700 dark:text-blue-300' 
+                                                : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300'
+                                            }`}>
+                                              {lesson.title}
+                                            </h5>
+                                            <div className="flex items-center gap-3 justify-end">
+                                              {lesson.video_url && (
+                                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30">
+                                                  <Play className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                                  <span className="text-xs font-medium text-green-700 dark:text-green-300">ویدیو</span>
+                                                </div>
+                                              )}
+                                              {lesson.file_url && (
+                                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30">
+                                                  <FileText className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                                                  <span className="text-xs font-medium text-orange-700 dark:text-orange-300">فایل</span>
+                                                </div>
+                                              )}
+                                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                                <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{lesson.duration} دقیقه</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <ChevronRight className={`h-4 w-4 transition-all duration-300 ${
+                                            isSelected 
+                                              ? 'text-blue-500 rotate-90 scale-110' 
+                                              : 'text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1'
+                                          }`} />
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </div>
+                        ))}
+                        
+                        {/* Render orphan sections (sections not in any title group) */}
                         {sections.map((section, sectionIndex) => (
                           <AccordionItem 
                             key={section.id} 
@@ -614,7 +800,7 @@ const CourseAccess: React.FC = () => {
                                           )}
                                           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30">
                                             <Clock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">15 دقیقه</span>
+                                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{lesson.duration} دقیقه</span>
                                           </div>
                                         </div>
                                       </div>

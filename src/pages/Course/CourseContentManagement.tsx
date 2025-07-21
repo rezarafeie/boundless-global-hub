@@ -64,6 +64,7 @@ interface CourseLesson {
   content: string;
   video_url?: string;
   file_url?: string;
+  duration: number;
   order_index: number;
   section_id: string;
   course_id: string;
@@ -104,7 +105,8 @@ const CourseContentManagement: React.FC = () => {
     content: '',
     video_url: '',
     file_url: '',
-    section_id: ''
+    section_id: '',
+    duration: 15
   });
   const [videoInputMode, setVideoInputMode] = useState<'url' | 'embed'>('url');
 
@@ -232,7 +234,8 @@ const CourseContentManagement: React.FC = () => {
       content: '',
       video_url: '',
       file_url: '',
-      section_id: ''
+      section_id: '',
+      duration: 15
     });
     setEditingLesson(null);
   };
@@ -309,7 +312,8 @@ const CourseContentManagement: React.FC = () => {
       content: lesson.content,
       video_url: lesson.video_url || '',
       file_url: lesson.file_url || '',
-      section_id: lesson.section_id
+      section_id: lesson.section_id,
+      duration: lesson.duration || 15
     });
     
     // Detect if it's an embed code or URL
@@ -401,7 +405,8 @@ const CourseContentManagement: React.FC = () => {
             content: lessonForm.content.trim(),
             video_url: lessonForm.video_url.trim() || null,
             file_url: lessonForm.file_url.trim() || null,
-            section_id: lessonForm.section_id
+            section_id: lessonForm.section_id,
+            duration: lessonForm.duration
           })
           .eq('id', editingLesson.id);
         
@@ -422,7 +427,8 @@ const CourseContentManagement: React.FC = () => {
             file_url: lessonForm.file_url.trim() || null,
             section_id: lessonForm.section_id,
             course_id: courseId,
-            order_index: nextOrderIndex
+            order_index: nextOrderIndex,
+            duration: lessonForm.duration
           });
         
         if (error) throw error;
@@ -1226,6 +1232,18 @@ const SortableLesson: React.FC<{
                     value={lessonForm.file_url}
                     onChange={(e) => setLessonForm(prev => ({ ...prev, file_url: e.target.value }))}
                     placeholder="https://example.com/file.pdf"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lesson-duration">مدت زمان (دقیقه)</Label>
+                  <Input
+                    id="lesson-duration"
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={lessonForm.duration}
+                    onChange={(e) => setLessonForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 15 }))}
+                    placeholder="15"
                   />
                 </div>
                 <div className="flex justify-end gap-2">
