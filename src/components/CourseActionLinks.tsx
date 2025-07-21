@@ -145,7 +145,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
           <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
             <MessageSquare className="h-6 w-6 text-orange-600 dark:text-orange-400" />
           </div>
-          فعال سازی های مهم
+          ورود به نسخه قدیمی
         </CardTitle>
         <p className="text-muted-foreground">
           خدمات اختصاصی که برای این دوره در نظر گرفته شده است

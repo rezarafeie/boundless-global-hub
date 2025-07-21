@@ -618,7 +618,7 @@ const Dashboard = () => {
           </TabsList>
 
           {/* Enrolled Courses Tab */}
-          <TabsContent value="courses" className="space-y-4">
+          <TabsContent value="courses" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
             {enrolledCourses.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
@@ -677,7 +677,7 @@ const Dashboard = () => {
           </TabsContent>
 
           {/* Licenses Tab */}
-          <TabsContent value="licenses" className="space-y-4">
+          <TabsContent value="licenses" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
             {courseLicenses.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
@@ -738,7 +738,7 @@ const Dashboard = () => {
           </TabsContent>
 
           {/* Payment History Tab */}
-          <TabsContent value="payments" className="space-y-4">
+          <TabsContent value="payments" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
             {paymentHistory.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">

@@ -77,7 +77,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     },
     {
       id: 'woocommerce',
-      title: 'فعال سازی های مهم',
+      title: 'ورود به نسخه قدیمی',
       description: 'دسترسی آنلاین به دوره',
       icon: ShoppingCart,
       enabled: hasWooCommerce,
@@ -216,7 +216,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                           size="lg"
                         >
                           <GraduationCap className="ml-3 h-5 w-5 flex-shrink-0" />
-                          <span className="flex-1 text-center">🚀 ورود به آکادمی جدید</span>
+                          <span className="flex-1 text-center">🚀 ورود به سیستم آموزشی آنلاین</span>
                           <ArrowRight className="mr-3 h-4 w-4 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       )}
