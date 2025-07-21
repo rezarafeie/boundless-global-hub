@@ -6,7 +6,7 @@ import { type MessengerUser } from '@/lib/messengerService';
 import { useEnhancedNotificationService } from '@/hooks/useEnhancedNotificationService';
 import EnhancedNotificationPermissionBanner from '@/components/Chat/EnhancedNotificationPermissionBanner';
 import AddToHomeScreenBanner from '@/components/Chat/AddToHomeScreenBanner';
-import EnhancedNotificationDiagnostics from '@/components/Chat/EnhancedNotificationDiagnostics';
+
 import { isMessengerSubdomain } from '@/utils/subdomainDetection';
 
 interface MessengerPageProps {
@@ -33,9 +33,6 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
     return <div>Session not found</div>;
   }
 
-  // Show notification diagnostics in development mode or when debug=true
-  const showDiagnostics = process.env.NODE_ENV === 'development' || window.location.search.includes('debug=true');
-
   return (
     <div className="h-full overflow-hidden">
       {/* Show enhanced notification banner if needed */}
@@ -51,15 +48,6 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
         <AddToHomeScreenBanner />
       )}
       
-      {/* Show enhanced notification diagnostics for debugging */}
-      {showDiagnostics && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm">
-          <EnhancedNotificationDiagnostics 
-            currentUser={currentUser}
-            sessionToken={sessionToken}
-          />
-        </div>
-      )}
       
       <Messenger 
         sessionToken={sessionToken}
