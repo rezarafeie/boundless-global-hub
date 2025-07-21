@@ -1,86 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { normalizePhone, generatePhoneSearchFormats } from '@/utils/phoneUtils';
+import type { ChatRoom, MessengerUser, MessengerMessage, ChatTopic, AdminSettings } from '@/types/supabase';
 
-interface MessengerUser {
-  id: number;
-  name: string;
-  username: string | null;
-  avatar_url: string | null;
-  phone: string;
-  is_approved: boolean;
-  is_messenger_admin: boolean;
-  is_support_agent: boolean;
-  bedoun_marz: boolean;
-  bedoun_marz_approved: boolean;
-  bedoun_marz_request: boolean;
-  created_at: string;
-  updated_at: string;
-  last_seen: string;
-  role: 'user' | 'admin' | 'moderator' | 'support';
-  email: string | null;
-  user_id: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  full_name: string | null;
-  country_code: string | null;
-  signup_source: string | null;
-  bio: string | null;
-  notification_enabled: boolean;
-  notification_token: string | null;
-	password_hash: string | null;
-}
-
-interface MessengerMessage {
-  id: number;
-  created_at: string;
-  message: string;
-  room_id: number;
-  sender_id: number;
-  sender?: MessengerUser;
-  media_url: string | null;
-  message_type: string | null;
-  media_content: string | null;
-  topic_id: number | null;
-  conversation_id: number | null;
-  is_read: boolean;
-  recipient_id: number | null;
-  unread_by_support: boolean;
-  reply_to_message_id: number | null;
-  forwarded_from_message_id: number | null;
-}
-
-interface ChatRoom {
-  id: number;
-  created_at: string;
-  name: string;
-  description: string;
-  avatar_url: string | null;
-  is_active: boolean;
-  is_public?: boolean;
-  type: 'group' | 'channel' | 'direct';
-  is_super_group: boolean;
-  is_boundless_only: boolean;
-  updated_at: string;
-}
-
-interface AdminSettings {
-  id: number;
-  manual_approval_enabled: boolean;
-  updated_at: string;
-}
-
-interface ChatTopic {
-  id: number;
-  title: string;
-  description: string;
-  room_id: number;
-  section_id: number | null;
-  is_active: boolean;
-  order_index: number;
-  icon: string;
-  created_at: string;
-  updated_at: string;
-}
+// Export the types for external use
+export type { ChatRoom, MessengerUser, MessengerMessage, ChatTopic, AdminSettings };
 
 class MessengerService {
   async validateSession(sessionToken: string): Promise<any | null> {
@@ -411,7 +334,12 @@ class MessengerService {
         throw error;
       }
 
-      return data as ChatRoom[];
+      // Ensure type field is properly typed
+      return (data || []).map(room => ({
+        ...room,
+        type: room.type as 'group' | 'channel' | 'direct',
+        is_public: room.is_public ?? false
+      })) as ChatRoom[];
     } catch (error) {
       console.error('Error in getRooms:', error);
       throw error;
