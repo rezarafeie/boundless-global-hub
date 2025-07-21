@@ -136,7 +136,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 overflow-hidden">
-      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-6xl min-w-0">
+      <div className="container mx-auto px-1 sm:px-2 py-6 sm:py-8 max-w-6xl min-w-0">
         {/* Modern Header - Mobile First */}
         <div className="text-center mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-primary/10 to-primary/20 rounded-full border border-primary/20 mb-4 sm:mb-6 shadow-lg backdrop-blur-sm">
@@ -146,13 +146,13 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 sm:mb-4 px-2">
             شروع یادگیری از همین الان
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-4">
+          <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-2">
             دوره شما با موفقیت فعال شد. از طریق روش‌های زیر می‌توانید به آموزش‌ها دسترسی پیدا کنید
           </p>
         </div>
 
         {/* Access Types - Responsive Grid */}
-        <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-4xl mx-auto px-2">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-4xl mx-auto px-1">
           {accessTypes.map((accessType, index) => {
             if (!accessType.enabled) return null;
             
@@ -171,7 +171,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                   </div>
                 ) : (
                   /* Modern Clean Cards - Fully Responsive */
-                  <Card className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90 w-full min-w-0">
+                  <Card className="group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90 w-full min-w-0">
                     {/* Gradient Border Effect */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${
                       accessType.color === 'green' ? 'from-green-500/20 to-emerald-500/20' :
@@ -212,7 +212,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       {accessType.id === 'academy' && accessType.status === 'active' && (
                         <Button 
                           onClick={() => window.location.href = `/access?course=${course?.slug}`}
-                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
+                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
                           size="lg"
                         >
                           <GraduationCap className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
@@ -227,7 +227,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                       {accessType.id === 'woocommerce' && accessType.status === 'active' && (
                         <Button 
                           onClick={onEnterCourse}
-                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
+                          className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02]"
                           size="lg"
                         >
                           <ExternalLink className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />

@@ -148,7 +148,7 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
   };
 
   return (
-    <Card className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-purple-50/80 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-purple-950/40 backdrop-blur-sm">
+    <Card className="relative overflow-hidden border-0 shadow-sm bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-purple-50/80 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-purple-950/40 backdrop-blur-sm">
       {/* Gradient Border Effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-500/10" />
       
@@ -242,7 +242,7 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
 
             <Button 
               onClick={handlePlayerClick}
-              className="w-full h-14 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 text-base font-semibold"
+              className="w-full h-14 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-sm hover:shadow-md transition-all duration-500 text-base font-semibold"
               size="lg"
             >
               <Play className="ml-3 h-5 w-5" />
@@ -254,7 +254,7 @@ const RafieiPlayerSection: React.FC<RafieiPlayerSectionProps> = ({ enrollment, c
           <Button 
             onClick={createLicense}
             disabled={isCreatingLicense}
-            className="w-full h-14 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-500 text-base font-semibold disabled:opacity-50"
+            className="w-full h-14 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-sm hover:shadow-md transition-all duration-500 text-base font-semibold disabled:opacity-50"
           >
             {isCreatingLicense ? (
               <>
