@@ -8,6 +8,7 @@ import { supportMessageService } from '@/lib/supportMessageService';
 import type { MessengerUser } from '@/lib/messengerService';
 import type { SupportMessage } from '@/lib/supportMessageService';
 import SupportResponseInput from './SupportResponseInput';
+import MediaMessage from './MediaMessage';
 
 interface SupportRoom {
   id: string;
@@ -132,19 +133,12 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
                 {/* Media content */}
                 {message.media_url && (
                   <div className="mt-2">
-                    {message.message_type === 'image' && (
-                      <img 
-                        src={message.media_url} 
-                        alt="تصویر پیام" 
-                        className="max-w-full rounded-lg"
-                      />
-                    )}
-                    {message.message_type === 'voice' && (
-                      <audio controls className="max-w-full">
-                        <source src={message.media_url} type="audio/mpeg" />
-                        مرورگر شما از پخش صوت پشتیبانی نمی‌کند.
-                      </audio>
-                    )}
+                    <MediaMessage
+                      url={message.media_url}
+                      type={message.message_type || 'file'}
+                      name={message.media_content || 'فایل'}
+                      className="max-w-full"
+                    />
                   </div>
                 )}
               </div>
