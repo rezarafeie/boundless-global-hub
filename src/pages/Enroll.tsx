@@ -509,20 +509,17 @@ const Enroll: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* User Login Status */}
                   {!isAuthenticated && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                        <User className="h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          برای تکمیل خودکار فرم، ابتدا 
-                          <Button 
-                            variant="link" 
-                            className="px-1 h-auto text-blue-700 dark:text-blue-300 underline"
-                            onClick={() => window.location.href = '/auth'}
-                          >
-                            وارد شوید
-                          </Button>
-                        </span>
-                      </div>
+                    <div className="text-center">
+                      <Button 
+                        variant="link" 
+                        className="text-sm text-muted-foreground hover:text-primary"
+                        onClick={() => {
+                          const currentUrl = window.location.pathname + window.location.search;
+                          window.location.href = `/auth?redirect=${encodeURIComponent(currentUrl)}`;
+                        }}
+                      >
+                        حساب کاربری دارید؟ وارد شوید
+                      </Button>
                     </div>
                   )}
 
