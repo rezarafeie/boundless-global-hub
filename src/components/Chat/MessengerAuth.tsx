@@ -18,7 +18,7 @@ interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
 }
 
-type AuthStep = 'phone' | 'check-user' | 'login' | 'login-otp' | 'otp' | 'password' | 'user-info' | 'complete';
+type AuthStep = 'phone' | 'check-user' | 'login' | 'login-otp' | 'otp' | 'password' | 'user-info' | 'email-collection' | 'complete';
 
 const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
@@ -194,7 +194,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         return;
       }
 
-      onAuthenticated(result.session_token || 'default_session', result.user?.name || '', result.user!);
+      // Check if user has email before completing login
+      if (result.user && !result.user.email) {
+        setExistingUser(result.user);
+        setCurrentStep('email-collection');
+      } else {
+        onAuthenticated(result.session_token || 'default_session', result.user?.name || '', result.user!);
+      }
       
     } catch (error: any) {
       console.error('Login error:', error);
@@ -263,10 +269,16 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       }
 
       if (data && data.success) {
-        // OTP verified, log in the user
+        // OTP verified, check if user has email before completing login
         if (existingUser) {
-          const sessionToken = await messengerService.createSession(existingUser.id);
-          onAuthenticated(sessionToken, existingUser.name, existingUser);
+          if (!existingUser.email) {
+            // User doesn't have email, ask for it
+            setCurrentStep('email-collection');
+          } else {
+            // User has email, proceed with login
+            const sessionToken = await messengerService.createSession(existingUser.id);
+            onAuthenticated(sessionToken, existingUser.name, existingUser);
+          }
         }
       } else {
         console.log('Login OTP verification failed, showing error toast');
@@ -435,12 +447,65 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     }
   };
 
+  const handleEmailCollection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.email.trim()) {
+      toast.error('خطا', {
+        description: 'لطفاً ایمیل را وارد کنید'
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('خطا', {
+        description: 'لطفاً ایمیل معتبری وارد کنید'
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Check if email is already used by another user
+      const emailExists = await messengerService.isEmailUsed(formData.email);
+      if (emailExists) {
+        toast.error('خطا', {
+          description: 'این ایمیل قبلاً استفاده شده است. لطفاً ایمیل دیگری انتخاب کنید'
+        });
+        return;
+      }
+
+      // Update user's email
+      if (existingUser) {
+        await messengerService.updateUserDetails(existingUser.id, { email: formData.email });
+        const updatedUser = { ...existingUser, email: formData.email };
+        
+        // Complete login
+        const sessionToken = await messengerService.createSession(existingUser.id);
+        onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+      }
+    } catch (error: any) {
+      console.error('Error updating email:', error);
+      toast.error('خطا', {
+        description: error.message || 'خطا در بروزرسانی ایمیل'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBack = () => {
     if (currentStep === 'login' || currentStep === 'login-otp') {
       setCurrentStep('phone');
       setExistingUser(null);
       setFormData(prev => ({ ...prev, password: '' }));
       setOtpCode('');
+    } else if (currentStep === 'email-collection') {
+      setCurrentStep('login');
+      setFormData(prev => ({ ...prev, email: '' }));
     } else if (currentStep === 'otp') {
       setCurrentStep('phone');
       setOtpCode('');
@@ -805,6 +870,52 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
           </form>
         );
 
+      case 'email-collection':
+        return (
+          <form onSubmit={handleEmailCollection} className="space-y-6">
+            <div className="text-center space-y-2 mb-6">
+              <p className="text-lg font-medium text-foreground">
+                خوش آمدید {existingUser?.name}!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                برای تکمیل ورود، لطفاً ایمیل خود را وارد کنید
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="ایمیل"
+                required
+                dir="ltr"
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleBack}
+                className="flex-1 h-12 rounded-full"
+                disabled={loading}
+              >
+                بازگشت
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+                disabled={loading}
+              >
+                {loading ? 'در حال بروزرسانی...' : 'ادامه'}
+              </Button>
+            </div>
+          </form>
+        );
+
       case 'complete':
         return (
           <div className="text-center space-y-4">
@@ -829,6 +940,7 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
       case 'otp': return 'کد تأیید را وارد کنید';
       case 'password': return 'رمز عبور خود را تعیین کنید';
       case 'user-info': return 'اطلاعات خود را تکمیل کنید';
+      case 'email-collection': return 'ایمیل خود را وارد کنید';
       case 'complete': return 'ثبت نام تکمیل شد';
       default: return '';
     }
