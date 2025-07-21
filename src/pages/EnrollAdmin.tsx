@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -418,22 +419,30 @@ const EnrollAdmin: React.FC = () => {
   return (
     <MainLayout>
       <SidebarProvider>
-        <div className="flex min-h-screen w-full pt-16">
-          {/* Admin Sidebar */}
+        <div className="flex min-h-screen w-full">
+          {/* Admin Sidebar - Only shown on desktop */}
           <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
           
           {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            {/* Header with Sidebar Trigger */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+          <main className="flex-1 overflow-auto bg-background">
+            {/* Mobile Header */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
               <div className="flex items-center justify-between p-4">
-                <SidebarTrigger />
+                <h1 className="text-lg font-semibold">پنل مدیریت</h1>
+                <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+              </div>
+            </div>
+            
+            {/* Desktop Header */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b hidden lg:block">
+              <div className="flex items-center justify-between p-4">
+                <SidebarTrigger className="rounded-xl hover:bg-muted/80" />
                 <h1 className="text-xl font-semibold">پنل مدیریت</h1>
                 <div></div> {/* Spacer for centering */}
               </div>
             </div>
             
-            <div className="container mx-auto px-4 md:px-6 py-8">
+            <div className="container mx-auto px-4 md:px-6 py-6 max-w-none">
             
             {/* Dashboard View */}
             {activeView === 'dashboard' && (
