@@ -416,7 +416,27 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       // Login flow
       setLoading(true);
       try {
-        const result = await messengerService.authenticateUser(phoneNumber, password, countryCode);
+        let result;
+        
+        if (isAcademyAuth) {
+          // Use unified auth service for academy authentication
+          console.log('🎓 Academy login attempt for:', phoneNumber);
+          const { unifiedAuthService } = await import('@/lib/unifiedAuthService');
+          const authResult = await unifiedAuthService.authenticateUser(phoneNumber, password, countryCode);
+          
+          if (authResult && authResult.user) {
+            console.log('✅ Academy authentication successful');
+            result = { session_token: authResult.sessionToken };
+          } else {
+            console.log('❌ Academy authentication failed');
+            result = null;
+          }
+        } else {
+          // Use messenger service for messenger authentication
+          console.log('💬 Messenger login attempt for:', phoneNumber);
+          result = await messengerService.authenticateUser(phoneNumber, password, countryCode);
+        }
+        
         if (result && existingUser) {
           if (!existingUser.is_approved) {
             setCurrentStep('pending');
