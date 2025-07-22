@@ -793,8 +793,7 @@ const CourseAccess: React.FC = () => {
                           </Accordion>
                         </div>
                       )}
-                    )}
-                  </div>
+                    }
                   </div>
                 </div>
               </div>
