@@ -72,16 +72,9 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   const [supportActivated, setSupportActivated] = useState(false);
   const [telegramActivated, setTelegramActivated] = useState(false);
 
-  // Check if required activations are completed
+  // Simplified activation check - always return true since activations are handled in main page
   const isRequiredActivationsCompleted = () => {
-    const supportRequired = course?.support_activation_required;
-    const telegramRequired = course?.telegram_activation_required;
-    
-    if (!supportRequired && !telegramRequired) return true;
-    if (supportRequired && !supportActivated) return false;
-    if (telegramRequired && !telegramActivated) return false;
-    
-    return true;
+    return true; // Activations are now handled in the main enrollment success page
   };
 
   // Determine available access types
@@ -328,12 +321,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                               }
                             }
                           }}
-                          disabled={loadingSSO || accessType.status === 'blocked'}
-                          className={`w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] ${
-                            accessType.status === 'blocked' 
-                              ? 'bg-gray-400 text-gray-600 opacity-50 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white'
-                          }`}
+                          disabled={loadingSSO}
+                          className="w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white"
                           size="lg"
                         >
                           {loadingSSO ? (
@@ -362,14 +351,6 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                         </Button>
                       )}
 
-                      {accessType.id === 'academy' && accessType.status === 'blocked' && (
-                        <div className="w-full p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-center">
-                          <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 mx-auto mb-2" />
-                          <p className="text-red-700 dark:text-red-300 text-sm font-medium">
-                            برای دسترسی ابتدا فعال‌سازی‌های بالا را انجام دهید
-                          </p>
-                        </div>
-                      )}
 
                       {accessType.id === 'woocommerce' && (
                         <Button 
@@ -383,12 +364,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                               }
                             }
                           }}
-                          disabled={loadingSSO || accessType.status === 'blocked'}
-                          className={`w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] ${
-                            accessType.status === 'blocked' 
-                              ? 'bg-gray-400 text-gray-600 opacity-50 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white'
-                          }`}
+                          disabled={loadingSSO}
+                          className="w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white"
                           size="lg"
                         >
                           {loadingSSO ? (
