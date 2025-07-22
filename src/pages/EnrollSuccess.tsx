@@ -457,8 +457,8 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* Required Activations at Top Priority */}
-                {result.course && (result.course.support_activation_required || result.course.telegram_activation_required) && (
+                {/* Required Activations at Top Priority - Only show if smart activation is not enabled */}
+                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.telegram_activation_required) && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800 mb-6">
                     <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
                       ⚠️ فعال‌سازی‌های مهم
@@ -467,7 +467,7 @@ const EnrollSuccess: React.FC = () => {
                       برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را انجام دهید:
                     </p>
                     <div className="space-y-2">
-                      {result.course.support_activation_required && (
+                      {result.course.support_activation_required && !result.course.smart_activation_enabled && (
                         <div className="flex items-center gap-2 text-sm">
                           <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                           <span>فعال‌سازی پشتیبانی (اجباری)</span>
@@ -499,7 +499,7 @@ const EnrollSuccess: React.FC = () => {
                   </h3>
                   <div className="space-y-3 md:grid md:grid-cols-3 md:gap-3 md:space-y-0">
                     {/* Smart Activation Telegram Link or Regular Telegram */}
-                    {result.course?.smart_activation_enabled && !result.course?.support_activation_required && result.course?.smart_activation_telegram_link ? (
+                    {result.course?.smart_activation_enabled && result.course?.smart_activation_telegram_link ? (
                       <a 
                         href={replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment)} 
                         target="_blank" 
