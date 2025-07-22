@@ -457,8 +457,8 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* Required Activations at Top Priority - Only show if smart activation is not enabled */}
-                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.telegram_activation_required) && (
+                {/* Required Activations at Top Priority */}
+                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required) && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800 mb-6">
                     <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
                       ⚠️ فعال‌سازی‌های مهم
@@ -466,12 +466,40 @@ const EnrollSuccess: React.FC = () => {
                     <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
                       برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را انجام دهید:
                     </p>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {result.course.support_activation_required && !result.course.smart_activation_enabled && (
                         <div className="flex items-center gap-2 text-sm">
                           <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                           <span>فعال‌سازی پشتیبانی (اجباری)</span>
                         </div>
+                      )}
+                      {result.course.smart_activation_enabled && result.course.smart_activation_telegram_link && (
+                        <a 
+                          href={replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-all duration-200 border border-purple-200 dark:border-purple-800 hover:shadow-md group relative"
+                        >
+                          {/* Smart Badge */}
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                            <Zap className="h-3 w-3 text-white" />
+                          </div>
+                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                            <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm flex items-center gap-2">
+                              فعال‌سازی هوشمند (اجباری)
+                              <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                SMART
+                              </Badge>
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              کلیک کنید تا به صورت خودکار فعال شود
+                            </p>
+                          </div>
+                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                        </a>
                       )}
                       {result.course.telegram_activation_required && (
                         <div className="flex items-center gap-2 text-sm">
@@ -498,34 +526,8 @@ const EnrollSuccess: React.FC = () => {
                     پشتیبانی و ارتباط با ما
                   </h3>
                   <div className="space-y-3 md:grid md:grid-cols-3 md:gap-3 md:space-y-0">
-                    {/* Smart Activation Telegram Link or Regular Telegram */}
-                    {result.course?.smart_activation_enabled && result.course?.smart_activation_telegram_link ? (
-                      <a 
-                        href={replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment)} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0 relative"
-                      >
-                        {/* Smart Badge */}
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                          <Zap className="h-3 w-3 text-white" />
-                        </div>
-                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                          <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm flex items-center gap-1">
-                            تلگرام هوشمند
-                            <Badge variant="secondary" className="text-xs px-1 py-0 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                              SMART
-                            </Badge>
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">پیام آماده با اطلاعات شما</p>
-                        </div>
-                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                      </a>
-                    ) : (
-                      /* Regular Telegram */
+                    {/* Regular Telegram Link when smart activation is not enabled */}
+                    {(!result.course?.smart_activation_enabled || !result.course?.smart_activation_telegram_link) && (
                       <a 
                         href="https://t.me/rafieiacademy" 
                         target="_blank" 
