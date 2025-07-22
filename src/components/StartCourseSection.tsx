@@ -401,16 +401,6 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           })}
         </div>
 
-        {/* Course Action Links - Support, Telegram, Gifts */}
-        {course && enrollment && (
-          <div className="w-full mt-12">
-            <CourseActionLinks 
-              course={course}
-              enrollment={enrollment}
-              userEmail={userEmail || enrollment?.email}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
