@@ -777,6 +777,8 @@ export type Database = {
           sale_expires_at: string | null
           sale_price: number | null
           slug: string
+          smart_activation_enabled: boolean
+          smart_activation_telegram_link: string | null
           spotplayer_course_id: string | null
           support_activation_required: boolean | null
           support_link: string | null
@@ -806,6 +808,8 @@ export type Database = {
           sale_expires_at?: string | null
           sale_price?: number | null
           slug: string
+          smart_activation_enabled?: boolean
+          smart_activation_telegram_link?: string | null
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
           support_link?: string | null
@@ -835,6 +839,8 @@ export type Database = {
           sale_expires_at?: string | null
           sale_price?: number | null
           slug?: string
+          smart_activation_enabled?: boolean
+          smart_activation_telegram_link?: string | null
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
           support_link?: string | null

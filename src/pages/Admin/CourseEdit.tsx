@@ -38,6 +38,8 @@ interface Course {
   gifts_link?: string | null;
   support_activation_required?: boolean;
   telegram_activation_required?: boolean;
+  smart_activation_enabled?: boolean;
+  smart_activation_telegram_link?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,7 +76,9 @@ const CourseEdit: React.FC = () => {
     telegram_channel_link: '',
     gifts_link: '',
     support_activation_required: false,
-    telegram_activation_required: false
+    telegram_activation_required: false,
+    smart_activation_enabled: false,
+    smart_activation_telegram_link: ''
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -132,7 +136,9 @@ const CourseEdit: React.FC = () => {
         telegram_channel_link: data.telegram_channel_link || '',
         gifts_link: data.gifts_link || '',
         support_activation_required: data.support_activation_required || false,
-        telegram_activation_required: data.telegram_activation_required || false
+        telegram_activation_required: data.telegram_activation_required || false,
+        smart_activation_enabled: data.smart_activation_enabled || false,
+        smart_activation_telegram_link: data.smart_activation_telegram_link || ''
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -218,7 +224,9 @@ const CourseEdit: React.FC = () => {
         telegram_channel_link: formData.telegram_channel_link.trim() || null,
         gifts_link: formData.gifts_link.trim() || null,
         support_activation_required: formData.support_activation_required,
-        telegram_activation_required: formData.telegram_activation_required
+        telegram_activation_required: formData.telegram_activation_required,
+        smart_activation_enabled: formData.smart_activation_enabled,
+        smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null
       };
 
       const { error } = await supabase
@@ -581,6 +589,39 @@ const CourseEdit: React.FC = () => {
                       />
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
+                    
+                    {/* Smart Activation Section */}
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="smart_activation_enabled"
+                        checked={formData.smart_activation_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, smart_activation_enabled: checked }))}
+                      />
+                      <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
+                    </div>
+                    
+                    {formData.smart_activation_enabled && (
+                      <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 mt-3">
+                        <Label htmlFor="smart_activation_telegram_link">لینک تلگرام فعال‌سازی هوشمند</Label>
+                        <Textarea
+                          id="smart_activation_telegram_link"
+                          value={formData.smart_activation_telegram_link}
+                          onChange={(e) => setFormData(prev => ({ ...prev, smart_activation_telegram_link: e.target.value }))}
+                          placeholder="https://t.me/rafieiacademy?text=درود وقت بخیر
+برای فعال سازی پشتیبانی بدون مرز پیام میدم خدمتتون
+mba
+نام : {name}
+نام خانوادگی : {lastname}
+شماره همراه : {phone}
+ایمیل : {email}"
+                          rows={8}
+                          className="mt-2"
+                        />
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                          می‌توانید از متغیرهای زیر در متن استفاده کنید: {"{name}"}, {"{lastname}"}, {"{phone}"}, {"{email}"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
