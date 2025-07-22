@@ -73,14 +73,28 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
   };
 
   const handleStartCourse = () => {
-    if (courseSlug && !courseSettingsLoading) {
+    console.log('handleStartCourse called:', { 
+      courseSlug, 
+      courseSettingsLoading
+    });
+    
+    if (courseSlug) {
       const enrollUrl = getEnrollUrl(courseSlug, iframeUrl);
+      console.log('Generated enrollUrl:', enrollUrl, 'from courseSlug:', courseSlug, 'defaultUrl:', iframeUrl);
+      
+      // If enrollUrl is null, it means settings are still loading
+      if (enrollUrl === null) {
+        console.log('Course settings still loading, waiting...');
+        return;
+      }
       
       if (enrollUrl.startsWith('/')) {
         // Internal URL - navigate directly
+        console.log('Navigating to internal URL:', enrollUrl);
         window.location.href = enrollUrl;
       } else {
         // External URL - open modal or new tab
+        console.log('External URL detected:', enrollUrl);
         if (enrollUrl === iframeUrl) {
           setIsModalOpen(true);
         } else {
@@ -88,7 +102,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
         }
       }
     } else {
-      // Default behavior - open modal
+      console.log('No courseSlug, opening modal');
       setIsModalOpen(true);
     }
   };

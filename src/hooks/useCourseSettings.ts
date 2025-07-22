@@ -38,15 +38,20 @@ export const useCourseSettings = (courseSlug: string) => {
   }, [courseSlug]);
 
   const getEnrollUrl = (courseSlug: string, defaultUrl: string) => {
+    console.log('getEnrollUrl called:', { loading, courseSettings, courseSlug, defaultUrl });
+    
     if (loading) {
-      // Still loading, return default URL for now
-      return defaultUrl;
+      // Still loading, return null to indicate not ready
+      console.log('Still loading course settings...');
+      return null;
     }
     
     if (courseSettings?.use_landing_page_merge) {
+      console.log('Landing page merge enabled, returning enrollment URL');
       return `/enroll?course=${courseSlug}`;
     }
     
+    console.log('Landing page merge disabled, returning default URL');
     return defaultUrl;
   };
 
