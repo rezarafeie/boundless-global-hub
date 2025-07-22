@@ -28,7 +28,7 @@ interface UnifiedMessengerAuthProps {
   isAcademyAuth?: boolean; // Add flag to distinguish academy vs messenger auth
 }
 
-type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'otp-login' | 'linking' | 'name-confirm' | 'success';
+type AuthStep = 'phone' | 'password' | 'password-setup' | 'name' | 'username' | 'pending' | 'otp-link' | 'otp-login' | 'linking' | 'name-confirm' | 'success';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail, isAcademyAuth = false }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
@@ -328,9 +328,41 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       if (user) {
         setExistingUser(user);
         
-        // If we have Google prefill data, this means user logged in with Google
-        // but the phone number already exists - we need to link the accounts via OTP
-        if (prefillData?.email && !user.email) {
+        // Check if user has a password - if not, send OTP automatically
+        if (!user.password_hash) {
+          console.log('🔐 User has no password, sending OTP automatically');
+          setIsLogin(true);
+          
+          // Format phone for OTP sending
+          const formattedPhone = countryCode === '+98' 
+            ? `+98${phoneNumber}` 
+            : `00${countryCode.slice(1)}${phoneNumber}`;
+          
+          setFormattedPhoneForOTP(formattedPhone);
+          console.log('📱 Formatted phone for OTP:', formattedPhone);
+          
+          // Send OTP for verification
+          const { data, error } = await supabase.functions.invoke('send-otp', {
+            body: {
+              phone: phoneNumber,
+              countryCode: countryCode
+            }
+          });
+
+          if (error) {
+            console.error('Edge function error:', error);
+            throw error;
+          }
+
+          if (data.success) {
+            setCurrentStep('otp-login');
+            toast.success('کد تأیید ارسال شد', {
+              description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+            });
+          } else {
+            throw new Error(data.error || 'خطا در ارسال کد تأیید');
+          }
+        } else if (prefillData?.email && !user.email) {
           console.log('🔗 Google user wants to link to existing phone number');
           setIsGoogleLinking(true);
           
@@ -370,7 +402,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             throw new Error(data.error || 'خطا در ارسال کد تأیید');
           }
         } else {
-          // Normal login flow
+          // Normal login flow - user has password
           setIsLogin(true);
           setCurrentStep('password');
         }
@@ -621,6 +653,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             return;
           }
           
+          // Check if user has no password - if so, ask them to set one
+          if (!existingUser.password_hash) {
+            console.log('🔐 User has no password, requesting password setup');
+            setCurrentStep('password-setup');
+            toast.success('لطفاً رمز عبور جدید تعین کنید');
+            return;
+          }
+          
           // Create session for OTP login
           const sessionToken = await messengerService.createSession(existingUser.id);
           onAuthenticated(sessionToken, existingUser.name, existingUser);
@@ -776,6 +816,60 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     } catch (error: any) {
       console.error('Error in name confirmation:', error);
       toast.error(error.message || 'لطفاً دوباره تلاش کنید');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!password.trim()) {
+      toast.error('رمز عبور را وارد کنید');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('رمز عبور باید حداقل ۶ کاراکتر باشد');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      console.log('🔐 Setting up password for user:', existingUser?.id);
+      
+      // Update user password in database
+      const { error: updateError } = await supabase
+        .from('chat_users')
+        .update({
+          password_hash: password // This will be hashed by the backend
+        })
+        .eq('id', existingUser?.id);
+
+      if (updateError) {
+        console.error('Password update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Password set successfully');
+      
+      // Create session and login
+      if (existingUser) {
+        const sessionToken = await messengerService.createSession(existingUser.id);
+        
+        // Update the existing user object
+        const updatedUser = {
+          ...existingUser,
+          password_hash: password
+        };
+        
+        toast.success('رمز عبور با موفقیت تنظیم شد');
+        onAuthenticated(sessionToken, updatedUser.name, updatedUser);
+      }
+    } catch (error: any) {
+      console.error('Password setup error:', error);
+      toast.error(error.message || 'خطا در تنظیم رمز عبور');
     } finally {
       setLoading(false);
     }
@@ -1057,6 +1151,45 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 </button>
               </div>
             )}
+          </form>
+        )}
+
+        {currentStep === 'password-setup' && (
+          <form onSubmit={handlePasswordSetup} className="space-y-6">
+            <div className="text-center mb-6">
+              <p className="text-sm text-muted-foreground">
+                برای: <span className="font-medium text-foreground">{existingUser?.name}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">{countryCode}{phoneNumber}</p>
+              <p className="text-sm text-primary mt-2">لطفاً رمز عبور جدید تعین کنید</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Input
+                id="newPassword"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="رمز عبور جدید"
+                required
+                minLength={6}
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+              <p className="text-xs text-muted-foreground">رمز عبور باید حداقل ۶ کاراکتر باشد</p>
+            </div>
+            
+            <div className="flex gap-3 mt-8">
+              <Button type="submit" className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال تنظیم...
+                  </>
+                ) : (
+                  'تنظیم رمز عبور'
+                )}
+              </Button>
+            </div>
           </form>
         )}
 
