@@ -285,14 +285,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           setFirstName(userFirstName);
           setLastName(userLastName);
           
-          // Format phone for OTP sending
-          const formattedPhone = countryCode === '+98' 
-            ? `+98${phoneNumber}` 
-            : `00${countryCode.slice(1)}${phoneNumber}`;
-          
-          setFormattedPhoneForOTP(formattedPhone);
-          console.log('📱 Formatted phone for OTP:', formattedPhone);
-          
           // Send OTP for linking
           const { data, error } = await supabase.functions.invoke('send-otp', {
             body: {
@@ -307,6 +299,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           }
 
           if (data.success) {
+            // Use the formatted phone returned by the edge function for consistency
+            setFormattedPhoneForOTP(data.formattedPhone);
+            console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+            
             setCurrentStep('otp-link');
             toast.success('کد تأیید ارسال شد', {
               description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
@@ -333,14 +329,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           console.log('🔐 User has no password, sending OTP automatically');
           setIsLogin(true);
           
-          // Format phone for OTP sending
-          const formattedPhone = countryCode === '+98' 
-            ? `+98${phoneNumber}` 
-            : `00${countryCode.slice(1)}${phoneNumber}`;
-          
-          setFormattedPhoneForOTP(formattedPhone);
-          console.log('📱 Formatted phone for OTP:', formattedPhone);
-          
           // Send OTP for verification
           const { data, error } = await supabase.functions.invoke('send-otp', {
             body: {
@@ -355,6 +343,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           }
 
           if (data.success) {
+            // Use the formatted phone returned by the edge function for consistency
+            setFormattedPhoneForOTP(data.formattedPhone);
+            console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+            
             setCurrentStep('otp-login');
             toast.success('کد تأیید ارسال شد', {
               description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
@@ -372,14 +364,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           setFirstName(userFirstName);
           setLastName(userLastName);
           
-          // Format phone for OTP sending
-          const formattedPhone = countryCode === '+98' 
-            ? `+98${phoneNumber}` 
-            : `00${countryCode.slice(1)}${phoneNumber}`;
-          
-          setFormattedPhoneForOTP(formattedPhone);
-          console.log('📱 Formatted phone for OTP:', formattedPhone);
-          
           // Send OTP for verification
           const { data, error } = await supabase.functions.invoke('send-otp', {
             body: {
@@ -394,6 +378,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           }
 
           if (data.success) {
+            // Use the formatted phone returned by the edge function for consistency
+            setFormattedPhoneForOTP(data.formattedPhone);
+            console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+            
             setCurrentStep('otp-link');
             toast.success('کد تأیید ارسال شد', {
               description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
@@ -479,14 +467,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleOTPLogin = async () => {
     setLoading(true);
     try {
-      // Format phone for OTP sending
-      const formattedPhone = countryCode === '+98' 
-        ? `+98${phoneNumber}` 
-        : `00${countryCode.slice(1)}${phoneNumber}`;
-      
-      setFormattedPhoneForOTP(formattedPhone);
-      console.log('📱 Formatted phone for OTP login:', formattedPhone);
-      
       // Send OTP for login
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: {
@@ -501,6 +481,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       }
 
       if (data.success) {
+        // Use the formatted phone returned by the edge function for consistency
+        setFormattedPhoneForOTP(data.formattedPhone);
+        console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+        
         setCurrentStep('otp-login');
         toast.success('کد تأیید ارسال شد', {
           description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
@@ -622,10 +606,12 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     
     try {
-      // Use the stored formatted phone number for consistency
-      const phoneForVerification = formattedPhoneForOTP || (countryCode === '+98' 
-        ? `+98${phoneNumber}` 
-        : `00${countryCode.slice(1)}${phoneNumber}`);
+      // Use the exact same formatted phone that was stored when OTP was sent
+      const phoneForVerification = formattedPhoneForOTP;
+      
+      if (!phoneForVerification) {
+        throw new Error('خطا در شماره تلفن. لطفاً دوباره تلاش کنید.');
+      }
 
       console.log('🔐 Verifying OTP for login:', phoneForVerification, 'Code:', code);
       
@@ -690,10 +676,12 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     
     try {
-      // Use the stored formatted phone number for consistency
-      const phoneForVerification = formattedPhoneForOTP || (countryCode === '+98' 
-        ? `+98${phoneNumber}` 
-        : `00${countryCode.slice(1)}${phoneNumber}`);
+      // Use the exact same formatted phone that was stored when OTP was sent
+      const phoneForVerification = formattedPhoneForOTP;
+      
+      if (!phoneForVerification) {
+        throw new Error('خطا در شماره تلفن. لطفاً دوباره تلاش کنید.');
+      }
 
       console.log('🔐 Verifying OTP for phone:', phoneForVerification, 'Code:', code);
       
