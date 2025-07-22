@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,6 +43,22 @@ const EnrollSuccess: React.FC = () => {
       handleAutoAuthentication();
     }
   }, [result, user, authenticating]);
+
+  // Function to replace user placeholders in smart activation telegram link
+  const replacePlaceholders = (template: string, enrollment: any): string => {
+    if (!template || !enrollment) return template;
+    
+    const fullName = enrollment.full_name || '';
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    return template
+      .replace(/{name}/g, firstName)
+      .replace(/{lastname}/g, lastName)
+      .replace(/{phone}/g, enrollment.phone || '')
+      .replace(/{email}/g, enrollment.email || '');
+  };
 
   const handleAutoAuthentication = async () => {
     if (!result?.enrollment) return;
@@ -149,7 +165,9 @@ const EnrollSuccess: React.FC = () => {
             gifts_link,
             enable_course_access,
             support_activation_required,
-            telegram_activation_required
+            telegram_activation_required,
+            smart_activation_enabled,
+            smart_activation_telegram_link
           )
         `)
         .eq('id', enrollmentId)
@@ -206,7 +224,9 @@ const EnrollSuccess: React.FC = () => {
             gifts_link,
             enable_course_access,
             support_activation_required,
-            telegram_activation_required
+            telegram_activation_required,
+            smart_activation_enabled,
+            smart_activation_telegram_link
           )
         `)
         .eq('id', enrollmentId)
@@ -478,22 +498,50 @@ const EnrollSuccess: React.FC = () => {
                     پشتیبانی و ارتباط با ما
                   </h3>
                   <div className="space-y-3 md:grid md:grid-cols-3 md:gap-3 md:space-y-0">
-                    {/* Telegram */}
-                    <a 
-                      href="https://t.me/rafieiacademy" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0"
-                    >
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                        <Send className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">تلگرام</p>
-                        <p className="text-xs text-muted-foreground truncate">@rafieiacademy</p>
-                      </div>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                    </a>
+                    {/* Smart Activation Telegram Link or Regular Telegram */}
+                    {result.course?.smart_activation_enabled && !result.course?.support_activation_required && result.course?.smart_activation_telegram_link ? (
+                      <a 
+                        href={replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0 relative"
+                      >
+                        {/* Smart Badge */}
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                          <Zap className="h-3 w-3 text-white" />
+                        </div>
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                          <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm flex items-center gap-1">
+                            تلگرام هوشمند
+                            <Badge variant="secondary" className="text-xs px-1 py-0 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                              SMART
+                            </Badge>
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">پیام آماده با اطلاعات شما</p>
+                        </div>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      </a>
+                    ) : (
+                      /* Regular Telegram */
+                      <a 
+                        href="https://t.me/rafieiacademy" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 md:gap-3 p-3 bg-card/80 rounded-lg hover:bg-card transition-all duration-200 border border-border/50 hover:shadow-md hover:border-primary/30 group min-w-0"
+                      >
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                          <Send className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">تلگرام</p>
+                          <p className="text-xs text-muted-foreground truncate">@rafieiacademy</p>
+                        </div>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      </a>
+                    )}
 
                     {/* Rafiei Messenger */}
                     <a 
