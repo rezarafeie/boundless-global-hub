@@ -235,7 +235,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 overflow-hidden">
+    <div className="w-full bg-gradient-to-br from-background via-background/95 to-primary/5 overflow-hidden">
       <div className="container mx-auto px-1 sm:px-2 py-6 sm:py-8 max-w-6xl min-w-0">
         {/* Modern Header - Mobile First */}
         <div className="text-center mb-8 sm:mb-12">
