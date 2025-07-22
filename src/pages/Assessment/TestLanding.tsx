@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Award, TrendingUp, CheckCircle, Brain, Heart, DollarSign, Lightbulb, Target, BarChart3, Zap, Shield, BookOpen, Star, Puzzle, Trophy } from "lucide-react";
 import EnhancedIframe from "@/components/EnhancedIframe";
 import MobileStickyButton from "@/components/MobileStickyButton";
+import Header from "@/components/Layout/Header";
 
 const TestLanding = () => {
   const { slug } = useParams();

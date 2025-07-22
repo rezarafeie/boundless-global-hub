@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import EnhancedIframe from "@/components/EnhancedIframe";
+import Header from "@/components/Layout/Header";
 
 const SmartFallback = () => {
   const [iframeFailed, setIframeFailed] = useState(false);
@@ -16,7 +17,9 @@ const SmartFallback = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)]">
+    <>
+      <Header />
+      <div className="min-h-[calc(100vh-4rem)]" style={{ marginTop: '64px' }}>
       {/* Fallback Error Message */}
       {iframeFailed && (
         <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
@@ -53,6 +56,7 @@ const SmartFallback = () => {
         />
       )}
     </div>
+    </>
   );
 };
 
