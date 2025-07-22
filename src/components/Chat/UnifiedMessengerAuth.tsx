@@ -28,7 +28,7 @@ interface UnifiedMessengerAuthProps {
   isAcademyAuth?: boolean; // Add flag to distinguish academy vs messenger auth
 }
 
-type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'linking' | 'name-confirm' | 'success';
+type AuthStep = 'phone' | 'password' | 'name' | 'username' | 'pending' | 'otp-link' | 'otp-login' | 'linking' | 'name-confirm' | 'success';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail, isAcademyAuth = false }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
@@ -444,6 +444,46 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
+  const handleOTPLogin = async () => {
+    setLoading(true);
+    try {
+      // Format phone for OTP sending
+      const formattedPhone = countryCode === '+98' 
+        ? `+98${phoneNumber}` 
+        : `00${countryCode.slice(1)}${phoneNumber}`;
+      
+      setFormattedPhoneForOTP(formattedPhone);
+      console.log('📱 Formatted phone for OTP login:', formattedPhone);
+      
+      // Send OTP for login
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: {
+          phone: phoneNumber,
+          countryCode: countryCode
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data.success) {
+        setCurrentStep('otp-login');
+        toast.success('کد تأیید ارسال شد', {
+          description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+        });
+      } else {
+        throw new Error(data.error || 'خطا در ارسال کد تأیید');
+      }
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      toast.error('خطا در ارسال کد تأیید');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -539,6 +579,66 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'لطفاً دوباره تلاش کنید');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyLoginOTP = async (code: string) => {
+    if (code.length !== 4) return;
+
+    setLoading(true);
+    
+    try {
+      // Use the stored formatted phone number for consistency
+      const phoneForVerification = formattedPhoneForOTP || (countryCode === '+98' 
+        ? `+98${phoneNumber}` 
+        : `00${countryCode.slice(1)}${phoneNumber}`);
+
+      console.log('🔐 Verifying OTP for login:', phoneForVerification, 'Code:', code);
+      
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: {
+          phone: phoneForVerification,
+          otpCode: code
+        }
+      });
+
+      console.log('✅ OTP verification response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data && data.success) {
+        console.log('✅ OTP verified successfully for login');
+        setOtpVerified(true);
+        
+        if (existingUser) {
+          if (!existingUser.is_approved) {
+            setCurrentStep('pending');
+            return;
+          }
+          
+          // Create session for OTP login
+          const sessionToken = await messengerService.createSession(existingUser.id);
+          onAuthenticated(sessionToken, existingUser.name, existingUser);
+        } else {
+          toast.error('کاربر یافت نشد');
+        }
+      } else {
+        console.log('❌ OTP verification failed');
+        toast.error('کد اشتباه است', {
+          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
+        });
+        setOtpCode('');
+        return;
+      }
+    } catch (error: any) {
+      console.error('Error verifying OTP:', error);
+      toast.error(error.message || 'کد وارد شده اشتباه است');
+      setOtpCode('');
     } finally {
       setLoading(false);
     }
@@ -921,6 +1021,20 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 required
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
+              
+              {/* OTP Login Option for Academy Auth */}
+              {isLogin && isAcademyAuth && (
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={handleOTPLogin}
+                    className="text-sm text-primary underline p-0 h-auto"
+                  >
+                    ورود با کد تأیید
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="flex gap-3 mt-8">
@@ -1211,6 +1325,119 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 تغییر شماره تلفن
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'otp-login' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-3 mb-8">
+              {/* Enhanced Animated Icon */}
+              <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+                <svg className="w-10 h-10 text-primary animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 12l2 2 4-4"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-semibold text-foreground">
+                ورود با کد تأیید
+              </h3>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  کد تأیید ۴ رقمی به شماره
+                </p>
+                <p className="text-lg font-medium text-foreground font-mono bg-muted/30 rounded-lg py-2 px-4" dir="ltr">
+                  {formattedPhoneForOTP || `${countryCode}${phoneNumber}`}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  ارسال شد. کد را در زیر وارد کنید
+                </p>
+              </div>
+            </div>
+
+            {/* Enhanced OTP Input */}
+            <div className="flex justify-center mb-8">
+              <InputOTP
+                value={otpCode}
+                onChange={(value) => {
+                  setOtpCode(value);
+                  if (value.length === 4) {
+                    verifyLoginOTP(value);
+                  }
+                }}
+                maxLength={4}
+                className="gap-4"
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot 
+                    index={0} 
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
+                  />
+                  <InputOTPSlot 
+                    index={1} 
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
+                  />
+                  <InputOTPSlot 
+                    index={2} 
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
+                  />
+                  <InputOTPSlot 
+                    index={3} 
+                    className="w-16 h-16 text-2xl font-bold border-2 border-border rounded-xl transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 data-[has-value]:border-primary data-[has-value]:bg-primary/5 data-[has-value]:scale-105"
+                  />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            {/* Enhanced Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center space-x-3 mb-6 bg-primary/5 rounded-lg py-4 px-6">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="text-base text-primary font-medium">در حال تأیید کد...</span>
+              </div>
+            )}
+
+            {/* Enhanced Resend Section */}
+            <div className="text-center space-y-4">
+              <div className="bg-muted/30 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  کد را دریافت نکردید؟
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-primary hover:text-primary/80 hover:bg-primary/10 font-medium transition-all duration-200"
+                  onClick={handleOTPLogin}
+                  disabled={loading}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  ارسال مجدد کد
+                </Button>
+              </div>
+            </div>
+
+            {/* Enhanced Back Button */}
+            <div className="pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCurrentStep('password');
+                  setOtpCode('');
+                  setFormattedPhoneForOTP('');
+                }}
+                className="w-full h-12 rounded-full border-border hover:bg-muted/50 transition-all duration-200"
+                disabled={loading}
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                بازگشت به ورود با رمز
               </Button>
             </div>
           </div>
