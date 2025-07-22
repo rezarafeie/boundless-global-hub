@@ -1022,19 +1022,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
               />
               
-              {/* OTP Login Option for Academy Auth */}
-              {isLogin && isAcademyAuth && (
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={handleOTPLogin}
-                    className="text-sm text-primary underline p-0 h-auto"
-                  >
-                    ورود با کد تأیید
-                  </Button>
-                </div>
-              )}
             </div>
             
             <div className="flex gap-3 mt-8">
@@ -1057,6 +1044,19 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 برگشت
               </Button>
             </div>
+            
+            {/* OTP Login Option for Academy Auth */}
+            {isLogin && isAcademyAuth && (
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={handleOTPLogin}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  ورود با کد تأیید
+                </button>
+              </div>
+            )}
           </form>
         )}
 
@@ -1360,7 +1360,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             </div>
 
             {/* Enhanced OTP Input */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-8" dir="ltr">
               <InputOTP
                 value={otpCode}
                 onChange={(value) => {
@@ -1403,23 +1403,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
             {/* Enhanced Resend Section */}
             <div className="text-center space-y-4">
-              <div className="bg-muted/30 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  کد را دریافت نکردید؟
-                </p>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-primary hover:text-primary/80 hover:bg-primary/10 font-medium transition-all duration-200"
-                  onClick={handleOTPLogin}
-                  disabled={loading}
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  ارسال مجدد کد
-                </Button>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-primary hover:text-primary/80 hover:bg-primary/10 font-medium transition-all duration-200"
+                onClick={handleOTPLogin}
+                disabled={loading}
+              >
+                ارسال مجدد کد
+              </Button>
             </div>
 
             {/* Enhanced Back Button */}
