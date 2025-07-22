@@ -403,21 +403,28 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
         </div>
 
         {/* Course Action Links - Support, Telegram, Gifts - Show always but exclude actions already shown at top */}
-        {course && enrollment && (
-          <div className="w-full mt-12">
-            <CourseActionLinks 
-              course={{
-                ...course,
-                // Hide support link if it's required (shown at top)
-                support_link: course.support_activation_required && !course.smart_activation_enabled ? null : course.support_link,
-                // Hide telegram link if it's required (shown at top)  
-                telegram_channel_link: course.telegram_activation_required ? null : course.telegram_channel_link
-              }}
-              enrollment={enrollment}
-              userEmail={userEmail || enrollment?.email}
-            />
-          </div>
-        )}
+        {course && enrollment && (() => {
+          const modifiedCourse = {
+            ...course,
+            // Hide support link if it's required (shown at top)
+            support_link: course.support_activation_required && !course.smart_activation_enabled ? null : course.support_link,
+            // Hide telegram link if it's required (shown at top)  
+            telegram_channel_link: course.telegram_activation_required ? null : course.telegram_channel_link
+          };
+          
+          // Check if there are any available actions
+          const hasAvailableActions = modifiedCourse.support_link || modifiedCourse.telegram_channel_link || modifiedCourse.gifts_link;
+          
+          return hasAvailableActions ? (
+            <div className="w-full mt-12">
+              <CourseActionLinks 
+                course={modifiedCourse}
+                enrollment={enrollment}
+                userEmail={userEmail || enrollment?.email}
+              />
+            </div>
+          ) : null;
+        })()}
       </div>
     </div>
   );
