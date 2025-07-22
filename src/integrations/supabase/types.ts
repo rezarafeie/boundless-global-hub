@@ -720,6 +720,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          is_open: boolean
           order_index: number
           title: string
           updated_at: string | null
@@ -730,6 +731,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_open?: boolean
           order_index?: number
           title: string
           updated_at?: string | null
@@ -740,6 +742,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_open?: boolean
           order_index?: number
           title?: string
           updated_at?: string | null

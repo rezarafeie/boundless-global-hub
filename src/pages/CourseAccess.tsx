@@ -42,6 +42,7 @@ interface TitleGroup {
   title: string;
   icon: string;
   order_index: number;
+  is_open: boolean;
   sections: Section[];
 }
 
@@ -92,6 +93,7 @@ const CourseAccess: React.FC = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
+  const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
 
   // Check if mobile on resize
   useEffect(() => {
@@ -190,6 +192,7 @@ const CourseAccess: React.FC = () => {
           title,
           icon,
           order_index,
+          is_open,
           course_sections (
             id,
             title,
@@ -265,6 +268,15 @@ const CourseAccess: React.FC = () => {
 
       setTitleGroups(formattedTitleGroups);
       setSections(formattedOrphanSections);
+
+      // Set initially open title groups based on is_open field
+      const initiallyOpen = new Set<string>();
+      formattedTitleGroups.forEach(group => {
+        if (group.is_open) {
+          initiallyOpen.add(group.id);
+        }
+      });
+      setOpenTitleGroups(initiallyOpen);
 
       // Auto-select first lesson if available
       let firstLesson = null;
@@ -607,7 +619,7 @@ const CourseAccess: React.FC = () => {
                         <p className="text-gray-500 dark:text-gray-400 text-xs">محتوای دوره به زودی اضافه خواهد شد</p>
                       </div>
                     ) : (
-                      <Accordion type="multiple" className="space-y-1">
+                      <Accordion type="multiple" className="space-y-1" defaultValue={Array.from(openTitleGroups)}>
                         {/* Render Title Groups */}
                         {titleGroups.map((titleGroup) => (
                           <div key={titleGroup.id} className="mb-6">

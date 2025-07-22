@@ -46,6 +46,7 @@ interface CourseTitleGroup {
   course_id: string;
   created_at: string;
   updated_at: string;
+  is_open: boolean;
 }
 
 interface CourseSection {
@@ -119,7 +120,7 @@ const CourseContentManagement: React.FC = () => {
   }, [lessons]);
   
   // Form states
-  const [titleGroupForm, setTitleGroupForm] = useState({ title: '', icon: '📚' });
+  const [titleGroupForm, setTitleGroupForm] = useState({ title: '', icon: '📚', is_open: false });
   const [sectionForm, setSectionForm] = useState({ title: '', title_group_id: '' });
   const [lessonForm, setLessonForm] = useState({
     title: '',
@@ -250,7 +251,7 @@ const CourseContentManagement: React.FC = () => {
   };
 
   const resetTitleGroupForm = () => {
-    setTitleGroupForm({ title: '', icon: '📚' });
+    setTitleGroupForm({ title: '', icon: '📚', is_open: false });
     setEditingTitleGroup(null);
   };
 
@@ -279,7 +280,8 @@ const CourseContentManagement: React.FC = () => {
           .from('course_title_groups')
           .update({
             title: titleGroupForm.title.trim(),
-            icon: titleGroupForm.icon
+            icon: titleGroupForm.icon,
+            is_open: titleGroupForm.is_open
           })
           .eq('id', editingTitleGroup.id);
         
@@ -303,7 +305,8 @@ const CourseContentManagement: React.FC = () => {
             course_id: courseId,
             title: titleGroupForm.title.trim(),
             icon: titleGroupForm.icon,
-            order_index: nextOrderIndex
+            order_index: nextOrderIndex,
+            is_open: titleGroupForm.is_open
           });
         
         if (error) throw error;
@@ -326,7 +329,7 @@ const CourseContentManagement: React.FC = () => {
 
   const handleEditTitleGroup = (titleGroup: CourseTitleGroup) => {
     setEditingTitleGroup(titleGroup);
-    setTitleGroupForm({ title: titleGroup.title, icon: titleGroup.icon });
+    setTitleGroupForm({ title: titleGroup.title, icon: titleGroup.icon, is_open: titleGroup.is_open });
     setShowTitleGroupModal(true);
   };
 
@@ -1255,6 +1258,14 @@ const SortableLesson: React.FC<{
                       </Button>
                     ))}
                   </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="titlegroup-open"
+                    checked={titleGroupForm.is_open}
+                    onCheckedChange={(checked) => setTitleGroupForm({ ...titleGroupForm, is_open: checked })}
+                  />
+                  <Label htmlFor="titlegroup-open">باز بودن به صورت پیش‌فرض</Label>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowTitleGroupModal(false)}>
