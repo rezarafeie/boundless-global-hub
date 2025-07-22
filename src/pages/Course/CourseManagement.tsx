@@ -31,6 +31,7 @@ interface Course {
   telegram_channel_link: string | null;
   gifts_link: string | null;
   enable_course_access: boolean;
+  is_free_access: boolean;
   created_at: string;
 }
 
@@ -57,6 +58,7 @@ const CourseManagement: React.FC = () => {
     telegram_channel_link: '',
     gifts_link: '',
     enable_course_access: false,
+    is_free_access: false,
     is_active: true
   });
   
@@ -139,6 +141,7 @@ const CourseManagement: React.FC = () => {
           telegram_channel_link: data.telegram_channel_link || '',
           gifts_link: data.gifts_link || '',
           enable_course_access: data.enable_course_access || false,
+          is_free_access: data.is_free_access || false,
           is_active: data.is_active
         });
 
@@ -178,6 +181,7 @@ const CourseManagement: React.FC = () => {
         telegram_channel_link: courseForm.telegram_channel_link,
         gifts_link: courseForm.gifts_link,
         enable_course_access: courseForm.enable_course_access,
+        is_free_access: courseForm.is_free_access,
         is_active: courseForm.is_active
       };
 
@@ -513,6 +517,25 @@ const CourseManagement: React.FC = () => {
 
               {courseForm.enable_course_access && (
                 <div className="mt-6 space-y-4">
+                  {/* Free Access Option */}
+                  <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="space-y-1">
+                      <Label htmlFor="free-access-toggle" className="text-base font-medium text-green-800 dark:text-green-400">
+                        دسترسی رایگان عمومی
+                      </Label>
+                      <p className="text-sm text-green-600 dark:text-green-300">
+                        اگر فعال باشد، لینک /access نیازی به ورود یا احراز هویت ندارد و همه می‌توانند محتوای دوره را ببینند
+                      </p>
+                    </div>
+                    <Switch
+                      id="free-access-toggle"
+                      checked={courseForm.is_free_access}
+                      onCheckedChange={(checked) => 
+                        setCourseForm(prev => ({ ...prev, is_free_access: checked }))
+                      }
+                    />
+                  </div>
+
                   <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                     <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">مدیریت دروس و بخش‌ها</h4>
                     <p className="text-sm text-blue-600 dark:text-blue-300 mb-3">

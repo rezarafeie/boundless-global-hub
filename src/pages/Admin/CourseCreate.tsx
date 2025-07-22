@@ -35,6 +35,7 @@ const CourseCreate: React.FC = () => {
     woocommerce_create_access: true,
     use_landing_page_merge: false,
     enable_course_access: false,
+    is_free_access: false,
     support_link: '',
     telegram_channel_link: '',
     gifts_link: '',
@@ -117,6 +118,7 @@ const CourseCreate: React.FC = () => {
         woocommerce_create_access: formData.woocommerce_create_access,
         use_landing_page_merge: formData.use_landing_page_merge,
         enable_course_access: formData.enable_course_access,
+        is_free_access: formData.is_free_access,
         support_link: formData.support_link.trim() || null,
         telegram_channel_link: formData.telegram_channel_link.trim() || null,
         gifts_link: formData.gifts_link.trim() || null,
@@ -363,11 +365,32 @@ const CourseCreate: React.FC = () => {
                 </div>
 
                 {formData.enable_course_access && (
-                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2">مدیریت محتوای دوره</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      برای افزودن درس‌ها و بخش‌های دوره، ابتدا دوره را ذخیره کنید.
-                    </p>
+                  <div className="space-y-4">
+                    {/* Free Access Option */}
+                    <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="space-y-1">
+                        <Label htmlFor="free-access-toggle" className="text-base font-medium text-green-800 dark:text-green-400">
+                          دسترسی رایگان عمومی
+                        </Label>
+                        <p className="text-sm text-green-600 dark:text-green-300">
+                          اگر فعال باشد، لینک /access نیازی به ورود یا احراز هویت ندارد و همه می‌توانند محتوای دوره را ببینند
+                        </p>
+                      </div>
+                      <Switch
+                        id="free-access-toggle"
+                        checked={formData.is_free_access}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, is_free_access: checked }))
+                        }
+                      />
+                    </div>
+
+                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2">مدیریت محتوای دوره</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        برای افزودن درس‌ها و بخش‌های دوره، ابتدا دوره را ذخیره کنید.
+                      </p>
+                    </div>
                   </div>
                 )}
 

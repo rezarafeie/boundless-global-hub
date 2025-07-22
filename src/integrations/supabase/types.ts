@@ -763,6 +763,7 @@ export type Database = {
           gifts_link: string | null
           id: string
           is_active: boolean
+          is_free_access: boolean | null
           is_sale_enabled: boolean | null
           is_spotplayer_enabled: boolean | null
           price: number
@@ -791,6 +792,7 @@ export type Database = {
           gifts_link?: string | null
           id?: string
           is_active?: boolean
+          is_free_access?: boolean | null
           is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
           price?: number
@@ -819,6 +821,7 @@ export type Database = {
           gifts_link?: string | null
           id?: string
           is_active?: boolean
+          is_free_access?: boolean | null
           is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
           price?: number
