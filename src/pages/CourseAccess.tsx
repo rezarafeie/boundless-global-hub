@@ -34,6 +34,7 @@ interface Course {
   slug: string;
   price: number;
   enable_course_access: boolean;
+  is_free_access: boolean;
 }
 
 interface TitleGroup {
@@ -132,7 +133,7 @@ const CourseAccess: React.FC = () => {
       // Fetch course information
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access')
         .eq('slug', courseSlug)
         .eq('is_active', true)
         .single();
@@ -149,6 +150,12 @@ const CourseAccess: React.FC = () => {
       }
 
       setCourse(courseData);
+
+      // Check if course has free access - skip authentication if enabled
+      if (courseData.is_free_access) {
+        await fetchCourseContent(courseData.id);
+        return;
+      }
 
       // If user is logged in, check enrollment
       if (isAuthenticated && user) {
@@ -463,8 +470,8 @@ const CourseAccess: React.FC = () => {
           </div>
         </div>
 
-        {/* Not Logged In */}
-        {!isAuthenticated && (
+        {/* Not Logged In - Only show if course doesn't have free access */}
+        {!isAuthenticated && !course.is_free_access && (
           <div className="container mx-auto px-4 py-12">
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-6 text-center">
@@ -504,8 +511,8 @@ const CourseAccess: React.FC = () => {
           </div>
         )}
 
-        {/* Logged In but Not Enrolled */}
-        {isAuthenticated && !enrollment && (
+        {/* Logged In but Not Enrolled - Only show if course doesn't have free access */}
+        {isAuthenticated && !enrollment && !course.is_free_access && (
           <div className="container mx-auto px-4 py-12">
             <Card className="max-w-md mx-auto">
               <CardContent className="pt-6 text-center">
@@ -525,8 +532,8 @@ const CourseAccess: React.FC = () => {
           </div>
         )}
 
-        {/* Enrolled - Show Course Content */}
-        {isAuthenticated && enrollment && (
+        {/* Course Content - Show if enrolled OR if course has free access */}
+        {(enrollment || course.is_free_access) && (
           <>
             {/* Course Notifications Section */}
             <div className="container mx-auto px-4 py-4">
