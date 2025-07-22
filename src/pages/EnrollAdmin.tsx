@@ -42,6 +42,7 @@ import {
 } from '@/lib/enrollmentWebhookService';
 import { DataImportSection } from '@/components/admin/DataImportSection';
 import UsersOverview from './UsersOverview';
+import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
 
 interface Course {
   id: string;
@@ -77,6 +78,7 @@ interface Enrollment {
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  chat_user_id: number | null;
   zarinpal_ref_id?: string | null;
   zarinpal_authority?: string | null;
   woocommerce_order_id?: number | null;
@@ -94,7 +96,7 @@ const EnrollAdmin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
-  const [adminNotes, setAdminNotes] = useState('');
+  
   const [processing, setProcessing] = useState(false);
   const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users'>('dashboard');
 
@@ -265,7 +267,6 @@ const EnrollAdmin: React.FC = () => {
 
   const handleViewDetails = (enrollment: Enrollment) => {
     setSelectedEnrollment(enrollment);
-    setAdminNotes(enrollment.admin_notes || '');
     setShowEnrollmentModal(true);
   };
 
@@ -289,7 +290,6 @@ const EnrollAdmin: React.FC = () => {
         .update({
           manual_payment_status: 'approved',
           payment_status: 'completed',
-          admin_notes: adminNotes,
           approved_by: 'Admin',
           approved_at: new Date().toISOString()
         })
@@ -359,7 +359,6 @@ const EnrollAdmin: React.FC = () => {
         .from('enrollments')
         .update({
           manual_payment_status: 'rejected',
-          admin_notes: adminNotes,
           approved_by: 'Admin',
           approved_at: new Date().toISOString()
         })
@@ -974,17 +973,13 @@ const EnrollAdmin: React.FC = () => {
                 </div>
               </div>
 
-              {/* Admin Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">یادداشت مدیر</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="یادداشت خود را اینجا بنویسید..."
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
+              {/* CRM Notes */}
+              {selectedEnrollment.chat_user_id && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">مدیریت CRM کاربر</Label>
+                  <UserCRM userId={selectedEnrollment.chat_user_id} />
+                </div>
+              )}
 
               {/* Current Status */}
               <div className="flex items-center gap-4">
