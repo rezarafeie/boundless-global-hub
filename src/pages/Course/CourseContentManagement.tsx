@@ -121,7 +121,7 @@ const CourseContentManagement: React.FC = () => {
   
   // Form states
   const [titleGroupForm, setTitleGroupForm] = useState({ title: '', icon: '📚', is_open: false });
-  const [sectionForm, setSectionForm] = useState({ title: '', title_group_id: '' });
+  const [sectionForm, setSectionForm] = useState({ title: '', title_group_id: '', is_open: false });
   const [lessonForm, setLessonForm] = useState({
     title: '',
     content: '',

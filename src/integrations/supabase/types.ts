@@ -673,6 +673,7 @@ export type Database = {
           course_id: string
           created_at: string
           id: string
+          is_open: boolean
           order_index: number
           title: string
           title_group_id: string | null
@@ -682,6 +683,7 @@ export type Database = {
           course_id: string
           created_at?: string
           id?: string
+          is_open?: boolean
           order_index: number
           title: string
           title_group_id?: string | null
@@ -691,6 +693,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           id?: string
+          is_open?: boolean
           order_index?: number
           title?: string
           title_group_id?: string | null
