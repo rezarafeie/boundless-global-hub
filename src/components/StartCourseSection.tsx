@@ -257,64 +257,6 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           </p>
         </div>
 
-        {/* Required Activations Section - Priority 1 */}
-        {(course?.support_activation_required || course?.telegram_activation_required) && !isRequiredActivationsCompleted() && (
-          <div className="mb-8 sm:mb-12">
-            <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-amber-800 dark:text-amber-400 flex items-center gap-2 text-xl">
-                  <AlertTriangle className="h-6 w-6" />
-                  فعال‌سازی‌های ضروری
-                </CardTitle>
-                <p className="text-amber-700 dark:text-amber-300 text-sm">
-                  برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را فعال کنید:
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {course?.support_activation_required && !supportActivated && (
-                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white dark:bg-gray-900/50 rounded-lg border border-amber-200 dark:border-amber-700">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
-                        <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-amber-800 dark:text-amber-400">فعال‌سازی پشتیبانی</h4>
-                        <p className="text-sm text-amber-700 dark:text-amber-300">ارتباط با تیم پشتیبانی (اجباری)</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleActivateSupport}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                      فعال‌سازی پشتیبانی
-                    </Button>
-                  </div>
-                )}
-                
-                {course?.telegram_activation_required && !telegramActivated && (
-                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white dark:bg-gray-900/50 rounded-lg border border-amber-200 dark:border-amber-700">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/50 rounded-lg flex items-center justify-center">
-                        <Send className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-amber-800 dark:text-amber-400">عضویت در کانال تلگرام</h4>
-                        <p className="text-sm text-amber-700 dark:text-amber-300">دریافت اطلاعیه‌ها و آپدیت‌ها (اجباری)</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleActivateTelegram}
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                      عضویت در کانال
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {/* Access Types - Responsive Grid */}
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-4xl mx-auto px-1">
           {accessTypes.map((accessType, index) => {
