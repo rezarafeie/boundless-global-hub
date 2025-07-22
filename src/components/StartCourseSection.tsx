@@ -49,6 +49,7 @@ interface StartCourseSectionProps {
     slug?: string;
     support_activation_required?: boolean;
     telegram_activation_required?: boolean;
+    smart_activation_enabled?: boolean;
   } | undefined;
   onEnterCourse: () => void;
   userEmail?: string;
@@ -401,6 +402,25 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           })}
         </div>
 
+        {/* Course Action Links - Support, Telegram, Gifts - Only show if multiple activations required */}
+        {course && enrollment && (() => {
+          const activationCount = [
+            course.support_activation_required && !course.smart_activation_enabled,
+            course.smart_activation_enabled,
+            course.telegram_activation_required
+          ].filter(Boolean).length;
+          
+          // Only show if there's more than one activation required
+          return activationCount > 1;
+        })() && (
+          <div className="w-full mt-12">
+            <CourseActionLinks 
+              course={course}
+              enrollment={enrollment}
+              userEmail={userEmail || enrollment?.email}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
