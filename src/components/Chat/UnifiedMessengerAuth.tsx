@@ -1466,11 +1466,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         {currentStep === 'otp-login' && (
           <div className="space-y-6">
             <div className="text-center space-y-3 mb-8">
-            {/* Enhanced Animated Icon */}
-            <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
-            </div>
-              
               <h3 className="text-xl font-semibold text-foreground">
                 ورود با کد تأیید
               </h3>
