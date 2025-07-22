@@ -362,104 +362,9 @@ const EnrollSuccess: React.FC = () => {
               </CardHeader>
               
               <CardContent className="space-y-6">
-                {/* Payment Details */}
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                  <h3 className="font-semibold text-green-800 dark:text-green-400 mb-3">جزئیات پرداخت</h3>
-                  <div className="space-y-2 text-sm">
-                    {/* Show different details based on payment type */}
-                    {result.refId === 'FREE_COURSE' ? (
-                      // Free course details
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">نوع دوره:</span>
-                          <span className="font-medium text-green-600">رایگان</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">زمان ثبت‌نام:</span>
-                          <span className="font-medium">{result.enrollment?.created_at ? new Intl.DateTimeFormat('fa-IR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
-                        </div>
-                      </>
-                    ) : result.refId === 'MANUAL_PAYMENT_APPROVED' ? (
-                      // Manual payment details
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">مبلغ پرداختی:</span>
-                          <span className="font-medium">{result.enrollment?.payment_amount ? new Intl.NumberFormat('fa-IR').format(result.enrollment.payment_amount) + ' تومان' : 'نامشخص'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">زمان تایید:</span>
-                          <span className="font-medium">{result.enrollment?.approved_at ? new Intl.DateTimeFormat('fa-IR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }).format(new Date(result.enrollment.approved_at)) : 'نامشخص'}</span>
-                        </div>
-                        {result.enrollment?.receipt_url && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">رسید پرداخت:</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(result.enrollment.receipt_url, '_blank')}
-                              className="h-8 px-3 text-xs"
-                            >
-                              مشاهده رسید
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      // Online payment details
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">کد رهگیری:</span>
-                          <span className="font-mono font-medium">{result.refId}</span>
-                        </div>
-                      </>
-                    )}
-                    {result.woocommerceOrderId && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">شماره سفارش:</span>
-                        <span className="font-mono font-medium">{result.woocommerceOrderId}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">ایمیل:</span>
-                      <span className="font-medium">{email}</span>
-                    </div>
-                  </div>
-                </div>
-
-
-                {/* Course Details */}
-                {result.course && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{result.course.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {result.course.description}
-                        </p>
-                      </div>
-                      <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-                        فعال
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
-                {/* Required Activations at Top Priority - Consolidated Section */}
+                {/* 1. Activation Requirements (if activated) */}
                 {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required) && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800 mb-6">
+                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                     <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
                       ⚠️ فعال‌سازی‌های مهم
                     </h3>
@@ -539,7 +444,7 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* Start Course Section */}
+                {/* 2. Course Start Section */}
                 <StartCourseSection 
                   enrollment={result.enrollment}
                   course={result.course}
@@ -547,7 +452,104 @@ const EnrollSuccess: React.FC = () => {
                   userEmail={email || ''}
                 />
 
-                {/* Support Section - Mobile-Responsive and Clean */}
+                {/* 3. Course Action Links (if activation requires not activated) */}
+                {/* This will be rendered by StartCourseSection -> CourseActionLinks */}
+
+                {/* 4. Payment Details */}
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <h3 className="font-semibold text-green-800 dark:text-green-400 mb-3">جزئیات پرداخت</h3>
+                  <div className="space-y-2 text-sm">
+                    {/* Show different details based on payment type */}
+                    {result.refId === 'FREE_COURSE' ? (
+                      // Free course details
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">نوع دوره:</span>
+                          <span className="font-medium text-green-600">رایگان</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">زمان ثبت‌نام:</span>
+                          <span className="font-medium">{result.enrollment?.created_at ? new Intl.DateTimeFormat('fa-IR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
+                        </div>
+                      </>
+                    ) : result.refId === 'MANUAL_PAYMENT_APPROVED' ? (
+                      // Manual payment details
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">مبلغ پرداختی:</span>
+                          <span className="font-medium">{result.enrollment?.payment_amount ? new Intl.NumberFormat('fa-IR').format(result.enrollment.payment_amount) + ' تومان' : 'نامشخص'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">زمان تایید:</span>
+                          <span className="font-medium">{result.enrollment?.approved_at ? new Intl.DateTimeFormat('fa-IR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }).format(new Date(result.enrollment.approved_at)) : 'نامشخص'}</span>
+                        </div>
+                        {result.enrollment?.receipt_url && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">رسید پرداخت:</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(result.enrollment.receipt_url, '_blank')}
+                              className="h-8 px-3 text-xs"
+                            >
+                              مشاهده رسید
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      // Online payment details
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">کد رهگیری:</span>
+                          <span className="font-mono font-medium">{result.refId}</span>
+                        </div>
+                      </>
+                    )}
+                    {result.woocommerceOrderId && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">شماره سفارش:</span>
+                        <span className="font-mono font-medium">{result.woocommerceOrderId}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">ایمیل:</span>
+                      <span className="font-medium">{email}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Course Details */}
+                {result.course && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{result.course.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {result.course.description}
+                        </p>
+                      </div>
+                      <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                        فعال
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. Support Section */}
                 <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20 shadow-sm overflow-hidden">
                   <h3 className="font-semibold text-primary mb-4 flex items-center gap-2 text-base md:text-lg">
                     <MessageSquare className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
