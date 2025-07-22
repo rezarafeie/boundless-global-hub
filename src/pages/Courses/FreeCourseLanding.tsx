@@ -724,6 +724,20 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
         </div>
       </motion.section>
 
+      {/* Fixed Bottom Enrollment Button */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg p-4">
+        <div className="container max-w-4xl mx-auto">
+          <Button 
+            onClick={handleStartCourse}
+            size="lg"
+            className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 rounded-full px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+          >
+            <Play className="mr-3" size={20} />
+            شروع رایگان همین الان
+          </Button>
+        </div>
+      </div>
+
       {/* Course Modal */}
       <IframeModal
         isOpen={isModalOpen}
