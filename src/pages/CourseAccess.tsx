@@ -517,7 +517,10 @@ const CourseAccess: React.FC = () => {
                     </Button>
                   </div>
                   <div className="p-4">
-                    <UnifiedMessengerAuth onAuthenticated={() => setShowAuth(false)} />
+                    <UnifiedMessengerAuth 
+                      onAuthenticated={() => setShowAuth(false)} 
+                      isAcademyAuth={true}
+                    />
                   </div>
                 </div>
               </div>
