@@ -402,20 +402,17 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           })}
         </div>
 
-        {/* Course Action Links - Support, Telegram, Gifts - Hide only when exactly one activation required */}
-        {course && enrollment && (() => {
-          const activationCount = [
-            course.support_activation_required && !course.smart_activation_enabled,
-            course.smart_activation_enabled,
-            course.telegram_activation_required
-          ].filter(Boolean).length;
-          
-          // Hide only when there's exactly one activation required
-          return activationCount !== 1;
-        })() && (
+        {/* Course Action Links - Support, Telegram, Gifts - Show always but exclude actions already shown at top */}
+        {course && enrollment && (
           <div className="w-full mt-12">
             <CourseActionLinks 
-              course={course}
+              course={{
+                ...course,
+                // Hide support link if it's required (shown at top)
+                support_link: course.support_activation_required && !course.smart_activation_enabled ? null : course.support_link,
+                // Hide telegram link if it's required (shown at top)  
+                telegram_channel_link: course.telegram_activation_required ? null : course.telegram_channel_link
+              }}
               enrollment={enrollment}
               userEmail={userEmail || enrollment?.email}
             />
