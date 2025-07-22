@@ -338,9 +338,45 @@ const CourseAccess: React.FC = () => {
     }
   };
 
+  // Helper function to find next lesson
+  const findNextLesson = (currentLesson: Lesson): Lesson | null => {
+    // Get all lessons in order
+    const allLessons: Lesson[] = [];
+    
+    titleGroups.forEach(group => {
+      group.sections.forEach(section => {
+        allLessons.push(...section.lessons);
+      });
+    });
+    
+    sections.forEach(section => {
+      allLessons.push(...section.lessons);
+    });
+    
+    const currentIndex = allLessons.findIndex(l => l.id === currentLesson.id);
+    return currentIndex >= 0 && currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
+  };
+
   const renderLessonContent = (lesson: Lesson) => {
+    const nextLesson = findNextLesson(lesson);
+    
     return (
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Back to Course Menu Button */}
+        <div className="flex justify-start">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setSelectedLesson(null);
+              if (isMobile) setShowMobileLessonView(false);
+            }}
+            className="flex items-center gap-2"
+          >
+            <ChevronRight className="h-4 w-4 rotate-180" />
+            بازگشت به فهرست دروس
+          </Button>
+        </div>
+
         {/* Lesson Header */}
         <div className="text-center lg:text-right space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
@@ -377,6 +413,27 @@ const CourseAccess: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Next Lesson Button */}
+            {nextLesson && (
+              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-primary mb-2">درس بعدی</h4>
+                      <p className="text-sm text-muted-foreground">{nextLesson.title}</p>
+                    </div>
+                    <Button 
+                      onClick={() => handleLessonSelect(nextLesson)}
+                      className="flex items-center gap-2"
+                    >
+                      درس بعدی
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar Content */}
@@ -406,27 +463,6 @@ const CourseAccess: React.FC = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Course Progress */}
-            <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20">
-              <CardContent className="p-6">
-                <div className="text-center space-y-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
-                    <BookOpen className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">پیشرفت دوره</h4>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mb-4">
-                      در حال مطالعه درس {sections.findIndex(s => s.lessons.some(l => l.id === lesson.id)) + 1}
-                    </p>
-                  </div>
-                  <div className="w-full bg-blue-100 dark:bg-blue-900 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
-                  </div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">45% تکمیل شده</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
