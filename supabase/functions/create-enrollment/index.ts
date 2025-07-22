@@ -126,6 +126,11 @@ Deno.serve(async (req) => {
     // Always send enrollment_created webhook
     try {
       console.log('📤 Sending enrollment_created webhook...');
+      console.log('🎯 Free course enrollment details:', {
+        payment_amount: createdEnrollment.payment_amount,
+        payment_status: createdEnrollment.payment_status,
+        payment_method: createdEnrollment.payment_method
+      });
 
       const webhookPayload = {
         event_type: 'enrollment_created',
@@ -138,7 +143,10 @@ Deno.serve(async (req) => {
             phone: phone,
             country_code: country_code || '+98'
           },
-          course: courseData
+          course: courseData,
+          // Add explicit markers for free course enrollments
+          is_free_enrollment: createdEnrollment.payment_amount === 0,
+          enrollment_type: createdEnrollment.payment_amount === 0 ? 'free' : 'paid'
         }
       };
 
