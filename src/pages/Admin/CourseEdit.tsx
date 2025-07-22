@@ -32,6 +32,7 @@ interface Course {
   woocommerce_create_access?: boolean;
   use_landing_page_merge?: boolean;
   enable_course_access?: boolean;
+  is_free_access?: boolean;
   support_link?: string | null;
   telegram_channel_link?: string | null;
   gifts_link?: string | null;
