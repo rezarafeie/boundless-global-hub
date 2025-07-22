@@ -444,13 +444,13 @@ const CourseEdit: React.FC = () => {
                       </div>
                       
                       <div>
-                        <Label htmlFor="sale_expires_at">تاریخ پایان حراج *</Label>
+                        <Label htmlFor="sale_expires_at">تاریخ پایان حراج</Label>
                         <Input
                           id="sale_expires_at"
                           type="datetime-local"
                           value={formData.sale_expires_at}
                           onChange={(e) => setFormData(prev => ({ ...prev, sale_expires_at: e.target.value }))}
-                          required={formData.is_sale_enabled}
+                          required={false}
                         />
                       </div>
                     </div>
