@@ -490,32 +490,34 @@ const CourseAccess: React.FC = () => {
                 <User className="h-12 w-12 text-amber-500 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold mb-2">❌ شما وارد نشده‌اید</h2>
                 <p className="text-muted-foreground mb-4">
-                  برای دسترسی به محتوای دوره باید وارد شوید
+                  برای دسترسی به محتوای دوره، لطفاً وارد حساب کاربری خود شوید
                 </p>
-                <Button onClick={() => setShowAuth(true)}>
-                  ورود / ثبت‌نام
-                </Button>
+                <div className="space-y-3">
+                  <Button onClick={() => setShowAuth(true)} className="w-full">
+                    ورود / ثبت‌نام
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.open(`/course/${course.slug}`, '_blank')}
+                    className="w-full"
+                  >
+                    مشاهده صفحه دوره
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             
             {showAuth && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="bg-background border rounded-xl shadow-xl max-w-md w-full mx-4 relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAuth(false)}
-                    className="absolute left-4 top-4 z-10"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <div className="p-6 pt-12">
-                    <UnifiedMessengerAuth 
-                      onSuccess={(userData) => {
-                        setShowAuth(false);
-                        window.location.reload(); // Refresh to update auth state
-                      }} 
-                    />
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-background rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+                  <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+                    <h3 className="font-semibold">ورود / ثبت‌نام</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowAuth(false)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="p-4">
+                    <UnifiedMessengerAuth onAuthenticated={() => setShowAuth(false)} />
                   </div>
                 </div>
               </div>
@@ -568,93 +570,84 @@ const CourseAccess: React.FC = () => {
                         <p className="text-muted-foreground">هنوز هیچ درسی اضافه نشده است</p>
                       </div>
                     ) : (
-                      <Accordion type="multiple" className="space-y-1" defaultValue={Array.from(openTitleGroups)}>
-                        {/* Render Title Groups as Accordion Items */}
-                        {titleGroups.map((titleGroup) => (
-                          <AccordionItem 
-                            key={titleGroup.id} 
-                            value={titleGroup.id}
-                            className="border border-primary/20 rounded-2xl bg-gradient-to-r from-primary/5 to-primary/10 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 mb-4"
-                          >
-                            <AccordionTrigger className="px-5 py-4 hover:bg-primary/10 transition-all duration-300 [&[data-state=open]]:bg-primary/10">
-                              <div className="flex items-center justify-between w-full pr-3">
-                                <div className="flex items-center gap-4">
-                                  <span className="text-2xl">{titleGroup.icon}</span>
-                                  <div className="text-right">
-                                    <h3 className="font-bold text-lg text-primary mb-1">
-                                      {titleGroup.title}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                      {titleGroup.sections.reduce((total, section) => total + section.lessons.length, 0)} درس در {titleGroup.sections.length} بخش
-                                    </p>
+                      <>
+                        {/* Title Groups */}
+                        <Accordion type="multiple" value={Array.from(openTitleGroups)} onValueChange={(values) => setOpenTitleGroups(new Set(values))} className="space-y-3">
+                          {titleGroups.map((titleGroup, titleGroupIndex) => (
+                            <AccordionItem 
+                              key={titleGroup.id} 
+                              value={titleGroup.id}
+                              className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                            >
+                              <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                <div className="flex items-center justify-between w-full pr-3">
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-2xl">{titleGroup.icon}</div>
+                                    <div className="text-right">
+                                      <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                                        {titleGroup.title}
+                                      </h3>
+                                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        شامل {titleGroup.sections.length} فصل
+                                      </p>
+                                    </div>
                                   </div>
+                                  <Badge variant="secondary" className="bg-primary/20 text-primary px-3 py-1.5 text-sm font-medium shadow-sm">
+                                    {titleGroup.sections.reduce((total, section) => total + section.lessons.length, 0)}
+                                  </Badge>
                                 </div>
-                                <Badge variant="secondary" className="bg-primary/20 text-primary px-3 py-1.5 text-sm font-medium shadow-sm">
-                                  {titleGroup.sections.reduce((total, section) => total + section.lessons.length, 0)}
-                                </Badge>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-0 pb-4">
-                              <div className="space-y-2 px-4">
-                                {/* Sections under this title group */}
-                                {titleGroup.sections.map((section, sectionIndex) => (
-                                  <Accordion key={section.id} type="multiple" className="space-y-1">
-                                    <AccordionItem 
-                                      value={section.id}
-                                      className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
-                                    >
-                                      <AccordionTrigger className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
-                                        <div className="flex items-center justify-between w-full pr-3">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                              <BookOpen className="h-4 w-4 text-white" />
+                              </AccordionTrigger>
+                              <AccordionContent className="px-0 pb-4">
+                                <div className="space-y-2 px-4">
+                                  {/* Sections under this title group */}
+                                  {titleGroup.sections.map((section, sectionIndex) => (
+                                    <Accordion key={section.id} type="multiple" className="space-y-1">
+                                      <AccordionItem 
+                                        value={section.id}
+                                        className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+                                      >
+                                        <AccordionTrigger className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                          <div className="flex items-center justify-between w-full pr-3">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                                                <BookOpen className="h-4 w-4 text-white" />
+                                              </div>
+                                              <div className="text-right">
+                                                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-0.5">
+                                                  {section.title}
+                                                </h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                  {section.lessons.length} درس
+                                                </p>
+                                              </div>
                                             </div>
-                                            <div className="text-right">
-                                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-0.5">
-                                                {section.title}
-                                              </h4>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {section.lessons.length} درس
-                                              </p>
-                                            </div>
+                                            <Badge variant="outline" className="text-xs px-2 py-0.5">
+                                              {section.lessons.length}
+                                            </Badge>
                                           </div>
-                                          <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 dark:from-blue-950 dark:to-purple-950 dark:text-blue-300 px-2 py-1 text-xs font-medium shadow-sm">
-                                            {section.lessons.length}
-                                          </Badge>
-                                        </div>
-                                      </AccordionTrigger>
-                                      <AccordionContent className="px-0 pb-0">
-                                        <div className="border-t border-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
-                                          {section.lessons.map((lesson, lessonIndex) => {
-                                            const isSelected = selectedLesson?.id === lesson.id;
-                                            const lessonNumber = titleGroups.slice(0, titleGroups.findIndex(g => g.id === titleGroup.id)).reduce((total, g) => total + g.sections.reduce((sectionTotal, s) => sectionTotal + s.lessons.length, 0), 0) + titleGroup.sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
-                                            
-                                            return (
-                                              <button
-                                                key={lesson.id}
-                                                onClick={() => handleLessonSelect(lesson)}
-                                                className={`w-full text-right px-4 py-3 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
-                                                  isSelected 
-                                                    ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500' 
-                                                    : 'border-l-4 border-transparent hover:border-l-4 hover:border-blue-300'
-                                                }`}
-                                              >
-                                                <div className="flex items-center justify-between">
-                                                  <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all duration-300 ${
-                                                      isSelected 
-                                                        ? 'bg-blue-500 text-white shadow-lg' 
-                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900 group-hover:text-blue-600'
-                                                    }`}>
-                                                      {lessonNumber}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                      <h5 className={`font-medium text-sm mb-1 transition-colors duration-300 ${
-                                                        isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                        </AccordionTrigger>
+                                        <AccordionContent className="px-0 pb-2">
+                                          <div className="space-y-1 px-3">
+                                            {section.lessons.map((lesson, lessonIndex) => {
+                                              const isSelected = selectedLesson?.id === lesson.id;
+                                              return (
+                                                <button
+                                                  key={lesson.id}
+                                                  onClick={() => handleLessonSelect(lesson)}
+                                                  className={`w-full text-right p-3 rounded-lg transition-all duration-200 group border ${
+                                                    isSelected 
+                                                      ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm' 
+                                                      : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                                  }`}
+                                                >
+                                                  <div className="flex items-center justify-between">
+                                                    <div className="flex-1 min-w-0">
+                                                      <h5 className={`font-medium text-sm mb-1 text-right truncate ${
+                                                        isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
                                                       }`}>
-                                                        {lesson.title}
+                                                        {lessonIndex + 1}. {lesson.title}
                                                       </h5>
-                                                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                                                         <div className="flex items-center gap-1">
                                                           <Clock className="h-3 w-3" />
                                                           <span>{lesson.duration} دقیقه</span>
@@ -673,127 +666,117 @@ const CourseAccess: React.FC = () => {
                                                         )}
                                                       </div>
                                                     </div>
+                                                    {isSelected && (
+                                                      <div className="flex items-center gap-2">
+                                                        <CheckCircle className="h-5 w-5 text-blue-500" />
+                                                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                      </div>
+                                                    )}
                                                   </div>
-                                                  {isSelected && (
-                                                    <div className="flex items-center gap-2">
-                                                      <CheckCircle className="h-5 w-5 text-blue-500" />
-                                                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
-                                      </AccordionContent>
-                                    </AccordionItem>
-                                  </Accordion>
-                                ))}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        </AccordionContent>
+                                      </AccordionItem>
+                                    </Accordion>
+                                  ))}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
 
-                      {/* Show orphan sections if they exist */}
-                      {sections.length > 0 && (
-                        <div className="mt-4">
-                          <Accordion type="multiple" className="space-y-1">
-                            {sections.map((section, sectionIndex) => (
-                              <AccordionItem 
-                                key={section.id} 
-                                value={section.id}
-                                className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
-                              >
-                                <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
-                                  <div className="flex items-center justify-between w-full pr-3">
-                                    <div className="flex items-center gap-4">
-                                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                                        <BookOpen className="h-5 w-5 text-white" />
+                        {/* Show orphan sections if they exist */}
+                        {sections.length > 0 && (
+                          <div className="mt-4">
+                            <Accordion type="multiple" className="space-y-1">
+                              {sections.map((section, sectionIndex) => (
+                                <AccordionItem 
+                                  key={section.id} 
+                                  value={section.id}
+                                  className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
+                                >
+                                  <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                    <div className="flex items-center justify-between w-full pr-3">
+                                      <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
+                                          <BookOpen className="h-5 w-5 text-white" />
+                                        </div>
+                                        <div className="text-right">
+                                          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                                            {section.title}
+                                          </h3>
+                                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            {section.lessons.length} درس
+                                          </p>
+                                        </div>
                                       </div>
-                                      <div className="text-right">
-                                        <h4 className="font-semibold text-base text-gray-900 dark:text-gray-100 mb-1">
-                                          {section.title}
-                                        </h4>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                                          {section.lessons.length} درس در این بخش
-                                        </p>
-                                      </div>
+                                      <Badge variant="secondary" className="bg-primary/20 text-primary px-3 py-1.5 text-sm font-medium shadow-sm">
+                                        {section.lessons.length}
+                                      </Badge>
                                     </div>
-                                    <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 dark:from-blue-950 dark:to-purple-950 dark:text-blue-300 px-3 py-1.5 text-sm font-medium shadow-sm">
-                                      {section.lessons.length}
-                                    </Badge>
-                                  </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-0 pb-0">
-                                  <div className="border-t border-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800">
-                                    {section.lessons.map((lesson, lessonIndex) => {
-                                      const isSelected = selectedLesson?.id === lesson.id;
-                                      const lessonNumber = titleGroups.reduce((total, group) => total + group.sections.reduce((sectionTotal, s) => sectionTotal + s.lessons.length, 0), 0) + sections.slice(0, sectionIndex).reduce((total, s) => total + s.lessons.length, 0) + lessonIndex + 1;
-                                      
-                                      return (
-                                        <button
-                                          key={lesson.id}
-                                          onClick={() => handleLessonSelect(lesson)}
-                                          className={`w-full text-right px-5 py-3 transition-all duration-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 group border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${
-                                            isSelected 
-                                              ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-500' 
-                                              : 'border-l-4 border-transparent hover:border-l-4 hover:border-blue-300'
-                                          }`}
-                                        >
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all duration-300 ${
-                                                isSelected 
-                                                  ? 'bg-blue-500 text-white shadow-lg' 
-                                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900 group-hover:text-blue-600'
-                                              }`}>
-                                                {lessonNumber}
-                                              </div>
-                                              <div className="flex-1">
-                                                <h5 className={`font-medium text-sm mb-1 transition-colors duration-300 ${
-                                                  isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                  </AccordionTrigger>
+                                  <AccordionContent className="px-0 pb-4">
+                                    <div className="space-y-1 px-4">
+                                      {section.lessons.map((lesson, lessonIndex) => {
+                                        const isSelected = selectedLesson?.id === lesson.id;
+                                        return (
+                                          <button
+                                            key={lesson.id}
+                                            onClick={() => handleLessonSelect(lesson)}
+                                            className={`w-full text-right p-4 rounded-xl transition-all duration-200 group border ${
+                                              isSelected 
+                                                ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-md' 
+                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                            }`}
+                                          >
+                                            <div className="flex items-center justify-between">
+                                              <div className="flex-1 min-w-0">
+                                                <h4 className={`font-semibold text-base mb-2 text-right truncate ${
+                                                  isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
                                                 }`}>
-                                                  {lesson.title}
-                                                </h5>
-                                                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                                  {lessonIndex + 1}. {lesson.title}
+                                                </h4>
+                                                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                                                   <div className="flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
+                                                    <Clock className="h-4 w-4" />
                                                     <span>{lesson.duration} دقیقه</span>
                                                   </div>
                                                   {lesson.video_url && (
                                                     <div className="flex items-center gap-1">
-                                                      <PlayCircle className="h-3 w-3" />
+                                                      <PlayCircle className="h-4 w-4" />
                                                       <span>ویدیو</span>
                                                     </div>
                                                   )}
                                                   {lesson.file_url && (
                                                     <div className="flex items-center gap-1">
-                                                      <FileText className="h-3 w-3" />
+                                                      <FileText className="h-4 w-4" />
                                                       <span>فایل</span>
                                                     </div>
                                                   )}
                                                 </div>
                                               </div>
+                                              {isSelected && (
+                                                <div className="flex items-center gap-2">
+                                                  <CheckCircle className="h-5 w-5 text-blue-500" />
+                                                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                </div>
+                                              )}
                                             </div>
-                                            {isSelected && (
-                                              <div className="flex items-center gap-2">
-                                                <CheckCircle className="h-5 w-5 text-blue-500" />
-                                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            ))}
-                          </Accordion>
-                        </div>
-                      )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                            </Accordion>
+                          </div>
+                        )}
+                      </>
                     )}
+                  </div>
                 </div>
               </div>
 

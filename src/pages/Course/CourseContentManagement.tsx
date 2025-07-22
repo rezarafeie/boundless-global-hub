@@ -256,7 +256,7 @@ const CourseContentManagement: React.FC = () => {
   };
 
   const resetSectionForm = () => {
-    setSectionForm({ title: '', title_group_id: '' });
+    setSectionForm({ title: '', title_group_id: '', is_open: false });
     setEditingSection(null);
   };
 
@@ -335,7 +335,7 @@ const CourseContentManagement: React.FC = () => {
 
   const handleEditSection = (section: CourseSection) => {
     setEditingSection(section);
-    setSectionForm({ title: section.title, title_group_id: section.title_group_id || '' });
+    setSectionForm({ title: section.title, title_group_id: section.title_group_id || '', is_open: false });
     setShowSectionModal(true);
   };
 
