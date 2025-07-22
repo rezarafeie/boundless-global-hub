@@ -518,7 +518,11 @@ const CourseAccess: React.FC = () => {
                   </div>
                   <div className="p-4">
                     <UnifiedMessengerAuth 
-                      onAuthenticated={() => setShowAuth(false)} 
+                      onAuthenticated={(sessionToken: string, userName: string, user: any) => {
+                        login(user, sessionToken);
+                        setShowAuth(false);
+                        checkAuthAndLoadCourse(); // Reload course data to check enrollment
+                      }}
                       isAcademyAuth={true}
                     />
                   </div>
