@@ -52,7 +52,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
   courseSlug
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { getEnrollUrl } = useCourseSettings(courseSlug || '');
+  const { getEnrollUrl, loading: courseSettingsLoading } = useCourseSettings(courseSlug || '');
   
   // Set countdown target for 7 days from now
   const targetDate = new Date();
@@ -73,7 +73,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
   };
 
   const handleStartCourse = () => {
-    if (courseSlug) {
+    if (courseSlug && !courseSettingsLoading) {
       const enrollUrl = getEnrollUrl(courseSlug, iframeUrl);
       
       if (enrollUrl.startsWith('/')) {
