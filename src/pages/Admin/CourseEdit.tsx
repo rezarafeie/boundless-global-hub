@@ -585,29 +585,6 @@ const CourseEdit: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="woocommerce_product_id">ID محصول WooCommerce</Label>
-                  <Input
-                    id="woocommerce_product_id"
-                    type="number"
-                    value={formData.woocommerce_product_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, woocommerce_product_id: e.target.value }))}
-                    placeholder="123"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="redirect_url">URL هدایت پس از خرید</Label>
-                <Input
-                  id="redirect_url"
-                  type="url"
-                  value={formData.redirect_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, redirect_url: e.target.value }))}
-                  placeholder="https://academy.rafiei.co/course/boundless"
-                />
-              </div>
 
               {/* SpotPlayer Section */}
               <div className="border-t pt-6 space-y-4">
@@ -667,6 +644,30 @@ const CourseEdit: React.FC = () => {
                   <p className="text-sm text-muted-foreground">
                     در صورت غیرفعال بودن، دکمه دسترسی به دوره حذف می‌شود
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="woocommerce_product_id">ID محصول WooCommerce</Label>
+                    <Input
+                      id="woocommerce_product_id"
+                      type="number"
+                      value={formData.woocommerce_product_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, woocommerce_product_id: e.target.value }))}
+                      placeholder="123"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="redirect_url">URL هدایت پس از خرید</Label>
+                  <Input
+                    id="redirect_url"
+                    type="url"
+                    value={formData.redirect_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, redirect_url: e.target.value }))}
+                    placeholder="https://academy.rafiei.co/course/boundless"
+                  />
                 </div>
               </div>
 

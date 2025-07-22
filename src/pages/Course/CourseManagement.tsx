@@ -23,6 +23,7 @@ interface Course {
   usd_price: number | null;
   is_active: boolean;
   redirect_url: string | null;
+  woocommerce_product_id: number | null;
   spotplayer_course_id: string | null;
   is_spotplayer_enabled: boolean;
   create_test_license: boolean;
@@ -50,6 +51,7 @@ const CourseManagement: React.FC = () => {
     use_dollar_price: false,
     usd_price: 0,
     redirect_url: '',
+    woocommerce_product_id: '',
     spotplayer_course_id: '',
     is_spotplayer_enabled: false,
     create_test_license: false,
@@ -133,6 +135,7 @@ const CourseManagement: React.FC = () => {
           use_dollar_price: data.use_dollar_price || false,
           usd_price: data.usd_price || 0,
           redirect_url: data.redirect_url || '',
+          woocommerce_product_id: data.woocommerce_product_id?.toString() || '',
           spotplayer_course_id: data.spotplayer_course_id || '',
           is_spotplayer_enabled: data.is_spotplayer_enabled || false,
           create_test_license: data.create_test_license || false,
@@ -173,6 +176,7 @@ const CourseManagement: React.FC = () => {
         use_dollar_price: courseForm.use_dollar_price,
         usd_price: courseForm.use_dollar_price ? courseForm.usd_price : null,
         redirect_url: courseForm.redirect_url,
+        woocommerce_product_id: courseForm.woocommerce_product_id ? parseInt(courseForm.woocommerce_product_id) : null,
         spotplayer_course_id: courseForm.spotplayer_course_id,
         is_spotplayer_enabled: courseForm.is_spotplayer_enabled,
         create_test_license: courseForm.create_test_license,
@@ -382,15 +386,6 @@ const CourseManagement: React.FC = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="redirect_url">لینک دسترسی</Label>
-              <Input
-                id="redirect_url"
-                value={courseForm.redirect_url}
-                onChange={(e) => setCourseForm(prev => ({ ...prev, redirect_url: e.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
 
             {/* Course Status */}
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
@@ -489,6 +484,27 @@ const CourseManagement: React.FC = () => {
                   onCheckedChange={(checked) => 
                     setCourseForm(prev => ({ ...prev, woocommerce_create_access: checked }))
                   }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="woocommerce_product_id">ID محصول WooCommerce</Label>
+                <Input
+                  id="woocommerce_product_id"
+                  type="number"
+                  value={courseForm.woocommerce_product_id}
+                  onChange={(e) => setCourseForm(prev => ({ ...prev, woocommerce_product_id: e.target.value }))}
+                  placeholder="123"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="redirect_url">URL هدایت پس از خرید</Label>
+                <Input
+                  id="redirect_url"
+                  value={courseForm.redirect_url}
+                  onChange={(e) => setCourseForm(prev => ({ ...prev, redirect_url: e.target.value }))}
+                  placeholder="https://academy.rafiei.co/course/boundless"
                 />
               </div>
             </div>
