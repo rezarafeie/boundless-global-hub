@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, BarChart3, Settings, Webhook } from 'lucide-react';
+import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck } from 'lucide-react';
 import CourseManagement from '@/components/Admin/CourseManagement';
 import { WebhookManagement } from '@/components/Admin/WebhookManagement';
+import UserManagement from '@/components/Admin/UserManagement';
 
 const EnrollmentAdmin: React.FC = () => {
   return (
@@ -21,7 +22,7 @@ const EnrollmentAdmin: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white/70 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-6 bg-white/70 backdrop-blur-sm">
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">دوره‌ها</span>
@@ -29,6 +30,10 @@ const EnrollmentAdmin: React.FC = () => {
             <TabsTrigger value="enrollments" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">ثبت‌نام‌ها</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">کاربران</span>
             </TabsTrigger>
             <TabsTrigger value="webhooks" className="flex items-center gap-2">
               <Webhook className="h-4 w-4" />
@@ -62,6 +67,10 @@ const EnrollmentAdmin: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UserManagement />
           </TabsContent>
 
           <TabsContent value="webhooks" className="space-y-6">
