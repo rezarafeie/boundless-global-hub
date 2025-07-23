@@ -858,13 +858,15 @@ const EnrollAdmin: React.FC = () => {
 
         {/* Enrollment Details Modal */}
       <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
-        <DialogContent className="max-w-none w-screen h-screen fixed inset-0 m-0 rounded-none overflow-y-auto">
-          <DialogHeader className="relative">
-            <DialogTitle>جزئیات ثبت‌نام</DialogTitle>
-            <DialogDescription>
-              بررسی و تایید پرداخت دستی
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-none w-[100vw] h-[100vh] fixed inset-0 m-0 p-0 rounded-none border-none">
+          <div className="h-full flex flex-col">
+            <DialogHeader className="p-6 border-b bg-background">
+              <DialogTitle>جزئیات ثبت‌نام</DialogTitle>
+              <DialogDescription>
+                بررسی و تایید پرداخت دستی
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto p-6">
           
           {selectedEnrollment && (
             <div className="space-y-6">
@@ -1033,6 +1035,8 @@ const EnrollAdmin: React.FC = () => {
               )}
             </div>
           )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </MainLayout>
