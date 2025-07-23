@@ -164,7 +164,15 @@ const CourseAccess: React.FC = () => {
 
       // Log course page visit if user is authenticated
       if (isAuthenticated && user?.id) {
-        await logCoursePageVisit(parseInt(user.id.toString()), courseData.id, courseData.title);
+        try {
+          console.log('Logging course page visit for user:', user.id, 'course:', courseData.id);
+          await logCoursePageVisit(parseInt(user.id.toString()), courseData.id, courseData.title);
+          console.log('Course page visit logged successfully');
+        } catch (error) {
+          console.error('Error logging course page visit:', error);
+        }
+      } else {
+        console.log('User not authenticated or no user ID:', { isAuthenticated, userId: user?.id });
       }
 
       // Check if course has free access - skip authentication if enabled
