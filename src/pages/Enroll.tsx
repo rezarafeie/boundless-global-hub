@@ -180,7 +180,7 @@ const Enroll: React.FC = () => {
       console.error('Error fetching exchange rate:', error);
       toast({
         title: "خطا",
-        description: "خطا در دریافت نرخ ارز. قیمت ریالی نمایش داده شده ممکن است به‌روز نباشد.",
+        description: "خطا در دریافت نرخ ارز. قیمت نمایش داده شده ممکن است به‌روز نباشد.",
         variant: "destructive"
       });
       // Fallback to course price if exchange rate fails
@@ -833,7 +833,7 @@ const Enroll: React.FC = () => {
                                 : discountedPrice !== null 
                                   ? formatPrice(discountedPrice)
                                   : course.use_dollar_price && finalRialPrice 
-                                    ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                                    ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
                                     : formatPrice(course.price)
                               }
                             </>
