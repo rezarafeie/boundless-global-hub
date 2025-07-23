@@ -293,8 +293,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
 
         {/* Access Types - Responsive Grid */}
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 max-w-4xl mx-auto px-1">
-          {accessTypes.map((accessType, index) => {
-            if (!accessType.enabled) return null;
+          {accessTypes.filter(type => type.enabled).map((accessType, index) => {
+            const stepNumber = index + 1;
             
             return (
               <div key={accessType.id} className={`w-full transform transition-all duration-500 ${
@@ -303,7 +303,11 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
               }`}>
                 {/* Rafiei Player - Special integrated section */}
                 {accessType.id === 'rafiei-player' ? (
-                  <div className="group hover:scale-[1.01] transition-all duration-300">
+                  <div className="group hover:scale-[1.01] transition-all duration-300 relative">
+                    {/* Step Number for Rafiei Player */}
+                    <div className="absolute -top-2 -right-2 z-10 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+                      {stepNumber}
+                    </div>
                     <RafieiPlayerSection 
                       enrollment={enrollment}
                       course={course}
@@ -313,6 +317,15 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                 ) : (
                   /* Modern Clean Cards - Fully Responsive */
                   <Card className="group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90 w-full min-w-0">
+                    {/* Step Number */}
+                    <div className={`absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg text-white ${
+                      accessType.color === 'green' ? 'bg-green-600' :
+                      accessType.color === 'blue' ? 'bg-blue-600' :
+                      'bg-purple-600'
+                    }`}>
+                      {stepNumber}
+                    </div>
+                    
                     {/* Gradient Border Effect */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${
                       accessType.color === 'green' ? 'from-green-500/20 to-emerald-500/20' :
