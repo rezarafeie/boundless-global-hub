@@ -9,7 +9,7 @@ interface UseLessonTrackerOptions {
   courseTitle: string;
 }
 
-export const useLessonTracker = (options: UseLessonTrackerOptions) => {
+export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
   const { user } = useAuth();
   const startTimeRef = useRef<number>(Date.now());
   const isActiveRef = useRef(true);
@@ -17,7 +17,7 @@ export const useLessonTracker = (options: UseLessonTrackerOptions) => {
 
   // Log lesson opened
   useEffect(() => {
-    if (!user?.id || hasLoggedOpenRef.current) return;
+    if (!user?.id || !options || hasLoggedOpenRef.current) return;
 
     const logLessonOpen = async () => {
       try {
@@ -62,7 +62,7 @@ export const useLessonTracker = (options: UseLessonTrackerOptions) => {
     };
 
     const logTimeSpent = async () => {
-      if (!user?.id || !isActiveRef.current) return;
+      if (!user?.id || !isActiveRef.current || !options) return;
 
       const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000 / 60); // minutes
       if (timeSpent > 0) {
@@ -119,7 +119,7 @@ export const useLessonTracker = (options: UseLessonTrackerOptions) => {
   }, [user?.id, options]);
 
   const markLessonComplete = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !options) return;
 
     try {
       // Log completion activity
