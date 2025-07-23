@@ -82,7 +82,7 @@ const CourseAccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
-  const { logCoursePageVisit } = useAuthTracking();
+  const { logCoursePageVisit, logMaterialDownload } = useAuthTracking();
   
   // Function to replace user template variables in content
   const replaceUserTemplate = (content: string): string => {
@@ -485,7 +485,22 @@ const CourseAccess: React.FC = () => {
                       </p>
                     </div>
                     <Button
-                      onClick={() => window.open(lesson.file_url!, '_blank')}
+                      onClick={async () => {
+                        // Track material download
+                        if (isAuthenticated && user?.id && course) {
+                          try {
+                            await logMaterialDownload(
+                              parseInt(user.id.toString()),
+                              course.id,
+                              `${lesson.title} - منابع درس`,
+                              lesson.file_url!
+                            );
+                          } catch (error) {
+                            console.error('Error logging material download:', error);
+                          }
+                        }
+                        window.open(lesson.file_url!, '_blank');
+                      }}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
                     >
                       <Download className="h-4 w-4 mr-2" />
@@ -495,6 +510,47 @@ const CourseAccess: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Mark as Complete Button */}
+            <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">تکمیل درس</h4>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mb-4">
+                      درس را به عنوان تکمیل شده علامت‌گذاری کنید
+                    </p>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      if (markLessonComplete) {
+                        try {
+                          await markLessonComplete();
+                          toast({
+                            title: "تبریک!",
+                            description: "درس با موفقیت تکمیل شد",
+                          });
+                        } catch (error) {
+                          console.error('Error marking lesson as complete:', error);
+                          toast({
+                            title: "خطا",
+                            description: "خطا در تکمیل درس",
+                            variant: "destructive"
+                          });
+                        }
+                      }
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    تکمیل درس
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
