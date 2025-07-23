@@ -79,7 +79,7 @@ interface Enrollment {
 }
 
 const CourseAccess: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
   const { logCoursePageVisit, logMaterialDownload } = useAuthTracking();
@@ -92,6 +92,7 @@ const CourseAccess: React.FC = () => {
   };
   
   const courseSlug = searchParams.get('course');
+  const lessonId = searchParams.get('lesson');
   
   const [course, setCourse] = useState<Course | null>(null);
   const [titleGroups, setTitleGroups] = useState<TitleGroup[]>([]);
@@ -115,9 +116,15 @@ const CourseAccess: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Handle lesson selection for mobile
+  // Handle lesson selection for mobile and URL updates
   const handleLessonSelect = (lesson: Lesson) => {
     setSelectedLesson(lesson);
+    
+    // Update URL with lesson parameter
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('lesson', lesson.id);
+    setSearchParams(newSearchParams, { replace: true });
+    
     if (isMobile) {
       setShowMobileLessonView(true);
     }
@@ -300,16 +307,56 @@ const CourseAccess: React.FC = () => {
       });
       setOpenTitleGroups(initiallyOpen);
 
-      // Auto-select first lesson if available
-      let firstLesson = null;
-      if (formattedTitleGroups.length > 0 && formattedTitleGroups[0].sections.length > 0 && formattedTitleGroups[0].sections[0].lessons.length > 0) {
-        firstLesson = formattedTitleGroups[0].sections[0].lessons[0];
-      } else if (formattedOrphanSections.length > 0 && formattedOrphanSections[0].lessons.length > 0) {
-        firstLesson = formattedOrphanSections[0].lessons[0];
+      // Auto-select lesson based on URL parameter or first lesson
+      let lessonToSelect = null;
+      
+      // First try to find lesson from URL parameter
+      if (lessonId) {
+        // Search in title groups
+        for (const group of formattedTitleGroups) {
+          for (const section of group.sections) {
+            const foundLesson = section.lessons.find(lesson => lesson.id === lessonId);
+            if (foundLesson) {
+              lessonToSelect = foundLesson;
+              // Also open the title group containing this lesson
+              initiallyOpen.add(group.id);
+              setOpenTitleGroups(initiallyOpen);
+              break;
+            }
+          }
+          if (lessonToSelect) break;
+        }
+        
+        // Search in orphan sections if not found in title groups
+        if (!lessonToSelect) {
+          for (const section of formattedOrphanSections) {
+            const foundLesson = section.lessons.find(lesson => lesson.id === lessonId);
+            if (foundLesson) {
+              lessonToSelect = foundLesson;
+              break;
+            }
+          }
+        }
       }
       
-      if (firstLesson) {
-        setSelectedLesson(firstLesson);
+      // If no lesson found from URL or no URL parameter, select first available lesson
+      if (!lessonToSelect) {
+        if (formattedTitleGroups.length > 0 && formattedTitleGroups[0].sections.length > 0 && formattedTitleGroups[0].sections[0].lessons.length > 0) {
+          lessonToSelect = formattedTitleGroups[0].sections[0].lessons[0];
+        } else if (formattedOrphanSections.length > 0 && formattedOrphanSections[0].lessons.length > 0) {
+          lessonToSelect = formattedOrphanSections[0].lessons[0];
+        }
+      }
+      
+      if (lessonToSelect) {
+        setSelectedLesson(lessonToSelect);
+        
+        // Update URL if lesson was selected automatically and no lesson was in URL
+        if (!lessonId && lessonToSelect) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.set('lesson', lessonToSelect.id);
+          setSearchParams(newSearchParams, { replace: true });
+        }
       }
 
     } catch (error) {
