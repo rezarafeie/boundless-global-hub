@@ -335,8 +335,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                        ? formatPrice(salePrice)
                        : discountedPrice !== null 
                          ? formatPrice(discountedPrice)
-                         : finalRialPrice 
-                           ? TetherlandService.formatIRRAmount(finalRialPrice) + ' ریال'
+                          : finalRialPrice 
+                            ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
                            : formatPrice(course.price)
                      }
                    </span>
