@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
 import MainLayout from '@/components/Layout/MainLayout';
+import CrossCourseLessonCopy from '@/components/Course/CrossCourseLessonCopy';
 import {
   DndContext,
   closestCenter,
@@ -1332,13 +1333,23 @@ const SortableLesson: React.FC<{
             </DialogContent>
           </Dialog>
 
+          <div className="flex gap-2">
+            <Dialog open={showLessonModal} onOpenChange={setShowLessonModal}>
+              <DialogTrigger asChild>
+                <Button variant="outline" onClick={resetLessonForm}>
+                  <Plus className="h-4 w-4 ml-2" />
+                  افزودن درس جدید
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+            
+            <CrossCourseLessonCopy 
+              currentCourseId={courseId!}
+              onLessonsCopied={fetchCourseData}
+            />
+          </div>
+
           <Dialog open={showLessonModal} onOpenChange={setShowLessonModal}>
-            <DialogTrigger asChild>
-              <Button variant="outline" onClick={resetLessonForm}>
-                <Plus className="h-4 w-4 ml-2" />
-                افزودن درس جدید
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
