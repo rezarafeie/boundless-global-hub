@@ -114,7 +114,7 @@ export function UserActivity({ userId }: UserActivityProps) {
       });
 
       // 4. Lesson progress
-      const { data: lessonProgress } = await supabase
+      const { data: lessonProgress, error: lessonError } = await supabase
         .from('user_lesson_progress')
         .select(`
           *, 
@@ -126,8 +126,14 @@ export function UserActivity({ userId }: UserActivityProps) {
         `)
         .eq('user_id', userId);
 
+      console.log('Lesson progress data for user', userId, ':', lessonProgress);
+      console.log('Lesson progress error:', lessonError);
+
       lessonProgress?.forEach((progress: any) => {
+        console.log('Processing lesson progress:', progress);
+        
         if (progress.first_opened_at) {
+          console.log('Adding lesson opened activity');
           allActivities.push({
             id: `lesson-open-${progress.id}`,
             event_type: 'lesson_opened',
@@ -138,6 +144,7 @@ export function UserActivity({ userId }: UserActivityProps) {
         }
 
         if (progress.is_completed && progress.completed_at) {
+          console.log('Adding lesson completed activity for:', progress.course_lessons?.title);
           allActivities.push({
             id: `lesson-complete-${progress.id}`,
             event_type: 'lesson_completed',
@@ -148,6 +155,7 @@ export function UserActivity({ userId }: UserActivityProps) {
         }
 
         if (progress.total_time_spent > 0) {
+          console.log('Adding time spent activity');
           allActivities.push({
             id: `lesson-time-${progress.id}`,
             event_type: 'lesson_time_spent',
