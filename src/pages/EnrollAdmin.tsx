@@ -101,6 +101,8 @@ const EnrollAdmin: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users'>('dashboard');
+  const [showUserDetails, setShowUserDetails] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   useEffect(() => {
     // Check for tab parameter and set active view
@@ -281,6 +283,41 @@ const EnrollAdmin: React.FC = () => {
     window.location.href = '/enroll/admin/course/new';
   };
 
+  const handleOpenUserDetails = async (enrollment: Enrollment) => {
+    try {
+      // Fetch user details from chat_users table
+      const { data: userData, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', enrollment.phone)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        throw error;
+      }
+
+      // Set user data with enrollment info as fallback
+      const userDetails = userData || {
+        id: null,
+        name: enrollment.full_name,
+        phone: enrollment.phone,
+        email: enrollment.email,
+        is_approved: false,
+        created_at: enrollment.created_at
+      };
+
+      setSelectedUser(userDetails);
+      setShowUserDetails(true);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری اطلاعات کاربر",
+        variant: "destructive"
+      });
+    }
+  };
+
 
   const handleApprove = async () => {
     if (!selectedEnrollment) return;
@@ -426,19 +463,28 @@ const EnrollAdmin: React.FC = () => {
         // Full Page Enrollment Details View
         <div className="min-h-screen bg-background">
           <div className="sticky top-0 z-10 bg-background border-b">
-            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">جزئیات ثبت‌نام</h1>
-                <p className="text-muted-foreground">بررسی و تایید پرداخت دستی</p>
+              <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">جزئیات ثبت‌نام</h1>
+                  <p className="text-muted-foreground">بررسی و تایید پرداخت دستی</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleOpenUserDetails(selectedEnrollment)}
+                  >
+                    <User className="h-4 w-4 ml-2" />
+                    جزئیات کاربر
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEnrollmentDetails(false)}
+                  >
+                    <XCircle className="h-4 w-4 ml-2" />
+                    بستن
+                  </Button>
+                </div>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowEnrollmentDetails(false)}
-              >
-                <XCircle className="h-4 w-4 ml-2" />
-                بستن
-              </Button>
-            </div>
           </div>
           
           <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -1044,6 +1090,179 @@ const EnrollAdmin: React.FC = () => {
               )}
               </div>
             </main>
+          </div>
+        )}
+
+        {/* User Details Full Screen Popup */}
+        {showUserDetails && selectedUser && (
+          <div className="fixed inset-0 z-50 min-h-screen bg-background">
+            <div className="sticky top-0 z-10 bg-background border-b">
+              <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">جزئیات کاربر</h1>
+                  <p className="text-muted-foreground">اطلاعات کامل کاربر</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUserDetails(false)}
+                >
+                  <XCircle className="h-4 w-4 ml-2" />
+                  بستن
+                </Button>
+              </div>
+            </div>
+            
+            <div className="container mx-auto px-4 py-6 max-w-6xl h-full overflow-y-auto">
+              <div className="space-y-6">
+                {/* Basic User Info */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      اطلاعات کاربر
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>نام</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedUser.name || 'نامشخص'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>شماره تلفن</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedUser.phone}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>ایمیل</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedUser.email || 'نامشخص'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>تاریخ عضویت</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatDate(selectedUser.created_at)}</span>
+                        </div>
+                      </div>
+
+                      {selectedUser.username && (
+                        <div className="space-y-2">
+                          <Label>نام کاربری</Label>
+                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>{selectedUser.username}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label>وضعیت تایید</Label>
+                        <div className="flex items-center gap-2">
+                          {selectedUser.is_approved ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                              <CheckCircle className="h-3 w-3 ml-1" />
+                              تایید شده
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-red-100 text-red-700">
+                              <XCircle className="h-3 w-3 ml-1" />
+                              تایید نشده
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedUser.bedoun_marz !== undefined && (
+                        <div className="space-y-2">
+                          <Label>عضویت بدون مرز</Label>
+                          <div className="flex items-center gap-2">
+                            {selectedUser.bedoun_marz ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                <CheckCircle className="h-3 w-3 ml-1" />
+                                عضو بدون مرز
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">عضو عادی</Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedUser.last_seen && (
+                        <div className="space-y-2">
+                          <Label>آخرین بازدید</Label>
+                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>{formatDate(selectedUser.last_seen)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bio Section */}
+                {selectedUser.bio && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>بیوگرافی</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm leading-relaxed">{selectedUser.bio}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* CRM Section for registered users */}
+                {selectedUser.id && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        مدیریت CRM
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <UserCRM userId={selectedUser.id} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Additional User Details */}
+                {(selectedUser.is_messenger_admin || selectedUser.is_support_agent) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>نقش‌های سیستمی</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedUser.is_messenger_admin && (
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                            مدیر پیام‌رسان
+                          </Badge>
+                        )}
+                        {selectedUser.is_support_agent && (
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                            نماینده پشتیبانی
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
           </div>
         )}
     </MainLayout>
