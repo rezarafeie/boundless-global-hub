@@ -28,6 +28,7 @@ interface CSVRow {
   last_name: string;
   email: string;
   phone: string;
+  entry_date?: string;
 }
 
 export function DataImportSection() {
@@ -97,7 +98,8 @@ export function DataImportSection() {
           first_name: values[headers.indexOf('first_name')] || '',
           last_name: values[headers.indexOf('last_name')] || '',
           email: values[headers.indexOf('email')] || '',
-          phone: values[headers.indexOf('phone')] || ''
+          phone: values[headers.indexOf('phone')] || '',
+          entry_date: headers.includes('entry_date') ? values[headers.indexOf('entry_date')] || '' : undefined
         };
         
         // Basic validation
@@ -145,6 +147,40 @@ export function DataImportSection() {
         // Create new enrollment
         const fullName = `${row.first_name} ${row.last_name}`.trim();
         
+        // Parse entry date if provided, otherwise use current date
+        let createdAt = new Date().toISOString();
+        if (row.entry_date && row.entry_date.trim()) {
+          try {
+            // Support multiple date formats: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY
+            const dateStr = row.entry_date.trim();
+            let parsedDate: Date;
+            
+            if (dateStr.includes('/')) {
+              // Handle DD/MM/YYYY format
+              const [day, month, year] = dateStr.split('/');
+              parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            } else if (dateStr.includes('-') && dateStr.length === 10) {
+              // Handle YYYY-MM-DD or DD-MM-YYYY format
+              if (dateStr.indexOf('-') === 4) {
+                // YYYY-MM-DD format
+                parsedDate = new Date(dateStr);
+              } else {
+                // DD-MM-YYYY format
+                const [day, month, year] = dateStr.split('-');
+                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              }
+            } else {
+              parsedDate = new Date(dateStr);
+            }
+            
+            if (!isNaN(parsedDate.getTime())) {
+              createdAt = parsedDate.toISOString();
+            }
+          } catch (error) {
+            console.warn(`Invalid date format for ${row.email}: ${row.entry_date}, using current date`);
+          }
+        }
+        
         const { error: enrollmentError } = await supabase
           .from('enrollments')
           .insert({
@@ -155,7 +191,8 @@ export function DataImportSection() {
             payment_status: 'completed',
             payment_amount: course.price,
             payment_method: 'manual_import',
-            country_code: '+98'
+            country_code: '+98',
+            created_at: createdAt
           });
 
         if (enrollmentError) {
@@ -257,7 +294,9 @@ export function DataImportSection() {
               className="cursor-pointer"
             />
             <p className="text-sm text-muted-foreground">
-              فرمت مورد انتظار: first_name, last_name, email, phone
+              فرمت مورد انتظار: first_name, last_name, email, phone, entry_date (اختیاری)
+              <br />
+              فرمت تاریخ: YYYY-MM-DD یا DD/MM/YYYY یا DD-MM-YYYY
             </p>
           </div>
 
