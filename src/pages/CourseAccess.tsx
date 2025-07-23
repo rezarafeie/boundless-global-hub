@@ -26,6 +26,7 @@ import MainLayout from '@/components/Layout/MainLayout';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
+import CourseActionLinks from '@/components/CourseActionLinks';
 
 interface Course {
   id: string;
@@ -35,6 +36,11 @@ interface Course {
   price: number;
   enable_course_access: boolean;
   is_free_access: boolean;
+  support_link?: string | null;
+  telegram_channel_link?: string | null;
+  gifts_link?: string | null;
+  support_activation_required?: boolean;
+  telegram_activation_required?: boolean;
 }
 
 interface TitleGroup {
@@ -135,7 +141,7 @@ const CourseAccess: React.FC = () => {
       // Fetch course information
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required')
         .eq('slug', courseSlug)
         .eq('is_active', true)
         .single();
@@ -719,16 +725,16 @@ const CourseAccess: React.FC = () => {
                                                 </button>
                                               );
                                             })}
-                                          </div>
-                                        </AccordionContent>
-                                      </AccordionItem>
-                                    </Accordion>
-                                  ))}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
+                           </div>
+                         </AccordionContent>
+                       </AccordionItem>
+                     </Accordion>
+                   ))}
+                 </div>
+               </AccordionContent>
+             </AccordionItem>
+           ))}
+         </Accordion>
 
                         {/* Show orphan sections if they exist */}
                         {sections.length > 0 && (
@@ -817,11 +823,37 @@ const CourseAccess: React.FC = () => {
                             </Accordion>
                           </div>
                         )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+                       </>
+                     )}
+
+                     {/* Course Action Links at the bottom of the menu */}
+                     {course && (course.support_link || course.telegram_channel_link || course.gifts_link) && enrollment && (
+                       <div className="mt-6 pt-4 border-t border-border">
+                         <CourseActionLinks 
+                           course={{
+                             id: course.id,
+                             title: course.title,
+                             support_link: course.support_link,
+                             telegram_channel_link: course.telegram_channel_link,
+                             gifts_link: course.gifts_link,
+                             support_activation_required: course.support_activation_required || false,
+                             telegram_activation_required: course.telegram_activation_required || false,
+                             smart_activation_enabled: false
+                           }}
+                           enrollment={{
+                             id: enrollment.id,
+                             full_name: user?.name || user?.firstName || 'کاربر',
+                             email: user?.email || ''
+                           }}
+                           userEmail={user?.email || ''}
+                           onSupportActivated={() => {}}
+                           onTelegramActivated={() => {}}
+                         />
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               </div>
 
               {/* Desktop Main Content Area */}
               {!isMobile && (
