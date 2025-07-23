@@ -361,6 +361,9 @@ const CourseAccess: React.FC = () => {
   };
 
   // Lesson tracker hook for the selected lesson
+  console.log('CourseAccess render - selectedLesson:', selectedLesson);
+  console.log('CourseAccess render - course:', course);
+  
   const { markLessonComplete } = useLessonTracker(
     selectedLesson && course ? {
       courseId: course.id,
@@ -369,6 +372,8 @@ const CourseAccess: React.FC = () => {
       lessonTitle: selectedLesson.title
     } : undefined
   );
+  
+  console.log('CourseAccess render - markLessonComplete:', markLessonComplete);
 
   // Helper function to find next lesson
   const findNextLesson = (currentLesson: Lesson): Lesson | null => {
