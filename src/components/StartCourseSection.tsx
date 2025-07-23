@@ -384,13 +384,13 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                               <span>در حال تولید لینک ورود...</span>
                             ) : getSSOUrl('academy') ? (
                               <>
-                                <span className="hidden sm:inline">🔐 ورود خودکار به سیستم آموزشی</span>
-                                <span className="sm:hidden">🔐 ورود خودکار</span>
+                                <span className="hidden sm:inline">🔐 ورود به {course?.title || 'دوره'}</span>
+                                <span className="sm:hidden">🔐 ورود به {course?.title || 'دوره'}</span>
                               </>
                             ) : (
                               <>
-                                <span className="hidden sm:inline">🚀 ورود به سیستم آموزشی آنلاین</span>
-                                <span className="sm:hidden">🚀 سیستم آموزشی</span>
+                                <span className="hidden sm:inline">🚀 ورود به {course?.title || 'دوره'}</span>
+                                <span className="sm:hidden">🚀 ورود به {course?.title || 'دوره'}</span>
                               </>
                             )}
                           </span>
