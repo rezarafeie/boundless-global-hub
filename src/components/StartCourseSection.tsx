@@ -289,12 +289,6 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
             <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
             <span className="text-sm sm:text-lg font-bold text-primary">🎯 دوره شما آماده است!</span>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 sm:mb-4 px-2">
-            شروع یادگیری از همین الان
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed px-2">
-            دوره شما با موفقیت فعال شد. از طریق روش‌های زیر می‌توانید به آموزش‌ها دسترسی پیدا کنید
-          </p>
         </div>
 
         {/* Access Types - Responsive Grid */}
