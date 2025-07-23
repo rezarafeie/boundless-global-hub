@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +7,39 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Play, Gift, Bot, MessageCircle, FileText, Check, Users, Save } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthTracking } from "@/hooks/useAuthTracking";
 
 const TaghirAccess = () => {
   const { translations } = useLanguage();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
+  const { logCoursePageVisit, logSupportActivation, logTelegramJoin } = useAuthTracking();
   const [activatedSteps, setActivatedSteps] = useState<string[]>([]);
 
-  const handleStepActivation = (stepId: string) => {
+  // Log course page visit on component mount
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      // Use a static course ID for Taghir project or get it from URL params
+      logCoursePageVisit(parseInt(user.id.toString()), "287b51a8-a93b-4334-91ef-a5d3bf97fc3d", "پروژه تغییر");
+    }
+  }, [isAuthenticated, user, logCoursePageVisit]);
+
+  const handleStepActivation = async (stepId: string) => {
     if (!activatedSteps.includes(stepId)) {
       setActivatedSteps([...activatedSteps, stepId]);
+      
+      // Log specific activities based on step type
+      if (isAuthenticated && user?.id) {
+        const userId = parseInt(user.id.toString());
+        const courseId = "287b51a8-a93b-4334-91ef-a5d3bf97fc3d";
+        
+        if (stepId === "support") {
+          await logSupportActivation(userId, courseId);
+        } else if (stepId === "channel") {
+          await logTelegramJoin(userId, courseId, "تلگرام پروژه تغییر");
+        }
+      }
     }
   };
 

@@ -27,6 +27,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
 import CourseActionLinks from '@/components/CourseActionLinks';
+import { useLessonTracker } from '@/hooks/useLessonTracker';
+import { useAuthTracking } from '@/hooks/useAuthTracking';
 
 interface Course {
   id: string;
@@ -80,6 +82,7 @@ const CourseAccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
+  const { logCoursePageVisit } = useAuthTracking();
   
   // Function to replace user template variables in content
   const replaceUserTemplate = (content: string): string => {
@@ -158,6 +161,11 @@ const CourseAccess: React.FC = () => {
       }
 
       setCourse(courseData);
+
+      // Log course page visit if user is authenticated
+      if (isAuthenticated && user?.id) {
+        await logCoursePageVisit(parseInt(user.id.toString()), courseData.id, courseData.title);
+      }
 
       // Check if course has free access - skip authentication if enabled
       if (courseData.is_free_access) {
@@ -343,6 +351,16 @@ const CourseAccess: React.FC = () => {
       );
     }
   };
+
+  // Lesson tracker hook for the selected lesson
+  const { markLessonComplete } = useLessonTracker(
+    selectedLesson && course ? {
+      courseId: course.id,
+      lessonId: selectedLesson.id,
+      courseTitle: course.title,
+      lessonTitle: selectedLesson.title
+    } : undefined
+  );
 
   // Helper function to find next lesson
   const findNextLesson = (currentLesson: Lesson): Lesson | null => {
