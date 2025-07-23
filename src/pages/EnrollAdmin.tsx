@@ -98,6 +98,7 @@ const EnrollAdmin: React.FC = () => {
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   
   const [processing, setProcessing] = useState(false);
+  const [adminNotes, setAdminNotes] = useState('');
   const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users'>('dashboard');
 
   useEffect(() => {
@@ -267,6 +268,7 @@ const EnrollAdmin: React.FC = () => {
 
   const handleViewDetails = (enrollment: Enrollment) => {
     setSelectedEnrollment(enrollment);
+    setAdminNotes(''); // Reset admin notes when opening modal
     setShowEnrollmentModal(true);
   };
 
@@ -359,6 +361,7 @@ const EnrollAdmin: React.FC = () => {
         .from('enrollments')
         .update({
           manual_payment_status: 'rejected',
+          admin_notes: adminNotes || null,
           approved_by: 'Admin',
           approved_at: new Date().toISOString()
         })
@@ -388,6 +391,7 @@ const EnrollAdmin: React.FC = () => {
 
       fetchEnrollments();
       setShowEnrollmentModal(false);
+      setAdminNotes(''); // Clear admin notes after successful rejection
 
     } catch (error) {
       console.error('Error rejecting payment:', error);
@@ -986,6 +990,24 @@ const EnrollAdmin: React.FC = () => {
                 <Label>وضعیت بررسی فعلی:</Label>
                 {getStatusBadge(selectedEnrollment.manual_payment_status)}
               </div>
+
+              {/* Admin Notes for Rejection */}
+              {selectedEnrollment.manual_payment_status === 'pending' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>یادداشت مدیر (در صورت رد درخواست)</Label>
+                    <Textarea 
+                      placeholder="دلیل رد درخواست را بنویسید..."
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      این یادداشت در صورت رد درخواست به کاربر نمایش داده خواهد شد
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               {selectedEnrollment.manual_payment_status === 'pending' && (
