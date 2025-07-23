@@ -219,8 +219,6 @@ const EnrollAdmin: React.FC = () => {
         return <Badge variant="default" className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 ml-1" />پرداخت شده</Badge>;
       case 'pending':
         return <Badge variant="secondary" className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ml-1" />در انتظار پرداخت</Badge>;
-      case 'cancelled_payment':
-        return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" />لغو شده</Badge>;
       case 'failed':
       case 'error':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" />ناموفق</Badge>;
@@ -319,6 +317,7 @@ const EnrollAdmin: React.FC = () => {
       });
     }
   };
+
 
   const handleApprove = async () => {
     if (!selectedEnrollment) return;
@@ -444,6 +443,7 @@ const EnrollAdmin: React.FC = () => {
     }
   };
 
+
   if (loading) {
     return (
       <MainLayout>
@@ -458,189 +458,11 @@ const EnrollAdmin: React.FC = () => {
   }
 
   return (
-    <>
-      {/* User Details Full Screen Popup - Portal-like overlay */}
-      {showUserDetails && selectedUser && (
-        <div className="fixed inset-0 z-[9999] bg-background">
-          <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 bg-background border-b shadow-sm">
-              <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold">جزئیات کاربر</h1>
-                  <p className="text-muted-foreground">اطلاعات کامل کاربر</p>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowUserDetails(false)}
-                >
-                  <XCircle className="h-4 w-4 ml-2" />
-                  بستن
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto">
-              <div className="container mx-auto px-4 py-6 max-w-6xl">
-                <div className="space-y-6">
-                  {/* Basic User Info */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        اطلاعات کاربر
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>نام</Label>
-                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span>{selectedUser.name || 'نامشخص'}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label>شماره تلفن</Label>
-                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span>{selectedUser.phone}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label>ایمیل</Label>
-                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span>{selectedUser.email || 'نامشخص'}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label>تاریخ عضویت</Label>
-                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{formatDate(selectedUser.created_at)}</span>
-                          </div>
-                        </div>
-
-                        {selectedUser.username && (
-                          <div className="space-y-2">
-                            <Label>نام کاربری</Label>
-                            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span>{selectedUser.username}</span>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="space-y-2">
-                          <Label>وضعیت تایید</Label>
-                          <div className="flex items-center gap-2">
-                            {selectedUser.is_approved ? (
-                              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                <CheckCircle className="h-3 w-3 ml-1" />
-                                تایید شده
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="bg-red-100 text-red-700">
-                                <XCircle className="h-3 w-3 ml-1" />
-                                تایید نشده
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {selectedUser.bedoun_marz !== undefined && (
-                          <div className="space-y-2">
-                            <Label>عضویت بدون مرز</Label>
-                            <div className="flex items-center gap-2">
-                              {selectedUser.bedoun_marz ? (
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                                  <CheckCircle className="h-3 w-3 ml-1" />
-                                  عضو بدون مرز
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline">عضو عادی</Badge>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedUser.last_seen && (
-                          <div className="space-y-2">
-                            <Label>آخرین بازدید</Label>
-                            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>{formatDate(selectedUser.last_seen)}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Bio Section */}
-                  {selectedUser.bio && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>بیوگرافی</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm leading-relaxed">{selectedUser.bio}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* CRM Section for registered users */}
-                  {selectedUser.id && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <FileText className="h-5 w-5" />
-                          مدیریت CRM
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <UserCRM userId={selectedUser.id} />
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Additional User Details */}
-                  {(selectedUser.is_messenger_admin || selectedUser.is_support_agent) && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>نقش‌های سیستمی</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedUser.is_messenger_admin && (
-                            <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                              مدیر پیام‌رسان
-                            </Badge>
-                          )}
-                          {selectedUser.is_support_agent && (
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-                              نماینده پشتیبانی
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <MainLayout>
-        {showEnrollmentDetails && selectedEnrollment ? (
-          // Full Page Enrollment Details View
-          <div className="min-h-screen bg-background">
-            <div className="sticky top-0 z-10 bg-background border-b">
+    <MainLayout>
+      {showEnrollmentDetails && selectedEnrollment ? (
+        // Full Page Enrollment Details View
+        <div className="min-h-screen bg-background">
+          <div className="sticky top-0 z-10 bg-background border-b">
               <div className="container mx-auto px-4 py-4 flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold">جزئیات ثبت‌نام</h1>
@@ -663,111 +485,726 @@ const EnrollAdmin: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </div>
-            
-            <div className="container mx-auto px-4 py-6 max-w-6xl">
-              <div className="space-y-6">
-                {/* User Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>نام و نام خانوادگی</Label>
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEnrollment.full_name}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>ایمیل</Label>
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{selectedEnrollment.email}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>شماره تلفن</Label>
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEnrollment.phone}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>تاریخ ثبت‌نام</Label>
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{formatDate(selectedEnrollment.created_at)}</span>
-                    </div>
+          </div>
+          
+          <div className="container mx-auto px-4 py-6 max-w-6xl">
+            <div className="space-y-6">
+              {/* User Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>نام و نام خانوادگی</Label>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedEnrollment.full_name}</span>
                   </div>
                 </div>
+                
+                <div className="space-y-2">
+                  <Label>ایمیل</Label>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{selectedEnrollment.email}</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>شماره تلفن</Label>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedEnrollment.phone}</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>تاریخ ثبت‌نام</Label>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{formatDate(selectedEnrollment.created_at)}</span>
+                  </div>
+                </div>
+              </div>
 
-                {/* Course Info */}
+              {/* Course Info */}
+              <div className="space-y-2">
+                <Label>دوره انتخابی</Label>
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{selectedEnrollment.courses?.title}</span>
+                    <span className="text-xl font-bold text-primary">
+                      {formatPrice(selectedEnrollment.payment_amount)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Receipt */}
+              {selectedEnrollment.receipt_url && (
+                <div className="space-y-2">
+                  <Label>رسید پرداخت</Label>
+                  <div className="border rounded-lg overflow-hidden">
+                    <img 
+                      src={selectedEnrollment.receipt_url} 
+                      alt="Receipt" 
+                      className="w-full h-auto max-h-96 object-contain bg-muted"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Details */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">جزئیات پرداخت</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>وضعیت پرداخت</Label>
+                    <div className="flex items-center gap-2">
+                      {getPaymentStatusBadge(selectedEnrollment.payment_status)}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>روش پرداخت</Label>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <span className="text-sm">{selectedEnrollment.payment_method || 'نامشخص'}</span>
+                    </div>
+                  </div>
+                  
+                  {selectedEnrollment.zarinpal_ref_id && (
+                    <div className="space-y-2">
+                      <Label>کد رهگیری زرین‌پال</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-mono">{selectedEnrollment.zarinpal_ref_id}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEnrollment.zarinpal_authority && (
+                    <div className="space-y-2">
+                      <Label>Authority زرین‌پال</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-mono">{selectedEnrollment.zarinpal_authority}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedEnrollment.woocommerce_order_id && (
+                    <div className="space-y-2">
+                      <Label>شناسه سفارش ووکامرس</Label>
+                      <div className="p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-mono">{selectedEnrollment.woocommerce_order_id}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CRM Notes */}
+              {selectedEnrollment.chat_user_id && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">مدیریت CRM کاربر</Label>
+                  <UserCRM userId={selectedEnrollment.chat_user_id} />
+                </div>
+              )}
+
+              {/* Current Status */}
+              <div className="flex items-center gap-4">
+                <Label>وضعیت بررسی فعلی:</Label>
+                {getStatusBadge(selectedEnrollment.manual_payment_status)}
+              </div>
+
+              {/* Admin Notes for Rejection */}
+              {selectedEnrollment.manual_payment_status === 'pending' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>یادداشت مدیر (در صورت رد درخواست)</Label>
+                    <Textarea 
+                      placeholder="دلیل رد درخواست را بنویسید..."
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      این یادداشت در صورت رد درخواست به کاربر نمایش داده خواهد شد
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {selectedEnrollment.manual_payment_status === 'pending' && (
+                <div className="flex gap-4 pt-4">
+                  <Button
+                    onClick={handleApprove}
+                    disabled={processing}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    <CheckCircle className="h-4 w-4 ml-2" />
+                    تایید پرداخت
+                  </Button>
+                  <Button
+                    onClick={handleReject}
+                    disabled={processing}
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    <XCircle className="h-4 w-4 ml-2" />
+                    رد پرداخت
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Main Admin Panel View
+        <div className="flex min-h-screen w-full">
+          {/* Desktop Sidebar - Always visible */}
+          <div className="hidden lg:block">
+            <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+          </div>
+          
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto bg-background">
+            {/* Mobile Header */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
+              <div className="flex items-center justify-start px-4 py-3">
+                <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+              </div>
+            </div>
+              
+              <div className="container mx-auto px-4 md:px-6 py-6 max-w-none">
+              
+              {/* Dashboard View */}
+              {activeView === 'dashboard' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">داشبورد مدیریت</h1>
+                    <p className="text-muted-foreground mt-2">مرور کلی از وضعیت سیستم</p>
+                  </div>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">کل دوره‌ها</p>
+                            <p className="text-2xl font-bold">{courses.length}</p>
+                          </div>
+                          <BookOpen className="h-8 w-8 text-primary" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
+                            <p className="text-2xl font-bold">{enrollments.length}</p>
+                          </div>
+                          <User className="h-8 w-8 text-primary" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">در انتظار تایید</p>
+                            <p className="text-2xl font-bold text-amber-600">
+                              {enrollments.filter(e => e.manual_payment_status === 'pending').length}
+                            </p>
+                          </div>
+                          <Clock className="h-8 w-8 text-amber-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">دوره‌های فعال</p>
+                            <p className="text-2xl font-bold text-green-600">
+                              {courses.filter(c => c.is_active).length}
+                            </p>
+                          </div>
+                          <CheckCircle className="h-8 w-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Recent Activity */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>آخرین ثبت‌نام‌ها</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {enrollments.slice(0, 5).length === 0 ? (
+                        <p className="text-muted-foreground text-center py-8">هیچ ثبت‌نامی یافت نشد</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {enrollments.slice(0, 5).map((enrollment) => (
+                            <div key={enrollment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                              <div>
+                                <p className="font-medium">{enrollment.full_name}</p>
+                                <p className="text-sm text-muted-foreground">{enrollment.courses?.title || 'نامشخص'}</p>
+                              </div>
+                              <div className="text-left">
+                                <p className="text-sm font-medium">{formatPrice(enrollment.payment_amount)}</p>
+                                <p className="text-xs text-muted-foreground">{formatDate(enrollment.created_at)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Enrollments View */}
+              {activeView === 'enrollments' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">مدیریت ثبت‌نام‌ها</h1>
+                    <p className="text-muted-foreground mt-2">مدیریت و تایید پرداخت‌های دستی</p>
+                  </div>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
+                            <p className="text-2xl font-bold">{filteredEnrollments.length}</p>
+                          </div>
+                          <User className="h-8 w-8 text-primary" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">در انتظار تایید</p>
+                            <p className="text-2xl font-bold text-amber-600">
+                              {filteredEnrollments.filter(e => e.manual_payment_status === 'pending').length}
+                            </p>
+                          </div>
+                          <Clock className="h-8 w-8 text-amber-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">تایید شده</p>
+                            <p className="text-2xl font-bold text-green-600">
+                              {filteredEnrollments.filter(e => e.manual_payment_status === 'approved').length}
+                            </p>
+                          </div>
+                          <CheckCircle className="h-8 w-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">رد شده</p>
+                            <p className="text-2xl font-bold text-red-600">
+                              {filteredEnrollments.filter(e => e.manual_payment_status === 'rejected').length}
+                            </p>
+                          </div>
+                          <XCircle className="h-8 w-8 text-red-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Enrollments Table */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="h-6 w-6" />
+                        پرداخت‌های دستی
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Search and Filters */}
+                      <div className="mb-6 space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="relative flex-1">
+                            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="جستجو بر اساس نام، ایمیل، شماره تلفن یا دوره..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pr-10"
+                            />
+                          </div>
+                          
+                          <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-full sm:w-48">
+                              <SelectValue placeholder="فیلتر وضعیت" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                              <SelectItem value="payment_pending">در انتظار پرداخت</SelectItem>
+                              <SelectItem value="payment_completed">پرداخت شده</SelectItem>
+                              <SelectItem value="manual_pending">در انتظار بررسی</SelectItem>
+                              <SelectItem value="manual_approved">تایید شده</SelectItem>
+                              <SelectItem value="manual_rejected">رد شده</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          <Select value={courseFilter} onValueChange={setCourseFilter}>
+                            <SelectTrigger className="w-full sm:w-48">
+                              <SelectValue placeholder="فیلتر دوره" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">همه دوره‌ها</SelectItem>
+                              {courses.map((course) => (
+                                <SelectItem key={course.id} value={course.id}>
+                                  {course.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Filter className="h-4 w-4" />
+                          <span>نمایش {filteredEnrollments.length} از {enrollments.length} ثبت‌نام</span>
+                          {(searchTerm || statusFilter !== 'all' || courseFilter !== 'all') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSearchTerm('');
+                                setStatusFilter('all');
+                                setCourseFilter('all');
+                              }}
+                            >
+                              پاک کردن فیلترها
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {filteredEnrollments.length === 0 ? (
+                        <div className="text-center py-12">
+                          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-lg font-medium text-muted-foreground">
+                            {searchTerm || statusFilter !== 'all' || courseFilter !== 'all' 
+                              ? 'هیچ ثبت‌نامی با این فیلترها یافت نشد' 
+                              : 'هیچ ثبت‌نامی یافت نشد'
+                            }
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Desktop Table */}
+                          <div className="hidden md:block overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                               <TableRow>
+                                 <TableHead className="text-right">نام و نام خانوادگی</TableHead>
+                                 <TableHead className="text-right">دوره</TableHead>
+                                 <TableHead className="text-right">مبلغ</TableHead>
+                                 <TableHead className="text-right">وضعیت پرداخت</TableHead>
+                                 <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
+                                 <TableHead className="text-right">عملیات</TableHead>
+                               </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {filteredEnrollments.map((enrollment) => (
+                                  <TableRow key={enrollment.id}>
+                                    <TableCell>
+                                      <div>
+                                        <div className="font-medium">{enrollment.full_name}</div>
+                                        <div className="text-sm text-muted-foreground">{enrollment.email}</div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
+                                    </TableCell>
+                                     <TableCell>
+                                       {getPaymentStatusBadge(enrollment.payment_status)}
+                                     </TableCell>
+                                     <TableCell>
+                                       <div className="text-sm">{formatDate(enrollment.created_at)}</div>
+                                     </TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-2 flex-wrap">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
+                                        >
+                                          <ExternalLink className="h-4 w-4 ml-1" />
+                                          جزئیات
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleViewDetails(enrollment)}
+                                        >
+                                          <Eye className="h-4 w-4 ml-1" />
+                                          مشاهده
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+
+                          {/* Mobile Cards */}
+                          <div className="md:hidden space-y-4">
+                            {filteredEnrollments.map((enrollment) => (
+                              <Card key={enrollment.id} className="p-4">
+                                <div className="space-y-3">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h4 className="font-medium text-sm">{enrollment.full_name}</h4>
+                                      <p className="text-xs text-muted-foreground">{enrollment.email}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      {getPaymentStatusBadge(enrollment.payment_status)}
+                                      {getStatusBadge(enrollment.manual_payment_status)}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                      <span className="text-xs text-muted-foreground">دوره:</span>
+                                      <span className="text-xs font-medium">{enrollment.courses?.title || 'نامشخص'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-xs text-muted-foreground">مبلغ:</span>
+                                      <span className="text-xs font-mono">{formatPrice(enrollment.payment_amount)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-xs text-muted-foreground">تاریخ:</span>
+                                      <span className="text-xs">{formatDate(enrollment.created_at)}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex gap-2 pt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex-1 text-xs"
+                                      onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
+                                    >
+                                      <ExternalLink className="h-3 w-3 ml-1" />
+                                      جزئیات
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex-1 text-xs"
+                                      onClick={() => handleViewDetails(enrollment)}
+                                    >
+                                      <Eye className="h-3 w-3 ml-1" />
+                                      مشاهده
+                                    </Button>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Discount Management View */}
+              {activeView === 'discounts' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">مدیریت کدهای تخفیف</h1>
+                    <p className="text-muted-foreground mt-2">ایجاد و مدیریت کدهای تخفیف برای دوره‌ها</p>
+                  </div>
+                  <DiscountManagement />
+                </div>
+              )}
+
+              {/* Courses View */}
+              {activeView === 'courses' && (
+                <div className="space-y-6">
+                  <CourseManagement />
+                </div>
+              )}
+
+              {/* Reports View */}
+              {activeView === 'reports' && (
+                <div className="space-y-6">
+                  <AnalyticsReports />
+                </div>
+              )}
+
+              {/* Data Import View */}
+              {activeView === 'data-import' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">وارد کردن داده</h1>
+                    <p className="text-muted-foreground mt-2">وارد کردن کاربران از فایل CSV و اختصاص دسترسی به دوره‌ها</p>
+                  </div>
+                  <DataImportSection />
+                </div>
+              )}
+
+              {/* Webhooks View */}
+              {activeView === 'webhooks' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">مدیریت وب‌هوک‌ها</h1>
+                    <p className="text-muted-foreground mt-2">مدیریت و نظارت بر وب‌هوک‌های سیستم</p>
+                  </div>
+                  <WebhookManagement />
+                </div>
+              )}
+
+              {/* Users View */}
+              {activeView === 'users' && (
+                <div className="space-y-6">
+                  <UsersOverview />
+                </div>
+              )}
+              </div>
+            </main>
+          </div>
+        )}
+
+        {/* User Details Full Screen Popup */}
+        {showUserDetails && selectedUser && (
+          <div className="fixed inset-0 z-50 min-h-screen bg-background">
+            <div className="sticky top-0 z-10 bg-background border-b">
+              <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">جزئیات کاربر</h1>
+                  <p className="text-muted-foreground">اطلاعات کامل کاربر</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUserDetails(false)}
+                >
+                  <XCircle className="h-4 w-4 ml-2" />
+                  بستن
+                </Button>
+              </div>
+            </div>
+            
+            <div className="container mx-auto px-4 py-6 max-w-6xl h-full overflow-y-auto">
+              <div className="space-y-6">
+                {/* Basic User Info */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      اطلاعات دوره
+                      <User className="h-5 w-5" />
+                      اطلاعات کاربر
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>نام دوره</Label>
-                        <div className="p-3 bg-muted rounded-lg">
-                          <span className="font-medium">{selectedEnrollment.courses?.title}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>مبلغ پرداختی</Label>
+                        <Label>نام</Label>
                         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{formatPrice(selectedEnrollment.payment_amount)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Payment Info */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      اطلاعات پرداخت
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>روش پرداخت</Label>
-                        <div className="p-3 bg-muted rounded-lg">
-                          <span>{selectedEnrollment.payment_method === 'zarinpal' ? 'درگاه زرین‌پال' : 'پرداخت دستی'}</span>
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedUser.name || 'نامشخص'}</span>
                         </div>
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>وضعیت پرداخت</Label>
-                        <div className="flex items-center gap-2">
-                          {getPaymentStatusBadge(selectedEnrollment.payment_status)}
+                        <Label>شماره تلفن</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedUser.phone}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>ایمیل</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedUser.email || 'نامشخص'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>تاریخ عضویت</Label>
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatDate(selectedUser.created_at)}</span>
                         </div>
                       </div>
 
-                      {selectedEnrollment.zarinpal_ref_id && (
+                      {selectedUser.username && (
                         <div className="space-y-2">
-                          <Label>شماره مرجع زرین‌پال</Label>
-                          <div className="p-3 bg-muted rounded-lg">
-                            <span className="font-mono">{selectedEnrollment.zarinpal_ref_id}</span>
+                          <Label>نام کاربری</Label>
+                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>{selectedUser.username}</span>
                           </div>
                         </div>
                       )}
 
-                      {selectedEnrollment.woocommerce_order_id && (
+                      <div className="space-y-2">
+                        <Label>وضعیت تایید</Label>
+                        <div className="flex items-center gap-2">
+                          {selectedUser.is_approved ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                              <CheckCircle className="h-3 w-3 ml-1" />
+                              تایید شده
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-red-100 text-red-700">
+                              <XCircle className="h-3 w-3 ml-1" />
+                              تایید نشده
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedUser.bedoun_marz !== undefined && (
                         <div className="space-y-2">
-                          <Label>شماره سفارش ووکامرس</Label>
-                          <div className="p-3 bg-muted rounded-lg">
-                            <span className="font-mono">{selectedEnrollment.woocommerce_order_id}</span>
+                          <Label>عضویت بدون مرز</Label>
+                          <div className="flex items-center gap-2">
+                            {selectedUser.bedoun_marz ? (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                <CheckCircle className="h-3 w-3 ml-1" />
+                                عضو بدون مرز
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">عضو عادی</Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedUser.last_seen && (
+                        <div className="space-y-2">
+                          <Label>آخرین بازدید</Label>
+                          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>{formatDate(selectedUser.last_seen)}</span>
                           </div>
                         </div>
                       )}
@@ -775,110 +1212,50 @@ const EnrollAdmin: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Manual Payment Management */}
-                {selectedEnrollment.payment_method === 'manual' && (
+                {/* Bio Section */}
+                {selectedUser.bio && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>بیوگرافی</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm leading-relaxed">{selectedUser.bio}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* CRM Section for registered users */}
+                {selectedUser.id && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5" />
-                        مدیریت پرداخت دستی
+                        مدیریت CRM
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>وضعیت بررسی</Label>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(selectedEnrollment.manual_payment_status)}
-                          </div>
-                        </div>
+                      <UserCRM userId={selectedUser.id} />
+                    </CardContent>
+                  </Card>
+                )}
 
-                        {selectedEnrollment.receipt_url && (
-                          <div className="space-y-2">
-                            <Label>فیش پرداختی</Label>
-                            <div className="flex items-center gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => window.open(selectedEnrollment.receipt_url!, '_blank')}
-                              >
-                                <Eye className="h-4 w-4 ml-2" />
-                                مشاهده فیش
-                              </Button>
-                            </div>
-                          </div>
+                {/* Additional User Details */}
+                {(selectedUser.is_messenger_admin || selectedUser.is_support_agent) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>نقش‌های سیستمی</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedUser.is_messenger_admin && (
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                            مدیر پیام‌رسان
+                          </Badge>
                         )}
-
-                        {selectedEnrollment.manual_payment_status === 'pending' && (
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="admin-notes">یادداشت ادمین (اختیاری)</Label>
-                              <Textarea
-                                id="admin-notes"
-                                value={adminNotes}
-                                onChange={(e) => setAdminNotes(e.target.value)}
-                                placeholder="یادداشت در صورت رد پرداخت..."
-                                className="min-h-[100px]"
-                              />
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <Button
-                                onClick={handleApprove}
-                                disabled={processing}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                {processing ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
-                                ) : (
-                                  <CheckCircle className="h-4 w-4 ml-2" />
-                                )}
-                                تایید پرداخت
-                              </Button>
-                              
-                              <Button
-                                variant="destructive"
-                                onClick={handleReject}
-                                disabled={processing}
-                              >
-                                {processing ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
-                                ) : (
-                                  <XCircle className="h-4 w-4 ml-2" />
-                                )}
-                                رد پرداخت
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedEnrollment.approved_by && (
-                          <div className="space-y-2">
-                            <Label>بررسی شده توسط</Label>
-                            <div className="p-3 bg-muted rounded-lg">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span>{selectedEnrollment.approved_by}</span>
-                              </div>
-                              {selectedEnrollment.approved_at && (
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm text-muted-foreground">
-                                    {formatDate(selectedEnrollment.approved_at)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedEnrollment.admin_notes && (
-                          <div className="space-y-2">
-                            <Label>یادداشت ادمین</Label>
-                            <div className="p-3 bg-muted rounded-lg">
-                              <p className="text-sm">{selectedEnrollment.admin_notes}</p>
-                            </div>
-                          </div>
+                        {selectedUser.is_support_agent && (
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                            نماینده پشتیبانی
+                          </Badge>
                         )}
                       </div>
                     </CardContent>
@@ -887,300 +1264,8 @@ const EnrollAdmin: React.FC = () => {
               </div>
             </div>
           </div>
-        ) : (
-          // Admin Dashboard Main View
-          <div className="min-h-screen bg-background">
-            <SidebarProvider>
-              <div className="flex w-full">
-                <AdminSidebar 
-                  activeView={activeView} 
-                  onViewChange={setActiveView}
-                />
-                
-                <main className="flex-1 overflow-auto">
-                  <div className="container mx-auto px-4 py-6">
-                    {/* Dashboard View */}
-                    {activeView === 'dashboard' && (
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h1 className="text-3xl font-bold">پنل مدیریت ثبت‌نام</h1>
-                            <p className="text-muted-foreground">مدیریت دوره‌ها، ثبت‌نام‌ها و گزارش‌ها</p>
-                          </div>
-                        </div>
-
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                          <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm font-medium">کل ثبت‌نام‌ها</CardTitle>
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold">{enrollments.length}</div>
-                              <p className="text-xs text-muted-foreground">
-                                در کل دوره‌ها
-                              </p>
-                            </CardContent>
-                          </Card>
-
-                          <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm font-medium">پرداخت‌های موفق</CardTitle>
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-green-600">
-                                {enrollments.filter(e => e.payment_status === 'completed' || e.payment_status === 'success').length}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                پرداخت کامل شده
-                              </p>
-                            </CardContent>
-                          </Card>
-
-                          <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                              <CardTitle className="text-sm font-medium">در انتظار بررسی</CardTitle>
-                              <Clock className="h-4 w-4 text-amber-600" />
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-amber-600">
-                                {enrollments.filter(e => e.manual_payment_status === 'pending').length}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                پرداخت دستی در انتظار
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </div>
-
-                        {/* Courses Overview */}
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              <BookOpen className="h-5 w-5" />
-                              نمای کلی دوره‌ها
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {courses.slice(0, 5).map((course) => (
-                                <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                  <div className="flex-1">
-                                    <h3 className="font-medium">{course.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{formatPrice(course.price)}</p>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    <div className="text-center">
-                                      <div className="text-2xl font-bold text-primary">
-                                        {getEnrolledUsersCount(course.id)}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">ثبت‌نام</div>
-                                    </div>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEditCourse(course)}
-                                    >
-                                      <Edit className="h-4 w-4 ml-1" />
-                                      ویرایش
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    )}
-
-                    {/* Enrollments View */}
-                    {activeView === 'enrollments' && (
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h1 className="text-3xl font-bold">مدیریت ثبت‌نام‌ها</h1>
-                            <p className="text-muted-foreground">بررسی و تایید ثبت‌نام‌های کاربران</p>
-                          </div>
-                        </div>
-
-                        {/* Filters */}
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="search">جستجو</Label>
-                                <div className="relative">
-                                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input
-                                    id="search"
-                                    placeholder="نام، ایمیل، شماره تلفن..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pr-10"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>وضعیت پرداخت</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="همه وضعیت‌ها" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                                    <SelectItem value="payment_pending">در انتظار پرداخت</SelectItem>
-                                    <SelectItem value="payment_completed">پرداخت شده</SelectItem>
-                                    <SelectItem value="manual_pending">در انتظار بررسی دستی</SelectItem>
-                                    <SelectItem value="manual_approved">تایید شده دستی</SelectItem>
-                                    <SelectItem value="manual_rejected">رد شده دستی</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>دوره</Label>
-                                <Select value={courseFilter} onValueChange={setCourseFilter}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="همه دوره‌ها" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="all">همه دوره‌ها</SelectItem>
-                                    {courses.map((course) => (
-                                      <SelectItem key={course.id} value={course.id}>
-                                        {course.title}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="flex items-end">
-                                <Button 
-                                  variant="outline" 
-                                  onClick={() => {
-                                    setSearchTerm('');
-                                    setStatusFilter('all');
-                                    setCourseFilter('all');
-                                  }}
-                                >
-                                  <Filter className="h-4 w-4 ml-2" />
-                                  پاک کردن فیلترها
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Enrollments Table */}
-                        <Card>
-                          <CardContent className="p-0">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="text-right">نام</TableHead>
-                                  <TableHead className="text-right">ایمیل</TableHead>
-                                  <TableHead className="text-right">دوره</TableHead>
-                                  <TableHead className="text-right">مبلغ</TableHead>
-                                  <TableHead className="text-right">وضعیت پرداخت</TableHead>
-                                  <TableHead className="text-right">تاریخ</TableHead>
-                                  <TableHead className="text-right">عملیات</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {filteredEnrollments.map((enrollment) => (
-                                  <TableRow key={enrollment.id}>
-                                    <TableCell className="font-medium">
-                                      {enrollment.full_name}
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                      {enrollment.email}
-                                    </TableCell>
-                                    <TableCell>
-                                      {enrollment.courses?.title}
-                                    </TableCell>
-                                    <TableCell>
-                                      {formatPrice(enrollment.payment_amount)}
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex flex-col gap-1">
-                                        {getPaymentStatusBadge(enrollment.payment_status)}
-                                        {enrollment.manual_payment_status && getStatusBadge(enrollment.manual_payment_status)}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                      {formatDate(enrollment.created_at)}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleViewDetails(enrollment)}
-                                      >
-                                        <Eye className="h-4 w-4 ml-1" />
-                                        جزئیات
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    )}
-
-                    {/* Discounts View */}
-                    {activeView === 'discounts' && (
-                      <div className="space-y-6">
-                        <DiscountManagement />
-                      </div>
-                    )}
-
-                    {/* Courses View */}
-                    {activeView === 'courses' && (
-                      <div className="space-y-6">
-                        <CourseManagement />
-                      </div>
-                    )}
-
-                    {/* Webhooks View */}
-                    {activeView === 'webhooks' && (
-                      <div className="space-y-6">
-                        <WebhookManagement />
-                      </div>
-                    )}
-
-                    {/* Reports View */}
-                    {activeView === 'reports' && (
-                      <div className="space-y-6">
-                        <AnalyticsReports />
-                      </div>
-                    )}
-
-                    {/* Data Import View */}
-                    {activeView === 'data-import' && (
-                      <div className="space-y-6">
-                        <DataImportSection />
-                      </div>
-                    )}
-
-                    {/* Users View */}
-                    {activeView === 'users' && (
-                      <div className="space-y-6">
-                        <UsersOverview />
-                      </div>
-                    )}
-                  </div>
-                </main>
-              </div>
-            </SidebarProvider>
-          </div>
         )}
-      </MainLayout>
-    </>
+    </MainLayout>
   );
 };
 
