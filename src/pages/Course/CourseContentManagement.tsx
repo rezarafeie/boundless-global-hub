@@ -1333,23 +1333,23 @@ const SortableLesson: React.FC<{
             </DialogContent>
           </Dialog>
 
-          <div className="flex gap-2">
-            <Dialog open={showLessonModal} onOpenChange={setShowLessonModal}>
-              <DialogTrigger asChild>
-                <Button variant="outline" onClick={resetLessonForm}>
-                  <Plus className="h-4 w-4 ml-2" />
-                  افزودن درس جدید
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-            
-            <CrossCourseLessonCopy 
-              currentCourseId={courseId!}
-              onLessonsCopied={fetchCourseData}
-            />
-          </div>
-
           <Dialog open={showLessonModal} onOpenChange={setShowLessonModal}>
+            <DialogTrigger asChild>
+              <Button onClick={resetLessonForm} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                <Plus className="h-4 w-4 ml-2" />
+                افزودن درس جدید
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+          
+          <CrossCourseLessonCopy 
+            currentCourseId={courseId!}
+            onLessonsCopied={fetchCourseData}
+          />
+        </div>
+
+        {/* Lesson Modal */}
+        <Dialog open={showLessonModal} onOpenChange={setShowLessonModal}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -1451,7 +1451,6 @@ const SortableLesson: React.FC<{
               </div>
             </DialogContent>
           </Dialog>
-        </div>
 
         {/* Content */}
         <Tabs defaultValue="content" className="w-full">
