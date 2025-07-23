@@ -5,6 +5,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useRafieiAuth } from '@/hooks/useRafieiAuth';
 import RafieiAuth from '@/components/Auth/RafieiAuth';
 import { toast } from 'sonner';
+import { activityService } from '@/lib/activityService';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EnrollmentButtonProps {
   courseId: string;
@@ -21,6 +23,7 @@ const EnrollmentButton: React.FC<EnrollmentButtonProps> = ({
   className,
   children
 }) => {
+  const { user } = useAuth();
   const { 
     isAuthOpen, 
     openAuth, 
@@ -35,7 +38,17 @@ const EnrollmentButton: React.FC<EnrollmentButtonProps> = ({
     enrollmentMode: true
   });
 
-  const handleEnrollment = () => {
+  const handleEnrollment = async () => {
+    // Log enrollment activity
+    if (user?.id) {
+      await activityService.logActivity(
+        Number(user.id),
+        'course_enrolled',
+        courseId,
+        { course_name: courseName }
+      );
+    }
+    
     // Here you would implement the actual enrollment logic
     toast.success(`ثبت‌نام در دوره ${courseName} با موفقیت انجام شد`);
   };
