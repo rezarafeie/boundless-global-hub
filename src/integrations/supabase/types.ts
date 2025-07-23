@@ -2311,6 +2311,10 @@ export type Database = {
         Args: { data: string }
         Returns: string
       }
+      cancel_unpaid_zarinpal_enrollments: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_expired_sso_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined
