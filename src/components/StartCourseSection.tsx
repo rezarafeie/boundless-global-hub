@@ -468,6 +468,9 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           // Check if there are any available actions
           const hasAvailableActions = modifiedCourse.support_link || modifiedCourse.telegram_channel_link || modifiedCourse.gifts_link;
           
+          // Calculate starting step number for action links
+          const enabledAccessTypesCount = accessTypes.filter(type => type.enabled).length;
+          
           return hasAvailableActions ? (
             <div className="w-full mt-12">
               <CourseActionLinks 
@@ -478,6 +481,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                 onTelegramActivated={handleActivateTelegram}
                 supportActivated={supportActivated}
                 telegramActivated={telegramActivated}
+                startingStepNumber={enabledAccessTypesCount + 1}
               />
             </div>
           ) : null;

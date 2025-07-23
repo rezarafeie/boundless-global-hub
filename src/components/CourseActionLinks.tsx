@@ -33,6 +33,7 @@ interface CourseActionLinksProps {
   onTelegramActivated?: () => void;
   supportActivated?: boolean;
   telegramActivated?: boolean;
+  startingStepNumber?: number;
 }
 
 const CourseActionLinks: React.FC<CourseActionLinksProps> = ({ 
@@ -42,7 +43,8 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
   onSupportActivated,
   onTelegramActivated,
   supportActivated = false,
-  telegramActivated = false
+  telegramActivated = false,
+  startingStepNumber = 1
 }) => {
   const { toast } = useToast();
   const [clickedActions, setClickedActions] = useState<Set<string>>(new Set());
@@ -179,15 +181,21 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
       </CardHeader>
       <CardContent className="space-y-3 p-3 sm:p-4">
         <div className="space-y-3">
-          {availableActions.map((action) => {
+          {availableActions.map((action, index) => {
             const colors = getColorClasses(action.color);
             const isClicked = clickedActions.has(action.id as 'support' | 'telegram' | 'gifts');
+            const stepNumber = startingStepNumber + index;
             
             return (
               <div 
                 key={action.id}
-                className="flex flex-col gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800 w-full overflow-hidden"
+                className="flex flex-col gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800 w-full overflow-hidden relative"
               >
+                {/* Step Number */}
+                <div className="absolute -top-2 -right-2 z-10 w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+                  {stepNumber}
+                </div>
+                
                 <div className="flex items-start gap-3 w-full">
                   <div className={`w-10 h-10 ${colors.badgeBg} rounded-lg flex items-center justify-center border ${colors.border} flex-shrink-0`}>
                     <action.icon className={`h-5 w-5 ${colors.text}`} />
