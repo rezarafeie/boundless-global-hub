@@ -67,6 +67,8 @@ const ShortLinksManager: React.FC = () => {
   };
 
   const handleCreateLink = async () => {
+    console.log('Creating link with data:', formData);
+    
     if (!formData.original_url.trim()) {
       toast({
         title: "خطا",
@@ -79,7 +81,9 @@ const ShortLinksManager: React.FC = () => {
     // Validate URL format
     try {
       new URL(formData.original_url);
+      console.log('URL validation passed');
     } catch {
+      console.log('URL validation failed');
       toast({
         title: "خطا",
         description: "فرمت URL صحیح نیست",
@@ -92,11 +96,19 @@ const ShortLinksManager: React.FC = () => {
       ? formData.slug.trim() 
       : undefined;
 
+    console.log('Calling createShortLink with:', {
+      original_url: formData.original_url,
+      slug,
+      created_by: 'admin'
+    });
+
     const result = await createShortLink({
       original_url: formData.original_url,
       slug,
-      created_by: 'admin', // You can get this from auth context
+      created_by: 'admin',
     });
+
+    console.log('createShortLink result:', result);
 
     if (result) {
       toast({
