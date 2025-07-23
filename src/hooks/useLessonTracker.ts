@@ -119,10 +119,17 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
   }, [user?.id, options]);
 
   const markLessonComplete = async () => {
-    if (!user?.id || !options) return;
+    console.log('markLessonComplete called with:', { user: user?.id, options });
+    if (!user?.id || !options) {
+      console.log('Early return from markLessonComplete:', { userId: user?.id, options });
+      return;
+    }
 
     try {
+      console.log('Starting lesson completion process...');
+      
       // Log completion activity
+      console.log('Logging completion activity...');
       await activityService.logActivity(
         Number(user.id),
         'lesson_completed',
@@ -133,16 +140,20 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
           course_title: options.courseTitle
         }
       );
+      console.log('Activity logged successfully');
 
       // Mark lesson as completed
+      console.log('Tracking lesson progress...');
       await activityService.trackLessonProgress(
         Number(user.id),
         options.courseId,
         options.lessonId,
         'completed'
       );
+      console.log('Lesson progress tracked successfully');
     } catch (error) {
       console.error('Error marking lesson complete:', error);
+      throw error;
     }
   };
 

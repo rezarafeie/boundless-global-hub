@@ -526,9 +526,16 @@ const CourseAccess: React.FC = () => {
                   </div>
                   <Button
                     onClick={async () => {
+                      console.log('Complete lesson button clicked');
+                      console.log('selectedLesson:', selectedLesson);
+                      console.log('course:', course);
+                      console.log('markLessonComplete function:', markLessonComplete);
+                      
                       if (markLessonComplete) {
                         try {
+                          console.log('Calling markLessonComplete...');
                           await markLessonComplete();
+                          console.log('markLessonComplete completed successfully');
                           toast({
                             title: "تبریک!",
                             description: "درس با موفقیت تکمیل شد",
@@ -541,6 +548,13 @@ const CourseAccess: React.FC = () => {
                             variant: "destructive"
                           });
                         }
+                      } else {
+                        console.log('markLessonComplete function is undefined');
+                        toast({
+                          title: "خطا",
+                          description: "لطفا ابتدا یک درس انتخاب کنید",
+                          variant: "destructive"
+                        });
                       }
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
