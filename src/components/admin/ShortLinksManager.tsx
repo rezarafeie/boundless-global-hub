@@ -417,9 +417,16 @@ const ShortLinksManager: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(link.original_url, '_blank')}
+                          onClick={() => window.open(getShortUrl(link.slug), '_blank')}
                         >
                           <ExternalLink className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(getShortUrl(link.slug))}
+                        >
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
