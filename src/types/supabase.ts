@@ -157,3 +157,19 @@ export interface AdminSettings {
   manual_approval_enabled: boolean;
   updated_at: string;
 }
+
+export interface ShortLink {
+  id: string;
+  slug: string;
+  original_url: string;
+  clicks: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShortLinkInsert {
+  slug?: string;
+  original_url: string;
+  created_by?: string;
+}

@@ -6,7 +6,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import { shouldShowMessengerOnly } from "./utils/subdomainDetection";
+import { shouldShowMessengerOnly, shouldShowShortlinkOnly } from "./utils/subdomainDetection";
 
 // Import all pages
 import Index from "./pages/Index";
@@ -96,6 +96,9 @@ import UserHub from "./pages/UserHub";
 import MessengerApp from "./pages/MessengerApp";
 import MessengerProfile from "./pages/MessengerProfile";
 
+// Short link redirect page
+import ShortLinkRedirect from "./pages/ShortLinkRedirect";
+
 // Import the new component
 import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
@@ -108,6 +111,33 @@ import UserProfile from "./pages/UserProfile";
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Check if we're on the shortlink subdomain
+  const isShortlinkOnly = shouldShowShortlinkOnly();
+  
+  if (isShortlinkOnly) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <NotificationProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Routes>
+                      <Route path="/:slug" element={<ShortLinkRedirect />} />
+                      <Route path="/" element={<ShortLinkRedirect />} />
+                    </Routes>
+                  </TooltipProvider>
+                </AuthProvider>
+              </NotificationProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
+
   // Check if we're on the messenger subdomain
   const isMessengerOnly = shouldShowMessengerOnly();
   

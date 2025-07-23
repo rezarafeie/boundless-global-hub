@@ -1696,6 +1696,36 @@ export type Database = {
           },
         ]
       }
+      short_links: {
+        Row: {
+          clicks: number
+          created_at: string
+          created_by: string | null
+          id: string
+          original_url: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          clicks?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          original_url: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          clicks?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          original_url?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sso_tokens: {
         Row: {
           course_slug: string
@@ -2454,6 +2484,10 @@ export type Database = {
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
+      }
+      increment_short_link_clicks: {
+        Args: { link_slug: string }
+        Returns: undefined
       }
       increment_views: {
         Args: { announcement_id: number }

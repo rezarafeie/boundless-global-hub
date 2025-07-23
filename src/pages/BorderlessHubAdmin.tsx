@@ -5,12 +5,13 @@ import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Settings, Wifi, Users, MessageSquare, Bell, Shield } from 'lucide-react';
+import { Settings, Wifi, Users, MessageSquare, Bell, Shield, Link } from 'lucide-react';
 import { messengerService } from '@/lib/messengerService';
 import { useToast } from '@/hooks/use-toast';
 import HubManagementSection from '@/components/Admin/HubManagementSection';
 import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
 import NotificationManagementSection from '@/components/Admin/NotificationManagementSection';
+import ShortLinksManager from '@/components/admin/ShortLinksManager';
 
 const BorderlessHubAdmin = () => {
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ const BorderlessHubAdmin = () => {
         <div className="container mx-auto px-4 py-6">
           <Tabs defaultValue="hub-management" className="w-full">
             {/* Mobile-First Tab Navigation */}
-            <TabsList className="grid w-full grid-cols-3 mb-6 h-auto">
+            <TabsList className="grid w-full grid-cols-4 mb-6 h-auto">
               <TabsTrigger 
                 value="hub-management" 
                 className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
@@ -113,6 +114,13 @@ const BorderlessHubAdmin = () => {
                 <Bell className="w-5 h-5" />
                 <span>مدیریت اعلان‌ها</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="short-links" 
+                className="flex flex-col items-center gap-2 py-4 text-xs sm:text-sm"
+              >
+                <Link className="w-5 h-5" />
+                <span>لینک‌های کوتاه</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Tab Content */}
@@ -126,6 +134,10 @@ const BorderlessHubAdmin = () => {
 
             <TabsContent value="notification-management" className="space-y-6">
               <NotificationManagementSection />
+            </TabsContent>
+
+            <TabsContent value="short-links" className="space-y-6">
+              <ShortLinksManager />
             </TabsContent>
           </Tabs>
           
