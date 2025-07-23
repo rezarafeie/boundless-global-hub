@@ -174,7 +174,12 @@ const CourseAccess: React.FC = () => {
       // Log course page visit if user is authenticated
       if (isAuthenticated && user?.id) {
         try {
-          console.log('Logging course page visit for user:', user.id, 'course:', courseData.id);
+          console.log('Logging course page visit for user:', user.id, 'course:', courseData.id, 'title:', courseData.title);
+          const metadata = {
+            course_title: courseData.title,
+            visit_time: new Date().toISOString()
+          };
+          console.log('Metadata being sent:', metadata);
           await logCoursePageVisit(parseInt(user.id.toString()), courseData.id, courseData.title);
           console.log('Course page visit logged successfully');
         } catch (error) {
