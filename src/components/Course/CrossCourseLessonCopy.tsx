@@ -174,7 +174,8 @@ const CrossCourseLessonCopy: React.FC<CrossCourseLessonCopyProps> = ({
       for (let i = 0; i < lessonsToCopy.length; i++) {
         const lesson = lessonsToCopy[i];
         
-        const { error: insertError } = await supabase
+        // Insert the new lesson
+        const { data: newLesson, error: insertError } = await supabase
           .from('course_lessons')
           .insert({
             title: lesson.title,
@@ -185,9 +186,21 @@ const CrossCourseLessonCopy: React.FC<CrossCourseLessonCopyProps> = ({
             order_index: maxOrderIndex + i + 1,
             section_id: targetSectionId,
             course_id: currentCourseId
-          });
+          })
+          .select('id')
+          .single();
 
         if (insertError) throw insertError;
+
+        // Also create entry in lesson_sections junction table
+        const { error: junctionError } = await supabase
+          .from('lesson_sections')
+          .insert({
+            lesson_id: newLesson.id,
+            section_id: targetSectionId
+          });
+
+        if (junctionError) throw junctionError;
       }
 
       toast({
