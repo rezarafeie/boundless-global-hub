@@ -19,6 +19,9 @@ interface CourseActionLinksProps {
     support_link?: string | null;
     telegram_channel_link?: string | null;
     gifts_link?: string | null;
+    support_activation_required?: boolean;
+    telegram_activation_required?: boolean;
+    smart_activation_enabled?: boolean;
   };
   enrollment: {
     id: string;
@@ -26,12 +29,20 @@ interface CourseActionLinksProps {
     email?: string;
   };
   userEmail?: string;
+  onSupportActivated?: () => void;
+  onTelegramActivated?: () => void;
+  supportActivated?: boolean;
+  telegramActivated?: boolean;
 }
 
 const CourseActionLinks: React.FC<CourseActionLinksProps> = ({ 
   course, 
   enrollment, 
-  userEmail 
+  userEmail,
+  onSupportActivated,
+  onTelegramActivated,
+  supportActivated = false,
+  telegramActivated = false
 }) => {
   const { toast } = useToast();
   const [clickedActions, setClickedActions] = useState<Set<string>>(new Set());
@@ -75,24 +86,37 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
     if (!clickedActions.has(actionType)) {
       logClick(actionType);
     }
+
+    // Trigger activation callbacks for required activations
+    if (actionType === 'support' && course.support_activation_required && onSupportActivated) {
+      onSupportActivated();
+    }
+    
+    if (actionType === 'telegram' && course.telegram_activation_required && onTelegramActivated) {
+      onTelegramActivated();
+    }
   };
 
   const actionButtons = [
     {
       id: 'support',
-      title: 'فعال‌سازی پشتیبانی',
-      description: 'دریافت پشتیبانی مستقیم برای این دوره',
+      title: course.support_activation_required ? 'فعال‌سازی پشتیبانی (اجباری)' : 'فعال‌سازی پشتیبانی',
+      description: course.support_activation_required ? 'برای دسترسی به دوره‌ها باید پشتیبانی را فعال کنید' : 'دریافت پشتیبانی مستقیم برای این دوره',
       icon: MessageSquare,
       url: course.support_link,
-      color: 'blue'
+      color: 'blue',
+      required: course.support_activation_required,
+      activated: supportActivated
     },
     {
       id: 'telegram',
-      title: 'عضویت در کانال تلگرام',
-      description: 'عضویت در کانال اختصاصی دوره',
+      title: course.telegram_activation_required ? 'عضویت در کانال تلگرام (اجباری)' : 'عضویت در کانال تلگرام',
+      description: course.telegram_activation_required ? 'برای دسترسی به دوره‌ها باید در کانال تلگرام عضو شوید' : 'عضویت در کانال اختصاصی دوره',
       icon: Send,
       url: course.telegram_channel_link,
-      color: 'cyan'
+      color: 'cyan',
+      required: course.telegram_activation_required,
+      activated: telegramActivated
     },
     {
       id: 'gifts',
@@ -100,7 +124,9 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
       description: 'دانلود محتوای تکمیلی و هدایای دوره',
       icon: Gift,
       url: course.gifts_link,
-      color: 'pink'
+      color: 'pink',
+      required: false,
+      activated: false
     }
   ];
 
@@ -171,10 +197,15 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
                       <h4 className="font-semibold text-orange-700 dark:text-orange-300 text-sm sm:text-base break-words">
                         {action.title}
                       </h4>
-                      {isClicked && (
+                      {(action.activated || isClicked) && (
                         <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 text-xs w-fit">
                           <CheckCircle className="h-3 w-3 ml-1" />
-                          انجام شد
+                          {action.required ? 'فعال شد' : 'انجام شد'}
+                        </Badge>
+                      )}
+                      {action.required && !action.activated && (
+                        <Badge variant="outline" className="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700 text-xs w-fit">
+                          اجباری
                         </Badge>
                       )}
                     </div>

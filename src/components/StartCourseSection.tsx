@@ -73,9 +73,55 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   const [supportActivated, setSupportActivated] = useState(false);
   const [telegramActivated, setTelegramActivated] = useState(false);
 
-  // Simplified activation check - always return true since activations are handled in main page
+  // Load activation status from localStorage on component mount
+  useEffect(() => {
+    if (!enrollment?.id) return;
+    
+    const activationKey = `activations_${enrollment.id}`;
+    const savedActivations = localStorage.getItem(activationKey);
+    
+    if (savedActivations) {
+      try {
+        const { support, telegram } = JSON.parse(savedActivations);
+        setSupportActivated(support || false);
+        setTelegramActivated(telegram || false);
+      } catch (error) {
+        console.error('Error parsing saved activations:', error);
+      }
+    }
+  }, [enrollment?.id]);
+
+  // Save activation status to localStorage whenever it changes
+  useEffect(() => {
+    if (!enrollment?.id) return;
+    
+    const activationKey = `activations_${enrollment.id}`;
+    const activations = {
+      support: supportActivated,
+      telegram: telegramActivated
+    };
+    
+    localStorage.setItem(activationKey, JSON.stringify(activations));
+  }, [supportActivated, telegramActivated, enrollment?.id]);
+
+  // Check if all required activations are completed
   const isRequiredActivationsCompleted = () => {
-    return true; // Activations are now handled in the main enrollment success page
+    if (!course) return false;
+    
+    // If smart activation is enabled, no manual activations are required
+    if (course.smart_activation_enabled) return true;
+    
+    // Check if support activation is required and completed
+    if (course.support_activation_required && !supportActivated) {
+      return false;
+    }
+    
+    // Check if telegram activation is required and completed
+    if (course.telegram_activation_required && !telegramActivated) {
+      return false;
+    }
+    
+    return true;
   };
 
   // Determine available access types
@@ -109,7 +155,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       description: 'دسترسی آنلاین به دوره',
       icon: ShoppingCart,
       enabled: hasWooCommerce,
-      status: 'active',
+      status: hasWooCommerce ? (isRequiredActivationsCompleted() ? 'active' : 'blocked') : 'coming-soon',
       color: 'blue'
     }
   ];
@@ -222,7 +268,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     setSupportActivated(true);
     toast({
       title: "فعال‌سازی پشتیبانی",
-      description: "پشتیبانی با موفقیت فعال شد!",
+      description: "پشتیبانی با موفقیت فعال شد! حالا می‌توانید به دوره‌ها دسترسی پیدا کنید.",
     });
   };
 
@@ -230,7 +276,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     setTelegramActivated(true);
     toast({
       title: "فعال‌سازی تلگرام",
-      description: "کانال تلگرام با موفقیت فعال شد!",
+      description: "کانال تلگرام با موفقیت فعال شد! حالا می‌توانید به دوره‌ها دسترسی پیدا کنید.",
     });
   };
 
@@ -322,7 +368,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                               }
                             }
                           }}
-                          disabled={loadingSSO}
+                          disabled={loadingSSO || accessType.status !== 'active'}
                           className="w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] bg-gradient-to-r from-green-600 via-green-600 to-emerald-600 hover:from-green-700 hover:via-green-700 hover:to-emerald-700 text-white"
                           size="lg"
                         >
@@ -365,7 +411,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                               }
                             }
                           }}
-                          disabled={loadingSSO}
+                          disabled={loadingSSO || accessType.status !== 'active'}
                           className="w-full h-12 sm:h-14 shadow-sm hover:shadow-md transition-all duration-500 border-0 text-sm sm:text-base font-semibold group-hover:scale-[1.02] bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-600 hover:from-blue-700 hover:via-blue-700 hover:to-cyan-700 text-white"
                           size="lg"
                         >
@@ -418,9 +464,13 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
           return hasAvailableActions ? (
             <div className="w-full mt-12">
               <CourseActionLinks 
-                course={modifiedCourse}
+                course={course}
                 enrollment={enrollment}
                 userEmail={userEmail || enrollment?.email}
+                onSupportActivated={handleActivateSupport}
+                onTelegramActivated={handleActivateTelegram}
+                supportActivated={supportActivated}
+                telegramActivated={telegramActivated}
               />
             </div>
           ) : null;
