@@ -75,9 +75,9 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
             {
               course_id: options.courseId,
               lesson_title: options.lessonTitle,
-              course_title: options.courseTitle
-            },
-            timeSpent
+              course_title: options.courseTitle,
+              time_spent_minutes: timeSpent
+            }
           );
 
           // Update lesson progress

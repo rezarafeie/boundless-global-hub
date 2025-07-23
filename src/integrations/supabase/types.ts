@@ -2602,13 +2602,20 @@ export type Database = {
         Returns: boolean
       }
       log_user_activity: {
-        Args: {
-          p_user_id: number
-          p_event_type: string
-          p_reference?: string
-          p_metadata?: Json
-          p_duration?: number
-        }
+        Args:
+          | {
+              p_user_id: number
+              p_event_type: string
+              p_reference?: string
+              p_metadata?: Json
+            }
+          | {
+              p_user_id: number
+              p_event_type: string
+              p_reference?: string
+              p_metadata?: Json
+              p_duration?: number
+            }
         Returns: string
       }
       search_users: {

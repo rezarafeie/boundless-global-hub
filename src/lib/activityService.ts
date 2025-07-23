@@ -28,16 +28,14 @@ export const activityService = {
     userId: number,
     eventType: ActivityEventType,
     reference?: string,
-    metadata: ActivityMetadata = {},
-    duration?: number
+    metadata: ActivityMetadata = {}
   ) {
     try {
       const { data, error } = await supabase.rpc('log_user_activity', {
         p_user_id: userId,
         p_event_type: eventType,
         p_reference: reference || null,
-        p_metadata: metadata,
-        p_duration: duration || null
+        p_metadata: metadata
       });
 
       if (error) {

@@ -24,8 +24,7 @@ export const useActivityTracker = (options: UseActivityTrackerOptions) => {
         Number(user.id),
         options.eventType,
         options.reference,
-        options.metadata,
-        duration
+        { ...options.metadata, duration: duration }
       );
       hasLoggedRef.current = true;
     } catch (error) {
