@@ -2161,6 +2161,99 @@ export type Database = {
         }
         Relationships: []
       }
+      user_course_progress: {
+        Row: {
+          completed_lessons: number | null
+          course_id: string
+          course_page_visited: boolean | null
+          created_at: string | null
+          id: string
+          last_activity_at: string | null
+          progress_percentage: number | null
+          support_activated: boolean | null
+          telegram_joined: boolean | null
+          total_lessons: number | null
+          total_time_spent: number | null
+          updated_at: string | null
+          user_id: number
+        }
+        Insert: {
+          completed_lessons?: number | null
+          course_id: string
+          course_page_visited?: boolean | null
+          created_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          progress_percentage?: number | null
+          support_activated?: boolean | null
+          telegram_joined?: boolean | null
+          total_lessons?: number | null
+          total_time_spent?: number | null
+          updated_at?: string | null
+          user_id: number
+        }
+        Update: {
+          completed_lessons?: number | null
+          course_id?: string
+          course_page_visited?: boolean | null
+          created_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          progress_percentage?: number | null
+          support_activated?: boolean | null
+          telegram_joined?: boolean | null
+          total_lessons?: number | null
+          total_time_spent?: number | null
+          updated_at?: string | null
+          user_id?: number
+        }
+        Relationships: []
+      }
+      user_lesson_progress: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          created_at: string | null
+          first_opened_at: string | null
+          id: string
+          is_completed: boolean | null
+          is_opened: boolean | null
+          last_accessed_at: string | null
+          lesson_id: string
+          total_time_spent: number | null
+          updated_at: string | null
+          user_id: number
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          created_at?: string | null
+          first_opened_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_opened?: boolean | null
+          last_accessed_at?: string | null
+          lesson_id: string
+          total_time_spent?: number | null
+          updated_at?: string | null
+          user_id: number
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string | null
+          first_opened_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_opened?: boolean | null
+          last_accessed_at?: string | null
+          lesson_id?: string
+          total_time_spent?: number | null
+          updated_at?: string | null
+          user_id?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string | null
@@ -2504,6 +2597,16 @@ export type Database = {
       is_session_valid: {
         Args: { session_token_param: string }
         Returns: boolean
+      }
+      log_user_activity: {
+        Args: {
+          p_user_id: number
+          p_event_type: string
+          p_reference?: string
+          p_metadata?: Json
+          p_duration?: number
+        }
+        Returns: string
       }
       search_users: {
         Args: { search_term: string }
