@@ -85,7 +85,8 @@ export function UserActivity({ userId }: UserActivityProps) {
             description = `عضو کانال تلگرام شد`;
             break;
           case 'course_page_visited':
-            description = `صفحه دوره بازدید شد`;
+            const courseTitle = log.metadata?.course_title || 'دوره';
+            description = `بازدید صفحه دوره: ${courseTitle}`;
             break;
           case 'lesson_opened':
             description = `درس باز شد`;
