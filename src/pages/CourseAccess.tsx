@@ -104,6 +104,8 @@ const CourseAccess: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
   const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   // Check if mobile on resize
   useEffect(() => {
@@ -359,6 +361,11 @@ const CourseAccess: React.FC = () => {
         }
       }
 
+      // Fetch completed lessons for the user
+      if (isAuthenticated && user?.id) {
+        await fetchCompletedLessons(courseId);
+      }
+
     } catch (error) {
       console.error('Error fetching course content:', error);
       toast({
@@ -366,6 +373,27 @@ const CourseAccess: React.FC = () => {
         description: "خطا در بارگذاری محتوای دوره",
         variant: "destructive"
       });
+    }
+  };
+
+  // Fetch completed lessons for the user
+  const fetchCompletedLessons = async (courseId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_lesson_progress')
+        .select('lesson_id')
+        .eq('user_id', Number(user.id))
+        .eq('course_id', courseId)
+        .eq('is_completed', true);
+
+      if (error) throw error;
+
+      const completedLessonIds = new Set(data?.map(item => item.lesson_id) || []);
+      setCompletedLessons(completedLessonIds);
+    } catch (error) {
+      console.error('Error fetching completed lessons:', error);
     }
   };
 
@@ -564,34 +592,64 @@ const CourseAccess: React.FC = () => {
             )}
 
             {/* Mark as Complete Button */}
-            <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
-              <CardContent className="p-6">
-                <div className="text-center space-y-4">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">تکمیل درس</h4>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mb-4">
-                      درس را به عنوان تکمیل شده علامت‌گذاری کنید
-                    </p>
-                  </div>
-                  <Button
-                    onClick={async () => {
-                      console.log('Complete lesson button clicked');
-                      console.log('selectedLesson:', selectedLesson);
-                      console.log('course:', course);
-                      console.log('markLessonComplete function:', markLessonComplete);
-                      
-                      if (markLessonComplete) {
+            {selectedLesson && (
+              <Card className={`border-2 transition-all duration-300 ${
+                completedLessons.has(selectedLesson.id)
+                  ? 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20'
+                  : 'border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20'
+              }`}>
+                <CardContent className="p-6">
+                  <div className="text-center space-y-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
+                      completedLessons.has(selectedLesson.id)
+                        ? 'bg-emerald-500'
+                        : 'bg-blue-500'
+                    }`}>
+                      <CheckCircle className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className={`font-semibold mb-2 ${
+                        completedLessons.has(selectedLesson.id)
+                          ? 'text-emerald-800 dark:text-emerald-300'
+                          : 'text-blue-800 dark:text-blue-300'
+                      }`}>
+                        {completedLessons.has(selectedLesson.id) ? 'درس تکمیل شده' : 'تکمیل درس'}
+                      </h4>
+                      <p className={`text-sm mb-4 ${
+                        completedLessons.has(selectedLesson.id)
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-blue-600 dark:text-blue-400'
+                      }`}>
+                        {completedLessons.has(selectedLesson.id) 
+                          ? 'این درس با موفقیت تکمیل شده است'
+                          : 'درس را به عنوان تکمیل شده علامت‌گذاری کنید'
+                        }
+                      </p>
+                    </div>
+                    <Button
+                      onClick={async () => {
+                        if (!selectedLesson || !user?.id || !course) return;
+                        
+                        setIsMarkingComplete(true);
+                        
                         try {
-                          console.log('Calling markLessonComplete...');
-                          await markLessonComplete();
-                          console.log('markLessonComplete completed successfully');
-                          toast({
-                            title: "تبریک!",
-                            description: "درس با موفقیت تکمیل شد",
-                          });
+                          if (markLessonComplete) {
+                            await markLessonComplete();
+                            
+                            // Update local state immediately
+                            setCompletedLessons(prev => new Set([...prev, selectedLesson.id]));
+                            
+                            toast({
+                              title: "تبریک!",
+                              description: "درس با موفقیت تکمیل شد",
+                            });
+                          } else {
+                            toast({
+                              title: "خطا",
+                              description: "خطا در سیستم تکمیل درس",
+                              variant: "destructive"
+                            });
+                          }
                         } catch (error) {
                           console.error('Error marking lesson as complete:', error);
                           toast({
@@ -599,24 +657,29 @@ const CourseAccess: React.FC = () => {
                             description: "خطا در تکمیل درس",
                             variant: "destructive"
                           });
+                        } finally {
+                          setIsMarkingComplete(false);
                         }
-                      } else {
-                        console.log('markLessonComplete function is undefined');
-                        toast({
-                          title: "خطا",
-                          description: "لطفا ابتدا یک درس انتخاب کنید",
-                          variant: "destructive"
-                        });
+                      }}
+                      disabled={completedLessons.has(selectedLesson.id) || isMarkingComplete}
+                      className={`w-full text-white shadow-lg transition-all duration-300 ${
+                        completedLessons.has(selectedLesson.id)
+                          ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {isMarkingComplete 
+                        ? 'در حال تکمیل...'
+                        : completedLessons.has(selectedLesson.id) 
+                          ? 'تکمیل شده' 
+                          : 'تکمیل درس'
                       }
-                    }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    تکمیل درس
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
@@ -833,8 +896,12 @@ const CourseAccess: React.FC = () => {
                                                   onClick={() => handleLessonSelect(lesson)}
                                                   className={`w-full text-right p-3 rounded-lg transition-all duration-200 group border ${
                                                     isSelected 
-                                                      ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm' 
-                                                      : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                                      ? completedLessons.has(lesson.id)
+                                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 shadow-sm'
+                                                        : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm'
+                                                      : completedLessons.has(lesson.id)
+                                                        ? 'hover:bg-emerald-50 dark:hover:bg-emerald-800/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700'
+                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
                                                   }`}
                                                 >
                                                   <div className="flex items-center justify-between">
@@ -863,13 +930,21 @@ const CourseAccess: React.FC = () => {
                                                         )}
                                                       </div>
                                                     </div>
-                                                    {isSelected && (
-                                                      <div className="flex items-center gap-2">
-                                                        <CheckCircle className="h-5 w-5 text-blue-500" />
-                                                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
-                                                      </div>
-                                                    )}
-                                                  </div>
+                                                     <div className="flex items-center gap-2">
+                                                       {completedLessons.has(lesson.id) && (
+                                                         <div className="flex items-center gap-1">
+                                                           <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                                           <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">تکمیل شده</span>
+                                                         </div>
+                                                       )}
+                                                       {isSelected && !completedLessons.has(lesson.id) && (
+                                                         <div className="flex items-center gap-1">
+                                                           <PlayCircle className="h-4 w-4 text-blue-500" />
+                                                           <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                         </div>
+                                                        )}
+                                                     </div>
+                                                   </div>
                                                 </button>
                                               );
                                             })}
@@ -921,12 +996,16 @@ const CourseAccess: React.FC = () => {
                                         return (
                                           <button
                                             key={lesson.id}
-                                            onClick={() => handleLessonSelect(lesson)}
-                                            className={`w-full text-right p-4 rounded-xl transition-all duration-200 group border ${
-                                              isSelected 
-                                                ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-md' 
-                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
-                                            }`}
+                                             onClick={() => handleLessonSelect(lesson)}
+                                             className={`w-full text-right p-4 rounded-xl transition-all duration-200 group border ${
+                                               isSelected 
+                                                 ? completedLessons.has(lesson.id)
+                                                   ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 shadow-md'
+                                                   : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-md'
+                                                 : completedLessons.has(lesson.id)
+                                                   ? 'hover:bg-emerald-50 dark:hover:bg-emerald-800/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700'
+                                                   : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                             }`}
                                           >
                                             <div className="flex items-center justify-between">
                                               <div className="flex-1 min-w-0">
@@ -954,12 +1033,20 @@ const CourseAccess: React.FC = () => {
                                                   )}
                                                 </div>
                                               </div>
-                                              {isSelected && (
-                                                <div className="flex items-center gap-2">
-                                                  <CheckCircle className="h-5 w-5 text-blue-500" />
-                                                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
-                                                </div>
-                                              )}
+                                               <div className="flex items-center gap-2">
+                                                 {completedLessons.has(lesson.id) && (
+                                                   <div className="flex items-center gap-2">
+                                                     <CheckCircle className="h-5 w-5 text-emerald-500" />
+                                                     <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">تکمیل شده</span>
+                                                   </div>
+                                                 )}
+                                                 {isSelected && !completedLessons.has(lesson.id) && (
+                                                   <div className="flex items-center gap-2">
+                                                     <PlayCircle className="h-5 w-5 text-blue-500" />
+                                                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                   </div>
+                                                 )}
+                                               </div>
                                             </div>
                                           </button>
                                         );
