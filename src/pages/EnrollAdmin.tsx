@@ -221,6 +221,7 @@ const EnrollAdmin: React.FC = () => {
         return <Badge variant="secondary" className="bg-amber-100 text-amber-700"><Clock className="h-3 w-3 ml-1" />در انتظار پرداخت</Badge>;
       case 'failed':
       case 'error':
+      case 'cancelled_payment':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 ml-1" />ناموفق</Badge>;
       default:
         return <Badge variant="outline">{status || 'در انتظار'}</Badge>;
@@ -252,6 +253,8 @@ const EnrollAdmin: React.FC = () => {
         filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'pending');
       } else if (statusFilter === 'payment_completed') {
         filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'completed' || e.payment_status?.toLowerCase() === 'success');
+      } else if (statusFilter === 'payment_failed') {
+        filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'failed' || e.payment_status?.toLowerCase() === 'cancelled_payment' || e.payment_status?.toLowerCase() === 'error');
       } else if (statusFilter === 'manual_pending') {
         filtered = filtered.filter(e => e.manual_payment_status === 'pending');
       } else if (statusFilter === 'manual_approved') {
@@ -726,6 +729,20 @@ const EnrollAdmin: React.FC = () => {
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
+                            <p className="text-sm text-muted-foreground">ناموفق</p>
+                            <p className="text-2xl font-bold text-red-600">
+                              {enrollments.filter(e => e.payment_status?.toLowerCase() === 'failed' || e.payment_status?.toLowerCase() === 'cancelled_payment' || e.payment_status?.toLowerCase() === 'error').length}
+                            </p>
+                          </div>
+                          <XCircle className="h-8 w-8 text-red-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
                             <p className="text-sm text-muted-foreground">دوره‌های فعال</p>
                             <p className="text-2xl font-bold text-green-600">
                               {courses.filter(c => c.is_active).length}
@@ -775,7 +792,7 @@ const EnrollAdmin: React.FC = () => {
                   </div>
 
                   {/* Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     <Card>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -829,6 +846,20 @@ const EnrollAdmin: React.FC = () => {
                         </div>
                       </CardContent>
                     </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">ناموفق</p>
+                            <p className="text-2xl font-bold text-orange-600">
+                              {filteredEnrollments.filter(e => e.payment_status?.toLowerCase() === 'failed' || e.payment_status?.toLowerCase() === 'cancelled_payment' || e.payment_status?.toLowerCase() === 'error').length}
+                            </p>
+                          </div>
+                          <XCircle className="h-8 w-8 text-orange-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   {/* Enrollments Table */}
@@ -861,6 +892,7 @@ const EnrollAdmin: React.FC = () => {
                               <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                               <SelectItem value="payment_pending">در انتظار پرداخت</SelectItem>
                               <SelectItem value="payment_completed">پرداخت شده</SelectItem>
+                              <SelectItem value="payment_failed">ناموفق</SelectItem>
                               <SelectItem value="manual_pending">در انتظار بررسی</SelectItem>
                               <SelectItem value="manual_approved">تایید شده</SelectItem>
                               <SelectItem value="manual_rejected">رد شده</SelectItem>

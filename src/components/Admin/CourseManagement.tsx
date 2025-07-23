@@ -300,11 +300,11 @@ const CourseManagement: React.FC = () => {
                           <Badge 
                             variant={
                               enrollment.payment_status === 'completed' ? "default" :
-                              enrollment.payment_status === 'failed' ? "destructive" : "secondary"
+                              (enrollment.payment_status === 'failed' || enrollment.payment_status === 'cancelled_payment') ? "destructive" : "secondary"
                             }
                           >
                             {enrollment.payment_status === 'completed' ? 'تکمیل شده' :
-                             enrollment.payment_status === 'failed' ? 'ناموفق' : 'در انتظار'}
+                             (enrollment.payment_status === 'failed' || enrollment.payment_status === 'cancelled_payment') ? 'ناموفق' : 'در انتظار'}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatPrice(enrollment.payment_amount)}</TableCell>
