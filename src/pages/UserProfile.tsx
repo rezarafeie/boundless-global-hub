@@ -50,7 +50,7 @@ export default function UserProfile() {
     enrollments: false,
     licenses: false,
     crm: false,
-    activity: false
+    activity: true
   });
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function UserProfile() {
         .from('chat_users')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setUser(data);
@@ -157,7 +157,7 @@ export default function UserProfile() {
     },
     {
       id: 'activity',
-      title: 'فعالیت‌ها',
+      title: 'پیشرفت تحصیلی و فعالیت‌ها',
       icon: Activity,
       component: <UserActivity userId={user.id} />
     }
