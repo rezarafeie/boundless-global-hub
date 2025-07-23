@@ -95,7 +95,9 @@ export const useAuthTracking = () => {
 
   const logCoursePageVisit = async (userId: number, courseId: string, courseTitle: string) => {
     try {
-      await activityService.logActivity(
+      console.log('logCoursePageVisit called with:', { userId, courseId, courseTitle });
+      
+      const result = await activityService.logActivity(
         userId,
         'course_page_visited',
         courseId,
@@ -104,13 +106,20 @@ export const useAuthTracking = () => {
           visit_time: new Date().toISOString()
         }
       );
+      
+      console.log('Activity logged successfully:', result);
 
       // Update course progress
-      await activityService.updateCourseProgress(
-        userId,
-        courseId,
-        { course_page_visited: true }
-      );
+      try {
+        await activityService.updateCourseProgress(
+          userId,
+          courseId,
+          { course_page_visited: true }
+        );
+        console.log('Course progress updated successfully');
+      } catch (progressError) {
+        console.error('Error updating course progress:', progressError);
+      }
     } catch (error) {
       console.error('Error logging course page visit:', error);
     }
