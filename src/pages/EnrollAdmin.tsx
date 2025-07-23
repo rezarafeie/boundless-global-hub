@@ -858,8 +858,8 @@ const EnrollAdmin: React.FC = () => {
 
         {/* Enrollment Details Modal */}
       <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-none w-screen h-screen fixed inset-0 m-0 rounded-none overflow-y-auto">
+          <DialogHeader className="relative">
             <DialogTitle>جزئیات ثبت‌نام</DialogTitle>
             <DialogDescription>
               بررسی و تایید پرداخت دستی
