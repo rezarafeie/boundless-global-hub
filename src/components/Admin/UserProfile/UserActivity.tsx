@@ -118,8 +118,11 @@ export function UserActivity({ userId }: UserActivityProps) {
         .from('user_lesson_progress')
         .select(`
           *, 
-          course_lessons (title, course_id),
-          courses (title)
+          course_lessons (
+            title, 
+            course_id,
+            courses (title)
+          )
         `)
         .eq('user_id', userId);
 
