@@ -2142,6 +2142,7 @@ export type Database = {
           created_at: string
           event_type: string
           id: string
+          metadata: Json | null
           reference: string | null
           user_id: number
         }
@@ -2149,6 +2150,7 @@ export type Database = {
           created_at?: string
           event_type: string
           id?: string
+          metadata?: Json | null
           reference?: string | null
           user_id: number
         }
@@ -2156,6 +2158,7 @@ export type Database = {
           created_at?: string
           event_type?: string
           id?: string
+          metadata?: Json | null
           reference?: string | null
           user_id?: number
         }
