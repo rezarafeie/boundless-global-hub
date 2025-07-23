@@ -43,6 +43,7 @@ import {
 import { DataImportSection } from '@/components/admin/DataImportSection';
 import UsersOverview from './UsersOverview';
 import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
+import ShortLinksManager from '@/components/admin/ShortLinksManager';
 
 interface Course {
   id: string;
@@ -100,15 +101,15 @@ const EnrollAdmin: React.FC = () => {
   
   const [processing, setProcessing] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
-  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users' | 'shortlinks'>('dashboard');
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   useEffect(() => {
     // Check for tab parameter and set active view
     const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks', 'reports', 'data-import', 'users'].includes(tab)) {
-      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users');
+    if (tab && ['dashboard', 'enrollments', 'discounts', 'courses', 'webhooks', 'reports', 'data-import', 'users', 'shortlinks'].includes(tab)) {
+      setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users' | 'shortlinks');
     }
     
     Promise.all([fetchEnrollments(), fetchCourses()]);
@@ -1118,6 +1119,17 @@ const EnrollAdmin: React.FC = () => {
               {activeView === 'users' && (
                 <div className="space-y-6">
                   <UsersOverview />
+                </div>
+              )}
+
+              {/* Short Links View */}
+              {activeView === 'shortlinks' && (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">مدیریت لینک‌های کوتاه</h1>
+                    <p className="text-muted-foreground mt-2">ایجاد و مدیریت لینک‌های کوتاه برای l.rafiei.co</p>
+                  </div>
+                  <ShortLinksManager />
                 </div>
               )}
               </div>

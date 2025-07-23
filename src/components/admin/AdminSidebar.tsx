@@ -10,12 +10,12 @@ import {
 } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { BarChart3, CreditCard, Upload, DollarSign, BookOpen, Users, TrendingUp, Webhook, Menu, X } from 'lucide-react';
+import { BarChart3, CreditCard, Upload, DollarSign, BookOpen, Users, TrendingUp, Webhook, Menu, X, Link } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminSidebarProps {
   activeView: string;
-  onViewChange: (view: 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users') => void;
+  onViewChange: (view: 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users' | 'shortlinks') => void;
 }
 
 const sidebarItems = [
@@ -58,6 +58,11 @@ const sidebarItems = [
     id: 'webhooks',
     label: 'وب‌هوک‌ها',
     icon: Webhook,
+  },
+  {
+    id: 'shortlinks',
+    label: 'لینک‌های کوتاه',
+    icon: Link,
   },
 ];
 
