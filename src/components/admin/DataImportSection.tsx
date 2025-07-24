@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +39,23 @@ interface CSVRow {
   payment_price?: string;
 }
 
+interface PreviewAnalysis {
+  totalRows: number;
+  uniqueUsers: number;
+  duplicatesInFile: number;
+  existingUsers: number;
+  newUsers: number;
+  existingEnrollments: number;
+  newEnrollments: number;
+  duplicateEmails: string[];
+  duplicatePhones: string[];
+  conflicts: Array<{
+    email?: string;
+    phone?: string;
+    reason: string;
+  }>;
+}
+
 export function DataImportSection() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
@@ -47,6 +63,7 @@ export function DataImportSection() {
   const [isImporting, setIsImporting] = useState(false);
   const [importHistory, setImportHistory] = useState<any[]>([]);
   const [previewData, setPreviewData] = useState<CSVRow[]>([]);
+  const [previewAnalysis, setPreviewAnalysis] = useState<PreviewAnalysis | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -139,56 +156,101 @@ export function DataImportSection() {
       throw new Error('دوره انتخاب شده یافت نشد');
     }
 
+    // Process unique users only (remove duplicates within CSV)
+    const uniqueUsers = new Map<string, CSVRow>();
     for (const row of csvRows) {
+      const userKey = `${row.email?.trim().toLowerCase()}-${row.phone?.trim()}`;
+      if (!uniqueUsers.has(userKey)) {
+        uniqueUsers.set(userKey, row);
+      }
+    }
+
+    for (const row of uniqueUsers.values()) {
       try {
-        // Check if enrollment already exists - handle null email/phone
-        let existingQuery = supabase
+        // First, check if user exists in chat_users table
+        let existingUser = null;
+        if ((row.email && row.email.trim()) || (row.phone && row.phone.trim())) {
+          const conditions = [];
+          if (row.email && row.email.trim()) conditions.push(`email.eq.${row.email.trim()}`);
+          if (row.phone && row.phone.trim()) conditions.push(`phone.eq.${row.phone.trim()}`);
+          
+          if (conditions.length > 0) {
+            const { data: userData } = await supabase
+              .from('chat_users')
+              .select('id, email, phone')
+              .or(conditions.join(','))
+              .maybeSingle();
+            
+            existingUser = userData;
+          }
+        }
+
+        // Check if enrollment already exists for this course
+        let existingEnrollmentQuery = supabase
           .from('enrollments')
           .select('id')
           .eq('course_id', courseId);
         
-        // Build OR condition only for non-empty values
-        const conditions = [];
-        if (row.email && row.email.trim()) conditions.push(`email.eq.${row.email.trim()}`);
-        if (row.phone && row.phone.trim()) conditions.push(`phone.eq.${row.phone.trim()}`);
+        const enrollmentConditions = [];
+        if (row.email && row.email.trim()) enrollmentConditions.push(`email.eq.${row.email.trim()}`);
+        if (row.phone && row.phone.trim()) enrollmentConditions.push(`phone.eq.${row.phone.trim()}`);
         
-        if (conditions.length > 0) {
-          existingQuery = existingQuery.or(conditions.join(','));
+        if (enrollmentConditions.length > 0) {
+          existingEnrollmentQuery = existingEnrollmentQuery.or(enrollmentConditions.join(','));
         } else {
-          // If no email or phone, skip duplicate check
-          existingQuery = existingQuery.limit(0);
+          existingEnrollmentQuery = existingEnrollmentQuery.limit(0);
         }
         
-        const { data: existingEnrollment, error: enrollmentCheckError } = await existingQuery.maybeSingle();
-
-        if (enrollmentCheckError) {
-          console.error(`Error checking enrollment for ${row.email}:`, enrollmentCheckError);
-          continue;
-        }
+        const { data: existingEnrollment } = await existingEnrollmentQuery.maybeSingle();
 
         if (existingEnrollment) {
-          // Enrollment already exists
           existingEnrollments++;
-          console.log(`Enrollment already exists for ${row.email}`);
+          console.log(`Enrollment already exists for ${row.email || row.phone}`);
           continue;
         }
 
-        // Create new enrollment
+        // Create or update user in chat_users if needed
+        let chatUserId = existingUser?.id;
+        
+        if (!existingUser && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
+          // Create new user in chat_users
+          const { data: newUser, error: userError } = await supabase
+            .from('chat_users')
+            .insert({
+              name: `${row.first_name} ${row.last_name}`.trim(),
+              phone: row.phone?.trim() || null,
+              email: row.email?.trim() || null,
+              first_name: row.first_name?.trim(),
+              last_name: row.last_name?.trim(),
+              full_name: `${row.first_name} ${row.last_name}`.trim(),
+              country_code: '+98',
+              signup_source: 'enrollment',
+              is_approved: true,
+              role: 'user'
+            })
+            .select('id')
+            .single();
+
+          if (userError) {
+            console.error(`Error creating user for ${row.email}:`, userError);
+          } else {
+            chatUserId = newUser.id;
+          }
+        }
+
+        // Create enrollment
         const fullName = `${row.first_name} ${row.last_name}`.trim();
         
-        // Parse entry date if provided, otherwise use current date
+        // Parse entry date
         let createdAt = new Date().toISOString();
         if (row.entry_date && row.entry_date.trim()) {
           try {
-            // Support multiple date formats including 2024-02-28 08:22
             const dateStr = row.entry_date.trim();
             let parsedDate: Date;
             
             if (dateStr.includes(' ')) {
-              // Handle YYYY-MM-DD HH:MM format
               const [datePart, timePart] = dateStr.split(' ');
               if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
-                // YYYY-MM-DD format with time
                 const [year, month, day] = datePart.split('-');
                 const [hour, minute] = timePart.split(':');
                 parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
@@ -196,16 +258,12 @@ export function DataImportSection() {
                 parsedDate = new Date(dateStr);
               }
             } else if (dateStr.includes('/')) {
-              // Handle DD/MM/YYYY format
               const [day, month, year] = dateStr.split('/');
               parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
             } else if (dateStr.includes('-') && dateStr.length === 10) {
-              // Handle YYYY-MM-DD or DD-MM-YYYY format
               if (dateStr.indexOf('-') === 4) {
-                // YYYY-MM-DD format
                 parsedDate = new Date(dateStr);
               } else {
-                // DD-MM-YYYY format
                 const [day, month, year] = dateStr.split('-');
                 parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
               }
@@ -243,13 +301,14 @@ export function DataImportSection() {
           .insert({
             course_id: courseId,
             full_name: fullName,
-            email: row.email || null,
-            phone: row.phone || null,
+            email: row.email?.trim() || null,
+            phone: row.phone?.trim() || null,
             payment_status: 'completed',
             payment_amount: paymentAmount,
             payment_method: paymentMethod,
             country_code: '+98',
-            created_at: createdAt
+            created_at: createdAt,
+            chat_user_id: chatUserId
           });
 
         if (enrollmentError) {
@@ -258,24 +317,136 @@ export function DataImportSection() {
         }
 
         newEnrollmentsCreated++;
-        console.log(`Successfully created enrollment for ${row.email}`);
+        console.log(`Successfully created enrollment for ${row.email || row.phone}`);
 
       } catch (error) {
         console.error(`Error processing user ${row.email}:`, error);
-        // Continue with next user instead of failing entire import
       }
     }
 
     return {
-      totalRows: csvRows.length,
+      totalRows: uniqueUsers.size,
       newEnrollmentsCreated,
       existingEnrollments
     };
   };
 
+  const analyzeCSVData = async (csvRows: CSVRow[], courseId: string): Promise<PreviewAnalysis> => {
+    const analysis: PreviewAnalysis = {
+      totalRows: csvRows.length,
+      uniqueUsers: 0,
+      duplicatesInFile: 0,
+      existingUsers: 0,
+      newUsers: 0,
+      existingEnrollments: 0,
+      newEnrollments: 0,
+      duplicateEmails: [],
+      duplicatePhones: [],
+      conflicts: []
+    };
+
+    // Check for duplicates within the CSV file
+    const emailMap = new Map<string, number>();
+    const phoneMap = new Map<string, number>();
+    
+    csvRows.forEach((row, index) => {
+      if (row.email && row.email.trim()) {
+        const email = row.email.trim().toLowerCase();
+        emailMap.set(email, (emailMap.get(email) || 0) + 1);
+      }
+      if (row.phone && row.phone.trim()) {
+        const phone = row.phone.trim();
+        phoneMap.set(phone, (phoneMap.get(phone) || 0) + 1);
+      }
+    });
+
+    // Find duplicates in file
+    analysis.duplicateEmails = Array.from(emailMap.entries())
+      .filter(([_, count]) => count > 1)
+      .map(([email]) => email);
+    
+    analysis.duplicatePhones = Array.from(phoneMap.entries())
+      .filter(([_, count]) => count > 1)
+      .map(([phone]) => phone);
+
+    analysis.duplicatesInFile = analysis.duplicateEmails.length + analysis.duplicatePhones.length;
+
+    // Check against existing users in database
+    const emails = csvRows.map(row => row.email?.trim().toLowerCase()).filter(Boolean);
+    const phones = csvRows.map(row => row.phone?.trim()).filter(Boolean);
+
+    let existingUsers = [];
+    if (emails.length > 0 || phones.length > 0) {
+      const { data: dbUsers } = await supabase
+        .from('chat_users')
+        .select('id, email, phone')
+        .or(`email.in.(${emails.join(',')}),phone.in.(${phones.join(',')})`);
+      
+      existingUsers = dbUsers || [];
+    }
+
+    // Check existing enrollments for the selected course
+    let existingEnrollments = [];
+    if (emails.length > 0 || phones.length > 0) {
+      const { data: dbEnrollments } = await supabase
+        .from('enrollments')
+        .select('email, phone')
+        .eq('course_id', courseId)
+        .or(`email.in.(${emails.join(',')}),phone.in.(${phones.join(',')})`);
+      
+      existingEnrollments = dbEnrollments || [];
+    }
+
+    // Analyze each row
+    const processedUsers = new Set<string>();
+    
+    for (const row of csvRows) {
+      const userKey = `${row.email?.trim().toLowerCase()}-${row.phone?.trim()}`;
+      
+      if (processedUsers.has(userKey)) {
+        continue; // Skip duplicates within file
+      }
+      processedUsers.add(userKey);
+
+      // Check if user exists in database
+      const userExists = existingUsers.some(user => 
+        (row.email && user.email?.toLowerCase() === row.email.trim().toLowerCase()) ||
+        (row.phone && user.phone === row.phone.trim())
+      );
+
+      // Check if enrollment exists for this course
+      const enrollmentExists = existingEnrollments.some(enrollment => 
+        (row.email && enrollment.email?.toLowerCase() === row.email.trim().toLowerCase()) ||
+        (row.phone && enrollment.phone === row.phone.trim())
+      );
+
+      if (userExists) {
+        analysis.existingUsers++;
+      } else {
+        analysis.newUsers++;
+      }
+
+      if (enrollmentExists) {
+        analysis.existingEnrollments++;
+        analysis.conflicts.push({
+          email: row.email,
+          phone: row.phone,
+          reason: 'ثبت‌نام برای این دوره از قبل وجود دارد'
+        });
+      } else {
+        analysis.newEnrollments++;
+      }
+    }
+
+    analysis.uniqueUsers = analysis.existingUsers + analysis.newUsers;
+
+    return analysis;
+  };
+
   const handleFileUpload = async (file: File | null) => {
     setCsvFile(file);
     setPreviewData([]);
+    setPreviewAnalysis(null);
     setShowPreview(false);
     
     if (!file) return;
@@ -292,6 +463,22 @@ export function DataImportSection() {
       setCsvFile(null);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleCourseSelection = async (courseId: string) => {
+    setSelectedCourse(courseId);
+    
+    if (previewData.length > 0) {
+      setIsProcessing(true);
+      try {
+        const analysis = await analyzeCSVData(previewData, courseId);
+        setPreviewAnalysis(analysis);
+      } catch (error: any) {
+        toast.error(`خطا در تجزیه و تحلیل داده‌ها: ${error.message}`);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -335,6 +522,7 @@ export function DataImportSection() {
       setCsvFile(null);
       setSelectedCourse('');
       setPreviewData([]);
+      setPreviewAnalysis(null);
       setShowPreview(false);
       
       // Refresh import history
@@ -425,7 +613,6 @@ export function DataImportSection() {
     }
   };
 
-
   return (
     <div className="space-y-6">
       {/* Import Form */}
@@ -467,7 +654,7 @@ export function DataImportSection() {
           {showPreview && (
             <div className="space-y-2">
               <Label htmlFor="course-select">انتخاب دوره</Label>
-              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+              <Select value={selectedCourse} onValueChange={handleCourseSelection}>
                 <SelectTrigger>
                   <SelectValue placeholder="دوره مورد نظر را انتخاب کنید" />
                 </SelectTrigger>
@@ -484,6 +671,88 @@ export function DataImportSection() {
         </CardContent>
       </Card>
 
+      {/* Analysis Results */}
+      {previewAnalysis && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              تجزیه و تحلیل داده‌ها
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{previewAnalysis.totalRows}</div>
+                <div className="text-sm text-blue-600">کل ردیف‌ها</div>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{previewAnalysis.newUsers}</div>
+                <div className="text-sm text-green-600">کاربران جدید</div>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">{previewAnalysis.existingUsers}</div>
+                <div className="text-sm text-yellow-600">کاربران موجود</div>
+              </div>
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{previewAnalysis.newEnrollments}</div>
+                <div className="text-sm text-purple-600">ثبت‌نام‌های جدید</div>
+              </div>
+            </div>
+
+            {previewAnalysis.duplicatesInFile > 0 && (
+              <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-orange-700">
+                      <strong>تکراری در فایل:</strong> {previewAnalysis.duplicatesInFile} مورد
+                    </p>
+                    {previewAnalysis.duplicateEmails.length > 0 && (
+                      <p className="text-xs text-orange-600 mt-1">
+                        ایمیل‌های تکراری: {previewAnalysis.duplicateEmails.slice(0, 3).join(', ')}
+                        {previewAnalysis.duplicateEmails.length > 3 && '...'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewAnalysis.existingEnrollments > 0 && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">
+                      <strong>ثبت‌نام‌های موجود:</strong> {previewAnalysis.existingEnrollments} مورد برای این دوره از قبل وجود دارد
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewAnalysis.conflicts.length > 0 && (
+              <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700 font-medium mb-2">تضادهای شناسایی شده:</p>
+                    <div className="max-h-32 overflow-y-auto">
+                      {previewAnalysis.conflicts.slice(0, 5).map((conflict, index) => (
+                        <p key={index} className="text-xs text-red-600">
+                          {conflict.email || conflict.phone}: {conflict.reason}
+                        </p>
+                      ))}
+                      {previewAnalysis.conflicts.length > 5 && (
+                        <p className="text-xs text-red-600">... و {previewAnalysis.conflicts.length - 5} مورد دیگر</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Preview Data */}
       {showPreview && previewData.length > 0 && (
         <Card>
@@ -492,9 +761,6 @@ export function DataImportSection() {
               <Eye className="h-5 w-5" />
               پیش‌نمایش داده‌ها ({previewData.length} ردیف)
             </CardTitle>
-            <CardDescription>
-              داده‌های پردازش شده را بررسی کنید و سپس دکمه وارد کردن را فشار دهید
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="max-h-96 overflow-auto border rounded-lg">
@@ -507,94 +773,92 @@ export function DataImportSection() {
                     <TableHead>تلفن</TableHead>
                     <TableHead>تاریخ ثبت‌نام</TableHead>
                     <TableHead>روش پرداخت</TableHead>
-                    <TableHead>مبلغ (تومان)</TableHead>
+                    <TableHead>مبلغ پرداخت</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {previewData.map((row, index) => (
+                  {previewData.slice(0, 10).map((row, index) => (
                     <TableRow key={index}>
                       <TableCell>{row.first_name}</TableCell>
                       <TableCell>{row.last_name}</TableCell>
-                      <TableCell>{row.email}</TableCell>
-                      <TableCell>{row.phone}</TableCell>
-                      <TableCell>{row.entry_date || 'الان'}</TableCell>
+                      <TableCell>{row.email || '-'}</TableCell>
+                      <TableCell>{row.phone || '-'}</TableCell>
+                      <TableCell>{row.entry_date || 'تاریخ فعلی'}</TableCell>
                       <TableCell>
                         {row.payment_method === 'manual' ? 'کارت به کارت' : 
                          row.payment_method === 'zarinpal' ? 'zarinpal' : 
-                         'ریخط‌واردات دستی'}
+                         row.payment_method || 'manual_import'}
                       </TableCell>
                       <TableCell>
-                        {row.payment_price ? 
-                          parseFloat(row.payment_price.replace(/[,\s]/g, '')).toLocaleString() : 
-                          courses.find(c => c.id === selectedCourse)?.price?.toLocaleString() || 'مشخص نشده'}
+                        {row.payment_price ? `${parseFloat(row.payment_price).toLocaleString()} تومان` : 'قیمت دوره'}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              {previewData.length > 10 && (
+                <div className="p-4 text-center text-muted-foreground">
+                  و {previewData.length - 10} ردیف دیگر...
+                </div>
+              )}
             </div>
-            
-            {/* Final Import Button */}
-            <div className="mt-4">
-              <Button
-                onClick={handleFinalImport}
-                disabled={!selectedCourse || isImporting}
-                className="w-full"
-                size="lg"
-              >
-                <Database className="h-4 w-4 mr-2" />
-                {isImporting ? 'در حال وارد کردن...' : `وارد کردن ${previewData.length} ردیف به دیتابیس`}
-              </Button>
-            </div>
+
+            {/* Import and Management Buttons */}
+            {showPreview && (
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={handleFinalImport}
+                  disabled={!selectedCourse || isImporting}
+                  className="flex items-center gap-2"
+                >
+                  {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                  <Database className="h-4 w-4" />
+                  {isImporting ? 'در حال وارد کردن...' : 'وارد کردن به پایگاه داده'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
-      <Separator />
-
-      {/* Backup & Restore Controls */}
+      {/* Backup and Management Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            مدیریت پشتیبان‌گیری و بازگردانی
+            مدیریت پشتیبان‌گیری و بازیابی
           </CardTitle>
           <CardDescription>
-            پشتیبان‌گیری از کل داده‌ها یا بازگردانی آخرین واردات
+            پشتیبان‌گیری از داده‌ها و بازیابی آخرین واردات
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <CardContent>
+          <div className="flex gap-2">
             <Button
               onClick={handleBackupData}
               variant="outline"
-              className="flex-1"
+              className="flex items-center gap-2"
             >
-              <Download className="h-4 w-4 mr-2" />
-              پشتیبان‌گیری کامل
+              <Download className="h-4 w-4" />
+              پشتیبان‌گیری از همه داده‌ها
             </Button>
-            
             <Button
               onClick={handleRestoreLastImport}
               variant="destructive"
-              className="flex-1"
               disabled={importHistory.length === 0}
+              className="flex items-center gap-2"
             >
-              <RotateCcw className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-4 w-4" />
               برگرداندن آخرین واردات
             </Button>
           </div>
-          
           {importHistory.length > 0 && (
-            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-              <strong>آخرین واردات:</strong> {importHistory[0].courses?.title} - 
-              {importHistory[0].new_users_created} ثبت‌نام جدید در {new Date(importHistory[0].created_at).toLocaleDateString('fa-IR')}
-            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              آخرین واردات: {importHistory[0].new_users_created} ثبت‌نام از دوره "{importHistory[0].courses?.title}"
+            </p>
           )}
         </CardContent>
       </Card>
-
-      <Separator />
 
       {/* Import History */}
       <Card>
@@ -605,42 +869,60 @@ export function DataImportSection() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {importHistory.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              هنوز هیچ واردات انجام نشده است
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {importHistory.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div className="space-y-1">
-                    <div className="font-medium">
-                      {log.courses?.title || 'دوره نامشخص'}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(log.created_at).toLocaleDateString('fa-IR')}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <span>{log.total_rows} کل</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <UserPlus className="h-4 w-4 text-green-600" />
-                      <span>{log.new_users_created} جدید</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <UserCheck className="h-4 w-4 text-orange-600" />
-                      <span>{log.existing_users_updated} موجود</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {importHistory.length > 0 ? (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>تاریخ</TableHead>
+                    <TableHead>دوره</TableHead>
+                    <TableHead>تعداد کل</TableHead>
+                    <TableHead>ثبت‌نام جدید</TableHead>
+                    <TableHead>موجود</TableHead>
+                    <TableHead>توسط</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {importHistory.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>
+                        {new Date(log.created_at).toLocaleDateString('fa-IR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </TableCell>
+                      <TableCell>{log.courses?.title}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          {log.total_rows}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-green-600">
+                          <UserPlus className="h-4 w-4" />
+                          {log.new_users_created}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-yellow-600">
+                          <UserCheck className="h-4 w-4" />
+                          {log.existing_users_updated}
+                        </div>
+                      </TableCell>
+                      <TableCell>{log.uploaded_by}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">
+              هیچ تاریخچه واردات یافت نشد
+            </p>
           )}
         </CardContent>
       </Card>
