@@ -2,26 +2,26 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, Calendar, Globe, UserCheck } from 'lucide-react';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  created_at: string;
-  last_seen: string;
-  is_approved: boolean;
-  is_messenger_admin: boolean;
-  bedoun_marz_approved: boolean;
-  signup_source: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  country_code: string;
-}
+import type { ChatUser } from '@/lib/supabase';
 
 interface UserOverviewProps {
-  user: User;
+  user: ChatUser | {
+    id: number;
+    name: string;
+    email?: string;
+    phone: string;
+    created_at: string;
+    last_seen?: string;
+    is_approved: boolean;
+    is_messenger_admin: boolean;
+    bedoun_marz_approved: boolean;
+    signup_source?: string;
+    user_id?: string;
+    first_name?: string;
+    last_name?: string;
+    country_code?: string;
+    [key: string]: any;
+  };
 }
 
 export function UserOverview({ user }: UserOverviewProps) {
@@ -156,7 +156,7 @@ export function UserOverview({ user }: UserOverviewProps) {
             </div>
             <div>
               <label className="text-xs sm:text-sm font-medium text-muted-foreground">آخرین بازدید</label>
-              <p className="font-medium text-sm sm:text-base">{formatDate(user.last_seen)}</p>
+              <p className="font-medium text-sm sm:text-base">{formatDate(user.last_seen || '')}</p>
             </div>
           </div>
         </CardContent>

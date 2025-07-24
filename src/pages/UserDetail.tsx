@@ -9,6 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
 import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
+import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
+import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
+import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
+import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
 import type { ChatUser } from '@/lib/supabase';
 
 const UserDetail: React.FC = () => {
@@ -131,192 +135,17 @@ const UserDetail: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Basic User Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                اطلاعات کاربر
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>نام</Label>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{user.name || 'نامشخص'}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>شماره تلفن</Label>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{user.phone}</span>
-                  </div>
-                </div>
-                
-                {user.email && (
-                  <div className="space-y-2">
-                    <Label>ایمیل</Label>
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{user.email}</span>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label>تاریخ عضویت</Label>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDate(user.created_at)}</span>
-                  </div>
-                </div>
-              </div>
+          {/* User Overview */}
+          <UserOverview user={user} />
 
-              {user.username && (
-                <div className="space-y-2 mt-4">
-                  <Label>نام کاربری</Label>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>@{user.username}</span>
-                  </div>
-                </div>
-              )}
+          {/* User Enrollments */}
+          <UserEnrollments userId={user.id} />
 
-              <div className="space-y-2 mt-4">
-                <Label>وضعیت تایید</Label>
-                <div className="flex items-center gap-2">
-                  {user.is_approved ? (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
-                      <CheckCircle className="h-3 w-3 ml-1" />
-                      تایید شده
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-red-100 text-red-700">
-                      <XCircle className="h-3 w-3 ml-1" />
-                      تایید نشده
-                    </Badge>
-                  )}
-                </div>
-              </div>
+          {/* User Licenses */}
+          <UserLicenses userId={user.id} userPhone={user.phone} />
 
-              {/* Role Badges */}
-              <div className="space-y-2 mt-4">
-                <Label>نقش‌ها و دسترسی‌ها</Label>
-                <div className="flex flex-wrap gap-2">
-                  {user.is_messenger_admin && (
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                      مدیر پیام‌رسان
-                    </Badge>
-                  )}
-                  {user.bedoun_marz_approved && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                      عضو بدون مرز
-                    </Badge>
-                  )}
-                  {user.is_support_agent && (
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-700">
-                      نماینده پشتیبانی
-                    </Badge>
-                  )}
-                  {!user.is_messenger_admin && !user.bedoun_marz_approved && !user.is_support_agent && (
-                    <Badge variant="outline">کاربر عادی</Badge>
-                  )}
-                </div>
-              </div>
-
-              {user.last_seen && (
-                <div className="space-y-2 mt-4">
-                  <Label>آخرین بازدید</Label>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDate(user.last_seen)}</span>
-                  </div>
-                </div>
-              )}
-
-              {user.user_id && (
-                <div className="space-y-2 mt-4">
-                  <Label>شناسه کاربری سیستم</Label>
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <span className="text-xs font-mono">{user.user_id}</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Bio Section */}
-          {user.bio && (
-            <Card>
-              <CardHeader>
-                <CardTitle>بیوگرافی</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed">{user.bio}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Additional User Information */}
-          {(user.first_name || user.last_name || user.full_name) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>اطلاعات تکمیلی</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {user.first_name && (
-                    <div className="space-y-2">
-                      <Label>نام</Label>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <span>{user.first_name}</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {user.last_name && (
-                    <div className="space-y-2">
-                      <Label>نام خانوادگی</Label>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <span>{user.last_name}</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {user.full_name && (
-                    <div className="space-y-2">
-                      <Label>نام کامل</Label>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <span>{user.full_name}</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {user.country_code && (
-                    <div className="space-y-2">
-                      <Label>کد کشور</Label>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <span>{user.country_code}</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {user.signup_source && (
-                    <div className="space-y-2">
-                      <Label>منبع ثبت‌نام</Label>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <span>{user.signup_source}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* User Activity */}
+          <UserActivity userId={user.id} />
 
           {/* CRM Section */}
           <Card>
