@@ -132,7 +132,7 @@ const UserManagement: React.FC = () => {
                       <Card 
                         key={user.id} 
                         className="p-4 transition-colors cursor-pointer hover:bg-muted/50 hover:shadow-md"
-                        onClick={() => navigate(`/user/detail/${user.id}`)}
+                        onClick={() => navigate(`/enroll/admin/users/${user.id}`)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
