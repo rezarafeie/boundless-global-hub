@@ -28,7 +28,7 @@ interface UnifiedMessengerAuthProps {
   isAcademyAuth?: boolean; // Add flag to distinguish academy vs messenger auth
 }
 
-type AuthStep = 'phone' | 'password' | 'password-setup' | 'name' | 'username' | 'pending' | 'otp-link' | 'otp-login' | 'linking' | 'name-confirm' | 'success';
+type AuthStep = 'phone' | 'password' | 'password-setup' | 'name' | 'username' | 'pending' | 'otp-link' | 'otp-login' | 'linking' | 'name-confirm' | 'success' | 'forgot-password' | 'forgot-otp' | 'reset-password';
 
 const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthenticated, prefillData, linkingEmail, isAcademyAuth = false }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>('phone');
@@ -887,6 +887,44 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     }
   };
 
+  const handleForgotPasswordOTP = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { phone: phoneNumber, countryCode: countryCode }
+      });
+      if (data.success) {
+        setFormattedPhoneForOTP(data.formattedPhone);
+        setCurrentStep('forgot-otp');
+        toast.success('کد بازیابی ارسال شد');
+      }
+    } catch (error: any) {
+      toast.error('خطا در ارسال کد بازیابی');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyForgotPasswordOTP = async (code: string) => {
+    const { data } = await supabase.functions.invoke('verify-otp', {
+      body: { phone: formattedPhoneForOTP, otpCode: code }
+    });
+    if (data?.success) {
+      setCurrentStep('reset-password');
+      setOtpVerified(true);
+      toast.success('کد تأیید شد');
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (existingUser) {
+      await messengerService.updateUserPassword(existingUser.id, password);
+      const result = await messengerService.loginWithPassword(formattedPhoneForOTP, password);
+      onAuthenticated(result.session_token || '', result.user?.name || '', result.user!);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
@@ -1129,13 +1167,33 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             
             {/* OTP Login Option for Academy Auth */}
             {isLogin && isAcademyAuth && (
-              <div className="text-center mt-4">
+              <div className="text-center mt-4 space-y-2">
                 <button
                   type="button"
                   onClick={handleOTPLogin}
-                  className="text-sm text-foreground"
+                  className="text-sm text-foreground block w-full"
                 >
                   ورود با کد تأیید
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep('forgot-password')}
+                  className="text-sm text-red-600 hover:text-red-700 block w-full"
+                >
+                  فراموشی رمز عبور
+                </button>
+              </div>
+            )}
+            
+            {/* Forgot Password for Messenger Auth */}
+            {isLogin && !isAcademyAuth && (
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep('forgot-password')}
+                  className="text-sm text-red-600 hover:text-red-700"
+                >
+                  فراموشی رمز عبور
                 </button>
               </div>
             )}

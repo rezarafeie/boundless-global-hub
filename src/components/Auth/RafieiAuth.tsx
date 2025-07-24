@@ -16,7 +16,7 @@ interface RafieiAuthProps {
   redirectAfterAuth?: string;
 }
 
-type AuthFlow = 'initial' | 'login' | 'register' | 'otp' | 'otp_verify' | 'set_password';
+type AuthFlow = 'initial' | 'login' | 'register' | 'otp' | 'otp_verify' | 'set_password' | 'forgot_password' | 'forgot_otp_verify' | 'reset_password';
 
 interface AuthState {
   flow: AuthFlow;
@@ -199,6 +199,66 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
     }
   };
 
+  // Handle forgot password
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    try {
+      if (authState.identifierType === 'email') {
+        await rafieiAuth.sendEmailOTP(authState.identifier);
+        toast.success('لینک بازیابی رمز عبور به ایمیل شما ارسال شد');
+        setAuthState(prev => ({ ...prev, flow: 'forgot_password' }));
+      } else {
+        await rafieiAuth.sendSMSOTP(authState.identifier);
+        toast.success('کد تأیید برای بازیابی رمز عبور ارسال شد');
+        setAuthState(prev => ({ ...prev, flow: 'forgot_otp_verify' }));
+      }
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      toast.error(error.message || 'خطا در ارسال کد بازیابی');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle forgot password OTP verification
+  const handleForgotOTPVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode.trim()) return;
+
+    setLoading(true);
+    try {
+      await rafieiAuth.verifyOTP(authState.identifier, otpCode);
+      toast.success('کد تأیید شد، رمز عبور جدید را وارد کنید');
+      setAuthState(prev => ({ ...prev, flow: 'reset_password' }));
+      setOtpCode('');
+    } catch (error: any) {
+      console.error('Forgot OTP verification error:', error);
+      toast.error(error.message || 'کد تأیید نامعتبر است');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle password reset
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword.trim()) return;
+
+    setLoading(true);
+    try {
+      const result = await rafieiAuth.setPasswordForUser(authState.identifier, newPassword);
+      rafieiAuth.setSession(result.session_token, result.user);
+      
+      toast.success('رمز عبور با موفقیت تغییر یافت و وارد شدید');
+      onSuccess?.(result.user, result.session_token);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast.error(error.message || 'خطا در تغییر رمز عبور');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle registration
   const handleRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,6 +321,12 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
     } else if (authState.flow === 'set_password') {
       setAuthState(prev => ({ ...prev, flow: 'otp_verify' }));
       setNewPassword('');
+    } else if (authState.flow === 'forgot_password' || authState.flow === 'forgot_otp_verify') {
+      setAuthState(prev => ({ ...prev, flow: 'login' }));
+      setOtpCode('');
+    } else if (authState.flow === 'reset_password') {
+      setAuthState(prev => ({ ...prev, flow: 'forgot_otp_verify' }));
+      setNewPassword('');
     }
   };
 
@@ -284,6 +350,9 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
             {authState.flow === 'otp' && 'کد تأیید ارسال شد'}
             {authState.flow === 'otp_verify' && 'کد تأیید را وارد کنید'}
             {authState.flow === 'set_password' && 'رمز عبور جدید تنظیم کنید'}
+            {authState.flow === 'forgot_password' && 'کد بازیابی ارسال شد'}
+            {authState.flow === 'forgot_otp_verify' && 'کد بازیابی را وارد کنید'}
+            {authState.flow === 'reset_password' && 'رمز عبور جدید را وارد کنید'}
           </CardDescription>
         </CardHeader>
 
@@ -360,7 +429,7 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                   </Button>
                 </form>
                 
-                <div className="text-center">
+                <div className="text-center space-y-2">
                   <Button 
                     type="button" 
                     variant="link" 
@@ -369,6 +438,16 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                     className="text-sm"
                   >
                     ورود بدون رمز عبور (کد تأیید)
+                  </Button>
+                  <br />
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    onClick={handleForgotPassword}
+                    disabled={loading}
+                    className="text-sm text-red-600 hover:text-red-700"
+                  >
+                    فراموشی رمز عبور
                   </Button>
                 </div>
                 
@@ -587,6 +666,116 @@ const RafieiAuth: React.FC<RafieiAuthProps> = ({
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     تنظیم رمز عبور
+                  </Button>
+                </form>
+                
+                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
+                  <ArrowLeft className="w-4 h-4 ml-2" />
+                  بازگشت
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Forgot Password OTP Step */}
+            {authState.flow === 'forgot_password' && (
+              <motion.div
+                key="forgot_password"
+                variants={pageVariants}
+                initial="initial"
+                animate="in"
+                exit="out"
+                className="space-y-4 text-center"
+              >
+                <div className="text-sm text-gray-600">
+                  {authState.identifierType === 'email' 
+                    ? 'لینک بازیابی رمز عبور به ایمیل شما ارسال شد. لطفاً ایمیل خود را بررسی کنید.'
+                    : 'کد بازیابی به شماره همراه شما ارسال شد.'
+                  }
+                </div>
+                
+                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
+                  <ArrowLeft className="w-4 h-4 ml-2" />
+                  بازگشت
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Forgot Password OTP Verification Step */}
+            {authState.flow === 'forgot_otp_verify' && (
+              <motion.div
+                key="forgot_otp_verify"
+                variants={pageVariants}
+                initial="initial"
+                animate="in"
+                exit="out"
+                className="space-y-4"
+              >
+                <div className="text-sm text-gray-600 mb-4 text-center">
+                  کد بازیابی برای: <span className="font-medium">{authState.identifier}</span>
+                </div>
+                
+                <form onSubmit={handleForgotOTPVerification} className="space-y-4">
+                  <div>
+                    <Label htmlFor="forgotOtpCode">کد بازیابی</Label>
+                    <Input
+                      id="forgotOtpCode"
+                      type="text"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      placeholder="کد 4 رقمی"
+                      required
+                      className="text-center text-lg tracking-widest"
+                      maxLength={4}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    تأیید کد
+                  </Button>
+                </form>
+                
+                <Button type="button" variant="ghost" onClick={goBack} className="w-full">
+                  <ArrowLeft className="w-4 h-4 ml-2" />
+                  بازگشت
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Reset Password Step */}
+            {authState.flow === 'reset_password' && (
+              <motion.div
+                key="reset_password"
+                variants={pageVariants}
+                initial="initial"
+                animate="in"
+                exit="out"
+                className="space-y-4"
+              >
+                <div className="text-sm text-gray-600 mb-4 text-center">
+                  رمز عبور جدید برای: <span className="font-medium">{authState.identifier}</span>
+                </div>
+                
+                <form onSubmit={handlePasswordReset} className="space-y-4">
+                  <div>
+                    <Label htmlFor="resetPassword">رمز عبور جدید</Label>
+                    <Input
+                      id="resetPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      className="text-right"
+                      minLength={6}
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      حداقل 6 کاراکتر
+                    </div>
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    تنظیم رمز عبور جدید
                   </Button>
                 </form>
                 
