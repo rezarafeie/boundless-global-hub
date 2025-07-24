@@ -205,6 +205,7 @@ const App = () => {
                     
                     {/* User Management routes */}
                     <Route path="/enroll/admin/users" element={<UsersOverview />} />
+                    <Route path="/enroll/admin/users/:userId" element={<UserDetail />} />
                     <Route path="/user/detail/:userId" element={<UserDetail />} />
                     
                     {/* SSO Access routes */}
