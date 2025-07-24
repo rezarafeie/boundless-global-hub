@@ -6,9 +6,18 @@ export const chatUserAdminService = {
   async getAllUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
     console.log('getAllUsers called with:', { searchTerm, limit, offset });
     
-    // Normalize phone search - handle both formats (with and without leading 0)
+    // Enhanced phone search - handle various formats
     const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
-      ? [`phone.ilike.%${searchTerm}%`, `phone.ilike.%0${searchTerm}%`, `phone.eq.${searchTerm}`, `phone.eq.0${searchTerm}`]
+      ? [
+          `phone.ilike.%${searchTerm}%`,
+          `phone.ilike.%0${searchTerm}%`, 
+          `phone.eq.${searchTerm}`,
+          `phone.eq.0${searchTerm}`,
+          // Handle cases where stored phone has +98 prefix
+          `phone.ilike.%98${searchTerm}%`,
+          `phone.eq.98${searchTerm}`,
+          `phone.eq.+98${searchTerm}`
+        ]
       : [];
     
     // Build search conditions
@@ -16,6 +25,7 @@ export const chatUserAdminService = {
       `name.ilike.%${searchTerm}%`,
       `email.ilike.%${searchTerm}%`,
       `user_id.ilike.%${searchTerm}%`,
+      `id.eq.${searchTerm}`, // Add ID search
       ...phoneSearch
     ].join(',') : '';
     
@@ -34,7 +44,7 @@ export const chatUserAdminService = {
       throw countError;
     }
     
-    console.log('Total count result:', count);
+    console.log('getAllUsers - Total count result:', count, 'for search:', searchTerm);
     
     // Get data with pagination
     let dataQuery = supabase
@@ -57,7 +67,7 @@ export const chatUserAdminService = {
       throw error;
     }
     
-    console.log('Data result:', { count: data?.length, total: count });
+    console.log('getAllUsers - Data result:', { found: data?.length, total: count, searchTerm });
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
@@ -124,9 +134,18 @@ export const chatUserAdminService = {
   async getApprovedUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
     console.log('getApprovedUsers called with:', { searchTerm, limit, offset });
     
-    // Normalize phone search - handle both formats (with and without leading 0)
+    // Enhanced phone search - handle various formats
     const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
-      ? [`phone.ilike.%${searchTerm}%`, `phone.ilike.%0${searchTerm}%`, `phone.eq.${searchTerm}`, `phone.eq.0${searchTerm}`]
+      ? [
+          `phone.ilike.%${searchTerm}%`,
+          `phone.ilike.%0${searchTerm}%`, 
+          `phone.eq.${searchTerm}`,
+          `phone.eq.0${searchTerm}`,
+          // Handle cases where stored phone has +98 prefix
+          `phone.ilike.%98${searchTerm}%`,
+          `phone.eq.98${searchTerm}`,
+          `phone.eq.+98${searchTerm}`
+        ]
       : [];
     
     // Build search conditions
@@ -134,10 +153,11 @@ export const chatUserAdminService = {
       `name.ilike.%${searchTerm}%`,
       `email.ilike.%${searchTerm}%`,
       `user_id.ilike.%${searchTerm}%`,
+      `id.eq.${searchTerm}`, // Add ID search
       ...phoneSearch
     ].join(',') : '';
     
-    // Get total count
+    // Get total count with search filter
     let countQuery = supabase
       .from('chat_users')
       .select('*', { count: 'exact', head: true })
@@ -153,9 +173,9 @@ export const chatUserAdminService = {
       throw countError;
     }
     
-    console.log('Approved users count result:', count);
+    console.log('getApprovedUsers - Count result:', count, 'for search:', searchTerm);
     
-    // Get data for display
+    // Get data for display with same filter
     let dataQuery = supabase
       .from('chat_users')
       .select('*')
@@ -177,7 +197,7 @@ export const chatUserAdminService = {
       throw error;
     }
     
-    console.log('Approved users data result:', { count: data?.length, total: count });
+    console.log('getApprovedUsers - Data result:', { found: data?.length, total: count, searchTerm });
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 

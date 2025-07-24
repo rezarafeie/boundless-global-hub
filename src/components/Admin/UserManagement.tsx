@@ -10,6 +10,7 @@ import { Users, UserCheck, UserX, LogOut, Clock, Search, ChevronLeft, ChevronRig
 import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
+import { supabase } from '@/integrations/supabase/client';
 import type { ChatUser } from '@/lib/supabase';
 
 const UserManagement: React.FC = () => {
@@ -32,25 +33,27 @@ const UserManagement: React.FC = () => {
     sessions: 0
   });
   
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, 100); // Reduced debounce delay for faster search
   const itemsPerPage = 50;
 
   // Fetch total counts once on mount (no search, no pagination)
   const fetchTotalCounts = async () => {
     try {
-      const [pendingTotal, approvedTotal, sessionsTotal] = await Promise.all([
-        chatUserAdminService.getPendingUsers('', 1, 0).then(r => r.total),
-        chatUserAdminService.getApprovedUsers('', 1, 0).then(r => r.total),
-        chatUserAdminService.getActiveSessions('', 1, 0).then(r => r.total)
+      // Use real database counts without pagination limits
+      const [{ count: pendingCount }, { count: approvedCount }, { count: sessionsCount }] = await Promise.all([
+        supabase.from('chat_users').select('*', { count: 'exact', head: true }).eq('is_approved', false),
+        supabase.from('chat_users').select('*', { count: 'exact', head: true }).eq('is_approved', true),
+        supabase.from('user_sessions').select('*', { count: 'exact', head: true }).eq('is_active', true)
       ]);
       
-      setTotalUserCounts({
-        pending: pendingTotal,
-        approved: approvedTotal,
-        sessions: sessionsTotal
-      });
+      const realCounts = {
+        pending: pendingCount || 0,
+        approved: approvedCount || 0,
+        sessions: sessionsCount || 0
+      };
       
-      console.log('Total counts fetched:', { pendingTotal, approvedTotal, sessionsTotal });
+      setTotalUserCounts(realCounts);
+      console.log('Real total counts fetched from DB:', realCounts);
     } catch (error) {
       console.error('Error fetching total counts:', error);
     }
