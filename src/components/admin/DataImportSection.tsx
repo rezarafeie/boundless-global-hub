@@ -150,10 +150,8 @@ export function DataImportSection() {
           payment_price: headers.includes('payment_price') ? (values[headers.indexOf('payment_price')]?.trim() || null) : null
         };
         
-        // Basic validation - require at least first_name and last_name
-        if (row.first_name && row.last_name) {
-          rows.push(row);
-        }
+        // Process all rows, even with empty first_name or last_name
+        rows.push(row);
       }
     }
 
@@ -315,12 +313,12 @@ export function DataImportSection() {
           const { data: newUser, error: userError } = await supabase
             .from('chat_users')
             .insert({
-              name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر',
+              name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر بدون نام',
               phone: row.phone || null,
               email: row.email || null,
               first_name: row.first_name || null,
               last_name: row.last_name || null,
-              full_name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر',
+              full_name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر بدون نام',
               country_code: '+98',
               signup_source: 'enrollment',
               is_approved: true,
@@ -341,7 +339,7 @@ export function DataImportSection() {
         }
 
         // Create enrollment
-        const fullName = `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر';
+        const fullName = `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر بدون نام';
         
         // Parse entry date for enrollment
         let createdAt = new Date().toISOString();
