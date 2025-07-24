@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CheckCircle, XCircle, Eye, Search, Filter, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
@@ -91,6 +92,8 @@ interface Enrollment {
 
 const EnrollAdmin: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -951,22 +954,22 @@ const EnrollAdmin: React.FC = () => {
                             {filteredEnrollments.map((enrollment) => (
                               <Card key={enrollment.id} className="p-4 hover:shadow-md transition-shadow">
                                 <div className="space-y-3">
-                                  <div className="flex justify-between items-start">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                                     <div className="flex-1">
                                       <h4 className="font-medium text-base">{enrollment.full_name}</h4>
-                                      <p className="text-sm text-muted-foreground">{enrollment.email}</p>
+                                      <p className="text-sm text-muted-foreground break-all">{enrollment.email}</p>
                                       <p className="text-sm text-muted-foreground">{enrollment.phone}</p>
                                     </div>
-                                    <div className="space-y-1 text-right">
+                                    <div className="flex flex-wrap gap-1 sm:space-y-1 sm:text-right">
                                       {getPaymentStatusBadge(enrollment.payment_status)}
                                       {getStatusBadge(enrollment.manual_payment_status)}
                                     </div>
                                   </div>
                                   
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                                     <div>
                                       <span className="text-muted-foreground">دوره:</span>
-                                      <p className="font-medium">{enrollment.courses?.title || 'نامشخص'}</p>
+                                      <p className="font-medium break-words">{enrollment.courses?.title || 'نامشخص'}</p>
                                     </div>
                                     <div>
                                       <span className="text-muted-foreground">مبلغ:</span>
@@ -974,7 +977,7 @@ const EnrollAdmin: React.FC = () => {
                                     </div>
                                     <div>
                                       <span className="text-muted-foreground">تاریخ:</span>
-                                      <p>{formatDate(enrollment.created_at)}</p>
+                                      <p className="text-xs sm:text-sm">{formatDate(enrollment.created_at)}</p>
                                     </div>
                                     <div>
                                       <span className="text-muted-foreground">شناسه:</span>
@@ -982,10 +985,11 @@ const EnrollAdmin: React.FC = () => {
                                     </div>
                                   </div>
                                   
-                                  <div className="flex gap-2 pt-2 border-t">
+                                  <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 pt-2 border-t`}>
                                     <Button
                                       variant="outline"
                                       size="sm"
+                                      className="w-full sm:w-auto"
                                       onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
                                     >
                                       <ExternalLink className="h-4 w-4 ml-1" />
@@ -994,6 +998,7 @@ const EnrollAdmin: React.FC = () => {
                                     <Button
                                       variant="outline"
                                       size="sm"
+                                      className="w-full sm:w-auto"
                                       onClick={() => handleViewDetails(enrollment)}
                                     >
                                       <Eye className="h-4 w-4 ml-1" />
@@ -1002,7 +1007,14 @@ const EnrollAdmin: React.FC = () => {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => handleOpenUserDetails(enrollment)}
+                                      className="w-full sm:w-auto"
+                                      onClick={() => {
+                                        if (enrollment.chat_user_id) {
+                                          navigate(`/enroll/admin/users/${enrollment.chat_user_id}`);
+                                        } else {
+                                          handleOpenUserDetails(enrollment);
+                                        }
+                                      }}
                                     >
                                       <User className="h-4 w-4 ml-1" />
                                       پروفایل کاربر
