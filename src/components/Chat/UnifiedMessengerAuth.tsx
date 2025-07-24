@@ -1874,6 +1874,142 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             </div>
           </div>
         )}
+
+        {currentStep === 'forgot-password' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <p className="text-lg font-medium text-foreground">فراموشی رمز عبور</p>
+              <p className="text-sm text-muted-foreground">کد بازیابی به شماره شما ارسال می‌شود</p>
+              <p className="text-xs text-muted-foreground">{countryCode}{phoneNumber}</p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleForgotPasswordOTP} 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال ارسال...
+                  </>
+                ) : (
+                  'ارسال کد بازیابی'
+                )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setCurrentStep('password')} 
+                className="px-4 h-12 rounded-full text-muted-foreground"
+              >
+                برگشت
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'forgot-otp' && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                کد بازیابی ۴ رقمی ارسال شده به شماره زیر را وارد کنید:
+              </p>
+              <p className="font-mono text-primary text-sm mt-2" dir="ltr">{formattedPhoneForOTP}</p>
+            </div>
+
+            <div className="flex justify-center" dir="ltr">
+              <InputOTP
+                maxLength={4}
+                value={otpCode}
+                onChange={setOtpCode}
+                disabled={loading}
+                className="gap-4"
+              >
+                <InputOTPGroup className="gap-4">
+                  {[0, 1, 2, 3].map((index) => (
+                    <InputOTPSlot 
+                      key={index}
+                      index={index} 
+                      className="w-16 h-16 text-2xl font-semibold border-2 border-border rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20" 
+                    />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => verifyForgotPasswordOTP(otpCode)} 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                disabled={loading || otpCode.length !== 4}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال تأیید...
+                  </>
+                ) : (
+                  'تأیید کد'
+                )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setCurrentStep('forgot-password')} 
+                className="px-4 h-12 rounded-full text-muted-foreground"
+              >
+                برگشت
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'reset-password' && (
+          <form onSubmit={handlePasswordReset} className="space-y-6">
+            <div className="text-center space-y-2">
+              <p className="text-lg font-medium text-foreground">رمز عبور جدید</p>
+              <p className="text-sm text-muted-foreground">رمز عبور جدید خود را وارد کنید</p>
+              <p className="text-xs text-muted-foreground">{countryCode}{phoneNumber}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="رمز عبور جدید (حداقل ۶ کاراکتر)"
+                required
+                minLength={6}
+                className="h-12 border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-primary placeholder:text-muted-foreground"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <Button 
+                type="submit" 
+                className="flex-1 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-normal" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    در حال تنظیم...
+                  </>
+                ) : (
+                  'تنظیم رمز عبور'
+                )}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setCurrentStep('forgot-otp')} 
+                className="px-4 h-12 rounded-full text-muted-foreground"
+              >
+                برگشت
+              </Button>
+            </div>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
