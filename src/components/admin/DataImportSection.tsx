@@ -22,6 +22,12 @@ interface ImportResult {
   totalRows: number;
   newEnrollmentsCreated: number;
   existingEnrollments: number;
+  importLogId?: string;
+}
+
+interface BackupData {
+  enrollments: any[];
+  import_logs: any[];
 }
 
 interface CSVRow {
@@ -110,8 +116,11 @@ export function DataImportSection() {
           payment_price: headers.includes('payment_price') ? values[headers.indexOf('payment_price')] || '' : undefined
         };
         
-        // Basic validation
-        if (row.email && row.phone && row.first_name && row.last_name) {
+        // Basic validation - allow null email/phone
+        if (row.first_name && row.last_name) {
+          // Set empty strings to null for database compatibility
+          if (!row.email || !row.email.trim()) row.email = '';
+          if (!row.phone || !row.phone.trim()) row.phone = '';
           rows.push(row);
         }
       }
