@@ -84,20 +84,33 @@ const CourseManagement: React.FC = () => {
 
   const fetchEnrollments = async (courseId: string) => {
     try {
-      const offset = (enrollmentPage - 1) * enrollmentsPerPage;
-      let query = supabase
+      // First get total count (with search if applied)
+      let countQuery = supabase
         .from('enrollments')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', courseId);
+      
+      if (debouncedEnrollmentSearch) {
+        countQuery = countQuery.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
+      }
+      
+      const { count } = await countQuery;
+      
+      // Then get data for display with pagination
+      const offset = (enrollmentPage - 1) * enrollmentsPerPage;
+      let dataQuery = supabase
+        .from('enrollments')
+        .select('*')
         .eq('course_id', courseId)
         .order('created_at', { ascending: false });
       
       if (debouncedEnrollmentSearch) {
-        query = query.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
+        dataQuery = dataQuery.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
       }
       
-      query = query.range(offset, offset + enrollmentsPerPage - 1);
+      dataQuery = dataQuery.range(offset, offset + enrollmentsPerPage - 1);
 
-      const { data, error, count } = await query;
+      const { data, error } = await dataQuery;
 
       if (error) throw error;
       console.log(`Fetched ${data?.length || 0} enrollments out of ${count || 0} total for course ${courseId}`);

@@ -4,62 +4,100 @@ import type { ChatUser } from './supabase';
 
 export const chatUserAdminService = {
   async getAllUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
-    let query = supabase
+    // First get total count (with search if applied)
+    let countQuery = supabase
       .from('chat_users')
-      .select('*', { count: 'exact' })
+      .select('*', { count: 'exact', head: true });
+    
+    if (searchTerm) {
+      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+    }
+    
+    const { count } = await countQuery;
+    
+    // Then get the actual data for display (with pagination)
+    let dataQuery = supabase
+      .from('chat_users')
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (searchTerm) {
-      query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
     }
     
     if (limit && offset !== undefined) {
-      query = query.range(offset, offset + limit - 1);
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
     }
     
-    const { data, error, count } = await query;
+    const { data, error } = await dataQuery;
     
     if (error) throw error;
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
   async getPendingUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
-    let query = supabase
+    // First get total count
+    let countQuery = supabase
       .from('chat_users')
-      .select('*', { count: 'exact' })
+      .select('*', { count: 'exact', head: true })
+      .eq('is_approved', false);
+    
+    if (searchTerm) {
+      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+    }
+    
+    const { count } = await countQuery;
+    
+    // Then get data for display
+    let dataQuery = supabase
+      .from('chat_users')
+      .select('*')
       .eq('is_approved', false)
       .order('created_at', { ascending: false });
     
     if (searchTerm) {
-      query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
     }
     
     if (limit && offset !== undefined) {
-      query = query.range(offset, offset + limit - 1);
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
     }
     
-    const { data, error, count } = await query;
+    const { data, error } = await dataQuery;
     
     if (error) throw error;
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
   async getApprovedUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
-    let query = supabase
+    // First get total count
+    let countQuery = supabase
       .from('chat_users')
-      .select('*', { count: 'exact' })
+      .select('*', { count: 'exact', head: true })
+      .eq('is_approved', true);
+    
+    if (searchTerm) {
+      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+    }
+    
+    const { count } = await countQuery;
+    
+    // Then get data for display
+    let dataQuery = supabase
+      .from('chat_users')
+      .select('*')
       .eq('is_approved', true)
       .order('created_at', { ascending: false });
     
     if (searchTerm) {
-      query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
     }
     
     if (limit && offset !== undefined) {
-      query = query.range(offset, offset + limit - 1);
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
     }
     
-    const { data, error, count } = await query;
+    const { data, error } = await dataQuery;
     
     if (error) throw error;
     return { users: (data || []) as ChatUser[], total: count || 0 };
