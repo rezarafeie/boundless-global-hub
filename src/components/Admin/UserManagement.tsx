@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Search, User, Phone, Mail, Calendar, ChevronLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Search, User, Phone, Mail, Calendar } from 'lucide-react';
 import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import { useDebounce } from '@/hooks/use-debounce';
 import type { ChatUser } from '@/lib/supabase';
 
-const UserManagement: React.FC = () => {
+const UserManagement: React.FC<{ onUserClick?: (user: ChatUser) => void }> = ({ onUserClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,13 +127,17 @@ const UserManagement: React.FC = () => {
                 {searchResults.length > 0 && (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {searchResults.map((user) => (
-                      <Card key={user.id} className="p-4">
+                      <Card 
+                        key={user.id} 
+                        className={`p-4 transition-colors ${onUserClick ? 'cursor-pointer hover:bg-muted/50 hover:shadow-md' : ''}`}
+                        onClick={() => onUserClick?.(user)}
+                      >
                         <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-3 flex-1">
                             <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
                               <User className="w-5 h-5 text-purple-600" />
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1 flex-1">
                               <div className="flex items-center gap-2">
                                 <h3 className="font-medium">{user.name}</h3>
                                 {getStatusBadge(user)}
@@ -173,6 +177,9 @@ const UserManagement: React.FC = () => {
                               </div>
                             </div>
                           </div>
+                          {onUserClick && (
+                            <ChevronLeft className="w-4 h-4 text-muted-foreground mt-1" />
+                          )}
                         </div>
                       </Card>
                     ))}
