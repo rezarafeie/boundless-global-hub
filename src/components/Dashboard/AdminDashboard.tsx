@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface DashboardStats {
   totalUsers: number;
   totalMessages: number;
+  totalEnrollments: number;
   todayMessages: number;
   activeUsers: number;
   recentUsers: MessengerUser[];
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalMessages: 0,
+    totalEnrollments: 0,
     todayMessages: 0,
     activeUsers: 0,
     recentUsers: [],
@@ -46,45 +48,64 @@ const AdminDashboard = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch all users
-      const allUsers = await messengerService.getAllUsers();
-      
-      // Fetch all messages
-      const allMessages = await messengerService.getAllMessages();
-      
-      // Calculate today's messages
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayMessages = allMessages.filter(msg => 
-        new Date(msg.created_at) >= today
-      ).length;
+      // Fetch exact counts from database
+      const [totalUsersCount, totalMessagesCount, totalEnrollmentsCount] = await Promise.all([
+        messengerService.getUsersCount(),
+        messengerService.getMessagesCount(),
+        messengerService.getEnrollmentsCount()
+      ]);
 
-      // Calculate active users (users who sent messages in last 7 days)
+      console.log('Exact counts from database:', {
+        users: totalUsersCount,
+        messages: totalMessagesCount,
+        enrollments: totalEnrollmentsCount
+      });
+
+      // Fetch recent data for display (limited to what we need)
+      const { data: recentUsersData } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const { data: recentMessagesData } = await supabase
+        .from('messenger_messages')
+        .select(`
+          *,
+          sender:chat_users!messenger_messages_sender_id_fkey (
+            name,
+            phone
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(15);
+
+      // Calculate today's messages count
+      const today = new Date().toISOString().split('T')[0];
+      const { count: todayMessagesCount } = await supabase
+        .from('messenger_messages')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today);
+
+      // Calculate active users count (sent messages in last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const recentSenderIds = new Set(
-        allMessages
-          .filter(msg => new Date(msg.created_at) >= sevenDaysAgo)
-          .map(msg => msg.sender_id)
-      );
+      const { data: activeUsersData } = await supabase
+        .from('messenger_messages')
+        .select('sender_id')
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .not('sender_id', 'is', null);
 
-      // Get recent users (last 10 registrations)
-      const recentUsers = allUsers
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 10);
-
-      // Get recent messages (last 15 messages)
-      const recentMessages = allMessages
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 15);
+      const uniqueActiveUsers = new Set(activeUsersData?.map(msg => msg.sender_id) || []);
 
       setStats({
-        totalUsers: allUsers.length,
-        totalMessages: allMessages.length,
-        todayMessages,
-        activeUsers: recentSenderIds.size,
-        recentUsers,
-        recentMessages
+        totalUsers: totalUsersCount,
+        totalMessages: totalMessagesCount,
+        totalEnrollments: totalEnrollmentsCount,
+        todayMessages: todayMessagesCount || 0,
+        activeUsers: uniqueActiveUsers.size,
+        recentUsers: recentUsersData || [],
+        recentMessages: recentMessagesData || []
       });
 
     } catch (error: any) {
@@ -249,6 +270,18 @@ const AdminDashboard = () => {
                 <p className="text-2xl font-bold">{stats.activeUsers}</p>
               </div>
               <Activity className="w-8 h-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">کل ثبت‌نام‌ها</p>
+                <p className="text-2xl font-bold">{stats.totalEnrollments}</p>
+              </div>
+              <Users className="w-8 h-8 text-red-500" />
             </div>
           </CardContent>
         </Card>

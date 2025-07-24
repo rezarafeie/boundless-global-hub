@@ -130,6 +130,48 @@ export const messengerService = {
     }
   },
 
+  async getUsersCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('chat_users')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error fetching users count:', error);
+      return 0;
+    }
+  },
+
+  async getMessagesCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('messenger_messages')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error fetching messages count:', error);
+      return 0;
+    }
+  },
+
+  async getEnrollmentsCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error fetching enrollments count:', error);
+      return 0;
+    }
+  },
+
   async getUserById(userId: number): Promise<MessengerUser | null> {
     try {
       const { data, error } = await supabase
