@@ -934,134 +934,96 @@ const EnrollAdmin: React.FC = () => {
                         </div>
                       </div>
 
-                      {filteredEnrollments.length === 0 ? (
-                        <div className="text-center py-12">
-                          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-lg font-medium text-muted-foreground">
-                            {searchTerm || statusFilter !== 'all' || courseFilter !== 'all' 
-                              ? 'هیچ ثبت‌نامی با این فیلترها یافت نشد' 
-                              : 'هیچ ثبت‌نامی یافت نشد'
-                            }
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Desktop Table */}
-                          <div className="hidden md:block overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                               <TableRow>
-                                 <TableHead className="text-right">نام و نام خانوادگی</TableHead>
-                                 <TableHead className="text-right">دوره</TableHead>
-                                 <TableHead className="text-right">مبلغ</TableHead>
-                                 <TableHead className="text-right">وضعیت پرداخت</TableHead>
-                                 <TableHead className="text-right">تاریخ ثبت‌نام</TableHead>
-                                 <TableHead className="text-right">عملیات</TableHead>
-                               </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {filteredEnrollments.map((enrollment) => (
-                                  <TableRow key={enrollment.id}>
-                                    <TableCell>
-                                      <div>
-                                        <div className="font-medium">{enrollment.full_name}</div>
-                                        <div className="text-sm text-muted-foreground">{enrollment.email}</div>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="font-medium">{enrollment.courses?.title || 'نامشخص'}</div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="font-mono">{formatPrice(enrollment.payment_amount)}</div>
-                                    </TableCell>
-                                     <TableCell>
-                                       {getPaymentStatusBadge(enrollment.payment_status)}
-                                     </TableCell>
-                                     <TableCell>
-                                       <div className="text-sm">{formatDate(enrollment.created_at)}</div>
-                                     </TableCell>
-                                    <TableCell>
-                                      <div className="flex gap-2 flex-wrap">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
-                                        >
-                                          <ExternalLink className="h-4 w-4 ml-1" />
-                                          جزئیات
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleViewDetails(enrollment)}
-                                        >
-                                          <Eye className="h-4 w-4 ml-1" />
-                                          مشاهده
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                      {/* Search Results */}
+                      {(searchTerm || statusFilter !== 'all' || courseFilter !== 'all') ? (
+                        filteredEnrollments.length === 0 ? (
+                          <div className="text-center py-12">
+                            <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-lg font-medium text-muted-foreground">
+                              هیچ ثبت‌نامی با این فیلترها یافت نشد
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              فیلترهای جستجو را تغییر دهید یا جستجوی جدیدی انجام دهید
+                            </p>
                           </div>
-
-                          {/* Mobile Cards */}
-                          <div className="md:hidden space-y-4">
+                        ) : (
+                          <div className="space-y-4">
                             {filteredEnrollments.map((enrollment) => (
-                              <Card key={enrollment.id} className="p-4">
+                              <Card key={enrollment.id} className="p-4 hover:shadow-md transition-shadow">
                                 <div className="space-y-3">
                                   <div className="flex justify-between items-start">
-                                    <div>
-                                      <h4 className="font-medium text-sm">{enrollment.full_name}</h4>
-                                      <p className="text-xs text-muted-foreground">{enrollment.email}</p>
+                                    <div className="flex-1">
+                                      <h4 className="font-medium text-base">{enrollment.full_name}</h4>
+                                      <p className="text-sm text-muted-foreground">{enrollment.email}</p>
+                                      <p className="text-sm text-muted-foreground">{enrollment.phone}</p>
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 text-right">
                                       {getPaymentStatusBadge(enrollment.payment_status)}
                                       {getStatusBadge(enrollment.manual_payment_status)}
                                     </div>
                                   </div>
                                   
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-xs text-muted-foreground">دوره:</span>
-                                      <span className="text-xs font-medium">{enrollment.courses?.title || 'نامشخص'}</span>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">دوره:</span>
+                                      <p className="font-medium">{enrollment.courses?.title || 'نامشخص'}</p>
                                     </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-xs text-muted-foreground">مبلغ:</span>
-                                      <span className="text-xs font-mono">{formatPrice(enrollment.payment_amount)}</span>
+                                    <div>
+                                      <span className="text-muted-foreground">مبلغ:</span>
+                                      <p className="font-mono">{formatPrice(enrollment.payment_amount)}</p>
                                     </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-xs text-muted-foreground">تاریخ:</span>
-                                      <span className="text-xs">{formatDate(enrollment.created_at)}</span>
+                                    <div>
+                                      <span className="text-muted-foreground">تاریخ:</span>
+                                      <p>{formatDate(enrollment.created_at)}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">شناسه:</span>
+                                      <p className="font-mono text-xs">{enrollment.id.slice(0, 8)}...</p>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex gap-2 pt-2">
+                                  <div className="flex gap-2 pt-2 border-t">
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="flex-1 text-xs"
                                       onClick={() => window.open(`/enroll/details?id=${enrollment.id}`, '_blank')}
                                     >
-                                      <ExternalLink className="h-3 w-3 ml-1" />
-                                      جزئیات
+                                      <ExternalLink className="h-4 w-4 ml-1" />
+                                      جزئیات کامل
                                     </Button>
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="flex-1 text-xs"
                                       onClick={() => handleViewDetails(enrollment)}
                                     >
-                                      <Eye className="h-3 w-3 ml-1" />
-                                      مشاهده
+                                      <Eye className="h-4 w-4 ml-1" />
+                                      مشاهده سریع
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleOpenUserDetails(enrollment)}
+                                    >
+                                      <User className="h-4 w-4 ml-1" />
+                                      پروفایل کاربر
                                     </Button>
                                   </div>
                                 </div>
                               </Card>
                             ))}
                           </div>
-                        </>
+                        )
+                      ) : (
+                        <div className="text-center py-12">
+                          <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-medium">جستجوی ثبت‌نام‌ها</h3>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            از کادر جستجو برای یافتن ثبت‌نام‌ها استفاده کنید یا فیلترهای بالا را اعمال کنید
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            می‌توانید بر اساس نام، ایمیل، شماره تلفن یا نام دوره جستجو کنید
+                          </p>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
