@@ -76,13 +76,16 @@ const CourseManagement: React.FC = () => {
 
   const fetchEnrollments = async (courseId: string) => {
     try {
-      const { data, error } = await supabase
+      // Use range to get all enrollments, not limited to 1000
+      const { data, error, count } = await supabase
         .from('enrollments')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('course_id', courseId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(0, 10000); // Fetch up to 10,000 enrollments
 
       if (error) throw error;
+      console.log(`Fetched ${data?.length || 0} enrollments out of ${count || 0} total for course ${courseId}`);
       setEnrollments(data || []);
     } catch (error) {
       console.error('Error fetching enrollments:', error);

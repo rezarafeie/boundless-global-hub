@@ -114,12 +114,15 @@ export const messengerService = {
 
   async getAllUsers(): Promise<MessengerUser[]> {
     try {
-      const { data, error } = await supabase
+      // Use range to get all records, not limited to 1000
+      const { data, error, count } = await supabase
         .from('chat_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(0, 10000); // Fetch up to 10,000 users
 
       if (error) throw error;
+      console.log(`Fetched ${data?.length || 0} users out of ${count || 0} total`);
       return data || [];
     } catch (error) {
       console.error('Error fetching all users:', error);
@@ -396,7 +399,8 @@ export const messengerService = {
 
   async getAllMessages(): Promise<MessengerMessage[]> {
     try {
-      const { data, error } = await supabase
+      // Use range to get all records, not limited to 1000
+      const { data, error, count } = await supabase
         .from('messenger_messages')
         .select(`
           *,
@@ -404,10 +408,12 @@ export const messengerService = {
             name,
             phone
           )
-        `)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(0, 10000); // Fetch up to 10,000 messages
 
       if (error) throw error;
+      console.log(`Fetched ${data?.length || 0} messages out of ${count || 0} total`);
       return data || [];
     } catch (error) {
       console.error('Error fetching all messages:', error);
