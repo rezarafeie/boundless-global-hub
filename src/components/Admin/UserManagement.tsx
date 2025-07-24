@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search, User, Phone, Mail, Calendar, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import { useDebounce } from '@/hooks/use-debounce';
 import type { ChatUser } from '@/lib/supabase';
 
-const UserManagement: React.FC<{ onUserClick?: (user: ChatUser) => void }> = ({ onUserClick }) => {
+const UserManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -129,8 +131,8 @@ const UserManagement: React.FC<{ onUserClick?: (user: ChatUser) => void }> = ({ 
                     {searchResults.map((user) => (
                       <Card 
                         key={user.id} 
-                        className={`p-4 transition-colors ${onUserClick ? 'cursor-pointer hover:bg-muted/50 hover:shadow-md' : ''}`}
-                        onClick={() => onUserClick?.(user)}
+                        className="p-4 transition-colors cursor-pointer hover:bg-muted/50 hover:shadow-md"
+                        onClick={() => navigate(`/user/detail/${user.id}`)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
@@ -177,9 +179,7 @@ const UserManagement: React.FC<{ onUserClick?: (user: ChatUser) => void }> = ({ 
                               </div>
                             </div>
                           </div>
-                          {onUserClick && (
-                            <ChevronLeft className="w-4 h-4 text-muted-foreground mt-1" />
-                          )}
+                          <ChevronLeft className="w-4 h-4 text-muted-foreground mt-1" />
                         </div>
                       </Card>
                     ))}

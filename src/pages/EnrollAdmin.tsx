@@ -1118,10 +1118,7 @@ const EnrollAdmin: React.FC = () => {
               {/* Users View */}
               {activeView === 'users' && (
                 <div className="space-y-6">
-                  <UserManagement onUserClick={(user) => {
-                    setSelectedUser(user);
-                    setShowUserDetails(true);
-                  }} />
+                  <UserManagement />
                 </div>
               )}
 

@@ -106,7 +106,7 @@ import CourseEdit from "./pages/Admin/CourseEdit";
 
 // User Management components
 import UsersOverview from "./pages/UsersOverview";
-import UserProfile from "./pages/UserProfile";
+import UserDetail from "./pages/UserDetail";
 
 const queryClient = new QueryClient();
 
@@ -205,7 +205,7 @@ const App = () => {
                     
                     {/* User Management routes */}
                     <Route path="/enroll/admin/users" element={<UsersOverview />} />
-                    <Route path="/enroll/admin/users/:userId" element={<UserProfile />} />
+                    <Route path="/user/detail/:userId" element={<UserDetail />} />
                     
                     {/* SSO Access routes */}
                     <Route path="/sso-access" element={<SSOAccess />} />
