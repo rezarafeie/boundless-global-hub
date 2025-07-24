@@ -44,13 +44,13 @@ interface BackupData {
 }
 
 interface CSVRow {
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  entry_date?: string;
-  payment_method?: string;
-  payment_price?: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  entry_date?: string | null;
+  payment_method?: string | null;
+  payment_price?: string | null;
 }
 
 interface PreviewAnalysis {
@@ -141,20 +141,17 @@ export function DataImportSection() {
       const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
       if (values.length >= 4) {
         const row: CSVRow = {
-          first_name: values[headers.indexOf('first_name')] || '',
-          last_name: values[headers.indexOf('last_name')] || '',
-          email: values[headers.indexOf('email')] || '',
-          phone: values[headers.indexOf('phone')] || '',
-          entry_date: headers.includes('entry_date') ? values[headers.indexOf('entry_date')] || '' : undefined,
-          payment_method: headers.includes('payment_method') ? values[headers.indexOf('payment_method')] || '' : undefined,
-          payment_price: headers.includes('payment_price') ? values[headers.indexOf('payment_price')] || '' : undefined
+          first_name: values[headers.indexOf('first_name')]?.trim() || null,
+          last_name: values[headers.indexOf('last_name')]?.trim() || null,
+          email: values[headers.indexOf('email')]?.trim() || null,
+          phone: values[headers.indexOf('phone')]?.trim() || null,
+          entry_date: headers.includes('entry_date') ? (values[headers.indexOf('entry_date')]?.trim() || null) : null,
+          payment_method: headers.includes('payment_method') ? (values[headers.indexOf('payment_method')]?.trim() || null) : null,
+          payment_price: headers.includes('payment_price') ? (values[headers.indexOf('payment_price')]?.trim() || null) : null
         };
         
-        // Basic validation - allow null email/phone
+        // Basic validation - require at least first_name and last_name
         if (row.first_name && row.last_name) {
-          // Set empty strings to null for database compatibility
-          if (!row.email || !row.email.trim()) row.email = '';
-          if (!row.phone || !row.phone.trim()) row.phone = '';
           rows.push(row);
         }
       }
@@ -318,12 +315,12 @@ export function DataImportSection() {
           const { data: newUser, error: userError } = await supabase
             .from('chat_users')
             .insert({
-              name: `${row.first_name} ${row.last_name}`.trim(),
-              phone: row.phone?.trim() || null,
-              email: row.email?.trim() || null,
-              first_name: row.first_name?.trim(),
-              last_name: row.last_name?.trim(),
-              full_name: `${row.first_name} ${row.last_name}`.trim(),
+              name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر',
+              phone: row.phone || null,
+              email: row.email || null,
+              first_name: row.first_name || null,
+              last_name: row.last_name || null,
+              full_name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر',
               country_code: '+98',
               signup_source: 'enrollment',
               is_approved: true,
@@ -344,11 +341,11 @@ export function DataImportSection() {
         }
 
         // Create enrollment
-        const fullName = `${row.first_name} ${row.last_name}`.trim();
+        const fullName = `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر';
         
         // Parse entry date for enrollment
         let createdAt = new Date().toISOString();
-        if (row.entry_date && row.entry_date.trim()) {
+        if (row.entry_date?.trim()) {
           try {
             const dateStr = row.entry_date.trim();
             let parsedDate: Date;
@@ -386,15 +383,15 @@ export function DataImportSection() {
 
         // Determine payment method
         let paymentMethod = 'manual_import';
-        if (row.payment_method && row.payment_method.trim().toLowerCase() === 'manual') {
+        if (row.payment_method?.trim().toLowerCase() === 'manual') {
           paymentMethod = 'کارت به کارت';
-        } else if (row.payment_method && row.payment_method.trim().toLowerCase() === 'zarinpal') {
+        } else if (row.payment_method?.trim().toLowerCase() === 'zarinpal') {
           paymentMethod = 'zarinpal';
         }
 
         // Determine payment amount
         let paymentAmount = course.price;
-        if (row.payment_price && row.payment_price.trim()) {
+        if (row.payment_price?.trim()) {
           const customPrice = parseFloat(row.payment_price.replace(/[,\s]/g, ''));
           if (!isNaN(customPrice) && customPrice > 0) {
             paymentAmount = customPrice;
@@ -406,8 +403,8 @@ export function DataImportSection() {
           .insert({
             course_id: courseId,
             full_name: fullName,
-            email: row.email?.trim() || null,
-            phone: row.phone?.trim() || null,
+            email: row.email || null,
+            phone: row.phone || null,
             payment_status: 'completed',
             payment_amount: paymentAmount,
             payment_method: paymentMethod,
