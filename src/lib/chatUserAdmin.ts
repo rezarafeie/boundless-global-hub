@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ChatUser } from './supabase';
 
 export const chatUserAdminService = {
-  async getAllUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
+  async getAllUsers(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ users: ChatUser[], total: number }> {
     console.log('getAllUsers called with:', { searchTerm, limit, offset });
     
     // Enhanced phone search - handle various formats
@@ -46,7 +46,7 @@ export const chatUserAdminService = {
     
     console.log('getAllUsers - Total count result:', count, 'for search:', searchTerm);
     
-    // Get data with pagination
+    // Get data
     let dataQuery = supabase
       .from('chat_users')
       .select('*')
@@ -54,13 +54,11 @@ export const chatUserAdminService = {
     
     if (searchTerm && searchConditions) {
       dataQuery = dataQuery.or(searchConditions);
-    }
-    
-    if (limit && offset !== undefined) {
-      dataQuery = dataQuery.range(offset, offset + limit - 1);
+      // When searching, return all matching results (up to 500 for performance)
+      dataQuery = dataQuery.limit(500);
     } else {
-      // Remove 1000 row limit - allow access to all records
-      dataQuery = dataQuery.limit(10000);
+      // Default pagination: 100 records per page
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
     }
     
     const { data, error } = await dataQuery;
@@ -74,7 +72,7 @@ export const chatUserAdminService = {
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
-  async getPendingUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
+  async getPendingUsers(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ users: ChatUser[], total: number }> {
     console.log('getPendingUsers called with:', { searchTerm, limit, offset });
     
     // Normalize phone search - handle both formats (with and without leading 0)
@@ -117,13 +115,11 @@ export const chatUserAdminService = {
     
     if (searchTerm && searchConditions) {
       dataQuery = dataQuery.or(searchConditions);
-    }
-    
-    if (limit && offset !== undefined) {
-      dataQuery = dataQuery.range(offset, offset + limit - 1);
+      // When searching, return all matching results (up to 500 for performance)
+      dataQuery = dataQuery.limit(500);
     } else {
-      // Remove 1000 row limit - allow access to all records
-      dataQuery = dataQuery.limit(10000);
+      // Default pagination: 100 records per page
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
     }
     
     const { data, error } = await dataQuery;
@@ -137,7 +133,7 @@ export const chatUserAdminService = {
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
-  async getApprovedUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
+  async getApprovedUsers(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ users: ChatUser[], total: number }> {
     console.log('getApprovedUsers called with:', { searchTerm, limit, offset });
     
     // Enhanced phone search - handle various formats
@@ -190,13 +186,11 @@ export const chatUserAdminService = {
     
     if (searchTerm && searchConditions) {
       dataQuery = dataQuery.or(searchConditions);
-    }
-    
-    if (limit && offset !== undefined) {
-      dataQuery = dataQuery.range(offset, offset + limit - 1);
+      // When searching, return all matching results (up to 500 for performance)
+      dataQuery = dataQuery.limit(500);
     } else {
-      // Remove 1000 row limit - allow access to all records
-      dataQuery = dataQuery.limit(10000);
+      // Default pagination: 100 records per page
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
     }
     
     const { data, error } = await dataQuery;
@@ -237,7 +231,7 @@ export const chatUserAdminService = {
     if (error) throw error;
   },
 
-  async getActiveSessions(searchTerm?: string, limit?: number, offset?: number): Promise<{ sessions: any[], total: number }> {
+  async getActiveSessions(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ sessions: any[], total: number }> {
     let query = supabase
       .from('user_sessions')
       .select(`
@@ -253,13 +247,11 @@ export const chatUserAdminService = {
     
     if (searchTerm) {
       query = query.filter('chat_users.name', 'ilike', `%${searchTerm}%`);
-    }
-    
-    if (limit && offset !== undefined) {
-      query = query.range(offset, offset + limit - 1);
+      // When searching, return all matching results (up to 500 for performance)
+      query = query.limit(500);
     } else {
-      // Remove 1000 row limit - allow access to all records
-      query = query.limit(10000);
+      // Default pagination: 100 records per page
+      query = query.range(offset, offset + limit - 1);
     }
     
     const { data, error, count } = await query;

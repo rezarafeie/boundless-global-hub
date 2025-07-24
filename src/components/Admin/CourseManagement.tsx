@@ -91,13 +91,13 @@ const CourseManagement: React.FC = () => {
         .eq('course_id', courseId);
       
       if (debouncedEnrollmentSearch) {
-        countQuery = countQuery.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
+        const searchFilter = `full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`;
+        countQuery = countQuery.or(searchFilter);
       }
       
       const { count } = await countQuery;
       
-      // Then get data for display with pagination
-      const offset = (enrollmentPage - 1) * enrollmentsPerPage;
+      // Then get data for display
       let dataQuery = supabase
         .from('enrollments')
         .select('*')
@@ -105,14 +105,14 @@ const CourseManagement: React.FC = () => {
         .order('created_at', { ascending: false });
       
       if (debouncedEnrollmentSearch) {
-        dataQuery = dataQuery.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
-      }
-      
-      // Remove 1000 row limit - allow access to all enrollment records
-      if (debouncedEnrollmentSearch) {
-        dataQuery = dataQuery.range(offset, offset + enrollmentsPerPage - 1);
+        const searchFilter = `full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`;
+        dataQuery = dataQuery.or(searchFilter);
+        // When searching, return all matching results (up to 500 for performance)
+        dataQuery = dataQuery.limit(500);
       } else {
-        dataQuery = dataQuery.limit(10000);
+        // Default pagination: 100 records per page
+        const offset = (enrollmentPage - 1) * enrollmentsPerPage;
+        dataQuery = dataQuery.range(offset, offset + enrollmentsPerPage - 1);
       }
 
       const { data, error } = await dataQuery;

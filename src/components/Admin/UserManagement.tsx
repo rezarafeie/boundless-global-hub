@@ -62,27 +62,52 @@ const UserManagement: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const offset = (currentPage - 1) * itemsPerPage;
       
-      console.log(`Fetching data for tab: ${activeTab}, search: "${debouncedSearchTerm}", page: ${currentPage}, offset: ${offset}`);
+      console.log(`Fetching data for tab: ${activeTab}, search: "${debouncedSearchTerm}", page: ${currentPage}`);
       
-      if (activeTab === 'pending') {
-        const pendingResult = await chatUserAdminService.getPendingUsers(debouncedSearchTerm, itemsPerPage, offset);
-        console.log(`Pending users result:`, pendingResult);
-        setPendingUsers(pendingResult.users);
-        setPendingTotal(pendingResult.total);
+      if (debouncedSearchTerm) {
+        // When searching, don't use pagination - search across all records
+        if (activeTab === 'pending') {
+          const pendingResult = await chatUserAdminService.getPendingUsers(debouncedSearchTerm);
+          console.log(`Pending users search result:`, pendingResult);
+          setPendingUsers(pendingResult.users);
+          setPendingTotal(pendingResult.total);
+          
+        } else if (activeTab === 'approved') {
+          const approvedResult = await chatUserAdminService.getApprovedUsers(debouncedSearchTerm);
+          console.log(`Approved users search result:`, approvedResult);
+          setApprovedUsers(approvedResult.users);
+          setApprovedTotal(approvedResult.total);
+          
+        } else if (activeTab === 'sessions') {
+          const sessionsResult = await chatUserAdminService.getActiveSessions(debouncedSearchTerm);
+          console.log(`Sessions search result:`, sessionsResult);
+          setActiveSessions(sessionsResult.sessions);
+          setSessionsTotal(sessionsResult.total);
+        }
+      } else {
+        // Default pagination: 100 records per page
+        const limit = 100;
+        const offset = (currentPage - 1) * limit;
         
-      } else if (activeTab === 'approved') {
-        const approvedResult = await chatUserAdminService.getApprovedUsers(debouncedSearchTerm, itemsPerPage, offset);
-        console.log(`Approved users result:`, approvedResult);
-        setApprovedUsers(approvedResult.users);
-        setApprovedTotal(approvedResult.total);
-        
-      } else if (activeTab === 'sessions') {
-        const sessionsResult = await chatUserAdminService.getActiveSessions(debouncedSearchTerm, itemsPerPage, offset);
-        console.log(`Sessions result:`, sessionsResult);
-        setActiveSessions(sessionsResult.sessions);
-        setSessionsTotal(sessionsResult.total);
+        if (activeTab === 'pending') {
+          const pendingResult = await chatUserAdminService.getPendingUsers('', limit, offset);
+          console.log(`Pending users paginated result:`, pendingResult);
+          setPendingUsers(pendingResult.users);
+          setPendingTotal(pendingResult.total);
+          
+        } else if (activeTab === 'approved') {
+          const approvedResult = await chatUserAdminService.getApprovedUsers('', limit, offset);
+          console.log(`Approved users paginated result:`, approvedResult);
+          setApprovedUsers(approvedResult.users);
+          setApprovedTotal(approvedResult.total);
+          
+        } else if (activeTab === 'sessions') {
+          const sessionsResult = await chatUserAdminService.getActiveSessions('', limit, offset);
+          console.log(`Sessions paginated result:`, sessionsResult);
+          setActiveSessions(sessionsResult.sessions);
+          setSessionsTotal(sessionsResult.total);
+        }
       }
       
     } catch (error) {
@@ -187,7 +212,7 @@ const UserManagement: React.FC = () => {
     );
   }
 
-  const totalPages = Math.ceil((activeTab === 'pending' ? pendingTotal : activeTab === 'approved' ? approvedTotal : sessionsTotal) / itemsPerPage);
+  const totalPages = debouncedSearchTerm ? 1 : Math.ceil((activeTab === 'pending' ? pendingTotal : activeTab === 'approved' ? approvedTotal : sessionsTotal) / 100);
 
   return (
     <div className="space-y-6">
