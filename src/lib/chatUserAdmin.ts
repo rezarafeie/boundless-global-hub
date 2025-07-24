@@ -58,6 +58,9 @@ export const chatUserAdminService = {
     
     if (limit && offset !== undefined) {
       dataQuery = dataQuery.range(offset, offset + limit - 1);
+    } else {
+      // Remove 1000 row limit - allow access to all records
+      dataQuery = dataQuery.limit(10000);
     }
     
     const { data, error } = await dataQuery;
@@ -118,6 +121,9 @@ export const chatUserAdminService = {
     
     if (limit && offset !== undefined) {
       dataQuery = dataQuery.range(offset, offset + limit - 1);
+    } else {
+      // Remove 1000 row limit - allow access to all records
+      dataQuery = dataQuery.limit(10000);
     }
     
     const { data, error } = await dataQuery;
@@ -188,6 +194,9 @@ export const chatUserAdminService = {
     
     if (limit && offset !== undefined) {
       dataQuery = dataQuery.range(offset, offset + limit - 1);
+    } else {
+      // Remove 1000 row limit - allow access to all records
+      dataQuery = dataQuery.limit(10000);
     }
     
     const { data, error } = await dataQuery;
@@ -248,6 +257,9 @@ export const chatUserAdminService = {
     
     if (limit && offset !== undefined) {
       query = query.range(offset, offset + limit - 1);
+    } else {
+      // Remove 1000 row limit - allow access to all records
+      query = query.limit(10000);
     }
     
     const { data, error, count } = await query;

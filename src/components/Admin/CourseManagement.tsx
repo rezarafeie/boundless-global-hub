@@ -108,7 +108,12 @@ const CourseManagement: React.FC = () => {
         dataQuery = dataQuery.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
       }
       
-      dataQuery = dataQuery.range(offset, offset + enrollmentsPerPage - 1);
+      // Remove 1000 row limit - allow access to all enrollment records
+      if (debouncedEnrollmentSearch) {
+        dataQuery = dataQuery.range(offset, offset + enrollmentsPerPage - 1);
+      } else {
+        dataQuery = dataQuery.limit(10000);
+      }
 
       const { data, error } = await dataQuery;
 
