@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
 import { TetherlandService } from '@/lib/tetherlandService';
 
 interface Course {
@@ -48,6 +50,12 @@ const CourseManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
+  const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState('');
+  const [enrollmentTotal, setEnrollmentTotal] = useState(0);
+  const [enrollmentPage, setEnrollmentPage] = useState(1);
+  
+  const debouncedEnrollmentSearch = useDebounce(enrollmentSearchTerm, 300);
+  const enrollmentsPerPage = 50;
 
   useEffect(() => {
     fetchCourses();
@@ -76,17 +84,25 @@ const CourseManagement: React.FC = () => {
 
   const fetchEnrollments = async (courseId: string) => {
     try {
-      // Use range to get all enrollments, not limited to 1000
-      const { data, error, count } = await supabase
+      const offset = (enrollmentPage - 1) * enrollmentsPerPage;
+      let query = supabase
         .from('enrollments')
         .select('*', { count: 'exact' })
         .eq('course_id', courseId)
-        .order('created_at', { ascending: false })
-        .range(0, 10000); // Fetch up to 10,000 enrollments
+        .order('created_at', { ascending: false });
+      
+      if (debouncedEnrollmentSearch) {
+        query = query.or(`full_name.ilike.%${debouncedEnrollmentSearch}%,email.ilike.%${debouncedEnrollmentSearch}%,phone.ilike.%${debouncedEnrollmentSearch}%`);
+      }
+      
+      query = query.range(offset, offset + enrollmentsPerPage - 1);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
       console.log(`Fetched ${data?.length || 0} enrollments out of ${count || 0} total for course ${courseId}`);
       setEnrollments(data || []);
+      setEnrollmentTotal(count || 0);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
       toast({
@@ -143,9 +159,23 @@ const CourseManagement: React.FC = () => {
 
   const handleViewEnrollments = (course: Course) => {
     setSelectedCourse(course);
+    setEnrollmentSearchTerm('');
+    setEnrollmentPage(1);
     fetchEnrollments(course.id);
     setShowEnrollmentsModal(true);
   };
+
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchEnrollments(selectedCourse.id);
+    }
+  }, [debouncedEnrollmentSearch, enrollmentPage, selectedCourse]);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setEnrollmentPage(1);
+    }
+  }, [debouncedEnrollmentSearch]);
 
   return (
     <div className="space-y-6">
@@ -270,18 +300,33 @@ const CourseManagement: React.FC = () => {
       <Dialog open={showEnrollmentsModal} onOpenChange={setShowEnrollmentsModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              ثبت‌نام‌های دوره: {selectedCourse?.title}
+            <DialogTitle className="flex items-center justify-between">
+              <span>ثبت‌نام‌های دوره: {selectedCourse?.title}</span>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="جستجوی نام، ایمیل یا تلفن..."
+                  value={enrollmentSearchTerm}
+                  onChange={(e) => setEnrollmentSearchTerm(e.target.value)}
+                  className="pl-10 w-80"
+                />
+              </div>
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             {enrollments.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">هنوز ثبت‌نامی برای این دوره وجود ندارد</p>
+                <p className="text-muted-foreground">
+                  {enrollmentSearchTerm ? 'نتیجه‌ای یافت نشد' : 'هنوز ثبت‌نامی برای این دوره وجود ندارد'}
+                </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  نمایش {enrollments.length} از {enrollmentTotal} ثبت‌نام
+                </p>
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -316,6 +361,31 @@ const CourseManagement: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
+                
+                {Math.ceil(enrollmentTotal / enrollmentsPerPage) > 1 && (
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => setEnrollmentPage(Math.max(1, enrollmentPage - 1))}
+                      disabled={enrollmentPage === 1}
+                    >
+                      <ChevronRight className="h-4 w-4 mr-2" />
+                      قبلی
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      صفحه {enrollmentPage} از {Math.ceil(enrollmentTotal / enrollmentsPerPage)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEnrollmentPage(Math.min(Math.ceil(enrollmentTotal / enrollmentsPerPage), enrollmentPage + 1))}
+                      disabled={enrollmentPage === Math.ceil(enrollmentTotal / enrollmentsPerPage)}
+                    >
+                      بعدی
+                      <ChevronLeft className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

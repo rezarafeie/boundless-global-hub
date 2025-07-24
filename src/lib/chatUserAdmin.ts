@@ -3,25 +3,66 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ChatUser } from './supabase';
 
 export const chatUserAdminService = {
-  async getAllUsers(): Promise<ChatUser[]> {
-    const { data, error } = await supabase
+  async getAllUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
+    let query = supabase
       .from('chat_users')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
     
+    if (searchTerm) {
+      query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    }
+    
+    if (limit && offset !== undefined) {
+      query = query.range(offset, offset + limit - 1);
+    }
+    
+    const { data, error, count } = await query;
+    
     if (error) throw error;
-    return (data || []) as ChatUser[];
+    return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
-  async getPendingUsers(): Promise<ChatUser[]> {
-    const { data, error } = await supabase
+  async getPendingUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
+    let query = supabase
       .from('chat_users')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('is_approved', false)
       .order('created_at', { ascending: false });
     
+    if (searchTerm) {
+      query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    }
+    
+    if (limit && offset !== undefined) {
+      query = query.range(offset, offset + limit - 1);
+    }
+    
+    const { data, error, count } = await query;
+    
     if (error) throw error;
-    return (data || []) as ChatUser[];
+    return { users: (data || []) as ChatUser[], total: count || 0 };
+  },
+
+  async getApprovedUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
+    let query = supabase
+      .from('chat_users')
+      .select('*', { count: 'exact' })
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+    
+    if (searchTerm) {
+      query = query.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    }
+    
+    if (limit && offset !== undefined) {
+      query = query.range(offset, offset + limit - 1);
+    }
+    
+    const { data, error, count } = await query;
+    
+    if (error) throw error;
+    return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
   async approveUser(userId: number): Promise<void> {
@@ -51,8 +92,8 @@ export const chatUserAdminService = {
     if (error) throw error;
   },
 
-  async getActiveSessions(): Promise<any[]> {
-    const { data, error } = await supabase
+  async getActiveSessions(searchTerm?: string, limit?: number, offset?: number): Promise<{ sessions: any[], total: number }> {
+    let query = supabase
       .from('user_sessions')
       .select(`
         *,
@@ -61,12 +102,22 @@ export const chatUserAdminService = {
           name,
           phone
         )
-      `)
+      `, { count: 'exact' })
       .eq('is_active', true)
       .order('last_activity', { ascending: false });
     
+    if (searchTerm) {
+      query = query.filter('chat_users.name', 'ilike', `%${searchTerm}%`);
+    }
+    
+    if (limit && offset !== undefined) {
+      query = query.range(offset, offset + limit - 1);
+    }
+    
+    const { data, error, count } = await query;
+    
     if (error) throw error;
-    return data || [];
+    return { sessions: data || [], total: count || 0 };
   },
 
   async forceLogoutUser(sessionToken: string): Promise<void> {

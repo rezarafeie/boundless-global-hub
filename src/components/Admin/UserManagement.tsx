@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserCheck, UserX, LogOut, Clock } from 'lucide-react';
+import { Users, UserCheck, UserX, LogOut, Clock, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
 import type { ChatUser } from '@/lib/supabase';
 
 const UserManagement: React.FC = () => {
@@ -16,19 +18,33 @@ const UserManagement: React.FC = () => {
   const [approvedUsers, setApprovedUsers] = useState<ChatUser[]>([]);
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [approvedTotal, setApprovedTotal] = useState(0);
+  const [sessionsTotal, setSessionsTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('pending');
+  
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const itemsPerPage = 50;
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [pending, approved, sessions] = await Promise.all([
-        chatUserAdminService.getPendingUsers(),
-        chatUserAdminService.getAllUsers().then(users => users.filter(u => u.is_approved)),
-        chatUserAdminService.getActiveSessions()
+      const offset = (currentPage - 1) * itemsPerPage;
+      
+      const [pendingResult, approvedResult, sessionsResult] = await Promise.all([
+        chatUserAdminService.getPendingUsers(debouncedSearchTerm, itemsPerPage, offset),
+        chatUserAdminService.getApprovedUsers(debouncedSearchTerm, itemsPerPage, offset),
+        chatUserAdminService.getActiveSessions(debouncedSearchTerm, itemsPerPage, offset)
       ]);
       
-      setPendingUsers(pending);
-      setApprovedUsers(approved);
-      setActiveSessions(sessions);
+      setPendingUsers(pendingResult.users);
+      setPendingTotal(pendingResult.total);
+      setApprovedUsers(approvedResult.users);
+      setApprovedTotal(approvedResult.total);
+      setActiveSessions(sessionsResult.sessions);
+      setSessionsTotal(sessionsResult.total);
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast({
@@ -43,7 +59,11 @@ const UserManagement: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [debouncedSearchTerm, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, activeTab]);
 
   const handleApproveUser = async (userId: number) => {
     try {
@@ -123,21 +143,36 @@ const UserManagement: React.FC = () => {
     );
   }
 
+  const totalPages = Math.ceil((activeTab === 'pending' ? pendingTotal : activeTab === 'approved' ? approvedTotal : sessionsTotal) / itemsPerPage);
+
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="pending" className="w-full">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <h2 className="text-2xl font-bold">مدیریت کاربران</h2>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="جستجوی نام، تلفن یا ایمیل..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-80"
+          />
+        </div>
+      </div>
+
+      <Tabs defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            در انتظار تایید ({pendingUsers.length})
+            در انتظار تایید ({pendingTotal})
           </TabsTrigger>
           <TabsTrigger value="approved" className="flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
-            کاربران تایید شده ({approvedUsers.length})
+            کاربران تایید شده ({approvedTotal})
           </TabsTrigger>
           <TabsTrigger value="sessions" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            جلسات فعال ({activeSessions.length})
+            جلسات فعال ({sessionsTotal})
           </TabsTrigger>
         </TabsList>
 
@@ -147,10 +182,21 @@ const UserManagement: React.FC = () => {
               <CardTitle>کاربران در انتظار تایید</CardTitle>
             </CardHeader>
             <CardContent>
-              {pendingUsers.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">هیچ کاربری در انتظار تایید نیست</p>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+                  <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
+                </div>
+              ) : pendingUsers.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">
+                  {searchTerm ? 'نتیجه‌ای یافت نشد' : 'هیچ کاربری در انتظار تایید نیست'}
+                </p>
               ) : (
-                <Table>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    نمایش {pendingUsers.length} از {pendingTotal} کاربر
+                  </p>
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>نام</TableHead>
@@ -190,7 +236,32 @@ const UserManagement: React.FC = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                  
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        قبلی
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        صفحه {currentPage} از {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        بعدی
+                        <ChevronLeft className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -202,10 +273,21 @@ const UserManagement: React.FC = () => {
               <CardTitle>کاربران تایید شده</CardTitle>
             </CardHeader>
             <CardContent>
-              {approvedUsers.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">هیچ کاربر تایید شده‌ای وجود ندارد</p>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+                  <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
+                </div>
+              ) : approvedUsers.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">
+                  {searchTerm ? 'نتیجه‌ای یافت نشد' : 'هیچ کاربر تایید شده‌ای وجود ندارد'}
+                </p>
               ) : (
-                <Table>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    نمایش {approvedUsers.length} از {approvedTotal} کاربر
+                  </p>
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>نام</TableHead>
@@ -241,7 +323,32 @@ const UserManagement: React.FC = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                  
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        قبلی
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        صفحه {currentPage} از {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        بعدی
+                        <ChevronLeft className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -253,10 +360,21 @@ const UserManagement: React.FC = () => {
               <CardTitle>جلسات فعال</CardTitle>
             </CardHeader>
             <CardContent>
-              {activeSessions.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">هیچ جلسه فعالی وجود ندارد</p>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+                  <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
+                </div>
+              ) : activeSessions.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">
+                  {searchTerm ? 'نتیجه‌ای یافت نشد' : 'هیچ جلسه فعالی وجود ندارد'}
+                </p>
               ) : (
-                <Table>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    نمایش {activeSessions.length} از {sessionsTotal} جلسه
+                  </p>
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>نام کاربر</TableHead>
@@ -288,7 +406,32 @@ const UserManagement: React.FC = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                  
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                        قبلی
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        صفحه {currentPage} از {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        بعدی
+                        <ChevronLeft className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
