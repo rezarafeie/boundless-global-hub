@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2 } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -141,13 +141,25 @@ export function DataImportSection() {
 
     for (const row of csvRows) {
       try {
-        // Check if enrollment already exists for this email/phone and course
-        const { data: existingEnrollment, error: enrollmentCheckError } = await supabase
+        // Check if enrollment already exists - handle null email/phone
+        let existingQuery = supabase
           .from('enrollments')
           .select('id')
-          .eq('course_id', courseId)
-          .or(`email.eq.${row.email},phone.eq.${row.phone}`)
-          .maybeSingle();
+          .eq('course_id', courseId);
+        
+        // Build OR condition only for non-empty values
+        const conditions = [];
+        if (row.email && row.email.trim()) conditions.push(`email.eq.${row.email.trim()}`);
+        if (row.phone && row.phone.trim()) conditions.push(`phone.eq.${row.phone.trim()}`);
+        
+        if (conditions.length > 0) {
+          existingQuery = existingQuery.or(conditions.join(','));
+        } else {
+          // If no email or phone, skip duplicate check
+          existingQuery = existingQuery.limit(0);
+        }
+        
+        const { data: existingEnrollment, error: enrollmentCheckError } = await existingQuery.maybeSingle();
 
         if (enrollmentCheckError) {
           console.error(`Error checking enrollment for ${row.email}:`, enrollmentCheckError);
@@ -330,6 +342,83 @@ export function DataImportSection() {
     }
   };
 
+  const handleBackupData = async () => {
+    try {
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const { data: importLogs, error: logsError } = await supabase
+        .from('import_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (enrollError || logsError) {
+        throw new Error('خطا در دریافت داده‌ها');
+      }
+
+      const backupData = {
+        enrollments: enrollments || [],
+        import_logs: importLogs || [],
+        backup_date: new Date().toISOString(),
+        total_enrollments: enrollments?.length || 0,
+        total_import_logs: importLogs?.length || 0
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `enrollments_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`پشتیبان‌گیری انجام شد - ${enrollments?.length || 0} ثبت‌نام`);
+    } catch (error: any) {
+      toast.error(`خطا در پشتیبان‌گیری: ${error.message}`);
+    }
+  };
+
+  const handleRestoreLastImport = async () => {
+    if (importHistory.length === 0) {
+      toast.error('هیچ واردات قبلی یافت نشد');
+      return;
+    }
+
+    const lastImport = importHistory[0];
+    const confirmRestore = window.confirm(
+      `آیا مطمئن هستید که می‌خواهید آخرین واردات را برگردانید؟\n` +
+      `این عمل ${lastImport.new_users_created} ثبت‌نام جدید از دوره "${lastImport.courses?.title}" را حذف خواهد کرد.`
+    );
+
+    if (!confirmRestore) return;
+
+    try {
+      // Delete enrollments created in the last import
+      const { error } = await supabase
+        .from('enrollments')
+        .delete()
+        .eq('course_id', lastImport.course_id)
+        .gte('created_at', lastImport.created_at);
+
+      if (error) throw error;
+
+      // Delete the import log
+      await supabase
+        .from('import_logs')
+        .delete()
+        .eq('id', lastImport.id);
+
+      toast.success(`آخرین واردات برگردانده شد - ${lastImport.new_users_created} ثبت‌نام حذف شد`);
+      fetchImportHistory();
+    } catch (error: any) {
+      toast.error(`خطا در برگرداندن واردات: ${error.message}`);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -454,6 +543,50 @@ export function DataImportSection() {
           </CardContent>
         </Card>
       )}
+
+      <Separator />
+
+      {/* Backup & Restore Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            مدیریت پشتیبان‌گیری و بازگردانی
+          </CardTitle>
+          <CardDescription>
+            پشتیبان‌گیری از کل داده‌ها یا بازگردانی آخرین واردات
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button
+              onClick={handleBackupData}
+              variant="outline"
+              className="flex-1"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              پشتیبان‌گیری کامل
+            </Button>
+            
+            <Button
+              onClick={handleRestoreLastImport}
+              variant="destructive"
+              className="flex-1"
+              disabled={importHistory.length === 0}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              برگرداندن آخرین واردات
+            </Button>
+          </div>
+          
+          {importHistory.length > 0 && (
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+              <strong>آخرین واردات:</strong> {importHistory[0].courses?.title} - 
+              {importHistory[0].new_users_created} ثبت‌نام جدید در {new Date(importHistory[0].created_at).toLocaleDateString('fa-IR')}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Separator />
 
