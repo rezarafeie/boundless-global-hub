@@ -25,8 +25,36 @@ const UserManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('pending');
   
+  // Keep track of total counts without search for display purposes
+  const [totalUserCounts, setTotalUserCounts] = useState({
+    pending: 0,
+    approved: 0,
+    sessions: 0
+  });
+  
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const itemsPerPage = 50;
+
+  // Fetch total counts once on mount (no search, no pagination)
+  const fetchTotalCounts = async () => {
+    try {
+      const [pendingTotal, approvedTotal, sessionsTotal] = await Promise.all([
+        chatUserAdminService.getPendingUsers('', 1, 0).then(r => r.total),
+        chatUserAdminService.getApprovedUsers('', 1, 0).then(r => r.total),
+        chatUserAdminService.getActiveSessions('', 1, 0).then(r => r.total)
+      ]);
+      
+      setTotalUserCounts({
+        pending: pendingTotal,
+        approved: approvedTotal,
+        sessions: sessionsTotal
+      });
+      
+      console.log('Total counts fetched:', { pendingTotal, approvedTotal, sessionsTotal });
+    } catch (error) {
+      console.error('Error fetching total counts:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -41,41 +69,17 @@ const UserManagement: React.FC = () => {
         setPendingUsers(pendingResult.users);
         setPendingTotal(pendingResult.total);
         
-        // Also get total counts for other tabs (without search/pagination for display purposes)
-        const [approvedTotal, sessionsTotal] = await Promise.all([
-          chatUserAdminService.getApprovedUsers('', 1, 0).then(r => r.total),
-          chatUserAdminService.getActiveSessions('', 1, 0).then(r => r.total)
-        ]);
-        setApprovedTotal(approvedTotal);
-        setSessionsTotal(sessionsTotal);
-        
       } else if (activeTab === 'approved') {
         const approvedResult = await chatUserAdminService.getApprovedUsers(debouncedSearchTerm, itemsPerPage, offset);
         console.log(`Approved users result:`, approvedResult);
         setApprovedUsers(approvedResult.users);
         setApprovedTotal(approvedResult.total);
         
-        // Get total counts for other tabs
-        const [pendingTotal, sessionsTotal] = await Promise.all([
-          chatUserAdminService.getPendingUsers('', 1, 0).then(r => r.total),
-          chatUserAdminService.getActiveSessions('', 1, 0).then(r => r.total)
-        ]);
-        setPendingTotal(pendingTotal);
-        setSessionsTotal(sessionsTotal);
-        
       } else if (activeTab === 'sessions') {
         const sessionsResult = await chatUserAdminService.getActiveSessions(debouncedSearchTerm, itemsPerPage, offset);
         console.log(`Sessions result:`, sessionsResult);
         setActiveSessions(sessionsResult.sessions);
         setSessionsTotal(sessionsResult.total);
-        
-        // Get total counts for other tabs
-        const [pendingTotal, approvedTotal] = await Promise.all([
-          chatUserAdminService.getPendingUsers('', 1, 0).then(r => r.total),
-          chatUserAdminService.getApprovedUsers('', 1, 0).then(r => r.total)
-        ]);
-        setPendingTotal(pendingTotal);
-        setApprovedTotal(approvedTotal);
       }
       
     } catch (error) {
@@ -91,8 +95,12 @@ const UserManagement: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchTotalCounts();
+  }, []);
+
+  useEffect(() => {
     fetchData();
-  }, [debouncedSearchTerm, currentPage]);
+  }, [debouncedSearchTerm, currentPage, activeTab]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -197,15 +205,15 @@ const UserManagement: React.FC = () => {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            در انتظار تایید ({pendingTotal})
+            در انتظار تایید ({searchTerm ? pendingTotal : totalUserCounts.pending})
           </TabsTrigger>
           <TabsTrigger value="approved" className="flex items-center gap-2">
             <UserCheck className="w-4 h-4" />
-            کاربران تایید شده ({approvedTotal})
+            کاربران تایید شده ({searchTerm ? approvedTotal : totalUserCounts.approved})
           </TabsTrigger>
           <TabsTrigger value="sessions" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            جلسات فعال ({sessionsTotal})
+            جلسات فعال ({searchTerm ? sessionsTotal : totalUserCounts.sessions})
           </TabsTrigger>
         </TabsList>
 
@@ -226,9 +234,14 @@ const UserManagement: React.FC = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    نمایش {pendingUsers.length} از {pendingTotal} کاربر
-                  </p>
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>نمایش {pendingUsers.length} از {pendingTotal} کاربر</span>
+                    {searchTerm && (
+                      <span className="text-orange-600">
+                        جستجو: "{searchTerm}" (کل: {totalUserCounts.pending})
+                      </span>
+                    )}
+                  </div>
                   <Table>
                   <TableHeader>
                     <TableRow>
@@ -317,9 +330,14 @@ const UserManagement: React.FC = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    نمایش {approvedUsers.length} از {approvedTotal} کاربر
-                  </p>
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>نمایش {approvedUsers.length} از {approvedTotal} کاربر</span>
+                    {searchTerm && (
+                      <span className="text-orange-600">
+                        جستجو: "{searchTerm}" (کل: {totalUserCounts.approved})
+                      </span>
+                    )}
+                  </div>
                   <Table>
                   <TableHeader>
                     <TableRow>
@@ -404,9 +422,14 @@ const UserManagement: React.FC = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    نمایش {activeSessions.length} از {sessionsTotal} جلسه
-                  </p>
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>نمایش {activeSessions.length} از {sessionsTotal} جلسه</span>
+                    {searchTerm && (
+                      <span className="text-orange-600">
+                        جستجو: "{searchTerm}" (کل: {totalUserCounts.sessions})
+                      </span>
+                    )}
+                  </div>
                   <Table>
                   <TableHeader>
                     <TableRow>

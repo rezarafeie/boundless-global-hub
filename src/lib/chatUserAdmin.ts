@@ -4,25 +4,46 @@ import type { ChatUser } from './supabase';
 
 export const chatUserAdminService = {
   async getAllUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
-    // First get total count (with search if applied)
+    console.log('getAllUsers called with:', { searchTerm, limit, offset });
+    
+    // Normalize phone search - handle both formats (with and without leading 0)
+    const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
+      ? [`phone.ilike.%${searchTerm}%`, `phone.ilike.%0${searchTerm}%`, `phone.eq.${searchTerm}`, `phone.eq.0${searchTerm}`]
+      : [];
+    
+    // Build search conditions
+    const searchConditions = searchTerm ? [
+      `name.ilike.%${searchTerm}%`,
+      `email.ilike.%${searchTerm}%`,
+      `user_id.ilike.%${searchTerm}%`,
+      ...phoneSearch
+    ].join(',') : '';
+    
+    // Get total count (with search if applied)
     let countQuery = supabase
       .from('chat_users')
       .select('*', { count: 'exact', head: true });
     
-    if (searchTerm) {
-      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
+    if (searchTerm && searchConditions) {
+      countQuery = countQuery.or(searchConditions);
     }
     
-    const { count } = await countQuery;
+    const { count, error: countError } = await countQuery;
+    if (countError) {
+      console.error('Count query error:', countError);
+      throw countError;
+    }
     
-    // Then get the actual data for display (with pagination)
+    console.log('Total count result:', count);
+    
+    // Get data with pagination
     let dataQuery = supabase
       .from('chat_users')
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (searchTerm) {
-      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
+    if (searchTerm && searchConditions) {
+      dataQuery = dataQuery.or(searchConditions);
     }
     
     if (limit && offset !== undefined) {
@@ -31,32 +52,58 @@ export const chatUserAdminService = {
     
     const { data, error } = await dataQuery;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Data query error:', error);
+      throw error;
+    }
+    
+    console.log('Data result:', { count: data?.length, total: count });
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
   async getPendingUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
-    // First get total count
+    console.log('getPendingUsers called with:', { searchTerm, limit, offset });
+    
+    // Normalize phone search - handle both formats (with and without leading 0)
+    const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
+      ? [`phone.ilike.%${searchTerm}%`, `phone.ilike.%0${searchTerm}%`, `phone.eq.${searchTerm}`, `phone.eq.0${searchTerm}`]
+      : [];
+    
+    // Build search conditions
+    const searchConditions = searchTerm ? [
+      `name.ilike.%${searchTerm}%`,
+      `email.ilike.%${searchTerm}%`,
+      `user_id.ilike.%${searchTerm}%`,
+      ...phoneSearch
+    ].join(',') : '';
+    
+    // Get total count
     let countQuery = supabase
       .from('chat_users')
       .select('*', { count: 'exact', head: true })
       .eq('is_approved', false);
     
-    if (searchTerm) {
-      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
+    if (searchTerm && searchConditions) {
+      countQuery = countQuery.or(searchConditions);
     }
     
-    const { count } = await countQuery;
+    const { count, error: countError } = await countQuery;
+    if (countError) {
+      console.error('Pending count query error:', countError);
+      throw countError;
+    }
     
-    // Then get data for display
+    console.log('Pending users count result:', count);
+    
+    // Get data for display
     let dataQuery = supabase
       .from('chat_users')
       .select('*')
       .eq('is_approved', false)
       .order('created_at', { ascending: false });
     
-    if (searchTerm) {
-      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
+    if (searchTerm && searchConditions) {
+      dataQuery = dataQuery.or(searchConditions);
     }
     
     if (limit && offset !== undefined) {
@@ -65,32 +112,58 @@ export const chatUserAdminService = {
     
     const { data, error } = await dataQuery;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Pending data query error:', error);
+      throw error;
+    }
+    
+    console.log('Pending users data result:', { count: data?.length, total: count });
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
   async getApprovedUsers(searchTerm?: string, limit?: number, offset?: number): Promise<{ users: ChatUser[], total: number }> {
-    // First get total count
+    console.log('getApprovedUsers called with:', { searchTerm, limit, offset });
+    
+    // Normalize phone search - handle both formats (with and without leading 0)
+    const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
+      ? [`phone.ilike.%${searchTerm}%`, `phone.ilike.%0${searchTerm}%`, `phone.eq.${searchTerm}`, `phone.eq.0${searchTerm}`]
+      : [];
+    
+    // Build search conditions
+    const searchConditions = searchTerm ? [
+      `name.ilike.%${searchTerm}%`,
+      `email.ilike.%${searchTerm}%`,
+      `user_id.ilike.%${searchTerm}%`,
+      ...phoneSearch
+    ].join(',') : '';
+    
+    // Get total count
     let countQuery = supabase
       .from('chat_users')
       .select('*', { count: 'exact', head: true })
       .eq('is_approved', true);
     
-    if (searchTerm) {
-      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
+    if (searchTerm && searchConditions) {
+      countQuery = countQuery.or(searchConditions);
     }
     
-    const { count } = await countQuery;
+    const { count, error: countError } = await countQuery;
+    if (countError) {
+      console.error('Approved count query error:', countError);
+      throw countError;
+    }
     
-    // Then get data for display
+    console.log('Approved users count result:', count);
+    
+    // Get data for display
     let dataQuery = supabase
       .from('chat_users')
       .select('*')
       .eq('is_approved', true)
       .order('created_at', { ascending: false });
     
-    if (searchTerm) {
-      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
+    if (searchTerm && searchConditions) {
+      dataQuery = dataQuery.or(searchConditions);
     }
     
     if (limit && offset !== undefined) {
@@ -99,7 +172,12 @@ export const chatUserAdminService = {
     
     const { data, error } = await dataQuery;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Approved data query error:', error);
+      throw error;
+    }
+    
+    console.log('Approved users data result:', { count: data?.length, total: count });
     return { users: (data || []) as ChatUser[], total: count || 0 };
   },
 
