@@ -243,8 +243,8 @@ export function DataImportSection() {
           .insert({
             course_id: courseId,
             full_name: fullName,
-            email: row.email,
-            phone: row.phone,
+            email: row.email || null,
+            phone: row.phone || null,
             payment_status: 'completed',
             payment_amount: paymentAmount,
             payment_method: paymentMethod,
@@ -309,8 +309,8 @@ export function DataImportSection() {
       // Process import
       const result = await processImport(previewData, selectedCourse);
 
-      // Log import
-      await supabase
+      // Log import with returning id
+      const { data: importLogData, error: logError } = await supabase
         .from('import_logs')
         .insert({
           uploaded_by: 'admin',
@@ -318,7 +318,13 @@ export function DataImportSection() {
           total_rows: result.totalRows,
           new_users_created: result.newEnrollmentsCreated,
           existing_users_updated: result.existingEnrollments
-        });
+        })
+        .select('id')
+        .single();
+
+      if (logError) {
+        console.error('Error logging import:', logError);
+      }
 
       // Show success message
       toast.success(
