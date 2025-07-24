@@ -34,8 +34,8 @@ export const chatUserAdminService = {
     
     if (searchTerm && searchConditions) {
       dataQuery = dataQuery.or(searchConditions);
-      // When searching, return all matching results (up to 500 for performance)
-      dataQuery = dataQuery.limit(500);
+      // When searching, return all matching results (no limit to search entire database)
+      dataQuery = dataQuery.limit(1000);
     } else {
       // Default pagination: 100 records per page
       dataQuery = dataQuery.range(offset, offset + limit - 1);
@@ -85,8 +85,8 @@ export const chatUserAdminService = {
     
     if (searchTerm && searchConditions) {
       dataQuery = dataQuery.or(searchConditions);
-      // When searching, return all matching results (up to 500 for performance)
-      dataQuery = dataQuery.limit(500);
+      // When searching, return all matching results (no limit to search entire database)
+      dataQuery = dataQuery.limit(1000);
     } else {
       // Default pagination: 100 records per page
       dataQuery = dataQuery.range(offset, offset + limit - 1);
@@ -136,8 +136,8 @@ export const chatUserAdminService = {
     
     if (searchTerm && searchConditions) {
       dataQuery = dataQuery.or(searchConditions);
-      // When searching, return all matching results (up to 500 for performance)
-      dataQuery = dataQuery.limit(500);
+      // When searching, return all matching results (no limit to search entire database)
+      dataQuery = dataQuery.limit(1000);
     } else {
       // Default pagination: 100 records per page
       dataQuery = dataQuery.range(offset, offset + limit - 1);
@@ -198,8 +198,8 @@ export const chatUserAdminService = {
     if (searchTerm) {
       // Search in related chat_users table
       query = query.or(`chat_users.name.ilike.%${searchTerm}%,chat_users.phone.ilike.%${searchTerm}%,chat_users.email.ilike.%${searchTerm}%`);
-      // When searching, return all matching results (up to 500 for performance)
-      query = query.limit(500);
+      // When searching, return all matching results (no limit to search entire database)
+      query = query.limit(1000);
     } else {
       // Default pagination: 100 records per page
       query = query.range(offset, offset + limit - 1);
