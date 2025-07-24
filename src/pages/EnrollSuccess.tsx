@@ -362,7 +362,7 @@ const EnrollSuccess: React.FC = () => {
               </CardHeader>
               
               <CardContent className="space-y-6">
-                {/* 1. Activation Requirements (if activated) */}
+                {/* Activation Requirements (if activated) */}
                 {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required) && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                     <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
@@ -444,7 +444,7 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* 2. Course Start Section */}
+                {/* Course Start Section */}
                 <StartCourseSection 
                   enrollment={result.enrollment}
                   course={result.course}
@@ -452,10 +452,10 @@ const EnrollSuccess: React.FC = () => {
                   userEmail={email || ''}
                 />
 
-                {/* 3. Course Action Links (if activation requires not activated) */}
+                {/* Course Action Links (if activation requires not activated) */}
                 {/* This will be rendered by StartCourseSection -> CourseActionLinks */}
 
-                {/* 4. Payment Details */}
+                {/* Payment Details */}
                 <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
                   <h3 className="font-semibold text-green-800 dark:text-green-400 mb-3">جزئیات پرداخت</h3>
                   <div className="space-y-2 text-sm">
@@ -531,7 +531,7 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 5. Course Details */}
+                {/* Course Details */}
                 {result.course && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                     <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
@@ -549,7 +549,7 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* 6. Support Section */}
+                {/* Support Section */}
                 <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20 shadow-sm overflow-hidden">
                   <h3 className="font-semibold text-primary mb-4 flex items-center gap-2 text-base md:text-lg">
                     <MessageSquare className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
