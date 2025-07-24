@@ -211,7 +211,7 @@ const BoundlessLanding = () => {
   };
 
   const handleStudentLoginClick = () => {
-    window.open('https://academy.rafiei.co/course/start', '_blank');
+    window.open('https://academy.rafiei.co/access/?course=boundless', '_blank');
   };
 
   return (
