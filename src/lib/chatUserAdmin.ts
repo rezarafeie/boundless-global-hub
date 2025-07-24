@@ -6,28 +6,8 @@ export const chatUserAdminService = {
   async getAllUsers(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ users: ChatUser[], total: number }> {
     console.log('getAllUsers called with:', { searchTerm, limit, offset });
     
-    // Enhanced phone search - handle various formats
-    const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
-      ? [
-          `phone.ilike.%${searchTerm}%`,
-          `phone.ilike.%0${searchTerm}%`, 
-          `phone.eq.${searchTerm}`,
-          `phone.eq.0${searchTerm}`,
-          // Handle cases where stored phone has +98 prefix
-          `phone.ilike.%98${searchTerm}%`,
-          `phone.eq.98${searchTerm}`,
-          `phone.eq.+98${searchTerm}`
-        ]
-      : [];
-    
-    // Build search conditions
-    const searchConditions = searchTerm ? [
-      `name.ilike.%${searchTerm}%`,
-      `email.ilike.%${searchTerm}%`,
-      `user_id.ilike.%${searchTerm}%`,
-      `id.eq.${searchTerm}`, // Add ID search
-      ...phoneSearch
-    ].join(',') : '';
+    // Use same search pattern as working support search
+    const searchConditions = searchTerm ? `name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%` : '';
     
     // Get total count (with search if applied)
     let countQuery = supabase
@@ -75,18 +55,8 @@ export const chatUserAdminService = {
   async getPendingUsers(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ users: ChatUser[], total: number }> {
     console.log('getPendingUsers called with:', { searchTerm, limit, offset });
     
-    // Normalize phone search - handle both formats (with and without leading 0)
-    const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
-      ? [`phone.ilike.%${searchTerm}%`, `phone.ilike.%0${searchTerm}%`, `phone.eq.${searchTerm}`, `phone.eq.0${searchTerm}`]
-      : [];
-    
-    // Build search conditions
-    const searchConditions = searchTerm ? [
-      `name.ilike.%${searchTerm}%`,
-      `email.ilike.%${searchTerm}%`,
-      `user_id.ilike.%${searchTerm}%`,
-      ...phoneSearch
-    ].join(',') : '';
+    // Use same search pattern as working support search
+    const searchConditions = searchTerm ? `name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%` : '';
     
     // Get total count
     let countQuery = supabase
@@ -136,28 +106,8 @@ export const chatUserAdminService = {
   async getApprovedUsers(searchTerm?: string, limit: number = 100, offset: number = 0): Promise<{ users: ChatUser[], total: number }> {
     console.log('getApprovedUsers called with:', { searchTerm, limit, offset });
     
-    // Enhanced phone search - handle various formats
-    const phoneSearch = searchTerm && /^\d+$/.test(searchTerm) 
-      ? [
-          `phone.ilike.%${searchTerm}%`,
-          `phone.ilike.%0${searchTerm}%`, 
-          `phone.eq.${searchTerm}`,
-          `phone.eq.0${searchTerm}`,
-          // Handle cases where stored phone has +98 prefix
-          `phone.ilike.%98${searchTerm}%`,
-          `phone.eq.98${searchTerm}`,
-          `phone.eq.+98${searchTerm}`
-        ]
-      : [];
-    
-    // Build search conditions
-    const searchConditions = searchTerm ? [
-      `name.ilike.%${searchTerm}%`,
-      `email.ilike.%${searchTerm}%`,
-      `user_id.ilike.%${searchTerm}%`,
-      `id.eq.${searchTerm}`, // Add ID search
-      ...phoneSearch
-    ].join(',') : '';
+    // Use same search pattern as working support search
+    const searchConditions = searchTerm ? `name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%` : '';
     
     // Get total count with search filter
     let countQuery = supabase
@@ -246,7 +196,8 @@ export const chatUserAdminService = {
       .order('last_activity', { ascending: false });
     
     if (searchTerm) {
-      query = query.filter('chat_users.name', 'ilike', `%${searchTerm}%`);
+      // Search in related chat_users table
+      query = query.or(`chat_users.name.ilike.%${searchTerm}%,chat_users.phone.ilike.%${searchTerm}%,chat_users.email.ilike.%${searchTerm}%`);
       // When searching, return all matching results (up to 500 for performance)
       query = query.limit(500);
     } else {
