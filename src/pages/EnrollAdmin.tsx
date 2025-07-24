@@ -41,7 +41,7 @@ import {
   sendEnrollmentManualPaymentSubmitted
 } from '@/lib/enrollmentWebhookService';
 import { DataImportSection } from '@/components/admin/DataImportSection';
-import UsersOverview from './UsersOverview';
+import UserManagement from '@/components/Admin/UserManagement';
 import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
 import ShortLinksManager from '@/components/admin/ShortLinksManager';
 
@@ -1118,7 +1118,7 @@ const EnrollAdmin: React.FC = () => {
               {/* Users View */}
               {activeView === 'users' && (
                 <div className="space-y-6">
-                  <UsersOverview />
+                  <UserManagement />
                 </div>
               )}
 
