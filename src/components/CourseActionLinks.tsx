@@ -191,10 +191,6 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
                 key={action.id}
                 className="flex flex-col gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-orange-100 dark:border-orange-800 w-full overflow-hidden relative"
               >
-                {/* Step Number */}
-                <div className="absolute -top-2 -right-2 z-10 w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
-                  {stepNumber}
-                </div>
                 
                 <div className="flex items-start gap-3 w-full">
                   <div className={`w-10 h-10 ${colors.badgeBg} rounded-lg flex items-center justify-center border ${colors.border} flex-shrink-0`}>
