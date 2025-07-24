@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2 } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2, Play, Pause } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -21,7 +22,20 @@ interface ImportResult {
   totalRows: number;
   newEnrollmentsCreated: number;
   existingEnrollments: number;
+  errors: number;
+  processed: number;
   importLogId?: string;
+}
+
+interface ImportProgress {
+  total: number;
+  processed: number;
+  created: number;
+  existing: number;
+  errors: number;
+  currentUser: string;
+  isRunning: boolean;
+  canResume: boolean;
 }
 
 interface BackupData {
@@ -66,6 +80,9 @@ export function DataImportSection() {
   const [previewAnalysis, setPreviewAnalysis] = useState<PreviewAnalysis | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const [processedRows, setProcessedRows] = useState<Set<number>>(new Set());
+  const [isPaused, setIsPaused] = useState(false);
 
   // Fetch courses on component mount
   React.useEffect(() => {
@@ -146,9 +163,11 @@ export function DataImportSection() {
     return rows;
   };
 
-  const processImport = async (csvRows: CSVRow[], courseId: string): Promise<ImportResult> => {
+  const processImport = async (csvRows: CSVRow[], courseId: string, startFromIndex: number = 0): Promise<ImportResult> => {
     let newEnrollmentsCreated = 0;
     let existingEnrollments = 0;
+    let errors = 0;
+    let processed = 0;
 
     // Get course details for payment amount
     const course = courses.find(c => c.id === courseId);
@@ -157,16 +176,57 @@ export function DataImportSection() {
     }
 
     // Process unique users only (remove duplicates within CSV)
-    const uniqueUsers = new Map<string, CSVRow>();
-    for (const row of csvRows) {
+    const uniqueUsers = new Map<string, { row: CSVRow; index: number }>();
+    csvRows.forEach((row, index) => {
       const userKey = `${row.email?.trim().toLowerCase()}-${row.phone?.trim()}`;
       if (!uniqueUsers.has(userKey)) {
-        uniqueUsers.set(userKey, row);
+        uniqueUsers.set(userKey, { row, index });
       }
-    }
+    });
 
-    for (const row of uniqueUsers.values()) {
+    const uniqueUserArray = Array.from(uniqueUsers.values());
+
+    // Initialize progress
+    setImportProgress({
+      total: uniqueUserArray.length,
+      processed: 0,
+      created: 0,
+      existing: 0,
+      errors: 0,
+      currentUser: '',
+      isRunning: true,
+      canResume: false
+    });
+
+    for (let i = startFromIndex; i < uniqueUserArray.length; i++) {
+      // Check if import is paused
+      if (isPaused) {
+        setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: true } : null);
+        return {
+          totalRows: uniqueUserArray.length,
+          newEnrollmentsCreated,
+          existingEnrollments,
+          errors,
+          processed
+        };
+      }
+
+      const { row, index } = uniqueUserArray[i];
+      
+      // Skip if already processed
+      if (processedRows.has(index)) {
+        processed++;
+        continue;
+      }
+
       try {
+        // Update progress
+        setImportProgress(prev => prev ? {
+          ...prev,
+          processed: processed + 1,
+          currentUser: `${row.first_name} ${row.last_name}`.trim()
+        } : null);
+
         // First, check if user exists in chat_users table
         let existingUser = null;
         if ((row.email && row.email.trim()) || (row.phone && row.phone.trim())) {
@@ -205,6 +265,9 @@ export function DataImportSection() {
 
         if (existingEnrollment) {
           existingEnrollments++;
+          setImportProgress(prev => prev ? { ...prev, existing: prev.existing + 1 } : null);
+          setProcessedRows(prev => new Set([...prev, index]));
+          processed++;
           console.log(`Enrollment already exists for ${row.email || row.phone}`);
           continue;
         }
@@ -213,6 +276,44 @@ export function DataImportSection() {
         let chatUserId = existingUser?.id;
         
         if (!existingUser && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
+          // Parse entry date for user creation
+          let userCreatedAt = new Date().toISOString();
+          if (row.entry_date && row.entry_date.trim()) {
+            try {
+              const dateStr = row.entry_date.trim();
+              let parsedDate: Date;
+              
+              if (dateStr.includes(' ')) {
+                const [datePart, timePart] = dateStr.split(' ');
+                if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
+                  const [year, month, day] = datePart.split('-');
+                  const [hour, minute] = timePart.split(':');
+                  parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+                } else {
+                  parsedDate = new Date(dateStr);
+                }
+              } else if (dateStr.includes('/')) {
+                const [day, month, year] = dateStr.split('/');
+                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              } else if (dateStr.includes('-') && dateStr.length === 10) {
+                if (dateStr.indexOf('-') === 4) {
+                  parsedDate = new Date(dateStr);
+                } else {
+                  const [day, month, year] = dateStr.split('-');
+                  parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                }
+              } else {
+                parsedDate = new Date(dateStr);
+              }
+              
+              if (!isNaN(parsedDate.getTime())) {
+                userCreatedAt = parsedDate.toISOString();
+              }
+            } catch (error) {
+              console.warn(`Invalid date format for ${row.email}: ${row.entry_date}, using current date`);
+            }
+          }
+
           // Create new user in chat_users
           const { data: newUser, error: userError } = await supabase
             .from('chat_users')
@@ -226,13 +327,17 @@ export function DataImportSection() {
               country_code: '+98',
               signup_source: 'enrollment',
               is_approved: true,
-              role: 'user'
+              role: 'user',
+              created_at: userCreatedAt,
+              updated_at: userCreatedAt
             })
             .select('id')
             .single();
 
           if (userError) {
             console.error(`Error creating user for ${row.email}:`, userError);
+            errors++;
+            setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
           } else {
             chatUserId = newUser.id;
           }
@@ -241,7 +346,7 @@ export function DataImportSection() {
         // Create enrollment
         const fullName = `${row.first_name} ${row.last_name}`.trim();
         
-        // Parse entry date
+        // Parse entry date for enrollment
         let createdAt = new Date().toISOString();
         if (row.entry_date && row.entry_date.trim()) {
           try {
@@ -308,26 +413,42 @@ export function DataImportSection() {
             payment_method: paymentMethod,
             country_code: '+98',
             created_at: createdAt,
+            updated_at: createdAt,
             chat_user_id: chatUserId
           });
 
         if (enrollmentError) {
           console.error(`Error creating enrollment for ${row.email}:`, enrollmentError);
+          errors++;
+          setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
           continue;
         }
 
         newEnrollmentsCreated++;
+        setImportProgress(prev => prev ? { ...prev, created: prev.created + 1 } : null);
+        setProcessedRows(prev => new Set([...prev, index]));
+        processed++;
         console.log(`Successfully created enrollment for ${row.email || row.phone}`);
+
+        // Add small delay to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 50));
 
       } catch (error) {
         console.error(`Error processing user ${row.email}:`, error);
+        errors++;
+        setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
       }
     }
 
+    // Mark import as completed
+    setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: false } : null);
+
     return {
-      totalRows: uniqueUsers.size,
+      totalRows: uniqueUserArray.length,
       newEnrollmentsCreated,
-      existingEnrollments
+      existingEnrollments,
+      errors,
+      processed
     };
   };
 
@@ -489,44 +610,51 @@ export function DataImportSection() {
     }
 
     setIsImporting(true);
+    setIsPaused(false);
 
     try {
       console.log(`Importing ${previewData.length} rows for course ${selectedCourse}`);
 
       // Process import
-      const result = await processImport(previewData, selectedCourse);
+      const result = await processImport(previewData, selectedCourse, 0);
 
-      // Log import with returning id
-      const { data: importLogData, error: logError } = await supabase
-        .from('import_logs')
-        .insert({
-          uploaded_by: 'admin',
-          course_id: selectedCourse,
-          total_rows: result.totalRows,
-          new_users_created: result.newEnrollmentsCreated,
-          existing_users_updated: result.existingEnrollments
-        })
-        .select('id')
-        .single();
+      if (!isPaused) {
+        // Log import with returning id
+        const { data: importLogData, error: logError } = await supabase
+          .from('import_logs')
+          .insert({
+            uploaded_by: 'admin',
+            course_id: selectedCourse,
+            total_rows: result.totalRows,
+            new_users_created: result.newEnrollmentsCreated,
+            existing_users_updated: result.existingEnrollments
+          })
+          .select('id')
+          .single();
 
-      if (logError) {
-        console.error('Error logging import:', logError);
+        if (logError) {
+          console.error('Error logging import:', logError);
+        }
+
+        // Show success message
+        toast.success(
+          `✅ ${result.totalRows} کاربر پردازش شد، ${result.newEnrollmentsCreated} ثبت‌نام جدید ایجاد شد، ${result.existingEnrollments} ثبت‌نام موجود بود، ${result.errors} خطا`
+        );
+
+        // Reset form
+        setCsvFile(null);
+        setSelectedCourse('');
+        setPreviewData([]);
+        setPreviewAnalysis(null);
+        setShowPreview(false);
+        setImportProgress(null);
+        setProcessedRows(new Set());
+        
+        // Refresh import history
+        fetchImportHistory();
+      } else {
+        toast.info('وارد کردن داده‌ها متوقف شد. می‌توانید از همان نقطه ادامه دهید.');
       }
-
-      // Show success message
-      toast.success(
-        `✅ ${result.totalRows} کاربر پردازش شد، ${result.newEnrollmentsCreated} ثبت‌نام جدید ایجاد شد، ${result.existingEnrollments} ثبت‌نام موجود بود`
-      );
-
-      // Reset form
-      setCsvFile(null);
-      setSelectedCourse('');
-      setPreviewData([]);
-      setPreviewAnalysis(null);
-      setShowPreview(false);
-      
-      // Refresh import history
-      fetchImportHistory();
 
     } catch (error: any) {
       console.error('Import error:', error);
@@ -534,6 +662,70 @@ export function DataImportSection() {
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleResumeImport = async () => {
+    if (!selectedCourse || previewData.length === 0) {
+      toast.error('لطفاً دوره را انتخاب کنید');
+      return;
+    }
+
+    setIsImporting(true);
+    setIsPaused(false);
+
+    try {
+      const startFromIndex = processedRows.size;
+      console.log(`Resuming import from index ${startFromIndex}`);
+
+      // Process import from where it left off
+      const result = await processImport(previewData, selectedCourse, startFromIndex);
+
+      if (!isPaused) {
+        // Log import completion
+        const { data: importLogData, error: logError } = await supabase
+          .from('import_logs')
+          .insert({
+            uploaded_by: 'admin',
+            course_id: selectedCourse,
+            total_rows: result.totalRows,
+            new_users_created: result.newEnrollmentsCreated,
+            existing_users_updated: result.existingEnrollments
+          })
+          .select('id')
+          .single();
+
+        if (logError) {
+          console.error('Error logging import:', logError);
+        }
+
+        toast.success(
+          `✅ وارد کردن داده‌ها تکمیل شد! ${result.newEnrollmentsCreated} ثبت‌نام جدید ایجاد شد، ${result.existingEnrollments} ثبت‌نام موجود بود، ${result.errors} خطا`
+        );
+
+        // Reset form
+        setCsvFile(null);
+        setSelectedCourse('');
+        setPreviewData([]);
+        setPreviewAnalysis(null);
+        setShowPreview(false);
+        setImportProgress(null);
+        setProcessedRows(new Set());
+        
+        // Refresh import history
+        fetchImportHistory();
+      }
+
+    } catch (error: any) {
+      console.error('Resume import error:', error);
+      toast.error(`خطا در ادامه وارد کردن داده‌ها: ${error.message}`);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handlePauseImport = () => {
+    setIsPaused(true);
+    toast.info('در حال متوقف کردن وارد کردن داده‌ها...');
   };
 
   const handleBackupData = async () => {
@@ -803,18 +995,61 @@ export function DataImportSection() {
               )}
             </div>
 
+            {/* Progress Bar */}
+            {importProgress && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span>در حال پردازش: {importProgress.currentUser}</span>
+                  <span>{importProgress.processed} از {importProgress.total}</span>
+                </div>
+                <Progress 
+                  value={(importProgress.processed / importProgress.total) * 100} 
+                  className="h-2"
+                />
+                <div className="grid grid-cols-4 gap-2 text-xs">
+                  <div className="text-green-600">ایجاد شده: {importProgress.created}</div>
+                  <div className="text-yellow-600">موجود: {importProgress.existing}</div>
+                  <div className="text-red-600">خطا: {importProgress.errors}</div>
+                  <div className="text-blue-600">پردازش شده: {importProgress.processed}</div>
+                </div>
+              </div>
+            )}
+
             {/* Import and Management Buttons */}
             {showPreview && (
               <div className="flex gap-2 mt-4">
-                <Button
-                  onClick={handleFinalImport}
-                  disabled={!selectedCourse || isImporting}
-                  className="flex items-center gap-2"
-                >
-                  {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
-                  <Database className="h-4 w-4" />
-                  {isImporting ? 'در حال وارد کردن...' : 'وارد کردن به پایگاه داده'}
-                </Button>
+                {!importProgress?.canResume ? (
+                  <Button
+                    onClick={handleFinalImport}
+                    disabled={!selectedCourse || isImporting}
+                    className="flex items-center gap-2"
+                  >
+                    {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                    <Database className="h-4 w-4" />
+                    {isImporting ? 'در حال وارد کردن...' : 'وارد کردن به پایگاه داده'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleResumeImport}
+                    disabled={!selectedCourse || isImporting}
+                    className="flex items-center gap-2"
+                  >
+                    {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                    <Play className="h-4 w-4" />
+                    {isImporting ? 'در حال ادامه...' : 'ادامه وارد کردن از همان نقطه'}
+                  </Button>
+                )}
+                
+                {isImporting && !isPaused && (
+                  <Button
+                    onClick={handlePauseImport}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Pause className="h-4 w-4" />
+                    توقف
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
