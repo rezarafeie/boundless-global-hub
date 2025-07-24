@@ -10,6 +10,26 @@ export type ChatUser = {
   is_approved: boolean;
   created_at: string;
   updated_at: string;
+  bedoun_marz_request?: boolean;
+  bedoun_marz_approved?: boolean;
+  role?: string;
+  is_support_agent?: boolean;
+  last_seen?: string;
+  bedoun_marz?: boolean;
+  is_messenger_admin?: boolean;
+  username?: string;
+  password_hash?: string;
+  bio?: string;
+  email?: string;
+  user_id?: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  country_code?: string;
+  signup_source?: string;
+  notification_enabled?: boolean;
+  notification_token?: string;
+  avatar_url?: string;
 };
 
 export type UserSession = {
