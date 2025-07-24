@@ -29,6 +29,8 @@ interface CSVRow {
   email: string;
   phone: string;
   entry_date?: string;
+  payment_method?: string;
+  payment_price?: string;
 }
 
 export function DataImportSection() {
@@ -99,7 +101,9 @@ export function DataImportSection() {
           last_name: values[headers.indexOf('last_name')] || '',
           email: values[headers.indexOf('email')] || '',
           phone: values[headers.indexOf('phone')] || '',
-          entry_date: headers.includes('entry_date') ? values[headers.indexOf('entry_date')] || '' : undefined
+          entry_date: headers.includes('entry_date') ? values[headers.indexOf('entry_date')] || '' : undefined,
+          payment_method: headers.includes('payment_method') ? values[headers.indexOf('payment_method')] || '' : undefined,
+          payment_price: headers.includes('payment_price') ? values[headers.indexOf('payment_price')] || '' : undefined
         };
         
         // Basic validation
@@ -151,11 +155,22 @@ export function DataImportSection() {
         let createdAt = new Date().toISOString();
         if (row.entry_date && row.entry_date.trim()) {
           try {
-            // Support multiple date formats: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY
+            // Support multiple date formats including 2024-02-28 08:22
             const dateStr = row.entry_date.trim();
             let parsedDate: Date;
             
-            if (dateStr.includes('/')) {
+            if (dateStr.includes(' ')) {
+              // Handle YYYY-MM-DD HH:MM format
+              const [datePart, timePart] = dateStr.split(' ');
+              if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
+                // YYYY-MM-DD format with time
+                const [year, month, day] = datePart.split('-');
+                const [hour, minute] = timePart.split(':');
+                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+              } else {
+                parsedDate = new Date(dateStr);
+              }
+            } else if (dateStr.includes('/')) {
               // Handle DD/MM/YYYY format
               const [day, month, year] = dateStr.split('/');
               parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -180,6 +195,23 @@ export function DataImportSection() {
             console.warn(`Invalid date format for ${row.email}: ${row.entry_date}, using current date`);
           }
         }
+
+        // Determine payment method
+        let paymentMethod = 'manual_import';
+        if (row.payment_method && row.payment_method.trim().toLowerCase() === 'manual') {
+          paymentMethod = 'کارت به کارت';
+        } else if (row.payment_method && row.payment_method.trim().toLowerCase() === 'zarinpal') {
+          paymentMethod = 'zarinpal';
+        }
+
+        // Determine payment amount
+        let paymentAmount = course.price;
+        if (row.payment_price && row.payment_price.trim()) {
+          const customPrice = parseFloat(row.payment_price.replace(/[,\s]/g, ''));
+          if (!isNaN(customPrice) && customPrice > 0) {
+            paymentAmount = customPrice;
+          }
+        }
         
         const { error: enrollmentError } = await supabase
           .from('enrollments')
@@ -189,8 +221,8 @@ export function DataImportSection() {
             email: row.email,
             phone: row.phone,
             payment_status: 'completed',
-            payment_amount: course.price,
-            payment_method: 'manual_import',
+            payment_amount: paymentAmount,
+            payment_method: paymentMethod,
             country_code: '+98',
             created_at: createdAt
           });
@@ -294,9 +326,11 @@ export function DataImportSection() {
               className="cursor-pointer"
             />
             <p className="text-sm text-muted-foreground">
-              فرمت مورد انتظار: first_name, last_name, email, phone, entry_date (اختیاری)
+              فرمت مورد انتظار: first_name, last_name, email, phone, entry_date (اختیاری), payment_method (اختیاری), payment_price (اختیاری)
               <br />
-              فرمت تاریخ: YYYY-MM-DD یا DD/MM/YYYY یا DD-MM-YYYY
+              فرمت تاریخ: YYYY-MM-DD HH:MM (مثل 2024-02-28 08:22) یا YYYY-MM-DD یا DD/MM/YYYY یا DD-MM-YYYY
+              <br />
+              روش پرداخت: manual (کارت به کارت) یا zarinpal - قیمت پرداخت: مبلغ به تومان
             </p>
           </div>
 
