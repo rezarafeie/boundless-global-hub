@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileText, Users, UserPlus, UserCheck } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -39,6 +40,9 @@ export function DataImportSection() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importHistory, setImportHistory] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<CSVRow[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Fetch courses on component mount
   React.useEffect(() => {
@@ -248,27 +252,41 @@ export function DataImportSection() {
     };
   };
 
-  const handleImport = async () => {
-    if (!csvFile || !selectedCourse) {
-      toast.error('لطفاً فایل CSV و دوره را انتخاب کنید');
+  const handleFileUpload = async (file: File | null) => {
+    setCsvFile(file);
+    setPreviewData([]);
+    setShowPreview(false);
+    
+    if (!file) return;
+    
+    setIsProcessing(true);
+    try {
+      const csvText = await file.text();
+      const parsedData = parseCSV(csvText);
+      setPreviewData(parsedData);
+      setShowPreview(true);
+      toast.success(`${parsedData.length} ردیف داده پردازش شد`);
+    } catch (error: any) {
+      toast.error(`خطا در پردازش فایل: ${error.message}`);
+      setCsvFile(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleFinalImport = async () => {
+    if (!selectedCourse || previewData.length === 0) {
+      toast.error('لطفاً دوره را انتخاب کنید');
       return;
     }
 
     setIsImporting(true);
 
     try {
-      // Read CSV file
-      const csvText = await csvFile.text();
-      const csvRows = parseCSV(csvText);
-
-      if (csvRows.length === 0) {
-        throw new Error('هیچ داده معتبری در فایل یافت نشد');
-      }
-
-      console.log(`Processing ${csvRows.length} rows for course ${selectedCourse}`);
+      console.log(`Importing ${previewData.length} rows for course ${selectedCourse}`);
 
       // Process import
-      const result = await processImport(csvRows, selectedCourse);
+      const result = await processImport(previewData, selectedCourse);
 
       // Log import
       await supabase
@@ -289,6 +307,8 @@ export function DataImportSection() {
       // Reset form
       setCsvFile(null);
       setSelectedCourse('');
+      setPreviewData([]);
+      setShowPreview(false);
       
       // Refresh import history
       fetchImportHistory();
@@ -300,6 +320,7 @@ export function DataImportSection() {
       setIsImporting(false);
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -322,8 +343,9 @@ export function DataImportSection() {
               id="csv-file"
               type="file"
               accept=".csv"
-              onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+              onChange={(e) => handleFileUpload(e.target.files?.[0] || null)}
               className="cursor-pointer"
+              disabled={isProcessing}
             />
             <p className="text-sm text-muted-foreground">
               فرمت مورد انتظار: first_name, last_name, email, phone, entry_date (اختیاری), payment_method (اختیاری), payment_price (اختیاری)
@@ -332,35 +354,97 @@ export function DataImportSection() {
               <br />
               روش پرداخت: manual (کارت به کارت) یا zarinpal - قیمت پرداخت: مبلغ به تومان
             </p>
+            {isProcessing && (
+              <p className="text-sm text-blue-600">در حال پردازش فایل...</p>
+            )}
           </div>
 
-          {/* Course Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="course-select">انتخاب دوره</Label>
-            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-              <SelectTrigger>
-                <SelectValue placeholder="دوره مورد نظر را انتخاب کنید" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.title} - {course.price.toLocaleString()} تومان
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Import Button */}
-          <Button
-            onClick={handleImport}
-            disabled={!csvFile || !selectedCourse || isImporting}
-            className="w-full"
-          >
-            {isImporting ? 'در حال پردازش...' : 'وارد کردن کاربران و ثبت‌نام در دوره'}
-          </Button>
+          {/* Course Selection - Only show when we have preview data */}
+          {showPreview && (
+            <div className="space-y-2">
+              <Label htmlFor="course-select">انتخاب دوره</Label>
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <SelectTrigger>
+                  <SelectValue placeholder="دوره مورد نظر را انتخاب کنید" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title} - {course.price.toLocaleString()} تومان
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Preview Data */}
+      {showPreview && previewData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              پیش‌نمایش داده‌ها ({previewData.length} ردیف)
+            </CardTitle>
+            <CardDescription>
+              داده‌های پردازش شده را بررسی کنید و سپس دکمه وارد کردن را فشار دهید
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-96 overflow-auto border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>نام</TableHead>
+                    <TableHead>نام خانوادگی</TableHead>
+                    <TableHead>ایمیل</TableHead>
+                    <TableHead>تلفن</TableHead>
+                    <TableHead>تاریخ ثبت‌نام</TableHead>
+                    <TableHead>روش پرداخت</TableHead>
+                    <TableHead>مبلغ (تومان)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {previewData.map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{row.first_name}</TableCell>
+                      <TableCell>{row.last_name}</TableCell>
+                      <TableCell>{row.email}</TableCell>
+                      <TableCell>{row.phone}</TableCell>
+                      <TableCell>{row.entry_date || 'الان'}</TableCell>
+                      <TableCell>
+                        {row.payment_method === 'manual' ? 'کارت به کارت' : 
+                         row.payment_method === 'zarinpal' ? 'zarinpal' : 
+                         'ریخط‌واردات دستی'}
+                      </TableCell>
+                      <TableCell>
+                        {row.payment_price ? 
+                          parseFloat(row.payment_price.replace(/[,\s]/g, '')).toLocaleString() : 
+                          courses.find(c => c.id === selectedCourse)?.price?.toLocaleString() || 'مشخص نشده'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {/* Final Import Button */}
+            <div className="mt-4">
+              <Button
+                onClick={handleFinalImport}
+                disabled={!selectedCourse || isImporting}
+                className="w-full"
+                size="lg"
+              >
+                <Database className="h-4 w-4 mr-2" />
+                {isImporting ? 'در حال وارد کردن...' : `وارد کردن ${previewData.length} ردیف به دیتابیس`}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Separator />
 
