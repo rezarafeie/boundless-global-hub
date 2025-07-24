@@ -893,6 +893,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: { phone: phoneNumber, countryCode: countryCode }
       });
+      if (error) throw error;
       if (data.success) {
         setFormattedPhoneForOTP(data.formattedPhone);
         setCurrentStep('forgot-otp');
@@ -906,24 +907,64 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   };
 
   const verifyForgotPasswordOTP = async (code: string) => {
-    const { data } = await supabase.functions.invoke('verify-otp', {
-      body: { phone: formattedPhoneForOTP, otpCode: code }
-    });
-    if (data?.success) {
-      setCurrentStep('reset-password');
-      setOtpVerified(true);
-      toast.success('کد تأیید شد');
+    if (code.length !== 4) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: { phone: formattedPhoneForOTP, otpCode: code }
+      });
+      if (error) throw error;
+      if (data?.success) {
+        setCurrentStep('reset-password');
+        setOtpVerified(true);
+        setOtpCode('');
+        toast.success('کد تأیید شد');
+      } else {
+        toast.error('کد اشتباه است');
+        setOtpCode('');
+      }
+    } catch (error: any) {
+      toast.error('خطا در تأیید کد');
+      setOtpCode('');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (existingUser) {
-      await messengerService.updateUserPassword(existingUser.id, password);
-      const result = await messengerService.loginWithPassword(formattedPhoneForOTP, password);
-      onAuthenticated(result.session_token || '', result.user?.name || '', result.user!);
+    if (!password.trim() || password.length < 6) {
+      toast.error('رمز عبور باید حداقل ۶ کاراکتر باشد');
+      return;
+    }
+    setLoading(true);
+    try {
+      if (existingUser) {
+        await messengerService.updateUserPassword(existingUser.id, password);
+        const result = await messengerService.loginWithPassword(formattedPhoneForOTP, password);
+        if (result.error) throw new Error('خطا در ورود');
+        toast.success('رمز عبور تغییر یافت');
+        onAuthenticated(result.session_token || '', result.user?.name || '', result.user!);
+      }
+    } catch (error: any) {
+      toast.error('خطا در تغییر رمز عبور');
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Auto-verify OTP when 4 digits are entered  
+  useEffect(() => {
+    if (otpCode.length === 4) {
+      if (currentStep === 'otp-link') {
+        verifyOTPForLinking(otpCode);
+      } else if (currentStep === 'otp-login') {
+        verifyOTPForLogin(otpCode);
+      } else if (currentStep === 'forgot-otp') {
+        verifyForgotPasswordOTP(otpCode);
+      }
+    }
+  }, [otpCode, currentStep]);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
