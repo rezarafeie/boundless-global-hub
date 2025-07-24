@@ -10,7 +10,7 @@ export const chatUserAdminService = {
       .select('*', { count: 'exact', head: true });
     
     if (searchTerm) {
-      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
     }
     
     const { count } = await countQuery;
@@ -22,7 +22,7 @@ export const chatUserAdminService = {
       .order('created_at', { ascending: false });
     
     if (searchTerm) {
-      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
     }
     
     if (limit && offset !== undefined) {
@@ -43,7 +43,7 @@ export const chatUserAdminService = {
       .eq('is_approved', false);
     
     if (searchTerm) {
-      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
     }
     
     const { count } = await countQuery;
@@ -56,7 +56,7 @@ export const chatUserAdminService = {
       .order('created_at', { ascending: false });
     
     if (searchTerm) {
-      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
     }
     
     if (limit && offset !== undefined) {
@@ -77,7 +77,7 @@ export const chatUserAdminService = {
       .eq('is_approved', true);
     
     if (searchTerm) {
-      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      countQuery = countQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
     }
     
     const { count } = await countQuery;
@@ -90,7 +90,7 @@ export const chatUserAdminService = {
       .order('created_at', { ascending: false });
     
     if (searchTerm) {
-      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      dataQuery = dataQuery.or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,phone.ilike.%0${searchTerm}%`);
     }
     
     if (limit && offset !== undefined) {

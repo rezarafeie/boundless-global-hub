@@ -33,23 +33,56 @@ const UserManagement: React.FC = () => {
       setLoading(true);
       const offset = (currentPage - 1) * itemsPerPage;
       
-      const [pendingResult, approvedResult, sessionsResult] = await Promise.all([
-        chatUserAdminService.getPendingUsers(debouncedSearchTerm, itemsPerPage, offset),
-        chatUserAdminService.getApprovedUsers(debouncedSearchTerm, itemsPerPage, offset),
-        chatUserAdminService.getActiveSessions(debouncedSearchTerm, itemsPerPage, offset)
-      ]);
+      console.log(`Fetching data for tab: ${activeTab}, search: "${debouncedSearchTerm}", page: ${currentPage}, offset: ${offset}`);
       
-      setPendingUsers(pendingResult.users);
-      setPendingTotal(pendingResult.total);
-      setApprovedUsers(approvedResult.users);
-      setApprovedTotal(approvedResult.total);
-      setActiveSessions(sessionsResult.sessions);
-      setSessionsTotal(sessionsResult.total);
+      if (activeTab === 'pending') {
+        const pendingResult = await chatUserAdminService.getPendingUsers(debouncedSearchTerm, itemsPerPage, offset);
+        console.log(`Pending users result:`, pendingResult);
+        setPendingUsers(pendingResult.users);
+        setPendingTotal(pendingResult.total);
+        
+        // Also get total counts for other tabs (without search/pagination for display purposes)
+        const [approvedTotal, sessionsTotal] = await Promise.all([
+          chatUserAdminService.getApprovedUsers('', 1, 0).then(r => r.total),
+          chatUserAdminService.getActiveSessions('', 1, 0).then(r => r.total)
+        ]);
+        setApprovedTotal(approvedTotal);
+        setSessionsTotal(sessionsTotal);
+        
+      } else if (activeTab === 'approved') {
+        const approvedResult = await chatUserAdminService.getApprovedUsers(debouncedSearchTerm, itemsPerPage, offset);
+        console.log(`Approved users result:`, approvedResult);
+        setApprovedUsers(approvedResult.users);
+        setApprovedTotal(approvedResult.total);
+        
+        // Get total counts for other tabs
+        const [pendingTotal, sessionsTotal] = await Promise.all([
+          chatUserAdminService.getPendingUsers('', 1, 0).then(r => r.total),
+          chatUserAdminService.getActiveSessions('', 1, 0).then(r => r.total)
+        ]);
+        setPendingTotal(pendingTotal);
+        setSessionsTotal(sessionsTotal);
+        
+      } else if (activeTab === 'sessions') {
+        const sessionsResult = await chatUserAdminService.getActiveSessions(debouncedSearchTerm, itemsPerPage, offset);
+        console.log(`Sessions result:`, sessionsResult);
+        setActiveSessions(sessionsResult.sessions);
+        setSessionsTotal(sessionsResult.total);
+        
+        // Get total counts for other tabs
+        const [pendingTotal, approvedTotal] = await Promise.all([
+          chatUserAdminService.getPendingUsers('', 1, 0).then(r => r.total),
+          chatUserAdminService.getApprovedUsers('', 1, 0).then(r => r.total)
+        ]);
+        setPendingTotal(pendingTotal);
+        setApprovedTotal(approvedTotal);
+      }
+      
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: 'خطا',
-        description: 'خطا در بارگذاری اطلاعات کاربران',
+        description: 'خطا در بارگذاری داده‌ها',
         variant: 'destructive',
       });
     } finally {
@@ -160,7 +193,7 @@ const UserManagement: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
+      <Tabs value={activeTab} defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
