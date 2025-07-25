@@ -147,7 +147,7 @@ const EnrollAdmin: React.FC = () => {
 
   const fetchEnrollments = async () => {
     try {
-      // Fetch enrollments and courses separately, then join in JavaScript
+      // Fetch all enrollments and courses separately, then join in JavaScript
       const [enrollmentsResult, coursesResult] = await Promise.all([
         supabase
           .from('enrollments')
@@ -166,13 +166,15 @@ const EnrollAdmin: React.FC = () => {
         (coursesResult.data || []).map(course => [course.id, course])
       );
 
-      // Join the data in JavaScript
+      // Join the data in JavaScript - get ALL enrollments for search functionality
       const enrollmentsWithCourses = (enrollmentsResult.data || []).map(enrollment => ({
         ...enrollment,
         courses: coursesMap.get(enrollment.course_id) || { title: 'دوره نامشخص', slug: '' }
       }));
 
       setEnrollments(enrollmentsWithCourses);
+      // Initialize filtered enrollments with all data for search functionality
+      setFilteredEnrollments(enrollmentsWithCourses);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
       toast({
