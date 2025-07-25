@@ -155,9 +155,9 @@ serve(async (req) => {
                 // Close popup and let parent handle the redirect
                 setTimeout(() => window.close(), 1000);
               } else {
-                // If no opener (direct access), redirect the current window
+                // If no opener (direct access), redirect to the admin email page
                 setTimeout(() => {
-                  window.location.href = '${new URL('/enroll/admin/email?gmail_connected=true&email=' + encodeURIComponent(profileData.email), 'https://ihhetvwuhqohbfgkqoxw.supabase.co').href.replace('ihhetvwuhqohbfgkqoxw.supabase.co', window.location.hostname)}';
+                  window.location.href = '/enroll/admin/email?gmail_connected=true&email=' + encodeURIComponent('${profileData.email}');
                 }, 2000);
               }
             </script>
