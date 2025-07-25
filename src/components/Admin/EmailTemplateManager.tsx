@@ -111,7 +111,7 @@ const EmailTemplateManager: React.FC = () => {
 
       const templateData = {
         ...formData,
-        course_id: formData.course_id || null,
+        course_id: formData.course_id === 'null' || formData.course_id === '' ? null : formData.course_id,
       };
 
       let error;
@@ -151,7 +151,7 @@ const EmailTemplateManager: React.FC = () => {
     setSelectedTemplate(template);
     setFormData({
       name: template.name,
-      course_id: template.course_id || '',
+      course_id: template.course_id || 'null',
       sender_name: template.sender_name,
       sender_email: template.sender_email,
       subject: template.subject,
@@ -249,13 +249,16 @@ const EmailTemplateManager: React.FC = () => {
                     <Label htmlFor="course">Course (Optional)</Label>
                     <Select
                       value={formData.course_id}
-                      onValueChange={(value) => setFormData({ ...formData, course_id: value })}
+                      onValueChange={(value) => setFormData({ 
+                        ...formData, 
+                        course_id: value === 'null' ? '' : value 
+                      })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select course (default for all)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Default for all courses</SelectItem>
+                        <SelectItem value="null">Default for all courses</SelectItem>
                         {courses.map((course) => (
                           <SelectItem key={course.id} value={course.id}>
                             {course.title}
