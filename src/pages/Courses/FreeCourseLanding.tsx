@@ -201,7 +201,7 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
             
             <motion.div className="mb-4" variants={itemVariants}>
               <Badge className="bg-green-100 text-green-800 border-green-200 text-sm px-4 py-2">
-                🎉 کاملاً رایگان - ویژه تابستان ۱۴۰۳
+                🎉 کاملاً رایگان - ویژه تابستان ۱۴۰۴
               </Badge>
             </motion.div>
             
