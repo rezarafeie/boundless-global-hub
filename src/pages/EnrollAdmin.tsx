@@ -875,6 +875,50 @@ const EnrollAdmin: React.FC = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
+                      {/* Manual Payment Pending Section */}
+                      {enrollments.filter(e => e.manual_payment_status === 'pending').length > 0 && (
+                        <Card className="mb-4 border-amber-200 bg-amber-50/50">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-amber-800">
+                              <Clock className="h-5 w-5" />
+                              پرداخت‌های دستی در انتظار بررسی ({enrollments.filter(e => e.manual_payment_status === 'pending').length})
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {enrollments
+                              .filter(e => e.manual_payment_status === 'pending')
+                              .slice(0, 5)
+                              .map((enrollment) => (
+                                <Card key={enrollment.id} className="p-3 bg-white border-amber-200 hover:shadow-sm transition-shadow">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                    <div className="flex-1">
+                                      <h4 className="font-medium text-sm">{enrollment.full_name}</h4>
+                                      <p className="text-xs text-muted-foreground">{enrollment.courses?.title || 'نامشخص'} • {formatPrice(enrollment.payment_amount)}</p>
+                                      <p className="text-xs text-muted-foreground">{formatDate(enrollment.created_at)}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleViewDetails(enrollment)}
+                                        className="text-xs"
+                                      >
+                                        <Eye className="h-3 w-3 ml-1" />
+                                        بررسی
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
+                            {enrollments.filter(e => e.manual_payment_status === 'pending').length > 5 && (
+                              <p className="text-xs text-center text-muted-foreground pt-2">
+                                و {enrollments.filter(e => e.manual_payment_status === 'pending').length - 5} مورد دیگر...
+                              </p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      )}
+
                       {/* Search and Filters */}
                       <div className="mb-6 space-y-4">
                         <div className="flex flex-col sm:flex-row gap-4">
