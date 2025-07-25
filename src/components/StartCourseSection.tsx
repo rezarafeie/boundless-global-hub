@@ -142,7 +142,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       icon: GraduationCap,
       enabled: hasAcademyAccess,
       status: hasAcademyAccess ? (isRequiredActivationsCompleted() ? 'active' : 'blocked') : 'coming-soon',
-      color: 'green'
+      color: 'green',
+      requiresActivation: course?.smart_activation_enabled || course?.support_activation_required || course?.telegram_activation_required
     },
     {
       id: 'rafiei-player',
@@ -152,7 +153,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       enabled: hasRafieiPlayer,
       status: enrollment?.spotplayer_license_key ? 
         (isRequiredActivationsCompleted() ? 'active' : 'blocked') : 'pending',
-      color: 'purple'
+      color: 'purple',
+      requiresActivation: course?.smart_activation_enabled || course?.support_activation_required || course?.telegram_activation_required
     },
     {
       id: 'woocommerce',
@@ -161,7 +163,8 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
       icon: ShoppingCart,
       enabled: hasWooCommerce,
       status: hasWooCommerce ? (isRequiredActivationsCompleted() ? 'active' : 'blocked') : 'coming-soon',
-      color: 'blue'
+      color: 'blue',
+      requiresActivation: course?.smart_activation_enabled || course?.support_activation_required || course?.telegram_activation_required
     }
   ];
 
@@ -325,16 +328,39 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                   </div>
                 ) : (
                   /* Modern Clean Cards - Fully Responsive */
-                  <Card className="group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90 w-full min-w-0">
+                  <Card className={`group relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-500 bg-card/80 backdrop-blur-sm hover:bg-card/90 w-full min-w-0 ${
+                    accessType.requiresActivation && accessType.status === 'blocked' 
+                      ? 'opacity-50 pointer-events-none grayscale' 
+                      : ''
+                  }`}>
                     
                     {/* Gradient Border Effect */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${
                       accessType.color === 'green' ? 'from-green-500/20 to-emerald-500/20' :
                       accessType.color === 'blue' ? 'from-blue-500/20 to-cyan-500/20' :
                       'from-purple-500/20 to-pink-500/20'
-                    } opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                    } ${
+                      accessType.requiresActivation && accessType.status === 'blocked' 
+                        ? 'opacity-0' 
+                        : 'opacity-0 group-hover:opacity-100'
+                    } transition-opacity duration-500`} />
                     
                     <CardContent className="relative p-4 sm:p-6 md:p-8 min-w-0">
+                      {/* Disabled Overlay for blocked sections */}
+                      {accessType.requiresActivation && accessType.status === 'blocked' && (
+                        <div className="absolute inset-0 bg-gray-100/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+                          <div className="text-center p-4">
+                            <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              نیاز به فعال‌سازی هوشمند
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              ابتدا روی لینک فعال‌سازی هوشمند کلیک کنید
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Header Section */}
                       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
