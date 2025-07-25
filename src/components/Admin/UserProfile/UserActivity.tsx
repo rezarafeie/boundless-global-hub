@@ -74,34 +74,44 @@ export function UserActivity({ userId }: UserActivityProps) {
 
       activityLogs?.forEach((log: any) => {
         let description = '';
-        switch (log.event_type) {
-          case 'user_logged_in':
-            description = 'کاربر وارد وب‌سایت شد';
-            break;
-          case 'support_activated':
-            description = 'پشتیبانی فعال شد';
-            break;
-          case 'telegram_joined':
-            description = `عضو کانال تلگرام شد`;
-            break;
-          case 'course_page_visited':
-            const courseTitle = log.metadata?.course_title || 'دوره';
-            description = `بازدید صفحه دوره: ${courseTitle}`;
-            break;
-          case 'lesson_opened':
-            description = `درس باز شد`;
-            break;
-          case 'lesson_completed':
-            description = `درس تکمیل شد`;
-            break;
-          case 'lesson_time_spent':
-            description = `زمان صرف شده در درس`;
-            break;
-          case 'material_downloaded':
-            description = `فایل دانلود شد`;
-            break;
-          default:
-            description = log.event_type.replace(/_/g, ' ');
+        
+        // Check if event_description exists in metadata (for lesson activities with Persian text)
+        if (log.metadata?.event_description) {
+          description = log.metadata.event_description;
+        } else {
+          // Fallback to default descriptions
+          switch (log.event_type) {
+            case 'user_logged_in':
+              description = 'کاربر وارد وب‌سایت شد';
+              break;
+            case 'support_activated':
+              description = 'پشتیبانی فعال شد';
+              break;
+            case 'telegram_joined':
+              description = `عضو کانال تلگرام شد`;
+              break;
+            case 'course_page_visited':
+              const courseTitle = log.metadata?.course_title || 'دوره';
+              description = `بازدید صفحه دوره: ${courseTitle}`;
+              break;
+            case 'lesson_opened':
+              const lessonTitleOpen = log.metadata?.lesson_title || 'نامشخص';
+              description = `درس ${lessonTitleOpen} باز شد`;
+              break;
+            case 'lesson_completed':
+              const lessonTitleComplete = log.metadata?.lesson_title || 'نامشخص';
+              description = `درس ${lessonTitleComplete} تکمیل شد`;
+              break;
+            case 'lesson_time_spent':
+              const lessonTitleTime = log.metadata?.lesson_title || 'نامشخص';
+              description = `زمان صرف شده در درس ${lessonTitleTime}`;
+              break;
+            case 'material_downloaded':
+              description = `فایل دانلود شد`;
+              break;
+            default:
+              description = log.event_type.replace(/_/g, ' ');
+          }
         }
 
         allActivities.push({
