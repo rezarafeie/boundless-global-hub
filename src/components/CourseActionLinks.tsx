@@ -173,11 +173,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
           <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
             <MessageSquare className="h-6 w-6 text-orange-600 dark:text-orange-400" />
           </div>
-          فعال سازی های مهم
         </CardTitle>
-        <p className="text-muted-foreground">
-          خدمات اختصاصی که برای این دوره در نظر گرفته شده است
-        </p>
       </CardHeader>
       <CardContent className="space-y-3 p-3 sm:p-4">
         <div className="space-y-3">
