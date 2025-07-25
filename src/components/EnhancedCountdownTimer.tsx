@@ -45,7 +45,7 @@ const EnhancedCountdownTimer: React.FC<EnhancedCountdownTimerProps> = ({
     { value: timeLeft.hours, label: "ساعت" },
     { value: timeLeft.minutes, label: "دقیقه" },
     { value: timeLeft.seconds, label: "ثانیه" }
-  ];
+  ].reverse();
 
   return (
     <div className={`text-center ${className}`} dir="ltr">
