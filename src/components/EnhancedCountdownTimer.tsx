@@ -48,7 +48,7 @@ const EnhancedCountdownTimer: React.FC<EnhancedCountdownTimerProps> = ({
   ];
 
   return (
-    <div className={`text-center ${className}`}>
+    <div className={`text-center ${className}`} dir="ltr">
       <motion.h3 
         className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"
         initial={{ opacity: 0, y: 20 }}
@@ -69,7 +69,7 @@ const EnhancedCountdownTimer: React.FC<EnhancedCountdownTimerProps> = ({
             whileHover={{ scale: 1.05 }}
           >
             <motion.div 
-              className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"
+              className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent text-left"
               key={unit.value}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
@@ -77,7 +77,7 @@ const EnhancedCountdownTimer: React.FC<EnhancedCountdownTimerProps> = ({
             >
               {unit.value.toString().padStart(2, '0')}
             </motion.div>
-            <div className="text-sm text-muted-foreground font-medium mt-2">
+            <div className="text-sm text-muted-foreground font-medium mt-2 text-left">
               {unit.label}
             </div>
           </motion.div>
