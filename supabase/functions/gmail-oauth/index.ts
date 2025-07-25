@@ -138,22 +138,28 @@ serve(async (req) => {
         });
       }
 
-      // Success page that closes the window
+      // Success page that redirects back to admin email page
       return new Response(`
         <html>
           <body>
             <h1>Gmail Connected Successfully!</h1>
             <p>Email: ${profileData.email}</p>
-            <p>You can close this window now.</p>
+            <p>Redirecting back to admin panel...</p>
             <script>
-              // Post message to parent window
+              // Post message to parent window first
               if (window.opener) {
                 window.opener.postMessage({
                   type: 'gmail_oauth_success',
                   email: '${profileData.email}'
                 }, '*');
+                // Close popup and let parent handle the redirect
+                setTimeout(() => window.close(), 1000);
+              } else {
+                // If no opener (direct access), redirect the current window
+                setTimeout(() => {
+                  window.location.href = '${new URL('/enroll/admin/email?gmail_connected=true&email=' + encodeURIComponent(profileData.email), 'https://ihhetvwuhqohbfgkqoxw.supabase.co').href.replace('ihhetvwuhqohbfgkqoxw.supabase.co', window.location.hostname)}';
+                }, 2000);
               }
-              setTimeout(() => window.close(), 2000);
             </script>
           </body>
         </html>
