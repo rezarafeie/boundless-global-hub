@@ -100,6 +100,8 @@ const EmailTemplateManager: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      console.log('Starting save process...', { selectedTemplate, formData });
+      
       if (!formData.name || !formData.subject || !formData.html_content) {
         toast({
           title: "خطا",
@@ -114,21 +116,32 @@ const EmailTemplateManager: React.FC = () => {
         course_id: formData.course_id === 'null' || formData.course_id === '' ? null : formData.course_id,
       };
 
-      let error;
+      console.log('Template data to save:', templateData);
+
+      let result;
       if (selectedTemplate) {
         // Update existing template
-        ({ error } = await supabase
+        console.log('Updating template with ID:', selectedTemplate.id);
+        result = await supabase
           .from('email_templates')
           .update(templateData)
-          .eq('id', selectedTemplate.id));
+          .eq('id', selectedTemplate.id)
+          .select();
       } else {
         // Create new template
-        ({ error } = await supabase
+        console.log('Creating new template');
+        result = await supabase
           .from('email_templates')
-          .insert(templateData));
+          .insert(templateData)
+          .select();
       }
 
-      if (error) throw error;
+      console.log('Save result:', result);
+
+      if (result.error) {
+        console.error('Save error:', result.error);
+        throw result.error;
+      }
 
       toast({
         title: "موفق",
@@ -139,6 +152,7 @@ const EmailTemplateManager: React.FC = () => {
       resetForm();
       fetchTemplates();
     } catch (error: any) {
+      console.error('Save failed:', error);
       toast({
         title: "خطا",
         description: `Failed to save template: ${error.message}`,
