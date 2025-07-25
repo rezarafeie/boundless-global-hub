@@ -36,6 +36,7 @@ const EnrollSuccess: React.FC = () => {
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [authenticating, setAuthenticating] = useState(false);
+  const [smartActivated, setSmartActivated] = useState(false);
 
   // Auto-authenticate user after successful enrollment
   useEffect(() => {
@@ -43,6 +44,23 @@ const EnrollSuccess: React.FC = () => {
       handleAutoAuthentication();
     }
   }, [result, user, authenticating]);
+
+  // Check smart activation status
+  useEffect(() => {
+    if (result?.enrollment?.id) {
+      const activationKey = `activations_${result.enrollment.id}`;
+      const savedActivations = localStorage.getItem(activationKey);
+      
+      if (savedActivations) {
+        try {
+          const { smart } = JSON.parse(savedActivations);
+          setSmartActivated(smart || false);
+        } catch (error) {
+          console.error('Error parsing saved activations:', error);
+        }
+      }
+    }
+  }, [result?.enrollment?.id]);
 
   // Function to replace user placeholders in smart activation telegram link
   const replacePlaceholders = (template: string, enrollment: any): string => {
@@ -382,56 +400,86 @@ const EnrollSuccess: React.FC = () => {
                       
                        {/* Smart Activation */}
                       {result.course.smart_activation_enabled && result.course.smart_activation_telegram_link && (
-                        <a 
-                          href={replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment)} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
+                        <div 
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 border group relative ${
+                            smartActivated 
+                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800 cursor-default'
+                              : 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 border-purple-200 dark:border-purple-800 hover:shadow-md cursor-pointer'
+                          }`}
                           onClick={() => {
-                            // Mark smart activation as clicked in localStorage
-                            if (result.enrollment?.id) {
-                              const activationKey = `activations_${result.enrollment.id}`;
-                              const savedActivations = localStorage.getItem(activationKey);
-                              let activations = { support: false, telegram: false, smart: false };
-                              
-                              if (savedActivations) {
-                                try {
-                                  activations = JSON.parse(savedActivations);
-                                } catch (error) {
-                                  console.error('Error parsing saved activations:', error);
+                            if (!smartActivated) {
+                              // Mark smart activation as clicked in localStorage
+                              if (result.enrollment?.id) {
+                                const activationKey = `activations_${result.enrollment.id}`;
+                                const savedActivations = localStorage.getItem(activationKey);
+                                let activations = { support: false, telegram: false, smart: false };
+                                
+                                if (savedActivations) {
+                                  try {
+                                    activations = JSON.parse(savedActivations);
+                                  } catch (error) {
+                                    console.error('Error parsing saved activations:', error);
+                                  }
                                 }
+                                
+                                activations.smart = true;
+                                localStorage.setItem(activationKey, JSON.stringify(activations));
+                                setSmartActivated(true);
+                                
+                                // Open the link and reload page
+                                window.open(replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment), '_blank');
+                                setTimeout(() => {
+                                  window.location.reload();
+                                }, 100);
                               }
-                              
-                              activations.smart = true;
-                              localStorage.setItem(activationKey, JSON.stringify(activations));
-                              
-                              // Force a re-render by updating the key
-                              setTimeout(() => {
-                                window.location.reload();
-                              }, 100);
                             }
                           }}
-                          className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-all duration-200 border border-purple-200 dark:border-purple-800 hover:shadow-md group relative"
                         >
                           {/* Smart Badge */}
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                            <Zap className="h-3 w-3 text-white" />
+                          <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                            smartActivated 
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                              : 'bg-gradient-to-r from-purple-500 to-blue-500'
+                          }`}>
+                            {smartActivated ? (
+                              <CheckCircle className="h-3 w-3 text-white" />
+                            ) : (
+                              <Zap className="h-3 w-3 text-white" />
+                            )}
                           </div>
-                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                            <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform flex-shrink-0 ${
+                            smartActivated 
+                              ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10'
+                              : 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 group-hover:scale-110'
+                          }`}>
+                            {smartActivated ? (
+                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            ) : (
+                              <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm flex items-center gap-2">
-                              فعال‌سازی هوشمند (اجباری)
-                              <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                SMART
+                              فعال‌سازی هوشمند {smartActivated ? '(فعال شده)' : '(اجباری)'}
+                              <Badge variant="secondary" className={`text-xs px-2 py-0.5 ${
+                                smartActivated 
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                              }`}>
+                                {smartActivated ? 'فعال' : 'SMART'}
                               </Badge>
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              کلیک کنید تا به صورت خودکار فعال شود
+                              {smartActivated 
+                                ? 'فعال‌سازی هوشمند با موفقیت انجام شد'
+                                : 'کلیک کنید تا به صورت خودکار فعال شود'
+                              }
                             </p>
                           </div>
-                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                        </a>
+                          {!smartActivated && (
+                            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                          )}
+                        </div>
                       )}
                       
                       {/* Telegram Channel Activation */}
