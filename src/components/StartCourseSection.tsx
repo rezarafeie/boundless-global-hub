@@ -72,6 +72,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   const [loadingSSO, setLoadingSSO] = useState(false);
   const [supportActivated, setSupportActivated] = useState(false);
   const [telegramActivated, setTelegramActivated] = useState(false);
+  const [smartActivated, setSmartActivated] = useState(false);
 
   // Load activation status from localStorage on component mount
   useEffect(() => {
@@ -82,9 +83,10 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     
     if (savedActivations) {
       try {
-        const { support, telegram } = JSON.parse(savedActivations);
+        const { support, telegram, smart } = JSON.parse(savedActivations);
         setSupportActivated(support || false);
         setTelegramActivated(telegram || false);
+        setSmartActivated(smart || false);
       } catch (error) {
         console.error('Error parsing saved activations:', error);
       }
@@ -98,21 +100,24 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     const activationKey = `activations_${enrollment.id}`;
     const activations = {
       support: supportActivated,
-      telegram: telegramActivated
+      telegram: telegramActivated,
+      smart: smartActivated
     };
     
     localStorage.setItem(activationKey, JSON.stringify(activations));
-  }, [supportActivated, telegramActivated, enrollment?.id]);
+  }, [supportActivated, telegramActivated, smartActivated, enrollment?.id]);
 
   // Check if all required activations are completed
   const isRequiredActivationsCompleted = () => {
     if (!course) return false;
     
-    // If smart activation is enabled, no manual activations are required
-    if (course.smart_activation_enabled) return true;
+    // If smart activation is enabled, check if user has clicked it
+    if (course.smart_activation_enabled && !smartActivated) {
+      return false;
+    }
     
-    // Check if support activation is required and completed
-    if (course.support_activation_required && !supportActivated) {
+    // Check if support activation is required and completed (only if smart activation is not enabled)
+    if (course.support_activation_required && !course.smart_activation_enabled && !supportActivated) {
       return false;
     }
     
@@ -277,6 +282,14 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
     toast({
       title: "فعال‌سازی تلگرام",
       description: "کانال تلگرام با موفقیت فعال شد! حالا می‌توانید به دوره‌ها دسترسی پیدا کنید.",
+    });
+  };
+
+  const handleSmartActivation = () => {
+    setSmartActivated(true);
+    toast({
+      title: "فعال‌سازی هوشمند",
+      description: "فعال‌سازی هوشمند با موفقیت انجام شد! حالا می‌توانید به دوره‌ها دسترسی پیدا کنید.",
     });
   };
 

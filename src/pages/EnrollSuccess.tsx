@@ -380,12 +380,31 @@ const EnrollSuccess: React.FC = () => {
                         </div>
                       )}
                       
-                      {/* Smart Activation */}
+                       {/* Smart Activation */}
                       {result.course.smart_activation_enabled && result.course.smart_activation_telegram_link && (
                         <a 
                           href={replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment)} 
                           target="_blank" 
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            // Mark smart activation as clicked in localStorage
+                            if (result.enrollment?.id) {
+                              const activationKey = `activations_${result.enrollment.id}`;
+                              const savedActivations = localStorage.getItem(activationKey);
+                              let activations = { support: false, telegram: false, smart: false };
+                              
+                              if (savedActivations) {
+                                try {
+                                  activations = JSON.parse(savedActivations);
+                                } catch (error) {
+                                  console.error('Error parsing saved activations:', error);
+                                }
+                              }
+                              
+                              activations.smart = true;
+                              localStorage.setItem(activationKey, JSON.stringify(activations));
+                            }
+                          }}
                           className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-all duration-200 border border-purple-200 dark:border-purple-800 hover:shadow-md group relative"
                         >
                           {/* Smart Badge */}
