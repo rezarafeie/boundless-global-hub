@@ -114,42 +114,43 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
   const courseFeatures = [
     {
       icon: Video,
-      title: "محتوای ویدئویی اختصاصی",
-      description: "بیش از ۱۰ ساعت آموزش ویدئویی با کیفیت ۴K"
+      title: "بیش از ۲ ساعت آموزش ویدئویی",
+      description: "محتوای ویدئویی با کیفیت و ساختار حرفه‌ای"
     },
     {
       icon: FileText,
-      title: "کتابچه عملی ۱۰۰ صفحه‌ای",
-      description: "راهنمای جامع گام به گام برای پیاده‌سازی"
+      title: "کتابچه عملی راهنمای جامع",
+      description: "راهنمای گام به گام پیاده‌سازی کسب‌وکار بین‌المللی"
     },
     {
       icon: Users,
-      title: "انجمن اختصاصی",
-      description: "عضویت در کامیونیتی ۱۰۰ هزار نفری موفقین"
-    },
-    {
-      icon: Award,
-      title: "گواهی معتبر بین‌المللی",
-      description: "مدرک قابل ارائه در LinkedIn و رزومه"
+      title: "پشتیبانی قدم به قدم",
+      description: "بررسی تمرینات و تکالیف و پاسخ‌گویی به سوالات"
     },
     {
       icon: HeadphonesIcon,
-      title: "پشتیبانی مادام‌العمر",
-      description: "دسترسی دائمی به تیم پشتیبانی متخصص"
+      title: "مشاوره رایگان",
+      description: "مشاوره رایگان با مشاوران آکادمی رفیعی"
+    },
+    {
+      icon: Award,
+      title: "سنجش هوشمند بدون مرز",
+      description: "بررسی و انتخاب دقیق‌تر مسیر کسب‌وکار بین‌المللی"
     },
     {
       icon: Download,
-      title: "دسترسی آفلاین",
-      description: "امکان دانلود و مطالعه بدون اینترنت"
+      title: "دسترسی کامل مادام‌العمر",
+      description: "امکان دسترسی دائمی به تمام محتواها و بروزرسانی‌ها"
     }
   ];
 
   const modules = [
-    "فلسفه موفقیت در کسب‌وکار بین‌المللی",
-    "شناسایی و ارزیابی فرصت‌های طلایی",
-    "طراحی مدل کسب‌وکار نوآورانه",
-    "استراتژی‌های بازاریابی دیجیتال پیشرفته",
-    "مدیریت ریسک و سرمایه‌گذاری هوشمند"
+    "ذهنیت بدون مرز برای شروع مسیر بین‌المللی",
+    "ایکامرس با مدل دراپ شیپینگ",
+    "فروش خدمات با مدل دراپ سرویسینگ",
+    "فروش فایل با مدل دیجیتال گودز",
+    "فروش خدمات هوش مصنوعی",
+    "زیرساخت‌های کسب‌وکار بین‌المللی"
   ];
 
   return (
@@ -256,14 +257,14 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
         <div className="container max-w-6xl mx-auto px-6">
           <motion.div className="text-center mb-12" variants={itemVariants}>
             <h2 className="text-3xl md:text-4xl font-black text-foreground mb-6">
-              📚 محتوای دوره (۵ فصل تخصصی)
+              📚 محتوای دوره (۶ فصل تخصصی)
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              هر فصل طراحی شده تا مرحله‌ای از تحول شخصی و حرفه‌ای شما را تکمیل کند
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              یادگیری کامل مدل‌های کسب‌وکار بدون مرز و زیرساخت‌های لازم برای بین‌المللی شدن
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {modules.map((module, index) => (
               <motion.div key={index} variants={itemVariants}>
                 <Card className="h-full border-2 border-primary/20 hover:border-primary/40 transition-colors">
@@ -279,6 +280,47 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
               </motion.div>
             ))}
           </div>
+
+          {/* Additional detailed breakdown for the infrastructure module */}
+          <motion.div className="mt-16" variants={itemVariants}>
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
+                  🏗️ زیرساخت‌های کسب‌وکار بین‌المللی
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Globe className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold text-foreground mb-2">نقدکردن درآمد</h4>
+                    <p className="text-sm text-muted-foreground">روش‌های مختلف تبدیل درآمد ارزی به ریال</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Award className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold text-foreground mb-2">افتتاح حساب</h4>
+                    <p className="text-sm text-muted-foreground">راهنمای افتتاح حساب‌های بین‌المللی</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FileText className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold text-foreground mb-2">ثبت شرکت</h4>
+                    <p className="text-sm text-muted-foreground">مراحل تأسیس شرکت در کشورهای مختلف</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <MessageCircle className="w-6 h-6 text-primary" />
+                    </div>
+                    <h4 className="font-semibold text-foreground mb-2">ارتباطات</h4>
+                    <p className="text-sm text-muted-foreground">شبکه‌سازی و برقراری ارتباط مؤثر</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </motion.section>
 
@@ -346,10 +388,10 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
         <div className="container max-w-6xl mx-auto px-6">
           <motion.div className="text-center mb-12" variants={itemVariants}>
             <h2 className="text-3xl md:text-4xl font-black text-foreground mb-6">
-              💎 امکانات اختصاصی دوره
+              💎 امکانات ویژه دوره
             </h2>
             <p className="text-lg text-muted-foreground">
-              همه چیزی که برای موفقیت نیاز دارید در یک مکان
+              تمام ابزارها و امکانات لازم برای شروع موفق کسب‌وکار بین‌المللی
             </p>
           </motion.div>
 
