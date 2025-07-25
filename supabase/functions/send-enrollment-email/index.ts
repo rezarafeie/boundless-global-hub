@@ -124,14 +124,36 @@ async function sendUserEmail(enrollment: any, accessToken: string) {
   const course = enrollment.courses;
   
   // Get email template for this course or default
-  const { data: template, error: templateError } = await supabase
+  let template = null;
+  let templateError = null;
+  
+  // First try to get course-specific template
+  const { data: courseTemplate, error: courseError } = await supabase
     .from('email_templates')
     .select('*')
     .eq('is_active', true)
-    .or(`course_id.eq.${enrollment.course_id},and(course_id.is.null,is_default.eq.true)`)
-    .order('course_id', { ascending: false }) // Prioritize course-specific template
+    .eq('course_id', enrollment.course_id)
     .limit(1)
-    .single();
+    .maybeSingle();
+  
+  if (courseTemplate) {
+    template = courseTemplate;
+  } else {
+    // If no course-specific template, get default template
+    const { data: defaultTemplate, error: defaultError } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('is_active', true)
+      .is('course_id', null)
+      .eq('is_default', true)
+      .limit(1)
+      .maybeSingle();
+    
+    template = defaultTemplate;
+    templateError = defaultError;
+  }
+
+  console.log('Template query result:', { template, templateError });
 
   if (templateError || !template) {
     console.log('No email template found, using default');
