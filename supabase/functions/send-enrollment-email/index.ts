@@ -123,6 +123,93 @@ serve(async (req) => {
 async function sendUserEmail(enrollment: any, accessToken: string) {
   const course = enrollment.courses;
   
+  // Get email template for this course or default
+  const { data: template, error: templateError } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('is_active', true)
+    .or(`course_id.eq.${enrollment.course_id},and(course_id.is.null,is_default.eq.true)`)
+    .order('course_id', { ascending: false }) // Prioritize course-specific template
+    .limit(1)
+    .single();
+
+  if (templateError || !template) {
+    console.log('No email template found, using default');
+    return sendDefaultUserEmail(enrollment, accessToken);
+  }
+
+  // Replace template variables
+  const templateData = {
+    user_name: enrollment.full_name,
+    user_email: enrollment.email,
+    user_phone: enrollment.phone,
+    course_title: course?.title || 'نامشخص',
+    course_description: course?.description || '',
+    course_redirect_url: course?.redirect_url || '',
+    enrollment_date: new Date(enrollment.created_at).toLocaleDateString('fa-IR'),
+    payment_amount: enrollment.payment_amount.toLocaleString(),
+    payment_status: getPaymentStatusText(enrollment.payment_status),
+    spotplayer_license_key: enrollment.spotplayer_license_key || '',
+    spotplayer_license_url: enrollment.spotplayer_license_url || '',
+    spotplayer_license_id: enrollment.spotplayer_license_id || ''
+  };
+
+  let htmlContent = template.html_content;
+  let textContent = template.text_content || '';
+  let subject = template.subject;
+
+  // Replace variables in content
+  Object.entries(templateData).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    htmlContent = htmlContent.replace(regex, value || '');
+    textContent = textContent.replace(regex, value || '');
+    subject = subject.replace(regex, value || '');
+  });
+
+  // Handle conditional blocks like {{#if variable}}...{{/if}}
+  htmlContent = processConditionalBlocks(htmlContent, templateData);
+  textContent = processConditionalBlocks(textContent, templateData);
+
+  const emailContent = `Subject: =?UTF-8?B?${btoa(subject)}?=
+To: ${enrollment.email}
+From: ${template.sender_name} <${template.sender_email}>
+Content-Type: text/html; charset=UTF-8
+
+${htmlContent}`;
+
+  const base64Email = btoa(unescape(encodeURIComponent(emailContent)));
+  
+  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      raw: base64Email
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Failed to send user email: ${error.error?.message || 'Unknown error'}`);
+  }
+
+  // Log email
+  await supabase.from('email_logs').insert({
+    user_id: enrollment.chat_user_id,
+    course_id: enrollment.course_id,
+    recipient: enrollment.email,
+    subject: subject,
+    status: 'success'
+  });
+
+  return await response.json();
+}
+
+async function sendDefaultUserEmail(enrollment: any, accessToken: string) {
+  const course = enrollment.courses;
+  
   const emailContent = `Subject: =?UTF-8?B?${btoa('تایید ثبت نام در دوره')}?=
 To: ${enrollment.email}
 Content-Type: text/html; charset=UTF-8
@@ -254,4 +341,18 @@ function getPaymentStatusText(status: string): string {
     'cancelled': 'لغو شده'
   };
   return statusMap[status] || status;
+}
+
+function processConditionalBlocks(content: string, templateData: Record<string, any>): string {
+  // Handle {{#if variable}}...{{/if}} blocks
+  const ifBlockRegex = /{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g;
+  
+  return content.replace(ifBlockRegex, (match, variable, blockContent) => {
+    const value = templateData[variable];
+    // Show block if value exists and is not empty
+    if (value && value !== '' && value !== '0') {
+      return blockContent;
+    }
+    return '';
+  });
 }

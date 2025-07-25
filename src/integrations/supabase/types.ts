@@ -990,6 +990,59 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          html_content: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          sender_email: string
+          sender_name: string
+          subject: string
+          text_content: string | null
+          updated_at: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          html_content: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          sender_email?: string
+          sender_name?: string
+          subject: string
+          text_content?: string | null
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          sender_email?: string
+          sender_name?: string
+          subject?: string
+          text_content?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           admin_notes: string | null

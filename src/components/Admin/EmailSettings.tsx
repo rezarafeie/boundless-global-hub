@@ -4,9 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, CheckCircle, XCircle, RefreshCw, Search, Calendar } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, RefreshCw, Search, Calendar, Settings, Plus, Edit, Eye, Copy } from 'lucide-react';
+import EmailTemplateManager from './EmailTemplateManager';
 
 interface GmailCredentials {
   id: string;
@@ -323,6 +328,9 @@ const EmailSettings: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Email Templates Management */}
+      <EmailTemplateManager />
 
       {/* Email Logs */}
       <Card>
