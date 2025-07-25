@@ -1020,8 +1020,8 @@ const EnrollAdmin: React.FC = () => {
 
         {/* User Details Full Screen Popup */}
         {showUserDetails && selectedUser && (
-          <div className="fixed inset-0 z-[9999] min-h-screen bg-background/95 backdrop-blur-sm">
-            <div className="sticky top-0 z-[10000] bg-background/98 backdrop-blur border-b shadow-sm">
+          <div className="fixed inset-0 z-50 min-h-screen bg-background">
+            <div className="sticky top-0 z-10 bg-background border-b">
               <div className="container mx-auto px-4 py-4 flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold">جزئیات کاربر</h1>
@@ -1030,9 +1030,8 @@ const EnrollAdmin: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowUserDetails(false)}
-                  className="gap-2"
                 >
-                  <XCircle className="h-4 w-4" />
+                  <XCircle className="h-4 w-4 ml-2" />
                   بستن
                 </Button>
               </div>
