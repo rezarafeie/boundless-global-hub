@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Eye, Search, Filter, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Search, Filter, Clock, CreditCard, FileText, User, Mail, Phone, Calendar, Plus, Edit, BookOpen, DollarSign, Users, ExternalLink, BarChart3, Play, Webhook, TrendingUp, Upload, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,6 +108,17 @@ const EnrollAdmin: React.FC = () => {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
+  // Analytics state
+  const [analytics, setAnalytics] = useState({
+    totalUsers: 0,
+    totalEnrollments: 0,
+    totalSales: 0,
+    todayEnrollments: 0,
+    enrollmentsByCourse: [] as { title: string; enrollments_count: number }[],
+    recentEnrollments: [] as any[]
+  });
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   useEffect(() => {
     // Check for tab parameter and set active view
     const tab = searchParams.get('tab');
@@ -115,16 +126,110 @@ const EnrollAdmin: React.FC = () => {
       setActiveView(tab as 'dashboard' | 'enrollments' | 'discounts' | 'courses' | 'webhooks' | 'reports' | 'data-import' | 'users' | 'shortlinks');
     }
     
-    Promise.all([fetchEnrollments(), fetchCourses()]);
+    Promise.all([fetchEnrollments(), fetchCourses(), fetchAnalytics()]);
     
     // Set up auto reload every 30 seconds
     const autoReloadInterval = setInterval(() => {
-      Promise.all([fetchEnrollments(), fetchCourses()]);
+      Promise.all([fetchEnrollments(), fetchCourses(), fetchAnalytics()]);
     }, 30000); // 30 seconds
     
     // Cleanup interval on component unmount
     return () => clearInterval(autoReloadInterval);
   }, [searchParams]);
+
+  // Fetch analytics data
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      // Total Users
+      const { count: totalUsers, error: usersError } = await supabase
+        .from('chat_users')
+        .select('*', { count: 'exact', head: true });
+
+      if (usersError) throw usersError;
+
+      // Total Enrollments
+      const { count: totalEnrollments, error: enrollmentsError } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true });
+
+      if (enrollmentsError) throw enrollmentsError;
+
+      // Total Sales (successful transactions)
+      const { data: salesData, error: salesError } = await supabase
+        .from('enrollments')
+        .select('payment_amount')
+        .in('payment_status', ['completed', 'success']);
+
+      if (salesError) throw salesError;
+
+      const totalSales = salesData?.reduce((sum, enrollment) => sum + enrollment.payment_amount, 0) || 0;
+
+      // Today's Enrollments
+      const today = new Date().toISOString().split('T')[0];
+      const { count: todayEnrollments, error: todayError } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today);
+
+      if (todayError) throw todayError;
+
+      // Enrollments by Course
+      const { data: enrollmentsByCourse, error: courseEnrollmentsError } = await supabase
+        .from('enrollments')
+        .select(`
+          course_id,
+          courses!inner(title)
+        `);
+
+      if (courseEnrollmentsError) throw courseEnrollmentsError;
+
+      // Group by course and count
+      const courseStats = enrollmentsByCourse?.reduce((acc: any, enrollment: any) => {
+        const courseTitle = enrollment.courses?.title || 'نامشخص';
+        acc[courseTitle] = (acc[courseTitle] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      const enrollmentsByCourseData = Object.entries(courseStats)
+        .map(([title, count]) => ({ title, enrollments_count: count as number }))
+        .sort((a, b) => b.enrollments_count - a.enrollments_count);
+
+      // Recent Enrollments (latest 50)
+      const { data: recentEnrollments, error: recentError } = await supabase
+        .from('enrollments')
+        .select(`
+          id,
+          full_name,
+          email,
+          created_at,
+          courses!inner(title)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (recentError) throw recentError;
+
+      setAnalytics({
+        totalUsers: totalUsers || 0,
+        totalEnrollments: totalEnrollments || 0,
+        totalSales,
+        todayEnrollments: todayEnrollments || 0,
+        enrollmentsByCourse: enrollmentsByCourseData,
+        recentEnrollments: recentEnrollments || []
+      });
+
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری آمار",
+        variant: "destructive"
+      });
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
@@ -757,59 +862,156 @@ const EnrollAdmin: React.FC = () => {
               {activeView === 'dashboard' && (
                 <div className="space-y-6">
                   <div>
-                    <h1 className="text-3xl font-bold">داشبورد مدیریت</h1>
-                    <p className="text-muted-foreground mt-2">مرور کلی از وضعیت سیستم</p>
+                    <h1 className="text-3xl font-bold">داشبورد آمار و تحلیل</h1>
+                    <p className="text-muted-foreground mt-2">مرور کلی از وضعیت سیستم و آمار فروش</p>
                   </div>
 
-                  {/* Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                     <Card>
-                       <CardContent className="p-6">
-                         <div className="flex items-center justify-between">
-                           <div>
-                             <p className="text-sm text-muted-foreground">کل دوره‌ها</p>
-                             <p className="text-2xl font-bold">{courses.length}</p>
-                           </div>
-                           <BookOpen className="h-8 w-8 text-primary" />
-                         </div>
-                       </CardContent>
-                     </Card>
+                  {analyticsLoading && (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-sm text-muted-foreground">در حال بارگذاری آمار...</p>
+                    </div>
+                  )}
 
-                     <Card>
-                       <CardContent className="p-6">
-                         <div className="flex items-center justify-between">
-                           <div>
-                             <p className="text-sm text-muted-foreground">سیستم جستجو</p>
-                             <p className="text-lg font-medium">فعال</p>
-                           </div>
-                           <Search className="h-8 w-8 text-primary" />
-                         </div>
-                       </CardContent>
-                     </Card>
+                  {/* 📊 1. SUMMARY CARDS */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">کل کاربران</p>
+                            <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">{analytics.totalUsers.toLocaleString('fa-IR')}</p>
+                          </div>
+                          <User className="h-12 w-12 text-blue-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-green-600 dark:text-green-400">کل ثبت‌نام‌ها</p>
+                            <p className="text-3xl font-bold text-green-700 dark:text-green-300">{analytics.totalEnrollments.toLocaleString('fa-IR')}</p>
+                          </div>
+                          <BookOpen className="h-12 w-12 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-purple-600 dark:text-purple-400">کل فروش</p>
+                            <p className="text-3xl font-bold text-purple-700 dark:text-purple-300">
+                              {new Intl.NumberFormat('fa-IR').format(analytics.totalSales)} ت
+                            </p>
+                          </div>
+                          <CreditCard className="h-12 w-12 text-purple-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-orange-600 dark:text-orange-400">ثبت‌نام امروز</p>
+                            <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">{analytics.todayEnrollments.toLocaleString('fa-IR')}</p>
+                          </div>
+                          <Clock className="h-12 w-12 text-orange-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
-                  {/* Recent Activity */}
+                  {/* 📈 2. ENROLLMENTS BY COURSE */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>آخرین ثبت‌نام‌ها</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-6 w-6" />
+                        ثبت‌نام‌ها بر اساس دوره
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {enrollments.slice(0, 5).length === 0 ? (
-                        <p className="text-muted-foreground text-center py-8">هیچ ثبت‌نامی یافت نشد</p>
+                      {analytics.enrollmentsByCourse.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">هیچ داده‌ای یافت نشد</p>
                       ) : (
                         <div className="space-y-4">
-                          {enrollments.slice(0, 5).map((enrollment) => (
-                            <div key={enrollment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div>
-                                <p className="font-medium">{enrollment.full_name}</p>
-                                <p className="text-sm text-muted-foreground">{enrollment.courses?.title || 'نامشخص'}</p>
+                          {analytics.enrollmentsByCourse.map((course, index) => (
+                            <div key={course.title} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${
+                                  index === 0 ? 'from-blue-500 to-purple-500' :
+                                  index === 1 ? 'from-green-500 to-blue-500' :
+                                  index === 2 ? 'from-orange-500 to-red-500' :
+                                  'from-gray-400 to-gray-600'
+                                }`}></div>
+                                <span className="font-medium">{course.title}</span>
                               </div>
-                              <div className="text-left">
-                                <p className="text-sm font-medium">{formatPrice(enrollment.payment_amount)}</p>
-                                <p className="text-xs text-muted-foreground">{formatDate(enrollment.created_at)}</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold text-primary">{course.enrollments_count.toLocaleString('fa-IR')}</span>
+                                <span className="text-sm text-muted-foreground">ثبت‌نام</span>
                               </div>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* 🕵️‍♂️ 3. RECENT ENROLLMENTS */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-6 w-6" />
+                        آخرین ثبت‌نام‌ها (۵۰ مورد اخیر)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics.recentEnrollments.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">هیچ ثبت‌نامی یافت نشد</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>شناسه</TableHead>
+                                <TableHead>نام کاربر</TableHead>
+                                <TableHead>ایمیل</TableHead>
+                                <TableHead>دوره</TableHead>
+                                <TableHead>تاریخ ثبت‌نام</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {analytics.recentEnrollments.map((enrollment) => (
+                                <TableRow key={enrollment.id}>
+                                  <TableCell className="font-mono text-xs">
+                                    {enrollment.id.slice(0, 8)}...
+                                  </TableCell>
+                                  <TableCell className="font-medium">
+                                    {enrollment.full_name}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {enrollment.email}
+                                  </TableCell>
+                                  <TableCell>
+                                    {enrollment.courses?.title || 'نامشخص'}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {new Intl.DateTimeFormat('fa-IR', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }).format(new Date(enrollment.created_at))}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       )}
                     </CardContent>
