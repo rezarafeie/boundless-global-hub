@@ -127,14 +127,6 @@ const EnrollAdmin: React.FC = () => {
     }
     
     Promise.all([fetchEnrollments(), fetchCourses(), fetchAnalytics()]);
-    
-    // Set up auto reload every 30 seconds
-    const autoReloadInterval = setInterval(() => {
-      Promise.all([fetchEnrollments(), fetchCourses(), fetchAnalytics()]);
-    }, 30000); // 30 seconds
-    
-    // Cleanup interval on component unmount
-    return () => clearInterval(autoReloadInterval);
   }, [searchParams]);
 
   // Fetch analytics data
@@ -174,7 +166,7 @@ const EnrollAdmin: React.FC = () => {
 
       if (todayError) throw todayError;
 
-      // Enrollments by Course
+      // Enrollments by Course - Get ALL records
       const { data: enrollmentsByCourse, error: courseEnrollmentsError } = await supabase
         .from('enrollments')
         .select(`
@@ -861,9 +853,27 @@ const EnrollAdmin: React.FC = () => {
               {/* Dashboard View */}
               {activeView === 'dashboard' && (
                 <div className="space-y-6">
-                  <div>
-                    <h1 className="text-3xl font-bold">داشبورد آمار و تحلیل</h1>
-                    <p className="text-muted-foreground mt-2">مرور کلی از وضعیت سیستم و آمار فروش</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-3xl font-bold">داشبورد آمار و تحلیل</h1>
+                      <p className="text-muted-foreground mt-2">مرور کلی از وضعیت سیستم و آمار فروش</p>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        Promise.all([fetchEnrollments(), fetchCourses(), fetchAnalytics()]);
+                        toast({
+                          title: "به‌روزرسانی",
+                          description: "داده‌ها به‌روزرسانی شدند",
+                        });
+                      }} 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-2"
+                      disabled={analyticsLoading}
+                    >
+                      <Activity className="h-4 w-4" />
+                      به‌روزرسانی
+                    </Button>
                   </div>
 
                   {analyticsLoading && (
