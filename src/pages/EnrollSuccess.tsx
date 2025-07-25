@@ -426,11 +426,8 @@ const EnrollSuccess: React.FC = () => {
                                 localStorage.setItem(activationKey, JSON.stringify(activations));
                                 setSmartActivated(true);
                                 
-                                // Open the link and reload page
+                                // Open the link without reloading page
                                 window.open(replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment), '_blank');
-                                setTimeout(() => {
-                                  window.location.reload();
-                                }, 100);
                               }
                             }
                           }}

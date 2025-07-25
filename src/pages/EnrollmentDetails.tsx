@@ -107,7 +107,11 @@ const EnrollmentDetails: React.FC = () => {
             support_link,
             telegram_channel_link,
             gifts_link,
-            enable_course_access
+            enable_course_access,
+            support_activation_required,
+            telegram_activation_required,
+            smart_activation_enabled,
+            smart_activation_telegram_link
           )
         `)
         .eq('id', enrollmentId)

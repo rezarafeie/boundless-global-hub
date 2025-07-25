@@ -21,7 +21,7 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
 
     const logLessonOpen = async () => {
       try {
-        // Log activity
+        // Log activity with Persian text
         await activityService.logActivity(
           Number(user.id),
           'lesson_opened',
@@ -29,7 +29,8 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
           {
             course_id: options.courseId,
             lesson_title: options.lessonTitle,
-            course_title: options.courseTitle
+            course_title: options.courseTitle,
+            event_description: `درس ${options.lessonTitle} باز شد`
           }
         );
 
@@ -128,7 +129,7 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
     try {
       console.log('Starting lesson completion process...');
       
-      // Log completion activity
+      // Log completion activity with Persian text
       console.log('Logging completion activity...');
       await activityService.logActivity(
         Number(user.id),
@@ -137,7 +138,8 @@ export const useLessonTracker = (options?: UseLessonTrackerOptions) => {
         {
           course_id: options.courseId,
           lesson_title: options.lessonTitle,
-          course_title: options.courseTitle
+          course_title: options.courseTitle,
+          event_description: `درس ${options.lessonTitle} تکمیل شد`
         }
       );
       console.log('Activity logged successfully');
