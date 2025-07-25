@@ -158,44 +158,81 @@ class EnhancedWebhookManager {
     }
   }
 
+  // Helper method to enhance user data with firstname and lastname
+  private enhanceUserData(userData: any): any {
+    if (!userData) return userData;
+
+    const enhanced = { ...userData };
+    
+    // If we have full_name but not firstname/lastname, split them
+    if (userData.full_name && (!userData.firstname || !userData.lastname)) {
+      const nameParts = userData.full_name.trim().split(' ');
+      enhanced.firstname = nameParts[0] || '';
+      enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    }
+    
+    // If we have first_name/last_name but not firstname/lastname, map them
+    if (userData.first_name && !enhanced.firstname) {
+      enhanced.firstname = userData.first_name;
+    }
+    if (userData.last_name && !enhanced.lastname) {
+      enhanced.lastname = userData.last_name;
+    }
+    
+    // If we have name but not full_name or firstname/lastname, use it
+    if (userData.name && !enhanced.full_name && !enhanced.firstname) {
+      enhanced.full_name = userData.name;
+      const nameParts = userData.name.trim().split(' ');
+      enhanced.firstname = nameParts[0] || '';
+      enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    }
+
+    return enhanced;
+  }
+
   // Event-specific methods
   async sendEnrollmentCreated(enrollment: any, user: any, course: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('enrollment_created', {
       event_type: 'enrollment_created',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course }
+      data: { enrollment, user: enhancedUser, course }
     });
   }
 
   async sendEnrollmentPaidSuccessful(enrollment: any, user: any, course: any, payment: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('enrollment_paid_successful', {
       event_type: 'enrollment_paid_successful',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course, payment }
+      data: { enrollment, user: enhancedUser, course, payment }
     });
   }
 
   async sendEnrollmentManualPaymentSubmitted(enrollment: any, user: any, course: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('enrollment_manual_payment_submitted', {
       event_type: 'enrollment_manual_payment_submitted',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course }
+      data: { enrollment, user: enhancedUser, course }
     });
   }
 
   async sendEnrollmentManualPaymentApproved(enrollment: any, user: any, course: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('enrollment_manual_payment_approved', {
       event_type: 'enrollment_manual_payment_approved',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course }
+      data: { enrollment, user: enhancedUser, course }
     });
   }
 
   async sendEnrollmentManualPaymentRejected(enrollment: any, user: any, course: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('enrollment_manual_payment_rejected', {
       event_type: 'enrollment_manual_payment_rejected',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course }
+      data: { enrollment, user: enhancedUser, course }
     });
   }
 
@@ -203,18 +240,20 @@ class EnhancedWebhookManager {
     try {
       console.log('📤 EnhancedWebhookManager: Sending user_created webhook for:', user.name);
       
+      const enhancedUser = this.enhanceUserData(user);
+      
       // Try direct webhook sending first
       await this.sendWebhook('user_created', {
         event_type: 'user_created',
         timestamp: new Date().toISOString(),
-        data: { user }
+        data: { user: enhancedUser }
       });
       
       // Also call the edge function as backup/alternative method
       try {
         const { error: functionError } = await supabase.functions.invoke('send-user-webhook', {
           body: {
-            user,
+            user: enhancedUser,
             eventType: 'user_created'
           }
         });
@@ -233,26 +272,29 @@ class EnhancedWebhookManager {
   }
 
   async sendEmailLinkedExistingAccount(user: any, enrollment: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('email_linked_existing_account', {
       event_type: 'email_linked_existing_account',
       timestamp: new Date().toISOString(),
-      data: { user, enrollment }
+      data: { user: enhancedUser, enrollment }
     });
   }
 
   async sendSSOAccessLinkGenerated(enrollment: any, user: any, course: any, ssoTokens: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('sso_access_link_generated', {
       event_type: 'sso_access_link_generated',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course, sso_tokens: ssoTokens }
+      data: { enrollment, user: enhancedUser, course, sso_tokens: ssoTokens }
     });
   }
 
   async sendRafieiPlayerLicenseGenerated(enrollment: any, user: any, course: any, license: any) {
+    const enhancedUser = this.enhanceUserData(user);
     await this.sendWebhook('rafiei_player_license_generated', {
       event_type: 'rafiei_player_license_generated',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user, course, license }
+      data: { enrollment, user: enhancedUser, course, license }
     });
   }
 }

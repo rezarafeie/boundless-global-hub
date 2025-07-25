@@ -94,13 +94,48 @@ serve(async (req) => {
   }
 });
 
+// Helper function to enhance user data with firstname and lastname
+function enhanceUserData(userData: any): any {
+  if (!userData) return userData;
+
+  const enhanced = { ...userData };
+  
+  // If we have full_name but not firstname/lastname, split them
+  if (userData.full_name && (!userData.firstname || !userData.lastname)) {
+    const nameParts = userData.full_name.trim().split(' ');
+    enhanced.firstname = nameParts[0] || '';
+    enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  }
+  
+  // If we have first_name/last_name but not firstname/lastname, map them
+  if (userData.first_name && !enhanced.firstname) {
+    enhanced.firstname = userData.first_name;
+  }
+  if (userData.last_name && !enhanced.lastname) {
+    enhanced.lastname = userData.last_name;
+  }
+  
+  // If we have name but not full_name or firstname/lastname, use it
+  if (userData.name && !enhanced.full_name && !enhanced.firstname) {
+    enhanced.full_name = userData.name;
+    const nameParts = userData.name.trim().split(' ');
+    enhanced.firstname = nameParts[0] || '';
+    enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  }
+
+  return enhanced;
+}
+
 async function sendWebhook(webhook: WebhookConfig, user: any, eventType: string, supabaseClient: any) {
   try {
+    // Enhance user data with firstname and lastname
+    const enhancedUser = enhanceUserData(user);
+    
     // Create webhook payload
     const payload = {
       event_type: eventType,
       timestamp: new Date().toISOString(),
-      data: { user }
+      data: { user: enhancedUser }
     };
 
     // Merge with body template

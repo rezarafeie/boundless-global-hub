@@ -33,10 +33,11 @@ serve(async (req) => {
     if (!eventType && enrollment && course) {
       // Legacy format - convert to new format
       finalEventType = 'enrollment_created';
+      const enhancedUser = enhanceUserData(user);
       finalPayload = {
         event_type: 'enrollment_created',
         timestamp: new Date().toISOString(),
-        data: { enrollment, user, course }
+        data: { enrollment, user: enhancedUser, course }
       };
     }
 
@@ -85,10 +86,22 @@ serve(async (req) => {
     const webhookResults = await Promise.allSettled(
       webhookConfigs.map(async (config) => {
         try {
+          // Enhance user data if payload contains user data
+          let enhancedPayload = finalPayload;
+          if (finalPayload?.data?.user) {
+            enhancedPayload = {
+              ...finalPayload,
+              data: {
+                ...finalPayload.data,
+                user: enhanceUserData(finalPayload.data.user)
+              }
+            };
+          }
+          
           // Merge payload with body template if provided
-          let finalWebhookPayload = finalPayload;
+          let finalWebhookPayload = enhancedPayload;
           if (config.body_template) {
-            finalWebhookPayload = mergeTemplate(config.body_template, finalPayload);
+            finalWebhookPayload = mergeTemplate(config.body_template, enhancedPayload);
           }
 
           // Send webhook
@@ -182,6 +195,38 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to enhance user data with firstname and lastname
+function enhanceUserData(userData: any): any {
+  if (!userData) return userData;
+
+  const enhanced = { ...userData };
+  
+  // If we have full_name but not firstname/lastname, split them
+  if (userData.full_name && (!userData.firstname || !userData.lastname)) {
+    const nameParts = userData.full_name.trim().split(' ');
+    enhanced.firstname = nameParts[0] || '';
+    enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  }
+  
+  // If we have first_name/last_name but not firstname/lastname, map them
+  if (userData.first_name && !enhanced.firstname) {
+    enhanced.firstname = userData.first_name;
+  }
+  if (userData.last_name && !enhanced.lastname) {
+    enhanced.lastname = userData.last_name;
+  }
+  
+  // If we have name but not full_name or firstname/lastname, use it
+  if (userData.name && !enhanced.full_name && !enhanced.firstname) {
+    enhanced.full_name = userData.name;
+    const nameParts = userData.name.trim().split(' ');
+    enhanced.firstname = nameParts[0] || '';
+    enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  }
+
+  return enhanced;
+}
 
 // Helper function to merge template with payload
 function mergeTemplate(template: any, payload: any): any {
