@@ -37,6 +37,25 @@ const EmailSettings: React.FC = () => {
   useEffect(() => {
     fetchCredentials();
     fetchEmailLogs();
+    
+    // Listen for postMessage from OAuth popup immediately when component mounts
+    const handleMessage = (event: MessageEvent) => {
+      console.log('Received postMessage:', event);
+      if (event.data.type === 'gmail_oauth_success') {
+        console.log('Gmail OAuth success received on mount:', event.data);
+        toast({
+          title: "موفق",
+          description: `Gmail successfully connected: ${event.data.email}`,
+        });
+        fetchCredentials();
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
   }, []);
 
   const fetchCredentials = async () => {
