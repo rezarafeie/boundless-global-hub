@@ -55,6 +55,10 @@ interface EnrollmentData {
     telegram_channel_link?: string;
     gifts_link?: string;
     enable_course_access: boolean;
+    support_activation_required?: boolean;
+    telegram_activation_required?: boolean;
+    smart_activation_enabled?: boolean;
+    smart_activation_telegram_link?: string;
   };
 }
 
@@ -398,6 +402,33 @@ const EnrollmentDetails: React.FC = () => {
                 </Card>
               )}
             </div>
+          )}
+
+          {/* Smart Activation Section */}
+          {isSuccessfulPayment && enrollment.courses.smart_activation_enabled && enrollment.courses.smart_activation_telegram_link && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5 text-blue-600" />
+                  فعال‌سازی هوشمند
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  برای دسترسی کامل به دوره، ابتدا فعال‌سازی هوشمند را انجام دهید
+                </p>
+                <Button
+                  className="w-full"
+                  onClick={() => window.open(enrollment.courses.smart_activation_telegram_link!, '_blank')}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  فعال‌سازی هوشمند
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  پس از کلیک روی این دکمه، صفحه StartCourse فعال خواهد شد
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Important Links */}
