@@ -942,6 +942,54 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient: string
+          status: string
+          subject: string
+          user_id: number | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient: string
+          status: string
+          subject: string
+          user_id?: number | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient?: string
+          status?: string
+          subject?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           admin_notes: string | null
@@ -1040,6 +1088,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gmail_credentials: {
+        Row: {
+          access_token: string
+          created_at: string
+          email_address: string
+          id: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email_address: string
+          id?: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email_address?: string
+          id?: string
+          refresh_token?: string
+          token_expires_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       google_auth_settings: {
         Row: {

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck } from 'lucide-react';
+import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck, Mail } from 'lucide-react';
 import CourseManagement from '@/components/Admin/CourseManagement';
 import { WebhookManagement } from '@/components/Admin/WebhookManagement';
 import UserManagement from '@/components/Admin/UserManagement';
+import EmailSettings from '@/components/Admin/EmailSettings';
 
 const EnrollmentAdmin: React.FC = () => {
   return (
@@ -22,7 +23,7 @@ const EnrollmentAdmin: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white/70 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-7 bg-white/70 backdrop-blur-sm">
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">دوره‌ها</span>
@@ -42,6 +43,10 @@ const EnrollmentAdmin: React.FC = () => {
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">آمار</span>
+            </TabsTrigger>
+            <TabsTrigger value="emails" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">ایمیل</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -79,6 +84,10 @@ const EnrollmentAdmin: React.FC = () => {
                 <WebhookManagement />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="emails" className="space-y-6">
+            <EmailSettings />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
