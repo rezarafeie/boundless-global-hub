@@ -171,7 +171,7 @@ serve(async (req) => {
         const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
         authUrl.searchParams.set('client_id', GMAIL_CLIENT_ID);
         authUrl.searchParams.set('redirect_uri', GMAIL_REDIRECT_URI);
-        authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/gmail.send');
+        authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid');
         authUrl.searchParams.set('response_type', 'code');
         authUrl.searchParams.set('access_type', 'offline');
         authUrl.searchParams.set('prompt', 'consent');
