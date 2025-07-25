@@ -73,13 +73,10 @@ const EmailSettings: React.FC = () => {
 
   const fetchCredentials = async () => {
     try {
-      console.log('Fetching Gmail credentials...');
       const { data, error } = await supabase
         .from('gmail_credentials')
         .select('*')
         .limit(1);
-
-      console.log('Gmail credentials fetch result:', { data, error });
 
       if (error) {
         console.error('Error fetching credentials:', error);
@@ -93,10 +90,8 @@ const EmailSettings: React.FC = () => {
 
       // Handle case where no credentials exist
       if (data && data.length > 0) {
-        console.log('Found credentials:', data[0]);
         setCredentials(data[0]);
       } else {
-        console.log('No credentials found');
         setCredentials(null);
       }
     } catch (error) {
