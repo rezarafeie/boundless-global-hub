@@ -172,10 +172,14 @@ export function WebhookManagement() {
   };
 
   const handleSave = async () => {
-    console.log('Starting handleSave with formData:', formData);
+    console.log('🚀 handleSave called with formData:', formData);
+    console.log('🔧 selectedWebhook:', selectedWebhook);
+    console.log('🏗️ loading state:', loading);
     
     // Validate required fields
     if (!formData.name || !formData.url || !formData.event_type) {
+      console.log('❌ Validation failed - missing required fields');
+      console.log('Name:', formData.name, 'URL:', formData.url, 'Event:', formData.event_type);
       toast({
         title: 'خطا',
         description: 'لطفاً تمام فیلدهای الزامی را پر کنید',
@@ -187,7 +191,9 @@ export function WebhookManagement() {
     // Validate URL format
     try {
       new URL(formData.url);
+      console.log('✅ URL validation passed');
     } catch {
+      console.log('❌ URL validation failed:', formData.url);
       toast({
         title: 'خطا',
         description: 'آدرس URL معتبر نیست',
@@ -196,12 +202,14 @@ export function WebhookManagement() {
       return;
     }
 
+    console.log('🔄 Setting loading to true...');
     setLoading(true);
+    
     try {
-      console.log('Attempting to save webhook...');
+      console.log('📤 Attempting to save webhook...');
       
       if (selectedWebhook) {
-        console.log('Updating existing webhook:', selectedWebhook.id);
+        console.log('✏️ Updating existing webhook:', selectedWebhook.id);
         // Update existing webhook
         const { error } = await supabase
           .from('webhook_configurations')
@@ -209,13 +217,13 @@ export function WebhookManagement() {
           .eq('id', selectedWebhook.id);
 
         if (error) {
-          console.error('Update error:', error);
+          console.error('❌ Update error:', error);
           throw error;
         }
-        console.log('Webhook updated successfully');
+        console.log('✅ Webhook updated successfully');
         toast({ title: 'موفقیت', description: 'وب‌هوک با موفقیت به‌روزرسانی شد' });
       } else {
-        console.log('Creating new webhook...');
+        console.log('➕ Creating new webhook...');
         // Create new webhook
         const { data, error } = await supabase
           .from('webhook_configurations')
@@ -223,25 +231,31 @@ export function WebhookManagement() {
           .select();
 
         if (error) {
-          console.error('Insert error:', error);
+          console.error('❌ Insert error:', error);
           throw error;
         }
-        console.log('Webhook created successfully:', data);
+        console.log('✅ Webhook created successfully:', data);
         toast({ title: 'موفقیت', description: 'وب‌هوک جدید با موفقیت ایجاد شد' });
       }
 
+      console.log('🔄 Refreshing webhooks list...');
       await fetchWebhooks();
+      
+      console.log('🚪 Closing modals...');
       setIsCreateModalOpen(false);
       setIsEditModalOpen(false);
       resetForm();
+      
+      console.log('✅ Save process completed successfully');
     } catch (error: any) {
-      console.error('Save error:', error);
+      console.error('💥 Save error:', error);
       toast({
         title: 'خطا',
         description: `خطا در ذخیره وب‌هوک: ${error.message || error}`,
         variant: 'destructive'
       });
     } finally {
+      console.log('🏁 Setting loading to false...');
       setLoading(false);
     }
   };
