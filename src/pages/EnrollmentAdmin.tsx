@@ -23,7 +23,7 @@ const EnrollmentAdmin: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-white/70 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-7 lg:grid-cols-7 md:grid-cols-4 sm:grid-cols-3 bg-white/70 backdrop-blur-sm overflow-x-auto">
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">دوره‌ها</span>
