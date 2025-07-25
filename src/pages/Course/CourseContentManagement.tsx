@@ -1170,14 +1170,15 @@ const SortableLesson: React.FC<{
           {lesson.file_url && (
             <div className="mt-3 p-3 bg-background rounded-lg border">
               <h5 className="font-medium mb-2">فایل پیوست:</h5>
-              <a 
-                href={lesson.file_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
-              >
-                مشاهده فایل
-              </a>
+              <div className="text-sm text-blue-600 hover:text-blue-800 underline break-all">
+                <a 
+                  href={lesson.file_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  {lesson.file_url.length > 60 ? `${lesson.file_url.substring(0, 60)}...` : lesson.file_url}
+                </a>
+              </div>
             </div>
           )}
         </div>
