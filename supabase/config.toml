@@ -29,6 +29,9 @@ jwt_expiry = 3600
 refresh_token_rotation_enabled = true
 security_update_password_require_reauthentication = true
 
+[functions.gmail-oauth]
+verify_jwt = false
+
 [functions.send-push-notification]
 verify_jwt = false
 
