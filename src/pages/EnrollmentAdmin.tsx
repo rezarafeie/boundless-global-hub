@@ -23,32 +23,32 @@ const EnrollmentAdmin: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="w-full flex flex-wrap justify-start bg-white/70 backdrop-blur-sm p-2 gap-2 overflow-x-auto">
-            <TabsTrigger value="courses" className="flex items-center gap-2">
+          <TabsList className="w-full flex flex-wrap justify-start bg-white/70 backdrop-blur-sm p-2 gap-2">
+            <TabsTrigger value="courses" className="flex items-center gap-2 min-w-0 flex-shrink-0">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">دوره‌ها</span>
             </TabsTrigger>
-            <TabsTrigger value="enrollments" className="flex items-center gap-2">
+            <TabsTrigger value="enrollments" className="flex items-center gap-2 min-w-0 flex-shrink-0">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">ثبت‌نام‌ها</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger value="users" className="flex items-center gap-2 min-w-0 flex-shrink-0">
               <UserCheck className="h-4 w-4" />
               <span className="hidden sm:inline">کاربران</span>
             </TabsTrigger>
-            <TabsTrigger value="webhooks" className="flex items-center gap-2">
+            <TabsTrigger value="webhooks" className="flex items-center gap-2 min-w-0 flex-shrink-0">
               <Webhook className="h-4 w-4" />
               <span className="hidden sm:inline">وب‌هوک‌ها</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TabsTrigger value="analytics" className="flex items-center gap-2 min-w-0 flex-shrink-0">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">آمار</span>
             </TabsTrigger>
-            <TabsTrigger value="emails" className="flex items-center gap-2">
+            <TabsTrigger value="emails" className="flex items-center gap-2 min-w-0 flex-shrink-0 bg-blue-50 text-blue-600 border border-blue-200">
               <Mail className="h-4 w-4" />
               <span className="hidden sm:inline">ایمیل</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
+            <TabsTrigger value="settings" className="flex items-center gap-2 min-w-0 flex-shrink-0">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">تنظیمات</span>
             </TabsTrigger>
@@ -87,6 +87,17 @@ const EnrollmentAdmin: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="emails" className="space-y-6">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+              <h3 className="font-semibold text-blue-800 mb-2">تنظیمات ایمیل</h3>
+              <p className="text-blue-700 mb-4">برای مدیریت کامل ایمیل‌ها و تنظیمات Gmail به صفحه اختصاصی مراجعه کنید.</p>
+              <a 
+                href="/enroll/admin/email" 
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                <span>مدیریت ایمیل‌ها</span>
+              </a>
+            </div>
             <EmailSettings />
           </TabsContent>
 

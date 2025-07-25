@@ -28,6 +28,7 @@ import EnrollPending from "./pages/EnrollPending";
 import EnrollAdmin from "./pages/EnrollAdmin";
 import EnrollReject from "./pages/EnrollReject";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
+import EnrollmentEmailAdmin from "./pages/EnrollmentEmailAdmin";
 import EnrollmentDetails from "./pages/EnrollmentDetails";
 import CourseManagement from "./pages/Course/CourseManagement";
 import CourseAccess from "./pages/CourseAccess";
@@ -199,6 +200,7 @@ const App = () => {
                     <Route path="/enroll/details" element={<EnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollAdmin />} />
+                    <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
                     <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
