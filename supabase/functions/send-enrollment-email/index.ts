@@ -16,21 +16,26 @@ serve(async (req) => {
   }
 
   try {
+    console.log('📧 Send enrollment email function called');
     const { enrollmentId } = await req.json();
+    console.log('📝 Processing enrollment:', enrollmentId);
 
     // Get enrollment details
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('enrollments')
       .select(`
         *,
-        courses (title, description)
+        courses (title, description, redirect_url)
       `)
       .eq('id', enrollmentId)
       .single();
 
     if (enrollmentError || !enrollment) {
+      console.error('❌ Enrollment not found:', enrollmentError);
       throw new Error('Enrollment not found');
     }
+    
+    console.log('✅ Enrollment found:', enrollment.email, enrollment.courses?.title);
 
     // Get Gmail credentials
     const { data: credentials, error: credError } = await supabase
