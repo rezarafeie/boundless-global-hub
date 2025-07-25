@@ -45,11 +45,22 @@ serve(async (req) => {
     }
 
     // Get active webhook configurations for this event type
-    const { data: webhookConfigs, error: configError } = await supabase
+    // If payload contains course information, filter by course-specific webhooks
+    let webhookQuery = supabase
       .from('webhook_configurations')
       .select('*')
       .eq('event_type', finalEventType)
       .eq('is_active', true);
+
+    // If we have course data in the payload, include course-specific webhooks
+    if (finalPayload?.data?.course?.id) {
+      webhookQuery = webhookQuery.or(`course_id.is.null,course_id.eq.${finalPayload.data.course.id}`);
+    } else {
+      // If no course data, only get global webhooks (course_id is null)
+      webhookQuery = webhookQuery.is('course_id', null);
+    }
+
+    const { data: webhookConfigs, error: configError } = await webhookQuery;
 
     if (configError) {
       console.error('Error fetching webhook configurations:', configError);

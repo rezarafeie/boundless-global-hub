@@ -2340,6 +2340,7 @@ export type Database = {
       webhook_configurations: {
         Row: {
           body_template: Json | null
+          course_id: string | null
           created_at: string
           created_by: number | null
           event_type: string
@@ -2352,6 +2353,7 @@ export type Database = {
         }
         Insert: {
           body_template?: Json | null
+          course_id?: string | null
           created_at?: string
           created_by?: number | null
           event_type: string
@@ -2364,6 +2366,7 @@ export type Database = {
         }
         Update: {
           body_template?: Json | null
+          course_id?: string | null
           created_at?: string
           created_by?: number | null
           event_type?: string
@@ -2375,6 +2378,13 @@ export type Database = {
           url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "webhook_configurations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "webhook_configurations_created_by_fkey"
             columns: ["created_by"]
