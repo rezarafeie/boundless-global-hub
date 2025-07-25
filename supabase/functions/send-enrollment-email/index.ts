@@ -71,7 +71,10 @@ serve(async (req) => {
     const now = new Date();
     const expiresAt = new Date(credentials.token_expires_at);
 
+    console.log('🕐 Token check - now:', now.toISOString(), 'expires:', expiresAt.toISOString());
+
     if (now >= expiresAt) {
+      console.log('🔄 Token expired, refreshing...');
       // Refresh token
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -87,13 +90,17 @@ serve(async (req) => {
       });
 
       const refreshData = await refreshResponse.json();
+      console.log('🔄 Refresh response status:', refreshResponse.status);
       
       if (!refreshResponse.ok) {
+        console.error('❌ Token refresh failed:', refreshData);
         throw new Error(`Token refresh failed: ${refreshData.error_description || refreshData.error}`);
       }
 
       accessToken = refreshData.access_token;
       const newExpiresAt = new Date(Date.now() + (refreshData.expires_in * 1000));
+
+      console.log('✅ Token refreshed, new expires at:', newExpiresAt.toISOString());
 
       // Update credentials
       await supabase
@@ -103,6 +110,8 @@ serve(async (req) => {
           token_expires_at: newExpiresAt.toISOString(),
         })
         .eq('id', credentials.id);
+    } else {
+      console.log('✅ Token is still valid');
     }
 
     // Send emails
