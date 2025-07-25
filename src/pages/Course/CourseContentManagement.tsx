@@ -1129,11 +1129,15 @@ const SortableLesson: React.FC<{
           <Button
             size="sm"
             variant="outline"
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
+              console.log('Copy lesson link clicked', { lesson, course });
               try {
                 const lessonNumber = await getLessonNumberById(lesson.id);
-                if (lessonNumber && course) {
+                console.log('Lesson number retrieved:', lessonNumber);
+                if (lessonNumber && course?.slug) {
                   const accessUrl = `${window.location.origin}/access?course=${course.slug}&lesson=${lessonNumber}`;
+                  console.log('Generated access URL:', accessUrl);
                   await navigator.clipboard.writeText(accessUrl);
                   toast({
                     title: "لینک کپی شد",
@@ -1141,6 +1145,7 @@ const SortableLesson: React.FC<{
                     duration: 2000,
                   });
                 } else {
+                  console.error('Missing data:', { lessonNumber, courseSlug: course?.slug });
                   toast({
                     title: "خطا",
                     description: "خطا در تولید لینک درس",
@@ -1238,25 +1243,25 @@ const SortableLesson: React.FC<{
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" onClick={handleBack}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+          <Button variant="outline" size="sm" onClick={handleBack} className="self-start">
             <ArrowLeft className="h-4 w-4 ml-2" />
             بازگشت
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">
+          <div className="w-full sm:w-auto">
+            <h1 className="text-2xl sm:text-3xl font-bold">
               مدیریت محتوای دوره: {course?.title}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               مدیریت بخش‌ها و دروس دوره
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6">
           <Dialog open={showTitleGroupModal} onOpenChange={setShowTitleGroupModal}>
             <DialogTrigger asChild>
               <Button onClick={resetTitleGroupForm} className="bg-purple-600 hover:bg-purple-700">
@@ -1387,7 +1392,7 @@ const SortableLesson: React.FC<{
 
         {/* Lesson Modal */}
         <Dialog open={showLessonModal} onOpenChange={setShowLessonModal}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
               <DialogHeader>
                 <DialogTitle>
                   {editingLesson ? 'ویرایش درس' : 'افزودن درس جدید'}
@@ -1491,10 +1496,10 @@ const SortableLesson: React.FC<{
 
         {/* Content */}
         <Tabs defaultValue="content" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="content">محتوای دوره</TabsTrigger>
-            <TabsTrigger value="title-groups">گروه‌های عنوان</TabsTrigger>
-            <TabsTrigger value="notifications">اعلان‌های دوره</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
+            <TabsTrigger value="content" className="text-xs sm:text-sm">محتوای دوره</TabsTrigger>
+            <TabsTrigger value="title-groups" className="text-xs sm:text-sm">گروه‌های عنوان</TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs sm:text-sm">اعلان‌های دوره</TabsTrigger>
           </TabsList>
 
           <TabsContent value="content" className="space-y-6">
@@ -1788,7 +1793,7 @@ const SortableLesson: React.FC<{
 
         {/* Notification Form Dialog */}
         <Dialog open={showNotificationForm} onOpenChange={setShowNotificationForm}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>
                 {editingNotification ? 'ویرایش اعلان' : 'افزودن اعلان جدید'}
@@ -1796,7 +1801,7 @@ const SortableLesson: React.FC<{
             </DialogHeader>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="notification-title">عنوان اعلان</Label>
                   <Input
@@ -1837,7 +1842,7 @@ const SortableLesson: React.FC<{
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="notification-color">رنگ اعلان</Label>
                   <Input
