@@ -147,39 +147,27 @@ const EnrollAdmin: React.FC = () => {
 
   const fetchEnrollments = async () => {
     try {
-      // Fetch all enrollments and courses separately, then join in JavaScript
-      const [enrollmentsResult, coursesResult] = await Promise.all([
-        supabase
-          .from('enrollments')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('courses')
-          .select('id, title, slug')
-      ]);
+      // Only fetch basic course info for search functionality
+      const coursesResult = await supabase
+        .from('courses')
+        .select(`
+          id, title, description, slug, price, is_active, redirect_url, 
+          spotplayer_course_id, is_spotplayer_enabled, create_test_license, 
+          woocommerce_create_access, support_link, telegram_channel_link, 
+          gifts_link, enable_course_access, created_at
+        `);
 
-      if (enrollmentsResult.error) throw enrollmentsResult.error;
       if (coursesResult.error) throw coursesResult.error;
-
-      // Create a courses lookup map
-      const coursesMap = new Map(
-        (coursesResult.data || []).map(course => [course.id, course])
-      );
-
-      // Join the data in JavaScript - get ALL enrollments for search functionality
-      const enrollmentsWithCourses = (enrollmentsResult.data || []).map(enrollment => ({
-        ...enrollment,
-        courses: coursesMap.get(enrollment.course_id) || { title: 'دوره نامشخص', slug: '' }
-      }));
-
-      setEnrollments(enrollmentsWithCourses);
-      // Initialize filtered enrollments with all data for search functionality
-      setFilteredEnrollments(enrollmentsWithCourses);
+      setCourses(coursesResult.data || []);
+      
+      // Don't fetch enrollments initially - only search when user types
+      setEnrollments([]);
+      setFilteredEnrollments([]);
     } catch (error) {
-      console.error('Error fetching enrollments:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: "خطا",
-        description: "خطا در بارگذاری لیست ثبت‌نام‌ها",
+        description: "خطا در بارگذاری داده‌ها",
         variant: "destructive"
       });
     } finally {
@@ -239,44 +227,104 @@ const EnrollAdmin: React.FC = () => {
   const [courseFilter, setCourseFilter] = useState('all');
   const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>([]);
 
-  // Filter enrollments based on search and filters
-  useEffect(() => {
-    let filtered = enrollments;
+  const [searchLoading, setSearchLoading] = useState(false);
 
-    // Text search
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(enrollment => 
-        enrollment.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enrollment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        enrollment.phone.includes(searchTerm) ||
-        enrollment.courses?.title.toLowerCase().includes(searchTerm.toLowerCase())
+  // Real-time search function
+  const searchEnrollments = async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setFilteredEnrollments([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      // Search in the database with ilike for case-insensitive partial matching
+      const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        .from('enrollments')
+        .select('*')
+        .or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+        .order('created_at', { ascending: false })
+        .limit(100); // Limit results for performance
+
+      if (enrollmentsError) throw enrollmentsError;
+
+      // Get course data for the found enrollments
+      const courseIds = [...new Set(enrollmentsData?.map(e => e.course_id) || [])];
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, slug')
+        .in('id', courseIds);
+
+      if (coursesError) throw coursesError;
+
+      // Create courses lookup map
+      const coursesMap = new Map(
+        (coursesData || []).map(course => [course.id, course])
       );
-    }
 
-    // Status filter
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'payment_pending') {
-        filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'pending');
-      } else if (statusFilter === 'payment_completed') {
-        filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'completed' || e.payment_status?.toLowerCase() === 'success');
-      } else if (statusFilter === 'payment_failed') {
-        filtered = filtered.filter(e => e.payment_status?.toLowerCase() === 'failed' || e.payment_status?.toLowerCase() === 'cancelled_payment' || e.payment_status?.toLowerCase() === 'error');
-      } else if (statusFilter === 'manual_pending') {
-        filtered = filtered.filter(e => e.manual_payment_status === 'pending');
-      } else if (statusFilter === 'manual_approved') {
-        filtered = filtered.filter(e => e.manual_payment_status === 'approved');
-      } else if (statusFilter === 'manual_rejected') {
-        filtered = filtered.filter(e => e.manual_payment_status === 'rejected');
+      // Join enrollments with course data
+      const enrollmentsWithCourses = (enrollmentsData || []).map(enrollment => ({
+        ...enrollment,
+        courses: coursesMap.get(enrollment.course_id) || { title: 'دوره نامشخص', slug: '' }
+      }));
+
+      // Also search by course title
+      const { data: courseSearchData, error: courseSearchError } = await supabase
+        .from('courses')
+        .select('id, title, slug')
+        .ilike('title', `%${searchQuery}%`);
+
+      if (!courseSearchError && courseSearchData?.length) {
+        const courseIds = courseSearchData.map(c => c.id);
+        const { data: enrollmentsByCourse, error: enrollmentsByCourseError } = await supabase
+          .from('enrollments')
+          .select('*')
+          .in('course_id', courseIds)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (!enrollmentsByCourseError && enrollmentsByCourse?.length) {
+          const enrollmentsByCourseWithCourses = enrollmentsByCourse.map(enrollment => ({
+            ...enrollment,
+            courses: coursesMap.get(enrollment.course_id) || 
+                     courseSearchData.find(c => c.id === enrollment.course_id) || 
+                     { title: 'دوره نامشخص', slug: '' }
+          }));
+
+          // Merge results and remove duplicates
+          const allResults = [...enrollmentsWithCourses, ...enrollmentsByCourseWithCourses];
+          const uniqueResults = allResults.filter((enrollment, index, self) => 
+            index === self.findIndex(e => e.id === enrollment.id)
+          );
+
+          setFilteredEnrollments(uniqueResults);
+        } else {
+          setFilteredEnrollments(enrollmentsWithCourses);
+        }
+      } else {
+        setFilteredEnrollments(enrollmentsWithCourses);
       }
-    }
 
-    // Course filter
-    if (courseFilter !== 'all') {
-      filtered = filtered.filter(e => e.course_id === courseFilter);
+    } catch (error) {
+      console.error('Error searching enrollments:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در جستجوی ثبت‌نام‌ها",
+        variant: "destructive"
+      });
+    } finally {
+      setSearchLoading(false);
     }
+  };
 
-    setFilteredEnrollments(filtered);
-  }, [enrollments, searchTerm, statusFilter, courseFilter]);
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchEnrollments(searchTerm);
+    }, 300); // 300ms delay for debouncing
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const handleViewDetails = (enrollment: Enrollment) => {
     setSelectedEnrollment(enrollment);
@@ -715,71 +763,29 @@ const EnrollAdmin: React.FC = () => {
 
                   {/* Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">کل دوره‌ها</p>
-                            <p className="text-2xl font-bold">{courses.length}</p>
-                          </div>
-                          <BookOpen className="h-8 w-8 text-primary" />
-                        </div>
-                      </CardContent>
-                    </Card>
+                     <Card>
+                       <CardContent className="p-6">
+                         <div className="flex items-center justify-between">
+                           <div>
+                             <p className="text-sm text-muted-foreground">کل دوره‌ها</p>
+                             <p className="text-2xl font-bold">{courses.length}</p>
+                           </div>
+                           <BookOpen className="h-8 w-8 text-primary" />
+                         </div>
+                       </CardContent>
+                     </Card>
 
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">کل ثبت‌نام‌ها</p>
-                            <p className="text-2xl font-bold">{enrollments.length}</p>
-                          </div>
-                          <User className="h-8 w-8 text-primary" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">در انتظار تایید</p>
-                            <p className="text-2xl font-bold text-amber-600">
-                              {enrollments.filter(e => e.manual_payment_status === 'pending').length}
-                            </p>
-                          </div>
-                          <Clock className="h-8 w-8 text-amber-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">ناموفق</p>
-                            <p className="text-2xl font-bold text-red-600">
-                              {enrollments.filter(e => e.payment_status?.toLowerCase() === 'failed' || e.payment_status?.toLowerCase() === 'cancelled_payment' || e.payment_status?.toLowerCase() === 'error').length}
-                            </p>
-                          </div>
-                          <XCircle className="h-8 w-8 text-red-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">دوره‌های فعال</p>
-                            <p className="text-2xl font-bold text-green-600">
-                              {courses.filter(c => c.is_active).length}
-                            </p>
-                          </div>
-                          <CheckCircle className="h-8 w-8 text-green-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
+                     <Card>
+                       <CardContent className="p-6">
+                         <div className="flex items-center justify-between">
+                           <div>
+                             <p className="text-sm text-muted-foreground">سیستم جستجو</p>
+                             <p className="text-lg font-medium">فعال</p>
+                           </div>
+                           <Search className="h-8 w-8 text-primary" />
+                         </div>
+                       </CardContent>
+                     </Card>
                   </div>
 
                   {/* Recent Activity */}
@@ -832,7 +838,12 @@ const EnrollAdmin: React.FC = () => {
                     </div>
 
                     {/* Search Results */}
-                    {searchTerm ? (
+                    {searchLoading ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-sm text-muted-foreground">در حال جستجو...</p>
+                      </div>
+                    ) : searchTerm ? (
                       filteredEnrollments.length === 0 ? (
                         <div className="text-center py-12">
                           <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
