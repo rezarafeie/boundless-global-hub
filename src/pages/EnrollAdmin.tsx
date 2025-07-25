@@ -381,9 +381,18 @@ const EnrollAdmin: React.FC = () => {
         description: "پرداخت تایید شد. کاربر به صفحه موفقیت منتقل می‌شود",
       });
 
-      // Refresh the list
-      fetchEnrollments();
-      setShowEnrollmentModal(false);
+      // Refresh the list and update current enrollment
+      await fetchEnrollments();
+      
+      // Update the selected enrollment to show new status
+      const updatedEnrollment = {
+        ...selectedEnrollment,
+        manual_payment_status: 'approved',
+        payment_status: 'completed',
+        approved_by: 'Admin',
+        approved_at: new Date().toISOString()
+      };
+      setSelectedEnrollment(updatedEnrollment);
 
     } catch (error) {
       console.error('Error approving payment:', error);
@@ -434,8 +443,17 @@ const EnrollAdmin: React.FC = () => {
         description: "پرداخت رد شد. کاربر به صفحه رد منتقل می‌شود",
       });
 
-      fetchEnrollments();
-      setShowEnrollmentDetails(false);
+      await fetchEnrollments();
+      
+      // Update the selected enrollment to show new status
+      const updatedEnrollment = {
+        ...selectedEnrollment,
+        manual_payment_status: 'rejected',
+        admin_notes: adminNotes || null,
+        approved_by: 'Admin',
+        approved_at: new Date().toISOString()
+      };
+      setSelectedEnrollment(updatedEnrollment);
       setAdminNotes(''); // Clear admin notes after successful rejection
 
     } catch (error) {
@@ -620,45 +638,49 @@ const EnrollAdmin: React.FC = () => {
               </div>
 
               {/* Admin Notes for Rejection */}
-              {selectedEnrollment.manual_payment_status === 'pending' && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>یادداشت مدیر (در صورت رد درخواست)</Label>
-                    <Textarea 
-                      placeholder="دلیل رد درخواست را بنویسید..."
-                      value={adminNotes}
-                      onChange={(e) => setAdminNotes(e.target.value)}
-                      rows={3}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      این یادداشت در صورت رد درخواست به کاربر نمایش داده خواهد شد
-                    </p>
-                  </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>یادداشت مدیر (در صورت رد درخواست)</Label>
+                  <Textarea 
+                    placeholder="دلیل رد درخواست را بنویسید..."
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    این یادداشت در صورت رد درخواست به کاربر نمایش داده خواهد شد
+                  </p>
                 </div>
-              )}
+              </div>
 
-              {/* Action Buttons */}
-              {selectedEnrollment.manual_payment_status === 'pending' && (
-                <div className="flex gap-4 pt-4">
-                  <Button
-                    onClick={handleApprove}
-                    disabled={processing}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-4 w-4 ml-2" />
-                    تایید پرداخت
-                  </Button>
-                  <Button
-                    onClick={handleReject}
-                    disabled={processing}
-                    variant="destructive"
-                    className="flex-1"
-                  >
-                    <XCircle className="h-4 w-4 ml-2" />
-                    رد پرداخت
-                  </Button>
-                </div>
-              )}
+              {/* Action Buttons - Always Available */}
+              <div className="flex gap-4 pt-4">
+                <Button
+                  onClick={handleApprove}
+                  disabled={processing}
+                  className={`flex-1 ${
+                    selectedEnrollment.manual_payment_status === 'approved' 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  <CheckCircle className="h-4 w-4 ml-2" />
+                  {selectedEnrollment.manual_payment_status === 'approved' ? 'تایید شده ✓' : 'تایید پرداخت'}
+                </Button>
+                <Button
+                  onClick={handleReject}
+                  disabled={processing}
+                  variant="destructive"
+                  className={`flex-1 ${
+                    selectedEnrollment.manual_payment_status === 'rejected' 
+                      ? 'bg-red-700 hover:bg-red-800' 
+                      : ''
+                  }`}
+                >
+                  <XCircle className="h-4 w-4 ml-2" />
+                  {selectedEnrollment.manual_payment_status === 'rejected' ? 'رد شده ✗' : 'رد پرداخت'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
