@@ -74,19 +74,66 @@ serve(async (req) => {
     
     console.log('✅ Template found:', template.name);
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      enrollment: {
-        id: enrollment.id,
-        email: enrollment.email,
-        course: enrollment.courses?.title,
-        status: enrollment.payment_status
-      },
-      gmail: credentials.email_address,
-      template: template.name
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Actually send a test email
+    console.log('📧 Sending test email...');
+    try {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-enrollment-email', {
+        body: { enrollmentId: enrollment.id }
+      });
+
+      if (emailError) {
+        console.error('❌ Email sending failed:', emailError);
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: `Email sending failed: ${emailError.message}`,
+          enrollment: {
+            id: enrollment.id,
+            email: enrollment.email,
+            course: enrollment.courses?.title,
+            status: enrollment.payment_status
+          },
+          gmail: credentials.email_address,
+          template: template.name
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('✅ Test email sent successfully:', emailResult);
+      
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Test email sent successfully',
+        enrollment: {
+          id: enrollment.id,
+          email: enrollment.email,
+          course: enrollment.courses?.title,
+          status: enrollment.payment_status
+        },
+        gmail: credentials.email_address,
+        template: template.name,
+        emailResult
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    } catch (emailSendError) {
+      console.error('❌ Email sending exception:', emailSendError);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: `Email sending exception: ${emailSendError.message}`,
+        enrollment: {
+          id: enrollment.id,
+          email: enrollment.email,
+          course: enrollment.courses?.title,
+          status: enrollment.payment_status
+        },
+        gmail: credentials.email_address,
+        template: template.name
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
   } catch (error) {
     console.error('💥 Test failed:', error);
