@@ -140,7 +140,8 @@ const EmailSettings: React.FC = () => {
       setLoading(true);
       console.log('🧪 Testing enrollment email function...');
       
-      const { data, error } = await supabase.functions.invoke('test-enrollment-email');
+      // Call the dedicated test email function
+      const { data, error } = await supabase.functions.invoke('send-test-email');
       
       if (error) {
         console.error('❌ Test email error:', error);
@@ -151,14 +152,25 @@ const EmailSettings: React.FC = () => {
         });
       } else {
         console.log('✅ Test email response:', data);
-        toast({
-          title: "تست ایمیل موفق",
-          description: "Email function test completed. Check console for details.",
-        });
+        
+        if (data.success) {
+          toast({
+            title: "تست ایمیل موفق",
+            description: `Test email sent successfully for enrollment ${data.enrollmentId}`,
+          });
+        } else {
+          toast({
+            title: "خطا در ارسال ایمیل",
+            description: data.error || "Failed to send test email",
+            variant: "destructive"
+          });
+        }
       }
       
       // Refresh logs after test
-      fetchEmailLogs();
+      setTimeout(() => {
+        fetchEmailLogs();
+      }, 3000);
     } catch (error: any) {
       console.error('❌ Test email error:', error);
       toast({
