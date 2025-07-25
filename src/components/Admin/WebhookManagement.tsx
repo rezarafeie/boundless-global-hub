@@ -56,6 +56,7 @@ interface WebhookConfig {
   name: string;
   url: string;
   event_type: string;
+  course_id?: string | null;
   is_active: boolean;
   headers: any;
   body_template: any;
@@ -75,6 +76,7 @@ interface WebhookLog {
 
 export function WebhookManagement() {
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -88,6 +90,7 @@ export function WebhookManagement() {
     name: '',
     url: '',
     event_type: '',
+    course_id: null,
     is_active: true,
     headers: {},
     body_template: DEFAULT_BODY_TEMPLATE
@@ -96,13 +99,17 @@ export function WebhookManagement() {
   useEffect(() => {
     fetchWebhooks();
     fetchLogs();
+    fetchCourses();
   }, []);
 
   const fetchWebhooks = async () => {
     try {
       const { data, error } = await supabase
         .from('webhook_configurations')
-        .select('*')
+        .select(`
+          *,
+          courses(title, slug)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -124,6 +131,21 @@ export function WebhookManagement() {
         description: 'خطا در بارگیری وب‌هوک‌ها',
         variant: 'destructive'
       });
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title, slug')
+        .eq('is_active', true)
+        .order('title');
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
     }
   };
 
@@ -301,6 +323,7 @@ export function WebhookManagement() {
       name: '',
       url: '',
       event_type: '',
+      course_id: null,
       is_active: true,
       headers: {},
       body_template: DEFAULT_BODY_TEMPLATE
@@ -342,6 +365,7 @@ export function WebhookManagement() {
                     <TableHead>نام</TableHead>
                     <TableHead>URL</TableHead>
                     <TableHead>رویداد</TableHead>
+                    <TableHead>دوره</TableHead>
                     <TableHead>وضعیت</TableHead>
                     <TableHead>عملیات</TableHead>
                   </TableRow>
@@ -349,7 +373,7 @@ export function WebhookManagement() {
                 <TableBody>
                   {webhooks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         <div className="flex flex-col items-center gap-2">
                           <Plus className="w-8 h-8 text-muted-foreground" />
                           <p className="text-muted-foreground">هیچ وب‌هوکی تعریف نشده است</p>
@@ -372,6 +396,15 @@ export function WebhookManagement() {
                           <Badge variant="outline">
                             {WEBHOOK_EVENTS.find(e => e.value === webhook.event_type)?.label}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {webhook.course_id ? (
+                            <Badge variant="secondary">
+                              {(webhook as any).courses?.title || 'دوره نامشخص'}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">همه دوره‌ها</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={webhook.is_active ? "default" : "secondary"}>
@@ -521,6 +554,32 @@ export function WebhookManagement() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="course">دوره (اختیاری)</Label>
+              <Select 
+                value={formData.course_id || 'all'} 
+                onValueChange={(value) => setFormData({ 
+                  ...formData, 
+                  course_id: value === 'all' ? null : value 
+                })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه دوره‌ها</SelectItem>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">
+                اگر دوره‌ای انتخاب نکنید، وب‌هوک برای همه دوره‌ها اجرا می‌شود
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">
