@@ -105,64 +105,48 @@ const EmailSettings: React.FC = () => {
         throw new Error(`Failed to get OAuth URL: ${urlError?.message || 'No auth URL returned'}`);
       }
 
-      // Show the auth URL to user with instructions
-      const userConfirmed = confirm(`
-Gmail اتصال به حساب
-
-مراحل زیر را دنبال کنید:
-1. روی دکمه OK کلیک کنید
-2. لینک OAuth در تب جدیدی باز خواهد شد
-3. وارد حساب Gmail خود شوید  
-4. دسترسی‌های مورد نیاز را تایید کنید
-5. کد تایید را کپی کنید و در مرحله بعد وارد کنید
-
-آیا آماده ادامه هستید؟
-      `);
-
-      if (!userConfirmed) {
-        return;
-      }
-
-      // Open OAuth URL in new tab
-      const authWindow = window.open(urlData.auth_url, '_blank');
+      // Open OAuth URL in new window
+      const authWindow = window.open(
+        urlData.auth_url, 
+        'gmail-oauth', 
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
       
       if (!authWindow) {
         throw new Error('Popup blocked. Please allow popups and try again.');
       }
 
-      // Wait for user to complete OAuth and get the code
-      const code = prompt(`
-لطفاً کد تایید را از پنجره باز شده کپی کرده و اینجا وارد کنید:
+      // Listen for messages from the OAuth popup
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data.type === 'gmail_oauth_success') {
+          console.log('OAuth success received:', event.data);
+          
+          // Clean up
+          window.removeEventListener('message', handleMessage);
+          authWindow.close();
+          
+          toast({
+            title: "موفق",
+            description: `Gmail successfully connected: ${event.data.email}`,
+          });
 
-نکته: اگر پنجره OAuth بسته شد، دوباره تلاش کنید.
-      `);
-
-      if (!code || code.trim() === '') {
-        throw new Error('Authorization code is required');
-      }
-
-      console.log('Exchanging authorization code...');
-
-      // Exchange code for tokens
-      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('gmail-oauth', {
-        body: { 
-          action: 'exchange_code',
-          code: code.trim()
+          // Refresh credentials
+          fetchCredentials();
+          setOauthLoading(false);
         }
-      });
+      };
 
-      console.log('Token exchange response:', { tokenData, tokenError });
+      // Add message listener
+      window.addEventListener('message', handleMessage);
 
-      if (tokenError || !tokenData?.success) {
-        throw new Error(tokenData?.error || tokenError?.message || 'Failed to exchange authorization code');
-      }
-
-      toast({
-        title: "موفق",
-        description: `Gmail successfully connected: ${tokenData.email}`,
-      });
-
-      fetchCredentials();
+      // Check if window was closed manually
+      const checkClosed = setInterval(() => {
+        if (authWindow.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
+          setOauthLoading(false);
+        }
+      }, 1000);
 
     } catch (error: any) {
       console.error('Gmail OAuth error:', error);
@@ -171,7 +155,6 @@ Gmail اتصال به حساب
         description: error.message || 'Failed to connect Gmail',
         variant: "destructive"
       });
-    } finally {
       setOauthLoading(false);
     }
   };
