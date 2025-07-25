@@ -136,46 +136,11 @@ const EmailSettings: React.FC = () => {
   };
 
   const testEnrollmentEmail = async () => {
-    try {
-      setLoading(true);
-      console.log('🧪 Testing enrollment email by directly calling send-enrollment-email...');
-      
-      // Test with a known enrollment ID - directly call the send-enrollment-email function
-      const testEnrollmentId = 'e7e1dd55-1a93-4e73-911f-c08a8732d3e2'; // From recent logs
-      
-      const { data, error } = await supabase.functions.invoke('send-enrollment-email', {
-        body: { enrollmentId: testEnrollmentId }
-      });
-      
-      if (error) {
-        console.error('❌ Test email error:', error);
-        toast({
-          title: "خطا در تست ایمیل",
-          description: `Error: ${error.message}`,
-          variant: "destructive"
-        });
-      } else {
-        console.log('✅ Test email response:', data);
-        toast({
-          title: "تست ایمیل موفق",
-          description: `Email function called successfully for enrollment ${testEnrollmentId}`,
-        });
-      }
-      
-      // Refresh logs after test
-      setTimeout(() => {
-        fetchEmailLogs();
-      }, 3000);
-    } catch (error: any) {
-      console.error('❌ Test email error:', error);
-      toast({
-        title: "خطا در تست ایمیل",
-        description: error.message || 'Failed to test email function',
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    toast({
+      title: "تست ایمیل",
+      description: "Automatic email sending has been disabled. Emails are handled manually from admin panel.",
+      variant: "default"
+    });
   };
 
   const connectGmail = async () => {

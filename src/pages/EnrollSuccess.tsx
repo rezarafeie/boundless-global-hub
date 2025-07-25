@@ -45,32 +45,7 @@ const EnrollSuccess: React.FC = () => {
     }
   }, [result, user, authenticating]);
 
-  // Send enrollment email 3 seconds after successful enrollment
-  useEffect(() => {
-    if (result?.success && result?.enrollment?.id) {
-      console.log('📧 Scheduling enrollment email in 3 seconds for:', result.enrollment.id);
-      
-      const timer = setTimeout(async () => {
-        try {
-          console.log('📧 Sending delayed enrollment email for:', result.enrollment.id);
-          
-          const { data, error } = await supabase.functions.invoke('send-enrollment-email', {
-            body: { enrollmentId: result.enrollment.id }
-          });
-          
-          if (error) {
-            console.error('❌ Failed to send enrollment email:', error);
-          } else {
-            console.log('✅ Enrollment email sent successfully:', data);
-          }
-        } catch (error) {
-          console.error('❌ Error sending enrollment email:', error);
-        }
-      }, 3000); // 3 second delay
-      
-      return () => clearTimeout(timer);
-    }
-  }, [result?.success, result?.enrollment?.id]);
+  // Automatic email sending removed - emails handled manually from admin panel
 
   // Check smart activation status
   useEffect(() => {
