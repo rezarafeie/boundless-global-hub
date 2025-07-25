@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const GMAIL_CLIENT_ID = "242349790411-gkb8upvjoo1rcmtiru50mb9tu32eqt4g.apps.googleusercontent.com";
 const GMAIL_CLIENT_SECRET = "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";
-const GMAIL_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+const GMAIL_REDIRECT_URI = "https://ihhetvwuhqohbfgkqoxw.supabase.co/functions/v1/gmail-oauth";
 
 serve(async (req) => {
   // Handle CORS preflight requests
