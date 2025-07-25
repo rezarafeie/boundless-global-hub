@@ -28,6 +28,7 @@ import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
 import CourseActionLinks from '@/components/CourseActionLinks';
 import { useLessonTracker } from '@/hooks/useLessonTracker';
+import { useLessonNumber } from '@/hooks/useLessonNumber';
 import { useAuthTracking } from '@/hooks/useAuthTracking';
 
 interface Course {
@@ -83,6 +84,7 @@ const CourseAccess: React.FC = () => {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
   const { logCoursePageVisit, logMaterialDownload } = useAuthTracking();
+  const { getLessonByNumber, getLessonNumberById } = useLessonNumber();
   
   // Function to replace user template variables in content
   const replaceUserTemplate = (content: string): string => {
@@ -119,13 +121,22 @@ const CourseAccess: React.FC = () => {
   }, []);
 
   // Handle lesson selection for mobile and URL updates
-  const handleLessonSelect = (lesson: Lesson) => {
+  const handleLessonSelect = async (lesson: Lesson) => {
     setSelectedLesson(lesson);
     
-    // Update URL with lesson parameter
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('lesson', lesson.id);
-    setSearchParams(newSearchParams, { replace: true });
+    // Update URL with lesson number instead of UUID
+    try {
+      const lessonNumber = await getLessonNumberById(lesson.id);
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('lesson', lessonNumber ? lessonNumber.toString() : lesson.id);
+      setSearchParams(newSearchParams, { replace: true });
+    } catch (error) {
+      console.error('Error getting lesson number:', error);
+      // Fallback to UUID if lesson number is not available
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('lesson', lesson.id);
+      setSearchParams(newSearchParams, { replace: true });
+    }
     
     if (isMobile) {
       setShowMobileLessonView(true);
@@ -319,28 +330,67 @@ const CourseAccess: React.FC = () => {
       
       // First try to find lesson from URL parameter
       if (lessonId) {
-        // Search in title groups
-        for (const group of formattedTitleGroups) {
-          for (const section of group.sections) {
-            const foundLesson = section.lessons.find(lesson => lesson.id === lessonId);
-            if (foundLesson) {
-              lessonToSelect = foundLesson;
-              // Also open the title group containing this lesson
-              initiallyOpen.add(group.id);
-              setOpenTitleGroups(initiallyOpen);
-              break;
-            }
-          }
-          if (lessonToSelect) break;
-        }
+        // Check if lessonId is a number (new system) or UUID (old system)
+        const isLessonNumber = /^\d+$/.test(lessonId);
         
-        // Search in orphan sections if not found in title groups
-        if (!lessonToSelect) {
-          for (const section of formattedOrphanSections) {
-            const foundLesson = section.lessons.find(lesson => lesson.id === lessonId);
-            if (foundLesson) {
-              lessonToSelect = foundLesson;
-              break;
+        if (isLessonNumber && courseSlug) {
+          // New system: Find lesson by number
+          try {
+            const lessonByNumber = await getLessonByNumber(courseSlug, parseInt(lessonId));
+            if (lessonByNumber) {
+              // Find the lesson in our formatted data
+              for (const group of formattedTitleGroups) {
+                for (const section of group.sections) {
+                  const foundLesson = section.lessons.find(lesson => lesson.id === lessonByNumber.id);
+                  if (foundLesson) {
+                    lessonToSelect = foundLesson;
+                    initiallyOpen.add(group.id);
+                    setOpenTitleGroups(initiallyOpen);
+                    break;
+                  }
+                }
+                if (lessonToSelect) break;
+              }
+              
+              // Search in orphan sections if not found in title groups
+              if (!lessonToSelect) {
+                for (const section of formattedOrphanSections) {
+                  const foundLesson = section.lessons.find(lesson => lesson.id === lessonByNumber.id);
+                  if (foundLesson) {
+                    lessonToSelect = foundLesson;
+                    break;
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching lesson by number:', error);
+          }
+        } else {
+          // Old system: Find lesson by UUID
+          // Search in title groups
+          for (const group of formattedTitleGroups) {
+            for (const section of group.sections) {
+              const foundLesson = section.lessons.find(lesson => lesson.id === lessonId);
+              if (foundLesson) {
+                lessonToSelect = foundLesson;
+                // Also open the title group containing this lesson
+                initiallyOpen.add(group.id);
+                setOpenTitleGroups(initiallyOpen);
+                break;
+              }
+            }
+            if (lessonToSelect) break;
+          }
+          
+          // Search in orphan sections if not found in title groups
+          if (!lessonToSelect) {
+            for (const section of formattedOrphanSections) {
+              const foundLesson = section.lessons.find(lesson => lesson.id === lessonId);
+              if (foundLesson) {
+                lessonToSelect = foundLesson;
+                break;
+              }
             }
           }
         }

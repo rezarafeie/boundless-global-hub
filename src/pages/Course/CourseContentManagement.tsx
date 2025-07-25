@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DialogFooter } from '@/components/ui/dialog';
 import MainLayout from '@/components/Layout/MainLayout';
 import CrossCourseLessonCopy from '@/components/Course/CrossCourseLessonCopy';
+import { useLessonNumber } from '@/hooks/useLessonNumber';
 import {
   DndContext,
   closestCenter,
@@ -99,6 +100,7 @@ const CourseContentManagement: React.FC = () => {
   const [editingTitleGroup, setEditingTitleGroup] = useState<CourseTitleGroup | null>(null);
   const [editingSection, setEditingSection] = useState<CourseSection | null>(null);
   const [editingLesson, setEditingLesson] = useState<CourseLesson | null>(null);
+  const { getLessonNumberById } = useLessonNumber();
   
   // Collapsed state for sections - start with all sections collapsed
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -1124,6 +1126,40 @@ const SortableLesson: React.FC<{
         </div>
         
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              try {
+                const lessonNumber = await getLessonNumberById(lesson.id);
+                if (lessonNumber && course) {
+                  const accessUrl = `${window.location.origin}/access?course=${course.slug}&lesson=${lessonNumber}`;
+                  await navigator.clipboard.writeText(accessUrl);
+                  toast({
+                    title: "لینک کپی شد",
+                    description: `لینک درس ${lessonNumber} کپی شد`,
+                    duration: 2000,
+                  });
+                } else {
+                  toast({
+                    title: "خطا",
+                    description: "خطا در تولید لینک درس",
+                    variant: "destructive",
+                  });
+                }
+              } catch (error) {
+                console.error('Error copying lesson link:', error);
+                toast({
+                  title: "خطا",
+                  description: "خطا در کپی کردن لینک",
+                  variant: "destructive",
+                });
+              }
+            }}
+            title="کپی لینک درس"
+          >
+            <ExternalLink className="h-4 w-4" />
+          </Button>
           <Button
             size="sm"
             variant="outline"

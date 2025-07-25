@@ -572,6 +572,7 @@ export type Database = {
           duration: number | null
           file_url: string | null
           id: string
+          lesson_number: number | null
           order_index: number
           section_id: string
           title: string
@@ -585,6 +586,7 @@ export type Database = {
           duration?: number | null
           file_url?: string | null
           id?: string
+          lesson_number?: number | null
           order_index: number
           section_id: string
           title: string
@@ -598,6 +600,7 @@ export type Database = {
           duration?: number | null
           file_url?: string | null
           id?: string
+          lesson_number?: number | null
           order_index?: number
           section_id?: string
           title?: string
@@ -2463,6 +2466,10 @@ export type Database = {
         Args: { phone_number: string }
         Returns: string
       }
+      generate_lesson_numbers: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_unique_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2470,6 +2477,23 @@ export type Database = {
       get_academy_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["academy_user_role"]
+      }
+      get_lesson_by_number: {
+        Args: { course_slug_param: string; lesson_num: number }
+        Returns: {
+          id: string
+          title: string
+          content: string
+          video_url: string
+          file_url: string
+          duration: number
+          order_index: number
+          section_id: string
+          course_id: string
+          lesson_number: number
+          created_at: string
+          updated_at: string
+        }[]
       }
       get_or_create_private_conversation: {
         Args: { p_user1_id: number; p_user2_id: number }
