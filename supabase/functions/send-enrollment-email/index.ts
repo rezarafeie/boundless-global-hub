@@ -32,19 +32,45 @@ serve(async (req) => {
     
     console.log('📝 Processing enrollment:', enrollmentId);
 
-    // Get enrollment details
-    const { data: enrollment, error: enrollmentError } = await supabase
-      .from('enrollments')
-      .select(`
-        *,
-        courses (title, description, redirect_url)
-      `)
-      .eq('id', enrollmentId)
-      .single();
+    // Get enrollment details with retry logic to handle race conditions
+    let enrollment = null;
+    let enrollmentError = null;
+    
+    // Retry up to 3 times with delays to handle race conditions
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`🔄 Attempt ${attempt} to fetch enrollment:`, enrollmentId);
+      
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses (title, description, redirect_url)
+        `)
+        .eq('id', enrollmentId)
+        .maybeSingle();
+
+      if (data) {
+        enrollment = data;
+        enrollmentError = null;
+        console.log(`✅ Enrollment found on attempt ${attempt}`);
+        break;
+      } else if (error && error.code !== 'PGRST116') {
+        // If it's a real error (not just "no rows"), fail immediately
+        enrollmentError = error;
+        console.error(`❌ Database error on attempt ${attempt}:`, error);
+        break;
+      } else {
+        // No data found, wait and retry
+        console.log(`⏳ No enrollment found on attempt ${attempt}, waiting...`);
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        }
+      }
+    }
 
     if (enrollmentError || !enrollment) {
-      console.error('❌ Enrollment not found:', enrollmentError);
-      throw new Error('Enrollment not found');
+      console.error('❌ Enrollment not found after retries:', enrollmentError);
+      throw new Error(`Enrollment not found after ${3} attempts`);
     }
     
     console.log('✅ Enrollment found:', enrollment.email, enrollment.courses?.title);
