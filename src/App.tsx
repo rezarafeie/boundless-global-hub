@@ -81,6 +81,7 @@ import InstructorProfile from "./pages/InstructorProfile";
 import AIAssistant from "./pages/AIAssistant";
 import SolidarityLanding from "./pages/Solidarity/SolidarityLanding";
 import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
+import Start from "./pages/Start";
 
 // English pages
 import EnIndex from "./pages/en/Index";
@@ -177,6 +178,7 @@ const App = () => {
                   <Routes>
                     {/* Main pages */}
                     <Route path="/" element={<Index />} />
+                    <Route path="/start" element={<Start />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
