@@ -143,14 +143,20 @@ const EnrollSuccess: React.FC = () => {
   };
 
   useEffect(() => {
-    if (authority && enrollmentId && status === 'OK') {
+    console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, email });
+    
+    if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
         handleFreeCourseSuccess();
       } else if (authority === 'MANUAL_PAYMENT') {
         // Check if this is a manual payment that's already approved
         handleManualPaymentSuccess();
+      } else if (status === 'OK' || status === 'NOK') {
+        // Zarinpal payment - verify regardless of status to get proper error
+        verifyPayment();
       } else {
+        // Try to verify anyway for Zarinpal payments without status
         verifyPayment();
       }
     } else {

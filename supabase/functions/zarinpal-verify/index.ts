@@ -15,6 +15,7 @@ serve(async (req) => {
 
   try {
     const { authority, enrollmentId, manualApproval } = await req.json();
+    console.log('🔍 Zarinpal verify function called with:', { authority, enrollmentId, manualApproval });
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -148,6 +149,7 @@ serve(async (req) => {
 
     const zarinpalData = await zarinpalResponse.json();
     console.log('Zarinpal verify response:', zarinpalData);
+    console.log('Zarinpal verify status:', zarinpalResponse.status);
 
     if (zarinpalData.data && zarinpalData.data.code === 100) {
       // Payment successful - update enrollment
