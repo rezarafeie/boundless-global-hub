@@ -73,6 +73,24 @@ const EnrollmentDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [smartActivated, setSmartActivated] = useState(false);
+
+  // Load smart activation status from localStorage on component mount
+  useEffect(() => {
+    if (!enrollmentId) return;
+    
+    const activationKey = `activations_${enrollmentId}`;
+    const savedActivations = localStorage.getItem(activationKey);
+    
+    if (savedActivations) {
+      try {
+        const { smart } = JSON.parse(savedActivations);
+        setSmartActivated(smart || false);
+      } catch (error) {
+        console.error('Error parsing saved activations:', error);
+      }
+    }
+  }, [enrollmentId]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -170,6 +188,35 @@ const EnrollmentDetails: React.FC = () => {
         variant: 'destructive'
       });
     }
+  };
+
+  const handleSmartActivation = () => {
+    if (!enrollmentId) return;
+    
+    // Mark smart activation as clicked in localStorage
+    const activationKey = `activations_${enrollmentId}`;
+    const savedActivations = localStorage.getItem(activationKey);
+    let activations = { support: false, telegram: false, smart: false };
+    
+    if (savedActivations) {
+      try {
+        activations = JSON.parse(savedActivations);
+      } catch (error) {
+        console.error('Error parsing saved activations:', error);
+      }
+    }
+    
+    activations.smart = true;
+    localStorage.setItem(activationKey, JSON.stringify(activations));
+    setSmartActivated(true);
+    
+    // Open the link
+    window.open(enrollment!.courses.smart_activation_telegram_link!, '_blank');
+    
+    toast({
+      title: "فعال‌سازی هوشمند",
+      description: "فعال‌سازی هوشمند با موفقیت انجام شد! حالا می‌توانید به دوره‌ها دسترسی پیدا کنید.",
+    });
   };
 
   if (authLoading || loading) {
@@ -327,12 +374,48 @@ const EnrollmentDetails: React.FC = () => {
                   <h3 className="text-xl font-semibold mb-2">{enrollment.courses.title}</h3>
                   <p className="text-muted-foreground mb-4">{enrollment.courses.description}</p>
                   
+                  {/* Smart Activation Section - Above StartCourse */}
+                  {isSuccessfulPayment && enrollment.courses.smart_activation_enabled && enrollment.courses.smart_activation_telegram_link && (
+                    <Card className="mb-6">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Key className="h-5 w-5 text-blue-600" />
+                          فعال‌سازی هوشمند
+                          {smartActivated && (
+                            <Badge className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 mr-2">
+                              <CheckCircle className="h-3 w-3 ml-1" />
+                              فعال شده
+                            </Badge>
+                          )}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          برای دسترسی کامل به دوره، ابتدا فعال‌سازی هوشمند را انجام دهید
+                        </p>
+                        <Button
+                          className="w-full"
+                          onClick={handleSmartActivation}
+                          disabled={smartActivated}
+                          variant={smartActivated ? "outline" : "default"}
+                        >
+                          <Send className="h-4 w-4 mr-2" />
+                          {smartActivated ? "فعال‌سازی انجام شده" : "فعال‌سازی هوشمند"}
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                          {smartActivated ? "شما با موفقیت فعال‌سازی را انجام داده‌اید" : "پس از کلیک روی این دکمه، صفحه StartCourse فعال خواهد شد"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
                   {isSuccessfulPayment && (
                     <StartCourseSection 
                       enrollment={enrollment}
                       course={enrollment.courses}
                       onEnterCourse={handleEnterCourse}
                       userEmail={enrollment.email}
+                      key={`course-section-${enrollment.id}-${smartActivated}`}
                     />
                   )}
                 </div>
@@ -404,32 +487,6 @@ const EnrollmentDetails: React.FC = () => {
             </div>
           )}
 
-          {/* Smart Activation Section */}
-          {isSuccessfulPayment && enrollment.courses.smart_activation_enabled && enrollment.courses.smart_activation_telegram_link && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5 text-blue-600" />
-                  فعال‌سازی هوشمند
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  برای دسترسی کامل به دوره، ابتدا فعال‌سازی هوشمند را انجام دهید
-                </p>
-                <Button
-                  className="w-full"
-                  onClick={() => window.open(enrollment.courses.smart_activation_telegram_link!, '_blank')}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  فعال‌سازی هوشمند
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  پس از کلیک روی این دکمه، صفحه StartCourse فعال خواهد شد
-                </p>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Important Links */}
           {isSuccessfulPayment && (
