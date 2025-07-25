@@ -17,7 +17,19 @@ serve(async (req) => {
 
   try {
     console.log('📧 Send enrollment email function called');
-    const { enrollmentId } = await req.json();
+    
+    const requestBody = await req.text();
+    console.log('📝 Request body:', requestBody);
+    
+    let enrollmentId;
+    try {
+      const parsed = JSON.parse(requestBody);
+      enrollmentId = parsed.enrollmentId;
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      throw new Error('Invalid request body format');
+    }
+    
     console.log('📝 Processing enrollment:', enrollmentId);
 
     // Get enrollment details
