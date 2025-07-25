@@ -44,15 +44,19 @@ const EmailSettings: React.FC = () => {
       const { data, error } = await supabase
         .from('gmail_credentials')
         .select('*')
-        .limit(1)
-        .single();
+        .limit(1);
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching credentials:', error);
         return;
       }
 
-      setCredentials(data);
+      // Handle case where no credentials exist
+      if (data && data.length > 0) {
+        setCredentials(data[0]);
+      } else {
+        setCredentials(null);
+      }
     } catch (error) {
       console.error('Error fetching credentials:', error);
     }
@@ -88,36 +92,56 @@ const EmailSettings: React.FC = () => {
     try {
       setOauthLoading(true);
       
+      console.log('Starting Gmail OAuth process...');
+      
       // Get OAuth URL
       const { data: urlData, error: urlError } = await supabase.functions.invoke('gmail-oauth', {
         body: { action: 'get_auth_url' }
       });
 
+      console.log('OAuth URL response:', { urlData, urlError });
+
       if (urlError || !urlData?.auth_url) {
-        throw new Error('Failed to get OAuth URL');
+        throw new Error(`Failed to get OAuth URL: ${urlError?.message || 'No auth URL returned'}`);
       }
 
-      // Open OAuth window
-      const authWindow = window.open(urlData.auth_url, 'gmail-oauth', 'width=500,height=600');
+      // Show the auth URL to user with instructions
+      const userConfirmed = confirm(`
+Gmail اتصال به حساب
+
+مراحل زیر را دنبال کنید:
+1. روی دکمه OK کلیک کنید
+2. لینک OAuth در تب جدیدی باز خواهد شد
+3. وارد حساب Gmail خود شوید  
+4. دسترسی‌های مورد نیاز را تایید کنید
+5. کد تایید را کپی کنید و در مرحله بعد وارد کنید
+
+آیا آماده ادامه هستید؟
+      `);
+
+      if (!userConfirmed) {
+        return;
+      }
+
+      // Open OAuth URL in new tab
+      const authWindow = window.open(urlData.auth_url, '_blank');
       
       if (!authWindow) {
         throw new Error('Popup blocked. Please allow popups and try again.');
       }
 
-      // Show instructions to user
+      // Wait for user to complete OAuth and get the code
       const code = prompt(`
-لطفاً مراحل زیر را دنبال کنید:
-1. در پنجره باز شده وارد حساب Gmail خود شوید
-2. دسترسی‌های مورد نیاز را تایید کنید
-3. کد تایید را کپی کنید
-4. کد تایید را در اینجا وارد کنید:
+لطفاً کد تایید را از پنجره باز شده کپی کرده و اینجا وارد کنید:
+
+نکته: اگر پنجره OAuth بسته شد، دوباره تلاش کنید.
       `);
 
-      authWindow.close();
-
-      if (!code) {
+      if (!code || code.trim() === '') {
         throw new Error('Authorization code is required');
       }
+
+      console.log('Exchanging authorization code...');
 
       // Exchange code for tokens
       const { data: tokenData, error: tokenError } = await supabase.functions.invoke('gmail-oauth', {
@@ -127,8 +151,10 @@ const EmailSettings: React.FC = () => {
         }
       });
 
+      console.log('Token exchange response:', { tokenData, tokenError });
+
       if (tokenError || !tokenData?.success) {
-        throw new Error(tokenData?.error || 'Failed to exchange authorization code');
+        throw new Error(tokenData?.error || tokenError?.message || 'Failed to exchange authorization code');
       }
 
       toast({
