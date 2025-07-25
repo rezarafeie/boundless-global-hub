@@ -403,6 +403,11 @@ const EnrollSuccess: React.FC = () => {
                               
                               activations.smart = true;
                               localStorage.setItem(activationKey, JSON.stringify(activations));
+                              
+                              // Force a re-render by updating the key
+                              setTimeout(() => {
+                                window.location.reload();
+                              }, 100);
                             }
                           }}
                           className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-all duration-200 border border-purple-200 dark:border-purple-800 hover:shadow-md group relative"
@@ -469,6 +474,7 @@ const EnrollSuccess: React.FC = () => {
                   course={result.course}
                   onEnterCourse={handleEnterCourse}
                   userEmail={email || ''}
+                  key={`course-section-${result.enrollment?.id}`}
                 />
 
                 {/* Course Action Links (if activation requires not activated) */}
