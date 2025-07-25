@@ -167,15 +167,8 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
   }
 
   return (
-    <Card className="border-2 border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-orange-700 dark:text-orange-300">
-          <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-            <MessageSquare className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 p-3 sm:p-4">
+    <Card className="border border-border bg-card">
+      <CardContent className="space-y-3 p-4">
         <div className="space-y-3">
           {availableActions.map((action, index) => {
             const colors = getColorClasses(action.color);
