@@ -264,11 +264,24 @@ const Enroll: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm() || !course) return;
+    console.log('🔥 Enroll button clicked!');
+    console.log('📋 Form data:', formData);
+    console.log('📚 Course:', course);
+    console.log('💰 Is free course?', isFree);
+    console.log('🔑 Payment method:', paymentMethod);
+    
+    if (!validateForm() || !course) {
+      console.log('❌ Form validation failed or no course');
+      return;
+    }
     
     // Manual payment is handled in ManualPaymentSection component
-    if (paymentMethod === 'manual') return;
+    if (paymentMethod === 'manual') {
+      console.log('💳 Manual payment - handled in component');
+      return;
+    }
 
+    console.log('✅ Starting submission process...');
     setSubmitting(true);
     
     try {
