@@ -120,7 +120,7 @@ const EmailSettings: React.FC = () => {
           chat_users (name)
         `)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) {
         console.error('Error fetching email logs:', error);
@@ -130,6 +130,42 @@ const EmailSettings: React.FC = () => {
       setEmailLogs(data || []);
     } catch (error) {
       console.error('Error fetching email logs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testEnrollmentEmail = async () => {
+    try {
+      setLoading(true);
+      console.log('🧪 Testing enrollment email function...');
+      
+      const { data, error } = await supabase.functions.invoke('test-enrollment-email');
+      
+      if (error) {
+        console.error('❌ Test email error:', error);
+        toast({
+          title: "خطا در تست ایمیل",
+          description: `Error: ${error.message}`,
+          variant: "destructive"
+        });
+      } else {
+        console.log('✅ Test email response:', data);
+        toast({
+          title: "تست ایمیل موفق",
+          description: "Email function test completed. Check console for details.",
+        });
+      }
+      
+      // Refresh logs after test
+      fetchEmailLogs();
+    } catch (error: any) {
+      console.error('❌ Test email error:', error);
+      toast({
+        title: "خطا در تست ایمیل",
+        description: error.message || 'Failed to test email function',
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -336,19 +372,36 @@ const EmailSettings: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Email Logs</span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={fetchEmailLogs}
-              disabled={loading}
-            >
-              {loading ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
+            <span>Email Logs & Debug</span>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={testEnrollmentEmail}
+                disabled={loading}
+              >
+                {loading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4 mr-1" />
+                    Test Email
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchEmailLogs}
+                disabled={loading}
+              >
+                {loading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -372,13 +425,14 @@ const EmailSettings: React.FC = () => {
                   <TableHead>Recipient</TableHead>
                   <TableHead>Subject</TableHead>
                   <TableHead>Course/User</TableHead>
+                  <TableHead>Error Details</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLogs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                       {loading ? 'Loading...' : 'No emails found'}
                     </TableCell>
                   </TableRow>
@@ -412,16 +466,27 @@ const EmailSettings: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
+                      <TableCell className="max-w-xs">
+                        {log.error_message && (
+                          <div className="text-red-500 text-xs p-2 bg-red-50 rounded border">
+                            <div className="font-medium mb-1">Error:</div>
+                            <div className="break-words">{log.error_message}</div>
+                          </div>
+                        )}
+                        {log.status === 'success' && (
+                          <Badge variant="outline" className="text-green-600">
+                            No errors
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm text-gray-500">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           {new Date(log.created_at).toLocaleDateString('fa-IR')}
                         </div>
-                        {log.error_message && (
-                          <div className="text-red-500 text-xs mt-1">
-                            {log.error_message}
-                          </div>
-                        )}
+                        <div className="text-xs mt-1">
+                          {new Date(log.created_at).toLocaleTimeString('fa-IR')}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
