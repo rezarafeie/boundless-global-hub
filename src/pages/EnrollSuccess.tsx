@@ -519,7 +519,7 @@ const EnrollSuccess: React.FC = () => {
                   course={result.course}
                   onEnterCourse={handleEnterCourse}
                   userEmail={email || ''}
-                  key={`course-section-${result.enrollment?.id}`}
+                  key={`course-section-${result.enrollment?.id}-${smartActivated}`}
                 />
 
                 {/* Course Action Links (if activation requires not activated) */}
