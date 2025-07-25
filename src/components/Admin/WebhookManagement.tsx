@@ -644,7 +644,10 @@ export function WebhookManagement() {
               }}>
                 انصراف
               </Button>
-              <Button onClick={handleSave} disabled={loading}>
+              <Button onClick={() => {
+                console.log('🔥 Save button clicked!');
+                handleSave();
+              }} disabled={loading}>
                 {loading ? 'در حال ذخیره...' : 'ذخیره'}
               </Button>
             </div>
