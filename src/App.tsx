@@ -246,6 +246,7 @@ const App = () => {
                     <Route path="/course/american-business" element={<AmericanBusinessPage />} />
                     <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
                     <Route path="/course/passive-income" element={<PassiveIncomePage />} />
+                    <Route path="/daramad" element={<PassiveIncomePage />} />
 
                     {/* Course access control */}
                     <Route path="/course/access/taghir" element={<TaghirAccess />} />
