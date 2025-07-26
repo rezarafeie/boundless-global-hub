@@ -533,13 +533,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           roomId: selectedRoom.id,
           topicId: selectedTopic?.id,
           tempId,
-          messageId: sentMessage?.id
+          messageId: sentMessage?.id,
+          sentMessageObject: sentMessage
         });
         
         // Send webhook for group message with messageId for delete link
         try {
           await webhookService.sendMessageWebhook({
-            messageId: sentMessage?.id,
+            messageId: sentMessage?.id || sentMessage?.messageId || sentMessage,
             messageContent: message,
             senderName: currentUser.name,
             senderPhone: currentUser.phone,
@@ -554,7 +555,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             messageType: media ? 'media' : 'text',
             tableName: 'messenger_messages'
           });
-          console.log('✅ Group message webhook sent successfully');
+          console.log('✅ Group message webhook sent successfully with messageId:', sentMessage?.id);
         } catch (webhookError) {
           console.error('❌ Failed to send group message webhook:', webhookError);
         }
@@ -573,7 +574,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaContent
           );
           debugLog('Support message sent successfully', {
-            messageId: sentMessage?.id
+            messageId: sentMessage?.id,
+            sentMessageObject: sentMessage
           });
         } else {
           // Private message
@@ -590,14 +592,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             sessionToken
           );
           debugLog('Private message sent successfully', {
-            messageId: sentMessage?.id
+            messageId: sentMessage?.id,
+            sentMessageObject: sentMessage
           });
         }
         
         // Send webhook for private/support message with messageId for delete link
         try {
           await webhookService.sendMessageWebhook({
-            messageId: sentMessage?.id,
+            messageId: sentMessage?.id || sentMessage?.messageId || sentMessage,
             messageContent: message,
             senderName: currentUser.name,
             senderPhone: currentUser.phone,
@@ -611,7 +614,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             messageType: media ? 'media' : 'text',
             tableName: chatType === 'support' ? 'messenger_messages' : 'private_messages'
           });
-          console.log(`✅ ${chatType} message webhook sent successfully`);
+          console.log(`✅ ${chatType} message webhook sent successfully with messageId:`, sentMessage?.id);
         } catch (webhookError) {
           console.error(`❌ Failed to send ${chatType} message webhook:`, webhookError);
         }
