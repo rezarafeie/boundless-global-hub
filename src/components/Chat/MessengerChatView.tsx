@@ -506,14 +506,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       let chatType: 'group' | 'private' | 'support' = 'private';
       let chatName = '';
       let topicName = '';
+      let sentMessage: any = null;
 
       if (selectedRoom) {
         // Group or super group message
         chatType = 'group';
         chatName = selectedRoom.name;
         
-        // Send the message
-        await messengerService.sendMessage(
+        // Send the message and get the result
+        sentMessage = await messengerService.sendMessage(
           selectedRoom.id, 
           currentUser.id, 
           message, 
@@ -531,12 +532,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         debugLog('Room message sent successfully', {
           roomId: selectedRoom.id,
           topicId: selectedTopic?.id,
-          tempId
+          tempId,
+          messageId: sentMessage?.id
         });
         
-        // Send webhook for group message
+        // Send webhook for group message with messageId for delete link
         try {
           await webhookService.sendMessageWebhook({
+            messageId: sentMessage?.id,
             messageContent: message,
             senderName: currentUser.name,
             senderPhone: currentUser.phone,
@@ -562,20 +565,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           chatType = 'support';
           chatName = 'Support';
           
-          await messengerService.sendSupportMessage(
+          sentMessage = await messengerService.sendSupportMessage(
             currentUser.id,
             message,
             mediaUrl,
             mediaType,
             mediaContent
           );
-          debugLog('Support message sent successfully');
+          debugLog('Support message sent successfully', {
+            messageId: sentMessage?.id
+          });
         } else {
           // Private message
           chatType = 'private';
           chatName = selectedUser.name;
           
-          await privateMessageService.sendMessage(
+          sentMessage = await privateMessageService.sendMessage(
             currentUser.id,
             selectedUser.id,
             message,
@@ -584,12 +589,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaContent,
             sessionToken
           );
-          debugLog('Private message sent successfully');
+          debugLog('Private message sent successfully', {
+            messageId: sentMessage?.id
+          });
         }
         
-        // Send webhook for private/support message
+        // Send webhook for private/support message with messageId for delete link
         try {
           await webhookService.sendMessageWebhook({
+            messageId: sentMessage?.id,
             messageContent: message,
             senderName: currentUser.name,
             senderPhone: currentUser.phone,
