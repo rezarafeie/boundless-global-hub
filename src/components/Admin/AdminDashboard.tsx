@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -459,7 +458,7 @@ const AdminDashboard: React.FC = () => {
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse"></div>
+                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
                 ))}
               </div>
             ) : stats.pendingEnrollmentsList.length === 0 ? (
@@ -469,70 +468,50 @@ const AdminDashboard: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {stats.pendingEnrollmentsList.map((enrollment) => (
-                  <div key={enrollment.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0 mt-1 lg:mt-0"></div>
-                      
-                      {/* Main Info */}
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                          <p className="font-medium text-gray-900">{enrollment.full_name}</p>
-                          <span className="hidden sm:inline text-sm text-gray-500">•</span>
-                          <p className="text-sm text-gray-600">{enrollment.courses?.title}</p>
-                        </div>
-                        
-                        {/* Mobile: Stack info vertically */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-gray-500">
-                          <span className="font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span>{formatTime(enrollment.created_at)}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="text-xs bg-gray-100 px-2 py-1 rounded">{formatDateTime(enrollment.created_at)}</span>
-                        </div>
-                      </div>
-
-                      {/* Receipt and Actions */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:gap-3">
-                        {/* Receipt Button */}
-                        {enrollment.receipt_url ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => window.open(enrollment.receipt_url, '_blank')}
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            <span className="hidden sm:inline">رسید</span>
-                            <span className="sm:hidden">مشاهده رسید</span>
-                          </Button>
-                        ) : (
-                          <div className="text-xs text-gray-400 px-3 py-2 text-center">
-                            بدون رسید
-                          </div>
+                  <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                      <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-500">{formatTime(enrollment.created_at)}</span>
+                        {enrollment.receipt_url && (
+                          <>
+                            <span className="text-xs text-gray-400">•</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                              onClick={() => window.open(enrollment.receipt_url, '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              رسید
+                            </Button>
+                          </>
                         )}
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleApprovePayment(enrollment.id)}
-                            className="flex-1 sm:flex-none text-green-600 hover:text-green-700 hover:border-green-300 hover:bg-green-50"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            تایید
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRejectPayment(enrollment.id)}
-                            className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:border-red-300 hover:bg-red-50"
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            رد
-                          </Button>
-                        </div>
                       </div>
+                    </div>
+
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleApprovePayment(enrollment.id)}
+                        className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRejectPayment(enrollment.id)}
+                        className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
