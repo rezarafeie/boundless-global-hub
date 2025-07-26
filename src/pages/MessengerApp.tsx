@@ -255,8 +255,6 @@ const MessengerApp = () => {
           onUserUpdate={handleUserUpdate}
           isOffline={isOfflineMode}
           onLogout={handleLogout}
-          // Temporarily disable notification banner
-          disableNotificationBanner={true}
         />
       </div>
     </ReplyProvider>
