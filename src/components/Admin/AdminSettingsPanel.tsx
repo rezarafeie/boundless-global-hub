@@ -1,134 +1,147 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { messengerService, type AdminSettings } from '@/lib/messengerService';
-import { Settings, Shield, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Webhook, 
+  Link, 
+  Percent, 
+  Upload,
+  Settings as SettingsIcon 
+} from 'lucide-react';
+import { WebhookManagement } from './WebhookManagement';
+import ShortLinksManager from '../admin/ShortLinksManager';
+import DiscountManagement from './DiscountManagement';
+import { DataImportSection } from '../admin/DataImportSection';
 
 const AdminSettingsPanel: React.FC = () => {
-  const { toast } = useToast();
-  const [settings, setSettings] = useState<AdminSettings>({
-    id: 1,
-    manual_approval_enabled: false,
-    updated_at: new Date().toISOString()
-  });
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          تنظیمات سیستم
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          مدیریت تنظیمات پیشرفته و ابزارهای سیستم
+        </p>
+      </div>
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+      <Tabs defaultValue="webhooks" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur-sm">
+          <TabsTrigger value="webhooks" className="flex items-center gap-2">
+            <Webhook className="h-4 w-4" />
+            <span className="hidden sm:inline">وب‌هوک‌ها</span>
+          </TabsTrigger>
+          <TabsTrigger value="shortlinks" className="flex items-center gap-2">
+            <Link className="h-4 w-4" />
+            <span className="hidden sm:inline">لینک‌های کوتاه</span>
+          </TabsTrigger>
+          <TabsTrigger value="discounts" className="flex items-center gap-2">
+            <Percent className="h-4 w-4" />
+            <span className="hidden sm:inline">کدهای تخفیف</span>
+          </TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">وارد کردن داده</span>
+          </TabsTrigger>
+        </TabsList>
 
-  const loadSettings = async () => {
-    try {
-      setLoading(true);
-      const adminSettings = await messengerService.getAdminSettings();
-      setSettings(adminSettings);
-    } catch (error: any) {
-      console.error('Error loading admin settings:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری تنظیمات',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        <TabsContent value="webhooks" className="space-y-6">
+          <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Webhook className="h-5 w-5" />
+                مدیریت وب‌هوک‌ها
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WebhookManagement />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-  const handleManualApprovalToggle = async (enabled: boolean) => {
-    try {
-      setUpdating(true);
-      await messengerService.updateAdminSettings({
-        manual_approval_enabled: enabled
-      });
-      
-      setSettings(prev => ({
-        ...prev,
-        manual_approval_enabled: enabled,
-        updated_at: new Date().toISOString()
-      }));
+        <TabsContent value="shortlinks" className="space-y-6">
+          <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5" />
+                مدیریت لینک‌های کوتاه
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ShortLinksManager />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      toast({
-        title: 'موفق',
-        description: enabled 
-          ? 'تایید دستی کاربران فعال شد' 
-          : 'تایید خودکار کاربران فعال شد',
-      });
-    } catch (error: any) {
-      console.error('Error updating settings:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در به‌روزرسانی تنظیمات',
-        variant: 'destructive',
-      });
-    } finally {
-      setUpdating(false);
-    }
-  };
+        <TabsContent value="discounts" className="space-y-6">
+          <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Percent className="h-5 w-5" />
+                مدیریت کدهای تخفیف
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DiscountManagement />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-  if (loading) {
-    return (
-      <Card>
+        <TabsContent value="import" className="space-y-6">
+          <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                وارد کردن داده از فایل
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DataImportSection />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* System Information */}
+      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            تنظیمات سیستم
+            <SettingsIcon className="h-5 w-5" />
+            اطلاعات سیستم
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-semibold mb-2">تنظیمات پرداخت</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• درگاه: زرین‌پال</li>
+                <li>• واحد پول: تومان</li>
+                <li>• تایید خودکار: فعال</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2">تنظیمات WooCommerce</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• دامنه: auth.rafiei.co</li>
+                <li>• API: فعال</li>
+                <li>• سفارش خودکار: فعال</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="font-semibold text-blue-800 mb-2">اطلاعات مهم</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• تمام پرداخت‌ها از طریق زرین‌پال امن هستند</li>
+              <li>• سفارشات به صورت خودکار در WooCommerce ثبت می‌شوند</li>
+              <li>• ایمیل‌های تایید به صورت خودکار ارسال می‌شوند</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
-          تنظیمات سیستم
-        </CardTitle>
-        <CardDescription>
-          مدیریت تنظیمات عمومی پیام‌رسان
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-blue-500" />
-              <Label htmlFor="manual-approval" className="font-medium">
-                تایید دستی کاربران
-              </Label>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {settings.manual_approval_enabled 
-                ? 'کاربران جدید نیاز به تایید مدیر دارند'
-                : 'کاربران جدید به طور خودکار تایید می‌شوند'
-              }
-            </p>
-          </div>
-          <Switch
-            id="manual-approval"
-            checked={settings.manual_approval_enabled}
-            onCheckedChange={handleManualApprovalToggle}
-            disabled={updating}
-          />
-        </div>
-
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="w-4 h-4" />
-          <span>
-            آخرین به‌روزرسانی: {new Date(settings.updated_at).toLocaleString('fa-IR')}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 

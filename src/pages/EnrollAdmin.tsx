@@ -31,7 +31,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/Layout/MainLayout';
-import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { AdminSidebar } from '@/components/Admin/AdminSidebar';
 import DiscountManagement from '@/components/Admin/DiscountManagement';
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import CourseManagement from '@/components/Admin/CourseManagement';
@@ -836,7 +836,10 @@ const EnrollAdmin: React.FC = () => {
         <div className="flex min-h-screen w-full">
           {/* Desktop Sidebar - Always visible */}
           <div className="hidden lg:block">
-            <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+            <AdminSidebar 
+              activeView={activeView as any} 
+              onViewChange={(view) => setActiveView(view as any)} 
+            />
           </div>
           
           {/* Main Content */}
@@ -844,7 +847,10 @@ const EnrollAdmin: React.FC = () => {
             {/* Mobile Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
               <div className="flex items-center justify-start px-4 py-3">
-                <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+                <AdminSidebar 
+                  activeView={activeView as any} 
+                  onViewChange={(view) => setActiveView(view as any)} 
+                />
               </div>
             </div>
               
