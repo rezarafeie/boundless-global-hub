@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -409,7 +410,12 @@ const AdminDashboard: React.FC = () => {
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                        <button
+                          onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate"
+                        >
+                          {enrollment.full_name}
+                        </button>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -512,7 +518,7 @@ const AdminDashboard: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <button
                             onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                            className="font-medium text-blue-600 hover:text-blue-800 truncate block w-full text-right"
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block w-full text-right"
                           >
                             {enrollment.full_name}
                           </button>
@@ -581,7 +587,7 @@ const AdminDashboard: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <button
                           onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                          className="font-medium text-blue-600 hover:text-blue-800 truncate block w-full text-right"
+                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block w-full text-right"
                         >
                           {enrollment.full_name}
                         </button>

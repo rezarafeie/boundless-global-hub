@@ -175,6 +175,17 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
     return new Date(dateString).toLocaleDateString('fa-IR');
   };
 
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const persianDate = date.toLocaleDateString('fa-IR');
+    const time = date.toLocaleTimeString('fa-IR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false 
+    });
+    return `${persianDate} - ${time}`;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -212,113 +223,225 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>کاربر</TableHead>
-                  <TableHead>دوره</TableHead>
-                  <TableHead>مبلغ</TableHead>
-                  <TableHead>تاریخ</TableHead>
-                  <TableHead>رسید</TableHead>
-                  <TableHead>عملیات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingEnrollments.map((enrollment) => (
-                  <TableRow key={enrollment.id}>
-                    <TableCell>
-                      <div className="space-y-1">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>کاربر</TableHead>
+                    <TableHead>دوره</TableHead>
+                    <TableHead>مبلغ</TableHead>
+                    <TableHead>تاریخ</TableHead>
+                    <TableHead>رسید</TableHead>
+                    <TableHead>عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingEnrollments.map((enrollment) => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <button
+                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {enrollment.full_name}
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="h-3 w-3" />
+                            <span>{enrollment.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            <span>{enrollment.phone}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{enrollment.courses.title}</div>
+                          <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4" />
+                          {formatPrice(enrollment.payment_amount)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                      <TableCell>
+                        {enrollment.receipt_url ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                          >
+                            مشاهده رسید
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">ندارد</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewEnrollDetails(enrollment.id)}
+                            className="text-blue-600 hover:text-blue-700"
+                            title="مشاهده ثبت‌نام"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                            className="text-purple-600 hover:text-purple-700"
+                            title="جزئیات ثبت‌نام"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleApprove(enrollment.id)}
+                            className="text-green-600 hover:text-green-700"
+                            title="تایید پرداخت"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleReject(enrollment.id)}
+                            className="text-red-600 hover:text-red-700"
+                            title="رد پرداخت"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {pendingEnrollments.map((enrollment) => (
+                <Card key={enrollment.id} className="border border-orange-200">
+                  <CardContent className="p-4 space-y-3">
+                    {/* User Info */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           <button
                             onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate"
                           >
                             {enrollment.full_name}
                           </button>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="h-3 w-3" />
-                          <span>{enrollment.email}</span>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{enrollment.email}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3" />
+                          <Phone className="h-3 w-3 flex-shrink-0" />
                           <span>{enrollment.phone}</span>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{enrollment.courses.title}</div>
-                        <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 flex-shrink-0">
+                        در انتظار
+                      </Badge>
+                    </div>
+
+                    {/* Course and Amount */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{enrollment.courses.title}</p>
+                          <p className="text-sm text-muted-foreground">{enrollment.courses.slug}</p>
+                        </div>
+                        <div className="text-left flex-shrink-0 ml-3">
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4" />
+                            <span className="font-medium">{formatPrice(enrollment.payment_amount)}</span>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        {formatPrice(enrollment.payment_amount)}
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{formatDateTime(enrollment.created_at)}</span>
+                        {enrollment.receipt_url && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                            onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            رسید
+                          </Button>
+                        )}
                       </div>
-                    </TableCell>
-                    <TableCell>{formatDate(enrollment.created_at)}</TableCell>
-                    <TableCell>
-                      {enrollment.receipt_url ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(enrollment.receipt_url!, '_blank')}
-                        >
-                          مشاهده رسید
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">ندارد</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    </div>
+
+                    {/* Actions */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleViewEnrollDetails(enrollment.id)}
-                          className="text-blue-600 hover:text-blue-700"
-                          title="مشاهده ثبت‌نام"
+                          className="text-blue-600 hover:text-blue-700 flex-1 min-w-0"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 mr-1" />
+                          <span className="truncate">مشاهده</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                          className="text-purple-600 hover:text-purple-700"
-                          title="جزئیات ثبت‌نام"
+                          className="text-purple-600 hover:text-purple-700 flex-1 min-w-0"
                         >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleApprove(enrollment.id)}
-                          className="text-green-600 hover:text-green-700"
-                          title="تایید پرداخت"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleReject(enrollment.id)}
-                          className="text-red-600 hover:text-red-700"
-                          title="رد پرداخت"
-                        >
-                          <XCircle className="h-4 w-4" />
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          <span className="truncate">جزئیات</span>
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(enrollment.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          تایید
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleReject(enrollment.id)}
+                          className="flex-1"
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          رد
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
