@@ -1,778 +1,713 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle, RefreshCw } from 'lucide-react';
-import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
-import { privateMessageService, type PrivateMessage } from '@/lib/privateMessageService';
-import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { supabase } from '@/integrations/supabase/client';
-import SuperGroupTopicSelection from './SuperGroupTopicSelection';
-import PinnedMessage from './PinnedMessage';
-import ModernChatInput from './ModernChatInput';
-import ModernChatMessage from './ModernChatMessage';
-import MediaMessage from './MediaMessage';
-import UserProfile from './UserProfile';
-import type { ChatTopic } from '@/types/supabase';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  Send, 
+  Users, 
+  MessageCircle, 
+  Hash, 
+  Plus,
+  Paperclip,
+  Image,
+  FileText,
+  X,
+  ChevronLeft,
+  Settings,
+  LogOut,
+  Wifi,
+  WifiOff
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { type MessengerUser, type MessengerRoom, type MessengerMessage, type ChatTopic } from '@/lib/messengerService';
+import { webhookService } from '@/lib/webhookService';
+import { enhancedWebhookService } from '@/lib/enhancedWebhookService';
+import MessengerMessageItem from './MessengerMessageItem';
+import MessengerTopicSelector from './MessengerTopicSelector';
+import MessengerRoomSettings from './MessengerRoomSettings';
+import MessengerUserProfile from './MessengerUserProfile';
 
 interface MessengerChatViewProps {
-  selectedRoom: ChatRoom | null;
-  selectedUser: MessengerUser | null;
   currentUser: MessengerUser;
-  sessionToken: string;
-  onBack?: () => void;
-  onBackToRooms?: () => void;
-}
-
-interface OptimisticMessage extends MessengerMessage {
-  isOptimistic?: boolean;
-  tempId?: string;
+  onUserUpdate: (user: MessengerUser) => void;
+  isOffline?: boolean;
+  onLogout?: () => void;
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
-  selectedRoom,
-  selectedUser,
   currentUser,
-  sessionToken,
-  onBack,
-  onBackToRooms
+  onUserUpdate,
+  isOffline = false,
+  onLogout
 }) => {
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [messages, setMessages] = useState<OptimisticMessage[]>([]);
+  const [rooms, setRooms] = useState<MessengerRoom[]>([]);
+  const [currentRoom, setCurrentRoom] = useState<MessengerRoom | null>(null);
+  const [messages, setMessages] = useState<MessengerMessage[]>([]);
+  const [optimisticMessages, setOptimisticMessages] = useState<MessengerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [topics, setTopics] = useState<ChatTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<ChatTopic | null>(null);
-  const [pinnedMessage, setPinnedMessage] = useState<any>(null);
+  const [showRoomSettings, setShowRoomSettings] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
-  const [profileUser, setProfileUser] = useState<MessengerUser | null>(null);
-  const [messageLoadError, setMessageLoadError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showRoomList, setShowRoomList] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const realtimeChannelsRef = useRef<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Debug mode flag - can be enabled via URL param
-  const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
-
-  const debugLog = (message: string, data?: any) => {
-    if (debugMode) {
-      console.log(`[MessengerChat Debug] ${message}`, data);
-    }
-  };
-
-  // Enhanced conversation ID resolution with retry
-  const getOrCreateConversationId = async (user1Id: number, user2Id: number, retries = 3): Promise<number> => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        const conversationId = await privateMessageService.getOrCreateConversation(user1Id, user2Id);
-        debugLog(`Conversation ID resolved: ${conversationId} (attempt ${attempt})`);
-        return conversationId;
-      } catch (error) {
-        debugLog(`Conversation ID resolution failed (attempt ${attempt}):`, error);
-        if (attempt === retries) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setShowRoomList(true);
       }
-    }
-    throw new Error('Failed to resolve conversation ID');
-  };
-
-  useEffect(() => {
-    if (selectedRoom || selectedUser) {
-      loadMessages();
-    }
-    return () => {
-      // Cleanup optimistic messages when switching chats
-      setMessages(prev => prev.filter(msg => !msg.isOptimistic));
     };
-  }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
-
-  // Enhanced real-time subscription with better error handling
-  useEffect(() => {
-    if (!selectedRoom && !selectedUser) return;
     
-    // Cleanup previous channels
-    realtimeChannelsRef.current.forEach(channel => {
-      supabase.removeChannel(channel);
-    });
-    realtimeChannelsRef.current = [];
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
-    debugLog('Setting up realtime subscriptions for:', { 
-      roomId: selectedRoom?.id, 
-      userId: selectedUser?.id,
-      currentUserId: currentUser.id 
-    });
-
-    const channels: any[] = [];
-    
-    // Subscribe to messenger messages for room chats
-    if (selectedRoom) {
-      const roomMessagesChannel = supabase
-        .channel(`room_messages_${selectedRoom.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messenger_messages',
-            filter: `room_id=eq.${selectedRoom.id}`
-          },
-          (payload) => {
-            debugLog('New room message received:', payload);
-            const newMessage = payload.new as any;
-            setMessages(prev => {
-              // Remove any optimistic message with same content and replace with real message
-              const filteredMessages = prev.filter(msg => 
-                !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
-                  msg.message === newMessage.message && 
-                  Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
-              );
-              
-              // Check if real message already exists
-              const exists = filteredMessages.find(msg => msg.id === newMessage.id);
-              if (!exists) {
-                return [...filteredMessages, {
-                  ...newMessage,
-                  sender: { name: 'Unknown', phone: '' }
-                }];
-              }
-              return filteredMessages;
-            });
-          }
-        )
-        .subscribe();
-      channels.push(roomMessagesChannel);
-    }
-
-    // Subscribe to private messages for private chats
-    if (selectedUser && selectedUser.id !== 1) {
-      const privateMessagesChannel = supabase
-        .channel(`private_messages_user_${selectedUser.id}_${currentUser.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'private_messages'
-          },
-          async (payload) => {
-            debugLog('New private message received:', payload);
-            const newMessage = payload.new as any;
-            
-            try {
-              // Enhanced conversation validation
-              const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
-              if (conversation && 
-                  ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
-                   (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
-                
-                setMessages(prev => {
-                  // Remove optimistic message and add real message
-                  const filteredMessages = prev.filter(msg => 
-                    !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
-                      msg.message === newMessage.message &&
-                      Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
-                  );
-                  
-                  // Check if real message already exists
-                  const exists = filteredMessages.find(msg => msg.id === newMessage.id);
-                  if (!exists) {
-                    return [...filteredMessages, {
-                      ...newMessage,
-                      room_id: undefined,
-                      media_url: newMessage.media_url,
-                      message_type: newMessage.message_type || 'text',
-                      media_content: newMessage.media_content,
-                      sender: {
-                        name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-                        phone: ''
-                      }
-                    }];
-                  }
-                  return filteredMessages;
-                });
-              }
-            } catch (error) {
-              debugLog('Error processing private message:', error);
-            }
-          }
-        )
-        .subscribe();
-      channels.push(privateMessagesChannel);
-    }
-
-    // Subscribe to support messages
-    if (selectedUser && selectedUser.id === 1) {
-      const supportMessagesChannel = supabase
-        .channel(`support_messages_${currentUser.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messenger_messages',
-            filter: `recipient_id=eq.1`
-          },
-          (payload) => {
-            debugLog('New support message received:', payload);
-            const newMessage = payload.new as any;
-            
-            if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
-              setMessages(prev => {
-                const filteredMessages = prev.filter(msg => 
-                  !(msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
-                    msg.message === newMessage.message)
-                );
-                
-                const exists = filteredMessages.find(msg => msg.id === newMessage.id);
-                if (!exists) {
-                  return [...filteredMessages, {
-                    ...newMessage,
-                    sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' }
-                  }];
-                }
-                return filteredMessages;
-              });
-            }
-          }
-        )
-        .subscribe();
-      channels.push(supportMessagesChannel);
-    }
-
-    realtimeChannelsRef.current = channels;
-
-    // Cleanup function
-    return () => {
-      channels.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
-      realtimeChannelsRef.current = [];
-    };
-  }, [selectedRoom?.id, selectedUser?.id, currentUser.id]);
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, optimisticMessages, scrollToBottom]);
 
-  // Fetch user avatars when messages change
-  useEffect(() => {
-    const fetchUserAvatars = async () => {
-      const userIds = [...new Set(messages.map(msg => msg.sender_id).filter(Boolean))];
-      if (userIds.length === 0) return;
+  const loadRooms = useCallback(async () => {
+    if (!currentUser?.id) return;
 
-      try {
-        const { data, error } = await supabase
-          .from('chat_users')
-          .select('id, avatar_url')
-          .in('id', userIds);
-
-        if (error) throw error;
-
-        const avatarMap: Record<number, string> = {};
-        data?.forEach(user => {
-          if (user.avatar_url) {
-            avatarMap[user.id] = user.avatar_url;
-          }
-        });
-        
-        setUserAvatars(avatarMap);
-      } catch (error) {
-        debugLog('Error fetching user avatars:', error);
-      }
-    };
-
-    fetchUserAvatars();
-  }, [messages]);
-
-  // Enhanced message loading with retry logic
-  const loadMessages = async (retry = false) => {
     try {
-      setLoading(true);
-      setMessageLoadError(null);
+      const { data, error } = await supabase
+        .from('messenger_room_members')
+        .select(`
+          room:messenger_rooms(
+            id,
+            name,
+            description,
+            created_at,
+            created_by,
+            is_private,
+            member_count
+          )
+        `)
+        .eq('user_id', currentUser.id);
+
+      if (error) throw error;
+
+      const roomsData = data?.map(item => item.room).filter(Boolean) || [];
+      setRooms(roomsData);
       
-      let roomMessages: MessengerMessage[] = [];
-      
-      if (selectedRoom) {
-        debugLog('Loading messages for room:', selectedRoom.id);
-        if (selectedRoom.is_super_group) {
-          roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
-        } else {
-          roomMessages = await messengerService.getMessages(selectedRoom.id);
-        }
-      } else if (selectedUser) {
-        if (selectedUser.id === 1) {
-          debugLog('Loading support messages for user:', currentUser.id);
-          roomMessages = await messengerService.getSupportMessages(currentUser.id);
-        } else {
-          debugLog('Loading private messages between users');
-          const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
-          const privateMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
-          
-          roomMessages = privateMessages.map(msg => ({
-            ...msg,
-            room_id: undefined,
-            media_url: msg.media_url,
-            message_type: msg.message_type || 'text',
-            media_content: msg.media_content,
-            sender: {
-              name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-              phone: ''
-            }
-          }));
-        }
+      if (roomsData.length > 0 && !currentRoom) {
+        setCurrentRoom(roomsData[0]);
       }
-      
-      debugLog('Loaded messages:', roomMessages.length);
-      setMessages(roomMessages);
-      setRetryCount(0);
     } catch (error) {
-      debugLog('Error loading messages:', error);
-      const errorMessage = error instanceof Error ? error.message : 'خطا در بارگذاری پیام‌ها';
-      setMessageLoadError(errorMessage);
-      
-      if (!retry && retryCount < 3) {
-        setRetryCount(prev => prev + 1);
-        setTimeout(() => loadMessages(true), 2000 * (retryCount + 1));
+      console.error('Error loading rooms:', error);
+      toast.error('Failed to load rooms');
+    }
+  }, [currentUser?.id, currentRoom]);
+
+  const loadTopics = useCallback(async () => {
+    if (!currentRoom?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .select('*')
+        .eq('room_id', currentRoom.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      setTopics(data || []);
+    } catch (error) {
+      console.error('Error loading topics:', error);
+    }
+  }, [currentRoom?.id]);
+
+  const loadMessages = useCallback(async () => {
+    if (!currentRoom?.id) return;
+
+    try {
+      let query = supabase
+        .from('messenger_messages')
+        .select(`
+          id,
+          created_at,
+          room_id,
+          sender_id,
+          message,
+          topic_id,
+          media_url,
+          message_type,
+          media_content,
+          conversation_id,
+          sender:chat_users!messenger_messages_sender_id_fkey(name, phone)
+        `)
+        .eq('room_id', currentRoom.id)
+        .order('created_at', { ascending: true });
+
+      if (selectedTopic) {
+        query = query.eq('topic_id', selectedTopic.id);
       } else {
-        toast({
-          title: 'خطا',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-        setMessages([]);
+        query = query.is('topic_id', null);
       }
-    } finally {
-      setLoading(false);
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast.error('Failed to load messages');
     }
-  };
+  }, [currentRoom?.id, selectedTopic]);
 
-  // Manual refresh function
-  const handleManualRefresh = () => {
-    debugLog('Manual refresh triggered');
+  useEffect(() => {
+    loadRooms();
+  }, [loadRooms]);
+
+  useEffect(() => {
+    if (currentRoom) {
+      loadTopics();
+      loadMessages();
+    }
+  }, [currentRoom, loadTopics, loadMessages]);
+
+  useEffect(() => {
     loadMessages();
-  };
+  }, [selectedTopic, loadMessages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    if (!currentRoom?.id) return;
 
-  // Enhanced message sending with better optimistic updates
-  const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => {
-    if ((!messageText.trim() && !media) || sending) return;
+    const channel = supabase
+      .channel(`room-${currentRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messenger_messages',
+          filter: `room_id=eq.${currentRoom.id}`
+        },
+        (payload) => {
+          const newMessage = payload.new as MessengerMessage;
+          
+          if (selectedTopic && newMessage.topic_id !== selectedTopic.id) return;
+          if (!selectedTopic && newMessage.topic_id !== null) return;
+          
+          if (newMessage.sender_id !== currentUser.id) {
+            setMessages(prev => [...prev, newMessage]);
+          }
+        }
+      )
+      .subscribe();
 
-    const tempId = `temp_${Date.now()}_${Math.random()}`;
-    const optimisticMessage: OptimisticMessage = {
-      id: Date.now(),
-      tempId,
-      message: messageText || (media ? '📎 File' : ''),
-      sender_id: currentUser.id,
-      created_at: new Date().toISOString(),
-      room_id: selectedRoom?.id || 0,
-      media_url: media?.url || null,
-      media_content: media ? JSON.stringify({ 
-        name: media.name, 
-        size: media.size,
-        url: media.url,
-        type: media.type
-      }) : null,
-      message_type: media ? 'media' : 'text',
-      topic_id: selectedTopic?.id,
-      conversation_id: null,
-      sender: { name: currentUser.name, phone: currentUser.phone },
-      isOptimistic: true
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [currentRoom?.id, selectedTopic, currentUser.id]);
+
+  const sendMessage = async (content: string, mediaFile?: File) => {
+    if (!content.trim() && !mediaFile) return;
+    if (!currentUser?.id) return;
+
+    console.log('📤 [MessengerChatView] Sending message:', {
+      content: content.substring(0, 50) + '...',
+      currentRoom: currentRoom?.id,
+      selectedTopic: selectedTopic?.id,
+      hasMediaFile: !!mediaFile
+    });
 
     try {
-      setSending(true);
-      
-      // Add optimistic message immediately
-      setMessages(prev => [...prev, optimisticMessage]);
-      debugLog('Added optimistic message:', tempId);
-      
-      const message = messageText || '';
-      const mediaUrl = media?.url;
-      const mediaType = media?.type;
-      const mediaContent = media ? JSON.stringify({ 
-        name: media.name, 
-        size: media.size,
-        url: media.url,
-        type: media.type
-      }) : null;
-      
-      if (selectedRoom) {
-        await messengerService.sendMessage(
-          selectedRoom.id, 
-          currentUser.id, 
-          message, 
-          selectedTopic?.id,
-          mediaUrl,
-          mediaType,
-          mediaContent
-        );
-        debugLog('Room message sent successfully');
-      } else if (selectedUser) {
-        if (selectedUser.id === 1) {
-          await messengerService.sendSupportMessage(
-            currentUser.id,
-            message,
-            mediaUrl,
-            mediaType,
-            mediaContent
-          );
-          debugLog('Support message sent successfully');
-        } else {
-          await privateMessageService.sendMessage(
-            currentUser.id,
-            selectedUser.id,
-            message,
-            mediaUrl,
-            mediaType,
-            mediaContent,
-            sessionToken
-          );
-          debugLog('Private message sent successfully');
+      let mediaUrl = '';
+      let mediaType = '';
+      let messageType: 'text' | 'media' = 'text';
+
+      if (mediaFile) {
+        console.log('📤 [MessengerChatView] Uploading media file...');
+        
+        try {
+          const fileExt = mediaFile.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `${currentUser.id}/${fileName}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('messenger-files')
+            .upload(filePath, mediaFile);
+
+          if (uploadError) {
+            throw uploadError;
+          }
+
+          const { data: publicData } = supabase.storage
+            .from('messenger-files')
+            .getPublicUrl(filePath);
+
+          mediaUrl = publicData.publicUrl;
+          mediaType = mediaFile.type;
+          messageType = 'media';
+          
+          console.log('✅ [MessengerChatView] Media uploaded:', mediaUrl);
+        } catch (uploadError) {
+          console.error('❌ [MessengerChatView] Media upload failed:', uploadError);
+          return;
         }
       }
 
-      setNewMessage('');
-      
-      // Quick removal of optimistic message with fallback
-      setTimeout(() => {
-        setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
-        debugLog('Removed optimistic message after fallback timeout:', tempId);
-      }, 5000); // 5 seconds fallback for faster UI updates
-      
-    } catch (error) {
-      debugLog('Error sending message:', error);
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
-      toast({
-        title: 'خطا',
-        description: 'خطا در ارسال پیام',
-        variant: 'destructive',
+      const optimisticMessage = {
+        id: Date.now(),
+        message: content,
+        sender_id: currentUser.id,
+        created_at: new Date().toISOString(),
+        room_id: currentRoom?.id || null,
+        recipient_id: null,
+        conversation_id: null,
+        topic_id: selectedTopic?.id || null,
+        media_url: mediaUrl || null,
+        message_type: messageType,
+        media_content: null,
+        sender: {
+          name: currentUser.name,
+          phone: currentUser.phone
+        }
+      };
+
+      console.log('🔄 [MessengerChatView] Adding optimistic message:', {
+        id: optimisticMessage.id,
+        room_id: optimisticMessage.room_id,
+        topic_id: optimisticMessage.topic_id,
+        message: optimisticMessage.message.substring(0, 50) + '...'
       });
-    } finally {
-      setSending(false);
+
+      setOptimisticMessages(prev => [...prev, optimisticMessage]);
+
+      const messageData = {
+        room_id: currentRoom?.id || null,
+        sender_id: currentUser.id,
+        message: content,
+        topic_id: selectedTopic?.id || null,
+        media_url: mediaUrl || null,
+        message_type: messageType,
+        media_content: null
+      };
+
+      console.log('📤 [MessengerChatView] Inserting message into database:', messageData);
+
+      const { data: newMessage, error } = await supabase
+        .from('messenger_messages')
+        .insert([messageData])
+        .select(`
+          id,
+          created_at,
+          room_id,
+          sender_id,
+          message,
+          topic_id,
+          media_url,
+          message_type,
+          media_content,
+          conversation_id,
+          sender:chat_users!messenger_messages_sender_id_fkey(name, phone)
+        `)
+        .single();
+
+      if (error) {
+        console.error('❌ [MessengerChatView] Error sending message:', error);
+        setOptimisticMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        return;
+      }
+
+      console.log('✅ [MessengerChatView] Message sent successfully:', newMessage);
+
+      // Send webhook for all message types
+      try {
+        console.log('🔗 [MessengerChatView] Preparing webhook data...');
+        
+        let chatType: 'group' | 'private' | 'support' = 'group';
+        let chatName = currentRoom?.name || 'Unknown Room';
+        let topicName = selectedTopic?.title;
+
+        // Determine chat type based on context
+        if (currentRoom?.id) {
+          chatType = 'group'; // All room messages are group messages
+        } else {
+          chatType = 'private'; // Direct messages without room
+        }
+
+        const webhookData = {
+          messageContent: content,
+          senderName: currentUser.name || 'Unknown User',
+          senderPhone: currentUser.phone || '',
+          senderEmail: currentUser.email || '',
+          chatType,
+          chatName,
+          topicName,
+          topicId: selectedTopic?.id,
+          timestamp: newMessage.created_at,
+          mediaUrl: mediaUrl || undefined,
+          mediaType: mediaType || undefined,
+          messageType
+        };
+
+        console.log('🔗 [MessengerChatView] Sending webhook with data:', {
+          chatType: webhookData.chatType,
+          chatName: webhookData.chatName,
+          topicName: webhookData.topicName,
+          topicId: webhookData.topicId
+        });
+
+        await webhookService.sendMessageWebhook(webhookData);
+      } catch (webhookError) {
+        console.error('❌ [MessengerChatView] Webhook error (non-blocking):', webhookError);
+        // Don't block message sending for webhook errors
+      }
+
+      // Remove optimistic message after successful send
+      setTimeout(() => {
+        setOptimisticMessages(prev => {
+          const filtered = prev.filter(msg => {
+            const shouldRemove = msg.id === optimisticMessage.id || 
+              (msg.message === content && 
+               msg.topic_id === selectedTopic?.id && 
+               msg.room_id === currentRoom?.id);
+            
+            if (shouldRemove) {
+              console.log('🗑️ [MessengerChatView] Removing optimistic message:', {
+                optimisticId: msg.id,
+                realMessageId: newMessage.id,
+                content: msg.message.substring(0, 30) + '...'
+              });
+            }
+            
+            return !shouldRemove;
+          });
+          return filtered;
+        });
+      }, 1000);
+
+    } catch (error) {
+      console.error('❌ [MessengerChatView] Error in sendMessage:', error);
+      setOptimisticMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
     }
   };
 
-  const handleKeyPress = async (e: React.KeyboardEvent) => {
+  const handleSendMessage = async () => {
+    if (isOffline) {
+      toast.error('Cannot send messages while offline');
+      return;
+    }
+
+    const content = newMessage.trim();
+    if (!content && !selectedFile) return;
+
+    await sendMessage(content, selectedFile || undefined);
+    setNewMessage('');
+    setSelectedFile(null);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      await sendMessage(newMessage);
+      handleSendMessage();
     }
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+      setSelectedFile(file);
+    }
   };
 
-  const chatTitle = selectedRoom ? selectedRoom.name : selectedUser?.name || '';
-  const chatDescription = selectedRoom ? selectedRoom.description : '';
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
-  if (!selectedRoom && !selectedUser) {
+  const handleRoomSelect = (room: MessengerRoom) => {
+    setCurrentRoom(room);
+    setSelectedTopic(null);
+    if (isMobile) {
+      setShowRoomList(false);
+    }
+  };
+
+  const handleBackToRooms = () => {
+    if (isMobile) {
+      setShowRoomList(true);
+    }
+  };
+
+  const allMessages = [...messages, ...optimisticMessages].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-900">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-slate-400 mb-2">
-            یک گفتگو انتخاب کنید
-          </p>
-          <p className="text-sm text-slate-400">
-            از لیست سمت چپ یک گفتگو یا گروه انتخاب کنید
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // If super group is selected but no topic, show topic selection interface
-  if (selectedRoom?.is_super_group && !selectedTopic) {
-    return (
-      <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-        {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-          <Button variant="ghost" size="sm" onClick={onBackToRooms} className="flex-shrink-0">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={selectedRoom.avatar_url} alt={selectedRoom.name} />
-            <AvatarFallback 
-              style={{ backgroundColor: getAvatarColor(selectedRoom.name) }}
-              className="text-white font-medium"
-            >
-              {selectedRoom.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Crown className="w-5 h-5 text-yellow-600" />
-              {selectedRoom.name}
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              موضوعی را برای شروع گفتگو انتخاب کنید
-            </p>
-          </div>
-        </div>
-
-        {/* Topics Grid */}
-        <div className="flex-1 p-6">
-          <SuperGroupTopicSelection 
-            roomId={selectedRoom.id}
-            onTopicSelect={setSelectedTopic}
-          />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading messenger...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-        <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        
-        {/* Only show avatar if not a super group with selected topic */}
-        {!(selectedRoom?.is_super_group && selectedTopic) && (
-          <Avatar 
-            className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => {
-              if (selectedUser) {
-                setProfileUser(selectedUser);
-                setShowUserProfile(true);
-              }
-            }}
-          >
-            <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
-            <AvatarFallback 
-              style={{ backgroundColor: getAvatarColor(chatTitle) }}
-              className="text-white font-medium"
-            >
-              {chatTitle.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-        )}
-          
-        <div 
-          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : selectedUser ? 'cursor-pointer' : ''}`}
-          onClick={isMobile && onBack ? onBack : selectedUser ? () => {
-            setProfileUser(selectedUser);
-            setShowUserProfile(true);
-          } : undefined}
-        >
-          <div className="flex items-center gap-2">
-            <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
-              {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
-               selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
-            </h3>
-            
-            {/* Manual refresh button for debugging */}
-            {debugMode && (
+    <div className="flex h-full bg-background">
+      {/* Room List Sidebar */}
+      <div className={`${isMobile ? (showRoomList ? 'w-full' : 'hidden') : 'w-80'} border-r bg-card flex flex-col`}>
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>
+                  {currentUser.name?.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{currentUser.name}</p>
+                <div className="flex items-center gap-1">
+                  {isOffline ? (
+                    <WifiOff className="h-3 w-3 text-red-500" />
+                  ) : (
+                    <Wifi className="h-3 w-3 text-green-500" />
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {isOffline ? 'Offline' : 'Online'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleManualRefresh}
-                className="ml-2"
-                disabled={loading}
+                onClick={() => setShowUserProfile(true)}
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <Settings className="h-4 w-4" />
               </Button>
-            )}
-            
-          </div>
-          {selectedRoom && chatDescription && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
-          )}
-          {selectedTopic?.description && (
-            <p className="text-xs text-slate-400">{selectedTopic.description}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Error Banner */}
-      {messageLoadError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-red-700 dark:text-red-300">
-              خطا در بارگذاری پیام‌ها: {messageLoadError}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualRefresh}
-              disabled={loading}
-            >
-              تلاش مجدد
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-           id="messages-container"
-      >
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <MessageSkeleton key={i} />
-            ))}
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-slate-400 mb-2">
-                هنوز پیامی در این {selectedTopic ? 'موضوع' : 'گفتگو'} نیست
-              </p>
-              <p className="text-sm text-slate-400">
-                اولین نفری باشید که پیام می‌فرستد!
-              </p>
+              {onLogout && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-        ) : (
-          messages.map((message) => {
-            const isOwnMessage = message.sender_id === currentUser.id;
-            return (
-              <div key={message.tempId || message.id} id={`message-${message.id}`} className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                  {/* User Avatar - only show for other users' messages */}
-                  {!isOwnMessage && (
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
-                      <AvatarFallback 
-                        className="text-white font-bold text-xs"
-                        style={{ backgroundColor: getAvatarColor(message.sender?.name || 'User') }}
-                      >
-                        {(message.sender?.name || 'U').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  
-                  <div className="flex flex-col">
-                    <div
-                      className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
-                        isOwnMessage
-                          ? `${message.isOptimistic ? 'bg-blue-400 opacity-70' : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white rounded-br-md`
-                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      {/* Sending indicator for optimistic messages */}
-                      {message.isOptimistic && (
-                        <div className="absolute -top-1 -right-1">
-                          <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
-                        </div>
-                      )}
-                      
-                      {/* Header - show sender name only for other users */}
-                      {!isOwnMessage && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
-                            {message.sender?.name || 'نامشخص'}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {/* Media content */}
-                      {message.media_url && (
-                        <div className="mb-2">
-                          <MediaMessage
-                            url={message.media_url}
-                            type={(() => {
-                              try {
-                                return message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream';
-                              } catch {
-                                return 'application/octet-stream';
-                              }
-                            })()}
-                            size={(() => {
-                              try {
-                                return message.media_content ? JSON.parse(message.media_content).size : undefined;
-                              } catch {
-                                return undefined;
-                              }
-                            })()}
-                            name={(() => {
-                              try {
-                                return message.media_content ? JSON.parse(message.media_content).name : message.media_url.split('/').pop();
-                              } catch {
-                                return message.media_url.split('/').pop();
-                              }
-                            })()}
-                            className="max-w-[280px]"
-                          />
-                        </div>
-                      )}
-                      
-                      {/* Message text content */}
-                      {message.message && (
-                        <p className={`text-sm leading-relaxed ${
-                          isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
-                        }`}>
-                          {message.message}
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            Rooms
+          </h2>
+        </div>
+        
+        <ScrollArea className="flex-1">
+          <div className="p-2">
+            {rooms.map((room) => (
+              <Card
+                key={room.id}
+                className={`mb-2 cursor-pointer transition-colors hover:bg-accent ${
+                  currentRoom?.id === room.id ? 'bg-accent border-primary' : ''
+                }`}
+                onClick={() => handleRoomSelect(room)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{room.name}</h3>
+                      {room.description && (
+                        <p className="text-sm text-muted-foreground truncate">
+                          {room.description}
                         </p>
                       )}
-                      
-                      {/* Timestamp */}
-                      <div className={`flex items-center justify-end mt-1.5 text-xs ${
-                        isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
-                      }`}>
-                        <span>
-                          {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                        {message.isOptimistic && (
-                          <span className="ml-1 text-xs opacity-70">در حال ارسال...</span>
-                        )}
-                      </div>
                     </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {room.member_count || 0}
+                    </Badge>
                   </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
-      {/* Message Input */}
-      <ModernChatInput
-        onSendMessage={sendMessage}
-        disabled={sending}
-        currentUserId={currentUser.id}
-      />
+      {/* Chat Area */}
+      <div className={`${isMobile ? (showRoomList ? 'hidden' : 'w-full') : 'flex-1'} flex flex-col`}>
+        {currentRoom ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b bg-card">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBackToRooms}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <h2 className="font-semibold">{currentRoom.name}</h2>
+                    {currentRoom.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {currentRoom.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowRoomSettings(true)}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {topics.length > 0 && (
+                <div className="mt-3">
+                  <MessengerTopicSelector
+                    topics={topics}
+                    selectedTopic={selectedTopic}
+                    onTopicSelect={setSelectedTopic}
+                    currentRoom={currentRoom}
+                    currentUser={currentUser}
+                    onTopicsUpdate={loadTopics}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {allMessages.map((message) => (
+                  <MessengerMessageItem
+                    key={message.id}
+                    message={message}
+                    currentUser={currentUser}
+                    isOptimistic={optimisticMessages.some(opt => opt.id === message.id)}
+                  />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="p-4 border-t bg-card">
+              {selectedFile && (
+                <div className="mb-2 p-2 bg-accent rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {selectedFile.type.startsWith('image/') ? (
+                      <Image className="h-4 w-4" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
+                    <span className="text-sm truncate">{selectedFile.name}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeSelectedFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              
+              <div className="flex items-end gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isOffline}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <div className="flex-1">
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={isOffline ? "Cannot send messages while offline" : "Type a message..."}
+                    disabled={isOffline}
+                    className="resize-none"
+                  />
+                </div>
+                <Button 
+                  onClick={handleSendMessage}
+                  disabled={(!newMessage.trim() && !selectedFile) || isOffline}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Select a room to start chatting</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Room Settings Modal */}
+      {showRoomSettings && currentRoom && (
+        <MessengerRoomSettings
+          room={currentRoom}
+          currentUser={currentUser}
+          onClose={() => setShowRoomSettings(false)}
+          onRoomUpdate={(updatedRoom) => {
+            setCurrentRoom(updatedRoom);
+            setRooms(prev => prev.map(r => r.id === updatedRoom.id ? updatedRoom : r));
+          }}
+        />
+      )}
 
       {/* User Profile Modal */}
-      <UserProfile
-        isOpen={showUserProfile}
-        onClose={() => setShowUserProfile(false)}
-        user={profileUser}
-        currentUserId={currentUser.id}
-        onStartChat={() => {
-          // Already in chat
-        }}
-      />
+      {showUserProfile && (
+        <MessengerUserProfile
+          user={currentUser}
+          onClose={() => setShowUserProfile(false)}
+          onUserUpdate={onUserUpdate}
+        />
+      )}
     </div>
   );
 };

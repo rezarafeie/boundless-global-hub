@@ -21,7 +21,13 @@ const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk'
 export const webhookService = {
   async sendMessageWebhook(data: WebhookData): Promise<void> {
     try {
-      console.log('Sending webhook for message:', data);
+      console.log('🔗 [Webhook] Sending webhook for message:', {
+        chatType: data.chatType,
+        chatName: data.chatName,
+        topicId: data.topicId,
+        topicName: data.topicName,
+        messageContent: data.messageContent?.substring(0, 50) + '...'
+      });
       
       // Get topic name if topicId is provided but topicName is not
       let topicName = data.topicName;
@@ -34,8 +40,9 @@ export const webhookService = {
             .single();
           
           topicName = topic?.title;
+          console.log('🔗 [Webhook] Fetched topic name:', topicName);
         } catch (error) {
-          console.error('Error fetching topic name:', error);
+          console.error('🔗 [Webhook] Error fetching topic name:', error);
         }
       }
       
@@ -58,20 +65,26 @@ export const webhookService = {
         message_type: messageType
       };
 
+      console.log('🔗 [Webhook] Payload being sent:', payload);
+
       // Use form data to ensure fields are sent separately
       const formData = new FormData();
       Object.entries(payload).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
 
-      await fetch(WEBHOOK_URL, {
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         body: formData,
       });
 
-      console.log('Webhook sent successfully');
+      if (response.ok) {
+        console.log('✅ [Webhook] Webhook sent successfully');
+      } else {
+        console.error('❌ [Webhook] Webhook failed with status:', response.status);
+      }
     } catch (error) {
-      console.error('Error sending webhook:', error);
+      console.error('❌ [Webhook] Error sending webhook:', error);
       // Don't throw error to prevent blocking message sending
     }
   }
