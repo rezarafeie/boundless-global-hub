@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,7 +125,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
   };
 
   const handleViewEnrollmentDetails = (enrollmentId: string) => {
-    window.open(`/enroll/admin/enrollment/${enrollmentId}`, '_blank');
+    window.open(`/enroll/details?id=${enrollmentId}`, '_blank');
   };
 
   const handleViewEnrollDetails = (enrollmentId: string) => {
@@ -304,19 +303,10 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             size="sm"
                             variant="outline"
                             className="w-full"
-                            onClick={() => handleViewEnrollDetails(enrollment.id)}
+                            onClick={() => handleViewEnrollmentDetails(enrollment.id)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             مشاهده ثبت‌نام
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            جزئیات ثبت‌نام
                           </Button>
                           {enrollment.chat_user_id && (
                             <Button
@@ -393,18 +383,10 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleViewEnrollDetails(enrollment.id)}
+                              onClick={() => handleViewEnrollmentDetails(enrollment.id)}
                               title="مشاهده ثبت‌نام"
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                              title="جزئیات ثبت‌نام"
-                            >
-                              جزئیات
                             </Button>
                             {enrollment.chat_user_id && (
                               <Button
