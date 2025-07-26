@@ -193,46 +193,76 @@ class EnhancedWebhookManager {
   // Event-specific methods
   async sendEnrollmentCreated(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://academy.rafiei.net';
+    const adminAccessLink = `${baseUrl}/admin-enrollment-details?id=${enrollment.id}`;
+    
     await this.sendWebhook('enrollment_created', {
       event_type: 'enrollment_created',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course }
+      data: { 
+        enrollment, 
+        user: enhancedUser, 
+        course,
+        admin_access_link: adminAccessLink
+      }
     });
   }
 
   async sendEnrollmentPaidSuccessful(enrollment: any, user: any, course: any, payment: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://academy.rafiei.net';
+    const adminAccessLink = `${baseUrl}/admin-enrollment-details?id=${enrollment.id}`;
+    
     await this.sendWebhook('enrollment_paid_successful', {
       event_type: 'enrollment_paid_successful',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, payment }
+      data: { enrollment, user: enhancedUser, course, payment, admin_access_link: adminAccessLink }
     });
   }
 
   async sendEnrollmentManualPaymentSubmitted(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://academy.rafiei.net';
+    const adminAccessLink = `${baseUrl}/admin-enrollment-details?id=${enrollment.id}`;
+    
     await this.sendWebhook('enrollment_manual_payment_submitted', {
       event_type: 'enrollment_manual_payment_submitted',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course }
+      data: { enrollment, user: enhancedUser, course, admin_access_link: adminAccessLink }
     });
   }
 
   async sendEnrollmentManualPaymentApproved(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://academy.rafiei.net';
+    const adminAccessLink = `${baseUrl}/admin-enrollment-details?id=${enrollment.id}`;
+    
     await this.sendWebhook('enrollment_manual_payment_approved', {
       event_type: 'enrollment_manual_payment_approved',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course }
+      data: { enrollment, user: enhancedUser, course, admin_access_link: adminAccessLink }
     });
   }
 
   async sendEnrollmentManualPaymentRejected(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://academy.rafiei.net';
+    const adminAccessLink = `${baseUrl}/admin-enrollment-details?id=${enrollment.id}`;
+    
     await this.sendWebhook('enrollment_manual_payment_rejected', {
       event_type: 'enrollment_manual_payment_rejected',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course }
+      data: { enrollment, user: enhancedUser, course, admin_access_link: adminAccessLink }
     });
   }
 

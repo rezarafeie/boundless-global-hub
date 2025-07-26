@@ -43,3 +43,6 @@ verify_jwt = false
 
 [functions.send-enrollment-email]
 verify_jwt = false
+
+[functions.admin-enrollment-access]
+verify_jwt = false
