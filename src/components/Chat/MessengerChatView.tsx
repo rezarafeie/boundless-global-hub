@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -89,7 +88,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     if (!currentUser?.id) return;
 
     try {
-      // Use chat_rooms instead of messenger_room_members
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -102,7 +100,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         name: room.name,
         description: room.description,
         created_at: room.created_at,
-        member_count: 0 // TODO: Get actual member count
+        member_count: 0
       })) || [];
       
       setRooms(roomsData);
@@ -268,7 +266,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
 
-      const newOptimisticMessage = {
+      const optimisticMessage = {
         id: Date.now(),
         message: content,
         sender_id: currentUser.id,
@@ -287,13 +285,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       };
 
       console.log('🔄 [MessengerChatView] Adding optimistic message:', {
-        id: newOptimisticMessage.id,
-        room_id: newOptimisticMessage.room_id,
-        topic_id: newOptimisticMessage.topic_id,
-        message: newOptimisticMessage.message.substring(0, 50) + '...'
+        id: optimisticMessage.id,
+        room_id: optimisticMessage.room_id,
+        topic_id: optimisticMessage.topic_id,
+        message: optimisticMessage.message.substring(0, 50) + '...'
       });
 
-      setOptimisticMessages(prev => [...prev, newOptimisticMessage]);
+      setOptimisticMessages(prev => [...prev, optimisticMessage]);
 
       const messageData = {
         room_id: currentRoom?.id || null,
@@ -327,7 +325,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       if (error) {
         console.error('❌ [MessengerChatView] Error sending message:', error);
-        setOptimisticMessages(prev => prev.filter(msg => msg.id !== newOptimisticMessage.id));
+        setOptimisticMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
         return;
       }
 
@@ -341,11 +339,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         let chatName = currentRoom?.name || 'Unknown Room';
         let topicName = selectedTopic?.title;
 
-        // Determine chat type based on context
         if (currentRoom?.id) {
-          chatType = 'group'; // All room messages are group messages
+          chatType = 'group';
         } else {
-          chatType = 'private'; // Direct messages without room
+          chatType = 'private';
         }
 
         const webhookData = {
@@ -373,14 +370,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         await webhookService.sendMessageWebhook(webhookData);
       } catch (webhookError) {
         console.error('❌ [MessengerChatView] Webhook error (non-blocking):', webhookError);
-        // Don't block message sending for webhook errors
       }
 
       // Remove optimistic message after successful send
       setTimeout(() => {
         setOptimisticMessages(prev => {
           const filtered = prev.filter(msg => {
-            const shouldRemove = msg.id === newOptimisticMessage.id || 
+            const shouldRemove = msg.id === optimisticMessage.id || 
               (msg.message === content && 
                msg.topic_id === selectedTopic?.id && 
                msg.room_id === currentRoom?.id);
@@ -401,7 +397,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
     } catch (error) {
       console.error('❌ [MessengerChatView] Error in sendMessage:', error);
-      setOptimisticMessages(prev => prev.filter(msg => msg.id !== newOptimisticMessage.id));
     }
   };
 
@@ -429,7 +424,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         toast.error('File size must be less than 10MB');
         return;
       }
