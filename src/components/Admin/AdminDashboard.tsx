@@ -1,168 +1,287 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   Users, 
   BookOpen, 
   DollarSign, 
   TrendingUp,
+  UserCheck,
   Clock,
-  CheckCircle,
-  AlertCircle,
-  Mail
+  ArrowUpRight,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
-import PendingPaymentsSummary from './PendingPaymentsSummary';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface DashboardStats {
+  totalRevenue: number;
+  totalEnrollments: number;
+  activeCourses: number;
+  approvedUsers: number;
+  recentEnrollments: any[];
+  popularCourses: any[];
+}
 
 const AdminDashboard: React.FC = () => {
+  const { toast } = useToast();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalRevenue: 0,
+    totalEnrollments: 0,
+    activeCourses: 0,
+    approvedUsers: 0,
+    recentEnrollments: [],
+    popularCourses: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch total revenue from successful enrollments
+      const { data: revenueData } = await supabase
+        .from('enrollments')
+        .select('payment_amount')
+        .in('payment_status', ['completed', 'success']);
+
+      const totalRevenue = revenueData?.reduce((sum, enrollment) => sum + (enrollment.payment_amount || 0), 0) || 0;
+
+      // Fetch total enrollments
+      const { count: totalEnrollments } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch active courses
+      const { count: activeCourses } = await supabase
+        .from('courses')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Fetch approved users
+      const { count: approvedUsers } = await supabase
+        .from('chat_users')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_approved', true);
+
+      // Fetch recent enrollments
+      const { data: recentEnrollments } = await supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses(title)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Fetch popular courses by enrollment count
+      const { data: popularCourses } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          enrollments(id, payment_amount)
+        `)
+        .eq('is_active', true)
+        .limit(5);
+
+      setStats({
+        totalRevenue,
+        totalEnrollments: totalEnrollments || 0,
+        activeCourses: activeCourses || 0,
+        approvedUsers: approvedUsers || 0,
+        recentEnrollments: recentEnrollments || [],
+        popularCourses: popularCourses || []
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری اطلاعات داشبورد",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fa-IR');
+  };
+
+  const dashboardCards = [
+    {
+      title: 'کل درآمد',
+      value: formatPrice(stats.totalRevenue),
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      loading: loading
+    },
+    {
+      title: 'کل ثبت‌نام‌ها',
+      value: stats.totalEnrollments.toLocaleString('fa-IR'),
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      loading: loading
+    },
+    {
+      title: 'دوره‌های فعال',
+      value: stats.activeCourses.toLocaleString('fa-IR'),
+      icon: BookOpen,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      loading: loading
+    },
+    {
+      title: 'کاربران تایید شده',
+      value: stats.approvedUsers.toLocaleString('fa-IR'),
+      icon: UserCheck,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      loading: loading
+    }
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-          داشبورد مدیریت
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          خلاصه‌ای از وضعیت کلی سیستم و آمار مهم
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">خانه</h1>
+          <p className="text-gray-600 mt-1">نمای کلی آکادمی رفیعی</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchDashboardData}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          بروزرسانی
+        </Button>
       </div>
 
-      {/* Quick Stats Grid */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <PendingPaymentsSummary />
-        
-        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              کل فروش
+        {dashboardCards.map((card, index) => (
+          <Card key={index} className="border-0 shadow-sm bg-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-2">{card.title}</p>
+                  {card.loading ? (
+                    <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                  )}
+                </div>
+                <div className={`w-12 h-12 rounded-lg ${card.bgColor} flex items-center justify-center`}>
+                  <card.icon className={`h-6 w-6 ${card.color}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Enrollments */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Clock className="h-5 w-5 text-blue-600" />
+              ثبت‌نام‌های اخیر
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ۱۲۵,۰۰۰,۰۰۰ تومان
-            </div>
-            <p className="text-sm text-muted-foreground">در این ماه</p>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            ) : stats.recentEnrollments.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                هنوز ثبت‌نامی وجود ندارد
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stats.recentEnrollments.map((enrollment) => (
+                  <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                      <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-500">{formatDate(enrollment.created_at)}</span>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              تعداد ثبت‌نام
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">۴۲</div>
-            <p className="text-sm text-muted-foreground">در این ماه</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
+        {/* Popular Courses */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <TrendingUp className="h-5 w-5 text-purple-600" />
-              نرخ تبدیل
+              دوره‌های محبوب
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">۸۵٪</div>
-            <p className="text-sm text-muted-foreground">بازدید به خرید</p>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            ) : stats.popularCourses.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                هنوز دوره‌ای وجود ندارد
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stats.popularCourses.map((course, index) => {
+                  const enrollmentCount = course.enrollments?.length || 0;
+                  const totalRevenue = course.enrollments?.reduce((sum: number, e: any) => sum + (e.payment_amount || 0), 0) || 0;
+                  
+                  return (
+                    <div key={course.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 truncate">{course.title}</h4>
+                        <p className="text-sm text-gray-500">{enrollmentCount} ثبت‌نام</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-gray-900">{formatPrice(totalRevenue)}</p>
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                          #{index + 1}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              فعالیت‌های اخیر
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium text-sm">پرداخت تایید شد</p>
-                <p className="text-xs text-muted-foreground">۲ دقیقه پیش</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="font-medium text-sm">ثبت‌نام جدید</p>
-                <p className="text-xs text-muted-foreground">۵ دقیقه پیش</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-              <div>
-                <p className="font-medium text-sm">پرداخت در انتظار</p>
-                <p className="text-xs text-muted-foreground">۱۰ دقیقه پیش</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              دوره‌های پرطرفدار
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-              <div>
-                <p className="font-medium text-sm">دوره کسب و کار آمریکایی</p>
-                <p className="text-xs text-muted-foreground">۲۵ ثبت‌نام</p>
-              </div>
-              <span className="text-lg font-bold text-purple-600">۱</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <div>
-                <p className="font-medium text-sm">دوره درآمد غیرفعال</p>
-                <p className="text-xs text-muted-foreground">۱۸ ثبت‌نام</p>
-              </div>
-              <span className="text-lg font-bold text-blue-600">۲</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div>
-                <p className="font-medium text-sm">دوره طعم بی‌مرز</p>
-                <p className="text-xs text-muted-foreground">۱۲ ثبت‌نام</p>
-              </div>
-              <span className="text-lg font-bold text-green-600">۳</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-        <CardHeader>
-          <CardTitle>دسترسی سریع</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button className="flex flex-col items-center gap-2 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
-              <Users className="h-6 w-6 text-blue-600" />
-              <span className="text-sm font-medium">ثبت‌نام‌های جدید</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <span className="text-sm font-medium">تایید پرداخت‌ها</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
-              <BookOpen className="h-6 w-6 text-purple-600" />
-              <span className="text-sm font-medium">مدیریت دوره‌ها</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
-              <Mail className="h-6 w-6 text-orange-600" />
-              <span className="text-sm font-medium">ارسال ایمیل</span>
-            </button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

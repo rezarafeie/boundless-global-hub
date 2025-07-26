@@ -121,7 +121,7 @@ const PaginatedUsersTable: React.FC = () => {
   };
 
   const handleUserClick = (userId: number) => {
-    navigate(`/enroll/admin/users/${userId}`);
+    window.location.href = `/enroll/admin/users/${userId}`;
   };
 
   if (loading && currentPage === 1) {

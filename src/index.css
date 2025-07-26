@@ -4,6 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL Table Styles */
+[dir="rtl"] table {
+  text-align: right;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: right;
+}
+
+/* Mobile responsive table buttons */
+@media (max-width: 768px) {
+  .table-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .table-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

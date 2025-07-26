@@ -1,11 +1,9 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   BookOpen, 
   Users, 
   UserCheck, 
-  Mail, 
   Settings,
   BarChart3
 } from 'lucide-react';
@@ -15,14 +13,13 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 
-type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'emails' | 'analytics' | 'settings';
+type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings';
 
 interface AdminSidebarProps {
   activeView: ViewType;
@@ -32,7 +29,7 @@ interface AdminSidebarProps {
 const sidebarItems = [
   {
     id: 'dashboard',
-    label: 'داشبورد',
+    label: 'خانه',
     icon: LayoutDashboard,
   },
   {
@@ -51,13 +48,8 @@ const sidebarItems = [
     icon: UserCheck,
   },
   {
-    id: 'emails',
-    label: 'ایمیل‌ها',
-    icon: Mail,
-  },
-  {
     id: 'analytics',
-    label: 'آمار و گزارش',
+    label: 'آمار',
     icon: BarChart3,
   },
   {
@@ -73,30 +65,27 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
 
   return (
     <Sidebar className={cn(
-      "border-r border-border bg-gradient-to-b from-purple-50 to-blue-50 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-      collapsed ? "w-14" : "w-64"
+      "bg-white border-l border-gray-200",
+      collapsed ? "w-16" : "w-72"
     )} side="right">
-      <SidebarContent className="bg-gradient-to-b from-purple-600/10 to-blue-600/10">
-        <div className="p-4 border-b border-border/50">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-sm">ر</span>
+      <SidebarContent>
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold text-lg">ر</span>
             </div>
             {!collapsed && (
               <div className="text-right">
-                <h2 className="font-semibold text-sm text-purple-800">آکادمی رفیعی</h2>
-                <p className="text-xs text-purple-600">پنل مدیریت</p>
+                <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
+                <p className="text-sm text-gray-500">پنل مدیریت</p>
               </div>
             )}
           </div>
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            منوی اصلی
-          </SidebarGroupLabel>
+        <SidebarGroup className="px-4 py-6">
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
@@ -107,14 +96,18 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
                     <button
                       onClick={() => onViewChange(item.id as ViewType)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                        "w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200 font-medium",
+                        "hover:bg-gray-50",
                         activeView === item.id
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-accent hover:text-accent-foreground"
+                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg transform scale-[0.98]"
+                          : "text-gray-700 hover:text-gray-900"
                       )}
                     >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {!collapsed && <span className="text-sm">{item.label}</span>}
+                      <item.icon className={cn(
+                        "h-5 w-5 flex-shrink-0",
+                        activeView === item.id ? "text-white" : "text-gray-500"
+                      )} />
+                      {!collapsed && <span className="text-base">{item.label}</span>}
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

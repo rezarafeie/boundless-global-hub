@@ -70,7 +70,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'emails' | 'analytics' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings'>('dashboard');
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -202,22 +202,6 @@ const EnrollmentAdmin: React.FC = () => {
             </Suspense>
           </ErrorBoundary>
         );
-      case 'emails':
-        return (
-          <div className="space-y-6">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
-              <h3 className="font-semibold text-blue-800 mb-2">تنظیمات ایمیل</h3>
-              <p className="text-blue-700 mb-4">برای مدیریت کامل ایمیل‌ها و تنظیمات Gmail به صفحه اختصاصی مراجعه کنید.</p>
-              <a 
-                href="/enroll/admin/email" 
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <span>مدیریت ایمیل‌ها</span>
-              </a>
-            </div>
-            <EmailSettings />
-          </div>
-        );
       case 'analytics':
         return (
           <ErrorBoundary>
@@ -235,18 +219,16 @@ const EnrollmentAdmin: React.FC = () => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen w-full bg-gradient-to-br from-purple-50 to-blue-50" dir="rtl">
+      <div className="min-h-screen w-full bg-gray-50" dir="rtl">
         {/* Academy Header */}
-        <header className="h-16 bg-white/90 backdrop-blur-sm border-b border-purple-200 flex items-center px-6 shadow-sm">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6">
           <div className="flex-1 flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">ر</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                آکادمی رفیعی
-              </h1>
-              <p className="text-sm text-purple-600">پنل مدیریت جامع</p>
+              <h1 className="text-xl font-bold text-gray-900">آکادمی رفیعی</h1>
+              <p className="text-sm text-gray-500">پنل مدیریت</p>
             </div>
           </div>
           <SidebarTrigger className="ml-2" />
@@ -256,7 +238,7 @@ const EnrollmentAdmin: React.FC = () => {
           <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
           
           {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto" style={{ direction: 'rtl' }}>
+          <main className="flex-1 p-8 overflow-auto bg-white" style={{ direction: 'rtl' }}>
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
                 {renderContent()}

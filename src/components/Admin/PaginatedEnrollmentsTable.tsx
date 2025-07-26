@@ -267,15 +267,10 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              // Navigate to enrollment details or copy ID
-                              navigator.clipboard.writeText(enrollment.id);
-                              toast({
-                                title: "کپی شد",
-                                description: "شناسه ثبت‌نام کپی شد"
-                              });
+                              window.location.href = `/enroll/admin/enrollments/${enrollment.id}`;
                             }}
                           >
-                            کپی ID
+                            جزئیات
                           </Button>
                         </div>
                       </TableCell>
