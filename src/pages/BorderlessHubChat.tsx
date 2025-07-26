@@ -38,6 +38,21 @@ const BorderlessHubChat: React.FC = () => {
     }
   }, [topics, activeTopic]);
 
+  // Clear optimistic message when real message arrives
+  useEffect(() => {
+    if (optimisticMessage && messages.length > 0) {
+      const hasRealMessage = messages.some(msg => 
+        msg.message === optimisticMessage.message && 
+        msg.user_id === optimisticMessage.user_id &&
+        !msg.id.toString().startsWith('optimistic_')
+      );
+      
+      if (hasRealMessage) {
+        setOptimisticMessage(null);
+      }
+    }
+  }, [messages, optimisticMessage]);
+
   // Check authentication on mount
   useEffect(() => {
     const token = localStorage.getItem('chat_session_token');
@@ -92,8 +107,9 @@ const BorderlessHubChat: React.FC = () => {
       }
 
       // Create an optimistic message for immediate display
+      const optimisticId = `optimistic_${Date.now()}`;
       const optimisticMessage = {
-        id: Date.now(), // Temporary ID
+        id: optimisticId, // Use string ID to avoid conflicts
         message: messageText,
         sender_name: result.user.name,
         sender_role: 'member' as const,
@@ -116,9 +132,6 @@ const BorderlessHubChat: React.FC = () => {
         user_id: result.user.id,
         topic_id: activeTopic.id
       });
-
-      // Clear optimistic message after successful send
-      setTimeout(() => setOptimisticMessage(null), 1000);
 
     } catch (error) {
       // Clear optimistic message on error
