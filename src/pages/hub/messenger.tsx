@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MessengerChatView from '@/components/Chat/MessengerChatView';
@@ -184,7 +185,6 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
               currentUser={currentUser}
               selectedRoom={selectedRoom}
               selectedUser={selectedUser}
-              selectedSupportRoom={selectedSupportRoom}
               onRoomSelect={handleRoomSelect}
               onPrivateChat={handlePrivateChat}
               onSupportChat={handleSupportChat}
@@ -201,7 +201,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
           <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col`}>
             {view === 'rooms' && selectedRoom && (
               <MessengerChatView
-                roomId={selectedRoom.id}
+                room={selectedRoom}
                 currentUser={currentUser}
                 onBack={isMobile ? handleBackToInbox : undefined}
                 isOffline={isOffline}
@@ -210,10 +210,10 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
             
             {view === 'private' && selectedUser && (
               <PrivateChatView
-                recipientUser={selectedUser}
+                otherUser={selectedUser}
                 currentUser={currentUser}
+                sessionToken={sessionToken}
                 onBack={isMobile ? handleBackToInbox : undefined}
-                isOffline={isOffline}
               />
             )}
 
@@ -252,3 +252,4 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
 };
 
 export default MessengerPage;
+
