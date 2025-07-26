@@ -60,8 +60,16 @@ const sidebarItems = [
 ];
 
 export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
   const collapsed = state === "collapsed";
+
+  const handleViewChange = (view: ViewType) => {
+    onViewChange(view);
+    // Auto-close sidebar on mobile after selection
+    if (window.innerWidth < 1024) {
+      setOpen(false);
+    }
+  };
 
   return (
     <Sidebar className={cn(
@@ -96,7 +104,7 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
                     tooltip={collapsed ? item.label : undefined}
                   >
                     <button
-                      onClick={() => onViewChange(item.id as ViewType)}
+                      onClick={() => handleViewChange(item.id as ViewType)}
                       className={cn(
                         "w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200 font-medium",
                         "hover:bg-gray-50",
