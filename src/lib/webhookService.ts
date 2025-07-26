@@ -47,9 +47,12 @@ export const webhookService = {
       // Generate delete link if messageId is provided
       let deleteLink = '';
       if (data.messageId) {
-        const baseUrl = window.location.origin;
         const tableName = data.tableName || 'messenger_messages';
-        deleteLink = `${baseUrl.replace('ihhetvwuhqohbfgkqoxw.lovableproject.com', 'ihhetvwuhqohbfgkqoxw.supabase.co')}/functions/v1/delete-message-public?messageId=${data.messageId}&table=${tableName}`;
+        // Use the Supabase project URL directly for the delete function
+        deleteLink = `https://ihhetvwuhqohbfgkqoxw.supabase.co/functions/v1/delete-message-public?messageId=${data.messageId}&table=${tableName}`;
+        console.log('Generated delete link:', deleteLink);
+      } else {
+        console.warn('No messageId provided for delete link generation');
       }
       
       // Send data with media information and delete link
@@ -69,6 +72,8 @@ export const webhookService = {
         delete_link: deleteLink
       };
 
+      console.log('Webhook payload with delete link:', payload);
+
       // Use form data to ensure fields are sent separately
       const formData = new FormData();
       Object.entries(payload).forEach(([key, value]) => {
@@ -80,7 +85,7 @@ export const webhookService = {
         body: formData,
       });
 
-      console.log('Webhook sent successfully');
+      console.log('Webhook sent successfully with delete link:', deleteLink);
     } catch (error) {
       console.error('Error sending webhook:', error);
       // Don't throw error to prevent blocking message sending
