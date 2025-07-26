@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,7 +62,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [retryCount, setRetryCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const realtimeChannelsRef = useRef<any[]>([]);
-  const optimisticMessagesRef = useRef<Set<string>>(new Set());
+  const optimisticMessagesRef = useRef<Map<string, OptimisticMessage>>(new Map());
 
   // Debug mode flag - can be enabled via URL param
   const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
@@ -99,7 +100,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     };
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
-  // Enhanced real-time subscription with better message matching
+  // Enhanced real-time subscription with better message matching for super groups
   useEffect(() => {
     if (!selectedRoom && !selectedUser) return;
     
@@ -112,7 +113,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     debugLog('Setting up realtime subscriptions for:', { 
       roomId: selectedRoom?.id, 
       userId: selectedUser?.id,
-      currentUserId: currentUser.id 
+      currentUserId: currentUser.id,
+      topicId: selectedTopic?.id 
     });
 
     const channels: any[] = [];
@@ -133,17 +135,32 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             debugLog('New room message received:', payload);
             const newMessage = payload.new as any;
             
+            // For super groups, also check topic_id match
+            const isTopicMatch = !selectedTopic || !newMessage.topic_id || newMessage.topic_id === selectedTopic.id;
+            if (!isTopicMatch) {
+              debugLog('Topic mismatch, ignoring message');
+              return;
+            }
+            
             setMessages(prev => {
-              // Find and remove matching optimistic message
-              const messageKey = `${newMessage.sender_id}-${newMessage.message}-${selectedRoom.id}`;
+              // Create a unique key for matching optimistic messages
+              const messageKey = `${newMessage.sender_id}-${newMessage.message}-${selectedRoom.id}-${newMessage.topic_id || 'null'}`;
               let foundOptimistic = false;
               
+              // Find and remove matching optimistic message
               const filteredMessages = prev.filter(msg => {
-                if (msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
-                    msg.message === newMessage.message && msg.room_id === selectedRoom.id) {
-                  foundOptimistic = true;
-                  optimisticMessagesRef.current.delete(msg.tempId || '');
-                  return false;
+                if (msg.isOptimistic && msg.tempId) {
+                  const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
+                  if (optimisticMsg && 
+                      optimisticMsg.sender_id === newMessage.sender_id && 
+                      optimisticMsg.message === newMessage.message && 
+                      optimisticMsg.room_id === selectedRoom.id &&
+                      (optimisticMsg.topic_id || null) === (newMessage.topic_id || null)) {
+                    foundOptimistic = true;
+                    optimisticMessagesRef.current.delete(msg.tempId);
+                    debugLog(`Removed optimistic message: ${msg.tempId}`);
+                    return false;
+                  }
                 }
                 return true;
               });
@@ -193,11 +210,16 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                   let foundOptimistic = false;
                   
                   const filteredMessages = prev.filter(msg => {
-                    if (msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
-                        msg.message === newMessage.message) {
-                      foundOptimistic = true;
-                      optimisticMessagesRef.current.delete(msg.tempId || '');
-                      return false;
+                    if (msg.isOptimistic && msg.tempId) {
+                      const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
+                      if (optimisticMsg && 
+                          optimisticMsg.sender_id === newMessage.sender_id && 
+                          optimisticMsg.message === newMessage.message) {
+                        foundOptimistic = true;
+                        optimisticMessagesRef.current.delete(msg.tempId);
+                        debugLog(`Removed optimistic private message: ${msg.tempId}`);
+                        return false;
+                      }
                     }
                     return true;
                   });
@@ -252,11 +274,16 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                 let foundOptimistic = false;
                 
                 const filteredMessages = prev.filter(msg => {
-                  if (msg.isOptimistic && msg.sender_id === newMessage.sender_id && 
-                      msg.message === newMessage.message) {
-                    foundOptimistic = true;
-                    optimisticMessagesRef.current.delete(msg.tempId || '');
-                    return false;
+                  if (msg.isOptimistic && msg.tempId) {
+                    const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
+                    if (optimisticMsg && 
+                        optimisticMsg.sender_id === newMessage.sender_id && 
+                        optimisticMsg.message === newMessage.message) {
+                      foundOptimistic = true;
+                      optimisticMessagesRef.current.delete(msg.tempId);
+                      debugLog(`Removed optimistic support message: ${msg.tempId}`);
+                      return false;
+                    }
                   }
                   return true;
                 });
@@ -287,7 +314,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       });
       realtimeChannelsRef.current = [];
     };
-  }, [selectedRoom?.id, selectedUser?.id, currentUser.id]);
+  }, [selectedRoom?.id, selectedUser?.id, currentUser.id, selectedTopic?.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -420,9 +447,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     try {
       setSending(true);
       
+      // Store optimistic message in ref for better tracking
+      optimisticMessagesRef.current.set(tempId, optimisticMessage);
+      
       setMessages(prev => [...prev, optimisticMessage]);
-      optimisticMessagesRef.current.add(tempId);
-      debugLog('Added optimistic message:', tempId);
+      debugLog('Added optimistic message:', tempId, optimisticMessage);
       
       const message = messageText || '';
       const mediaUrl = media?.url;
@@ -471,13 +500,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       setNewMessage('');
       
+      // Extended fallback timeout for better reliability
       setTimeout(() => {
         if (optimisticMessagesRef.current.has(tempId)) {
           setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
           optimisticMessagesRef.current.delete(tempId);
           debugLog('Removed optimistic message after fallback timeout:', tempId);
         }
-      }, 10000);
+      }, 15000);
       
     } catch (error) {
       debugLog('Error sending message:', error);
@@ -566,6 +596,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
+      {/* Header */}
       <div className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
@@ -616,7 +647,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             )}
-            
           </div>
           {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
@@ -645,9 +675,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-           id="messages-container"
-      >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
         {loading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
