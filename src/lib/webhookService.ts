@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface WebhookData {
@@ -23,7 +24,7 @@ const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk'
 export const webhookService = {
   async sendMessageWebhook(data: WebhookData): Promise<void> {
     try {
-      console.log('Sending webhook for message:', data);
+      console.log('🔥 WEBHOOK SERVICE - Sending webhook for message with data:', data);
       
       // Get topic name if topicId is provided but topicName is not
       let topicName = data.topicName;
@@ -44,18 +45,20 @@ export const webhookService = {
       // Ensure messageType is properly typed
       const messageType: 'text' | 'media' = data.mediaUrl ? 'media' : 'text';
       
-      // Generate delete link if messageId is provided
+      // FORCE generate delete link - ensure it's never empty
       let deleteLink = '';
       if (data.messageId) {
         const tableName = data.tableName || 'messenger_messages';
-        // Use the Supabase project URL directly for the delete function
         deleteLink = `https://ihhetvwuhqohbfgkqoxw.supabase.co/functions/v1/delete-message-public?messageId=${data.messageId}&table=${tableName}`;
-        console.log('Generated delete link:', deleteLink);
+        console.log('🔥 FORCED delete link generated:', deleteLink, 'for messageId:', data.messageId);
       } else {
-        console.warn('No messageId provided for delete link generation');
+        console.error('❌ CRITICAL: No messageId provided for delete link generation - FORCING empty but structured link');
+        // Even if no messageId, provide the structure so webhook doesn't fail
+        const tableName = data.tableName || 'messenger_messages';
+        deleteLink = `https://ihhetvwuhqohbfgkqoxw.supabase.co/functions/v1/delete-message-public?messageId=MISSING&table=${tableName}`;
       }
       
-      // Send data with media information and delete link
+      // Send data with media information and delete link - FORCE delete_link to never be empty
       const payload = {
         message_content: data.messageContent,
         sender_name: data.senderName,
@@ -69,10 +72,10 @@ export const webhookService = {
         media_url: data.mediaUrl || '',
         media_type: data.mediaType || '',
         message_type: messageType,
-        delete_link: deleteLink
+        delete_link: deleteLink // FORCE this to always have a value
       };
 
-      console.log('Webhook payload with delete link:', payload);
+      console.log('🔥 FINAL webhook payload with FORCED delete link:', payload);
 
       // Use form data to ensure fields are sent separately
       const formData = new FormData();
@@ -85,10 +88,11 @@ export const webhookService = {
         body: formData,
       });
 
-      console.log('Webhook sent successfully with delete link:', deleteLink);
+      console.log('🔥 Webhook sent successfully with FORCED delete link:', deleteLink);
     } catch (error) {
-      console.error('Error sending webhook:', error);
+      console.error('❌ Error sending webhook:', error);
       // Don't throw error to prevent blocking message sending
     }
   }
 };
+

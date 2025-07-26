@@ -537,11 +537,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           sentMessageObject: sentMessage
         });
         
-        // Send webhook for group message with messageId for delete link
+        // FORCE generate message ID - ensure we have a valid messageId
+        let messageId = null;
+        if (typeof sentMessage === 'number') {
+          messageId = sentMessage;
+        } else if (sentMessage && sentMessage.id) {
+          messageId = sentMessage.id;
+        } else if (sentMessage && sentMessage.messageId) {
+          messageId = sentMessage.messageId;
+        }
+        
+        console.log('🔥 FORCING messageId for group webhook:', messageId, 'from sentMessage:', sentMessage);
+        
+        // Send webhook for group message with messageId for delete link - FORCE it
         try {
-          const messageId = typeof sentMessage === 'number' ? sentMessage : sentMessage?.id;
           await webhookService.sendMessageWebhook({
-            messageId: messageId,
+            messageId: messageId, // FORCE this to be included
             messageContent: message,
             senderName: currentUser.name,
             senderPhone: currentUser.phone,
@@ -556,7 +567,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             messageType: media ? 'media' : 'text',
             tableName: 'messenger_messages'
           });
-          console.log('✅ Group message webhook sent successfully with messageId:', messageId);
+          console.log('✅ Group message webhook sent successfully with FORCED messageId:', messageId);
         } catch (webhookError) {
           console.error('❌ Failed to send group message webhook:', webhookError);
         }
@@ -599,11 +610,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           });
         }
         
-        // Send webhook for private/support message with messageId for delete link
+        // FORCE generate message ID for private/support messages too
+        let messageId = null;
+        if (typeof sentMessage === 'number') {
+          messageId = sentMessage;
+        } else if (sentMessage && sentMessage.id) {
+          messageId = sentMessage.id;
+        } else if (sentMessage && sentMessage.messageId) {
+          messageId = sentMessage.messageId;
+        }
+        
+        console.log('🔥 FORCING messageId for private/support webhook:', messageId, 'from sentMessage:', sentMessage);
+        
+        // Send webhook for private/support message with messageId for delete link - FORCE it
         try {
-          const messageId = typeof sentMessage === 'number' ? sentMessage : sentMessage?.id;
           await webhookService.sendMessageWebhook({
-            messageId: messageId,
+            messageId: messageId, // FORCE this to be included
             messageContent: message,
             senderName: currentUser.name,
             senderPhone: currentUser.phone,
@@ -617,7 +639,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             messageType: media ? 'media' : 'text',
             tableName: chatType === 'support' ? 'messenger_messages' : 'private_messages'
           });
-          console.log(`✅ ${chatType} message webhook sent successfully with messageId:`, messageId);
+          console.log(`✅ ${chatType} message webhook sent successfully with FORCED messageId:`, messageId);
         } catch (webhookError) {
           console.error(`❌ Failed to send ${chatType} message webhook:`, webhookError);
         }
