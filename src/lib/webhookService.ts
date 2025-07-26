@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 interface WebhookData {
+  messageId?: number;
   messageContent: string;
   senderName: string;
   senderPhone: string;
@@ -14,6 +15,7 @@ interface WebhookData {
   mediaUrl?: string;
   mediaType?: string;
   messageType?: 'text' | 'media';
+  tableName?: string;
 }
 
 const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk';
@@ -42,7 +44,15 @@ export const webhookService = {
       // Ensure messageType is properly typed
       const messageType: 'text' | 'media' = data.mediaUrl ? 'media' : 'text';
       
-      // Send data with media information
+      // Generate delete link if messageId is provided
+      let deleteLink = '';
+      if (data.messageId) {
+        const baseUrl = window.location.origin;
+        const tableName = data.tableName || 'messenger_messages';
+        deleteLink = `${baseUrl.replace('ihhetvwuhqohbfgkqoxw.lovableproject.com', 'ihhetvwuhqohbfgkqoxw.supabase.co')}/functions/v1/delete-message-public?messageId=${data.messageId}&table=${tableName}`;
+      }
+      
+      // Send data with media information and delete link
       const payload = {
         message_content: data.messageContent,
         sender_name: data.senderName,
@@ -55,7 +65,8 @@ export const webhookService = {
         triggered_from: window.location.origin,
         media_url: data.mediaUrl || '',
         media_type: data.mediaType || '',
-        message_type: messageType
+        message_type: messageType,
+        delete_link: deleteLink
       };
 
       // Use form data to ensure fields are sent separately
