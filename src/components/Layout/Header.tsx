@@ -204,7 +204,7 @@ const Header = () => {
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex flex-col space-y-4 py-6 flex-1">
+                <nav className="flex flex-col space-y-4 py-6 flex-1 overflow-y-auto">{/* Add overflow-y-auto for scrolling */}
                   <Link 
                     to="/" 
                     className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
