@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Send, Loader2 } from 'lucide-react';
 import { supportMessageService } from '@/lib/supportMessageService';
 import { useToast } from '@/hooks/use-toast';
+import VoiceRecorderButton from './VoiceRecorderButton';
+import { uploadFile, FileUploadResult } from '@/lib/fileUploadService';
 
 interface SupportResponseInputProps {
   conversationId: number;
@@ -21,14 +23,18 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  const sendResponse = async () => {
-    if (!message.trim() || sending) return;
+  const sendResponse = async (messageText?: string, mediaUrl?: string, mediaType?: string, mediaContent?: string) => {
+    const textToSend = messageText || message.trim();
+    
+    if (!textToSend && !mediaUrl) return;
+    if (sending) return;
 
     // Validation and logging
     console.log('Sending support response with parameters:', {
       conversationId,
       recipientUserId,
-      messageLength: message.trim().length
+      messageLength: textToSend.length,
+      hasMedia: !!mediaUrl
     });
 
     if (!recipientUserId || recipientUserId === 0) {
@@ -55,17 +61,24 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
       setSending(true);
       console.log('Calling sendSupportMessage with:', {
         recipientUserId,
-        message: message.trim(),
-        conversationId
+        message: textToSend,
+        conversationId,
+        mediaUrl,
+        mediaType
       });
       
       await supportMessageService.sendSupportMessage(
         recipientUserId,
-        message.trim(),
-        conversationId
+        textToSend,
+        conversationId,
+        mediaUrl,
+        mediaType,
+        mediaContent
       );
 
-      setMessage('');
+      if (!mediaUrl) {
+        setMessage('');
+      }
       
       // Refresh messages immediately
       setTimeout(() => {
@@ -73,14 +86,43 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
       }, 500);
       
       toast({
-        title: 'پاسخ ارسال شد',
-        description: `پاسخ شما به کاربر ${recipientUserId} ارسال شد`,
+        title: mediaUrl ? 'فایل ارسال شد' : 'پاسخ ارسال شد',
+        description: `${mediaUrl ? 'فایل' : 'پاسخ'} شما به کاربر ${recipientUserId} ارسال شد`,
       });
     } catch (error) {
       console.error('Error sending support response:', error);
       toast({
         title: 'خطا',
         description: 'خطا در ارسال پاسخ',
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleVoiceRecorded = async (blob: Blob) => {
+    setSending(true);
+    try {
+      // Create a File object from the blob
+      const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+      
+      const uploadResult: FileUploadResult = await uploadFile(file, 'voice-messages', 1); // Support user ID is 1
+      
+      console.log('Voice message upload result:', uploadResult);
+      
+      // Send the voice message
+      await sendResponse('', uploadResult.url, 'audio/webm', uploadResult.name);
+
+      toast({
+        title: 'موفق',
+        description: 'پیام صوتی ارسال شد',
+      });
+    } catch (error) {
+      console.error('Voice upload error:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در ارسال پیام صوتی',
         variant: 'destructive',
       });
     } finally {
@@ -98,6 +140,10 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
   return (
     <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
       <div className="flex gap-2">
+        <VoiceRecorderButton 
+          onVoiceRecorded={handleVoiceRecorded}
+          disabled={sending}
+        />
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -107,7 +153,7 @@ const SupportResponseInput: React.FC<SupportResponseInputProps> = ({
           disabled={sending}
         />
         <Button 
-          onClick={sendResponse} 
+          onClick={() => sendResponse()} 
           disabled={!message.trim() || sending}
         >
           {sending ? (
