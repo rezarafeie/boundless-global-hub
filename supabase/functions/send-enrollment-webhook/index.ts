@@ -31,13 +31,21 @@ serve(async (req) => {
     let finalPayload = payload;
 
     if (!eventType && enrollment && course) {
-      // Legacy format - convert to new format
+      // Legacy format - convert to new format and add admin access link
       finalEventType = 'enrollment_created';
       const enhancedUser = enhanceUserData(user);
+      const baseUrl = 'https://academy.rafiei.net';
+      const adminAccessLink = `${baseUrl}/admin-enrollment-details?id=${enrollment.id}`;
+      
       finalPayload = {
         event_type: 'enrollment_created',
         timestamp: new Date().toISOString(),
-        data: { enrollment, user: enhancedUser, course }
+        data: { 
+          enrollment, 
+          user: enhancedUser, 
+          course,
+          admin_access_link: adminAccessLink
+        }
       };
     }
 
