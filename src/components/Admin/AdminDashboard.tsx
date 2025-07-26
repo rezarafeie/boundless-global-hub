@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -466,21 +467,43 @@ const AdminDashboard: React.FC = () => {
                 هیچ پرداخت در انتظار تاییدی وجود ندارد
               </div>
             ) : (
-              <div className="space-y-3">
-                {stats.pendingEnrollmentsList.map((enrollment) => (
-                  <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
-                      <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
+              <>
+                {/* Mobile Layout - Card-based */}
+                <div className="block md:hidden space-y-3">
+                  {stats.pendingEnrollmentsList.map((enrollment) => (
+                    <div key={enrollment.id} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                          <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0 ml-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleApprovePayment(enrollment.id)}
+                            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleRejectPayment(enrollment.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                        <span className="font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
+                        <span>•</span>
+                        <span>{formatDateTime(enrollment.created_at)}</span>
                         {enrollment.receipt_url && (
                           <>
-                            <span className="text-xs text-gray-400">•</span>
+                            <span>•</span>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -494,27 +517,60 @@ const AdminDashboard: React.FC = () => {
                         )}
                       </div>
                     </div>
+                  ))}
+                </div>
 
-                    <div className="flex gap-1 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleApprovePayment(enrollment.id)}
-                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRejectPayment(enrollment.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
+                {/* Desktop Layout - Original cards */}
+                <div className="hidden md:block space-y-3">
+                  {stats.pendingEnrollmentsList.map((enrollment) => (
+                    <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                        <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
+                          {enrollment.receipt_url && (
+                            <>
+                              <span className="text-xs text-gray-400">•</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                                onClick={() => window.open(enrollment.receipt_url, '_blank')}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                رسید
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleApprovePayment(enrollment.id)}
+                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRejectPayment(enrollment.id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
                 
                 {stats.pendingPayments > 5 && (
                   <div className="text-center pt-4">
@@ -527,7 +583,7 @@ const AdminDashboard: React.FC = () => {
                     </Button>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
