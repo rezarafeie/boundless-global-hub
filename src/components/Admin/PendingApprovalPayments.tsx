@@ -49,7 +49,9 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
             slug
           )
         `)
-        .eq('manual_payment_status', 'pending')
+        .eq('payment_method', 'manual')
+        .eq('payment_status', 'pending')
+        .is('manual_payment_status', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -169,7 +171,11 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
         {pendingEnrollments.length === 0 ? (
           <div className="text-center py-8">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-            <p className="text-muted-foreground">هیچ پرداختی در انتظار تایید نیست</p>
+            <h3 className="font-semibold text-green-700 mb-2">عالی! همه پرداخت‌ها بررسی شده</h3>
+            <p className="text-muted-foreground">در حال حاضر هیچ پرداخت دستی در انتظار تایید نیست</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              پرداخت‌های دستی جدید که نیاز به تایید دارند در اینجا نمایش داده خواهند شد
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">

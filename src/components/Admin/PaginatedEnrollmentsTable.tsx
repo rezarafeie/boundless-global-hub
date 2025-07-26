@@ -80,8 +80,8 @@ const PaginatedEnrollmentsTable: React.FC = () => {
       // Apply status filter
       if (statusFilter !== 'all') {
         if (statusFilter === 'pending_manual') {
-          countQuery = countQuery.eq('manual_payment_status', 'pending');
-          dataQuery = dataQuery.eq('manual_payment_status', 'pending');
+          countQuery = countQuery.eq('payment_method', 'manual').eq('payment_status', 'pending').is('manual_payment_status', null);
+          dataQuery = dataQuery.eq('payment_method', 'manual').eq('payment_status', 'pending').is('manual_payment_status', null);
         } else {
           countQuery = countQuery.eq('payment_status', statusFilter);
           dataQuery = dataQuery.eq('payment_status', statusFilter);
@@ -122,8 +122,9 @@ const PaginatedEnrollmentsTable: React.FC = () => {
   };
 
   const getStatusBadge = (enrollment: Enrollment) => {
-    if (enrollment.manual_payment_status === 'pending') {
-      return <Badge className="bg-orange-100 text-orange-800">در انتظار تایید</Badge>;
+    // Check for manual payments pending approval
+    if (enrollment.payment_method === 'manual' && enrollment.payment_status === 'pending' && !enrollment.manual_payment_status) {
+      return <Badge className="bg-orange-100 text-orange-800">در انتظار تایید دستی</Badge>;
     }
     
     switch (enrollment.payment_status) {

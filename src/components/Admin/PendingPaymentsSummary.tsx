@@ -17,7 +17,9 @@ const PendingPaymentsSummary: React.FC = () => {
       const { count, error } = await supabase
         .from('enrollments')
         .select('*', { count: 'exact', head: true })
-        .eq('manual_payment_status', 'pending');
+        .eq('payment_method', 'manual')
+        .eq('payment_status', 'pending')
+        .is('manual_payment_status', null);
 
       if (error) throw error;
       setPendingCount(count || 0);
