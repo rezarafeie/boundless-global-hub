@@ -21,7 +21,11 @@ import {
   HeadphonesIcon,
   UserCheck,
   UserX,
-  FileText
+  FileText,
+  Eye,
+  EyeOff,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +69,17 @@ interface EnrollmentData {
   };
 }
 
+interface ActivationStatus {
+  smart_activation_clicked: boolean;
+  smart_activation_clicked_at: string | null;
+  support_link_clicked: boolean;
+  support_link_clicked_at: string | null;
+  telegram_channel_clicked: boolean;
+  telegram_channel_clicked_at: string | null;
+  gifts_link_clicked: boolean;
+  gifts_link_clicked_at: string | null;
+}
+
 const AdminEnrollmentDetails: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -76,15 +91,59 @@ const AdminEnrollmentDetails: React.FC = () => {
   const [error, setError] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [notes, setNotes] = useState('');
+  const [activationStatus, setActivationStatus] = useState<ActivationStatus | null>(null);
 
   useEffect(() => {
     if (enrollmentId) {
       fetchEnrollmentDetails();
+      fetchActivationStatus();
     } else {
       setError(true);
       setLoading(false);
     }
   }, [enrollmentId]);
+
+  const fetchActivationStatus = async () => {
+    if (!enrollmentId) return;
+    
+    try {
+      // Check localStorage for activation status (simulating user clicks)
+      // In a real app, this would be stored in database
+      const activationKey = `activations_${enrollmentId}`;
+      const savedActivations = localStorage.getItem(activationKey);
+      
+      if (savedActivations) {
+        try {
+          const parsed = JSON.parse(savedActivations);
+          setActivationStatus({
+            smart_activation_clicked: parsed.smart || false,
+            smart_activation_clicked_at: parsed.smart_clicked_at || null,
+            support_link_clicked: parsed.support || false,
+            support_link_clicked_at: parsed.support_clicked_at || null,
+            telegram_channel_clicked: parsed.telegram || false,
+            telegram_channel_clicked_at: parsed.telegram_clicked_at || null,
+            gifts_link_clicked: parsed.gifts || false,
+            gifts_link_clicked_at: parsed.gifts_clicked_at || null,
+          });
+        } catch (error) {
+          console.error('Error parsing activation status:', error);
+        }
+      } else {
+        setActivationStatus({
+          smart_activation_clicked: false,
+          smart_activation_clicked_at: null,
+          support_link_clicked: false,
+          support_link_clicked_at: null,
+          telegram_channel_clicked: false,
+          telegram_channel_clicked_at: null,
+          gifts_link_clicked: false,
+          gifts_link_clicked_at: null,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching activation status:', error);
+    }
+  };
 
   const fetchEnrollmentDetails = async () => {
     if (!enrollmentId) return;
@@ -152,6 +211,18 @@ const AdminEnrollmentDetails: React.FC = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const formatClickTime = (timestamp: string | null) => {
+    if (!timestamp) return 'هرگز کلیک نشده';
+    
+    return new Intl.DateTimeFormat('fa-IR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(timestamp));
   };
 
   if (loading) {
@@ -250,6 +321,144 @@ const AdminEnrollmentDetails: React.FC = () => {
                     )}
                     رد ثبت‌نام
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* User Activation Status Card */}
+          {activationStatus && (isSuccessfulPayment || isManuallyApproved) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-blue-600" />
+                  وضعیت فعال‌سازی کاربر
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Smart Activation Status */}
+                  {enrollment.courses.smart_activation_enabled && enrollment.courses.smart_activation_telegram_link && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Key className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">فعال‌سازی هوشمند</span>
+                        <Badge variant={activationStatus.smart_activation_clicked ? "default" : "secondary"}>
+                          {activationStatus.smart_activation_clicked ? (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <XCircle className="h-3 w-3 mr-1" />
+                          )}
+                          {activationStatus.smart_activation_clicked ? 'کلیک شده' : 'کلیک نشده'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {activationStatus.smart_activation_clicked 
+                          ? `آخرین کلیک: ${formatClickTime(activationStatus.smart_activation_clicked_at)}`
+                          : 'کاربر هنوز روی لینک فعال‌سازی هوشمند کلیک نکرده'
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Support Link Status */}
+                  {enrollment.courses.support_link && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <HeadphonesIcon className="h-4 w-4 text-purple-600" />
+                        <span className="font-medium">لینک پشتیبانی</span>
+                        <Badge variant={activationStatus.support_link_clicked ? "default" : "secondary"}>
+                          {activationStatus.support_link_clicked ? (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <XCircle className="h-3 w-3 mr-1" />
+                          )}
+                          {activationStatus.support_link_clicked ? 'کلیک شده' : 'کلیک نشده'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {activationStatus.support_link_clicked 
+                          ? `آخرین کلیک: ${formatClickTime(activationStatus.support_link_clicked_at)}`
+                          : 'کاربر هنوز روی لینک پشتیبانی کلیک نکرده'
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Telegram Channel Status */}
+                  {enrollment.courses.telegram_channel_link && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Send className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium">کانال تلگرام</span>
+                        <Badge variant={activationStatus.telegram_channel_clicked ? "default" : "secondary"}>
+                          {activationStatus.telegram_channel_clicked ? (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <XCircle className="h-3 w-3 mr-1" />
+                          )}
+                          {activationStatus.telegram_channel_clicked ? 'کلیک شده' : 'کلیک نشده'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {activationStatus.telegram_channel_clicked 
+                          ? `آخرین کلیک: ${formatClickTime(activationStatus.telegram_channel_clicked_at)}`
+                          : 'کاربر هنوز روی لینک کانال تلگرام کلیک نکرده'
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Gifts Link Status */}
+                  {enrollment.courses.gifts_link && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Gift className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">لینک هدایا</span>
+                        <Badge variant={activationStatus.gifts_link_clicked ? "default" : "secondary"}>
+                          {activationStatus.gifts_link_clicked ? (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          ) : (
+                            <XCircle className="h-3 w-3 mr-1" />
+                          )}
+                          {activationStatus.gifts_link_clicked ? 'کلیک شده' : 'کلیک نشده'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {activationStatus.gifts_link_clicked 
+                          ? `آخرین کلیک: ${formatClickTime(activationStatus.gifts_link_clicked_at)}`
+                          : 'کاربر هنوز روی لینک هدایا کلیک نکرده'
+                        }
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Overall Activity Summary */}
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">خلاصه فعالیت کاربر</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {(() => {
+                      const clickedCount = [
+                        activationStatus.smart_activation_clicked,
+                        activationStatus.support_link_clicked,
+                        activationStatus.telegram_channel_clicked,
+                        activationStatus.gifts_link_clicked
+                      ].filter(Boolean).length;
+                      
+                      const totalLinks = [
+                        enrollment.courses.smart_activation_enabled && enrollment.courses.smart_activation_telegram_link,
+                        enrollment.courses.support_link,
+                        enrollment.courses.telegram_channel_link,
+                        enrollment.courses.gifts_link
+                      ].filter(Boolean).length;
+
+                      return `کاربر روی ${clickedCount} از ${totalLinks} لینک مهم کلیک کرده است.`;
+                    })()}
+                  </p>
                 </div>
               </CardContent>
             </Card>
