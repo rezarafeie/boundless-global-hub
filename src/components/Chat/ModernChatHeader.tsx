@@ -33,10 +33,7 @@ const ModernChatHeader: React.FC<ModernChatHeaderProps> = ({
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        {/* Online/Offline status dot */}
-        <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-        
+      <div className="flex items-center gap-4">        
         <span className="text-slate-300 text-sm hidden sm:block">
           خوش آمدید، <span className="text-amber-300 font-medium">{userName}</span>
         </span>
