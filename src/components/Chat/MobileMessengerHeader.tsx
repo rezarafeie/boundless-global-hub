@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ArrowRight, MessageCircle, LogOut, User } from 'lucide-react';
+import { ArrowRight, LogOut, User } from 'lucide-react';
 import { MessengerUser } from '@/lib/messengerService';
 
 interface MobileMessengerHeaderProps {
@@ -51,11 +51,6 @@ const MobileMessengerHeader: React.FC<MobileMessengerHeaderProps> = ({
             {currentUser.name || 'کاربر'}
           </span>
         </Button>
-        
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <MessageCircle className="w-5 h-5 text-blue-500" />
-        </div>
         
         <Button
           variant="ghost"
