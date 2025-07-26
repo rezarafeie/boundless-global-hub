@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -98,15 +99,25 @@ const AdminDashboard: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .eq('is_approved', true);
 
-      // Fetch pending payments count
-      const { count: pendingPayments } = await supabase
+      // Fetch pending payments count with correct filtering for manual payments
+      const { data: pendingPaymentsData } = await supabase
         .from('enrollments')
-        .select('*', { count: 'exact', head: true })
+        .select('*')
         .eq('payment_method', 'manual')
-        .eq('payment_status', 'pending')
-        .is('manual_payment_status', null);
+        .in('payment_status', ['pending', 'awaiting_approval']);
 
-      // Fetch pending payments list (limited to 5 for dashboard)
+      // Filter for manual payments that haven't been approved or rejected yet
+      const filteredPendingPayments = pendingPaymentsData?.filter(enrollment => 
+        enrollment.payment_method === 'manual' && 
+        (enrollment.payment_status === 'pending' || enrollment.payment_status === 'awaiting_approval') &&
+        (!enrollment.manual_payment_status || 
+         enrollment.manual_payment_status === null || 
+         enrollment.manual_payment_status === 'pending')
+      ) || [];
+
+      const pendingPayments = filteredPendingPayments.length;
+
+      // Fetch pending payments list (limited to 5 for dashboard) with course info
       const { data: pendingEnrollmentsList } = await supabase
         .from('enrollments')
         .select(`
@@ -114,10 +125,18 @@ const AdminDashboard: React.FC = () => {
           courses(title, slug)
         `)
         .eq('payment_method', 'manual')
-        .eq('payment_status', 'pending')
-        .is('manual_payment_status', null)
+        .in('payment_status', ['pending', 'awaiting_approval'])
         .order('created_at', { ascending: false })
         .limit(5);
+
+      // Filter the list as well
+      const filteredPendingList = pendingEnrollmentsList?.filter(enrollment => 
+        enrollment.payment_method === 'manual' && 
+        (enrollment.payment_status === 'pending' || enrollment.payment_status === 'awaiting_approval') &&
+        (!enrollment.manual_payment_status || 
+         enrollment.manual_payment_status === null || 
+         enrollment.manual_payment_status === 'pending')
+      ) || [];
 
       // Fetch recent enrollments
       const { data: recentEnrollments } = await supabase
@@ -139,15 +158,18 @@ const AdminDashboard: React.FC = () => {
         .eq('is_active', true)
         .limit(5);
 
+      console.log('Pending payments count:', pendingPayments);
+      console.log('Filtered pending enrollments list:', filteredPendingList);
+
       setStats({
         totalRevenue,
         totalEnrollments: totalEnrollments || 0,
         activeCourses: activeCourses || 0,
         approvedUsers: approvedUsers || 0,
-        pendingPayments: pendingPayments || 0,
+        pendingPayments: pendingPayments,
         recentEnrollments: recentEnrollments || [],
         popularCourses: popularCourses || [],
-        pendingEnrollmentsList: pendingEnrollmentsList || []
+        pendingEnrollmentsList: filteredPendingList
       });
 
     } catch (error) {
