@@ -1,18 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck, Mail } from 'lucide-react';
+import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck, Mail, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import CourseManagement from '@/components/Admin/CourseManagement';
 import { WebhookManagement } from '@/components/Admin/WebhookManagement';
-import UserManagement from '@/components/Admin/UserManagement';
 import EmailSettings from '@/components/Admin/EmailSettings';
 import PendingApprovalPayments from '@/components/Admin/PendingApprovalPayments';
 import PendingPaymentsSummary from '@/components/Admin/PendingPaymentsSummary';
 import PaginatedUsersTable from '@/components/Admin/PaginatedUsersTable';
 import PaginatedEnrollmentsTable from '@/components/Admin/PaginatedEnrollmentsTable';
 
+// Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <Alert className="bg-red-50 border-red-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            خطایی در نمایش این بخش رخ داده است. لطفاً صفحه را بازخوانی کنید.
+            {this.state.error && (
+              <details className="mt-2 text-xs text-red-600">
+                <summary>جزئیات خطا</summary>
+                <pre className="mt-1 whitespace-pre-wrap">{this.state.error.message}</pre>
+              </details>
+            )}
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Loading Component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center p-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+    <span className="mr-2 text-muted-foreground">در حال بارگذاری...</span>
+  </div>
+);
+
 const EnrollmentAdmin: React.FC = () => {
-  console.log('EnrollmentAdmin: Component rendering');
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Header */}
@@ -64,12 +111,24 @@ const EnrollmentAdmin: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="enrollments" className="space-y-6">
-            <PendingApprovalPayments />
-            <PaginatedEnrollmentsTable />
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <PendingApprovalPayments />
+              </Suspense>
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <PaginatedEnrollmentsTable />
+              </Suspense>
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <PaginatedUsersTable />
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <PaginatedUsersTable />
+              </Suspense>
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="webhooks" className="space-y-6">
