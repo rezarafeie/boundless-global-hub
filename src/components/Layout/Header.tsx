@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Globe, Sun, Moon } from "lucide-react";
@@ -9,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+import { messengerService } from "@/lib/messengerService";
 import OnlineStatusIndicator from "@/components/OnlineStatusIndicator";
 
 const Header = () => {
@@ -19,9 +19,39 @@ const Header = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
+
+  // Check user role on mount and when user changes
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!user?.phone) {
+        setUserRole(null);
+        setIsMessengerAdmin(false);
+        return;
+      }
+
+      try {
+        const detailedUser = await messengerService.getUserByPhone(user.phone);
+        if (detailedUser) {
+          setUserRole(detailedUser.role || 'user');
+          setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+
+    checkUserRole();
+  }, [user]);
 
   const handleMessengerClick = () => {
     navigate('/hub/messenger');
+  };
+
+  // Check if user has admin access
+  const hasAdminAccess = () => {
+    return isMessengerAdmin || ['admin', 'enrollments_manager'].includes(userRole || '');
   };
 
   // Use different logos for light/dark modes with proper fallbacks
@@ -84,6 +114,20 @@ const Header = () => {
           <Link to="/hub" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Hub" : "هاب"}
           </Link>
+          
+          {/* Admin Links for authorized users */}
+          {isAuthenticated && hasAdminAccess() && (
+            <>
+              <Link to="/enroll/admin" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+                {language === "en" ? "Enrollment Admin" : "مدیریت ثبت‌نام"}
+              </Link>
+              {isMessengerAdmin && (
+                <Link to="/hub/admin" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+                  {language === "en" ? "Hub Admin" : "مدیریت هاب"}
+                </Link>
+              )}
+            </>
+          )}
         </nav>
         
         <div className="flex items-center gap-3">
@@ -212,6 +256,28 @@ const Header = () => {
                   >
                     {language === "en" ? "Hub" : "هاب"}
                   </Link>
+                  
+                  {/* Admin Links for authorized users in mobile menu */}
+                  {isAuthenticated && hasAdminAccess() && (
+                    <>
+                      <Link 
+                        to="/enroll/admin" 
+                        className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {language === "en" ? "Enrollment Admin" : "مدیریت ثبت‌نام"}
+                      </Link>
+                      {isMessengerAdmin && (
+                        <Link 
+                          to="/hub/admin" 
+                          className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {language === "en" ? "Hub Admin" : "مدیریت هاب"}
+                        </Link>
+                      )}
+                    </>
+                  )}
                 </nav>
 
                 {/* Footer Actions */}

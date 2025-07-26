@@ -73,6 +73,8 @@ const EnrollmentAdmin: React.FC = () => {
   const [hasAccess, setHasAccess] = useState(false);
   const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -111,6 +113,13 @@ const EnrollmentAdmin: React.FC = () => {
         if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
           console.log('User has access');
           setHasAccess(true);
+          setUserRole(userRole);
+          setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
+          
+          // Set default view based on user role
+          if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
+            setActiveView('enrollments'); // Show enrollments by default for enrollment managers
+          }
         } else {
           console.log('User does not have required role');
           setHasAccess(false);
@@ -178,6 +187,23 @@ const EnrollmentAdmin: React.FC = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
+        // Don't show dashboard summary for enrollment managers who are not messenger admins
+        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+          return (
+            <div className="space-y-6">
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PendingApprovalPayments />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PaginatedEnrollmentsTable />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          );
+        }
         return <AdminDashboard />;
       case 'courses':
         return <CourseManagement />;
@@ -215,6 +241,23 @@ const EnrollmentAdmin: React.FC = () => {
       case 'settings':
         return <AdminSettingsPanel />;
       default:
+        // Don't show dashboard summary for enrollment managers who are not messenger admins
+        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+          return (
+            <div className="space-y-6">
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PendingApprovalPayments />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PaginatedEnrollmentsTable />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          );
+        }
         return <AdminDashboard />;
     }
   };
