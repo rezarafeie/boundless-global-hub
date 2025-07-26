@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,27 +77,29 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
-  // Enhanced message matching function
+  // Enhanced message matching function with more robust logic
   const createMessageHash = (senderId: number, message: string, timestamp?: string): string => {
     return `${senderId}-${message.substring(0, 50)}-${timestamp || Date.now()}`;
   };
 
   const findMatchingOptimisticMessage = (realMessage: any): string | null => {
     for (const [tempId, optimisticMsg] of optimisticMessagesRef.current.entries()) {
-      // Match by sender, message content, and approximate time
+      // Match by sender and message content first
+      const senderMatch = optimisticMsg.sender_id === realMessage.sender_id;
+      const contentMatch = optimisticMsg.message.trim() === (realMessage.message || '').trim();
+      
+      // Time tolerance check (within 2 minutes)
       const timeMatch = Math.abs(
         new Date(realMessage.created_at).getTime() - 
         new Date(optimisticMsg.created_at).getTime()
-      ) < 30000; // 30 seconds tolerance
+      ) < 120000; // 2 minutes tolerance
 
-      const contentMatch = optimisticMsg.sender_id === realMessage.sender_id &&
-                          optimisticMsg.message === realMessage.message;
-      
       // For super groups, also match topic_id
       const topicMatch = !selectedRoom?.is_super_group || 
                         (optimisticMsg.topic_id === realMessage.topic_id);
 
-      if (contentMatch && timeMatch && topicMatch) {
+      if (senderMatch && contentMatch && timeMatch && topicMatch) {
+        debugLog(`Found matching optimistic message: ${tempId} for real message: ${realMessage.id}`);
         return tempId;
       }
     }
@@ -133,7 +134,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         debugLog('Auto-refreshing messages due to disconnection');
         await loadMessagesAndSync();
       }
-    }, 10000); // Check every 10 seconds
+    }, 15000); // Check every 15 seconds
   };
 
   const loadMessagesAndSync = async () => {
@@ -170,20 +171,31 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
       
-      // Merge with existing optimistic messages
+      // Merge with optimistic messages but keep them visible
       setMessages(prevMessages => {
         const realMessageIds = new Set(roomMessages.map(msg => msg.id));
-        const optimisticMessages = prevMessages.filter(msg => msg.isOptimistic && !realMessageIds.has(msg.id));
+        
+        // Keep optimistic messages that haven't been matched yet
+        const optimisticMessages = prevMessages.filter(msg => 
+          msg.isOptimistic && !realMessageIds.has(msg.id)
+        );
         
         // Update last message timestamp
         if (roomMessages.length > 0) {
           lastMessageTimestamp.current = roomMessages[roomMessages.length - 1].created_at;
         }
         
-        return [...roomMessages, ...optimisticMessages];
+        // Combine real messages with remaining optimistic messages
+        const combinedMessages = [...roomMessages, ...optimisticMessages];
+        
+        // Sort by timestamp to maintain proper order
+        return combinedMessages.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
       });
       
       debugLog('Messages synced:', roomMessages.length);
+      setIsConnected(true);
     } catch (error) {
       debugLog('Error syncing messages:', error);
       setIsConnected(false);
@@ -208,7 +220,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     };
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
-  // Enhanced real-time subscription with improved message handling
+  // Enhanced real-time subscription with better message handling
   useEffect(() => {
     if (!selectedRoom && !selectedUser) return;
     
@@ -251,37 +263,43 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             }
             
             setMessages(prev => {
+              // Check if this message already exists (prevent duplicates)
+              const existingMessage = prev.find(msg => msg.id === newMessage.id && !msg.isOptimistic);
+              if (existingMessage) {
+                debugLog('Message already exists, skipping');
+                return prev;
+              }
+
               // Find matching optimistic message
               const matchingTempId = findMatchingOptimisticMessage(newMessage);
               
               if (matchingTempId) {
                 // Replace optimistic message with real one
                 optimisticMessagesRef.current.delete(matchingTempId);
-                debugLog(`Replaced optimistic message: ${matchingTempId}`);
+                debugLog(`Replacing optimistic message: ${matchingTempId} with real message: ${newMessage.id}`);
                 
                 return prev.map(msg => 
                   msg.tempId === matchingTempId 
                     ? { 
                         ...newMessage, 
                         sender: { name: 'Unknown', phone: '' },
-                        status: 'sent' as const
+                        status: 'sent' as const,
+                        isOptimistic: false
                       }
                     : msg
                 );
               } else {
-                // Check if real message already exists
-                const exists = prev.find(msg => msg.id === newMessage.id);
-                if (!exists) {
-                  debugLog(`Adding new real message: ${newMessage.id}`);
-                  return [...prev, {
-                    ...newMessage,
-                    sender: { name: 'Unknown', phone: '' },
-                    status: 'sent' as const
-                  }];
-                }
+                // Add new real message
+                debugLog(`Adding new real message: ${newMessage.id}`);
+                return [...prev, {
+                  ...newMessage,
+                  sender: { name: 'Unknown', phone: '' },
+                  status: 'sent' as const,
+                  isOptimistic: false
+                }].sort((a, b) => 
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
               }
-              
-              return prev;
             });
             
             setIsConnected(true);
@@ -313,11 +331,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                    (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
                 
                 setMessages(prev => {
+                  // Check for duplicates
+                  const existingMessage = prev.find(msg => msg.id === newMessage.id && !msg.isOptimistic);
+                  if (existingMessage) {
+                    return prev;
+                  }
+
                   const matchingTempId = findMatchingOptimisticMessage(newMessage);
                   
                   if (matchingTempId) {
                     optimisticMessagesRef.current.delete(matchingTempId);
-                    debugLog(`Replaced optimistic private message: ${matchingTempId}`);
+                    debugLog(`Replacing optimistic private message: ${matchingTempId}`);
                     
                     return prev.map(msg => 
                       msg.tempId === matchingTempId 
@@ -331,29 +355,29 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                               name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
                               phone: ''
                             },
-                            status: 'sent' as const
+                            status: 'sent' as const,
+                            isOptimistic: false
                           }
                         : msg
                     );
                   } else {
-                    const exists = prev.find(msg => msg.id === newMessage.id);
-                    if (!exists) {
-                      debugLog(`Adding new private message: ${newMessage.id}`);
-                      return [...prev, {
-                        ...newMessage,
-                        room_id: undefined,
-                        media_url: newMessage.media_url,
-                        message_type: newMessage.message_type || 'text',
-                        media_content: newMessage.media_content,
-                        sender: {
-                          name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-                          phone: ''
-                        },
-                        status: 'sent' as const
-                      }];
-                    }
+                    debugLog(`Adding new private message: ${newMessage.id}`);
+                    return [...prev, {
+                      ...newMessage,
+                      room_id: undefined,
+                      media_url: newMessage.media_url,
+                      message_type: newMessage.message_type || 'text',
+                      media_content: newMessage.media_content,
+                      sender: {
+                        name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+                        phone: ''
+                      },
+                      status: 'sent' as const,
+                      isOptimistic: false
+                    }].sort((a, b) => 
+                      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                    );
                   }
-                  return prev;
                 });
                 
                 setIsConnected(true);
@@ -385,33 +409,38 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             
             if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
               setMessages(prev => {
+                const existingMessage = prev.find(msg => msg.id === newMessage.id && !msg.isOptimistic);
+                if (existingMessage) {
+                  return prev;
+                }
+
                 const matchingTempId = findMatchingOptimisticMessage(newMessage);
                 
                 if (matchingTempId) {
                   optimisticMessagesRef.current.delete(matchingTempId);
-                  debugLog(`Replaced optimistic support message: ${matchingTempId}`);
+                  debugLog(`Replacing optimistic support message: ${matchingTempId}`);
                   
                   return prev.map(msg => 
                     msg.tempId === matchingTempId 
                       ? { 
                           ...newMessage, 
                           sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' },
-                          status: 'sent' as const
+                          status: 'sent' as const,
+                          isOptimistic: false
                         }
                       : msg
                   );
                 } else {
-                  const exists = prev.find(msg => msg.id === newMessage.id);
-                  if (!exists) {
-                    debugLog(`Adding new support message: ${newMessage.id}`);
-                    return [...prev, {
-                      ...newMessage,
-                      sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' },
-                      status: 'sent' as const
-                    }];
-                  }
+                  debugLog(`Adding new support message: ${newMessage.id}`);
+                  return [...prev, {
+                    ...newMessage,
+                    sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' },
+                    status: 'sent' as const,
+                    isOptimistic: false
+                  }].sort((a, b) => 
+                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                  );
                 }
-                return prev;
               });
               
               setIsConnected(true);
@@ -544,11 +573,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     try {
       setSending(true);
       
-      // Store optimistic message in ref for better tracking
+      // Store optimistic message in ref for matching
       optimisticMessagesRef.current.set(tempId, optimisticMessage);
       
       // Add optimistic message immediately to UI
-      setMessages(prev => [...prev, optimisticMessage]);
+      setMessages(prev => [...prev, optimisticMessage].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      ));
       debugLog('Added optimistic message:', tempId);
       
       const message = messageText || '';
@@ -632,7 +663,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
 
-      // Update optimistic message status to sent
+      // Update optimistic message status to sent immediately
       setMessages(prev => prev.map(msg => 
         msg.tempId === tempId 
           ? { ...msg, status: 'sent' as const }
@@ -664,24 +695,19 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       setNewMessage('');
       
-      // Fallback timeout - remove optimistic message if not replaced by real-time update
+      // Extended timeout for optimistic message cleanup (only if not replaced)
       setTimeout(() => {
         if (optimisticMessagesRef.current.has(tempId)) {
+          debugLog(`Optimistic message ${tempId} not replaced by real-time, but keeping it as sent`);
+          // Don't remove it, just ensure it's marked as sent
           setMessages(prev => prev.map(msg => 
             msg.tempId === tempId 
-              ? { ...msg, status: 'failed' as const }
+              ? { ...msg, status: 'sent' as const, isOptimistic: false }
               : msg
           ));
-          // Remove failed message after another timeout
-          setTimeout(() => {
-            if (optimisticMessagesRef.current.has(tempId)) {
-              setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
-              optimisticMessagesRef.current.delete(tempId);
-              debugLog('Removed failed optimistic message:', tempId);
-            }
-          }, 3000);
+          optimisticMessagesRef.current.delete(tempId);
         }
-      }, 15000);
+      }, 30000); // 30 second timeout
       
     } catch (error) {
       debugLog('Error sending message:', error);
@@ -697,7 +723,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setTimeout(() => {
         setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
         optimisticMessagesRef.current.delete(tempId);
-      }, 3000);
+      }, 5000); // Keep failed messages visible for 5 seconds
       
       toast({
         title: 'خطا',
