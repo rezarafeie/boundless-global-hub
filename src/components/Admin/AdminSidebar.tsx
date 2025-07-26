@@ -66,11 +66,9 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
   const handleViewChange = (view: ViewType) => {
     onViewChange(view);
     // Force close sidebar completely on mobile only
-    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
-    if (isMobile) {
-      setTimeout(() => {
-        setOpen(false);
-      }, 150);
+    const isMobile = window.innerWidth < 1024;
+    if (isMobile && open) {
+      setOpen(false);
     }
   };
 
