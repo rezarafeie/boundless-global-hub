@@ -281,7 +281,7 @@ const EnrollmentAdmin: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex w-full flex-1 h-full">{/* Added flex-1 and h-full, removed h-[calc(100vh-64px)] pt-16 */}
+      <div className="flex w-full flex-1 h-full pt-16">{/* Added pt-16 to account for fixed header */}
         <AdminSidebar 
           activeView={activeView} 
           onViewChange={setActiveView}
