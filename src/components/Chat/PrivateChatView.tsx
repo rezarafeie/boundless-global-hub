@@ -141,7 +141,7 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   };
 
   const scrollToBottom = () => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'instant' });
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {

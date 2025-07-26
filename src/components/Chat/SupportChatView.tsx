@@ -45,7 +45,7 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'instant', block: 'end' });
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   };
 

@@ -262,32 +262,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     };
   }, [selectedRoom?.id, selectedUser?.id, currentUser.id]);
 
-  // Clear optimistic messages when real message arrives
-  useEffect(() => {
-    if (messages.length > 0) {
-      setMessages(prev => prev.filter(msg => {
-        if (msg.isOptimistic && msg.tempId) {
-          // Check if there's a real message with same content and sender
-          const hasRealMessage = prev.some(realMsg => 
-            !realMsg.isOptimistic &&
-            !realMsg.tempId &&
-            realMsg.message === msg.message &&
-            realMsg.sender_id === msg.sender_id &&
-            realMsg.room_id === msg.room_id &&
-            realMsg.topic_id === msg.topic_id &&
-            Math.abs(new Date(realMsg.created_at).getTime() - new Date(msg.created_at).getTime()) < 10000 // Within 10 seconds
-          );
-          
-          if (hasRealMessage) {
-            debugLog('Removing optimistic message - real message found:', msg.tempId);
-            return false; // Remove optimistic message
-          }
-        }
-        return true; // Keep message
-      }));
-    }
-  }, [messages]);
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -391,7 +365,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Enhanced message sending with better optimistic updates
@@ -473,6 +447,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       }
 
       setNewMessage('');
+      
+      // Quick removal of optimistic message with fallback
+      setTimeout(() => {
+        setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
+        debugLog('Removed optimistic message after fallback timeout:', tempId);
+      }, 5000); // 5 seconds fallback for faster UI updates
       
     } catch (error) {
       debugLog('Error sending message:', error);

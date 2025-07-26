@@ -22,7 +22,7 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
   const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
   
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Fetch user avatars for all message senders
