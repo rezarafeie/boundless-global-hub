@@ -18,6 +18,8 @@ type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' 
 interface AdminSidebarProps {
   activeView: ViewType;
   onViewChange: (view: ViewType) => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 const sidebarItems = [
@@ -53,15 +55,14 @@ const sidebarItems = [
   },
 ];
 
-export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AdminSidebar({ activeView, onViewChange, isOpen = false, onToggle }: AdminSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleViewChange = (view: ViewType) => {
     onViewChange(view);
     // Auto-close sidebar on mobile after selection
-    if (window.innerWidth < 1024) {
-      setIsOpen(false);
+    if (window.innerWidth < 1024 && onToggle) {
+      onToggle();
     }
   };
 
@@ -71,19 +72,12 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
 
   return (
     <>
-      {/* Mobile Trigger Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed top-20 right-4 z-[10001] p-2 bg-white rounded-lg shadow-lg border border-gray-200"
-      >
-        <Menu className="h-5 w-5 text-gray-600" />
-      </button>
 
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsOpen(false)}
+          onClick={onToggle}
         />
       )}
 
@@ -134,7 +128,7 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
 
             {/* Mobile Close Button */}
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={onToggle}
               className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <X className="h-4 w-4 text-gray-500" />

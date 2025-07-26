@@ -1,7 +1,7 @@
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Shield } from 'lucide-react';
+import { AlertCircle, Shield, Menu } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,6 +72,7 @@ const EnrollmentAdmin: React.FC = () => {
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings'>('dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -223,8 +224,27 @@ const EnrollmentAdmin: React.FC = () => {
       {/* Academy Main Header */}
       <Header />
       
+      {/* Mobile Menu Button Overlay */}
+      <div className="lg:hidden fixed top-0 left-0 z-[10001] h-16 w-full pointer-events-none">
+        <div className="flex items-center h-full px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="pointer-events-auto rounded-full hover:bg-accent dark:hover:bg-accent/50"
+          >
+            <Menu size={20} className="text-foreground" />
+          </Button>
+        </div>
+      </div>
+      
       <div className="flex w-full h-[calc(100vh-64px)] pt-16">
-        <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+        <AdminSidebar 
+          activeView={activeView} 
+          onViewChange={setActiveView}
+          isOpen={isMobileSidebarOpen}
+          onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        />
         
         {/* Main Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white" style={{ direction: 'rtl' }}>
