@@ -17,6 +17,7 @@ import ModernChatMessage from './ModernChatMessage';
 import MediaMessage from './MediaMessage';
 import UserProfile from './UserProfile';
 import type { ChatTopic } from '@/types/supabase';
+import { webhookService } from '@/lib/webhookService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -501,7 +502,17 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         type: media.type
       }) : null;
       
+      // Determine chat type and details for webhook
+      let chatType: 'group' | 'private' | 'support' = 'private';
+      let chatName = '';
+      let topicName = '';
+
       if (selectedRoom) {
+        // Group or super group message
+        chatType = 'group';
+        chatName = selectedRoom.name;
+        
+        // Send the message
         await messengerService.sendMessage(
           selectedRoom.id, 
           currentUser.id, 
@@ -511,13 +522,46 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           mediaType,
           mediaContent
         );
+        
+        // Get topic name for super groups
+        if (selectedTopic) {
+          topicName = selectedTopic.title;
+        }
+        
         debugLog('Room message sent successfully', {
           roomId: selectedRoom.id,
           topicId: selectedTopic?.id,
           tempId
         });
+        
+        // Send webhook for group message
+        try {
+          await webhookService.sendMessageWebhook({
+            messageContent: message,
+            senderName: currentUser.name,
+            senderPhone: currentUser.phone,
+            senderEmail: '', // Add email if available
+            chatType,
+            chatName,
+            topicName,
+            topicId: selectedTopic?.id,
+            timestamp: new Date().toISOString(),
+            mediaUrl,
+            mediaType,
+            messageType: media ? 'media' : 'text',
+            tableName: 'messenger_messages'
+          });
+          console.log('✅ Group message webhook sent successfully');
+        } catch (webhookError) {
+          console.error('❌ Failed to send group message webhook:', webhookError);
+        }
+        
       } else if (selectedUser) {
         if (selectedUser.id === 1) {
+          // Support message
+          chatType = 'support';
+          chatName = 'Support';
+          
           await messengerService.sendSupportMessage(
             currentUser.id,
             message,
@@ -527,6 +571,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           );
           debugLog('Support message sent successfully');
         } else {
+          // Private message
+          chatType = 'private';
+          chatName = selectedUser.name;
+          
           await privateMessageService.sendMessage(
             currentUser.id,
             selectedUser.id,
@@ -537,6 +585,27 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             sessionToken
           );
           debugLog('Private message sent successfully');
+        }
+        
+        // Send webhook for private/support message
+        try {
+          await webhookService.sendMessageWebhook({
+            messageContent: message,
+            senderName: currentUser.name,
+            senderPhone: currentUser.phone,
+            senderEmail: '', // Add email if available
+            chatType,
+            chatName,
+            topicName: '',
+            timestamp: new Date().toISOString(),
+            mediaUrl,
+            mediaType,
+            messageType: media ? 'media' : 'text',
+            tableName: chatType === 'support' ? 'messenger_messages' : 'private_messages'
+          });
+          console.log(`✅ ${chatType} message webhook sent successfully`);
+        } catch (webhookError) {
+          console.error(`❌ Failed to send ${chatType} message webhook:`, webhookError);
         }
       }
 
