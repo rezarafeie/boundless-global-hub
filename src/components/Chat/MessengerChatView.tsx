@@ -146,7 +146,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               // Enhanced matching for super group messages with topic
               let foundOptimistic = false;
               
-              // Find and remove matching optimistic message
+              // Find and remove matching optimistic message with stricter matching for super groups
               const filteredMessages = prev.filter(msg => {
                 if (msg.isOptimistic && msg.tempId) {
                   const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
@@ -155,17 +155,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                       optimisticMsg.message === newMessage.message && 
                       optimisticMsg.room_id === selectedRoom.id) {
                     
-                    // For super groups, also match topic_id
-                    const topicMatches = selectedRoom.is_super_group ? 
-                      (optimisticMsg.topic_id || null) === (newMessage.topic_id || null) : 
-                      true;
-                    
-                    if (topicMatches) {
-                      foundOptimistic = true;
-                      optimisticMessagesRef.current.delete(msg.tempId);
-                      debugLog(`Removed optimistic message: ${msg.tempId}`);
-                      return false;
+                    // For super groups, ensure exact topic_id match (including null/undefined handling)
+                    if (selectedRoom.is_super_group) {
+                      const optimisticTopicId = optimisticMsg.topic_id || null;
+                      const newMessageTopicId = newMessage.topic_id || null;
+                      if (optimisticTopicId !== newMessageTopicId) {
+                        return true; // Keep the optimistic message if topics don't match
+                      }
                     }
+                    
+                    foundOptimistic = true;
+                    optimisticMessagesRef.current.delete(msg.tempId);
+                    debugLog(`Removed optimistic message: ${msg.tempId}`, { 
+                      optimisticTopicId: optimisticMsg.topic_id, 
+                      newMessageTopicId: newMessage.topic_id 
+                    });
+                    return false;
                   }
                 }
                 return true;
@@ -506,14 +511,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       setNewMessage('');
       
-      // Extended fallback timeout for better reliability
+      // Extended fallback timeout for better reliability, especially for super groups
       setTimeout(() => {
         if (optimisticMessagesRef.current.has(tempId)) {
           setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
           optimisticMessagesRef.current.delete(tempId);
           debugLog('Removed optimistic message after fallback timeout:', tempId);
         }
-      }, 20000);
+      }, 25000); // Increased timeout for super groups
       
     } catch (error) {
       debugLog('Error sending message:', error);
