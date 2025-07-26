@@ -60,14 +60,14 @@ const sidebarItems = [
 ];
 
 export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
-  const { state, setOpen, open } = useSidebar();
+  const { state, setOpen, open, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
+  const shouldShowText = !collapsed || (isMobile && open);
 
   const handleViewChange = (view: ViewType) => {
     onViewChange(view);
-    // Force close sidebar completely on mobile only
-    const isMobile = window.innerWidth < 1024;
-    if (isMobile && open) {
+    // Force close sidebar on mobile
+    if (isMobile) {
       setOpen(false);
     }
   };
@@ -85,7 +85,7 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
             <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-lg">ر</span>
             </div>
-            {!collapsed && (
+            {shouldShowText && (
               <div className="text-right">
                 <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
                 <p className="text-sm text-gray-500">پنل مدیریت</p>
@@ -102,7 +102,7 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
                   <SidebarMenuButton
                     asChild
                     isActive={activeView === item.id}
-                    tooltip={collapsed ? item.label : undefined}
+                    tooltip={!shouldShowText ? item.label : undefined}
                   >
                     <button
                       onClick={() => handleViewChange(item.id as ViewType)}
@@ -118,7 +118,7 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
                         "h-5 w-5 flex-shrink-0",
                         activeView === item.id ? "text-white" : "text-gray-500"
                       )} />
-                      {!collapsed && <span className="text-base">{item.label}</span>}
+                      {shouldShowText && <span className="text-base">{item.label}</span>}
                     </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
