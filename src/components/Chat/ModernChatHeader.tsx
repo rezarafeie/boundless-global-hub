@@ -2,18 +2,20 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, LogOut, MessageCircle } from 'lucide-react';
+import { Users, LogOut } from 'lucide-react';
 
 interface ModernChatHeaderProps {
   userName: string;
   onlineCount: number;
   onLogout: () => void;
+  isOnline?: boolean;
 }
 
 const ModernChatHeader: React.FC<ModernChatHeaderProps> = ({ 
   userName, 
   onlineCount, 
-  onLogout 
+  onLogout,
+  isOnline = true
 }) => {
   return (
     <div className="flex items-center justify-between p-6 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 border-b border-slate-700 dark:border-slate-800">
@@ -32,8 +34,8 @@ const ModernChatHeader: React.FC<ModernChatHeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-4">
-        {/* Online status dot */}
-        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+        {/* Online/Offline status dot */}
+        <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
         
         <span className="text-slate-300 text-sm hidden sm:block">
           خوش آمدید، <span className="text-amber-300 font-medium">{userName}</span>
