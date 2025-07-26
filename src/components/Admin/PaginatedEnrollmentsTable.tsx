@@ -24,6 +24,7 @@ interface Enrollment {
   course_id: string;
   receipt_url: string | null;
   admin_notes: string | null;
+  chat_user_id: number | null;
   courses: {
     title: string;
     slug: string;
@@ -284,11 +285,23 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             variant="outline"
                             className="w-full"
                             onClick={() => {
-                              window.location.href = `/enroll/admin/enrollments/${enrollment.id}`;
+                              window.location.href = `/admin-enrollment-details?id=${enrollment.id}`;
                             }}
                           >
                             مشاهده جزئیات
                           </Button>
+                          {enrollment.chat_user_id && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => {
+                                window.location.href = `/user-detail/${enrollment.chat_user_id}`;
+                              }}
+                            >
+                              مشاهده کاربر
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -347,11 +360,22 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                window.location.href = `/enroll/admin/enrollments/${enrollment.id}`;
+                                window.location.href = `/admin-enrollment-details?id=${enrollment.id}`;
                               }}
                             >
                               جزئیات
                             </Button>
+                            {enrollment.chat_user_id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  window.location.href = `/user-detail/${enrollment.chat_user_id}`;
+                                }}
+                              >
+                                کاربر
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
