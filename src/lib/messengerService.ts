@@ -471,9 +471,9 @@ export const messengerService = {
     mediaUrl?: string,
     mediaType?: string,
     mediaContent?: string
-  ): Promise<void> {
+  ): Promise<{ id: number }> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messenger_messages')
         .insert({
           room_id: roomId,
@@ -483,9 +483,12 @@ export const messengerService = {
           media_url: mediaUrl,
           message_type: mediaType,
           media_content: mediaContent
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -498,9 +501,9 @@ export const messengerService = {
     mediaUrl?: string,
     mediaType?: string,
     mediaContent?: string
-  ): Promise<void> {
+  ): Promise<{ id: number }> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messenger_messages')
         .insert({
           sender_id: senderId,
@@ -509,9 +512,12 @@ export const messengerService = {
           media_url: mediaUrl,
           message_type: mediaType,
           media_content: mediaContent
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error sending support message:', error);
       throw error;
