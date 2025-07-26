@@ -957,9 +957,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   useEffect(() => {
     if (otpCode.length === 4) {
       if (currentStep === 'otp-link') {
-        verifyOTPForLinking(otpCode);
+        verifyLinkingOTP(otpCode);
       } else if (currentStep === 'otp-login') {
-        verifyOTPForLogin(otpCode);
+        verifyLoginOTP(otpCode);
       } else if (currentStep === 'forgot-otp') {
         verifyForgotPasswordOTP(otpCode);
       }
