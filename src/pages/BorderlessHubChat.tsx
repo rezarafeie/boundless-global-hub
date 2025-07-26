@@ -29,6 +29,7 @@ const BorderlessHubChat: React.FC = () => {
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(false);
+  const [optimisticMessage, setOptimisticMessage] = useState<any>(null);
 
   // Set first topic as active when topics load
   useEffect(() => {
@@ -90,6 +91,24 @@ const BorderlessHubChat: React.FC = () => {
         return;
       }
 
+      // Create an optimistic message for immediate display
+      const optimisticMessage = {
+        id: Date.now(), // Temporary ID
+        message: messageText,
+        sender_name: result.user.name,
+        sender_role: 'member' as const,
+        user_id: result.user.id,
+        topic_id: activeTopic.id,
+        created_at: new Date().toISOString(),
+        is_pinned: false,
+        reactions: null,
+        updated_at: new Date().toISOString()
+      };
+
+      // Add message to local state immediately for smooth UX
+      setOptimisticMessage(optimisticMessage);
+
+      // Send the actual message to the database
       await chatService.sendMessage({
         message: messageText,
         sender_name: result.user.name,
@@ -98,7 +117,13 @@ const BorderlessHubChat: React.FC = () => {
         topic_id: activeTopic.id
       });
 
+      // Clear optimistic message after successful send
+      setTimeout(() => setOptimisticMessage(null), 1000);
+
     } catch (error) {
+      // Clear optimistic message on error
+      setOptimisticMessage(null);
+      
       toast({
         title: 'خطا',
         description: 'پیام ارسال نشد. دوباره تلاش کنید.',
@@ -268,7 +293,7 @@ const BorderlessHubChat: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {activeTopic ? (
           <ChatTopicMessages
-            messages={messages}
+            messages={optimisticMessage ? [...messages, optimisticMessage] : messages}
             loading={messagesLoading}
             currentUserId={currentUserId}
           />
