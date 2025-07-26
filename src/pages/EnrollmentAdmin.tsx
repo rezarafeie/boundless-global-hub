@@ -1,12 +1,13 @@
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Shield } from 'lucide-react';
+import { AlertCircle, Shield, Menu } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+
+import Header from '@/components/Layout/Header';
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
 import AdminDashboard from '@/components/Admin/AdminDashboard';
 import CourseManagement from '@/components/Admin/CourseManagement';
@@ -71,6 +72,9 @@ const EnrollmentAdmin: React.FC = () => {
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings'>('dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -109,6 +113,13 @@ const EnrollmentAdmin: React.FC = () => {
         if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
           console.log('User has access');
           setHasAccess(true);
+          setUserRole(userRole);
+          setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
+          
+          // Set default view based on user role
+          if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
+            setActiveView('enrollments'); // Show enrollments by default for enrollment managers
+          }
         } else {
           console.log('User does not have required role');
           setHasAccess(false);
@@ -176,6 +187,23 @@ const EnrollmentAdmin: React.FC = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
+        // Don't show dashboard summary for enrollment managers who are not messenger admins
+        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+          return (
+            <div className="space-y-6">
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PendingApprovalPayments />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PaginatedEnrollmentsTable />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          );
+        }
         return <AdminDashboard />;
       case 'courses':
         return <CourseManagement />;
@@ -213,41 +241,64 @@ const EnrollmentAdmin: React.FC = () => {
       case 'settings':
         return <AdminSettingsPanel />;
       default:
+        // Don't show dashboard summary for enrollment managers who are not messenger admins
+        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+          return (
+            <div className="space-y-6">
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PendingApprovalPayments />
+                </Suspense>
+              </ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PaginatedEnrollmentsTable />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          );
+        }
         return <AdminDashboard />;
     }
   };
 
   return (
-    <SidebarProvider defaultOpen={false} open={undefined}>
-      <div className="min-h-screen w-full bg-gray-50" dir="rtl">
-        {/* Academy Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6">
-          <div className="flex-1 flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">ر</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">آکادمی رفیعی</h1>
-              <p className="text-sm text-gray-500">پنل مدیریت</p>
-            </div>
-          </div>
-          <SidebarTrigger className="ml-2" />
-        </header>
-
-        <div className="flex w-full">
-          <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
-          
-          {/* Main Content */}
-          <main className="flex-1 p-8 overflow-auto bg-white" style={{ direction: 'rtl' }}>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                {renderContent()}
-              </Suspense>
-            </ErrorBoundary>
-          </main>
+    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">{/* Changed min-h-screen to h-screen and added flex flex-col */}
+      {/* Academy Main Header */}
+      <Header />
+      
+      {/* Mobile Menu Button Overlay */}
+      <div className="lg:hidden fixed top-0 left-0 z-[10001] h-16 w-full pointer-events-none">
+        <div className="flex items-center h-full px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="pointer-events-auto rounded-full hover:bg-accent dark:hover:bg-accent/50"
+          >
+            <Menu size={20} className="text-foreground" />
+          </Button>
         </div>
       </div>
-    </SidebarProvider>
+      
+      <div className="flex w-full flex-1 h-full pt-16">{/* Added pt-16 to account for fixed header */}
+        <AdminSidebar 
+          activeView={activeView} 
+          onViewChange={setActiveView}
+          isOpen={isMobileSidebarOpen}
+          onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        />
+        
+        {/* Main Content */}
+        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>{/* Added h-full */}
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              {renderContent()}
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+      </div>
+    </div>
   );
 };
 

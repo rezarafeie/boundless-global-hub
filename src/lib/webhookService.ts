@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 interface WebhookData {
+  messageId?: number;
   messageContent: string;
   senderName: string;
   senderPhone: string;
@@ -14,6 +15,7 @@ interface WebhookData {
   mediaUrl?: string;
   mediaType?: string;
   messageType?: 'text' | 'media';
+  tableName?: string;
 }
 
 const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk';
@@ -21,13 +23,7 @@ const WEBHOOK_URL = 'https://hook.us1.make.com/0hc8v2f528r9ieyefwhu8g9ta8l4r1bk'
 export const webhookService = {
   async sendMessageWebhook(data: WebhookData): Promise<void> {
     try {
-      console.log('🔗 [Webhook] Sending webhook for message:', {
-        chatType: data.chatType,
-        chatName: data.chatName,
-        topicId: data.topicId,
-        topicName: data.topicName,
-        messageContent: data.messageContent?.substring(0, 50) + '...'
-      });
+      console.log('Sending webhook for message:', data);
       
       // Get topic name if topicId is provided but topicName is not
       let topicName = data.topicName;
@@ -40,16 +36,23 @@ export const webhookService = {
             .single();
           
           topicName = topic?.title;
-          console.log('🔗 [Webhook] Fetched topic name:', topicName);
         } catch (error) {
-          console.error('🔗 [Webhook] Error fetching topic name:', error);
+          console.error('Error fetching topic name:', error);
         }
       }
       
       // Ensure messageType is properly typed
       const messageType: 'text' | 'media' = data.mediaUrl ? 'media' : 'text';
       
-      // Send data with media information
+      // Generate delete link if messageId is provided
+      let deleteLink = '';
+      if (data.messageId) {
+        const baseUrl = window.location.origin;
+        const tableName = data.tableName || 'messenger_messages';
+        deleteLink = `${baseUrl.replace('ihhetvwuhqohbfgkqoxw.lovableproject.com', 'ihhetvwuhqohbfgkqoxw.supabase.co')}/functions/v1/delete-message-public?messageId=${data.messageId}&table=${tableName}`;
+      }
+      
+      // Send data with media information and delete link
       const payload = {
         message_content: data.messageContent,
         sender_name: data.senderName,
@@ -62,10 +65,9 @@ export const webhookService = {
         triggered_from: window.location.origin,
         media_url: data.mediaUrl || '',
         media_type: data.mediaType || '',
-        message_type: messageType
+        message_type: messageType,
+        delete_link: deleteLink
       };
-
-      console.log('🔗 [Webhook] Payload being sent:', payload);
 
       // Use form data to ensure fields are sent separately
       const formData = new FormData();
@@ -73,18 +75,14 @@ export const webhookService = {
         formData.append(key, String(value));
       });
 
-      const response = await fetch(WEBHOOK_URL, {
+      await fetch(WEBHOOK_URL, {
         method: 'POST',
         body: formData,
       });
 
-      if (response.ok) {
-        console.log('✅ [Webhook] Webhook sent successfully');
-      } else {
-        console.error('❌ [Webhook] Webhook failed with status:', response.status);
-      }
+      console.log('Webhook sent successfully');
     } catch (error) {
-      console.error('❌ [Webhook] Error sending webhook:', error);
+      console.error('Error sending webhook:', error);
       // Don't throw error to prevent blocking message sending
     }
   }
