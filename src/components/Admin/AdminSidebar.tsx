@@ -65,11 +65,13 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
 
   return (
     <Sidebar className={cn(
-      "bg-white border-l border-gray-200 lg:relative lg:translate-x-0",
-      collapsed ? "w-16" : "w-72 lg:w-72 w-64"
+      "bg-white border-l border-gray-200 shadow-lg lg:shadow-none",
+      "fixed lg:relative z-50 lg:z-auto",
+      "h-full lg:h-auto",
+      collapsed ? "w-16" : "w-72"
     )} side="right" collapsible="icon">
-      <SidebarContent>
-        <div className="p-6 border-b border-gray-100">
+      <SidebarContent className="bg-white h-full overflow-auto">
+        <div className="p-6 border-b border-gray-100 bg-white">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-lg">ر</span>
@@ -83,8 +85,8 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
           </div>
         </div>
 
-        <SidebarGroup className="px-4 py-6">
-          <SidebarGroupContent>
+        <SidebarGroup className="px-4 py-6 bg-white">
+          <SidebarGroupContent className="bg-white">
             <SidebarMenu className="space-y-1">
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
