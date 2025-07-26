@@ -218,7 +218,7 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen w-full bg-gray-50" dir="rtl">
         {/* Academy Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6">

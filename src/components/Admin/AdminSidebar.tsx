@@ -65,9 +65,9 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
 
   return (
     <Sidebar className={cn(
-      "bg-white border-l border-gray-200",
-      collapsed ? "w-16" : "w-72"
-    )} side="right">
+      "bg-white border-l border-gray-200 lg:relative lg:translate-x-0",
+      collapsed ? "w-16" : "w-72 lg:w-72 w-64"
+    )} side="right" collapsible="icon">
       <SidebarContent>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
