@@ -233,7 +233,31 @@ function enhanceUserData(userData: any): any {
     enhanced.lastname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
   }
 
-  return enhanced;
+  // Convert empty strings to null values
+  return convertEmptyToNull(enhanced);
+}
+
+// Helper function to convert empty strings to null values
+function convertEmptyToNull(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  
+  if (typeof obj === 'string') {
+    return obj.trim() === '' ? null : obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertEmptyToNull(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = convertEmptyToNull(value);
+    }
+    return result;
+  }
+  
+  return obj;
 }
 
 // Helper function to merge template with payload
