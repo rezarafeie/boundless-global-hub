@@ -29,10 +29,9 @@ const BorderlessHubAdmin = () => {
       }
 
       if (!isAuthenticated || !user) {
-        console.log('User not authenticated, redirecting to home');
+        console.log('User not authenticated');
         setCheckingRole(false);
         setHasAccess(false);
-        navigate('/');
         return;
       }
 
@@ -45,7 +44,6 @@ const BorderlessHubAdmin = () => {
           console.log('User not found in messenger service');
           setHasAccess(false);
           setCheckingRole(false);
-          navigate('/');
           return;
         }
 
@@ -85,14 +83,8 @@ const BorderlessHubAdmin = () => {
     );
   }
 
-  // Redirect if not authenticated (this should not normally execute due to useEffect redirect)
-  if (!isAuthenticated || !user) {
-    navigate('/');
-    return null;
-  }
-
-  // Show access denied if user doesn't have required role
-  if (!hasAccess) {
+  // Show access denied if not authenticated or user doesn't have required role
+  if (!isAuthenticated || !user || !hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">

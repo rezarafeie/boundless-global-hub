@@ -77,10 +77,9 @@ const EnrollmentAdmin: React.FC = () => {
       }
 
       if (!isAuthenticated || !user) {
-        console.log('User not authenticated, redirecting to home');
+        console.log('User not authenticated');
         setCheckingRole(false);
         setHasAccess(false);
-        navigate('/');
         return;
       }
 
@@ -93,7 +92,6 @@ const EnrollmentAdmin: React.FC = () => {
           console.log('User not found in messenger service');
           setHasAccess(false);
           setCheckingRole(false);
-          navigate('/');
           return;
         }
 
@@ -135,14 +133,8 @@ const EnrollmentAdmin: React.FC = () => {
     );
   }
 
-  // Redirect if not authenticated (this should not normally execute due to useEffect redirect)
-  if (!isAuthenticated || !user) {
-    navigate('/');
-    return null;
-  }
-
-  // Show access denied if user doesn't have required role
-  if (!hasAccess) {
+  // Show access denied if not authenticated or user doesn't have required role
+  if (!isAuthenticated || !user || !hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
         <div className="max-w-md w-full mx-4">
