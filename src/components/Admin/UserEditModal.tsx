@@ -157,6 +157,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                 <SelectContent>
                   <SelectItem value="user">کاربر عادی</SelectItem>
                   <SelectItem value="support">پشتیبانی</SelectItem>
+                  <SelectItem value="enrollments_manager">مدیر ثبت‌نام‌ها</SelectItem>
                   <SelectItem value="admin">مدیر</SelectItem>
                 </SelectContent>
               </Select>
