@@ -6,7 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
-
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
 import AdminDashboard from '@/components/Admin/AdminDashboard';
 import CourseManagement from '@/components/Admin/CourseManagement';
@@ -251,7 +250,6 @@ const EnrollmentAdmin: React.FC = () => {
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               آنلاین
             </div>
-            
           </div>
         </header>
 
