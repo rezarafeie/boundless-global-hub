@@ -365,14 +365,37 @@ const AdminEnrollmentDetails: React.FC = () => {
               {/* Receipt */}
               {enrollment.receipt_url && (
                 <div className="mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(enrollment.receipt_url, '_blank')}
-                    className="w-full"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    مشاهده رسید پرداخت
-                  </Button>
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="bg-muted p-3 border-b">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">رسید پرداخت</span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <img 
+                        src={enrollment.receipt_url} 
+                        alt="رسید پرداخت"
+                        className="w-full max-w-md mx-auto rounded-lg shadow-sm border"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallbackDiv = target.nextElementSibling as HTMLElement;
+                          if (fallbackDiv) fallbackDiv.style.display = 'block';
+                        }}
+                      />
+                      <div className="hidden text-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(enrollment.receipt_url, '_blank')}
+                          className="mt-2"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          مشاهده رسید پرداخت
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
