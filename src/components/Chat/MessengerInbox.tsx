@@ -158,7 +158,23 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     conv.other_user?.phone?.includes(searchTerm)
   );
 
-  const filteredSupportConversations = supportConversations.filter(conv =>
+  // Remove duplicates from support conversations by grouping them
+  const uniqueSupportConversations = supportConversations.reduce((acc, conv) => {
+    // Check if we already have a conversation with the same name
+    const existing = acc.find(existing => existing.name === conv.name);
+    if (!existing) {
+      acc.push(conv);
+    } else {
+      // Keep the one with more recent activity or higher unread count
+      if (conv.last_message_time > existing.last_message_time || conv.unread_count > existing.unread_count) {
+        const index = acc.indexOf(existing);
+        acc[index] = conv;
+      }
+    }
+    return acc;
+  }, []);
+
+  const filteredSupportConversations = uniqueSupportConversations.filter(conv =>
     conv.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -256,7 +272,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10 text-sm"
             dir="rtl"
-            disabled={isOffline && (!conversations.length && !rooms.length && !supportConversations.length)}
+            disabled={isOffline && (!conversations.length && !rooms.length && !filteredSupportConversations.length)}
           />
         </div>
         
