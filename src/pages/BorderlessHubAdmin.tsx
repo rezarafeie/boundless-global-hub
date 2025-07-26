@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +17,103 @@ import ShortLinksManager from '@/components/admin/ShortLinksManager';
 const BorderlessHubAdmin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      // First check if user is authenticated
+      if (isLoading) {
+        return; // Still loading, wait
+      }
+
+      if (!isAuthenticated || !user) {
+        console.log('User not authenticated, redirecting to home');
+        setCheckingRole(false);
+        setHasAccess(false);
+        navigate('/');
+        return;
+      }
+
+      try {
+        console.log('Checking user role for:', user);
+        // Get detailed user info from messenger service
+        const detailedUser = await messengerService.getUserByPhone(user.phone || '');
+        
+        if (!detailedUser) {
+          console.log('User not found in messenger service');
+          setHasAccess(false);
+          setCheckingRole(false);
+          navigate('/');
+          return;
+        }
+
+        console.log('User details:', detailedUser);
+        
+        // Check if user has admin or enrollments_manager role
+        const allowedRoles = ['admin', 'enrollments_manager'];
+        const userRole = detailedUser.role || 'user';
+        
+        console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin);
+        
+        if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
+          console.log('User has access');
+          setHasAccess(true);
+        } else {
+          console.log('User does not have required role');
+          setHasAccess(false);
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setHasAccess(false);
+      } finally {
+        setCheckingRole(false);
+      }
+    };
+
+    checkUserRole();
+  }, [isAuthenticated, user, isLoading, navigate]);
+
+  // Show loading while checking authentication or if not authenticated
+  if (isLoading || checkingRole) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600">
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated (this should not normally execute due to useEffect redirect)
+  if (!isAuthenticated || !user) {
+    navigate('/');
+    return null;
+  }
+
+  // Show access denied if user doesn't have required role
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="mb-4">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-red-600" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            دسترسی محدود
+          </h1>
+          <p className="text-gray-600 mb-6">
+            شما دسترسی لازم برای مشاهده این صفحه را ندارید. این بخش فقط برای مدیران سیستم قابل دسترس است.
+          </p>
+          <Button onClick={() => navigate('/')} variant="outline">
+            بازگشت به صفحه اصلی
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSupportLogin = async () => {
     try {
