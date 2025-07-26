@@ -935,21 +935,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                           : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      {/* Enhanced status indicator for optimistic messages */}
-                      {message.isOptimistic && (
-                        <div className="absolute -top-1 -right-1">
-                          {messageStatus === 'sending' && (
-                            <div className="w-3 h-3 bg-blue-300 rounded-full animate-pulse" />
-                          )}
-                          {messageStatus === 'failed' && (
-                            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                          )}
-                          {messageStatus === 'sent' && (
-                            <div className="w-3 h-3 bg-green-500 rounded-full" />
-                          )}
-                        </div>
-                      )}
-                      
                       {!isOwnMessage && (
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
