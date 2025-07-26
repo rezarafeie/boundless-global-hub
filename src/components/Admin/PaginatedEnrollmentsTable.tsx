@@ -1,0 +1,326 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
+
+interface Enrollment {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  payment_status: string;
+  manual_payment_status: string | null;
+  payment_amount: number;
+  payment_method: string | null;
+  created_at: string;
+  course_id: string;
+  receipt_url: string | null;
+  admin_notes: string | null;
+  courses: {
+    title: string;
+    slug: string;
+  };
+}
+
+const PaginatedEnrollmentsTable: React.FC = () => {
+  const { toast } = useToast();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalEnrollments, setTotalEnrollments] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const enrollmentsPerPage = 50;
+  const totalPages = Math.ceil(totalEnrollments / enrollmentsPerPage);
+
+  useEffect(() => {
+    fetchEnrollments();
+  }, [currentPage, debouncedSearchTerm, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, statusFilter]);
+
+  const fetchEnrollments = async () => {
+    try {
+      setLoading(true);
+      
+      // Build base query
+      let countQuery = supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true });
+        
+      let dataQuery = supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses (
+            title,
+            slug
+          )
+        `)
+        .order('created_at', { ascending: false });
+        
+      // Apply search filter
+      if (debouncedSearchTerm) {
+        const searchFilter = `full_name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`;
+        countQuery = countQuery.or(searchFilter);
+        dataQuery = dataQuery.or(searchFilter);
+      }
+      
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'pending_manual') {
+          countQuery = countQuery.eq('manual_payment_status', 'pending');
+          dataQuery = dataQuery.eq('manual_payment_status', 'pending');
+        } else {
+          countQuery = countQuery.eq('payment_status', statusFilter);
+          dataQuery = dataQuery.eq('payment_status', statusFilter);
+        }
+      }
+      
+      // Get total count
+      const { count } = await countQuery;
+      
+      // Apply pagination to data query
+      const offset = (currentPage - 1) * enrollmentsPerPage;
+      dataQuery = dataQuery.range(offset, offset + enrollmentsPerPage - 1);
+
+      const { data, error } = await dataQuery;
+
+      if (error) throw error;
+      
+      setEnrollments(data || []);
+      setTotalEnrollments(count || 0);
+    } catch (error) {
+      console.error('Error fetching enrollments:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری ثبت‌نام‌ها",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fa-IR');
+  };
+
+  const getStatusBadge = (enrollment: Enrollment) => {
+    if (enrollment.manual_payment_status === 'pending') {
+      return <Badge className="bg-orange-100 text-orange-800">در انتظار تایید</Badge>;
+    }
+    
+    switch (enrollment.payment_status) {
+      case 'completed':
+      case 'success':
+        return <Badge className="bg-green-100 text-green-800">تکمیل شده</Badge>;
+      case 'failed':
+      case 'cancelled_payment':
+        return <Badge variant="destructive">ناموفق</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">در انتظار</Badge>;
+      default:
+        return <Badge variant="secondary">{enrollment.payment_status}</Badge>;
+    }
+  };
+
+  const getPaymentMethodBadge = (method: string | null) => {
+    if (!method) return <span className="text-muted-foreground">-</span>;
+    
+    switch (method) {
+      case 'zarinpal':
+        return <Badge variant="outline">زرین‌پال</Badge>;
+      case 'manual':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700">دستی</Badge>;
+      default:
+        return <Badge variant="outline">{method}</Badge>;
+    }
+  };
+
+  if (loading && currentPage === 1) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+            <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            تمام ثبت‌نام‌ها
+            <Badge variant="secondary">{totalEnrollments} ثبت‌نام</Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                <SelectItem value="completed">تکمیل شده</SelectItem>
+                <SelectItem value="pending">در انتظار</SelectItem>
+                <SelectItem value="pending_manual">در انتظار تایید</SelectItem>
+                <SelectItem value="failed">ناموفق</SelectItem>
+                <SelectItem value="cancelled_payment">لغو شده</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Search */}
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="جستجوی نام، ایمیل، تلفن..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {enrollments.length === 0 && !loading ? (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">
+              {searchTerm || statusFilter !== 'all' ? 'هیچ ثبت‌نامی یافت نشد' : 'هنوز ثبت‌نامی وجود ندارد'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Enrollments Table */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>نام</TableHead>
+                    <TableHead>دوره</TableHead>
+                    <TableHead>تلفن</TableHead>
+                    <TableHead>ایمیل</TableHead>
+                    <TableHead>مبلغ</TableHead>
+                    <TableHead>روش پرداخت</TableHead>
+                    <TableHead>وضعیت</TableHead>
+                    <TableHead>تاریخ</TableHead>
+                    <TableHead>عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {enrollments.map((enrollment) => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{enrollment.courses.title}</div>
+                          <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{enrollment.phone}</TableCell>
+                      <TableCell>{enrollment.email}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4" />
+                          {formatPrice(enrollment.payment_amount)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getPaymentMethodBadge(enrollment.payment_method)}</TableCell>
+                      <TableCell>{getStatusBadge(enrollment)}</TableCell>
+                      <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {enrollment.receipt_url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Navigate to enrollment details or copy ID
+                              navigator.clipboard.writeText(enrollment.id);
+                              toast({
+                                title: "کپی شد",
+                                description: "شناسه ثبت‌نام کپی شد"
+                              });
+                            }}
+                          >
+                            کپی ID
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  نمایش {(currentPage - 1) * enrollmentsPerPage + 1} تا{' '}
+                  {Math.min(currentPage * enrollmentsPerPage, totalEnrollments)} از {totalEnrollments} ثبت‌نام
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1 || loading}
+                  >
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                    قبلی
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    صفحه {currentPage} از {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    بعدی
+                    <ChevronLeft className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default PaginatedEnrollmentsTable;

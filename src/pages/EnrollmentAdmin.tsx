@@ -8,6 +8,8 @@ import UserManagement from '@/components/Admin/UserManagement';
 import EmailSettings from '@/components/Admin/EmailSettings';
 import PendingApprovalPayments from '@/components/Admin/PendingApprovalPayments';
 import PendingPaymentsSummary from '@/components/Admin/PendingPaymentsSummary';
+import PaginatedUsersTable from '@/components/Admin/PaginatedUsersTable';
+import PaginatedEnrollmentsTable from '@/components/Admin/PaginatedEnrollmentsTable';
 
 const EnrollmentAdmin: React.FC = () => {
   return (
@@ -62,23 +64,11 @@ const EnrollmentAdmin: React.FC = () => {
 
           <TabsContent value="enrollments" className="space-y-6">
             <PendingApprovalPayments />
-            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader>
-                <CardTitle>گزارش کلی ثبت‌نام‌ها</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    گزارش تفصیلی ثبت‌نام‌ها در بخش مدیریت دوره‌ها قابل مشاهده است
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <PaginatedEnrollmentsTable />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <UserManagement />
+            <PaginatedUsersTable />
           </TabsContent>
 
           <TabsContent value="webhooks" className="space-y-6">
