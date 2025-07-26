@@ -138,7 +138,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             // For super groups, also check topic_id match
             const isTopicMatch = !selectedTopic || !newMessage.topic_id || newMessage.topic_id === selectedTopic.id;
             if (!isTopicMatch) {
-              debugLog('Topic mismatch, ignoring message');
+              debugLog('Topic mismatch, ignoring message:', {
+                selectedTopicId: selectedTopic?.id,
+                messageTopicId: newMessage.topic_id
+              });
               return;
             }
             
@@ -150,27 +153,43 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               const filteredMessages = prev.filter(msg => {
                 if (msg.isOptimistic && msg.tempId) {
                   const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
-                  if (optimisticMsg && 
-                      optimisticMsg.sender_id === newMessage.sender_id && 
-                      optimisticMsg.message === newMessage.message && 
-                      optimisticMsg.room_id === selectedRoom.id) {
+                  if (optimisticMsg) {
+                    // Basic message matching
+                    const messageMatches = optimisticMsg.sender_id === newMessage.sender_id && 
+                                         optimisticMsg.message === newMessage.message && 
+                                         optimisticMsg.room_id === selectedRoom.id;
                     
-                    // For super groups, ensure exact topic_id match (including null/undefined handling)
-                    if (selectedRoom.is_super_group) {
-                      const optimisticTopicId = optimisticMsg.topic_id || null;
-                      const newMessageTopicId = newMessage.topic_id || null;
-                      if (optimisticTopicId !== newMessageTopicId) {
-                        return true; // Keep the optimistic message if topics don't match
+                    if (messageMatches) {
+                      // For super groups, ensure exact topic_id match (including null/undefined handling)
+                      if (selectedRoom.is_super_group) {
+                        const optimisticTopicId = optimisticMsg.topic_id || null;
+                        const newMessageTopicId = newMessage.topic_id || null;
+                        
+                        debugLog(`Super group topic matching:`, {
+                          optimisticTopicId,
+                          newMessageTopicId,
+                          selectedTopicId: selectedTopic?.id,
+                          tempId: msg.tempId
+                        });
+                        
+                        if (optimisticTopicId !== newMessageTopicId) {
+                          debugLog('Topic mismatch - keeping optimistic message', {
+                            tempId: msg.tempId,
+                            optimisticTopicId,
+                            newMessageTopicId
+                          });
+                          return true; // Keep the optimistic message if topics don't match
+                        }
                       }
+                      
+                      foundOptimistic = true;
+                      optimisticMessagesRef.current.delete(msg.tempId);
+                      debugLog(`Removed optimistic message: ${msg.tempId}`, { 
+                        optimisticTopicId: optimisticMsg.topic_id, 
+                        newMessageTopicId: newMessage.topic_id 
+                      });
+                      return false;
                     }
-                    
-                    foundOptimistic = true;
-                    optimisticMessagesRef.current.delete(msg.tempId);
-                    debugLog(`Removed optimistic message: ${msg.tempId}`, { 
-                      optimisticTopicId: optimisticMsg.topic_id, 
-                      newMessageTopicId: newMessage.topic_id 
-                    });
-                    return false;
                   }
                 }
                 return true;
@@ -179,7 +198,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               // Check if real message already exists
               const exists = filteredMessages.find(msg => msg.id === newMessage.id);
               if (!exists) {
-                debugLog(`Adding real message, optimistic found: ${foundOptimistic}`);
+                debugLog(`Adding real message, optimistic found: ${foundOptimistic}`, {
+                  messageId: newMessage.id,
+                  topicId: newMessage.topic_id
+                });
                 return [...filteredMessages, {
                   ...newMessage,
                   sender: { name: 'Unknown', phone: '' }
@@ -462,7 +484,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       optimisticMessagesRef.current.set(tempId, optimisticMessage);
       
       setMessages(prev => [...prev, optimisticMessage]);
-      debugLog('Added optimistic message:', tempId, optimisticMessage);
+      debugLog('Added optimistic message:', tempId, {
+        message: optimisticMessage.message,
+        topicId: optimisticMessage.topic_id,
+        roomId: optimisticMessage.room_id,
+        senderId: optimisticMessage.sender_id
+      });
       
       const message = messageText || '';
       const mediaUrl = media?.url;
@@ -484,7 +511,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           mediaType,
           mediaContent
         );
-        debugLog('Room message sent successfully');
+        debugLog('Room message sent successfully', {
+          roomId: selectedRoom.id,
+          topicId: selectedTopic?.id,
+          tempId
+        });
       } else if (selectedUser) {
         if (selectedUser.id === 1) {
           await messengerService.sendSupportMessage(
@@ -511,14 +542,18 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       setNewMessage('');
       
-      // Extended fallback timeout for better reliability, especially for super groups
+      // Reduced fallback timeout for super groups for faster feedback
+      const timeoutDuration = selectedRoom?.is_super_group ? 15000 : 20000;
       setTimeout(() => {
         if (optimisticMessagesRef.current.has(tempId)) {
           setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
           optimisticMessagesRef.current.delete(tempId);
-          debugLog('Removed optimistic message after fallback timeout:', tempId);
+          debugLog('Removed optimistic message after fallback timeout:', tempId, {
+            timeoutDuration,
+            isSuperGroup: selectedRoom?.is_super_group
+          });
         }
-      }, 25000); // Increased timeout for super groups
+      }, timeoutDuration);
       
     } catch (error) {
       debugLog('Error sending message:', error);
