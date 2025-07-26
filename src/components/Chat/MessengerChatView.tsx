@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -88,24 +89,22 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     if (!currentUser?.id) return;
 
     try {
+      // Use chat_rooms instead of messenger_room_members
       const { data, error } = await supabase
-        .from('messenger_room_members')
-        .select(`
-          room:messenger_rooms(
-            id,
-            name,
-            description,
-            created_at,
-            created_by,
-            is_private,
-            member_count
-          )
-        `)
-        .eq('user_id', currentUser.id);
+        .from('chat_rooms')
+        .select('*')
+        .eq('is_active', true);
 
       if (error) throw error;
 
-      const roomsData = data?.map(item => item.room).filter(Boolean) || [];
+      const roomsData = data?.map(room => ({
+        id: room.id,
+        name: room.name,
+        description: room.description,
+        created_at: room.created_at,
+        member_count: 0 // TODO: Get actual member count
+      })) || [];
+      
       setRooms(roomsData);
       
       if (roomsData.length > 0 && !currentRoom) {
@@ -114,6 +113,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     } catch (error) {
       console.error('Error loading rooms:', error);
       toast.error('Failed to load rooms');
+    } finally {
+      setLoading(false);
     }
   }, [currentUser?.id, currentRoom]);
 
@@ -267,7 +268,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
 
-      const optimisticMessage = {
+      const newOptimisticMessage = {
         id: Date.now(),
         message: content,
         sender_id: currentUser.id,
@@ -286,13 +287,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       };
 
       console.log('🔄 [MessengerChatView] Adding optimistic message:', {
-        id: optimisticMessage.id,
-        room_id: optimisticMessage.room_id,
-        topic_id: optimisticMessage.topic_id,
-        message: optimisticMessage.message.substring(0, 50) + '...'
+        id: newOptimisticMessage.id,
+        room_id: newOptimisticMessage.room_id,
+        topic_id: newOptimisticMessage.topic_id,
+        message: newOptimisticMessage.message.substring(0, 50) + '...'
       });
 
-      setOptimisticMessages(prev => [...prev, optimisticMessage]);
+      setOptimisticMessages(prev => [...prev, newOptimisticMessage]);
 
       const messageData = {
         room_id: currentRoom?.id || null,
@@ -326,7 +327,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       if (error) {
         console.error('❌ [MessengerChatView] Error sending message:', error);
-        setOptimisticMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        setOptimisticMessages(prev => prev.filter(msg => msg.id !== newOptimisticMessage.id));
         return;
       }
 
@@ -379,7 +380,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setTimeout(() => {
         setOptimisticMessages(prev => {
           const filtered = prev.filter(msg => {
-            const shouldRemove = msg.id === optimisticMessage.id || 
+            const shouldRemove = msg.id === newOptimisticMessage.id || 
               (msg.message === content && 
                msg.topic_id === selectedTopic?.id && 
                msg.room_id === currentRoom?.id);
@@ -400,7 +401,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
     } catch (error) {
       console.error('❌ [MessengerChatView] Error in sendMessage:', error);
-      setOptimisticMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      setOptimisticMessages(prev => prev.filter(msg => msg.id !== newOptimisticMessage.id));
     }
   };
 

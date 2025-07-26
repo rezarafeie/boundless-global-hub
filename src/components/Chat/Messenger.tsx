@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MessengerInbox from './MessengerInbox';
 import MessengerChatView from './MessengerChatView';
@@ -52,12 +53,10 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
       {/* Right chat view - show on mobile when chat is selected */}
       <div className={`${isMobile && !(selectedRoom || selectedUser) ? 'hidden' : ''} flex-1 bg-muted min-h-0`}>
         <MessengerChatView
-          selectedRoom={selectedRoom}
-          selectedUser={selectedUser}
           currentUser={currentUser}
-          sessionToken={sessionToken}
-          onBack={isMobile ? handleBackToInbox : undefined}
-          onBackToRooms={handleBackToInbox}
+          onUserUpdate={onUserUpdate}
+          isOffline={isOffline}
+          onLogout={onLogout}
         />
       </div>
     </div>

@@ -62,17 +62,42 @@ export interface ChatRoom {
   updated_at: string;
 }
 
+// Add MessengerRoom as an alias for ChatRoom
+export interface MessengerRoom {
+  id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  created_by?: number;
+  is_private?: boolean;
+  member_count?: number;
+}
+
+// Add ChatTopic interface
+export interface ChatTopic {
+  id: number;
+  title: string;
+  description?: string;
+  room_id: number;
+  icon?: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  order_index?: number;
+}
+
 export interface MessengerMessage {
   id: number;
   created_at: string;
-  room_id: number;
+  room_id: number | null;
   sender_id: number;
   message: string;
-  topic_id?: number;
-  conversation_id?: number;
-  media_url?: string;
+  topic_id?: number | null;
+  conversation_id?: number | null;
+  recipient_id?: number | null;
+  media_url?: string | null;
   message_type?: string;
-  media_content?: string;
+  media_content?: string | null;
   sender?: {
     name: string;
     phone: string;
