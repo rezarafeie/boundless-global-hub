@@ -1,8 +1,12 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck, Mail, AlertCircle } from 'lucide-react';
+import { BookOpen, Users, BarChart3, Settings, Webhook, UserCheck, Mail, AlertCircle, Shield } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { messengerService } from '@/lib/messengerService';
 import CourseManagement from '@/components/Admin/CourseManagement';
 import { WebhookManagement } from '@/components/Admin/WebhookManagement';
 import EmailSettings from '@/components/Admin/EmailSettings';
@@ -60,6 +64,97 @@ const LoadingSpinner = () => (
 );
 
 const EnrollmentAdmin: React.FC = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!isAuthenticated || !user) {
+        navigate('/');
+        return;
+      }
+
+      try {
+        // Get detailed user info from messenger service
+        const detailedUser = await messengerService.getUserByPhone(user.phone || '');
+        
+        if (!detailedUser) {
+          navigate('/');
+          return;
+        }
+
+        // Check if user has admin or enrollments_manager role
+        const allowedRoles = ['admin', 'enrollments_manager'];
+        const userRole = detailedUser.role || 'user';
+        
+        if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
+          setHasAccess(true);
+        } else {
+          setHasAccess(false);
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setHasAccess(false);
+      } finally {
+        setCheckingRole(false);
+      }
+    };
+
+    if (!isLoading) {
+      checkUserRole();
+    }
+  }, [isAuthenticated, user, isLoading, navigate]);
+
+  // Show loading while checking authentication
+  if (isLoading || checkingRole) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">در حال بررسی دسترسی...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if user doesn't have required role
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <Card className="border-red-200 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-red-600" />
+              </div>
+              <CardTitle className="text-red-800">دسترسی محدود</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-red-700">
+                شما مجوز دسترسی به این بخش را ندارید. این صفحه فقط برای مدیران و مدیران ثبت‌نام‌ها قابل دسترسی است.
+              </p>
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                <p className="font-medium mb-1">نقش‌های مجاز:</p>
+                <ul className="text-right space-y-1">
+                  <li>• مدیر سیستم</li>
+                  <li>• مدیر ثبت‌نام‌ها</li>
+                </ul>
+              </div>
+              <Button 
+                onClick={() => navigate('/')} 
+                className="w-full"
+                variant="outline"
+              >
+                بازگشت به صفحه اصلی
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Header */}
