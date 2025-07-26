@@ -47,6 +47,7 @@ const DEFAULT_BODY_TEMPLATE = {
     payment_amount: '{{data.enrollment.payment_amount}}',
     created_at: '{{data.enrollment.created_at}}'
   },
+  admin_access_link: '{{data.admin_access_link}}',
   sso_tokens: '{{data.sso_tokens}}',
   license: '{{data.license}}'
 };

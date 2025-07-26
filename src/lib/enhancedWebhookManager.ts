@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export type WebhookEventType = 
@@ -48,6 +49,16 @@ class EnhancedWebhookManager {
     return data || [];
   }
 
+  // Helper method to ensure course data has proper price
+  private ensureCourseData(course: any): any {
+    if (!course) return course;
+    
+    return {
+      ...course,
+      price: course.price != null && course.price !== '' ? course.price : 0
+    };
+  }
+
   async sendWebhook(eventType: WebhookEventType, payload: any) {
     try {
       const webhooks = await this.getActiveWebhooks(eventType);
@@ -55,6 +66,11 @@ class EnhancedWebhookManager {
       if (webhooks.length === 0) {
         console.log(`No active webhooks found for event type: ${eventType}`);
         return;
+      }
+      
+      // Ensure course price is properly set in payload
+      if (payload.data?.course) {
+        payload.data.course = this.ensureCourseData(payload.data.course);
       }
       
       for (const webhook of webhooks) {
@@ -113,7 +129,13 @@ class EnhancedWebhookManager {
       if (typeof obj === 'string') {
         return obj.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
           const value = this.getNestedValue(payload, path);
-          return value !== undefined ? value : match;
+          
+          // Special handling for course.price - ensure it's 0 if empty
+          if (path === 'data.course.price' && (value == null || value === '')) {
+            return '0';
+          }
+          
+          return value !== undefined && value !== null ? value : match;
         });
       } else if (Array.isArray(obj)) {
         return obj.map(replaceVariables);
@@ -193,6 +215,7 @@ class EnhancedWebhookManager {
   // Event-specific methods
   async sendEnrollmentCreated(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : 'https://academy.rafiei.net';
@@ -204,7 +227,7 @@ class EnhancedWebhookManager {
       data: { 
         enrollment, 
         user: enhancedUser, 
-        course,
+        course: enhancedCourse,
         admin_access_link: adminAccessLink
       }
     });
@@ -212,6 +235,7 @@ class EnhancedWebhookManager {
 
   async sendEnrollmentPaidSuccessful(enrollment: any, user: any, course: any, payment: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : 'https://academy.rafiei.net';
@@ -220,12 +244,13 @@ class EnhancedWebhookManager {
     await this.sendWebhook('enrollment_paid_successful', {
       event_type: 'enrollment_paid_successful',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, payment, admin_access_link: adminAccessLink }
+      data: { enrollment, user: enhancedUser, course: enhancedCourse, payment, admin_access_link: adminAccessLink }
     });
   }
 
   async sendEnrollmentManualPaymentSubmitted(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : 'https://academy.rafiei.net';
@@ -234,12 +259,13 @@ class EnhancedWebhookManager {
     await this.sendWebhook('enrollment_manual_payment_submitted', {
       event_type: 'enrollment_manual_payment_submitted',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, admin_access_link: adminAccessLink }
+      data: { enrollment, user: enhancedUser, course: enhancedCourse, admin_access_link: adminAccessLink }
     });
   }
 
   async sendEnrollmentManualPaymentApproved(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : 'https://academy.rafiei.net';
@@ -248,12 +274,13 @@ class EnhancedWebhookManager {
     await this.sendWebhook('enrollment_manual_payment_approved', {
       event_type: 'enrollment_manual_payment_approved',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, admin_access_link: adminAccessLink }
+      data: { enrollment, user: enhancedUser, course: enhancedCourse, admin_access_link: adminAccessLink }
     });
   }
 
   async sendEnrollmentManualPaymentRejected(enrollment: any, user: any, course: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : 'https://academy.rafiei.net';
@@ -262,7 +289,7 @@ class EnhancedWebhookManager {
     await this.sendWebhook('enrollment_manual_payment_rejected', {
       event_type: 'enrollment_manual_payment_rejected',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, admin_access_link: adminAccessLink }
+      data: { enrollment, user: enhancedUser, course: enhancedCourse, admin_access_link: adminAccessLink }
     });
   }
 
@@ -312,19 +339,21 @@ class EnhancedWebhookManager {
 
   async sendSSOAccessLinkGenerated(enrollment: any, user: any, course: any, ssoTokens: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     await this.sendWebhook('sso_access_link_generated', {
       event_type: 'sso_access_link_generated',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, sso_tokens: ssoTokens }
+      data: { enrollment, user: enhancedUser, course: enhancedCourse, sso_tokens: ssoTokens }
     });
   }
 
   async sendRafieiPlayerLicenseGenerated(enrollment: any, user: any, course: any, license: any) {
     const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = this.ensureCourseData(course);
     await this.sendWebhook('rafiei_player_license_generated', {
       event_type: 'rafiei_player_license_generated',
       timestamp: new Date().toISOString(),
-      data: { enrollment, user: enhancedUser, course, license }
+      data: { enrollment, user: enhancedUser, course: enhancedCourse, license }
     });
   }
 }
