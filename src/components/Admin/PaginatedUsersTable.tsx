@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatUser {
   id: number;
@@ -29,7 +28,6 @@ interface ChatUser {
 const PaginatedUsersTable: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -142,13 +140,13 @@ const PaginatedUsersTable: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className={isMobile ? "flex flex-col gap-3" : "flex items-center justify-between"}>
+        <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             مدیریت کاربران
             <Badge variant="secondary">{totalUsers} کاربر</Badge>
           </div>
-          <div className={isMobile ? "relative" : "relative w-80"}>
+          <div className="relative w-80">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="جستجوی نام، ایمیل، تلفن، نام کاربری..."
@@ -169,96 +167,55 @@ const PaginatedUsersTable: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Users Table/Cards */}
-            {isMobile ? (
-              <div className="space-y-3">
-                {users.map((user) => (
-                  <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleUserClick(user.id)}>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">{user.name}</h3>
-                          {getStatusBadge(user)}
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div><span className="font-medium">تلفن:</span> {user.phone}</div>
-                          <div><span className="font-medium">ایمیل:</span> {user.email || '-'}</div>
-                          {user.username && (
-                            <div><span className="font-medium">نام کاربری:</span> <code className="bg-muted px-1 py-0.5 rounded text-xs">@{user.username}</code></div>
-                          )}
-                          <div><span className="font-medium">تاریخ عضویت:</span> {formatDate(user.created_at)}</div>
-                        </div>
-                        {getRoleBadges(user).length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {getRoleBadges(user)}
-                          </div>
+            {/* Users Table */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>نام</TableHead>
+                    <TableHead>تلفن</TableHead>
+                    <TableHead>ایمیل</TableHead>
+                    <TableHead>نام کاربری</TableHead>
+                    <TableHead>وضعیت</TableHead>
+                    <TableHead>نقش‌ها</TableHead>
+                    <TableHead>تاریخ عضویت</TableHead>
+                    <TableHead>عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.phone}</TableCell>
+                      <TableCell>{user.email || '-'}</TableCell>
+                      <TableCell>
+                        {user.username ? (
+                          <code className="bg-muted px-2 py-1 rounded text-sm">@{user.username}</code>
+                        ) : (
+                          '-'
                         )}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(user)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {getRoleBadges(user)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatDate(user.created_at)}</TableCell>
+                      <TableCell>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUserClick(user.id);
-                          }}
+                          onClick={() => handleUserClick(user.id)}
                         >
-                          مشاهده جزئیات
+                          مشاهده
                         </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>نام</TableHead>
-                      <TableHead>تلفن</TableHead>
-                      <TableHead>ایمیل</TableHead>
-                      <TableHead>نام کاربری</TableHead>
-                      <TableHead>وضعیت</TableHead>
-                      <TableHead>نقش‌ها</TableHead>
-                      <TableHead>تاریخ عضویت</TableHead>
-                      <TableHead>عملیات</TableHead>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell>{user.email || '-'}</TableCell>
-                        <TableCell>
-                          {user.username ? (
-                            <code className="bg-muted px-2 py-1 rounded text-sm">@{user.username}</code>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(user)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {getRoleBadges(user)}
-                          </div>
-                        </TableCell>
-                        <TableCell>{formatDate(user.created_at)}</TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUserClick(user.id)}
-                          >
-                            مشاهده
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (

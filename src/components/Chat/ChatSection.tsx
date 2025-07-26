@@ -22,7 +22,6 @@ const ChatSection: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
-  const [optimisticMessage, setOptimisticMessage] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
 
@@ -112,22 +111,6 @@ const ChatSection: React.FC = () => {
         return;
       }
 
-      // Create an optimistic message for immediate display
-      const optimisticMessage = {
-        id: Date.now(), // Temporary ID
-        message: messageText,
-        sender_name: result.user.name,
-        sender_role: 'member' as const,
-        user_id: result.user.id,
-        created_at: new Date().toISOString(),
-        is_pinned: false,
-        reactions: null,
-        updated_at: new Date().toISOString()
-      };
-
-      // Add message to local state immediately for smooth UX
-      setOptimisticMessage(optimisticMessage);
-
       await chatService.sendMessage({
         message: messageText,
         sender_name: result.user.name,
@@ -135,17 +118,11 @@ const ChatSection: React.FC = () => {
         user_id: result.user.id
       });
 
-      // Clear optimistic message after successful send
-      setTimeout(() => setOptimisticMessage(null), 1000);
-
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
 
     } catch (error) {
-      // Clear optimistic message on error
-      setOptimisticMessage(null);
-      
       toast({
         title: 'خطا',
         description: 'پیام ارسال نشد. دوباره تلاش کنید.',
@@ -256,7 +233,7 @@ const ChatSection: React.FC = () => {
               </div>
             </div>
           ) : (
-            (optimisticMessage ? [...recentMessages, optimisticMessage] : recentMessages).map((message) => (
+            recentMessages.map((message) => (
               <ModernChatMessage
                 key={message.id}
                 message={message}
