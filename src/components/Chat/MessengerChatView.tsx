@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageSkeleton, ChatSkeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Send, Users, Loader2, Pin, MoreVertical, Hash, Crown, MessageCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { messengerService, type ChatRoom, type MessengerUser, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService, type PrivateMessage } from '@/lib/privateMessageService';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +38,7 @@ interface MessengerChatViewProps {
 interface OptimisticMessage extends MessengerMessage {
   isOptimistic?: boolean;
   tempId?: string;
+  status?: 'sending' | 'sent' | 'failed';
 }
 
 const MessengerChatView: React.FC<MessengerChatViewProps> = ({
@@ -60,9 +62,12 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const [profileUser, setProfileUser] = useState<MessengerUser | null>(null);
   const [messageLoadError, setMessageLoadError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const realtimeChannelsRef = useRef<any[]>([]);
   const optimisticMessagesRef = useRef<Map<string, OptimisticMessage>>(new Map());
+  const lastMessageTimestamp = useRef<string>('');
+  const autoRefreshInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Debug mode flag - can be enabled via URL param
   const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';
@@ -71,6 +76,33 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     if (debugMode) {
       console.log(`[MessengerChat Debug] ${message}`, data);
     }
+  };
+
+  // Enhanced message matching function
+  const createMessageHash = (senderId: number, message: string, timestamp?: string): string => {
+    return `${senderId}-${message.substring(0, 50)}-${timestamp || Date.now()}`;
+  };
+
+  const findMatchingOptimisticMessage = (realMessage: any): string | null => {
+    for (const [tempId, optimisticMsg] of optimisticMessagesRef.current.entries()) {
+      // Match by sender, message content, and approximate time
+      const timeMatch = Math.abs(
+        new Date(realMessage.created_at).getTime() - 
+        new Date(optimisticMsg.created_at).getTime()
+      ) < 30000; // 30 seconds tolerance
+
+      const contentMatch = optimisticMsg.sender_id === realMessage.sender_id &&
+                          optimisticMsg.message === realMessage.message;
+      
+      // For super groups, also match topic_id
+      const topicMatch = !selectedRoom?.is_super_group || 
+                        (optimisticMsg.topic_id === realMessage.topic_id);
+
+      if (contentMatch && timeMatch && topicMatch) {
+        return tempId;
+      }
+    }
+    return null;
   };
 
   // Enhanced conversation ID resolution with retry
@@ -90,18 +122,93 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     throw new Error('Failed to resolve conversation ID');
   };
 
+  // Auto-refresh mechanism
+  const setupAutoRefresh = () => {
+    if (autoRefreshInterval.current) {
+      clearInterval(autoRefreshInterval.current);
+    }
+
+    autoRefreshInterval.current = setInterval(async () => {
+      if (!isConnected && (selectedRoom || selectedUser)) {
+        debugLog('Auto-refreshing messages due to disconnection');
+        await loadMessagesAndSync();
+      }
+    }, 10000); // Check every 10 seconds
+  };
+
+  const loadMessagesAndSync = async () => {
+    try {
+      let roomMessages: MessengerMessage[] = [];
+      
+      if (selectedRoom) {
+        debugLog('Loading messages for room:', selectedRoom.id);
+        if (selectedRoom.is_super_group) {
+          roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
+        } else {
+          roomMessages = await messengerService.getMessages(selectedRoom.id);
+        }
+      } else if (selectedUser) {
+        if (selectedUser.id === 1) {
+          debugLog('Loading support messages for user:', currentUser.id);
+          roomMessages = await messengerService.getSupportMessages(currentUser.id);
+        } else {
+          debugLog('Loading private messages between users');
+          const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
+          const privateMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
+          
+          roomMessages = privateMessages.map(msg => ({
+            ...msg,
+            room_id: undefined,
+            media_url: msg.media_url,
+            message_type: msg.message_type || 'text',
+            media_content: msg.media_content,
+            sender: {
+              name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+              phone: ''
+            }
+          }));
+        }
+      }
+      
+      // Merge with existing optimistic messages
+      setMessages(prevMessages => {
+        const realMessageIds = new Set(roomMessages.map(msg => msg.id));
+        const optimisticMessages = prevMessages.filter(msg => msg.isOptimistic && !realMessageIds.has(msg.id));
+        
+        // Update last message timestamp
+        if (roomMessages.length > 0) {
+          lastMessageTimestamp.current = roomMessages[roomMessages.length - 1].created_at;
+        }
+        
+        return [...roomMessages, ...optimisticMessages];
+      });
+      
+      debugLog('Messages synced:', roomMessages.length);
+    } catch (error) {
+      debugLog('Error syncing messages:', error);
+      setIsConnected(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedRoom || selectedUser) {
+      setMessages([]);
+      optimisticMessagesRef.current.clear();
+      lastMessageTimestamp.current = '';
       loadMessages();
+      setupAutoRefresh();
     }
+    
     return () => {
-      // Cleanup optimistic messages when switching chats
+      if (autoRefreshInterval.current) {
+        clearInterval(autoRefreshInterval.current);
+      }
       setMessages(prev => prev.filter(msg => !msg.isOptimistic));
       optimisticMessagesRef.current.clear();
     };
   }, [selectedRoom?.id, selectedUser?.id, selectedTopic?.id]);
 
-  // Enhanced real-time subscription with better message matching for super groups
+  // Enhanced real-time subscription with improved message handling
   useEffect(() => {
     if (!selectedRoom && !selectedUser) return;
     
@@ -136,81 +243,48 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             debugLog('New room message received:', payload);
             const newMessage = payload.new as any;
             
-            // For super groups, also check topic_id match
+            // For super groups, check topic_id match
             const isTopicMatch = !selectedTopic || !newMessage.topic_id || newMessage.topic_id === selectedTopic.id;
             if (!isTopicMatch) {
-              debugLog('Topic mismatch, ignoring message:', {
-                selectedTopicId: selectedTopic?.id,
-                messageTopicId: newMessage.topic_id
-              });
+              debugLog('Topic mismatch, ignoring message');
               return;
             }
             
             setMessages(prev => {
-              // Enhanced matching for super group messages with topic
-              let foundOptimistic = false;
+              // Find matching optimistic message
+              const matchingTempId = findMatchingOptimisticMessage(newMessage);
               
-              // Find and remove matching optimistic message with stricter matching for super groups
-              const filteredMessages = prev.filter(msg => {
-                if (msg.isOptimistic && msg.tempId) {
-                  const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
-                  if (optimisticMsg) {
-                    // Basic message matching
-                    const messageMatches = optimisticMsg.sender_id === newMessage.sender_id && 
-                                         optimisticMsg.message === newMessage.message && 
-                                         optimisticMsg.room_id === selectedRoom.id;
-                    
-                    if (messageMatches) {
-                      // For super groups, ensure exact topic_id match (including null/undefined handling)
-                      if (selectedRoom.is_super_group) {
-                        const optimisticTopicId = optimisticMsg.topic_id || null;
-                        const newMessageTopicId = newMessage.topic_id || null;
-                        
-                        debugLog(`Super group topic matching:`, {
-                          optimisticTopicId,
-                          newMessageTopicId,
-                          selectedTopicId: selectedTopic?.id,
-                          tempId: msg.tempId
-                        });
-                        
-                        if (optimisticTopicId !== newMessageTopicId) {
-                          debugLog('Topic mismatch - keeping optimistic message', {
-                            tempId: msg.tempId,
-                            optimisticTopicId,
-                            newMessageTopicId
-                          });
-                          return true; // Keep the optimistic message if topics don't match
-                        }
+              if (matchingTempId) {
+                // Replace optimistic message with real one
+                optimisticMessagesRef.current.delete(matchingTempId);
+                debugLog(`Replaced optimistic message: ${matchingTempId}`);
+                
+                return prev.map(msg => 
+                  msg.tempId === matchingTempId 
+                    ? { 
+                        ...newMessage, 
+                        sender: { name: 'Unknown', phone: '' },
+                        status: 'sent' as const
                       }
-                      
-                      foundOptimistic = true;
-                      optimisticMessagesRef.current.delete(msg.tempId);
-                      debugLog(`Removed optimistic message: ${msg.tempId}`, { 
-                        optimisticTopicId: optimisticMsg.topic_id, 
-                        newMessageTopicId: newMessage.topic_id 
-                      });
-                      return false;
-                    }
-                  }
+                    : msg
+                );
+              } else {
+                // Check if real message already exists
+                const exists = prev.find(msg => msg.id === newMessage.id);
+                if (!exists) {
+                  debugLog(`Adding new real message: ${newMessage.id}`);
+                  return [...prev, {
+                    ...newMessage,
+                    sender: { name: 'Unknown', phone: '' },
+                    status: 'sent' as const
+                  }];
                 }
-                return true;
-              });
-              
-              // Check if real message already exists
-              const exists = filteredMessages.find(msg => msg.id === newMessage.id);
-              if (!exists) {
-                debugLog(`Adding real message, optimistic found: ${foundOptimistic}`, {
-                  messageId: newMessage.id,
-                  topicId: newMessage.topic_id
-                });
-                return [...filteredMessages, {
-                  ...newMessage,
-                  sender: { name: 'Unknown', phone: '' }
-                }];
               }
               
-              return filteredMessages;
+              return prev;
             });
+            
+            setIsConnected(true);
           }
         )
         .subscribe();
@@ -233,49 +307,56 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             const newMessage = payload.new as any;
             
             try {
-              // Enhanced conversation validation
               const conversation = await privateMessageService.getConversation(newMessage.conversation_id);
               if (conversation && 
                   ((conversation.user1_id === currentUser.id && conversation.user2_id === selectedUser.id) ||
                    (conversation.user1_id === selectedUser.id && conversation.user2_id === currentUser.id))) {
                 
                 setMessages(prev => {
-                  // Find and remove matching optimistic message
-                  let foundOptimistic = false;
+                  const matchingTempId = findMatchingOptimisticMessage(newMessage);
                   
-                  const filteredMessages = prev.filter(msg => {
-                    if (msg.isOptimistic && msg.tempId) {
-                      const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
-                      if (optimisticMsg && 
-                          optimisticMsg.sender_id === newMessage.sender_id && 
-                          optimisticMsg.message === newMessage.message) {
-                        foundOptimistic = true;
-                        optimisticMessagesRef.current.delete(msg.tempId);
-                        debugLog(`Removed optimistic private message: ${msg.tempId}`);
-                        return false;
-                      }
+                  if (matchingTempId) {
+                    optimisticMessagesRef.current.delete(matchingTempId);
+                    debugLog(`Replaced optimistic private message: ${matchingTempId}`);
+                    
+                    return prev.map(msg => 
+                      msg.tempId === matchingTempId 
+                        ? { 
+                            ...newMessage,
+                            room_id: undefined,
+                            media_url: newMessage.media_url,
+                            message_type: newMessage.message_type || 'text',
+                            media_content: newMessage.media_content,
+                            sender: {
+                              name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+                              phone: ''
+                            },
+                            status: 'sent' as const
+                          }
+                        : msg
+                    );
+                  } else {
+                    const exists = prev.find(msg => msg.id === newMessage.id);
+                    if (!exists) {
+                      debugLog(`Adding new private message: ${newMessage.id}`);
+                      return [...prev, {
+                        ...newMessage,
+                        room_id: undefined,
+                        media_url: newMessage.media_url,
+                        message_type: newMessage.message_type || 'text',
+                        media_content: newMessage.media_content,
+                        sender: {
+                          name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
+                          phone: ''
+                        },
+                        status: 'sent' as const
+                      }];
                     }
-                    return true;
-                  });
-                  
-                  // Check if real message already exists
-                  const exists = filteredMessages.find(msg => msg.id === newMessage.id);
-                  if (!exists) {
-                    debugLog(`Adding real private message, optimistic found: ${foundOptimistic}`);
-                    return [...filteredMessages, {
-                      ...newMessage,
-                      room_id: undefined,
-                      media_url: newMessage.media_url,
-                      message_type: newMessage.message_type || 'text',
-                      media_content: newMessage.media_content,
-                      sender: {
-                        name: newMessage.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-                        phone: ''
-                      }
-                    }];
                   }
-                  return filteredMessages;
+                  return prev;
                 });
+                
+                setIsConnected(true);
               }
             } catch (error) {
               debugLog('Error processing private message:', error);
@@ -304,34 +385,36 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             
             if (newMessage.sender_id === currentUser.id || newMessage.recipient_id === currentUser.id) {
               setMessages(prev => {
-                // Find and remove matching optimistic message
-                let foundOptimistic = false;
+                const matchingTempId = findMatchingOptimisticMessage(newMessage);
                 
-                const filteredMessages = prev.filter(msg => {
-                  if (msg.isOptimistic && msg.tempId) {
-                    const optimisticMsg = optimisticMessagesRef.current.get(msg.tempId);
-                    if (optimisticMsg && 
-                        optimisticMsg.sender_id === newMessage.sender_id && 
-                        optimisticMsg.message === newMessage.message) {
-                      foundOptimistic = true;
-                      optimisticMessagesRef.current.delete(msg.tempId);
-                      debugLog(`Removed optimistic support message: ${msg.tempId}`);
-                      return false;
-                    }
+                if (matchingTempId) {
+                  optimisticMessagesRef.current.delete(matchingTempId);
+                  debugLog(`Replaced optimistic support message: ${matchingTempId}`);
+                  
+                  return prev.map(msg => 
+                    msg.tempId === matchingTempId 
+                      ? { 
+                          ...newMessage, 
+                          sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' },
+                          status: 'sent' as const
+                        }
+                      : msg
+                  );
+                } else {
+                  const exists = prev.find(msg => msg.id === newMessage.id);
+                  if (!exists) {
+                    debugLog(`Adding new support message: ${newMessage.id}`);
+                    return [...prev, {
+                      ...newMessage,
+                      sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' },
+                      status: 'sent' as const
+                    }];
                   }
-                  return true;
-                });
-                
-                const exists = filteredMessages.find(msg => msg.id === newMessage.id);
-                if (!exists) {
-                  debugLog(`Adding real support message, optimistic found: ${foundOptimistic}`);
-                  return [...filteredMessages, {
-                    ...newMessage,
-                    sender: { name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی', phone: '' }
-                  }];
                 }
-                return filteredMessages;
+                return prev;
               });
+              
+              setIsConnected(true);
             }
           }
         )
@@ -340,6 +423,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
 
     realtimeChannelsRef.current = channels;
+
+    // Connection monitoring
+    channels.forEach(channel => {
+      channel.on('system', {}, (payload: any) => {
+        if (payload.extension === 'postgres_changes' && payload.status === 'ok') {
+          setIsConnected(true);
+        }
+      });
+    });
 
     // Cleanup function
     return () => {
@@ -388,45 +480,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       setLoading(true);
       setMessageLoadError(null);
       
-      let roomMessages: MessengerMessage[] = [];
-      
-      if (selectedRoom) {
-        debugLog('Loading messages for room:', selectedRoom.id);
-        if (selectedRoom.is_super_group) {
-          roomMessages = await messengerService.getMessages(selectedRoom.id, selectedTopic?.id);
-        } else {
-          roomMessages = await messengerService.getMessages(selectedRoom.id);
-        }
-      } else if (selectedUser) {
-        if (selectedUser.id === 1) {
-          debugLog('Loading support messages for user:', currentUser.id);
-          roomMessages = await messengerService.getSupportMessages(currentUser.id);
-        } else {
-          debugLog('Loading private messages between users');
-          const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
-          const privateMessages = await privateMessageService.getConversationMessages(conversationId, sessionToken);
-          
-          roomMessages = privateMessages.map(msg => ({
-            ...msg,
-            room_id: undefined,
-            media_url: msg.media_url,
-            message_type: msg.message_type || 'text',
-            media_content: msg.media_content,
-            sender: {
-              name: msg.sender_id === currentUser.id ? currentUser.name : selectedUser.name,
-              phone: ''
-            }
-          }));
-        }
-      }
-      
-      debugLog('Loaded messages:', roomMessages.length);
-      setMessages(roomMessages);
+      await loadMessagesAndSync();
       setRetryCount(0);
+      setIsConnected(true);
     } catch (error) {
       debugLog('Error loading messages:', error);
       const errorMessage = error instanceof Error ? error.message : 'خطا در بارگذاری پیام‌ها';
       setMessageLoadError(errorMessage);
+      setIsConnected(false);
       
       if (!retry && retryCount < 3) {
         setRetryCount(prev => prev + 1);
@@ -437,7 +498,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           description: errorMessage,
           variant: 'destructive',
         });
-        setMessages([]);
       }
     } finally {
       setLoading(false);
@@ -450,19 +510,21 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const sendMessage = async (messageText: string, media?: { url: string; type: string; size?: number; name?: string }, replyToId?: number) => {
     if ((!messageText.trim() && !media) || sending) return;
 
     const tempId = `temp_${Date.now()}_${Math.random()}`;
+    const now = new Date().toISOString();
+    
     const optimisticMessage: OptimisticMessage = {
       id: Date.now(),
       tempId,
       message: messageText || (media ? '📎 File' : ''),
       sender_id: currentUser.id,
-      created_at: new Date().toISOString(),
+      created_at: now,
       room_id: selectedRoom?.id || 0,
       media_url: media?.url || null,
       media_content: media ? JSON.stringify({ 
@@ -475,7 +537,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       topic_id: selectedTopic?.id,
       conversation_id: null,
       sender: { name: currentUser.name, phone: currentUser.phone },
-      isOptimistic: true
+      isOptimistic: true,
+      status: 'sending'
     };
 
     try {
@@ -484,13 +547,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       // Store optimistic message in ref for better tracking
       optimisticMessagesRef.current.set(tempId, optimisticMessage);
       
+      // Add optimistic message immediately to UI
       setMessages(prev => [...prev, optimisticMessage]);
-      debugLog('Added optimistic message:', tempId, {
-        message: optimisticMessage.message,
-        topicId: optimisticMessage.topic_id,
-        roomId: optimisticMessage.room_id,
-        senderId: optimisticMessage.sender_id
-      });
+      debugLog('Added optimistic message:', tempId);
       
       const message = messageText || '';
       const mediaUrl = media?.url;
@@ -533,32 +592,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           roomId: selectedRoom.id,
           topicId: selectedTopic?.id,
           tempId,
-          messageId: sentMessage?.id || sentMessage,
-          sentMessageObject: sentMessage
+          messageId: sentMessage?.id || sentMessage
         });
-        
-        // Send webhook for group message with messageId for delete link
-        try {
-          await webhookService.sendMessageWebhook({
-            messageId: sentMessage?.id || sentMessage,
-            messageContent: message,
-            senderName: currentUser.name,
-            senderPhone: currentUser.phone,
-            senderEmail: currentUser.email || '',
-            chatType,
-            chatName,
-            topicName,
-            topicId: selectedTopic?.id,
-            timestamp: new Date().toISOString(),
-            mediaUrl,
-            mediaType,
-            messageType: media ? 'media' : 'text',
-            tableName: 'messenger_messages'
-          });
-          console.log('✅ Group message webhook sent successfully with messageId:', sentMessage?.id || sentMessage);
-        } catch (webhookError) {
-          console.error('❌ Failed to send group message webhook:', webhookError);
-        }
         
       } else if (selectedUser) {
         if (selectedUser.id === 1) {
@@ -574,8 +609,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaContent
           );
           debugLog('Support message sent successfully', {
-            messageId: sentMessage?.id || sentMessage,
-            sentMessageObject: sentMessage
+            messageId: sentMessage?.id || sentMessage
           });
         } else {
           // Private message
@@ -593,53 +627,78 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             sessionToken
           );
           debugLog('Private message sent successfully', {
-            messageId: sentMessage?.id || sentMessage,
-            sentMessageObject: sentMessage
+            messageId: sentMessage?.id || sentMessage
           });
         }
-        
-        // Send webhook for private/support message with messageId for delete link
-        try {
-          await webhookService.sendMessageWebhook({
-            messageId: sentMessage?.id || sentMessage,
-            messageContent: message,
-            senderName: currentUser.name,
-            senderPhone: currentUser.phone,
-            senderEmail: currentUser.email || '',
-            chatType,
-            chatName,
-            topicName: '',
-            timestamp: new Date().toISOString(),
-            mediaUrl,
-            mediaType,
-            messageType: media ? 'media' : 'text',
-            tableName: chatType === 'support' ? 'messenger_messages' : 'private_messages'
-          });
-          console.log(`✅ ${chatType} message webhook sent successfully with messageId:`, sentMessage?.id || sentMessage);
-        } catch (webhookError) {
-          console.error(`❌ Failed to send ${chatType} message webhook:`, webhookError);
-        }
+      }
+
+      // Update optimistic message status to sent
+      setMessages(prev => prev.map(msg => 
+        msg.tempId === tempId 
+          ? { ...msg, status: 'sent' as const }
+          : msg
+      ));
+
+      // Send webhook
+      try {
+        await webhookService.sendMessageWebhook({
+          messageId: sentMessage?.id || sentMessage,
+          messageContent: message,
+          senderName: currentUser.name,
+          senderPhone: currentUser.phone,
+          senderEmail: currentUser.email || '',
+          chatType,
+          chatName,
+          topicName,
+          topicId: selectedTopic?.id,
+          timestamp: now,
+          mediaUrl,
+          mediaType,
+          messageType: media ? 'media' : 'text',
+          tableName: chatType === 'support' ? 'messenger_messages' : (chatType === 'private' ? 'private_messages' : 'messenger_messages')
+        });
+        console.log(`✅ ${chatType} message webhook sent successfully`);
+      } catch (webhookError) {
+        console.error(`❌ Failed to send ${chatType} message webhook:`, webhookError);
       }
 
       setNewMessage('');
       
-      // Reduced fallback timeout for super groups for faster feedback
-      const timeoutDuration = selectedRoom?.is_super_group ? 15000 : 20000;
+      // Fallback timeout - remove optimistic message if not replaced by real-time update
       setTimeout(() => {
         if (optimisticMessagesRef.current.has(tempId)) {
-          setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
-          optimisticMessagesRef.current.delete(tempId);
-          debugLog('Removed optimistic message after fallback timeout:', tempId, {
-            timeoutDuration,
-            isSuperGroup: selectedRoom?.is_super_group
-          });
+          setMessages(prev => prev.map(msg => 
+            msg.tempId === tempId 
+              ? { ...msg, status: 'failed' as const }
+              : msg
+          ));
+          // Remove failed message after another timeout
+          setTimeout(() => {
+            if (optimisticMessagesRef.current.has(tempId)) {
+              setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
+              optimisticMessagesRef.current.delete(tempId);
+              debugLog('Removed failed optimistic message:', tempId);
+            }
+          }, 3000);
         }
-      }, timeoutDuration);
+      }, 15000);
       
     } catch (error) {
       debugLog('Error sending message:', error);
-      setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
-      optimisticMessagesRef.current.delete(tempId);
+      
+      // Mark message as failed
+      setMessages(prev => prev.map(msg => 
+        msg.tempId === tempId 
+          ? { ...msg, status: 'failed' as const }
+          : msg
+      ));
+      
+      // Remove failed message after timeout
+      setTimeout(() => {
+        setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
+        optimisticMessagesRef.current.delete(tempId);
+      }, 3000);
+      
       toast({
         title: 'خطا',
         description: 'خطا در ارسال پیام',
@@ -723,7 +782,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header */}
+      {/* Header with connection status */}
       <div className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
@@ -762,6 +821,15 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
               {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
                selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
             </h3>
+            
+            {/* Connection status indicator */}
+            <div className="flex items-center gap-1">
+              {isConnected ? (
+                <Wifi className="w-3 h-3 text-green-500" />
+              ) : (
+                <WifiOff className="w-3 h-3 text-red-500" />
+              )}
+            </div>
             
             {debugMode && (
               <Button
@@ -825,6 +893,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         ) : (
           messages.map((message) => {
             const isOwnMessage = message.sender_id === currentUser.id;
+            const messageStatus = message.status || 'sent';
+            
             return (
               <div key={message.tempId || message.id} id={`message-${message.id}`} className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -844,13 +914,26 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                     <div
                       className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
                         isOwnMessage
-                          ? `${message.isOptimistic ? 'bg-blue-400 opacity-70' : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white rounded-br-md`
+                          ? `${message.isOptimistic ? 
+                              messageStatus === 'sending' ? 'bg-blue-400 opacity-70' : 
+                              messageStatus === 'failed' ? 'bg-red-400 opacity-70' :
+                              'bg-blue-400 opacity-80' 
+                              : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white rounded-br-md`
                           : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
                       }`}
                     >
+                      {/* Status indicator for optimistic messages */}
                       {message.isOptimistic && (
                         <div className="absolute -top-1 -right-1">
-                          <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+                          {messageStatus === 'sending' && (
+                            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+                          )}
+                          {messageStatus === 'failed' && (
+                            <div className="w-3 h-3 bg-red-500 rounded-full" />
+                          )}
+                          {messageStatus === 'sent' && (
+                            <div className="w-3 h-3 bg-green-500 rounded-full" />
+                          )}
                         </div>
                       )}
                       
@@ -910,7 +993,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                           })}
                         </span>
                         {message.isOptimistic && (
-                          <span className="ml-1 text-xs opacity-70">در حال ارسال...</span>
+                          <span className="ml-1 text-xs opacity-70">
+                            {messageStatus === 'sending' && 'در حال ارسال...'}
+                            {messageStatus === 'failed' && 'ناموفق'}
+                            {messageStatus === 'sent' && 'ارسال شد'}
+                          </span>
                         )}
                       </div>
                     </div>

@@ -41,6 +41,11 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در ارسال پیام. لطفاً مجدداً تلاش کنید.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSending(false);
     }
@@ -90,7 +95,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
         const uploadResult: FileUploadResult = await uploadFile(file, 'messenger-files', currentUserId);
         
-        // Send the file as a message
+        // Send the file as a message immediately
         await onSendMessage('', {
           url: uploadResult.url,
           type: uploadResult.type,
@@ -126,7 +131,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       
       console.log('Voice message upload result:', uploadResult);
       
-      // Send the voice message with proper media data
+      // Send the voice message immediately
       await onSendMessage('', {
         url: uploadResult.url,
         type: 'audio/webm',
@@ -232,7 +237,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       
       {isSending && (
         <div className="text-center mt-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400 animate-pulse">
             در حال ارسال...
           </span>
         </div>
