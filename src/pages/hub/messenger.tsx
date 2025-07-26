@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MessengerChatView from '@/components/Chat/MessengerChatView';
 import PrivateChatView from '@/components/Chat/PrivateChatView';
 import SupportChatView from '@/components/Chat/SupportChatView';
 import MessengerInbox from '@/components/Chat/MessengerInbox';
-import { messengerService, type MessengerUser, type MessengerRoom, type MessengerMessage } from '@/lib/messengerService';
+import { messengerService, type MessengerUser, type ChatRoom, type MessengerMessage } from '@/lib/messengerService';
 import { privateMessageService } from '@/lib/privateMessageService';
 import { supportMessageService } from '@/lib/supportMessageService';
 import { ReplyProvider } from '@/contexts/ReplyContext';
@@ -38,11 +39,11 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
   });
 
   const [searchParams] = useSearchParams();
-  const [selectedRoom, setSelectedRoom] = useState<MessengerRoom | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [selectedUser, setSelectedUser] = useState<MessengerUser | null>(null);
-  const [selectedSupportRoom, setSelectedSupportRoom] = useState<MessengerRoom | null>(null);
+  const [selectedSupportRoom, setSelectedSupportRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<MessengerMessage[]>([]);
-  const [rooms, setRooms] = useState<MessengerRoom[]>([]);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState<string>('');
   const [view, setView] = useState<'rooms' | 'private' | 'support'>('rooms');
@@ -116,7 +117,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
     }
   };
 
-  const handleRoomSelect = useCallback((room: MessengerRoom) => {
+  const handleRoomSelect = useCallback((room: ChatRoom) => {
     console.log('📱 Room selected:', room.name);
     setSelectedRoom(room);
     setSelectedUser(null);
@@ -132,7 +133,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
     setView('private');
   }, []);
 
-  const handleSupportChat = useCallback((room: MessengerRoom) => {
+  const handleSupportChat = useCallback((room: ChatRoom) => {
     console.log('📱 Support chat in:', room.name);
     setSelectedSupportRoom(room);
     setSelectedRoom(null);
@@ -163,7 +164,9 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
   return (
     <div className="h-screen flex flex-col bg-background">
       <OnlineStatusIndicator />
-      <OfflineDetector />
+      <OfflineDetector>
+        <div />
+      </OfflineDetector>
       
       {/* Temporarily disable notification banner */}
       {/* {!disableNotificationBanner && notificationService.showPermissionBanner && (
@@ -179,7 +182,6 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
           <div className={`${isMobile ? 'w-full' : 'w-80'} border-r border-border bg-card`}>
             <MessengerInbox
               currentUser={currentUser}
-              rooms={rooms}
               selectedRoom={selectedRoom}
               selectedUser={selectedUser}
               selectedSupportRoom={selectedSupportRoom}
@@ -199,7 +201,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
           <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col`}>
             {view === 'rooms' && selectedRoom && (
               <MessengerChatView
-                room={selectedRoom}
+                roomId={selectedRoom.id}
                 currentUser={currentUser}
                 onBack={isMobile ? handleBackToInbox : undefined}
                 isOffline={isOffline}
@@ -208,7 +210,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
             
             {view === 'private' && selectedUser && (
               <PrivateChatView
-                otherUser={selectedUser}
+                recipientUser={selectedUser}
                 currentUser={currentUser}
                 onBack={isMobile ? handleBackToInbox : undefined}
                 isOffline={isOffline}
@@ -217,10 +219,19 @@ const MessengerPage: React.FC<MessengerPageProps> = ({
 
             {view === 'support' && selectedSupportRoom && (
               <SupportChatView
-                room={selectedSupportRoom}
+                supportRoom={{
+                  id: selectedSupportRoom.id.toString(),
+                  name: selectedSupportRoom.name,
+                  description: selectedSupportRoom.description || '',
+                  type: selectedSupportRoom.type,
+                  icon: <div>📞</div>,
+                  isPermanent: true
+                }}
                 currentUser={currentUser}
+                sessionToken={sessionToken}
                 onBack={isMobile ? handleBackToInbox : undefined}
-                isOffline={isOffline}
+                conversationId={1}
+                recipientUserId={1}
               />
             )}
           </div>
