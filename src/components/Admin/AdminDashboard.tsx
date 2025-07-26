@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,8 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -247,16 +249,27 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleRejectPayment = async (enrollmentId: string) => {
-    const reason = prompt('دلیل رد درخواست را وارد کنید:');
-    if (!reason) return;
-
     try {
+      const reason = window.prompt('دلیل رد درخواست را وارد کنید:');
+      if (reason === null) {
+        // User cancelled the prompt
+        return;
+      }
+      if (!reason || reason.trim() === '') {
+        toast({
+          title: "خطا",
+          description: "لطفا دلیل رد درخواست را وارد کنید",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('enrollments')
         .update({
           manual_payment_status: 'rejected',
           payment_status: 'failed',
-          admin_notes: reason,
+          admin_notes: reason.trim(),
           approved_by: 'admin'
         })
         .eq('id', enrollmentId);
@@ -287,6 +300,10 @@ const AdminDashboard: React.FC = () => {
     if (chatUserId) {
       window.open(`/enroll/admin/user/${chatUserId}`, '_blank');
     }
+  };
+
+  const handleViewEnrollDetails = (enrollmentId: string) => {
+    window.open(`/enroll/details?id=${enrollmentId}`, '_blank');
   };
 
   const dashboardCards = [
@@ -392,7 +409,18 @@ const AdminDashboard: React.FC = () => {
                   <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleViewEnrollDetails(enrollment.id)}
+                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          title="مشاهده جزئیات ثبت‌نام"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
