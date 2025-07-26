@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,10 @@ export function UserOverview({ user }: UserOverviewProps) {
     });
   };
 
+  const handleViewUserDetails = (userId: number) => {
+    window.open(`/enroll/admin/users/${userId}`, '_blank');
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6" dir="rtl">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -61,7 +66,12 @@ export function UserOverview({ user }: UserOverviewProps) {
 
             <div>
               <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام کامل</label>
-              <p className="font-medium text-sm sm:text-base">{user.name}</p>
+              <button
+                onClick={() => handleViewUserDetails(user.id)}
+                className="font-medium text-sm sm:text-base text-blue-600 hover:text-blue-800 hover:underline block w-full text-right"
+              >
+                {user.name}
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

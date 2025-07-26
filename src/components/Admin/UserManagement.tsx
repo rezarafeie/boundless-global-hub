@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -77,6 +76,10 @@ const UserManagement: React.FC = () => {
     return badges;
   };
 
+  const handleViewUserDetails = (userId: number) => {
+    window.open(`/enroll/admin/users/${userId}`, '_blank');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -132,7 +135,7 @@ const UserManagement: React.FC = () => {
                       <Card 
                         key={user.id} 
                         className="p-4 transition-colors cursor-pointer hover:bg-muted/50 hover:shadow-md"
-                        onClick={() => navigate(`/enroll/admin/users/${user.id}`)}
+                        onClick={() => handleViewUserDetails(user.id)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
@@ -141,7 +144,15 @@ const UserManagement: React.FC = () => {
                             </div>
                             <div className="space-y-1 flex-1">
                               <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{user.name}</h3>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewUserDetails(user.id);
+                                  }}
+                                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                >
+                                  {user.name}
+                                </button>
                                 {getStatusBadge(user)}
                                 {getRoleBadges(user)}
                               </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +49,10 @@ const UserManagementPanel = () => {
   const handleEditUser = (user: MessengerUser) => {
     setSelectedUser(user);
     setShowEditModal(true);
+  };
+
+  const handleViewUserDetails = (userId: number) => {
+    window.open(`/enroll/admin/users/${userId}`, '_blank');
   };
 
   const getAvatarColor = (name: string) => {
@@ -185,7 +188,12 @@ const UserManagementPanel = () => {
                   </Avatar>
                   
                   <div>
-                    <div className="font-medium">{user.name}</div>
+                    <button
+                      onClick={() => handleViewUserDetails(user.id)}
+                      className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-right"
+                    >
+                      {user.name}
+                    </button>
                     <div className="text-sm text-slate-500">
                       {user.phone}
                       {user.username && ` • @${user.username}`}

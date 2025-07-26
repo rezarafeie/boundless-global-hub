@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -124,6 +123,10 @@ const UserManagementTab = () => {
 
   const handleUserUpdate = () => {
     fetchUsers();
+  };
+
+  const handleViewUserDetails = (userId: number) => {
+    window.open(`/enroll/admin/users/${userId}`, '_blank');
   };
 
   const getStatusBadges = (user: MessengerUser) => {
@@ -254,7 +257,12 @@ const UserManagementTab = () => {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{user.name}</p>
+                        <button
+                          onClick={() => handleViewUserDetails(user.id)}
+                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-right"
+                        >
+                          {user.name}
+                        </button>
                         <p className="text-sm text-slate-500 flex items-center gap-1">
                           <Phone className="w-3 h-3" />
                           {user.phone}
