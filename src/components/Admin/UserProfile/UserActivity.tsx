@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, CheckCircle, MessageSquare, Key, Calendar, UserPlus, LogIn, BookOpen, Play, Clock, Download, CreditCard, Users } from 'lucide-react';
+import { Activity, CheckCircle, MessageSquare, Key, Calendar, UserPlus, LogIn, BookOpen, Play, Clock, Download, CreditCard, Users, ExternalLink, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ActivityRecord {
@@ -89,6 +90,18 @@ export function UserActivity({ userId }: UserActivityProps) {
               break;
             case 'telegram_joined':
               description = `عضو کانال تلگرام شد`;
+              break;
+            case 'smart_activation_clicked':
+              description = 'لینک فعال‌سازی هوشمند کلیک شد';
+              break;
+            case 'support_link_clicked':
+              description = 'لینک پشتیبانی کلیک شد';
+              break;
+            case 'telegram_link_clicked':
+              description = 'لینک تلگرام کلیک شد';
+              break;
+            case 'gifts_link_clicked':
+              description = 'لینک هدایا کلیک شد';
               break;
             case 'course_page_visited':
               const courseTitle = log.metadata?.course_title || 'دوره';
@@ -201,6 +214,14 @@ export function UserActivity({ userId }: UserActivityProps) {
         return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'telegram_joined':
         return <Users className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'smart_activation_clicked':
+        return <Zap className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'support_link_clicked':
+        return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'telegram_link_clicked':
+        return <Users className="w-3 h-3 sm:w-4 sm:h-4" />;
+      case 'gifts_link_clicked':
+        return <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'course_page_visited':
         return <Activity className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'lesson_opened':
@@ -225,6 +246,10 @@ export function UserActivity({ userId }: UserActivityProps) {
       course_enrolled: { variant: 'default', label: 'ثبت‌نام در دوره' },
       support_activated: { variant: 'outline', label: 'فعالسازی پشتیبانی' },
       telegram_joined: { variant: 'secondary', label: 'عضویت در تلگرام' },
+      smart_activation_clicked: { variant: 'default', label: 'فعال‌سازی هوشمند' },
+      support_link_clicked: { variant: 'outline', label: 'کلیک لینک پشتیبانی' },
+      telegram_link_clicked: { variant: 'secondary', label: 'کلیک لینک تلگرام' },
+      gifts_link_clicked: { variant: 'outline', label: 'کلیک لینک هدایا' },
       course_page_visited: { variant: 'outline', label: 'بازدید صفحه دوره' },
       lesson_opened: { variant: 'secondary', label: 'باز کردن درس' },
       lesson_completed: { variant: 'default', label: 'تکمیل درس' },
