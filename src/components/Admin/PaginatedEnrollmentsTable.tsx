@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink }
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Enrollment {
   id: string;
@@ -31,6 +32,7 @@ interface Enrollment {
 
 const PaginatedEnrollmentsTable: React.FC = () => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -170,39 +172,63 @@ const PaginatedEnrollmentsTable: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className={isMobile ? "flex flex-col gap-3" : "flex items-center justify-between"}>
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             تمام ثبت‌نام‌ها
             <Badge variant="secondary">{totalEnrollments} ثبت‌نام</Badge>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                <SelectItem value="completed">تکمیل شده</SelectItem>
-                <SelectItem value="pending">در انتظار</SelectItem>
-                <SelectItem value="pending_manual">در انتظار تایید</SelectItem>
-                <SelectItem value="failed">ناموفق</SelectItem>
-                <SelectItem value="cancelled_payment">لغو شده</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {/* Search */}
-            <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="جستجوی نام، ایمیل، تلفن..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          {isMobile ? (
+            <div className="space-y-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="completed">تکمیل شده</SelectItem>
+                  <SelectItem value="pending">در انتظار</SelectItem>
+                  <SelectItem value="pending_manual">در انتظار تایید</SelectItem>
+                  <SelectItem value="failed">ناموفق</SelectItem>
+                  <SelectItem value="cancelled_payment">لغو شده</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="جستجوی نام، ایمیل، تلفن..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="completed">تکمیل شده</SelectItem>
+                  <SelectItem value="pending">در انتظار</SelectItem>
+                  <SelectItem value="pending_manual">در انتظار تایید</SelectItem>
+                  <SelectItem value="failed">ناموفق</SelectItem>
+                  <SelectItem value="cancelled_payment">لغو شده</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="جستجوی نام، ایمیل، تلفن..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -215,70 +241,125 @@ const PaginatedEnrollmentsTable: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Enrollments Table */}
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>نام</TableHead>
-                    <TableHead>دوره</TableHead>
-                    <TableHead>تلفن</TableHead>
-                    <TableHead>ایمیل</TableHead>
-                    <TableHead>مبلغ</TableHead>
-                    <TableHead>روش پرداخت</TableHead>
-                    <TableHead>وضعیت</TableHead>
-                    <TableHead>تاریخ</TableHead>
-                    <TableHead>عملیات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {enrollments.map((enrollment) => (
-                    <TableRow key={enrollment.id}>
-                      <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{enrollment.courses.title}</div>
-                          <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
+            {/* Enrollments Table/Cards */}
+            {isMobile ? (
+              <div className="space-y-3">
+                {enrollments.map((enrollment) => (
+                  <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium">{enrollment.full_name}</h3>
+                          {getStatusBadge(enrollment)}
                         </div>
-                      </TableCell>
-                      <TableCell>{enrollment.phone}</TableCell>
-                      <TableCell>{enrollment.email}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4" />
-                          {formatPrice(enrollment.payment_amount)}
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">دوره:</span> {enrollment.courses.title}
+                            <div className="text-xs text-muted-foreground">{enrollment.courses.slug}</div>
+                          </div>
+                          <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
+                          <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">مبلغ:</span>
+                            <DollarSign className="h-3 w-3" />
+                            {formatPrice(enrollment.payment_amount)}
+                          </div>
+                          <div><span className="font-medium">روش پرداخت:</span> {getPaymentMethodBadge(enrollment.payment_method)}</div>
+                          <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
                         </div>
-                      </TableCell>
-                      <TableCell>{getPaymentMethodBadge(enrollment.payment_method)}</TableCell>
-                      <TableCell>{getStatusBadge(enrollment)}</TableCell>
-                      <TableCell>{formatDate(enrollment.created_at)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2">
                           {enrollment.receipt_url && (
                             <Button
                               size="sm"
                               variant="outline"
+                              className="w-full"
                               onClick={() => window.open(enrollment.receipt_url!, '_blank')}
                             >
-                              <ExternalLink className="h-4 w-4" />
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              مشاهده رسید
                             </Button>
                           )}
                           <Button
                             size="sm"
                             variant="outline"
+                            className="w-full"
                             onClick={() => {
                               window.location.href = `/enroll/admin/enrollments/${enrollment.id}`;
                             }}
                           >
-                            جزئیات
+                            مشاهده جزئیات
                           </Button>
                         </div>
-                      </TableCell>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>نام</TableHead>
+                      <TableHead>دوره</TableHead>
+                      <TableHead>تلفن</TableHead>
+                      <TableHead>ایمیل</TableHead>
+                      <TableHead>مبلغ</TableHead>
+                      <TableHead>روش پرداخت</TableHead>
+                      <TableHead>وضعیت</TableHead>
+                      <TableHead>تاریخ</TableHead>
+                      <TableHead>عملیات</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {enrollments.map((enrollment) => (
+                      <TableRow key={enrollment.id}>
+                        <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{enrollment.courses.title}</div>
+                            <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{enrollment.phone}</TableCell>
+                        <TableCell>{enrollment.email}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4" />
+                            {formatPrice(enrollment.payment_amount)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getPaymentMethodBadge(enrollment.payment_method)}</TableCell>
+                        <TableCell>{getStatusBadge(enrollment)}</TableCell>
+                        <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {enrollment.receipt_url && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                window.location.href = `/enroll/admin/enrollments/${enrollment.id}`;
+                              }}
+                            >
+                              جزئیات
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
