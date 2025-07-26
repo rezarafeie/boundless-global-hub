@@ -308,6 +308,16 @@ const AdminEnrollmentDetails: React.FC = () => {
                       {enrollment.payment_method === 'manual' ? 'واریز دستی' : 'آنلاین'}
                     </span>
                   </div>
+                  <div className="mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(`/user-detail?phone=${encodeURIComponent(enrollment.phone)}`, '_blank')}
+                      className="w-full"
+                    >
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      مشاهده جزئیات کاربر
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between">
