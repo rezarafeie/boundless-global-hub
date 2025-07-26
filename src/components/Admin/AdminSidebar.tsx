@@ -74,7 +74,7 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
       {/* Mobile Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-lg shadow-lg border border-gray-200"
+        className="lg:hidden fixed top-20 right-4 z-[10001] p-2 bg-white rounded-lg shadow-lg border border-gray-200"
       >
         <Menu className="h-5 w-5 text-gray-600" />
       </button>
