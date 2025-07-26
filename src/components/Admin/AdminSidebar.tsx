@@ -66,9 +66,11 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
   const handleViewChange = (view: ViewType) => {
     onViewChange(view);
     // Auto-close sidebar on mobile after selection
-    if (window.innerWidth < 1024) {
-      setOpen(false);
-    }
+    setTimeout(() => {
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        setOpen(false);
+      }
+    }, 100);
   };
 
   return (
