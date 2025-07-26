@@ -39,6 +39,27 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up realtime subscription for new enrollments
+    const enrollmentsChannel = supabase
+      .channel('enrollments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'enrollments'
+        },
+        () => {
+          console.log('New enrollment detected, refreshing data...');
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(enrollmentsChannel);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -117,6 +138,17 @@ const AdminDashboard: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fa-IR');
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const persianDate = date.toLocaleDateString('fa-IR');
+    const time = date.toLocaleTimeString('fa-IR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false 
+    });
+    return `${persianDate} - ${time}`;
   };
 
   const dashboardCards = [
@@ -225,7 +257,7 @@ const AdminDashboard: React.FC = () => {
                       <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
                       <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500">{formatDate(enrollment.created_at)}</span>
+                        <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
                         <span className="text-xs text-gray-400">•</span>
                         <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
                       </div>
