@@ -71,27 +71,45 @@ const EnrollmentAdmin: React.FC = () => {
 
   useEffect(() => {
     const checkUserRole = async () => {
+      // First check if user is authenticated
+      if (isLoading) {
+        return; // Still loading, wait
+      }
+
       if (!isAuthenticated || !user) {
+        console.log('User not authenticated, redirecting to home');
+        setCheckingRole(false);
+        setHasAccess(false);
         navigate('/');
         return;
       }
 
       try {
+        console.log('Checking user role for:', user);
         // Get detailed user info from messenger service
         const detailedUser = await messengerService.getUserByPhone(user.phone || '');
         
         if (!detailedUser) {
+          console.log('User not found in messenger service');
+          setHasAccess(false);
+          setCheckingRole(false);
           navigate('/');
           return;
         }
 
+        console.log('User details:', detailedUser);
+        
         // Check if user has admin or enrollments_manager role
         const allowedRoles = ['admin', 'enrollments_manager'];
         const userRole = detailedUser.role || 'user';
         
+        console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin);
+        
         if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
+          console.log('User has access');
           setHasAccess(true);
         } else {
+          console.log('User does not have required role');
           setHasAccess(false);
         }
       } catch (error) {
@@ -102,12 +120,10 @@ const EnrollmentAdmin: React.FC = () => {
       }
     };
 
-    if (!isLoading) {
-      checkUserRole();
-    }
+    checkUserRole();
   }, [isAuthenticated, user, isLoading, navigate]);
 
-  // Show loading while checking authentication
+  // Show loading while checking authentication or if not authenticated
   if (isLoading || checkingRole) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
@@ -117,6 +133,12 @@ const EnrollmentAdmin: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // Redirect if not authenticated (this should not normally execute due to useEffect redirect)
+  if (!isAuthenticated || !user) {
+    navigate('/');
+    return null;
   }
 
   // Show access denied if user doesn't have required role
