@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -280,6 +279,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleViewEnrollmentDetails = (enrollmentId: string) => {
+    window.open(`/enroll/admin/enrollment/${enrollmentId}`, '_blank');
+  };
+
+  const handleViewUserDetails = (chatUserId: number | null) => {
+    if (chatUserId) {
+      window.open(`/enroll/admin/user/${chatUserId}`, '_blank');
+    }
+  };
+
   const dashboardCards = [
     {
       title: 'کل درآمد',
@@ -474,15 +483,30 @@ const AdminDashboard: React.FC = () => {
                     <div key={enrollment.id} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-blue-600 hover:text-blue-800 truncate block w-full text-right"
+                          >
+                            {enrollment.full_name}
+                          </button>
                           <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
                         </div>
                         <div className="flex gap-1 flex-shrink-0 ml-2">
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="جزئیات ثبت‌نام"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handleApprovePayment(enrollment.id)}
                             className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="تایید پرداخت"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
@@ -491,6 +515,7 @@ const AdminDashboard: React.FC = () => {
                             variant="ghost"
                             onClick={() => handleRejectPayment(enrollment.id)}
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="رد پرداخت"
                           >
                             <XCircle className="h-4 w-4" />
                           </Button>
@@ -527,7 +552,12 @@ const AdminDashboard: React.FC = () => {
                       <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
                       
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
+                        <button
+                          onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                          className="font-medium text-blue-600 hover:text-blue-800 truncate block w-full text-right"
+                        >
+                          {enrollment.full_name}
+                        </button>
                         <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
@@ -554,8 +584,18 @@ const AdminDashboard: React.FC = () => {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          title="جزئیات ثبت‌نام"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleApprovePayment(enrollment.id)}
                           className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="تایید پرداخت"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -564,6 +604,7 @@ const AdminDashboard: React.FC = () => {
                           variant="ghost"
                           onClick={() => handleRejectPayment(enrollment.id)}
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          title="رد پرداخت"
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>
