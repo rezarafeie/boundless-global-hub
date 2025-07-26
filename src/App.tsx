@@ -201,7 +201,7 @@ const App = () => {
                     <Route path="/enroll/details" element={<EnrollmentDetails />} />
                     <Route path="/admin-enrollment-details" element={<AdminEnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
-                    <Route path="/enroll/admin" element={<EnrollAdmin />} />
+                    <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
                     <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
