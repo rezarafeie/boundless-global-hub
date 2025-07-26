@@ -1,23 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   BookOpen, 
   Users, 
   UserCheck, 
   Settings,
-  BarChart3
+  BarChart3,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
 
 type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings';
 
@@ -60,72 +54,127 @@ const sidebarItems = [
 ];
 
 export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
-  const { state, setOpen } = useSidebar();
-  const collapsed = state === "collapsed";
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleViewChange = (view: ViewType) => {
     onViewChange(view);
     // Auto-close sidebar on mobile after selection
     if (window.innerWidth < 1024) {
-      setOpen(false);
+      setIsOpen(false);
     }
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
-    <Sidebar className={cn(
-      "bg-white border-l border-gray-200 shadow-lg lg:shadow-none",
-      "fixed lg:relative z-50 lg:z-auto",
-      "h-full lg:h-auto",
-      collapsed ? "w-16" : "w-72"
-    )} side="right" collapsible="icon">
-      <SidebarContent className="bg-white h-full overflow-auto">
-        <div className="p-6 border-b border-gray-100 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-lg">ر</span>
-            </div>
-            {!collapsed && (
-              <div className="text-right">
-                <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
-                <p className="text-sm text-gray-500">پنل مدیریت</p>
+    <>
+      {/* Mobile Trigger Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-lg shadow-lg border border-gray-200"
+      >
+        <Menu className="h-5 w-5 text-gray-600" />
+      </button>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out",
+        "fixed lg:relative z-50 lg:z-auto h-full",
+        // Mobile styles
+        "lg:translate-x-0",
+        isOpen ? "translate-x-0" : "translate-x-full",
+        // Desktop styles
+        isCollapsed ? "lg:w-20" : "lg:w-72",
+        // Mobile width
+        "w-72"
+      )}>
+        {/* Header */}
+        <div className={cn(
+          "border-b border-gray-100 bg-white transition-all duration-300",
+          isCollapsed ? "p-4" : "p-6"
+        )}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300",
+                isCollapsed ? "w-10 h-10" : "w-12 h-12"
+              )}>
+                <span className="text-white font-bold text-lg">ر</span>
               </div>
-            )}
+              {!isCollapsed && (
+                <div className="text-right">
+                  <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
+                  <p className="text-sm text-gray-500">پنل مدیریت</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Desktop Collapse Button */}
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:flex p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronLeft className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-gray-500" />
+              )}
+            </button>
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
           </div>
         </div>
 
-        <SidebarGroup className="px-4 py-6 bg-white">
-          <SidebarGroupContent className="bg-white">
-            <SidebarMenu className="space-y-1">
-              {sidebarItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={activeView === item.id}
-                    tooltip={collapsed ? item.label : undefined}
-                  >
-                    <button
-                      onClick={() => handleViewChange(item.id as ViewType)}
-                      className={cn(
-                        "w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200 font-medium",
-                        "hover:bg-gray-50",
-                        activeView === item.id
-                          ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg transform scale-[0.98]"
-                          : "text-gray-700 hover:text-gray-900"
-                      )}
-                    >
-                      <item.icon className={cn(
-                        "h-5 w-5 flex-shrink-0",
-                        activeView === item.id ? "text-white" : "text-gray-500"
-                      )} />
-                      {!collapsed && <span className="text-base">{item.label}</span>}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+        {/* Navigation Menu */}
+        <nav className={cn(
+          "py-6 bg-white h-full overflow-auto",
+          isCollapsed ? "px-2" : "px-4"
+        )}>
+          <ul className="space-y-1">
+            {sidebarItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => handleViewChange(item.id as ViewType)}
+                  className={cn(
+                    "w-full flex items-center transition-all duration-200 font-medium rounded-xl",
+                    "hover:bg-gray-50",
+                    isCollapsed ? "px-3 py-4 justify-center" : "px-4 py-4 gap-4",
+                    activeView === item.id
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg transform scale-[0.98]"
+                      : "text-gray-700 hover:text-gray-900"
+                  )}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <item.icon className={cn(
+                    "h-5 w-5 flex-shrink-0",
+                    activeView === item.id ? "text-white" : "text-gray-500"
+                  )} />
+                  {!isCollapsed && (
+                    <span className="text-base text-right">{item.label}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+    </>
   );
 }

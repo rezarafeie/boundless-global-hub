@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
 import AdminDashboard from '@/components/Admin/AdminDashboard';
 import CourseManagement from '@/components/Admin/CourseManagement';
@@ -218,36 +218,33 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen w-full bg-gray-50" dir="rtl">
-        {/* Academy Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6">
-          <div className="flex-1 flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">ر</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">آکادمی رفیعی</h1>
-              <p className="text-sm text-gray-500">پنل مدیریت</p>
-            </div>
+    <div className="min-h-screen w-full bg-gray-50" dir="rtl">
+      {/* Academy Header - Hidden on mobile to make room for sidebar trigger */}
+      <header className="hidden lg:flex h-16 bg-white border-b border-gray-200 items-center px-6">
+        <div className="flex-1 flex items-center gap-4">
+          <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center">
+            <span className="text-white font-bold text-lg">ر</span>
           </div>
-          <SidebarTrigger className="ml-2" />
-        </header>
-
-        <div className="flex w-full">
-          <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
-          
-          {/* Main Content */}
-          <main className="flex-1 p-8 overflow-auto bg-white" style={{ direction: 'rtl' }}>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                {renderContent()}
-              </Suspense>
-            </ErrorBoundary>
-          </main>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">آکادمی رفیعی</h1>
+            <p className="text-sm text-gray-500">پنل مدیریت</p>
+          </div>
         </div>
+      </header>
+
+      <div className="flex w-full lg:h-[calc(100vh-64px)] h-screen">
+        <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+        
+        {/* Main Content */}
+        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white" style={{ direction: 'rtl' }}>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              {renderContent()}
+            </Suspense>
+          </ErrorBoundary>
+        </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
