@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -298,7 +297,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleViewUserDetails = (chatUserId: number | null) => {
     if (chatUserId) {
-      window.open(`/enroll/admin/user/${chatUserId}`, '_blank');
+      window.open(`/enroll/admin/users/${chatUserId}`, '_blank');
     }
   };
 
