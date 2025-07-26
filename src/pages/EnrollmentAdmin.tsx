@@ -218,8 +218,7 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <SidebarProvider defaultOpen={false} open={undefined}>
-      <div className="min-h-screen w-full bg-gray-50" dir="rtl">
+    <div className="min-h-screen w-full bg-gray-50" dir="rtl">
         {/* Academy Main Menu Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
           <div className="flex items-center gap-6">
@@ -252,7 +251,7 @@ const EnrollmentAdmin: React.FC = () => {
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               آنلاین
             </div>
-            <SidebarTrigger className="lg:hidden" />
+            <SidebarTrigger className="lg:hidden hidden" />
           </div>
         </header>
 
@@ -260,7 +259,7 @@ const EnrollmentAdmin: React.FC = () => {
           <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
           
           {/* Main Content */}
-          <main className="flex-1 p-8 overflow-auto bg-white" style={{ direction: 'rtl' }}>
+          <main className="flex-1 p-8 overflow-auto bg-white mr-80" style={{ direction: 'rtl' }}>
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
                 {renderContent()}
@@ -268,8 +267,7 @@ const EnrollmentAdmin: React.FC = () => {
             </ErrorBoundary>
           </main>
         </div>
-      </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
