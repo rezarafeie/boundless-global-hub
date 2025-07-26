@@ -474,10 +474,10 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{enrollment.full_name}</p>
                       <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
                         <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{formatTime(enrollment.created_at)}</span>
+                        <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
                         {enrollment.receipt_url && (
                           <>
                             <span className="text-xs text-gray-400">•</span>
@@ -495,12 +495,12 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-shrink-0">
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => handleApprovePayment(enrollment.id)}
-                        className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                       >
                         <CheckCircle className="h-4 w-4" />
                       </Button>
@@ -508,7 +508,7 @@ const AdminDashboard: React.FC = () => {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRejectPayment(enrollment.id)}
-                        className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <XCircle className="h-4 w-4" />
                       </Button>
