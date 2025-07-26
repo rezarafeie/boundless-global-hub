@@ -12,6 +12,7 @@ import PaginatedUsersTable from '@/components/Admin/PaginatedUsersTable';
 import PaginatedEnrollmentsTable from '@/components/Admin/PaginatedEnrollmentsTable';
 
 const EnrollmentAdmin: React.FC = () => {
+  console.log('EnrollmentAdmin: Component rendering');
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Header */}

@@ -26,6 +26,7 @@ interface ChatUser {
 }
 
 const PaginatedUsersTable: React.FC = () => {
+  console.log('PaginatedUsersTable: Component rendering');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<ChatUser[]>([]);
@@ -39,6 +40,7 @@ const PaginatedUsersTable: React.FC = () => {
   const totalPages = Math.ceil(totalUsers / usersPerPage);
 
   useEffect(() => {
+    console.log('PaginatedUsersTable: useEffect triggered');
     fetchUsers();
   }, [currentPage, debouncedSearchTerm]);
 

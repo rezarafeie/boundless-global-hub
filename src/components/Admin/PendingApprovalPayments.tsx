@@ -30,11 +30,13 @@ interface PendingApprovalPaymentsProps {
 }
 
 const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRefresh }) => {
+  console.log('PendingApprovalPayments: Component rendering');
   const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('PendingApprovalPayments: useEffect triggered');
     fetchPendingPayments();
   }, []);
 

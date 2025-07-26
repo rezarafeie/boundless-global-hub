@@ -30,6 +30,7 @@ interface Enrollment {
 }
 
 const PaginatedEnrollmentsTable: React.FC = () => {
+  console.log('PaginatedEnrollmentsTable: Component rendering');
   const { toast } = useToast();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
   const totalPages = Math.ceil(totalEnrollments / enrollmentsPerPage);
 
   useEffect(() => {
+    console.log('PaginatedEnrollmentsTable: useEffect triggered');
     fetchEnrollments();
   }, [currentPage, debouncedSearchTerm, statusFilter]);
 
