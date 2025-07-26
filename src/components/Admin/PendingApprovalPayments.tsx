@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CheckCircle, XCircle, Clock, User, Phone, Mail, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, User, Phone, Mail, DollarSign, Eye, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +20,7 @@ interface PendingEnrollment {
   course_id: string;
   receipt_url: string | null;
   admin_notes: string | null;
+  chat_user_id: number | null;
   courses: {
     title: string;
     slug: string;
@@ -151,6 +153,20 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
     }
   };
 
+  const handleViewEnrollmentDetails = (enrollmentId: string) => {
+    window.open(`/enroll/admin/enrollment/${enrollmentId}`, '_blank');
+  };
+
+  const handleViewEnrollDetails = (enrollmentId: string) => {
+    window.open(`/enroll/details?id=${enrollmentId}`, '_blank');
+  };
+
+  const handleViewUserDetails = (chatUserId: number | null) => {
+    if (chatUserId) {
+      window.open(`/enroll/admin/users/${chatUserId}`, '_blank');
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
   };
@@ -215,7 +231,12 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
-                          <span className="font-medium">{enrollment.full_name}</span>
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {enrollment.full_name}
+                          </button>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Mail className="h-3 w-3" />
@@ -258,8 +279,27 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => handleViewEnrollDetails(enrollment.id)}
+                          className="text-blue-600 hover:text-blue-700"
+                          title="مشاهده ثبت‌نام"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                          className="text-purple-600 hover:text-purple-700"
+                          title="جزئیات ثبت‌نام"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleApprove(enrollment.id)}
                           className="text-green-600 hover:text-green-700"
+                          title="تایید پرداخت"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -268,6 +308,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                           variant="outline"
                           onClick={() => handleReject(enrollment.id)}
                           className="text-red-600 hover:text-red-700"
+                          title="رد پرداخت"
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>

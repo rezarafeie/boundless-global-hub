@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -122,6 +123,20 @@ const PaginatedEnrollmentsTable: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fa-IR');
+  };
+
+  const handleViewEnrollmentDetails = (enrollmentId: string) => {
+    window.open(`/enroll/admin/enrollment/${enrollmentId}`, '_blank');
+  };
+
+  const handleViewEnrollDetails = (enrollmentId: string) => {
+    window.open(`/enroll/details?id=${enrollmentId}`, '_blank');
+  };
+
+  const handleViewUserDetails = (chatUserId: number | null) => {
+    if (chatUserId) {
+      window.open(`/enroll/admin/users/${chatUserId}`, '_blank');
+    }
   };
 
   const getStatusBadge = (enrollment: Enrollment) => {
@@ -250,7 +265,12 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                     <CardContent className="p-4">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium">{enrollment.full_name}</h3>
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                          >
+                            {enrollment.full_name}
+                          </button>
                           {getStatusBadge(enrollment)}
                         </div>
                         <div className="space-y-2 text-sm">
@@ -284,20 +304,26 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             size="sm"
                             variant="outline"
                             className="w-full"
-                            onClick={() => {
-                              window.location.href = `/admin-enrollment-details?id=${enrollment.id}`;
-                            }}
+                            onClick={() => handleViewEnrollDetails(enrollment.id)}
                           >
-                            مشاهده جزئیات
+                            <Eye className="h-4 w-4 mr-2" />
+                            مشاهده ثبت‌نام
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            جزئیات ثبت‌نام
                           </Button>
                           {enrollment.chat_user_id && (
                             <Button
                               size="sm"
                               variant="outline"
                               className="w-full"
-                              onClick={() => {
-                                window.location.href = `/user-detail/${enrollment.chat_user_id}`;
-                              }}
+                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
                             >
                               مشاهده کاربر
                             </Button>
@@ -327,7 +353,14 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                   <TableBody>
                     {enrollments.map((enrollment) => (
                       <TableRow key={enrollment.id}>
-                        <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                        <TableCell>
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-right"
+                          >
+                            {enrollment.full_name}
+                          </button>
+                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium">{enrollment.courses.title}</div>
@@ -352,6 +385,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                                title="مشاهده رسید"
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
@@ -359,9 +393,16 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                window.location.href = `/admin-enrollment-details?id=${enrollment.id}`;
-                              }}
+                              onClick={() => handleViewEnrollDetails(enrollment.id)}
+                              title="مشاهده ثبت‌نام"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                              title="جزئیات ثبت‌نام"
                             >
                               جزئیات
                             </Button>
@@ -369,9 +410,8 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  window.location.href = `/user-detail/${enrollment.chat_user_id}`;
-                                }}
+                                onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                                title="مشاهده کاربر"
                               >
                                 کاربر
                               </Button>
