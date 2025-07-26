@@ -40,6 +40,8 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
 
   const fetchPendingPayments = async () => {
     try {
+      console.log('Fetching pending payments...');
+      
       const { data, error } = await supabase
         .from('enrollments')
         .select(`
@@ -51,11 +53,23 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
         `)
         .eq('payment_method', 'manual')
         .eq('payment_status', 'pending')
-        .is('manual_payment_status', null)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setPendingEnrollments(data || []);
+      if (error) {
+        console.error('Error fetching pending payments:', error);
+        throw error;
+      }
+      
+      console.log('Raw enrollments data:', data);
+      
+      // Filter for truly pending enrollments (no manual_payment_status or null)
+      const filteredData = data?.filter(enrollment => 
+        !enrollment.manual_payment_status || 
+        enrollment.manual_payment_status === null
+      ) || [];
+      
+      console.log('Filtered pending enrollments:', filteredData);
+      setPendingEnrollments(filteredData);
     } catch (error) {
       console.error('Error fetching pending payments:', error);
       toast({
