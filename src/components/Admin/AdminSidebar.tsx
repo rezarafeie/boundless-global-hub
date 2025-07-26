@@ -73,19 +73,19 @@ export function AdminSidebar({ activeView, onViewChange }: AdminSidebarProps) {
 
   return (
     <Sidebar className={cn(
-      "border-l border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      "border-r border-border bg-gradient-to-b from-purple-50 to-blue-50 backdrop-blur supports-[backdrop-filter]:bg-background/60",
       collapsed ? "w-14" : "w-64"
-    )}>
-      <SidebarContent>
-        <div className="p-4 border-b border-border">
+    )} side="right">
+      <SidebarContent className="bg-gradient-to-b from-purple-600/10 to-blue-600/10">
+        <div className="p-4 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-sm">ر</span>
             </div>
             {!collapsed && (
-              <div>
-                <h2 className="font-semibold text-sm">پنل مدیریت</h2>
-                <p className="text-xs text-muted-foreground">آکادمی رفیعی</p>
+              <div className="text-right">
+                <h2 className="font-semibold text-sm text-purple-800">آکادمی رفیعی</h2>
+                <p className="text-xs text-purple-600">پنل مدیریت</p>
               </div>
             )}
           </div>

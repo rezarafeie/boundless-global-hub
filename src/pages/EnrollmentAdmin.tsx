@@ -235,22 +235,28 @@ const EnrollmentAdmin: React.FC = () => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen w-full bg-gradient-to-br from-purple-50 to-blue-50">
-        {/* Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-sm border-b border-border flex items-center px-4">
-          <SidebarTrigger className="mr-2" />
-          <div className="flex-1">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              پنل مدیریت آکادمی رفیعی
-            </h1>
+      <div className="min-h-screen w-full bg-gradient-to-br from-purple-50 to-blue-50" dir="rtl">
+        {/* Academy Header */}
+        <header className="h-16 bg-white/90 backdrop-blur-sm border-b border-purple-200 flex items-center px-6 shadow-sm">
+          <div className="flex-1 flex items-center gap-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">ر</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                آکادمی رفیعی
+              </h1>
+              <p className="text-sm text-purple-600">پنل مدیریت جامع</p>
+            </div>
           </div>
+          <SidebarTrigger className="ml-2" />
         </header>
 
         <div className="flex w-full">
           <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
           
           {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 p-6 overflow-auto" style={{ direction: 'rtl' }}>
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
                 {renderContent()}
