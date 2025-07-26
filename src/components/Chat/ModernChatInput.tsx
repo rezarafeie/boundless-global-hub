@@ -29,25 +29,25 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || disabled || isSending) return;
+    if (!message.trim() || disabled) return;
     
-    setIsSending(true);
+    const messageToSend = message.trim();
+    const replyId = replyingTo?.id;
+    
+    // Clear input and reply immediately for instant feel
+    setMessage('');
+    setReplyingTo(null);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+    
+    // Send message without waiting - fire and forget for speed
     try {
-      await onSendMessage(message.trim(), undefined, replyingTo?.id);
-      setMessage('');
-      setReplyingTo(null);
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
+      // Call onSendMessage immediately without await for instant UI update
+      onSendMessage(messageToSend, undefined, replyId);
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در ارسال پیام. لطفاً مجدداً تلاش کنید.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSending(false);
+      // Don't show error toast immediately to maintain fast feel
     }
   };
 
@@ -96,7 +96,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
         const uploadResult: FileUploadResult = await uploadFile(file, 'messenger-files', currentUserId);
         
         // Send the file as a message immediately
-        await onSendMessage('', {
+        onSendMessage('', {
           url: uploadResult.url,
           type: uploadResult.type,
           size: uploadResult.size,
@@ -132,7 +132,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
       console.log('Voice message upload result:', uploadResult);
       
       // Send the voice message immediately
-      await onSendMessage('', {
+      onSendMessage('', {
         url: uploadResult.url,
         type: 'audio/webm',
         size: uploadResult.size,
@@ -168,7 +168,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-3 safe-area-padding-bottom">
       {/* Reply Preview */}
       {replyingTo && (
-        <div className="max-w-6xl mx-auto mb-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border-l-4 border-blue-500">
+        <div className="max-w-6xl mx-auto mb-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border-l-4 border-blue-500 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
@@ -210,8 +210,8 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="پیام..."
-            className="resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-3 py-2 pr-10 min-h-[40px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-colors text-sm"
-            disabled={disabled || isSending}
+            className="resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-3 py-2 pr-10 min-h-[40px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-150 text-sm"
+            disabled={disabled}
             rows={1}
             dir="rtl"
             style={{ direction: 'rtl', textAlign: 'right' }}
@@ -223,25 +223,17 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
         
         <Button
           type="submit"
-          disabled={!isMessageValid || disabled || isSending}
+          disabled={!isMessageValid || disabled}
           size="sm"
-          className={`rounded-xl h-10 w-10 p-0 transition-all duration-200 flex-shrink-0 ${
-            isMessageValid && !disabled && !isSending
-              ? 'bg-blue-500 hover:bg-blue-600 text-white'
+          className={`rounded-xl h-10 w-10 p-0 transition-all duration-150 flex-shrink-0 transform active:scale-95 ${
+            isMessageValid && !disabled
+              ? 'bg-blue-500 hover:bg-blue-600 text-white hover:scale-105'
               : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
           }`}
         >
           <Send className="w-4 h-4" />
         </Button>
       </form>
-      
-      {isSending && (
-        <div className="text-center mt-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400 animate-pulse">
-            در حال ارسال...
-          </span>
-        </div>
-      )}
     </div>
   );
 };

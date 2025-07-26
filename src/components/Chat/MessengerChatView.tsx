@@ -134,7 +134,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         debugLog('Auto-refreshing messages due to disconnection');
         await loadMessagesAndSync();
       }
-    }, 15000); // Check every 15 seconds
+    }, 10000); // Faster auto-refresh for better responsiveness
   };
 
   const loadMessagesAndSync = async () => {
@@ -171,11 +171,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
       
-      // Merge with optimistic messages but keep them visible
+      // Merge with optimistic messages but preserve optimistic ones
       setMessages(prevMessages => {
         const realMessageIds = new Set(roomMessages.map(msg => msg.id));
         
-        // Keep optimistic messages that haven't been matched yet
+        // Keep optimistic messages that haven't been replaced
         const optimisticMessages = prevMessages.filter(msg => 
           msg.isOptimistic && !realMessageIds.has(msg.id)
         );
@@ -185,16 +185,14 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           lastMessageTimestamp.current = roomMessages[roomMessages.length - 1].created_at;
         }
         
-        // Combine real messages with remaining optimistic messages
+        // Combine and sort
         const combinedMessages = [...roomMessages, ...optimisticMessages];
-        
-        // Sort by timestamp to maintain proper order
         return combinedMessages.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
       });
       
-      debugLog('Messages synced:', roomMessages.length);
+      debugLog('Messages synced smoothly:', roomMessages.length);
       setIsConnected(true);
     } catch (error) {
       debugLog('Error syncing messages:', error);
@@ -230,12 +228,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     });
     realtimeChannelsRef.current = [];
 
-    debugLog('Setting up realtime subscriptions for:', { 
-      roomId: selectedRoom?.id, 
-      userId: selectedUser?.id,
-      currentUserId: currentUser.id,
-      topicId: selectedTopic?.id 
-    });
+    debugLog('Setting up realtime subscriptions for fast updates');
 
     const channels: any[] = [];
     
@@ -252,50 +245,45 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             filter: `room_id=eq.${selectedRoom.id}`
           },
           (payload) => {
-            debugLog('New room message received:', payload);
             const newMessage = payload.new as any;
             
             // For super groups, check topic_id match
             const isTopicMatch = !selectedTopic || !newMessage.topic_id || newMessage.topic_id === selectedTopic.id;
-            if (!isTopicMatch) {
-              debugLog('Topic mismatch, ignoring message');
-              return;
-            }
+            if (!isTopicMatch) return;
             
             setMessages(prev => {
-              // Check if this message already exists (prevent duplicates)
+              // Check for duplicates
               const existingMessage = prev.find(msg => msg.id === newMessage.id && !msg.isOptimistic);
-              if (existingMessage) {
-                debugLog('Message already exists, skipping');
-                return prev;
-              }
+              if (existingMessage) return prev;
 
-              // Find matching optimistic message
-              const matchingTempId = findMatchingOptimisticMessage(newMessage);
+              // Check if this replaces an optimistic message
+              const matchingOptimistic = prev.find(msg => 
+                msg.isOptimistic && 
+                msg.sender_id === newMessage.sender_id && 
+                msg.message.trim() === (newMessage.message || '').trim() &&
+                Math.abs(new Date(newMessage.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000
+              );
               
-              if (matchingTempId) {
-                // Replace optimistic message with real one
-                optimisticMessagesRef.current.delete(matchingTempId);
-                debugLog(`Replacing optimistic message: ${matchingTempId} with real message: ${newMessage.id}`);
-                
+              if (matchingOptimistic && matchingOptimistic.tempId) {
+                // Replace optimistic with real message smoothly
+                optimisticMessagesRef.current.delete(matchingOptimistic.tempId);
                 return prev.map(msg => 
-                  msg.tempId === matchingTempId 
+                  msg.tempId === matchingOptimistic.tempId 
                     ? { 
                         ...newMessage, 
                         sender: { name: 'Unknown', phone: '' },
-                        status: 'sent' as const,
-                        isOptimistic: false
+                        isOptimistic: false,
+                        status: 'sent' as const
                       }
                     : msg
                 );
               } else {
-                // Add new real message
-                debugLog(`Adding new real message: ${newMessage.id}`);
+                // Add new message
                 return [...prev, {
                   ...newMessage,
                   sender: { name: 'Unknown', phone: '' },
-                  status: 'sent' as const,
-                  isOptimistic: false
+                  isOptimistic: false,
+                  status: 'sent' as const
                 }].sort((a, b) => 
                   new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                 );
@@ -520,7 +508,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       
       if (!retry && retryCount < 3) {
         setRetryCount(prev => prev + 1);
-        setTimeout(() => loadMessages(true), 2000 * (retryCount + 1));
+        setTimeout(() => loadMessages(true), 1000 * (retryCount + 1));
       } else {
         toast({
           title: 'خطا',
@@ -570,18 +558,26 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       status: 'sending'
     };
 
-    try {
-      setSending(true);
-      
-      // Store optimistic message in ref for matching
-      optimisticMessagesRef.current.set(tempId, optimisticMessage);
-      
-      // Add optimistic message immediately to UI
-      setMessages(prev => [...prev, optimisticMessage].sort((a, b) => 
+    // Add optimistic message IMMEDIATELY to UI with smooth animation
+    setMessages(prev => {
+      const newMessages = [...prev, optimisticMessage];
+      return newMessages.sort((a, b) => 
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      ));
-      debugLog('Added optimistic message:', tempId);
-      
+      );
+    });
+
+    // Store in ref for matching
+    optimisticMessagesRef.current.set(tempId, optimisticMessage);
+    
+    // Scroll to bottom immediately
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+    
+    debugLog('Added optimistic message for instant UI:', tempId);
+
+    // Now handle the actual sending in background
+    try {
       const message = messageText || '';
       const mediaUrl = media?.url;
       const mediaType = media?.type;
@@ -598,12 +594,20 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
       let topicName = '';
       let sentMessage: any = null;
 
+      // Mark as sent immediately after API call starts (don't wait for completion)
+      setTimeout(() => {
+        setMessages(prev => prev.map(msg => 
+          msg.tempId === tempId 
+            ? { ...msg, status: 'sent' as const }
+            : msg
+        ));
+      }, 100); // Very short delay for instant feel
+
       if (selectedRoom) {
         // Group or super group message
         chatType = 'group';
         chatName = selectedRoom.name;
         
-        // Send the message and get the result with message ID
         sentMessage = await messengerService.sendMessage(
           selectedRoom.id, 
           currentUser.id, 
@@ -614,7 +618,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           mediaContent
         );
         
-        // Get topic name for super groups
         if (selectedTopic) {
           topicName = selectedTopic.title;
         }
@@ -647,7 +650,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           chatType = 'private';
           chatName = selectedUser.name;
           
-          const conversationId = await getOrCreateConversationId(currentUser.id, selectedUser.id);
+          const conversationId = await privateMessageService.getOrCreateConversation(currentUser.id, selectedUser.id);
           sentMessage = await privateMessageService.sendMessage(
             currentUser.id,
             selectedUser.id,
@@ -663,14 +666,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
         }
       }
 
-      // Update optimistic message status to sent immediately
-      setMessages(prev => prev.map(msg => 
-        msg.tempId === tempId 
-          ? { ...msg, status: 'sent' as const }
-          : msg
-      ));
-
-      // Send webhook
+      // Send webhook in background
       try {
         await webhookService.sendMessageWebhook({
           messageId: sentMessage?.id || sentMessage,
@@ -695,11 +691,10 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
 
       setNewMessage('');
       
-      // Extended timeout for optimistic message cleanup (only if not replaced)
+      // Keep optimistic message for longer to ensure smooth transition
       setTimeout(() => {
         if (optimisticMessagesRef.current.has(tempId)) {
-          debugLog(`Optimistic message ${tempId} not replaced by real-time, but keeping it as sent`);
-          // Don't remove it, just ensure it's marked as sent
+          debugLog(`Keeping optimistic message ${tempId} as sent - real-time will handle replacement`);
           setMessages(prev => prev.map(msg => 
             msg.tempId === tempId 
               ? { ...msg, status: 'sent' as const, isOptimistic: false }
@@ -707,31 +702,29 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           ));
           optimisticMessagesRef.current.delete(tempId);
         }
-      }, 30000); // 30 second timeout
+      }, 5000); // Keep for 5 seconds to ensure smooth transition
       
     } catch (error) {
       debugLog('Error sending message:', error);
       
-      // Mark message as failed
+      // Mark message as failed but keep it visible
       setMessages(prev => prev.map(msg => 
         msg.tempId === tempId 
           ? { ...msg, status: 'failed' as const }
           : msg
       ));
       
-      // Remove failed message after timeout
+      // Remove failed message after longer timeout
       setTimeout(() => {
         setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
         optimisticMessagesRef.current.delete(tempId);
-      }, 5000); // Keep failed messages visible for 5 seconds
+      }, 8000); // Keep failed messages longer for user to see
       
       toast({
         title: 'خطا',
         description: 'خطا در ارسال پیام',
         variant: 'destructive',
       });
-    } finally {
-      setSending(false);
     }
   };
 
@@ -856,18 +849,6 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                 <WifiOff className="w-3 h-3 text-red-500" />
               )}
             </div>
-            
-            {debugMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleManualRefresh}
-                className="ml-2"
-                disabled={loading}
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            )}
           </div>
           {selectedRoom && chatDescription && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
@@ -922,7 +903,13 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             const messageStatus = message.status || 'sent';
             
             return (
-              <div key={message.tempId || message.id} id={`message-${message.id}`} className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+              <div 
+                key={message.tempId || message.id} 
+                id={`message-${message.id}`} 
+                className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'} ${
+                  message.isOptimistic ? 'animate-fade-in' : ''
+                }`}
+              >
                 <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!isOwnMessage && (
                     <Avatar className="w-8 h-8 flex-shrink-0">
@@ -941,21 +928,21 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                       className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
                         isOwnMessage
                           ? `${message.isOptimistic ? 
-                              messageStatus === 'sending' ? 'bg-blue-400 opacity-70' : 
+                              messageStatus === 'sending' ? 'bg-blue-400 opacity-80' : 
                               messageStatus === 'failed' ? 'bg-red-400 opacity-70' :
-                              'bg-blue-400 opacity-80' 
+                              'bg-blue-500 opacity-90' 
                               : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white rounded-br-md`
                           : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      {/* Status indicator for optimistic messages */}
+                      {/* Enhanced status indicator for optimistic messages */}
                       {message.isOptimistic && (
                         <div className="absolute -top-1 -right-1">
                           {messageStatus === 'sending' && (
-                            <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+                            <div className="w-3 h-3 bg-blue-300 rounded-full animate-pulse" />
                           )}
                           {messageStatus === 'failed' && (
-                            <div className="w-3 h-3 bg-red-500 rounded-full" />
+                            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                           )}
                           {messageStatus === 'sent' && (
                             <div className="w-3 h-3 bg-green-500 rounded-full" />
@@ -1018,11 +1005,9 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                             minute: '2-digit'
                           })}
                         </span>
-                        {message.isOptimistic && (
-                          <span className="ml-1 text-xs opacity-70">
-                            {messageStatus === 'sending' && 'در حال ارسال...'}
-                            {messageStatus === 'failed' && 'ناموفق'}
-                            {messageStatus === 'sent' && 'ارسال شد'}
+                        {message.isOptimistic && messageStatus === 'sending' && (
+                          <span className="ml-1 text-xs opacity-70 animate-pulse">
+                            ...
                           </span>
                         )}
                       </div>
