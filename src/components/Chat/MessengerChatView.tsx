@@ -391,7 +391,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
   };
 
   // Enhanced message sending with better optimistic updates

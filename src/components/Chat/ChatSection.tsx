@@ -34,7 +34,7 @@ const ChatSection: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
   }, [messages]);
 
   // Fetch user avatars for all message senders
@@ -139,7 +139,7 @@ const ChatSection: React.FC = () => {
       setTimeout(() => setOptimisticMessage(null), 1000);
 
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
       }, 100);
 
     } catch (error) {
