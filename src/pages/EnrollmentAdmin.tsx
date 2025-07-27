@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
+import { supabase } from '@/integrations/supabase/client';
 import LeadManagement from '@/components/Admin/LeadManagement';
 
 import Header from '@/components/Layout/Header';
@@ -68,12 +70,14 @@ const LoadingSpinner = () => (
   </div>
 );
 
+type ActiveView = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm' | 'leads';
+
 const EnrollmentAdmin: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm' | 'leads'>('dashboard');
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -124,7 +128,10 @@ const EnrollmentAdmin: React.FC = () => {
         
         console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin, 'Is sales agent:', hasSalesAgentRole);
         
-        if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin || hasSalesAgentRole) {
+        // Check if user has access - include system admin check
+        const isSystemAdmin = userRole === 'admin' || detailedUser.is_messenger_admin;
+        
+        if (allowedRoles.includes(userRole) || isSystemAdmin || hasSalesAgentRole) {
           console.log('User has access');
           setHasAccess(true);
           setUserRole(userRole);
@@ -185,6 +192,7 @@ const EnrollmentAdmin: React.FC = () => {
                 <ul className="text-right space-y-1">
                   <li>• مدیر سیستم</li>
                   <li>• مدیر ثبت‌نام‌ها</li>
+                  <li>• نماینده فروش</li>
                 </ul>
               </div>
               <Button 
@@ -200,6 +208,10 @@ const EnrollmentAdmin: React.FC = () => {
       </div>
     );
   }
+
+  const handleViewChange = (view: string) => {
+    setActiveView(view as ActiveView);
+  };
 
   const renderContent = () => {
     switch (activeView) {
@@ -317,7 +329,7 @@ const EnrollmentAdmin: React.FC = () => {
       <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
           isOpen={isMobileSidebarOpen}
           onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           userRole={userRole}
