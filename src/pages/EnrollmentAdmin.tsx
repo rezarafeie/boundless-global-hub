@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
+import { supabase } from '@/integrations/supabase/client';
 import LeadManagement from '@/components/Admin/LeadManagement';
 
 import Header from '@/components/Layout/Header';
@@ -201,6 +203,10 @@ const EnrollmentAdmin: React.FC = () => {
     );
   }
 
+  const handleViewChange = (view: string) => {
+    setActiveView(view as typeof activeView);
+  };
+
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
@@ -317,7 +323,7 @@ const EnrollmentAdmin: React.FC = () => {
       <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
           isOpen={isMobileSidebarOpen}
           onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           userRole={userRole}
