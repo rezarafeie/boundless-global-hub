@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Plus, Phone, FileText, Trash2, Calendar } from 'lucide-react';
+import { MessageSquare, Plus, Phone, FileText, Trash2, Calendar, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,39 +19,99 @@ interface CRMNote {
   created_by: string;
   created_at: string;
   updated_at: string;
+  user_id: number;
+  course_id: string | null;
+  status: string;
+  course_title?: string;
+}
+
+interface Course {
+  id: string;
+  title: string;
 }
 
 interface UserCRMProps {
   userId: number;
 }
 
+const CRM_TYPES = [
+  { value: 'note', label: 'یادداشت' },
+  { value: 'call', label: 'تماس' },
+  { value: 'message', label: 'پیام' },
+  { value: 'consultation', label: 'جلسه مشاوره' }
+];
+
+const CRM_STATUSES = [
+  { value: 'در انتظار پرداخت', label: 'در انتظار پرداخت' },
+  { value: 'کنسل', label: 'کنسل' },
+  { value: 'موفق', label: 'موفق' },
+  { value: 'پاسخ نداده', label: 'پاسخ نداده' },
+  { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' }
+];
+
 export function UserCRM({ userId }: UserCRMProps) {
   const [notes, setNotes] = useState<CRMNote[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
-  const [newNote, setNewNote] = useState({ type: 'note', content: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Filters
   const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCourse, setFilterCourse] = useState('all');
+  
+  // New note form
+  const [newNote, setNewNote] = useState({
+    type: 'note',
+    content: '',
+    course_id: 'none',
+    status: 'در انتظار پرداخت'
+  });
+  
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchNotes();
+    fetchData();
   }, [userId]);
 
-  const fetchNotes = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch CRM notes for this user
+      const { data: notesData, error: notesError } = await supabase
         .from('crm_notes')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setNotes(data || []);
+      if (notesError) throw notesError;
+
+      // Fetch courses
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title')
+        .eq('is_active', true)
+        .order('title');
+
+      if (coursesError) throw coursesError;
+
+      // Enrich notes with course data
+      const enrichedNotes = (notesData || []).map(note => {
+        const course = coursesData?.find(c => c.id === note.course_id);
+        return {
+          ...note,
+          course_title: course?.title || 'بدون دوره'
+        };
+      });
+
+      setNotes(enrichedNotes);
+      setCourses(coursesData || []);
+      
     } catch (error) {
-      console.error('Error fetching CRM notes:', error);
+      console.error('Error fetching CRM data:', error);
       toast({
         title: "خطا",
-        description: "خطا در بارگذاری یادداشت‌های CRM.",
+        description: "خطا در بارگذاری داده‌های CRM.",
         variant: "destructive"
       });
     } finally {
@@ -59,8 +120,16 @@ export function UserCRM({ userId }: UserCRMProps) {
   };
 
   const addNote = async () => {
-    if (!newNote.content.trim()) return;
+    if (!newNote.content.trim()) {
+      toast({
+        title: "خطا",
+        description: "محتوای یادداشت نمی‌تواند خالی باشد.",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('crm_notes')
@@ -68,7 +137,9 @@ export function UserCRM({ userId }: UserCRMProps) {
           user_id: userId,
           type: newNote.type,
           content: newNote.content,
-          created_by: 'مدیر' // You might want to get this from current user context
+          course_id: newNote.course_id === 'none' ? null : newNote.course_id,
+          status: newNote.status,
+          created_by: 'مدیر'
         });
 
       if (error) throw error;
@@ -78,9 +149,19 @@ export function UserCRM({ userId }: UserCRMProps) {
         description: "یادداشت CRM با موفقیت اضافه شد."
       });
 
-      setNewNote({ type: 'note', content: '' });
+      // Reset form
+      setNewNote({
+        type: 'note',
+        content: '',
+        course_id: 'none',
+        status: 'در انتظار پرداخت'
+      });
+      
+      // Close dialog
       setIsAddingNote(false);
-      fetchNotes();
+      
+      // Refresh data
+      await fetchData();
     } catch (error) {
       console.error('Error adding CRM note:', error);
       toast({
@@ -88,6 +169,8 @@ export function UserCRM({ userId }: UserCRMProps) {
         description: "خطا در افزودن یادداشت CRM.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -105,7 +188,7 @@ export function UserCRM({ userId }: UserCRMProps) {
         description: "یادداشت CRM با موفقیت حذف شد."
       });
 
-      fetchNotes();
+      fetchData();
     } catch (error) {
       console.error('Error deleting CRM note:', error);
       toast({
@@ -119,28 +202,31 @@ export function UserCRM({ userId }: UserCRMProps) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'call':
-        return <Phone className="w-3 h-3 sm:w-4 sm:h-4" />;
+        return <Phone className="w-4 h-4" />;
       case 'message':
-        return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />;
+        return <MessageSquare className="w-4 h-4" />;
+      case 'consultation':
+        return <MessageSquare className="w-4 h-4" />;
       default:
-        return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
+        return <FileText className="w-4 h-4" />;
     }
   };
 
   const getTypeBadge = (type: string) => {
+    const typeLabel = CRM_TYPES.find(t => t.value === type)?.label || type;
+    return <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>;
+  };
+
+  const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
-      note: 'default',
-      call: 'secondary',
-      message: 'outline'
+      'موفق': 'default',
+      'کنسل': 'destructive',
+      'در انتظار پرداخت': 'secondary',
+      'پاسخ نداده': 'outline',
+      'امکان مکالمه نداشت': 'destructive'
     };
     
-    const typeLabels: Record<string, string> = {
-      note: 'یادداشت',
-      call: 'تماس',
-      message: 'پیام'
-    };
-    
-    return <Badge variant={variants[type] || 'default'} className="text-xs">{typeLabels[type] || type}</Badge>;
+    return <Badge variant={variants[status] || 'default'} className="text-xs">{status}</Badge>;
   };
 
   const formatDate = (dateString: string) => {
@@ -153,9 +239,13 @@ export function UserCRM({ userId }: UserCRMProps) {
     });
   };
 
-  const filteredNotes = filterType === 'all' 
-    ? notes 
-    : notes.filter(note => note.type === filterType);
+  // Apply filters
+  const filteredNotes = notes.filter(note => {
+    if (filterType !== 'all' && note.type !== filterType) return false;
+    if (filterStatus !== 'all' && note.status !== filterStatus) return false;
+    if (filterCourse !== 'all' && note.course_id !== filterCourse) return false;
+    return true;
+  });
 
   if (loading) {
     return (
@@ -173,31 +263,20 @@ export function UserCRM({ userId }: UserCRMProps) {
     <div dir="rtl">
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-              فعالیت‌های CRM ({filteredNotes.length})
-            </CardTitle>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="فیلتر" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه انواع</SelectItem>
-                  <SelectItem value="note">یادداشت‌ها</SelectItem>
-                  <SelectItem value="call">تماس‌ها</SelectItem>
-                  <SelectItem value="message">پیام‌ها</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                فعالیت‌های CRM ({filteredNotes.length})
+              </CardTitle>
               <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
                 <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2" size="sm">
+                  <Button className="flex items-center gap-2">
                     <Plus className="w-4 h-4" />
                     افزودن یادداشت
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>افزودن یادداشت CRM</DialogTitle>
                   </DialogHeader>
@@ -209,12 +288,42 @@ export function UserCRM({ userId }: UserCRMProps) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="note">یادداشت</SelectItem>
-                          <SelectItem value="call">گزارش تماس</SelectItem>
-                          <SelectItem value="message">پیام</SelectItem>
+                          {CRM_TYPES.map(type => (
+                            <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    <div>
+                      <Label htmlFor="course">دوره</Label>
+                      <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب دوره" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">بدون دوره</SelectItem>
+                          {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="status">وضعیت</Label>
+                      <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CRM_STATUSES.map(status => (
+                            <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
                     <div>
                       <Label htmlFor="content">محتوا</Label>
                       <Textarea
@@ -225,32 +334,70 @@ export function UserCRM({ userId }: UserCRMProps) {
                         rows={4}
                       />
                     </div>
+                    
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setIsAddingNote(false)}>
                         لغو
                       </Button>
-                      <Button onClick={addNote}>
-                        افزودن یادداشت
+                      <Button onClick={addNote} disabled={isSubmitting}>
+                        {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
                       </Button>
                     </div>
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
+            
+            {/* Filters */}
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                <span className="text-sm font-medium">فیلتر:</span>
+              </div>
+              
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="نوع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه انواع</SelectItem>
+                  {CRM_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="وضعیت" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  {CRM_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterCourse} onValueChange={setFilterCourse}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه دوره‌ها</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
+        
         <CardContent>
           {filteredNotes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               هیچ فعالیت CRM یافت نشد.
-              {filterType !== 'all' && (
-                <p className="mt-2">
-                  فیلتر را تغییر دهید یا{' '}
-                  <Button variant="link" onClick={() => setFilterType('all')} className="p-0 h-auto">
-                    همه فعالیت‌ها را مشاهده کنید
-                  </Button>
-                </p>
-              )}
             </div>
           ) : (
             <div className="space-y-4 sm:space-y-0">
@@ -277,6 +424,11 @@ export function UserCRM({ userId }: UserCRMProps) {
                       <div className="space-y-2">
                         <p className="text-sm leading-relaxed">{note.content}</p>
                         
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {getStatusBadge(note.status)}
+                          <Badge variant="outline">{note.course_title}</Badge>
+                        </div>
+                        
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -296,8 +448,10 @@ export function UserCRM({ userId }: UserCRMProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">نوع</TableHead>
+                      <TableHead className="text-right">دوره</TableHead>
                       <TableHead className="text-right">محتوا</TableHead>
-                      <TableHead className="text-right">ایجاد شده توسط</TableHead>
+                      <TableHead className="text-right">وضعیت</TableHead>
+                      <TableHead className="text-right">نماینده</TableHead>
                       <TableHead className="text-right">تاریخ</TableHead>
                       <TableHead className="text-right">عملیات</TableHead>
                     </TableRow>
@@ -312,16 +466,22 @@ export function UserCRM({ userId }: UserCRMProps) {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <span className="text-sm">{note.course_title}</span>
+                        </TableCell>
+                        <TableCell>
                           <div className="max-w-md">
                             <p className="text-sm leading-relaxed">{note.content}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(note.status)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
                             <span className="text-sm">{formatDate(note.created_at)}</span>
                           </div>
                         </TableCell>
