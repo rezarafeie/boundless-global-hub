@@ -378,65 +378,72 @@ export const messengerService = {
 
   async getRooms(): Promise<ChatRoom[]> {
     try {
-      // Get all active rooms with their last message and unread count
-      const { data: rooms, error } = await supabase
+      console.log('Fetching rooms with last message data...');
+      
+      // First get all active rooms
+      const { data: rooms, error: roomsError } = await supabase
         .from('chat_rooms')
-        .select(`
-          *,
-          last_message:messenger_messages(
-            message,
-            created_at,
-            sender:chat_users!messenger_messages_sender_id_fkey(name)
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      if (!rooms) return [];
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        throw roomsError;
+      }
 
-      // Process each room to get the actual last message and unread count
-      const processedRooms = await Promise.all(
+      if (!rooms || rooms.length === 0) {
+        console.log('No rooms found');
+        return [];
+      }
+
+      // Get last message for each room
+      const roomsWithLastMessage = await Promise.all(
         rooms.map(async (room) => {
-          // Get the actual last message for this room
-          const { data: lastMessage } = await supabase
-            .from('messenger_messages')
-            .select(`
-              message,
-              created_at,
-              sender:chat_users!messenger_messages_sender_id_fkey(name)
-            `)
-            .eq('room_id', room.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          try {
+            // Get the last message for this room
+            const { data: lastMessage } = await supabase
+              .from('messenger_messages')
+              .select(`
+                id,
+                message,
+                created_at,
+                sender_id,
+                chat_users!inner(name)
+              `)
+              .eq('room_id', room.id)
+              .order('created_at', { ascending: false })
+              .limit(1);
 
-          // Get unread count for this room
-          // For now, we'll use a simple count of recent messages
-          // In a real implementation, you'd track read status per user
-          const { count: unreadCount } = await supabase
-            .from('messenger_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('room_id', room.id)
-            .eq('is_read', false);
+            // Get unread count for this room (for now, we'll use 0 as placeholder)
+            // TODO: Implement proper unread count based on user's last read timestamp
+            const unreadCount = 0;
 
-          return {
-            ...room,
-            last_message: lastMessage ? {
-              message: lastMessage.message,
-              created_at: lastMessage.created_at,
-              sender_name: lastMessage.sender?.name
-            } : undefined,
-            unread_count: unreadCount || 0
-          };
+            return {
+              ...room,
+              last_message: lastMessage?.[0] ? {
+                message: lastMessage[0].message,
+                created_at: lastMessage[0].created_at,
+                sender_name: lastMessage[0].chat_users?.name || 'کاربر'
+              } : null,
+              unread_count: unreadCount
+            };
+          } catch (error) {
+            console.error(`Error getting last message for room ${room.id}:`, error);
+            return {
+              ...room,
+              last_message: null,
+              unread_count: 0
+            };
+          }
         })
       );
 
-      return processedRooms;
+      console.log('Successfully fetched rooms with last message data:', roomsWithLastMessage.length);
+      return roomsWithLastMessage;
     } catch (error) {
-      console.error('Error fetching rooms:', error);
-      return [];
+      console.error('Error in getRooms:', error);
+      throw error;
     }
   },
 
