@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +31,12 @@ interface Course {
   title: string;
 }
 
+interface ChatUser {
+  id: number;
+  name: string;
+  phone: string;
+}
+
 const CRM_TYPES = [
   { value: 'note', label: 'یادداشت' },
   { value: 'call', label: 'تماس' },
@@ -50,9 +55,11 @@ const CRM_STATUSES = [
 export function EnrollmentCRM() {
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Filters
   const [filterCourse, setFilterCourse] = useState('all');
@@ -65,7 +72,8 @@ export function EnrollmentCRM() {
     type: 'note',
     content: '',
     course_id: 'none',
-    status: 'در انتظار پرداخت'
+    status: 'در انتظار پرداخت',
+    user_id: ''
   });
   
   const { toast } = useToast();
@@ -93,10 +101,12 @@ export function EnrollmentCRM() {
 
       if (coursesError) throw coursesError;
 
-      // Fetch chat users for user names
+      // Fetch chat users for user names and user selection
       const { data: chatUsersData, error: chatUsersError } = await supabase
         .from('chat_users')
-        .select('id, name, phone');
+        .select('id, name, phone')
+        .eq('is_approved', true)
+        .order('name');
 
       if (chatUsersError) throw chatUsersError;
 
@@ -115,6 +125,7 @@ export function EnrollmentCRM() {
 
       setNotes(enrichedNotes);
       setCourses(coursesData || []);
+      setChatUsers(chatUsersData || []);
       
       // Extract unique agents
       const uniqueAgents = [...new Set(enrichedNotes.map(note => note.created_by))];
@@ -133,13 +144,30 @@ export function EnrollmentCRM() {
   };
 
   const addNote = async () => {
-    if (!newNote.content.trim()) return;
+    if (!newNote.content.trim()) {
+      toast({
+        title: "خطا",
+        description: "محتوای یادداشت نمی‌تواند خالی باشد.",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    if (!newNote.user_id) {
+      toast({
+        title: "خطا",
+        description: "لطفاً کاربر را انتخاب کنید.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('crm_notes')
         .insert({
-          user_id: 1, // This should be dynamic based on selected user
+          user_id: parseInt(newNote.user_id),
           type: newNote.type,
           content: newNote.content,
           course_id: newNote.course_id === 'none' ? null : newNote.course_id,
@@ -158,7 +186,8 @@ export function EnrollmentCRM() {
         type: 'note',
         content: '',
         course_id: 'none',
-        status: 'در انتظار پرداخت'
+        status: 'در انتظار پرداخت',
+        user_id: ''
       });
       setIsAddingNote(false);
       fetchData();
@@ -169,6 +198,8 @@ export function EnrollmentCRM() {
         description: "خطا در افزودن یادداشت CRM.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -256,6 +287,22 @@ export function EnrollmentCRM() {
                   </DialogHeader>
                   <div className="space-y-4" dir="rtl">
                     <div>
+                      <Label htmlFor="user">کاربر</Label>
+                      <Select value={newNote.user_id} onValueChange={(value) => setNewNote({...newNote, user_id: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب کاربر" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {chatUsers.map(user => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.name} ({user.phone})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
                       <Label htmlFor="type">نوع</Label>
                       <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
                         <SelectTrigger>
@@ -313,8 +360,8 @@ export function EnrollmentCRM() {
                       <Button variant="outline" onClick={() => setIsAddingNote(false)}>
                         لغو
                       </Button>
-                      <Button onClick={addNote}>
-                        افزودن یادداشت
+                      <Button onClick={addNote} disabled={isSubmitting}>
+                        {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
                       </Button>
                     </div>
                   </div>
