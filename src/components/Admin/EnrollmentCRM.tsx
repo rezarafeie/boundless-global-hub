@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, AlertCircle } from 'lucide-react';
+import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -97,6 +98,12 @@ export function EnrollmentCRM() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [enrollmentFilterCourse, setEnrollmentFilterCourse] = useState('all');
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalEnrollments, setTotalEnrollments] = useState(0);
+  const enrollmentsPerPage = 50;
+  const totalPages = Math.ceil(totalEnrollments / enrollmentsPerPage);
+  
   // New note form
   const [newNote, setNewNote] = useState({
     type: 'note',
@@ -112,6 +119,10 @@ export function EnrollmentCRM() {
 
   useEffect(() => {
     fetchEnrollmentsWithoutCRM();
+  }, [enrollmentFilterCourse, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [enrollmentFilterCourse]);
 
   const searchUsers = async () => {
@@ -226,6 +237,21 @@ export function EnrollmentCRM() {
     try {
       setLoadingEnrollments(true);
       
+      // Get total count first
+      let countQuery = supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .eq('payment_status', 'completed')
+        .not('chat_user_id', 'is', null);
+
+      // Apply course filter to count
+      if (enrollmentFilterCourse !== 'all') {
+        countQuery = countQuery.eq('course_id', enrollmentFilterCourse);
+      }
+
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
+
       // Build query to get enrollments without CRM records
       let query = supabase
         .from('enrollments')
@@ -245,12 +271,17 @@ export function EnrollmentCRM() {
           )
         `)
         .eq('payment_status', 'completed')
-        .not('chat_user_id', 'is', null);
+        .not('chat_user_id', 'is', null)
+        .order('created_at', { ascending: false });
 
       // Apply course filter
       if (enrollmentFilterCourse !== 'all') {
         query = query.eq('course_id', enrollmentFilterCourse);
       }
+
+      // Apply pagination
+      const offset = (currentPage - 1) * enrollmentsPerPage;
+      query = query.range(offset, offset + enrollmentsPerPage - 1);
 
       const { data: enrollments, error } = await query;
 
@@ -267,6 +298,33 @@ export function EnrollmentCRM() {
       const enrollmentsWithoutCRMRecords = (enrollments || []).filter(
         enrollment => enrollment.chat_user_id && !userIdsWithCRM.has(enrollment.chat_user_id)
       );
+
+      // Get total count of enrollments without CRM for pagination
+      const allEnrollmentsQuery = supabase
+        .from('enrollments')
+        .select('chat_user_id')
+        .eq('payment_status', 'completed')
+        .not('chat_user_id', 'is', null);
+
+      if (enrollmentFilterCourse !== 'all') {
+        allEnrollmentsQuery.eq('course_id', enrollmentFilterCourse);
+      }
+
+      const { data: allEnrollments } = await allEnrollmentsQuery;
+      
+      if (allEnrollments) {
+        const allEnrollmentsWithCRM = await supabase
+          .from('crm_notes')
+          .select('user_id')
+          .in('user_id', allEnrollments.map(e => e.chat_user_id).filter(Boolean));
+
+        const allUserIdsWithCRM = new Set(allEnrollmentsWithCRM.data?.map(n => n.user_id) || []);
+        const totalWithoutCRM = allEnrollments.filter(
+          enrollment => enrollment.chat_user_id && !allUserIdsWithCRM.has(enrollment.chat_user_id)
+        ).length;
+        
+        setTotalEnrollments(totalWithoutCRM);
+      }
 
       setEnrollmentsWithoutCRM(enrollmentsWithoutCRMRecords);
     } catch (error) {
@@ -478,9 +536,9 @@ export function EnrollmentCRM() {
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-orange-500" />
                 ثبت‌نام‌های بدون CRM
-                {enrollmentsWithoutCRM.length > 0 && (
+                {totalEnrollments > 0 && (
                   <Badge variant="destructive" className="text-xs">
-                    {enrollmentsWithoutCRM.length}
+                    {totalEnrollments}
                   </Badge>
                 )}
               </h3>
@@ -517,77 +575,112 @@ export function EnrollmentCRM() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {isMobile ? (
-                      enrollmentsWithoutCRM.map((enrollment) => (
-                        <Card key={enrollment.id} className="border-orange-200 bg-orange-50">
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium">{enrollment.full_name}</div>
-                                <Badge className="bg-orange-100 text-orange-800">
-                                  نیاز به CRM
-                                </Badge>
+                  <>
+                    <div className="space-y-3">
+                      {isMobile ? (
+                        enrollmentsWithoutCRM.map((enrollment) => (
+                          <Card key={enrollment.id} className="border-orange-200 bg-orange-50">
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium">{enrollment.full_name}</div>
+                                  <Badge className="bg-orange-100 text-orange-800">
+                                    نیاز به CRM
+                                  </Badge>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                  <div><span className="font-medium">دوره:</span> {enrollment.courses.title}</div>
+                                  <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
+                                  <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
+                                  <div><span className="font-medium">مبلغ:</span> {formatPrice(enrollment.payment_amount)}</div>
+                                  <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCreateCRMForEnrollment(enrollment)}
+                                  className="w-full"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  ایجاد CRM
+                                </Button>
                               </div>
-                              <div className="space-y-2 text-sm">
-                                <div><span className="font-medium">دوره:</span> {enrollment.courses.title}</div>
-                                <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
-                                <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
-                                <div><span className="font-medium">مبلغ:</span> {formatPrice(enrollment.payment_amount)}</div>
-                                <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => handleCreateCRMForEnrollment(enrollment)}
-                                className="w-full"
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                ایجاد CRM
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      <div className="border border-orange-200 rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader className="bg-orange-50">
-                            <TableRow>
-                              <TableHead>نام</TableHead>
-                              <TableHead>دوره</TableHead>
-                              <TableHead>ایمیل</TableHead>
-                              <TableHead>تلفن</TableHead>
-                              <TableHead>مبلغ</TableHead>
-                              <TableHead>تاریخ ثبت‌نام</TableHead>
-                              <TableHead>عملیات</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {enrollmentsWithoutCRM.map((enrollment) => (
-                              <TableRow key={enrollment.id} className="hover:bg-orange-50">
-                                <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                                <TableCell>{enrollment.courses.title}</TableCell>
-                                <TableCell>{enrollment.email}</TableCell>
-                                <TableCell>{enrollment.phone}</TableCell>
-                                <TableCell>{formatPrice(enrollment.payment_amount)}</TableCell>
-                                <TableCell>{formatDate(enrollment.created_at)}</TableCell>
-                                <TableCell>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleCreateCRMForEnrollment(enrollment)}
-                                    className="bg-orange-600 hover:bg-orange-700"
-                                  >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    ایجاد CRM
-                                  </Button>
-                                </TableCell>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="border border-orange-200 rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader className="bg-orange-50">
+                              <TableRow>
+                                <TableHead>نام</TableHead>
+                                <TableHead>دوره</TableHead>
+                                <TableHead>ایمیل</TableHead>
+                                <TableHead>تلفن</TableHead>
+                                <TableHead>مبلغ</TableHead>
+                                <TableHead>تاریخ ثبت‌نام</TableHead>
+                                <TableHead>عملیات</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {enrollmentsWithoutCRM.map((enrollment) => (
+                                <TableRow key={enrollment.id} className="hover:bg-orange-50">
+                                  <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                                  <TableCell>{enrollment.courses.title}</TableCell>
+                                  <TableCell>{enrollment.email}</TableCell>
+                                  <TableCell>{enrollment.phone}</TableCell>
+                                  <TableCell>{formatPrice(enrollment.payment_amount)}</TableCell>
+                                  <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                                  <TableCell>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleCreateCRMForEnrollment(enrollment)}
+                                      className="bg-orange-600 hover:bg-orange-700"
+                                    >
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      ایجاد CRM
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-sm text-muted-foreground">
+                          نمایش {(currentPage - 1) * enrollmentsPerPage + 1} تا{' '}
+                          {Math.min(currentPage * enrollmentsPerPage, totalEnrollments)} از {totalEnrollments} ثبت‌نام
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1 || loadingEnrollments}
+                          >
+                            <ChevronRight className="h-4 w-4 mr-2" />
+                            قبلی
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            صفحه {currentPage} از {totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage === totalPages || loadingEnrollments}
+                          >
+                            بعدی
+                            <ChevronLeft className="h-4 w-4 ml-2" />
+                          </Button>
+                        </div>
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
             )}
