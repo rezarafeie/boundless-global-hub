@@ -8,30 +8,31 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ReplyProvider } from "@/contexts/ReplyContext";
-import { NotificationErrorBoundary } from "@/components/NotificationErrorBoundary";
-import { OfflineDetector } from "@/components/OfflineDetector";
-import { PurpleLoader } from "@/components/PurpleLoader";
+import NotificationErrorBoundary from "@/components/NotificationErrorBoundary";
+import OfflineDetector from "@/components/OfflineDetector";
+import PurpleLoader from "@/components/PurpleLoader";
 import { lazy, Suspense } from "react";
-const Landing = lazy(() => import("./pages/Landing"));
-const Home = lazy(() => import("./pages/Home"));
-const Pricing = lazy(() => import("./pages/Pricing"));
-const Contact = lazy(() => import("./pages/Contact"));
-const About = lazy(() => import("./pages/About"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Terms = lazy(() => import("./pages/Terms"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Chat = lazy(() => import("./pages/Chat"));
-const Live = lazy(() => import("./pages/Live"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Course = lazy(() => import("./pages/Course"));
-const Courses = lazy(() => import("./pages/Courses"));
-const Module = lazy(() => import("./pages/Module"));
-const Enrollment = lazy(() => import("./pages/Enrollment"));
-const EnrollmentAdmin = lazy(() => import("./pages/EnrollmentAdmin"));
-const Admin = lazy(() => import("./pages/Admin"));
-const EmailSettings = lazy(() => import("./pages/EmailSettings"));
-const ShortLinkLanding = lazy(() => import("./pages/ShortLinkLanding"));
-const Test = lazy(() => import("./pages/Test"));
+const Landing = lazy(() => import("@/pages/Index"));
+const Home = lazy(() => import("@/pages/Dashboard"));
+const Pricing = lazy(() => import("@/pages/Pricing"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const About = lazy(() => import("@/pages/About"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
+const Terms = lazy(() => import("@/pages/Terms"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Chat = lazy(() => import("@/pages/Chat"));
+const Live = lazy(() => import("@/pages/Live"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const Course = lazy(() => import("@/pages/Course"));
+const Courses = lazy(() => import("@/pages/Courses"));
+const Module = lazy(() => import("@/pages/Module"));
+const Enrollment = lazy(() => import("@/pages/Enrollment"));
+const EnrollmentAdmin = lazy(() => import("@/pages/EnrollmentAdmin"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const EmailSettings = lazy(() => import("@/pages/EmailSettings"));
+const ShortLinkLanding = lazy(() => import("@/pages/ShortLinkLanding"));
+const Test = lazy(() => import("@/pages/Test"));
+const CRMAdmin = lazy(() => import("@/pages/CRMAdmin"));
 import PasswordReset from "@/pages/PasswordReset";
 import PasswordUpdate from "@/pages/PasswordUpdate";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -118,9 +119,8 @@ import MessengerChatOfflinePageLayout from "@/components/Messenger/MessengerChat
 import MessengerChatTimeoutPageLayout from "@/components/Messenger/MessengerChatTimeoutPageLayout";
 import MessengerChatServerErrorPageLayout from "@/components/Messenger/MessengerChatServerErrorPageLayout";
 import MessengerChatServiceUnavailablePageLayout from "@/components/Messenger/MessengerChatServiceUnavailablePageLayout";
-import MessengerChatGatewayTimeoutPageLayout from "@/components/Messenger/MessengerChatGatewayTimeoutLayout";
+import MessengerChatGatewayTimeoutPageLayout from "@/components/Messenger/MessengerChatGatewayTimeoutPageLayout";
 import MessengerChatBadGatewayPageLayout from "@/components/Messenger/MessengerChatBadGatewayPageLayout";
-const CRMAdmin = lazy(() => import("./pages/CRMAdmin"));
 const queryClient = new QueryClient();
 
 function App() {
@@ -162,6 +162,7 @@ function App() {
                           <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
                           <Route path="/admin" element={<Admin />} />
                           <Route path="/enroll/admin/email" element={<EmailSettings />} />
+                          <Route path="/enroll/admin/crm" element={<CRMAdmin />} />
                           <Route path="/s/:slug" element={<ShortLinkLanding />} />
                           <Route path="/test" element={<Test />} />
                           <Route path="/messenger" element={<Messenger />}>
@@ -244,7 +245,6 @@ function App() {
                               <Route path="bad-gateway" element={<MessengerChatBadGatewayPage />} />
                             </Route>
                           </Route>
-                          <Route path="/enroll/admin/crm" element={<CRMAdmin />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </Suspense>
