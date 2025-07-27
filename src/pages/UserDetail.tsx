@@ -238,44 +238,95 @@ const UserDetail: React.FC = () => {
               </div>
 
               <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} ${isMobile ? 'grid-cols-2 gap-1' : ''}`}>
-                  <TabsTrigger value="overview" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
+                <TabsList className={`
+                  w-full
+                  ${isMobile 
+                    ? 'grid-cols-2 gap-1 h-auto p-1' 
+                    : isAdmin 
+                      ? 'grid-cols-6' 
+                      : 'grid-cols-5'
+                  }
+                  grid
+                `}>
+                  <TabsTrigger 
+                    value="overview" 
+                    className={`
+                      flex items-center justify-center gap-1 
+                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
+                      whitespace-nowrap
+                    `}
+                  >
                     <User className="w-4 h-4" />
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>نمای کلی</span>
+                    <span>نمای کلی</span>
                   </TabsTrigger>
-                  <TabsTrigger value="enrollments" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
+                  <TabsTrigger 
+                    value="enrollments" 
+                    className={`
+                      flex items-center justify-center gap-1 
+                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
+                      whitespace-nowrap
+                    `}
+                  >
                     <CreditCard className="w-4 h-4" />
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>ثبت‌نام‌ها</span>
+                    <span>ثبت‌نام‌ها</span>
                   </TabsTrigger>
-                  <TabsTrigger value="licenses" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
+                  <TabsTrigger 
+                    value="licenses" 
+                    className={`
+                      flex items-center justify-center gap-1 
+                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
+                      whitespace-nowrap
+                    `}
+                  >
                     <Key className="w-4 h-4" />
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>لایسنس‌ها</span>
+                    <span>لایسنس‌ها</span>
                   </TabsTrigger>
-                  <TabsTrigger value="crm" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
+                  <TabsTrigger 
+                    value="crm" 
+                    className={`
+                      flex items-center justify-center gap-1 
+                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
+                      whitespace-nowrap
+                    `}
+                  >
                     <MessageSquare className="w-4 h-4" />
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>مدیریت ارتباط</span>
+                    <span>مدیریت ارتباط</span>
                   </TabsTrigger>
-                  <TabsTrigger value="activity" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
+                  <TabsTrigger 
+                    value="activity" 
+                    className={`
+                      flex items-center justify-center gap-1 
+                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
+                      whitespace-nowrap
+                    `}
+                  >
                     <Activity className="w-4 h-4" />
-                    <span className={isMobile ? 'hidden sm:inline' : ''}>فعالیت‌ها</span>
+                    <span>فعالیت‌ها</span>
                   </TabsTrigger>
                   {isAdmin && (
-                    <TabsTrigger value="roles" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
+                    <TabsTrigger 
+                      value="roles" 
+                      className={`
+                        flex items-center justify-center gap-1 
+                        ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
+                        whitespace-nowrap
+                      `}
+                    >
                       <Shield className="w-4 h-4" />
-                      <span className={isMobile ? 'hidden sm:inline' : ''}>نقش‌ها</span>
+                      <span>نقش‌ها</span>
                     </TabsTrigger>
                   )}
                 </TabsList>
-                <TabsContent value="overview" className="mt-6 text-right">
+                <TabsContent value="overview" className="mt-6 text-right" dir="rtl">
                   <UserOverview user={user} />
                 </TabsContent>
-                <TabsContent value="enrollments" className="mt-6 text-right">
+                <TabsContent value="enrollments" className="mt-6 text-right" dir="rtl">
                   <UserEnrollments userId={user.id} />
                 </TabsContent>
-                <TabsContent value="licenses" className="mt-6 text-right">
+                <TabsContent value="licenses" className="mt-6 text-right" dir="rtl">
                   <UserLicenses userId={user.id} userPhone={user.phone} />
                 </TabsContent>
-                <TabsContent value="crm" className="mt-6 text-right">
+                <TabsContent value="crm" className="mt-6 text-right" dir="rtl">
                   <UserCRM 
                     userId={user.id}
                     userName={user.name}
@@ -283,11 +334,11 @@ const UserDetail: React.FC = () => {
                     userEmail={user.email}
                   />
                 </TabsContent>
-                <TabsContent value="activity" className="mt-6 text-right">
+                <TabsContent value="activity" className="mt-6 text-right" dir="rtl">
                   <UserActivity userId={user.id} />
                 </TabsContent>
                 {isAdmin && (
-                  <TabsContent value="roles" className="mt-6 text-right">
+                  <TabsContent value="roles" className="mt-6 text-right" dir="rtl">
                     <UserRoleManagement userId={user.id} />
                   </TabsContent>
                 )}
