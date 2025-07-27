@@ -386,6 +386,8 @@ const LeadManagement: React.FC = () => {
 
   const fetchAgentSummaries = async () => {
     try {
+      console.log('Fetching agent summaries...');
+      
       const { data, error } = await supabase
         .from('sales_agents')
         .select(`
@@ -398,9 +400,12 @@ const LeadManagement: React.FC = () => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
+        console.log('No active sales agents found');
         setAgentSummaries([]);
         return;
       }
+
+      console.log('Found agents:', data.length);
 
       // Get user names
       const userIds = data.map(agent => agent.user_id);
@@ -415,13 +420,15 @@ const LeadManagement: React.FC = () => {
 
       const userMap = new Map(usersData?.map(u => [u.id, u]) || []);
 
-      // Get assignments for each agent
+      // Get all assignments for these agents
       const agentIds = data.map(agent => agent.id);
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('lead_assignments')
         .select(`
           sales_agent_id,
-          enrollment_id
+          enrollment_id,
+          status,
+          assigned_at
         `)
         .in('sales_agent_id', agentIds);
 
@@ -429,13 +436,15 @@ const LeadManagement: React.FC = () => {
         console.error('Error fetching assignments:', assignmentsError);
       }
 
+      console.log('Found assignments:', assignmentsData?.length || 0);
+
       // Get enrollment data for sales calculations
       const enrollmentIds = assignmentsData?.map(a => a.enrollment_id) || [];
       let enrollmentsData: any[] = [];
       if (enrollmentIds.length > 0) {
         const { data: enrollData, error: enrollError } = await supabase
           .from('enrollments')
-          .select('id, payment_amount, payment_status')
+          .select('id, payment_amount, payment_status, chat_user_id')
           .in('id', enrollmentIds);
 
         if (enrollError) {
@@ -447,54 +456,59 @@ const LeadManagement: React.FC = () => {
 
       const enrollmentMap = new Map(enrollmentsData.map(e => [e.id, e]));
 
+      // Get all CRM notes for call tracking
+      const { data: allCrmData, error: crmError } = await supabase
+        .from('crm_notes')
+        .select('id, user_id, type, created_by')
+        .eq('type', 'call');
+
+      if (crmError) {
+        console.error('Error fetching CRM notes:', crmError);
+      }
+
       // Calculate summaries for each agent
-      const summaries: AgentSummary[] = await Promise.all(
-        data.map(async (agent) => {
-          const user = userMap.get(agent.user_id);
-          const agentAssignments = assignmentsData?.filter(a => a.sales_agent_id === agent.id) || [];
-          
-          // Get CRM notes count for calls
-          const { data: crmData, error: crmError } = await supabase
-            .from('crm_notes')
-            .select('id')
-            .eq('user_id', agent.user_id)
-            .eq('type', 'call');
+      const summaries: AgentSummary[] = data.map((agent) => {
+        const user = userMap.get(agent.user_id);
+        const agentAssignments = assignmentsData?.filter(a => a.sales_agent_id === agent.id) || [];
+        
+        // Count calls made by this agent (using agent's name in created_by)
+        const agentName = user?.name || '';
+        const totalCalls = allCrmData?.filter(crm => 
+          crm.created_by === agentName
+        ).length || 0;
+        
+        const totalLeads = agentAssignments.length;
+        
+        // Calculate sales
+        const completedSales = agentAssignments.filter(assignment => {
+          const enrollment = enrollmentMap.get(assignment.enrollment_id);
+          return enrollment && ['success', 'completed'].includes(enrollment.payment_status);
+        }).length;
 
-          if (crmError) {
-            console.error('Error fetching CRM notes:', crmError);
+        const totalSalesAmount = agentAssignments.reduce((sum, assignment) => {
+          const enrollment = enrollmentMap.get(assignment.enrollment_id);
+          if (enrollment && ['success', 'completed'].includes(enrollment.payment_status)) {
+            return sum + (Number(enrollment.payment_amount) || 0);
           }
+          return sum;
+        }, 0);
 
-          const totalLeads = agentAssignments.length;
-          const totalCalls = crmData?.length || 0;
-          
-          // Calculate sales
-          const completedSales = agentAssignments.filter(assignment => {
-            const enrollment = enrollmentMap.get(assignment.enrollment_id);
-            return enrollment && ['success', 'completed'].includes(enrollment.payment_status);
-          }).length;
+        const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
 
-          const totalSalesAmount = agentAssignments.reduce((sum, assignment) => {
-            const enrollment = enrollmentMap.get(assignment.enrollment_id);
-            if (enrollment && ['success', 'completed'].includes(enrollment.payment_status)) {
-              return sum + (enrollment.payment_amount || 0);
-            }
-            return sum;
-          }, 0);
+        console.log(`Agent ${agentName}: leads=${totalLeads}, calls=${totalCalls}, sales=${completedSales}, amount=${totalSalesAmount}`);
 
-          const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
+        return {
+          agent_id: agent.id,
+          agent_name: agentName || 'نامشخص',
+          total_leads: totalLeads,
+          total_calls: totalCalls,
+          total_sales: completedSales,
+          total_sales_amount: totalSalesAmount,
+          conversion_rate: conversionRate
+        };
+      });
 
-          return {
-            agent_id: agent.id,
-            agent_name: user?.name || 'نامشخص',
-            total_leads: totalLeads,
-            total_calls: totalCalls,
-            total_sales: completedSales,
-            total_sales_amount: totalSalesAmount,
-            conversion_rate: conversionRate
-          };
-        })
-      );
-
+      console.log('Agent summaries calculated:', summaries);
       setAgentSummaries(summaries);
     } catch (error) {
       console.error('Error fetching agent summaries:', error);
