@@ -154,9 +154,7 @@ const BorderlessHubMessenger: React.FC = () => {
       setUser(existingUser);
       setNotificationToken(existingUser.notification_token);
 
-      console.log('Loading chat rooms...');
       const chatRooms = await messengerService.getRooms();
-      console.log('Chat rooms loaded:', chatRooms);
       setRooms(chatRooms);
 
       const privateChats = await privateMessageService.getUserConversations(existingUser.id, sessionToken);
@@ -392,32 +390,27 @@ const BorderlessHubMessenger: React.FC = () => {
     id: `group-${room.id}`,
     type: 'group' as const,
     name: room.name,
-    lastMessage: room.last_message?.message || 'هنوز پیامی وجود ندارد',
-    lastMessageTime: room.last_message?.created_at 
-      ? new Date(room.last_message.created_at).toLocaleTimeString('fa-IR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : '',
-    unreadCount: room.unread_count || 0,
+    lastMessage: 'آخرین پیام',
+    lastMessageTime: '12:00',
+    unreadCount: 0,
     data: room
   }));
 
-  // Process conversations for unified view
-  const conversationItems: UnifiedChatItem[] = conversations.map(conv => ({
-    id: `private-${conv.id}`,
-    type: 'private' as const,
-    name: conv.other_user?.name || 'نامشخص',
-    lastMessage: conv.last_message?.message || 'پیامی وجود ندارد',
-    lastMessageTime: conv.last_message?.created_at 
-      ? new Date(conv.last_message.created_at).toLocaleTimeString('fa-IR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : '',
-    unreadCount: conv.unread_count || 0,
-    data: conv
-  }));
+      // Process conversations for unified view
+      const conversationItems: UnifiedChatItem[] = conversations.map(conv => ({
+        id: `private-${conv.id}`,
+        type: 'private' as const,
+        name: conv.other_user?.name || 'نامشخص',
+        lastMessage: conv.last_message?.message || 'پیامی وجود ندارد',
+        lastMessageTime: conv.last_message?.created_at 
+          ? new Date(conv.last_message.created_at).toLocaleTimeString('fa-IR', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '',
+        unreadCount: conv.unread_count || 0,
+        data: conv
+      }));
 
   // Process support conversations for unified view
   const supportItems: UnifiedChatItem[] = supportConversations.map(conv => ({
@@ -522,65 +515,42 @@ const BorderlessHubMessenger: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              {chatItems.map((item) => (
-                <div
-                  key={item.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors ${
-                    (selectedRoom?.id === (item.data as ChatRoom).id) || 
-                    (selectedUser?.id === (item.data as PrivateConversation).other_user?.id)
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                      : 'border border-transparent'
-                  }`}
-                  onClick={() => {
-                    if (item.type === 'group') {
-                      handleRoomSelect(item.data as ChatRoom);
-                    } else if (item.type === 'private') {
-                      handleUserSelect((item.data as PrivateConversation).other_user);
-                    } else if (item.type === 'support') {
-                      handleSupportSelect(item.data);
-                    }
-                  }}
-                >
-                  <div className="relative">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage 
-                        src={(item.data as any).avatar_url || (item.data as any).other_user?.avatar_url} 
-                        alt={item.name} 
-                      />
-                      <AvatarFallback 
-                        style={{ backgroundColor: getAvatarColor(item.name) }}
-                        className="text-white font-medium text-sm"
-                      >
-                        {item.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {item.unreadCount > 0 && (
-                      <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                        {item.unreadCount > 9 ? '9+' : item.unreadCount}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                        {item.name}
-                      </div>
-                      {item.lastMessageTime && (
-                        <div className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
-                          {item.lastMessageTime}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {item.lastMessage}
-                    </div>
-                  </div>
+            chatItems.map((item) => (
+              <div
+                key={item.id}
+                className={`flex items-center gap-3 p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer ${
+                  (selectedRoom?.id === (item.data as ChatRoom).id) || (selectedUser?.id === (item.data as PrivateConversation).other_user?.id)
+                    ? 'bg-blue-50 dark:bg-blue-900'
+                    : ''
+                }`}
+                onClick={() => {
+                  if (item.type === 'group') {
+                    handleRoomSelect(item.data as ChatRoom);
+                  } else if (item.type === 'private') {
+                    handleUserSelect((item.data as PrivateConversation).other_user);
+                  } else if (item.type === 'support') {
+                    handleSupportSelect(item.data);
+                  }
+                }}
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={(item.data as any).avatar_url || (item.data as any).other_user?.avatar_url} alt={item.name} />
+                  <AvatarFallback 
+                    style={{ backgroundColor: getAvatarColor(item.name) }}
+                    className="text-white font-medium text-xs"
+                  >
+                    {item.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-slate-900 dark:text-white">{item.name}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{item.lastMessage}</div>
                 </div>
-              ))}
-            </div>
+                {item.unreadCount > 0 && (
+                  <Badge variant="secondary">{item.unreadCount}</Badge>
+                )}
+              </div>
+            ))
           )}
         </ScrollArea>
 
