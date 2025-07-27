@@ -1,4 +1,3 @@
-
 export interface Announcement {
   id: number;
   title: string;
@@ -172,4 +171,42 @@ export interface ShortLinkInsert {
   slug?: string;
   original_url: string;
   created_by?: string;
+}
+
+export interface SalesAgent {
+  id: number;
+  user_id: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SalesAgentCourse {
+  id: number;
+  sales_agent_id: number;
+  course_id: string;
+  created_at: string;
+}
+
+export interface LeadAssignment {
+  id: number;
+  enrollment_id: string;
+  sales_agent_id: number;
+  assigned_at: string;
+  assigned_by: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SalesAgentCourseInsert {
+  sales_agent_id: number;
+  course_id: string;
+}
+
+export interface LeadAssignmentInsert {
+  enrollment_id: string;
+  sales_agent_id: number;
+  assigned_by: number;
+  status?: string;
 }
