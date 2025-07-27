@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,13 +75,20 @@ const CRMAdmin: React.FC = () => {
 
       if (error) throw error;
       
-      // Filter and properly type the data
-      const validNotes = (data || []).filter(note => 
-        note && (
-          !note.chat_users || 
-          (typeof note.chat_users === 'object' && note.chat_users !== null && 'name' in note.chat_users)
-        )
-      ) as CRMNote[];
+      // Properly type and filter the data
+      const validNotes: CRMNote[] = (data || []).map(note => ({
+        id: note.id,
+        type: note.type,
+        content: note.content,
+        created_by: note.created_by,
+        created_at: note.created_at,
+        updated_at: note.updated_at,
+        user_id: note.user_id,
+        course_id: note.course_id,
+        status: note.status,
+        courses: note.courses || null,
+        chat_users: note.chat_users || null
+      }));
       
       setNotes(validNotes);
       
@@ -223,7 +229,7 @@ const CRMAdmin: React.FC = () => {
 
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.chat_users?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                         (note.chat_users?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     const matchesCourse = filterCourse === 'all' || note.course_id === filterCourse;
     const matchesAgent = filterAgent === 'all' || note.created_by === filterAgent;
     const matchesType = filterType === 'all' || note.type === filterType;
