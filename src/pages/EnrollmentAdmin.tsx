@@ -17,6 +17,7 @@ import PaginatedUsersTable from '@/components/Admin/PaginatedUsersTable';
 import PaginatedEnrollmentsTable from '@/components/Admin/PaginatedEnrollmentsTable';
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import AdminSettingsPanel from '@/components/Admin/AdminSettingsPanel';
+import { EnrollmentCRM } from '@/components/Admin/EnrollmentCRM';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -71,7 +72,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -240,6 +241,14 @@ const EnrollmentAdmin: React.FC = () => {
         );
       case 'settings':
         return <AdminSettingsPanel />;
+      case 'crm':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <EnrollmentCRM />
+            </Suspense>
+          </ErrorBoundary>
+        );
       default:
         // Don't show dashboard summary for enrollment managers who are not messenger admins
         if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
@@ -263,7 +272,7 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">{/* Changed min-h-screen to h-screen and added flex flex-col */}
+    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">
       {/* Academy Main Header */}
       <Header />
       
@@ -281,7 +290,7 @@ const EnrollmentAdmin: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex w-full flex-1 h-full pt-16">{/* Added pt-16 to account for fixed header */}
+      <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
           onViewChange={setActiveView}
@@ -290,7 +299,7 @@ const EnrollmentAdmin: React.FC = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>{/* Added h-full */}
+        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               {renderContent()}

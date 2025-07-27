@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
@@ -9,11 +10,12 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings';
+type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm';
 
 interface AdminSidebarProps {
   activeView: ViewType;
@@ -44,6 +46,11 @@ const sidebarItems = [
     icon: UserCheck,
   },
   {
+    id: 'crm',
+    label: 'CRM',
+    icon: MessageSquare,
+  },
+  {
     id: 'analytics',
     label: 'آمار',
     icon: BarChart3,
@@ -72,7 +79,6 @@ export function AdminSidebar({ activeView, onViewChange, isOpen = false, onToggl
 
   return (
     <>
-
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
