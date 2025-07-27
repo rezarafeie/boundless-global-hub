@@ -882,47 +882,58 @@ const LeadManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="space-y-4">
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
             <Users className="h-5 w-5" />
             مدیریت لیدها
           </CardTitle>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
+          
+          {/* Search and Tabs - Mobile Responsive */}
+          <div className="space-y-4">
+            {/* Search Input */}
+            <div className="flex items-center gap-2 w-full">
+              <Search className="h-4 w-4 flex-shrink-0" />
               <Input
                 placeholder="جستجو نام، ایمیل یا تلفن... (حداقل ۳ کاراکتر)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
+                className="w-full"
               />
             </div>
-            <div className="flex rounded-md bg-muted p-1">
-              <Button
-                variant={activeTab === 'available' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('available')}
-              >
-                لیدهای موجود
-              </Button>
-              <Button
-                variant={activeTab === 'assigned' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setActiveTab('assigned')}
-              >
-                واگذار شده‌ها
-              </Button>
-              {isAdmin && (
+            
+            {/* Tabs - Mobile Responsive */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row rounded-md bg-muted p-1 gap-1 sm:gap-0 w-full sm:w-auto">
                 <Button
-                  variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                  variant={activeTab === 'available' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setActiveTab('admin')}
+                  onClick={() => setActiveTab('available')}
+                  className="w-full sm:w-auto text-sm whitespace-nowrap"
                 >
-                  مدیریت ادمین
+                  لیدهای موجود
                 </Button>
-              )}
+                <Button
+                  variant={activeTab === 'assigned' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('assigned')}
+                  className="w-full sm:w-auto text-sm whitespace-nowrap"
+                >
+                  واگذار شده‌ها
+                </Button>
+                {isAdmin && (
+                  <Button
+                    variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveTab('admin')}
+                    className="w-full sm:w-auto text-sm whitespace-nowrap"
+                  >
+                    مدیریت ادمین
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
+          
           {searchTerm.length > 0 && searchTerm.length < 3 && (
             <p className="text-sm text-muted-foreground">حداقل ۳ کاراکتر برای جستجو وارد کنید</p>
           )}
@@ -946,25 +957,29 @@ const LeadManagement: React.FC = () => {
                               <h3 className="font-medium">{lead.full_name}</h3>
                               <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => openLeadDetail(lead)}
+                                className="w-full sm:w-auto flex items-center gap-1"
                               >
                                 <Eye className="h-4 w-4" />
+                                <span className="sm:hidden">مشاهده</span>
                               </Button>
                               {!lead.is_assigned && (
                                 <Button
                                   size="sm"
                                   onClick={() => handleAssignLead(lead.enrollment_id)}
                                   disabled={assignLoading === lead.enrollment_id}
+                                  className="w-full sm:w-auto flex items-center gap-1"
                                 >
                                   {assignLoading === lead.enrollment_id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
                                     <UserPlus className="h-4 w-4" />
                                   )}
+                                  <span className="sm:hidden">واگذاری</span>
                                 </Button>
                               )}
                             </div>
@@ -1081,14 +1096,17 @@ const LeadManagement: React.FC = () => {
                               <h3 className="font-medium">{assignment.full_name}</h3>
                               <p className="text-sm text-muted-foreground">{renderPhoneLink(assignment.phone)}</p>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openLeadDetail(assignment)}
-                            >
-                              <Eye className="h-4 w-4" />
-                              مشاهده
-                            </Button>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openLeadDetail(assignment)}
+                                className="w-full sm:w-auto flex items-center gap-1"
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span>مشاهده</span>
+                              </Button>
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
@@ -1296,14 +1314,17 @@ const LeadManagement: React.FC = () => {
                                    <h3 className="font-medium">{lead.full_name}</h3>
                                    <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</p>
                                  </div>
-                                 <Button
-                                   size="sm"
-                                   variant="outline"
-                                   onClick={() => openLeadDetail(lead)}
-                                 >
-                                   <Eye className="h-4 w-4" />
-                                   مشاهده
-                                 </Button>
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openLeadDetail(lead)}
+                                      className="w-full sm:w-auto flex items-center gap-1"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                      <span>مشاهده</span>
+                                    </Button>
+                                  </div>
                                </div>
                                <div className="grid grid-cols-2 gap-2 text-sm">
                                  <div>
