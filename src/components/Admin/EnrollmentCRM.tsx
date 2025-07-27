@@ -70,6 +70,14 @@ const CRM_STATUSES = [
   { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' }
 ];
 
+const PAYMENT_STATUSES = [
+  { value: 'completed', label: 'تکمیل شده' },
+  { value: 'pending', label: 'در انتظار' },
+  { value: 'failed', label: 'ناموفق' },
+  { value: 'cancelled', label: 'لغو شده' },
+  { value: 'cancelled_payment', label: 'لغو پرداخت' }
+];
+
 export function EnrollmentCRM() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -95,6 +103,7 @@ export function EnrollmentCRM() {
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [enrollmentFilterCourse, setEnrollmentFilterCourse] = useState('all');
+  const [enrollmentFilterStatus, setEnrollmentFilterStatus] = useState('all');
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,11 +126,11 @@ export function EnrollmentCRM() {
 
   useEffect(() => {
     fetchEnrollmentsWithoutCRM();
-  }, [enrollmentFilterCourse, currentPage]);
+  }, [enrollmentFilterCourse, enrollmentFilterStatus, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [enrollmentFilterCourse]);
+  }, [enrollmentFilterCourse, enrollmentFilterStatus]);
 
   const searchUsers = async () => {
     if (!searchTerm.trim()) return;
@@ -235,21 +244,6 @@ export function EnrollmentCRM() {
     try {
       setLoadingEnrollments(true);
       
-      // Get total count first
-      let countQuery = supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-        .eq('payment_status', 'completed')
-        .not('chat_user_id', 'is', null);
-
-      // Apply course filter to count
-      if (enrollmentFilterCourse !== 'all') {
-        countQuery = countQuery.eq('course_id', enrollmentFilterCourse);
-      }
-
-      const { count, error: countError } = await countQuery;
-      if (countError) throw countError;
-
       // Build query to get enrollments without CRM records
       let query = supabase
         .from('enrollments')
@@ -267,13 +261,17 @@ export function EnrollmentCRM() {
             slug
           )
         `)
-        .eq('payment_status', 'completed')
         .not('chat_user_id', 'is', null)
         .order('created_at', { ascending: false });
 
       // Apply course filter
       if (enrollmentFilterCourse !== 'all') {
         query = query.eq('course_id', enrollmentFilterCourse);
+      }
+
+      // Apply status filter
+      if (enrollmentFilterStatus !== 'all') {
+        query = query.eq('payment_status', enrollmentFilterStatus);
       }
 
       // Apply pagination
@@ -297,14 +295,17 @@ export function EnrollmentCRM() {
       );
 
       // Get total count of enrollments without CRM for pagination
-      const allEnrollmentsQuery = supabase
+      let allEnrollmentsQuery = supabase
         .from('enrollments')
         .select('chat_user_id')
-        .eq('payment_status', 'completed')
         .not('chat_user_id', 'is', null);
 
       if (enrollmentFilterCourse !== 'all') {
-        allEnrollmentsQuery.eq('course_id', enrollmentFilterCourse);
+        allEnrollmentsQuery = allEnrollmentsQuery.eq('course_id', enrollmentFilterCourse);
+      }
+
+      if (enrollmentFilterStatus !== 'all') {
+        allEnrollmentsQuery = allEnrollmentsQuery.eq('payment_status', enrollmentFilterStatus);
       }
 
       const { data: allEnrollments } = await allEnrollmentsQuery;
@@ -467,6 +468,26 @@ export function EnrollmentCRM() {
     return <Badge variant={variants[status] || 'default'} className="text-xs">{status}</Badge>;
   };
 
+  const getPaymentStatusBadge = (status: string) => {
+    const variants: Record<string, any> = {
+      'completed': 'default',
+      'pending': 'secondary',
+      'failed': 'destructive',
+      'cancelled': 'destructive',
+      'cancelled_payment': 'destructive'
+    };
+    
+    const labels: Record<string, string> = {
+      'completed': 'تکمیل شده',
+      'pending': 'در انتظار',
+      'failed': 'ناموفق',
+      'cancelled': 'لغو شده',
+      'cancelled_payment': 'لغو پرداخت'
+    };
+    
+    return <Badge variant={variants[status] || 'default'} className="text-xs">{labels[status] || status}</Badge>;
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fa-IR', {
       year: 'numeric',
@@ -539,19 +560,34 @@ export function EnrollmentCRM() {
                   </Badge>
                 )}
               </h3>
-              <Select value={enrollmentFilterCourse} onValueChange={setEnrollmentFilterCourse}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="همه دوره‌ها" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه دوره‌ها</SelectItem>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={enrollmentFilterCourse} onValueChange={setEnrollmentFilterCourse}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="همه دوره‌ها" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه دوره‌ها</SelectItem>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={enrollmentFilterStatus} onValueChange={setEnrollmentFilterStatus}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="همه وضعیت‌ها" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                    {PAYMENT_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {loadingEnrollments ? (
@@ -565,8 +601,8 @@ export function EnrollmentCRM() {
                   <div className="text-center py-8 bg-green-50 rounded-lg border border-green-200">
                     <AlertCircle className="h-12 w-12 mx-auto mb-4 text-green-600" />
                     <p className="text-green-700 font-medium">
-                      {enrollmentFilterCourse !== 'all' 
-                        ? 'همه ثبت‌نام‌های این دوره دارای CRM هستند'
+                      {enrollmentFilterCourse !== 'all' || enrollmentFilterStatus !== 'all'
+                        ? 'هیچ ثبت‌نامی با فیلترهای انتخابی بدون CRM یافت نشد'
                         : 'همه ثبت‌نام‌ها دارای CRM هستند'
                       }
                     </p>
@@ -588,6 +624,7 @@ export function EnrollmentCRM() {
                                 <div className="space-y-2 text-sm">
                                   <div><span className="font-medium">دوره:</span> {enrollment.courses.title}</div>
                                   <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
+                                  <div><span className="font-medium">وضعیت:</span> {getPaymentStatusBadge(enrollment.payment_status)}</div>
                                   <div><span className="font-medium">مبلغ:</span> {formatPrice(enrollment.payment_amount)}</div>
                                   <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
                                 </div>
@@ -611,6 +648,7 @@ export function EnrollmentCRM() {
                                 <TableHead>نام</TableHead>
                                 <TableHead>دوره</TableHead>
                                 <TableHead>تلفن</TableHead>
+                                <TableHead>وضعیت پرداخت</TableHead>
                                 <TableHead>مبلغ</TableHead>
                                 <TableHead>تاریخ ثبت‌نام</TableHead>
                                 <TableHead>عملیات</TableHead>
@@ -622,6 +660,7 @@ export function EnrollmentCRM() {
                                   <TableCell className="font-medium">{enrollment.full_name}</TableCell>
                                   <TableCell>{enrollment.courses.title}</TableCell>
                                   <TableCell>{enrollment.phone}</TableCell>
+                                  <TableCell>{getPaymentStatusBadge(enrollment.payment_status)}</TableCell>
                                   <TableCell>{formatPrice(enrollment.payment_amount)}</TableCell>
                                   <TableCell>{formatDate(enrollment.created_at)}</TableCell>
                                   <TableCell>
