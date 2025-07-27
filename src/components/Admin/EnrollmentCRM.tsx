@@ -98,7 +98,7 @@ export function EnrollmentCRM() {
 
     const timeoutId = setTimeout(() => {
       searchUsers();
-    }, 300);
+    }, 150); // Reduced debounce for faster search
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);

@@ -36,7 +36,7 @@ const PaginatedUsersTable: React.FC = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 150);
   const usersPerPage = 50;
   const totalPages = Math.ceil(totalUsers / usersPerPage);
 
@@ -57,7 +57,7 @@ const PaginatedUsersTable: React.FC = () => {
         .from('chat_users')
         .select('*', { count: 'exact', head: true });
         
-      if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+      if (debouncedSearchTerm) {
         countQuery = countQuery.or(`name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%,username.ilike.%${debouncedSearchTerm}%`);
       }
       
@@ -71,7 +71,7 @@ const PaginatedUsersTable: React.FC = () => {
         .order('created_at', { ascending: false })
         .range(offset, offset + usersPerPage - 1);
         
-      if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+      if (debouncedSearchTerm) {
         dataQuery = dataQuery.or(`name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%,username.ilike.%${debouncedSearchTerm}%`);
       }
 
@@ -148,26 +148,30 @@ const PaginatedUsersTable: React.FC = () => {
             مدیریت کاربران
             <Badge variant="secondary">{totalUsers} کاربر</Badge>
           </div>
-          <div className={isMobile ? "relative" : "relative w-80"}>
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="جستجوی نام، ایمیل، تلفن... (حداقل ۳ کاراکتر)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className={isMobile ? "relative space-y-2" : "relative w-80 space-y-2"}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="جستجوی نام، ایمیل، تلفن..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {loading && searchTerm && (
+              <div className="flex justify-center py-1">
+                <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+              </div>
+            )}
           </div>
         </CardTitle>
-        {searchTerm.length > 0 && searchTerm.length < 3 && (
-          <p className="text-sm text-muted-foreground">حداقل ۳ کاراکتر برای جستجو وارد کنید</p>
-        )}
       </CardHeader>
       <CardContent>
         {users.length === 0 && !loading ? (
           <div className="text-center py-8">
             <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">
-              {searchTerm && searchTerm.length >= 3 ? 'هیچ کاربری یافت نشد' : 'هنوز کاربری ثبت نشده است'}
+              {searchTerm ? 'هیچ کاربری یافت نشد' : 'هنوز کاربری ثبت نشده است'}
             </p>
           </div>
         ) : (
