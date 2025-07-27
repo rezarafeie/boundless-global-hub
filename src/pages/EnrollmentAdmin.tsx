@@ -11,16 +11,17 @@ import { supabase } from '@/integrations/supabase/client';
 
 import Header from '@/components/Layout/Header';
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
-import AdminDashboard from '@/components/Admin/AdminDashboard';
-import CourseManagement from '@/components/Admin/CourseManagement';
-import EmailSettings from '@/components/Admin/EmailSettings';
-import PendingApprovalPayments from '@/components/Admin/PendingApprovalPayments';
-import PaginatedUsersTable from '@/components/Admin/PaginatedUsersTable';
-import PaginatedEnrollmentsTable from '@/components/Admin/PaginatedEnrollmentsTable';
-import AnalyticsReports from '@/components/Admin/AnalyticsReports';
-import AdminSettingsPanel from '@/components/Admin/AdminSettingsPanel';
-import { EnrollmentCRM } from '@/components/Admin/EnrollmentCRM';
-import LeadManagement from '@/components/Admin/LeadManagement';
+
+// Lazy load admin components
+const AdminDashboard = React.lazy(() => import('@/components/Admin/AdminDashboard'));
+const CourseManagement = React.lazy(() => import('@/components/Admin/CourseManagement'));
+const PendingApprovalPayments = React.lazy(() => import('@/components/Admin/PendingApprovalPayments'));
+const PaginatedUsersTable = React.lazy(() => import('@/components/Admin/PaginatedUsersTable'));
+const PaginatedEnrollmentsTable = React.lazy(() => import('@/components/Admin/PaginatedEnrollmentsTable'));
+const AnalyticsReports = React.lazy(() => import('@/components/Admin/AnalyticsReports'));
+const AdminSettingsPanel = React.lazy(() => import('@/components/Admin/AdminSettingsPanel'));
+const EnrollmentCRM = React.lazy(() => import('@/components/Admin/EnrollmentCRM').then(module => ({ default: module.EnrollmentCRM })));
+const LeadManagement = React.lazy(() => import('@/components/Admin/LeadManagement'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -227,9 +228,21 @@ const EnrollmentAdmin: React.FC = () => {
             </div>
           );
         }
-        return <AdminDashboard />;
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminDashboard />
+            </Suspense>
+          </ErrorBoundary>
+        );
       case 'courses':
-        return <CourseManagement />;
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <CourseManagement />
+            </Suspense>
+          </ErrorBoundary>
+        );
       case 'enrollments':
         return (
           <div className="space-y-6">
@@ -270,7 +283,13 @@ const EnrollmentAdmin: React.FC = () => {
           </ErrorBoundary>
         );
       case 'settings':
-        return <AdminSettingsPanel />;
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminSettingsPanel />
+            </Suspense>
+          </ErrorBoundary>
+        );
       case 'crm':
         return (
           <ErrorBoundary>
@@ -297,7 +316,13 @@ const EnrollmentAdmin: React.FC = () => {
             </div>
           );
         }
-        return <AdminDashboard />;
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <AdminDashboard />
+            </Suspense>
+          </ErrorBoundary>
+        );
     }
   };
 
