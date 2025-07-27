@@ -92,7 +92,7 @@ const CRMAdmin: React.FC = () => {
       
       setNotes(validNotes);
       
-      // Extract unique agents
+      // Extract unique agents - add null check for chat_users
       const uniqueAgents = [...new Set(validNotes.map(note => note.created_by).filter(Boolean))];
       setAgents(uniqueAgents);
     } catch (error) {
