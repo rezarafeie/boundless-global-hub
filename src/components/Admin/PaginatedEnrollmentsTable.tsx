@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye, Shield, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -122,6 +123,13 @@ const PaginatedEnrollmentsTable: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fa-IR');
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('fa-IR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
   const handleViewEnrollmentDetails = (enrollmentId: string) => {
@@ -290,6 +298,11 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                           </div>
                           <div><span className="font-medium">روش پرداخت:</span> {getPaymentMethodBadge(enrollment.payment_method)}</div>
                           <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">زمان:</span>
+                            <Clock className="h-3 w-3" />
+                            {formatTime(enrollment.created_at)}
+                          </div>
                         </div>
                         <div className="flex flex-col gap-2">
                           {enrollment.receipt_url && (
@@ -340,6 +353,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                       <TableHead>روش پرداخت</TableHead>
                       <TableHead>وضعیت</TableHead>
                       <TableHead>تاریخ</TableHead>
+                      <TableHead>زمان</TableHead>
                       <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -371,6 +385,12 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                         <TableCell>{getPaymentMethodBadge(enrollment.payment_method)}</TableCell>
                         <TableCell>{getStatusBadge(enrollment)}</TableCell>
                         <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {formatTime(enrollment.created_at)}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {enrollment.receipt_url && (
