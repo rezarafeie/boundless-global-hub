@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2, Play, Pause } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2, Play, Pause, StickyNote } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -27,6 +28,14 @@ interface ImportResult {
   importLogId?: string;
 }
 
+interface CRMImportResult {
+  totalRows: number;
+  newNotesCreated: number;
+  existingNotes: number;
+  errors: number;
+  processed: number;
+}
+
 interface ImportProgress {
   total: number;
   processed: number;
@@ -41,6 +50,7 @@ interface ImportProgress {
 interface BackupData {
   enrollments: any[];
   import_logs: any[];
+  crm_notes?: any[];
 }
 
 interface CSVRow {
@@ -51,6 +61,17 @@ interface CSVRow {
   entry_date?: string | null;
   payment_method?: string | null;
   payment_price?: string | null;
+}
+
+interface CRMCSVRow {
+  user_phone: string | null;
+  user_name?: string | null;
+  content: string | null;
+  type: string | null;
+  status?: string | null;
+  created_by?: string | null;
+  course_name?: string | null;
+  created_date?: string | null;
 }
 
 interface PreviewAnalysis {
@@ -70,19 +91,42 @@ interface PreviewAnalysis {
   }>;
 }
 
+interface CRMPreviewAnalysis {
+  totalRows: number;
+  uniqueNotes: number;
+  existingUsers: number;
+  newUsers: number;
+  validRows: number;
+  invalidRows: number;
+  duplicatePhones: string[];
+  missingData: Array<{
+    phone?: string;
+    reason: string;
+  }>;
+}
+
 export function DataImportSection() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [crmCsvFile, setCrmCsvFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isCrmImporting, setIsCrmImporting] = useState(false);
   const [importHistory, setImportHistory] = useState<any[]>([]);
   const [previewData, setPreviewData] = useState<CSVRow[]>([]);
+  const [crmPreviewData, setCrmPreviewData] = useState<CRMCSVRow[]>([]);
   const [previewAnalysis, setPreviewAnalysis] = useState<PreviewAnalysis | null>(null);
+  const [crmPreviewAnalysis, setCrmPreviewAnalysis] = useState<CRMPreviewAnalysis | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCrmProcessing, setIsCrmProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showCrmPreview, setShowCrmPreview] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const [crmImportProgress, setCrmImportProgress] = useState<ImportProgress | null>(null);
   const [processedRows, setProcessedRows] = useState<Set<number>>(new Set());
+  const [crmProcessedRows, setCrmProcessedRows] = useState<Set<number>>(new Set());
   const [isPaused, setIsPaused] = useState(false);
+  const [isCrmPaused, setIsCrmPaused] = useState(false);
 
   // Fetch courses on component mount
   React.useEffect(() => {
@@ -559,6 +603,256 @@ export function DataImportSection() {
     return analysis;
   };
 
+  const parseCRMCSV = (csvText: string): CRMCSVRow[] => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    // Validate headers
+    const requiredHeaders = ['user_phone', 'content', 'type'];
+    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+    
+    if (missingHeaders.length > 0) {
+      throw new Error(`فیلدهای مورد نیاز یافت نشد: ${missingHeaders.join(', ')}`);
+    }
+
+    const rows: CRMCSVRow[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      if (values.length >= 3) {
+        const row: CRMCSVRow = {
+          user_phone: values[headers.indexOf('user_phone')]?.trim() || null,
+          user_name: headers.includes('user_name') ? (values[headers.indexOf('user_name')]?.trim() || null) : null,
+          content: values[headers.indexOf('content')]?.trim() || null,
+          type: values[headers.indexOf('type')]?.trim() || null,
+          status: headers.includes('status') ? (values[headers.indexOf('status')]?.trim() || null) : null,
+          created_by: headers.includes('created_by') ? (values[headers.indexOf('created_by')]?.trim() || null) : null,
+          course_name: headers.includes('course_name') ? (values[headers.indexOf('course_name')]?.trim() || null) : null,
+          created_date: headers.includes('created_date') ? (values[headers.indexOf('created_date')]?.trim() || null) : null
+        };
+        
+        rows.push(row);
+      }
+    }
+
+    return rows;
+  };
+
+  const analyzeCRMData = async (crmRows: CRMCSVRow[]): Promise<CRMPreviewAnalysis> => {
+    const analysis: CRMPreviewAnalysis = {
+      totalRows: crmRows.length,
+      uniqueNotes: 0,
+      existingUsers: 0,
+      newUsers: 0,
+      validRows: 0,
+      invalidRows: 0,
+      duplicatePhones: [],
+      missingData: []
+    };
+
+    // Check for duplicates and validation
+    const phoneMap = new Map<string, number>();
+    const validRows = [];
+    
+    crmRows.forEach((row, index) => {
+      // Check for required fields
+      if (!row.user_phone || !row.content || !row.type) {
+        analysis.missingData.push({
+          phone: row.user_phone,
+          reason: 'فیلدهای مورد نیاز (تلفن، محتوا، نوع) کامل نیست'
+        });
+        analysis.invalidRows++;
+        return;
+      }
+
+      const phone = row.user_phone.trim();
+      phoneMap.set(phone, (phoneMap.get(phone) || 0) + 1);
+      validRows.push(row);
+      analysis.validRows++;
+    });
+
+    // Find duplicate phones
+    analysis.duplicatePhones = Array.from(phoneMap.entries())
+      .filter(([_, count]) => count > 1)
+      .map(([phone]) => phone);
+
+    // Check against existing users
+    const phones = validRows.map(row => row.user_phone?.trim()).filter(Boolean);
+    
+    if (phones.length > 0) {
+      const { data: existingUsers } = await supabase
+        .from('chat_users')
+        .select('id, phone')
+        .in('phone', phones);
+      
+      analysis.existingUsers = existingUsers?.length || 0;
+      analysis.newUsers = phones.length - analysis.existingUsers;
+    }
+
+    analysis.uniqueNotes = validRows.length;
+
+    return analysis;
+  };
+
+  const processCRMImport = async (crmRows: CRMCSVRow[], startFromIndex: number = 0): Promise<CRMImportResult> => {
+    let newNotesCreated = 0;
+    let existingNotes = 0;
+    let errors = 0;
+    let processed = 0;
+
+    // Filter valid rows
+    const validRows = crmRows.filter(row => 
+      row.user_phone && row.content && row.type
+    );
+
+    // Initialize progress
+    setCrmImportProgress({
+      total: validRows.length,
+      processed: 0,
+      created: 0,
+      existing: 0,
+      errors: 0,
+      currentUser: '',
+      isRunning: true,
+      canResume: false
+    });
+
+    for (let i = startFromIndex; i < validRows.length; i++) {
+      if (isCrmPaused) {
+        setCrmImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: true } : null);
+        return {
+          totalRows: validRows.length,
+          newNotesCreated,
+          existingNotes,
+          errors,
+          processed
+        };
+      }
+
+      const row = validRows[i];
+      
+      if (crmProcessedRows.has(i)) {
+        processed++;
+        continue;
+      }
+
+      try {
+        // Update progress
+        setCrmImportProgress(prev => prev ? {
+          ...prev,
+          processed: processed + 1,
+          currentUser: row.user_name || row.user_phone || 'کاربر نامشخص'
+        } : null);
+
+        // Find user by phone
+        const { data: user } = await supabase
+          .from('chat_users')
+          .select('id')
+          .eq('phone', row.user_phone.trim())
+          .maybeSingle();
+
+        if (!user) {
+          console.warn(`User not found for phone: ${row.user_phone}`);
+          errors++;
+          setCrmImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
+          continue;
+        }
+
+        // Find course if course_name is provided
+        let courseId = null;
+        if (row.course_name) {
+          const { data: course } = await supabase
+            .from('courses')
+            .select('id')
+            .eq('title', row.course_name.trim())
+            .maybeSingle();
+          courseId = course?.id || null;
+        }
+
+        // Parse created date
+        let createdAt = new Date().toISOString();
+        if (row.created_date?.trim()) {
+          try {
+            const dateStr = row.created_date.trim();
+            let parsedDate: Date;
+            
+            if (dateStr.includes(' ')) {
+              const [datePart, timePart] = dateStr.split(' ');
+              if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
+                const [year, month, day] = datePart.split('-');
+                const [hour, minute] = timePart.split(':');
+                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+              } else {
+                parsedDate = new Date(dateStr);
+              }
+            } else if (dateStr.includes('/')) {
+              const [day, month, year] = dateStr.split('/');
+              parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            } else if (dateStr.includes('-') && dateStr.length === 10) {
+              if (dateStr.indexOf('-') === 4) {
+                parsedDate = new Date(dateStr);
+              } else {
+                const [day, month, year] = dateStr.split('-');
+                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              }
+            } else {
+              parsedDate = new Date(dateStr);
+            }
+            
+            if (!isNaN(parsedDate.getTime())) {
+              createdAt = parsedDate.toISOString();
+            }
+          } catch (error) {
+            console.warn(`Invalid date format: ${row.created_date}, using current date`);
+          }
+        }
+
+        // Create CRM note
+        const { error: noteError } = await supabase
+          .from('crm_notes')
+          .insert({
+            user_id: user.id,
+            content: row.content,
+            type: row.type,
+            status: row.status || 'در انتظار پرداخت',
+            created_by: row.created_by || 'imported',
+            course_id: courseId,
+            created_at: createdAt,
+            updated_at: createdAt
+          });
+
+        if (noteError) {
+          console.error(`Error creating CRM note:`, noteError);
+          errors++;
+          setCrmImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
+          continue;
+        }
+
+        newNotesCreated++;
+        setCrmImportProgress(prev => prev ? { ...prev, created: prev.created + 1 } : null);
+        setCrmProcessedRows(prev => new Set([...prev, i]));
+        processed++;
+
+        // Add small delay
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+      } catch (error) {
+        console.error(`Error processing CRM row:`, error);
+        errors++;
+        setCrmImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
+      }
+    }
+
+    setCrmImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: false } : null);
+
+    return {
+      totalRows: validRows.length,
+      newNotesCreated,
+      existingNotes,
+      errors,
+      processed
+    };
+  };
+
   const handleFileUpload = async (file: File | null) => {
     setCsvFile(file);
     setPreviewData([]);
@@ -735,16 +1029,23 @@ export function DataImportSection() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (enrollError || logsError) {
+      const { data: crmNotes, error: crmError } = await supabase
+        .from('crm_notes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (enrollError || logsError || crmError) {
         throw new Error('خطا در دریافت داده‌ها');
       }
 
       const backupData = {
         enrollments: enrollments || [],
         import_logs: importLogs || [],
+        crm_notes: crmNotes || [],
         backup_date: new Date().toISOString(),
         total_enrollments: enrollments?.length || 0,
-        total_import_logs: importLogs?.length || 0
+        total_import_logs: importLogs?.length || 0,
+        total_crm_notes: crmNotes?.length || 0
       };
 
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -757,7 +1058,7 @@ export function DataImportSection() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success(`پشتیبان‌گیری انجام شد - ${enrollments?.length || 0} ثبت‌نام`);
+      toast.success(`پشتیبان‌گیری انجام شد - ${enrollments?.length || 0} ثبت‌نام و ${crmNotes?.length || 0} یادداشت CRM`);
     } catch (error: any) {
       toast.error(`خطا در پشتیبان‌گیری: ${error.message}`);
     }
@@ -800,362 +1101,637 @@ export function DataImportSection() {
     }
   };
 
+  const handleCrmFileUpload = async (file: File | null) => {
+    setCrmCsvFile(file);
+    setCrmPreviewData([]);
+    setCrmPreviewAnalysis(null);
+    setShowCrmPreview(false);
+    
+    if (!file) return;
+    
+    setIsCrmProcessing(true);
+    try {
+      const csvText = await file.text();
+      const parsedData = parseCRMCSV(csvText);
+      setCrmPreviewData(parsedData);
+      
+      const analysis = await analyzeCRMData(parsedData);
+      setCrmPreviewAnalysis(analysis);
+      setShowCrmPreview(true);
+      
+      toast.success(`${parsedData.length} ردیف داده CRM پردازش شد`);
+    } catch (error: any) {
+      toast.error(`خطا در پردازش فایل CRM: ${error.message}`);
+      setCrmCsvFile(null);
+    } finally {
+      setIsCrmProcessing(false);
+    }
+  };
+
+  const handleCrmImport = async () => {
+    if (crmPreviewData.length === 0) {
+      toast.error('لطفاً فایل CRM را انتخاب کنید');
+      return;
+    }
+
+    setIsCrmImporting(true);
+    setIsCrmPaused(false);
+
+    try {
+      const result = await processCRMImport(crmPreviewData, 0);
+
+      if (!isCrmPaused) {
+        toast.success(
+          `✅ ${result.totalRows} یادداشت CRM پردازش شد، ${result.newNotesCreated} یادداشت جدید ایجاد شد، ${result.errors} خطا`
+        );
+
+        // Reset form
+        setCrmCsvFile(null);
+        setCrmPreviewData([]);
+        setCrmPreviewAnalysis(null);
+        setShowCrmPreview(false);
+        setCrmImportProgress(null);
+        setCrmProcessedRows(new Set());
+      } else {
+        toast.info('وارد کردن یادداشت‌های CRM متوقف شد');
+      }
+
+    } catch (error: any) {
+      console.error('CRM import error:', error);
+      toast.error(`خطا در وارد کردن یادداشت‌های CRM: ${error.message}`);
+    } finally {
+      setIsCrmImporting(false);
+    }
+  };
+
+  const handleCrmPauseImport = () => {
+    setIsCrmPaused(true);
+    toast.info('در حال متوقف کردن وارد کردن یادداشت‌های CRM...');
+  };
+
   return (
     <div className="space-y-6">
-      {/* Import Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            وارد کردن کاربران از فایل CSV
-          </CardTitle>
-          <CardDescription>
-            فایل CSV خود را بارگذاری کنید و دوره مورد نظر را برای ثبت‌نام انتخاب کنید
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* File Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="csv-file">فایل CSV</Label>
-            <Input
-              id="csv-file"
-              type="file"
-              accept=".csv"
-              onChange={(e) => handleFileUpload(e.target.files?.[0] || null)}
-              className="cursor-pointer"
-              disabled={isProcessing}
-            />
-            <p className="text-sm text-muted-foreground">
-              فرمت مورد انتظار: first_name, last_name, email, phone, entry_date (اختیاری), payment_method (اختیاری), payment_price (اختیاری)
-              <br />
-              فرمت تاریخ: YYYY-MM-DD HH:MM (مثل 2024-02-28 08:22) یا YYYY-MM-DD یا DD/MM/YYYY یا DD-MM-YYYY
-              <br />
-              روش پرداخت: manual (کارت به کارت) یا zarinpal - قیمت پرداخت: مبلغ به تومان
-            </p>
-            {isProcessing && (
-              <p className="text-sm text-blue-600">در حال پردازش فایل...</p>
-            )}
-          </div>
+      <Tabs defaultValue="enrollments" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="enrollments">وارد کردن ثبت‌نام‌ها</TabsTrigger>
+          <TabsTrigger value="crm">وارد کردن CRM</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="enrollments">
+          {/* Import Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                وارد کردن کاربران از فایل CSV
+              </CardTitle>
+              <CardDescription>
+                فایل CSV خود را بارگذاری کنید و دوره مورد نظر را برای ثبت‌نام انتخاب کنید
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="csv-file">فایل CSV</Label>
+                <Input
+                  id="csv-file"
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => handleFileUpload(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                  disabled={isProcessing}
+                />
+                <p className="text-sm text-muted-foreground">
+                  فرمت مورد انتظار: first_name, last_name, email, phone, entry_date (اختیاری), payment_method (اختیاری), payment_price (اختیاری)
+                  <br />
+                  فرمت تاریخ: YYYY-MM-DD HH:MM (مثل 2024-02-28 08:22) یا YYYY-MM-DD یا DD/MM/YYYY یا DD-MM-YYYY
+                  <br />
+                  روش پرداخت: manual (کارت به کارت) یا zarinpal - قیمت پرداخت: مبلغ به تومان
+                </p>
+                {isProcessing && (
+                  <p className="text-sm text-blue-600">در حال پردازش فایل...</p>
+                )}
+              </div>
 
-          {/* Course Selection - Only show when we have preview data */}
-          {showPreview && (
-            <div className="space-y-2">
-              <Label htmlFor="course-select">انتخاب دوره</Label>
-              <Select value={selectedCourse} onValueChange={handleCourseSelection}>
-                <SelectTrigger>
-                  <SelectValue placeholder="دوره مورد نظر را انتخاب کنید" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.title} - {course.price.toLocaleString()} تومان
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Analysis Results */}
-      {previewAnalysis && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              تجزیه و تحلیل داده‌ها
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{previewAnalysis.totalRows}</div>
-                <div className="text-sm text-blue-600">کل ردیف‌ها</div>
-              </div>
-              <div className="bg-green-50 p-3 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{previewAnalysis.newUsers}</div>
-                <div className="text-sm text-green-600">کاربران جدید</div>
-              </div>
-              <div className="bg-yellow-50 p-3 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">{previewAnalysis.existingUsers}</div>
-                <div className="text-sm text-yellow-600">کاربران موجود</div>
-              </div>
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{previewAnalysis.newEnrollments}</div>
-                <div className="text-sm text-purple-600">ثبت‌نام‌های جدید</div>
-              </div>
-            </div>
-
-            {previewAnalysis.duplicatesInFile > 0 && (
-              <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <p className="text-sm text-orange-700">
-                      <strong>تکراری در فایل:</strong> {previewAnalysis.duplicatesInFile} مورد
-                    </p>
-                    {previewAnalysis.duplicateEmails.length > 0 && (
-                      <p className="text-xs text-orange-600 mt-1">
-                        ایمیل‌های تکراری: {previewAnalysis.duplicateEmails.slice(0, 3).join(', ')}
-                        {previewAnalysis.duplicateEmails.length > 3 && '...'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {previewAnalysis.existingEnrollments > 0 && (
-              <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">
-                      <strong>ثبت‌نام‌های موجود:</strong> {previewAnalysis.existingEnrollments} مورد برای این دوره از قبل وجود دارد
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {previewAnalysis.conflicts.length > 0 && (
-              <div className="bg-red-50 border-l-4 border-red-400 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700 font-medium mb-2">تضادهای شناسایی شده:</p>
-                    <div className="max-h-32 overflow-y-auto">
-                      {previewAnalysis.conflicts.slice(0, 5).map((conflict, index) => (
-                        <p key={index} className="text-xs text-red-600">
-                          {conflict.email || conflict.phone}: {conflict.reason}
-                        </p>
+              {/* Course Selection - Only show when we have preview data */}
+              {showPreview && (
+                <div className="space-y-2">
+                  <Label htmlFor="course-select">انتخاب دوره</Label>
+                  <Select value={selectedCourse} onValueChange={handleCourseSelection}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="دوره مورد نظر را انتخاب کنید" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id}>
+                          {course.title} - {course.price.toLocaleString()} تومان
+                        </SelectItem>
                       ))}
-                      {previewAnalysis.conflicts.length > 5 && (
-                        <p className="text-xs text-red-600">... و {previewAnalysis.conflicts.length - 5} مورد دیگر</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Preview Data */}
-      {showPreview && previewData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              پیش‌نمایش داده‌ها ({previewData.length} ردیف)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-96 overflow-auto border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>نام</TableHead>
-                    <TableHead>نام خانوادگی</TableHead>
-                    <TableHead>ایمیل</TableHead>
-                    <TableHead>تلفن</TableHead>
-                    <TableHead>تاریخ ثبت‌نام</TableHead>
-                    <TableHead>روش پرداخت</TableHead>
-                    <TableHead>مبلغ پرداخت</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {previewData.slice(0, 10).map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{row.first_name}</TableCell>
-                      <TableCell>{row.last_name}</TableCell>
-                      <TableCell>{row.email || '-'}</TableCell>
-                      <TableCell>{row.phone || '-'}</TableCell>
-                      <TableCell>{row.entry_date || 'تاریخ فعلی'}</TableCell>
-                      <TableCell>
-                        {row.payment_method === 'manual' ? 'کارت به کارت' : 
-                         row.payment_method === 'zarinpal' ? 'zarinpal' : 
-                         row.payment_method || 'manual_import'}
-                      </TableCell>
-                      <TableCell>
-                        {row.payment_price ? `${parseFloat(row.payment_price).toLocaleString()} تومان` : 'قیمت دوره'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {previewData.length > 10 && (
-                <div className="p-4 text-center text-muted-foreground">
-                  و {previewData.length - 10} ردیف دیگر...
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Progress Bar */}
-            {importProgress && (
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span>در حال پردازش: {importProgress.currentUser}</span>
-                  <span>{importProgress.processed} از {importProgress.total}</span>
+          {/* Analysis Results */}
+          {previewAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  تجزیه و تحلیل داده‌ها
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{previewAnalysis.totalRows}</div>
+                    <div className="text-sm text-blue-600">کل ردیف‌ها</div>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{previewAnalysis.newUsers}</div>
+                    <div className="text-sm text-green-600">کاربران جدید</div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">{previewAnalysis.existingUsers}</div>
+                    <div className="text-sm text-yellow-600">کاربران موجود</div>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{previewAnalysis.newEnrollments}</div>
+                    <div className="text-sm text-purple-600">ثبت‌نام‌های جدید</div>
+                  </div>
                 </div>
-                <Progress 
-                  value={(importProgress.processed / importProgress.total) * 100} 
-                  className="h-2"
+
+                {previewAnalysis.duplicatesInFile > 0 && (
+                  <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-orange-700">
+                          <strong>تکراری در فایل:</strong> {previewAnalysis.duplicatesInFile} مورد
+                        </p>
+                        {previewAnalysis.duplicateEmails.length > 0 && (
+                          <p className="text-xs text-orange-600 mt-1">
+                            ایمیل‌های تکراری: {previewAnalysis.duplicateEmails.slice(0, 3).join(', ')}
+                            {previewAnalysis.duplicateEmails.length > 3 && '...'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {previewAnalysis.existingEnrollments > 0 && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-red-700">
+                          <strong>ثبت‌نام‌های موجود:</strong> {previewAnalysis.existingEnrollments} مورد برای این دوره از قبل وجود دارد
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {previewAnalysis.conflicts.length > 0 && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-red-700 font-medium mb-2">تضادهای شناسایی شده:</p>
+                        <div className="max-h-32 overflow-y-auto">
+                          {previewAnalysis.conflicts.slice(0, 5).map((conflict, index) => (
+                            <p key={index} className="text-xs text-red-600">
+                              {conflict.email || conflict.phone}: {conflict.reason}
+                            </p>
+                          ))}
+                          {previewAnalysis.conflicts.length > 5 && (
+                            <p className="text-xs text-red-600">... و {previewAnalysis.conflicts.length - 5} مورد دیگر</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Preview Data */}
+          {showPreview && previewData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  پیش‌نمایش داده‌ها ({previewData.length} ردیف)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-96 overflow-auto border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>نام</TableHead>
+                        <TableHead>نام خانوادگی</TableHead>
+                        <TableHead>ایمیل</TableHead>
+                        <TableHead>تلفن</TableHead>
+                        <TableHead>تاریخ ثبت‌نام</TableHead>
+                        <TableHead>روش پرداخت</TableHead>
+                        <TableHead>مبلغ پرداخت</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previewData.slice(0, 10).map((row, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{row.first_name}</TableCell>
+                          <TableCell>{row.last_name}</TableCell>
+                          <TableCell>{row.email || '-'}</TableCell>
+                          <TableCell>{row.phone || '-'}</TableCell>
+                          <TableCell>{row.entry_date || 'تاریخ فعلی'}</TableCell>
+                          <TableCell>
+                            {row.payment_method === 'manual' ? 'کارت به کارت' : 
+                             row.payment_method === 'zarinpal' ? 'zarinpal' : 
+                             row.payment_method || 'manual_import'}
+                          </TableCell>
+                          <TableCell>
+                            {row.payment_price ? `${parseFloat(row.payment_price).toLocaleString()} تومان` : 'قیمت دوره'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {previewData.length > 10 && (
+                    <div className="p-4 text-center text-muted-foreground">
+                      و {previewData.length - 10} ردیف دیگر...
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress Bar */}
+                {importProgress && (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>در حال پردازش: {importProgress.currentUser}</span>
+                      <span>{importProgress.processed} از {importProgress.total}</span>
+                    </div>
+                    <Progress 
+                      value={(importProgress.processed / importProgress.total) * 100} 
+                      className="h-2"
+                    />
+                    <div className="grid grid-cols-4 gap-2 text-xs">
+                      <div className="text-green-600">ایجاد شده: {importProgress.created}</div>
+                      <div className="text-yellow-600">موجود: {importProgress.existing}</div>
+                      <div className="text-red-600">خطا: {importProgress.errors}</div>
+                      <div className="text-blue-600">پردازش شده: {importProgress.processed}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Import and Management Buttons */}
+                {showPreview && (
+                  <div className="flex gap-2 mt-4">
+                    {!importProgress?.canResume ? (
+                      <Button
+                        onClick={handleFinalImport}
+                        disabled={!selectedCourse || isImporting}
+                        className="flex items-center gap-2"
+                      >
+                        {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                        <Database className="h-4 w-4" />
+                        {isImporting ? 'در حال وارد کردن...' : 'وارد کردن به پایگاه داده'}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleResumeImport}
+                        disabled={!selectedCourse || isImporting}
+                        className="flex items-center gap-2"
+                      >
+                        {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                        <Play className="h-4 w-4" />
+                        {isImporting ? 'در حال ادامه...' : 'ادامه وارد کردن از همان نقطه'}
+                      </Button>
+                    )}
+                    
+                    {isImporting && !isPaused && (
+                      <Button
+                        onClick={handlePauseImport}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Pause className="h-4 w-4" />
+                        توقف
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Backup and Management Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                مدیریت پشتیبان‌گیری و بازیابی
+              </CardTitle>
+              <CardDescription>
+                پشتیبان‌گیری از داده‌ها و بازیابی آخرین واردات
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleBackupData}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  پشتیبان‌گیری از همه داده‌ها
+                </Button>
+                <Button
+                  onClick={handleRestoreLastImport}
+                  variant="destructive"
+                  disabled={importHistory.length === 0}
+                  className="flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  برگرداندن آخرین واردات
+                </Button>
+              </div>
+              {importHistory.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  آخرین واردات: {importHistory[0].new_users_created} ثبت‌نام از دوره "{importHistory[0].courses?.title}"
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Import History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                تاریخچه واردات
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {importHistory.length > 0 ? (
+                <div className="space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>تاریخ</TableHead>
+                        <TableHead>دوره</TableHead>
+                        <TableHead>تعداد کل</TableHead>
+                        <TableHead>ثبت‌نام جدید</TableHead>
+                        <TableHead>موجود</TableHead>
+                        <TableHead>توسط</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importHistory.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell>
+                            {new Date(log.created_at).toLocaleDateString('fa-IR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </TableCell>
+                          <TableCell>{log.courses?.title}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              {log.total_rows}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-green-600">
+                              <UserPlus className="h-4 w-4" />
+                              {log.new_users_created}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-yellow-600">
+                              <UserCheck className="h-4 w-4" />
+                              {log.existing_users_updated}
+                            </div>
+                          </TableCell>
+                          <TableCell>{log.uploaded_by}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  هیچ تاریخچه واردات یافت نشد
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="crm">
+          {/* CRM Import Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <StickyNote className="h-5 w-5" />
+                وارد کردن یادداشت‌های CRM از فایل CSV
+              </CardTitle>
+              <CardDescription>
+                فایل CSV یادداشت‌های CRM خود را بارگذاری کنید
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="crm-csv-file">فایل CSV یادداشت‌های CRM</Label>
+                <Input
+                  id="crm-csv-file"
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => handleCrmFileUpload(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                  disabled={isCrmProcessing}
                 />
-                <div className="grid grid-cols-4 gap-2 text-xs">
-                  <div className="text-green-600">ایجاد شده: {importProgress.created}</div>
-                  <div className="text-yellow-600">موجود: {importProgress.existing}</div>
-                  <div className="text-red-600">خطا: {importProgress.errors}</div>
-                  <div className="text-blue-600">پردازش شده: {importProgress.processed}</div>
+                <p className="text-sm text-muted-foreground">
+                  فرمت مورد انتظار: user_phone, content, type, user_name (اختیاری), status (اختیاری), created_by (اختیاری), course_name (اختیاری), created_date (اختیاری)
+                  <br />
+                  فرمت تاریخ: YYYY-MM-DD HH:MM (مثل 2024-02-28 08:22) یا YYYY-MM-DD یا DD/MM/YYYY یا DD-MM-YYYY
+                </p>
+                {isCrmProcessing && (
+                  <p className="text-sm text-blue-600">در حال پردازش فایل CRM...</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* CRM Analysis Results */}
+          {crmPreviewAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <StickyNote className="h-5 w-5" />
+                  تجزیه و تحلیل داده‌های CRM
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{crmPreviewAnalysis.totalRows}</div>
+                    <div className="text-sm text-blue-600">کل ردیف‌ها</div>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{crmPreviewAnalysis.validRows}</div>
+                    <div className="text-sm text-green-600">ردیف‌های معتبر</div>
+                  </div>
+                  <div className="bg-red-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{crmPreviewAnalysis.invalidRows}</div>
+                    <div className="text-sm text-red-600">ردیف‌های نامعتبر</div>
+                  </div>
+                  <div className="bg-yellow-50 p-3 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">{crmPreviewAnalysis.existingUsers}</div>
+                    <div className="text-sm text-yellow-600">کاربران موجود</div>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Import and Management Buttons */}
-            {showPreview && (
-              <div className="flex gap-2 mt-4">
-                {!importProgress?.canResume ? (
+                {crmPreviewAnalysis.duplicatePhones.length > 0 && (
+                  <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-orange-700">
+                          <strong>تلفن‌های تکراری:</strong> {crmPreviewAnalysis.duplicatePhones.length} مورد
+                        </p>
+                        <p className="text-xs text-orange-600 mt-1">
+                          {crmPreviewAnalysis.duplicatePhones.slice(0, 3).join(', ')}
+                          {crmPreviewAnalysis.duplicatePhones.length > 3 && '...'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {crmPreviewAnalysis.missingData.length > 0 && (
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-red-700 font-medium mb-2">داده‌های ناقص:</p>
+                        <div className="max-h-32 overflow-y-auto">
+                          {crmPreviewAnalysis.missingData.slice(0, 5).map((item, index) => (
+                            <p key={index} className="text-xs text-red-600">
+                              {item.phone || 'نامشخص'}: {item.reason}
+                            </p>
+                          ))}
+                          {crmPreviewAnalysis.missingData.length > 5 && (
+                            <p className="text-xs text-red-600">... و {crmPreviewAnalysis.missingData.length - 5} مورد دیگر</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* CRM Preview Data */}
+          {showCrmPreview && crmPreviewData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  پیش‌نمایش داده‌های CRM ({crmPreviewData.length} ردیف)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-96 overflow-auto border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>تلفن کاربر</TableHead>
+                        <TableHead>نام کاربر</TableHead>
+                        <TableHead>محتوا</TableHead>
+                        <TableHead>نوع</TableHead>
+                        <TableHead>وضعیت</TableHead>
+                        <TableHead>ایجاد شده توسط</TableHead>
+                        <TableHead>دوره</TableHead>
+                        <TableHead>تاریخ ایجاد</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {crmPreviewData.slice(0, 10).map((row, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{row.user_phone}</TableCell>
+                          <TableCell>{row.user_name || '-'}</TableCell>
+                          <TableCell className="max-w-xs truncate">{row.content}</TableCell>
+                          <TableCell>{row.type}</TableCell>
+                          <TableCell>{row.status || 'در انتظار پرداخت'}</TableCell>
+                          <TableCell>{row.created_by || 'imported'}</TableCell>
+                          <TableCell>{row.course_name || '-'}</TableCell>
+                          <TableCell>{row.created_date || 'تاریخ فعلی'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {crmPreviewData.length > 10 && (
+                    <div className="p-4 text-center text-muted-foreground">
+                      و {crmPreviewData.length - 10} ردیف دیگر...
+                    </div>
+                  )}
+                </div>
+
+                {/* CRM Progress Bar */}
+                {crmImportProgress && (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>در حال پردازش: {crmImportProgress.currentUser}</span>
+                      <span>{crmImportProgress.processed} از {crmImportProgress.total}</span>
+                    </div>
+                    <Progress 
+                      value={(crmImportProgress.processed / crmImportProgress.total) * 100} 
+                      className="h-2"
+                    />
+                    <div className="grid grid-cols-4 gap-2 text-xs">
+                      <div className="text-green-600">ایجاد شده: {crmImportProgress.created}</div>
+                      <div className="text-yellow-600">موجود: {crmImportProgress.existing}</div>
+                      <div className="text-red-600">خطا: {crmImportProgress.errors}</div>
+                      <div className="text-blue-600">پردازش شده: {crmImportProgress.processed}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* CRM Import Buttons */}
+                <div className="flex gap-2 mt-4">
                   <Button
-                    onClick={handleFinalImport}
-                    disabled={!selectedCourse || isImporting}
+                    onClick={handleCrmImport}
+                    disabled={isCrmImporting}
                     className="flex items-center gap-2"
                   >
-                    {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
+                    {isCrmImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
                     <Database className="h-4 w-4" />
-                    {isImporting ? 'در حال وارد کردن...' : 'وارد کردن به پایگاه داده'}
+                    {isCrmImporting ? 'در حال وارد کردن...' : 'وارد کردن یادداشت‌های CRM'}
                   </Button>
-                ) : (
-                  <Button
-                    onClick={handleResumeImport}
-                    disabled={!selectedCourse || isImporting}
-                    className="flex items-center gap-2"
-                  >
-                    {isImporting && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />}
-                    <Play className="h-4 w-4" />
-                    {isImporting ? 'در حال ادامه...' : 'ادامه وارد کردن از همان نقطه'}
-                  </Button>
-                )}
-                
-                {isImporting && !isPaused && (
-                  <Button
-                    onClick={handlePauseImport}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Pause className="h-4 w-4" />
-                    توقف
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Backup and Management Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            مدیریت پشتیبان‌گیری و بازیابی
-          </CardTitle>
-          <CardDescription>
-            پشتیبان‌گیری از داده‌ها و بازیابی آخرین واردات
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleBackupData}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              پشتیبان‌گیری از همه داده‌ها
-            </Button>
-            <Button
-              onClick={handleRestoreLastImport}
-              variant="destructive"
-              disabled={importHistory.length === 0}
-              className="flex items-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              برگرداندن آخرین واردات
-            </Button>
-          </div>
-          {importHistory.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-2">
-              آخرین واردات: {importHistory[0].new_users_created} ثبت‌نام از دوره "{importHistory[0].courses?.title}"
-            </p>
+                  
+                  {isCrmImporting && !isCrmPaused && (
+                    <Button
+                      onClick={handleCrmPauseImport}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Pause className="h-4 w-4" />
+                      توقف
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Import History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            تاریخچه واردات
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {importHistory.length > 0 ? (
-            <div className="space-y-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>تاریخ</TableHead>
-                    <TableHead>دوره</TableHead>
-                    <TableHead>تعداد کل</TableHead>
-                    <TableHead>ثبت‌نام جدید</TableHead>
-                    <TableHead>موجود</TableHead>
-                    <TableHead>توسط</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {importHistory.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>
-                        {new Date(log.created_at).toLocaleDateString('fa-IR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </TableCell>
-                      <TableCell>{log.courses?.title}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          {log.total_rows}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-green-600">
-                          <UserPlus className="h-4 w-4" />
-                          {log.new_users_created}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-yellow-600">
-                          <UserCheck className="h-4 w-4" />
-                          {log.existing_users_updated}
-                        </div>
-                      </TableCell>
-                      <TableCell>{log.uploaded_by}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
-              هیچ تاریخچه واردات یافت نشد
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
