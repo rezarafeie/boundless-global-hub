@@ -86,8 +86,8 @@ const CRMAdmin: React.FC = () => {
         user_id: note.user_id,
         course_id: note.course_id,
         status: note.status,
-        courses: note.courses || null,
-        chat_users: note.chat_users || null
+        courses: note.courses && typeof note.courses === 'object' && 'title' in note.courses ? note.courses : null,
+        chat_users: note.chat_users && typeof note.chat_users === 'object' && 'name' in note.chat_users ? note.chat_users : null
       }));
       
       setNotes(validNotes);
