@@ -862,32 +862,46 @@ export type Database = {
       crm_notes: {
         Row: {
           content: string
+          course_id: string | null
           created_at: string
           created_by: string
           id: string
+          status: string | null
           type: string
           updated_at: string
           user_id: number
         }
         Insert: {
           content: string
+          course_id?: string | null
           created_at?: string
           created_by: string
           id?: string
+          status?: string | null
           type: string
           updated_at?: string
           user_id: number
         }
         Update: {
           content?: string
+          course_id?: string | null
           created_at?: string
           created_by?: string
           id?: string
+          status?: string | null
           type?: string
           updated_at?: string
           user_id?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crm_notes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discount_codes: {
         Row: {
