@@ -29,7 +29,7 @@ class UnifiedAuthService {
   async findUserByCredentials(phone: string, email?: string, countryCode?: string): Promise<UnifiedUser | null> {
     try {
       // Check messenger users first
-      const messengerUser = await messengerService.getUserByPhone(phone, countryCode || '+98');
+      const messengerUser = await messengerService.getUserByPhone(phone);
       
       // Check academy users
       const { data: academyUser } = await supabase
@@ -80,9 +80,9 @@ class UnifiedAuthService {
       // Check messenger password if user exists in messenger
       if (user.isMessengerUser && user.messengerData) {
         const messengerAuth = await messengerService.loginWithPassword(phone, password);
-        if (messengerAuth && messengerAuth.user) {
+        if (messengerAuth && messengerAuth.user && !messengerAuth.error) {
           passwordValid = true;
-          sessionToken = messengerAuth.session_token || '';
+          sessionToken = messengerAuth.sessionToken;
         }
       }
 
@@ -163,6 +163,10 @@ class UnifiedAuthService {
         lastName
       });
 
+      if (messengerResult.error) {
+        throw new Error(messengerResult.error);
+      }
+
       // Register in academy system
       const { data: academyUser, error: academyError } = await supabase
         .from('academy_users')
@@ -198,7 +202,7 @@ class UnifiedAuthService {
 
       return {
         user: unifiedUser,
-        sessionToken: messengerResult.session_token,
+        sessionToken: messengerResult.sessionToken,
         isNewUser: true
       };
     } catch (error) {

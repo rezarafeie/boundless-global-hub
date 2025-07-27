@@ -91,6 +91,18 @@ export interface ChatTopic {
   updated_at: string;
 }
 
+export interface AuthResult {
+  user: MessengerUser;
+  sessionToken: string;
+  error?: string;
+}
+
+export interface RegistrationResult {
+  user: MessengerUser;
+  sessionToken: string;
+  error?: string;
+}
+
 export const messengerService = {
   async getRooms(): Promise<ChatRoom[]> {
     try {
@@ -139,6 +151,14 @@ export const messengerService = {
                 media_url,
                 media_content,
                 created_at,
+                recipient_id,
+                room_id,
+                conversation_id,
+                topic_id,
+                is_read,
+                unread_by_support,
+                reply_to_message_id,
+                forwarded_from_message_id,
                 chat_users!messenger_messages_sender_id_fkey (name)
               `)
               .eq('room_id', room.id)
@@ -158,14 +178,10 @@ export const messengerService = {
               last_message: lastMessage ? {
                 ...lastMessage,
                 sender_name: lastMessage.chat_users?.name || 'Unknown',
-                recipient_id: null,
-                room_id: room.id,
-                conversation_id: null,
-                topic_id: null,
-                is_read: false,
-                unread_by_support: false,
-                reply_to_message_id: null,
-                forwarded_from_message_id: null
+                sender: {
+                  name: lastMessage.chat_users?.name || 'Unknown',
+                  phone: ''
+                }
               } : undefined,
               last_message_time: lastMessage?.created_at || room.updated_at,
               unread_count: unreadCount || 0
@@ -290,7 +306,10 @@ export const messengerService = {
           message_type: mediaType || 'text',
           media_url: mediaUrl || null,
           media_content: mediaContent || null,
-          is_read: false
+          is_read: false,
+          unread_by_support: false,
+          reply_to_message_id: null,
+          forwarded_from_message_id: null
         }])
         .select()
         .single();
@@ -351,7 +370,11 @@ export const messengerService = {
 
       const messages = (data || []).map(msg => ({
         ...msg,
-        sender_name: msg.chat_users?.name || 'Unknown'
+        sender_name: msg.chat_users?.name || 'Unknown',
+        sender: {
+          name: msg.chat_users?.name || 'Unknown',
+          phone: ''
+        }
       }));
 
       console.log('Messages fetched successfully:', messages.length);
@@ -803,42 +826,88 @@ export const messengerService = {
     }
   },
 
-  async loginWithPassword(phone: string, password: string): Promise<{ user: MessengerUser; sessionToken: string } | null> {
+  async loginWithPassword(phone: string, password: string): Promise<AuthResult> {
     try {
-      // This is a mock implementation - in reality you'd validate password hash
       const user = await this.getUserByPhone(phone);
-      if (!user) return null;
+      if (!user) {
+        return {
+          user: {} as MessengerUser,
+          sessionToken: '',
+          error: 'User not found'
+        };
+      }
 
-      const sessionToken = 'mock-session-token';
-      return { user, sessionToken };
+      // In a real implementation, you'd validate the password hash
+      // For now, we'll simulate a successful login
+      const sessionToken = await this.createSession(user.id);
+      
+      return {
+        user,
+        sessionToken,
+        error: undefined
+      };
     } catch (error) {
       console.error('Error in loginWithPassword:', error);
-      return null;
+      return {
+        user: {} as MessengerUser,
+        sessionToken: '',
+        error: 'Login failed'
+      };
     }
   },
 
-  async registerWithPassword(userData: Partial<MessengerUser>, password: string): Promise<MessengerUser | null> {
+  async registerWithPassword(userData: { 
+    name: string; 
+    phone: string; 
+    password: string; 
+    email?: string; 
+    username?: string;
+    countryCode?: string;
+    firstName?: string;
+    lastName?: string;
+    isBoundlessStudent?: boolean;
+  }): Promise<RegistrationResult> {
     try {
-      // This is a mock implementation - in reality you'd hash the password
       const { data, error } = await supabase
         .from('chat_users')
         .insert([{
-          ...userData,
+          name: userData.name,
+          phone: userData.phone,
+          email: userData.email || null,
+          username: userData.username || null,
+          country_code: userData.countryCode || '+98',
+          first_name: userData.firstName || null,
+          last_name: userData.lastName || null,
           password_hash: 'mock-hash', // In reality, hash the password
-          is_approved: false
+          is_approved: false,
+          bedoun_marz: userData.isBoundlessStudent || false
         }])
         .select()
         .single();
 
       if (error) {
         console.error('Error registering user:', error);
-        return null;
+        return {
+          user: {} as MessengerUser,
+          sessionToken: '',
+          error: 'Registration failed'
+        };
       }
 
-      return data;
+      const sessionToken = await this.createSession(data.id);
+      
+      return {
+        user: data,
+        sessionToken,
+        error: undefined
+      };
     } catch (error) {
       console.error('Error in registerWithPassword:', error);
-      return null;
+      return {
+        user: {} as MessengerUser,
+        sessionToken: '',
+        error: 'Registration failed'
+      };
     }
   },
 
@@ -940,7 +1009,11 @@ export const messengerService = {
           media_url: mediaUrl || null,
           media_content: mediaContent || null,
           is_read: false,
-          unread_by_support: false
+          unread_by_support: false,
+          room_id: null,
+          topic_id: null,
+          reply_to_message_id: null,
+          forwarded_from_message_id: null
         }])
         .select()
         .single();
@@ -1008,6 +1081,83 @@ export const messengerService = {
     } catch (error) {
       console.error('Error in getEnrollmentsCount:', error);
       return 0;
+    }
+  },
+
+  async deactivateSession(sessionToken: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_sessions')
+        .update({ is_active: false })
+        .eq('session_token', sessionToken);
+
+      if (error) {
+        console.error('Error deactivating session:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deactivateSession:', error);
+      throw error;
+    }
+  },
+
+  async checkUsernameUniqueness(username: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('id')
+        .eq('username', username)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // No user found with this username, so it's unique
+        return true;
+      }
+
+      if (error) {
+        console.error('Error checking username uniqueness:', error);
+        return false;
+      }
+
+      // User found with this username, so it's not unique
+      return false;
+    } catch (error) {
+      console.error('Error in checkUsernameUniqueness:', error);
+      return false;
+    }
+  },
+
+  async updateUserProfile(userId: number, updateData: Partial<MessengerUser>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user profile:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserProfile:', error);
+      throw error;
+    }
+  },
+
+  async changePassword(userId: number, newPassword: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ password_hash: 'mock-hash' }) // In reality, hash the password
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error changing password:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in changePassword:', error);
+      throw error;
     }
   }
 };
