@@ -364,76 +364,6 @@ const AdminEnrollmentDetails: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* User Activity Card */}
-          {enrollment.chat_user_id && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-blue-600" />
-                  فعالیت کاربر
-                  {activityLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activityLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <span className="mr-2 text-muted-foreground">در حال بارگذاری فعالیت‌ها...</span>
-                  </div>
-                ) : userActivity.length > 0 ? (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {userActivity.map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                        <div className="p-2 bg-primary/10 rounded-full">
-                          <Activity className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="font-medium text-sm">
-                              {activity.event_type === 'login' ? 'ورود به سیستم' :
-                               activity.event_type === 'logout' ? 'خروج از سیستم' :
-                               activity.event_type === 'page_view' ? 'بازدید صفحه' :
-                               activity.event_type === 'course_access' ? 'دسترسی به دوره' :
-                               activity.event_type === 'lesson_progress' ? 'پیشرفت درس' :
-                               activity.event_type === 'message_sent' ? 'ارسال پیام' :
-                               activity.event_type}
-                            </h4>
-                            <span className="text-xs text-muted-foreground">
-                              {new Intl.DateTimeFormat('fa-IR', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }).format(new Date(activity.created_at))}
-                            </span>
-                          </div>
-                          {activity.reference && (
-                            <p className="text-sm text-muted-foreground mb-1">
-                              مرجع: {activity.reference}
-                            </p>
-                          )}
-                          {activity.metadata && Object.keys(activity.metadata).length > 0 && (
-                            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                              <pre className="whitespace-pre-wrap overflow-hidden">
-                                {JSON.stringify(activity.metadata, null, 2).slice(0, 200)}
-                                {JSON.stringify(activity.metadata, null, 2).length > 200 && '...'}
-                              </pre>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">هنوز فعالیتی ثبت نشده است</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
           {/* Admin Actions Card */}
           {isPendingManualPayment && !isManuallyApproved && !isManuallyRejected && (
             <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
@@ -857,6 +787,77 @@ const AdminEnrollmentDetails: React.FC = () => {
               preselectedCourseId={enrollment.course_id}
               preselectedCourseTitle={enrollment.courses.title}
             />
+          )}
+
+          {/* User Activity Card */}
+          {enrollment.chat_user_id && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                  فعالیت کاربر
+                  {activityLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activityLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="mr-2 text-muted-foreground">در حال بارگذاری فعالیت‌ها...</span>
+                  </div>
+                ) : userActivity.length > 0 ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {userActivity.map((activity) => (
+                      <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <Activity className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium text-sm">
+                              {activity.event_type === 'login' ? 'ورود به سیستم' :
+                               activity.event_type === 'logout' ? 'خروج از سیستم' :
+                               activity.event_type === 'page_view' ? 'بازدید صفحه' :
+                               activity.event_type === 'course_access' ? 'دسترسی به دوره' :
+                               activity.event_type === 'lesson_progress' ? 'پیشرفت درس' :
+                               activity.event_type === 'message_sent' ? 'ارسال پیام' :
+                               activity.event_type}
+                            </h4>
+                            <span className="text-xs text-muted-foreground">
+                              {new Intl.DateTimeFormat('fa-IR', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }).format(new Date(activity.created_at))}
+                            </span>
+                          </div>
+                          {activity.reference && (
+                            <p className="text-sm text-muted-foreground mb-1">
+                              مرجع: {activity.reference}
+                            </p>
+                          )}
+                          {activity.metadata && Object.keys(activity.metadata).length > 0 && (
+                            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                              <pre className="whitespace-pre-wrap overflow-hidden">
+                                {JSON.stringify(activity.metadata, null, 2).slice(0, 200)}
+                                {JSON.stringify(activity.metadata, null, 2).length > 200 && '...'}
+                              </pre>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">هنوز فعالیتی ثبت نشده است</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
