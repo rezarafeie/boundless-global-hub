@@ -889,7 +889,6 @@ const LeadManagement: React.FC = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>نام و نام خانوادگی</TableHead>
-                          <TableHead>ایمیل</TableHead>
                           <TableHead>تلفن</TableHead>
                           <TableHead>دوره</TableHead>
                           <TableHead>مبلغ</TableHead>
@@ -902,7 +901,6 @@ const LeadManagement: React.FC = () => {
                         {filteredLeads.map((lead) => (
                           <TableRow key={lead.enrollment_id}>
                             <TableCell>{lead.full_name}</TableCell>
-                            <TableCell>{lead.email}</TableCell>
                             <TableCell>{lead.phone}</TableCell>
                             <TableCell>{lead.course_title}</TableCell>
                             <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
@@ -1008,7 +1006,6 @@ const LeadManagement: React.FC = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>نام و نام خانوادگی</TableHead>
-                          <TableHead>ایمیل</TableHead>
                           <TableHead>تلفن</TableHead>
                           <TableHead>دوره</TableHead>
                           <TableHead>مبلغ</TableHead>
@@ -1021,7 +1018,6 @@ const LeadManagement: React.FC = () => {
                         {filteredAssignments.map((assignment) => (
                           <TableRow key={assignment.assignment_id}>
                             <TableCell>{assignment.full_name}</TableCell>
-                            <TableCell>{assignment.email}</TableCell>
                             <TableCell>{assignment.phone}</TableCell>
                             <TableCell>{assignment.course_title}</TableCell>
                             <TableCell>{formatPrice(assignment.payment_amount)}</TableCell>
@@ -1189,7 +1185,6 @@ const LeadManagement: React.FC = () => {
                            <TableHeader>
                              <TableRow>
                                <TableHead>نام و نام خانوادگی</TableHead>
-                               <TableHead>ایمیل</TableHead>
                                <TableHead>تلفن</TableHead>
                                <TableHead>دوره</TableHead>
                                <TableHead>مبلغ</TableHead>
@@ -1203,7 +1198,6 @@ const LeadManagement: React.FC = () => {
                              {filteredAdminLeads.map((lead) => (
                                <TableRow key={lead.enrollment_id}>
                                  <TableCell>{lead.full_name}</TableCell>
-                                 <TableCell>{lead.email}</TableCell>
                                  <TableCell>{lead.phone}</TableCell>
                                  <TableCell>{lead.course_title}</TableCell>
                                  <TableCell>{formatPrice(lead.payment_amount)}</TableCell>

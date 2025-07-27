@@ -348,21 +348,19 @@ const CourseManagement: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>نام</TableHead>
-                      <TableHead>ایمیل</TableHead>
-                      <TableHead>تلفن</TableHead>
-                      <TableHead>وضعیت پرداخت</TableHead>
-                      <TableHead>مبلغ</TableHead>
-                      <TableHead>تاریخ</TableHead>
+                       <TableHead>نام</TableHead>
+                       <TableHead>تلفن</TableHead>
+                       <TableHead>وضعیت پرداخت</TableHead>
+                       <TableHead>مبلغ</TableHead>
+                       <TableHead>تاریخ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {enrollments.map((enrollment) => (
                       <TableRow key={enrollment.id}>
-                        <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                        <TableCell>{enrollment.email}</TableCell>
-                        <TableCell>{enrollment.phone}</TableCell>
-                        <TableCell>
+                         <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                         <TableCell>{enrollment.phone}</TableCell>
+                         <TableCell>
                           <Badge 
                             variant={
                               enrollment.payment_status === 'completed' ? "default" :

@@ -347,8 +347,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <span className="font-medium">دوره:</span> {enrollment.courses.title}
                             <div className="text-xs text-muted-foreground">{enrollment.courses.slug}</div>
                           </div>
-                          <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
-                          <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
+                           <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium">مبلغ:</span>
                             <DollarSign className="h-3 w-3" />
@@ -403,16 +402,15 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>نام</TableHead>
-                      <TableHead>دوره</TableHead>
-                      <TableHead>تلفن</TableHead>
-                      <TableHead>ایمیل</TableHead>
-                      <TableHead>مبلغ</TableHead>
-                      <TableHead>روش پرداخت</TableHead>
-                      <TableHead>وضعیت</TableHead>
-                      <TableHead>تاریخ</TableHead>
-                      <TableHead>زمان</TableHead>
-                      <TableHead>عملیات</TableHead>
+                       <TableHead>نام</TableHead>
+                       <TableHead>دوره</TableHead>
+                       <TableHead>تلفن</TableHead>
+                       <TableHead>مبلغ</TableHead>
+                       <TableHead>روش پرداخت</TableHead>
+                       <TableHead>وضعیت</TableHead>
+                       <TableHead>تاریخ</TableHead>
+                       <TableHead>زمان</TableHead>
+                       <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -432,10 +430,9 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{enrollment.phone}</TableCell>
-                        <TableCell>{enrollment.email}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
+                         <TableCell>{enrollment.phone}</TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-1">
                             <DollarSign className="h-4 w-4" />
                             {formatPrice(enrollment.payment_amount)}
                           </div>

@@ -184,8 +184,7 @@ const PaginatedUsersTable: React.FC = () => {
                           {getStatusBadge(user)}
                         </div>
                         <div className="space-y-2 text-sm">
-                          <div><span className="font-medium">تلفن:</span> {user.phone}</div>
-                          <div><span className="font-medium">ایمیل:</span> {user.email || '-'}</div>
+                           <div><span className="font-medium">تلفن:</span> {user.phone}</div>
                           {user.username && (
                             <div><span className="font-medium">نام کاربری:</span> <code className="bg-muted px-1 py-0.5 rounded text-xs">@{user.username}</code></div>
                           )}
@@ -217,23 +216,21 @@ const PaginatedUsersTable: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>نام</TableHead>
-                      <TableHead>تلفن</TableHead>
-                      <TableHead>ایمیل</TableHead>
-                      <TableHead>نام کاربری</TableHead>
-                      <TableHead>وضعیت</TableHead>
-                      <TableHead>نقش‌ها</TableHead>
-                      <TableHead>تاریخ عضویت</TableHead>
-                      <TableHead>عملیات</TableHead>
+                       <TableHead>نام</TableHead>
+                       <TableHead>تلفن</TableHead>
+                       <TableHead>نام کاربری</TableHead>
+                       <TableHead>وضعیت</TableHead>
+                       <TableHead>نقش‌ها</TableHead>
+                       <TableHead>تاریخ عضویت</TableHead>
+                       <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((user) => (
                       <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell>{user.email || '-'}</TableCell>
-                        <TableCell>
+                         <TableCell className="font-medium">{user.name}</TableCell>
+                         <TableCell>{user.phone}</TableCell>
+                         <TableCell>
                           {user.username ? (
                             <code className="bg-muted px-2 py-1 rounded text-sm">@{user.username}</code>
                           ) : (
