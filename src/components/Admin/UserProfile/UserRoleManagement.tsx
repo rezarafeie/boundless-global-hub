@@ -22,6 +22,12 @@ interface UserRoleManagementProps {
   onRoleUpdate: () => void;
 }
 
+interface AssignedCourse {
+  course_id: string;
+  course_title: string;
+  course_slug: string;
+}
+
 const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
   userId,
   userName,
@@ -36,6 +42,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
   const [selectedRole, setSelectedRole] = useState(currentRole);
   const [updating, setUpdating] = useState(false);
   const [isSalesAgent, setIsSalesAgent] = useState(false);
+  const [assignedCourses, setAssignedCourses] = useState<AssignedCourse[]>([]);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
 
   useEffect(() => {
@@ -51,9 +58,34 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
         .eq('is_active', true)
         .single();
 
-      setIsSalesAgent(!!data && !error);
+      const isAgent = !!data && !error;
+      setIsSalesAgent(isAgent);
+      
+      if (isAgent) {
+        fetchAssignedCourses();
+      }
     } catch (error) {
       console.error('Error checking sales agent:', error);
+    }
+  };
+
+  const fetchAssignedCourses = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_sales_agent_courses', {
+        agent_user_id: userId
+      });
+
+      if (error) throw error;
+      
+      const courses = (data || []).map((course: any) => ({
+        course_id: course.course_id,
+        course_title: course.course_title,
+        course_slug: course.course_slug
+      }));
+      
+      setAssignedCourses(courses);
+    } catch (error) {
+      console.error('Error fetching assigned courses:', error);
     }
   };
 
@@ -82,6 +114,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
 
         if (salesAgentError) throw salesAgentError;
         setIsSalesAgent(true);
+        fetchAssignedCourses();
       } else {
         // If role is not sales_agent, deactivate sales agent record
         const { error: deactivateError } = await supabase
@@ -91,6 +124,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
 
         if (deactivateError) throw deactivateError;
         setIsSalesAgent(false);
+        setAssignedCourses([]);
       }
 
       toast({
@@ -121,83 +155,103 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserCog className="h-5 w-5" />
-          مدیریت نقش کاربر
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium mb-2">نقش فعلی:</h3>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{currentRole}</Badge>
-              {isMessengerAdmin && <Badge variant="secondary">مدیر پیام‌رسان</Badge>}
-              {isSupportAgent && <Badge variant="secondary">پشتیبان</Badge>}
-              {isSalesAgent && <Badge variant="secondary">نماینده فروش</Badge>}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="font-medium mb-2">تغییر نقش:</h3>
-            <div className="flex items-center gap-2">
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="انتخاب نقش" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                onClick={handleRoleUpdate} 
-                disabled={updating || selectedRole === currentRole}
-              >
-                {updating ? 'در حال به‌روزرسانی...' : 'به‌روزرسانی'}
-              </Button>
-            </div>
-          </div>
-
-          {(selectedRole === 'sales_agent' || isSalesAgent) && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-medium mb-2">تنظیمات نماینده فروش:</h3>
-                <Dialog open={showCourseSelector} onOpenChange={setShowCourseSelector}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      مدیریت دوره‌های واگذار شده
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>مدیریت دوره‌های نماینده فروش</DialogTitle>
-                    </DialogHeader>
-                    <SalesAgentCourseSelector
-                      userId={userId}
-                      userName={userName}
-                      onClose={() => setShowCourseSelector(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
-                <p className="text-sm text-muted-foreground mt-2">
-                  انتخاب کنید که این نماینده فروش لیدهای کدام دوره‌ها را می‌تواند مشاهده کند
-                </p>
+    <div dir="rtl" className="text-right">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-right">
+            <UserCog className="h-5 w-5" />
+            مدیریت نقش کاربر
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="text-right">
+              <h3 className="font-medium mb-2 text-right">نقش فعلی:</h3>
+              <div className="flex items-center gap-2 justify-end">
+                <Badge variant="outline">{currentRole}</Badge>
+                {isMessengerAdmin && <Badge variant="secondary">مدیر پیام‌رسان</Badge>}
+                {isSupportAgent && <Badge variant="secondary">پشتیبان</Badge>}
+                {isSalesAgent && <Badge variant="secondary">نماینده فروش</Badge>}
               </div>
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+
+            <Separator />
+
+            <div className="text-right">
+              <h3 className="font-medium mb-2 text-right">تغییر نقش:</h3>
+              <div className="flex items-center gap-2 justify-end">
+                <Button 
+                  onClick={handleRoleUpdate} 
+                  disabled={updating || selectedRole === currentRole}
+                >
+                  {updating ? 'در حال به‌روزرسانی...' : 'به‌روزرسانی'}
+                </Button>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="انتخاب نقش" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {(selectedRole === 'sales_agent' || isSalesAgent) && (
+              <>
+                <Separator />
+                <div className="text-right">
+                  <h3 className="font-medium mb-2 text-right">تنظیمات نماینده فروش:</h3>
+                  
+                  {/* Show assigned courses */}
+                  {assignedCourses.length > 0 && (
+                    <div className="mb-4 text-right">
+                      <p className="text-sm font-medium mb-2 text-right">دوره‌های واگذار شده:</p>
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {assignedCourses.map((course) => (
+                          <Badge key={course.course_id} variant="outline" className="text-right">
+                            {course.course_title}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <Dialog open={showCourseSelector} onOpenChange={setShowCourseSelector}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        مدیریت دوره‌های واگذار شده
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-right">مدیریت دوره‌های نماینده فروش</DialogTitle>
+                      </DialogHeader>
+                      <SalesAgentCourseSelector
+                        userId={userId}
+                        userName={userName}
+                        onClose={() => {
+                          setShowCourseSelector(false);
+                          fetchAssignedCourses(); // Refresh courses after closing
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                  <p className="text-sm text-muted-foreground mt-2 text-right">
+                    انتخاب کنید که این نماینده فروش لیدهای کدام دوره‌ها را می‌تواند مشاهده کند
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

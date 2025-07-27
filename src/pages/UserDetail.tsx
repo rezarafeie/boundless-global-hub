@@ -232,16 +232,18 @@ const UserDetail: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="role" className="space-y-4">
-              <UserRoleManagement
-                userId={user.id}
-                userName={user.full_name || user.name}
-                userPhone={user.phone}
-                userEmail={user.email || ''}
-                currentRole={user.role || 'user'}
-                isMessengerAdmin={user.is_messenger_admin}
-                isSupportAgent={user.is_support_agent}
-                onRoleUpdate={handleRoleUpdate}
-              />
+              <div dir="rtl" className="text-right">
+                <UserRoleManagement
+                  userId={user.id}
+                  userName={user.full_name || user.name}
+                  userPhone={user.phone}
+                  userEmail={user.email || ''}
+                  currentRole={user.role || 'user'}
+                  isMessengerAdmin={user.is_messenger_admin}
+                  isSupportAgent={user.is_support_agent}
+                  onRoleUpdate={handleRoleUpdate}
+                />
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
