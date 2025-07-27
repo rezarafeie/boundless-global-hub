@@ -75,8 +75,8 @@ interface AdminLead {
 interface AgentSummary {
   agent_id: number;
   agent_name: string;
-  total_leads: number;
-  assigned_leads?: number; // Optional for backward compatibility
+  total_leads: number; // Assigned leads from admin
+  delegated_leads: number; // Leads delegated by agent to himself
   total_calls: number;
   total_sales: number;
   total_sales_amount: number;
@@ -515,8 +515,8 @@ const LeadManagement: React.FC = () => {
         return {
           agent_id: agent.id,
           agent_name: agentName || 'نامشخص',
-          total_leads: totalAvailableLeads, // Show total available leads, not just assigned
-          assigned_leads: assignedLeads, // Add this to show assigned leads separately
+          total_leads: assignedLeads, // Show only assigned leads
+          delegated_leads: assignedLeads, // For now, same as assigned (can be modified later for self-delegation logic)
           total_calls: totalCalls,
           total_sales: completedSales,
           total_sales_amount: totalSalesAmount,
@@ -943,6 +943,13 @@ const LeadManagement: React.FC = () => {
                           <span className="text-sm">لیدها:</span>
                         </div>
                         <Badge variant="secondary">{summary.total_leads}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4 text-orange-600" />
+                          <span className="text-sm">لید های واگذار شده:</span>
+                        </div>
+                        <Badge variant="secondary">{summary.delegated_leads}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
