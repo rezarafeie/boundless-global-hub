@@ -64,6 +64,7 @@ interface AdminLead {
   full_name: string;
   email: string;
   phone: string;
+  course_id: string;
   course_title: string;
   payment_amount: number;
   payment_status: string;
@@ -140,6 +141,11 @@ const LeadManagement: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const ITEMS_PER_PAGE = 50;
   
+  // Filter states for admin leads
+  const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const [selectedAgent, setSelectedAgent] = useState<string>('all');
+  const [agents, setAgents] = useState<{ id: number; name: string }[]>([]);
+  
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -157,6 +163,7 @@ const LeadManagement: React.FC = () => {
     fetchLeads();
     fetchAssignments();
     fetchCourses();
+    fetchAgents();
     if (isAdmin) {
       fetchAdminLeads(currentPage);
       fetchAgentSummaries();
@@ -175,6 +182,30 @@ const LeadManagement: React.FC = () => {
       setCourses(data || []);
     } catch (error) {
       console.error('Error fetching courses:', error);
+    }
+  };
+
+  const fetchAgents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sales_agents')
+        .select(`
+          id,
+          user_id,
+          chat_users!inner(name)
+        `)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      
+      const agentsData = data?.map(agent => ({
+        id: agent.id,
+        name: (agent as any).chat_users.name
+      })) || [];
+      
+      setAgents(agentsData);
+    } catch (error) {
+      console.error('Error fetching agents:', error);
     }
   };
 
@@ -362,6 +393,7 @@ const LeadManagement: React.FC = () => {
           full_name: enrollment.full_name,
           email: enrollment.email,
           phone: enrollment.phone,
+          course_id: enrollment.course_id,
           course_title: course?.title || 'نامشخص',
           payment_amount: enrollment.payment_amount,
           payment_status: enrollment.payment_status,
@@ -745,11 +777,33 @@ const LeadManagement: React.FC = () => {
   });
 
   const filteredAdminLeads = adminLeads.filter(lead => {
-    if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
-    return lead.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-           lead.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-           lead.phone.includes(debouncedSearchTerm) ||
-           (lead.assigned_to_agent && lead.assigned_to_agent.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+    // Search filter
+    if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+      const search = debouncedSearchTerm.toLowerCase();
+      const matchesSearch = (
+        lead.full_name.toLowerCase().includes(search) ||
+        lead.phone.includes(search) ||
+        lead.course_title.toLowerCase().includes(search) ||
+        (lead.assigned_to_agent && lead.assigned_to_agent.toLowerCase().includes(search))
+      );
+      if (!matchesSearch) return false;
+    }
+    
+    // Course filter
+    if (selectedCourse !== 'all' && lead.course_id !== selectedCourse) {
+      return false;
+    }
+    
+    // Agent filter
+    if (selectedAgent !== 'all') {
+      if (selectedAgent === 'unassigned') {
+        if (lead.assigned_to_agent) return false;
+      } else {
+        if (!lead.assigned_to_agent || !lead.assigned_to_agent.includes(selectedAgent)) return false;
+      }
+    }
+    
+    return true;
   });
 
   if (loading) {
@@ -1105,13 +1159,51 @@ const LeadManagement: React.FC = () => {
 
               {/* All Leads Table */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    تمام لیدها
-                    {adminLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
-                  </CardTitle>
-                </CardHeader>
+                 <CardHeader>
+                   <CardTitle className="flex items-center gap-2">
+                     <BarChart3 className="h-5 w-5" />
+                     تمام لیدها
+                     {adminLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                   </CardTitle>
+                   
+                   {/* Filter Controls */}
+                   <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                     <div className="flex-1">
+                       <Label htmlFor="course-filter" className="text-sm font-medium">فیلتر بر اساس دوره</Label>
+                       <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                         <SelectTrigger id="course-filter" className="w-full">
+                           <SelectValue placeholder="همه دوره‌ها" />
+                         </SelectTrigger>
+                         <SelectContent className="bg-white z-50">
+                           <SelectItem value="all">همه دوره‌ها</SelectItem>
+                           {courses.map((course) => (
+                             <SelectItem key={course.id} value={course.id}>
+                               {course.title}
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     
+                     <div className="flex-1">
+                       <Label htmlFor="agent-filter" className="text-sm font-medium">فیلتر بر اساس نماینده</Label>
+                       <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                         <SelectTrigger id="agent-filter" className="w-full">
+                           <SelectValue placeholder="همه نمایندگان" />
+                         </SelectTrigger>
+                         <SelectContent className="bg-white z-50">
+                           <SelectItem value="all">همه نمایندگان</SelectItem>
+                           <SelectItem value="unassigned">واگذار نشده</SelectItem>
+                           {agents.map((agent) => (
+                             <SelectItem key={agent.id} value={agent.name}>
+                               {agent.name}
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   </div>
+                 </CardHeader>
                 <CardContent>
                   {adminLoading ? (
                     <div className="flex items-center justify-center py-8">
