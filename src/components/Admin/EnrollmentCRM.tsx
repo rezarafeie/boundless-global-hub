@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CRMNote {
   id: string;
@@ -38,6 +40,22 @@ interface ChatUser {
   phone: string;
 }
 
+interface EnrollmentWithoutCRM {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  payment_status: string;
+  payment_amount: number;
+  created_at: string;
+  course_id: string;
+  chat_user_id: number;
+  courses: {
+    title: string;
+    slug: string;
+  };
+}
+
 const CRM_TYPES = [
   { value: 'note', label: 'یادداشت' },
   { value: 'call', label: 'تماس' },
@@ -54,11 +72,15 @@ const CRM_STATUSES = [
 ];
 
 export function EnrollmentCRM() {
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
+  const [enrollmentsWithoutCRM, setEnrollmentsWithoutCRM] = useState<EnrollmentWithoutCRM[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEnrollments, setLoadingEnrollments] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -73,6 +95,7 @@ export function EnrollmentCRM() {
   const [filterAgent, setFilterAgent] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [enrollmentFilterCourse, setEnrollmentFilterCourse] = useState('all');
   
   // New note form
   const [newNote, setNewNote] = useState({
@@ -82,26 +105,14 @@ export function EnrollmentCRM() {
     status: 'در انتظار پرداخت',
     user_id: ''
   });
-  
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Search users with debounce
   useEffect(() => {
-    if (searchTerm.trim().length === 0) {
-      setSearchResults([]);
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      searchUsers();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+    fetchEnrollmentsWithoutCRM();
+  }, [enrollmentFilterCourse]);
 
   const searchUsers = async () => {
     if (!searchTerm.trim()) return;
@@ -211,6 +222,98 @@ export function EnrollmentCRM() {
     }
   };
 
+  const fetchEnrollmentsWithoutCRM = async () => {
+    try {
+      setLoadingEnrollments(true);
+      
+      // Build query to get enrollments without CRM records
+      let query = supabase
+        .from('enrollments')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          payment_status,
+          payment_amount,
+          created_at,
+          course_id,
+          chat_user_id,
+          courses (
+            title,
+            slug
+          )
+        `)
+        .eq('payment_status', 'completed')
+        .not('chat_user_id', 'is', null);
+
+      // Apply course filter
+      if (enrollmentFilterCourse !== 'all') {
+        query = query.eq('course_id', enrollmentFilterCourse);
+      }
+
+      const { data: enrollments, error } = await query;
+
+      if (error) throw error;
+
+      // Get enrollments that don't have CRM records
+      const enrollmentsWithCRM = await supabase
+        .from('crm_notes')
+        .select('user_id')
+        .in('user_id', (enrollments || []).map(e => e.chat_user_id).filter(Boolean));
+
+      const userIdsWithCRM = new Set(enrollmentsWithCRM.data?.map(n => n.user_id) || []);
+      
+      const enrollmentsWithoutCRMRecords = (enrollments || []).filter(
+        enrollment => enrollment.chat_user_id && !userIdsWithCRM.has(enrollment.chat_user_id)
+      );
+
+      setEnrollmentsWithoutCRM(enrollmentsWithoutCRMRecords);
+    } catch (error) {
+      console.error('Error fetching enrollments without CRM:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری ثبت‌نام‌های بدون CRM.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingEnrollments(false);
+    }
+  };
+
+  const handleCreateCRMForEnrollment = async (enrollment: EnrollmentWithoutCRM) => {
+    try {
+      const { error } = await supabase
+        .from('crm_notes')
+        .insert({
+          user_id: enrollment.chat_user_id,
+          content: `پیگیری ثبت‌نام ${enrollment.full_name} برای دوره ${enrollment.courses.title}`,
+          type: 'follow_up',
+          status: 'در انتظار پرداخت',
+          course_id: enrollment.course_id,
+          created_by: 'مدیر'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "موفقیت",
+        description: "پیگیری CRM ایجاد شد"
+      });
+
+      // Refresh data
+      await fetchData();
+      await fetchEnrollmentsWithoutCRM();
+    } catch (error) {
+      console.error('Error creating CRM for enrollment:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در ایجاد پیگیری CRM",
+        variant: "destructive"
+      });
+    }
+  };
+
   const addNote = async () => {
     console.log('Adding note with data:', newNote);
     
@@ -266,6 +369,7 @@ export function EnrollmentCRM() {
       
       // Refresh data
       await fetchData();
+      await fetchEnrollmentsWithoutCRM();
     } catch (error) {
       console.error('Error adding CRM note:', error);
       toast({
@@ -318,6 +422,10 @@ export function EnrollmentCRM() {
     });
   };
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+  };
+
   // Apply filters
   const filteredNotes = notes.filter(note => {
     if (filterCourse !== 'all' && note.course_id !== filterCourse) return false;
@@ -326,6 +434,20 @@ export function EnrollmentCRM() {
     if (filterStatus !== 'all' && note.status !== filterStatus) return false;
     return true;
   });
+
+  // Search users with debounce
+  useEffect(() => {
+    if (searchTerm.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      searchUsers();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   if (loading) {
     return (
@@ -343,200 +465,327 @@ export function EnrollmentCRM() {
     <div dir="rtl">
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                فعالیت‌های CRM ({filteredNotes.length})
-              </CardTitle>
-            </div>
-            
-            {/* User Search Section */}
-            <div className="border rounded-lg p-4 bg-muted/50">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <Search className="w-4 h-4" />
-                  <span className="text-sm font-medium">جستجو و انتخاب کاربر:</span>
-                </div>
-                
-                {selectedUser ? (
-                  <div className="flex items-center gap-2 p-3 bg-background rounded-lg border">
-                    <div className="flex-1">
-                      <div className="font-medium">{selectedUser.name}</div>
-                      <div className="text-sm text-muted-foreground">{selectedUser.phone}</div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearSelectedUser}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <Input
-                      placeholder="جستجو بر اساس نام یا شماره تلفن..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                      dir="rtl"
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    
-                    {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
-                        {searchResults.map((user) => (
-                          <div
-                            key={user.id}
-                            className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                            onClick={() => selectUser(user)}
-                          >
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.phone}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {isSearching && (
-                      <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 p-3 text-center">
-                        <div className="text-sm text-muted-foreground">در حال جستجو...</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                <Button 
-                  onClick={openAddNoteDialog}
-                  disabled={!selectedUser}
-                  className="flex items-center gap-2 w-fit"
-                >
-                  <Plus className="w-4 h-4" />
-                  افزودن یادداشت
-                </Button>
-              </div>
-            </div>
-            
-            {/* Filters */}
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                <span className="text-sm font-medium">فیلتر:</span>
-              </div>
-              
-              <Select value={filterCourse} onValueChange={setFilterCourse}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="دوره" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه دوره‌ها</SelectItem>
-                  {courses.map(course => (
-                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={filterAgent} onValueChange={setFilterAgent}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="نماینده" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه نمایندگان</SelectItem>
-                  {agents.map(agent => (
-                    <SelectItem key={agent} value={agent}>{agent}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="نوع" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه انواع</SelectItem>
-                  {CRM_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="وضعیت" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                  {CRM_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            مدیریت CRM
+          </CardTitle>
         </CardHeader>
         
         <CardContent>
-          {filteredNotes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              هیچ فعالیت CRM یافت نشد.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">نوع</TableHead>
-                    <TableHead className="text-right">کاربر</TableHead>
-                    <TableHead className="text-right">دوره</TableHead>
-                    <TableHead className="text-right">محتوا</TableHead>
-                    <TableHead className="text-right">وضعیت</TableHead>
-                    <TableHead className="text-right">نماینده</TableHead>
-                    <TableHead className="text-right">تاریخ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredNotes.map((note) => (
-                    <TableRow key={note.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getTypeIcon(note.type)}
-                          {getTypeBadge(note.type)}
+          <Tabs defaultValue="notes" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="notes">فعالیت‌های CRM ({filteredNotes.length})</TabsTrigger>
+              <TabsTrigger value="enrollments">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  ثبت‌نام‌های بدون CRM
+                  {enrollmentsWithoutCRM.length > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {enrollmentsWithoutCRM.length}
+                    </Badge>
+                  )}
+                </div>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="notes" className="space-y-4">
+              {/* User Search Section */}
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <Search className="w-4 h-4" />
+                    <span className="text-sm font-medium">جستجو و انتخاب کاربر:</span>
+                  </div>
+                  
+                  {selectedUser ? (
+                    <div className="flex items-center gap-2 p-3 bg-background rounded-lg border">
+                      <div className="flex-1">
+                        <div className="font-medium">{selectedUser.name}</div>
+                        <div className="text-sm text-muted-foreground">{selectedUser.phone}</div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearSelectedUser}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <Input
+                        placeholder="جستجو بر اساس نام یا شماره تلفن..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                        dir="rtl"
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      
+                      {searchResults.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                          {searchResults.map((user) => (
+                            <div
+                              key={user.id}
+                              className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                              onClick={() => selectUser(user)}
+                            >
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-sm text-muted-foreground">{user.phone}</div>
+                            </div>
+                          ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{note.user_name}</span>
-                          <span className="text-sm text-muted-foreground">{note.user_phone}</span>
+                      )}
+                      
+                      {isSearching && (
+                        <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 p-3 text-center">
+                          <div className="text-sm text-muted-foreground">در حال جستجو...</div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{note.course_title}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-md">
-                          <p className="text-sm leading-relaxed">{note.content}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(note.status)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{formatDate(note.created_at)}</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                      )}
+                    </div>
+                  )}
+                  
+                  <Button 
+                    onClick={openAddNoteDialog}
+                    disabled={!selectedUser}
+                    className="flex items-center gap-2 w-fit"
+                  >
+                    <Plus className="w-4 h-4" />
+                    افزودن یادداشت
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Filters */}
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  <span className="text-sm font-medium">فیلتر:</span>
+                </div>
+                
+                <Select value={filterCourse} onValueChange={setFilterCourse}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="دوره" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه دوره‌ها</SelectItem>
+                    {courses.map(course => (
+                      <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={filterAgent} onValueChange={setFilterAgent}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="نماینده" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه نمایندگان</SelectItem>
+                    {agents.map(agent => (
+                      <SelectItem key={agent} value={agent}>{agent}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="نوع" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه انواع</SelectItem>
+                    {CRM_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="وضعیت" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                    {CRM_STATUSES.map(status => (
+                      <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filteredNotes.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  هیچ فعالیت CRM یافت نشد.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">نوع</TableHead>
+                        <TableHead className="text-right">کاربر</TableHead>
+                        <TableHead className="text-right">دوره</TableHead>
+                        <TableHead className="text-right">محتوا</TableHead>
+                        <TableHead className="text-right">وضعیت</TableHead>
+                        <TableHead className="text-right">نماینده</TableHead>
+                        <TableHead className="text-right">تاریخ</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredNotes.map((note) => (
+                        <TableRow key={note.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getTypeIcon(note.type)}
+                              {getTypeBadge(note.type)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{note.user_name}</span>
+                              <span className="text-sm text-muted-foreground">{note.user_phone}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">{note.course_title}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-md">
+                              <p className="text-sm leading-relaxed">{note.content}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(note.status)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm">{formatDate(note.created_at)}</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="enrollments" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  ثبت‌نام‌های بدون CRM
+                </h3>
+                <Select value={enrollmentFilterCourse} onValueChange={setEnrollmentFilterCourse}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="همه دوره‌ها" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه دوره‌ها</SelectItem>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {loadingEnrollments ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+                  <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {enrollmentsWithoutCRM.length === 0 ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {enrollmentFilterCourse !== 'all' 
+                          ? 'هیچ ثبت‌نام بدون CRM برای این دوره یافت نشد'
+                          : 'همه ثبت‌نام‌ها دارای CRM هستند'
+                        }
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {isMobile ? (
+                        enrollmentsWithoutCRM.map((enrollment) => (
+                          <Card key={enrollment.id}>
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium">{enrollment.full_name}</div>
+                                  <Badge className="bg-orange-100 text-orange-800">
+                                    نیاز به CRM
+                                  </Badge>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                  <div><span className="font-medium">دوره:</span> {enrollment.courses.title}</div>
+                                  <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
+                                  <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
+                                  <div><span className="font-medium">مبلغ:</span> {formatPrice(enrollment.payment_amount)}</div>
+                                  <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCreateCRMForEnrollment(enrollment)}
+                                  className="w-full"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  ایجاد CRM
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>نام</TableHead>
+                              <TableHead>دوره</TableHead>
+                              <TableHead>ایمیل</TableHead>
+                              <TableHead>تلفن</TableHead>
+                              <TableHead>مبلغ</TableHead>
+                              <TableHead>تاریخ ثبت‌نام</TableHead>
+                              <TableHead>عملیات</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {enrollmentsWithoutCRM.map((enrollment) => (
+                              <TableRow key={enrollment.id}>
+                                <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                                <TableCell>{enrollment.courses.title}</TableCell>
+                                <TableCell>{enrollment.email}</TableCell>
+                                <TableCell>{enrollment.phone}</TableCell>
+                                <TableCell>{formatPrice(enrollment.payment_amount)}</TableCell>
+                                <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleCreateCRMForEnrollment(enrollment)}
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    ایجاد CRM
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
