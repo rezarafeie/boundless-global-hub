@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -135,6 +136,10 @@ const EnrollmentAdmin: React.FC = () => {
     checkUserRole();
   }, [isAuthenticated, user, isLoading, navigate]);
 
+  const handleViewChange = (view: string) => {
+    setActiveView(view as 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings');
+  };
+
   // Show loading while checking authentication or if not authenticated
   if (isLoading || checkingRole) {
     return (
@@ -263,7 +268,7 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">{/* Changed min-h-screen to h-screen and added flex flex-col */}
+    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">
       {/* Academy Main Header */}
       <Header />
       
@@ -281,16 +286,16 @@ const EnrollmentAdmin: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex w-full flex-1 h-full pt-16">{/* Added pt-16 to account for fixed header */}
+      <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
           isOpen={isMobileSidebarOpen}
           onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>{/* Added h-full */}
+        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               {renderContent()}

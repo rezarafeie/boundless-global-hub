@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,10 +25,10 @@ interface CRMNote {
   status: string;
   courses?: {
     title: string;
-  };
+  } | null;
   chat_users?: {
     name: string;
-  };
+  } | null;
 }
 
 interface Course {
@@ -75,10 +74,16 @@ const CRMAdmin: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotes(data || []);
+      
+      // Filter out any notes with invalid chat_users data
+      const validNotes = (data || []).filter(note => 
+        !note.chat_users || (note.chat_users && typeof note.chat_users === 'object' && 'name' in note.chat_users)
+      );
+      
+      setNotes(validNotes);
       
       // Extract unique agents
-      const uniqueAgents = [...new Set(data?.map(note => note.created_by).filter(Boolean))];
+      const uniqueAgents = [...new Set(validNotes.map(note => note.created_by).filter(Boolean))];
       setAgents(uniqueAgents);
     } catch (error) {
       console.error('Error fetching CRM notes:', error);
@@ -214,7 +219,7 @@ const CRMAdmin: React.FC = () => {
 
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.chat_users?.name.toLowerCase().includes(searchTerm.toLowerCase());
+                         note.chat_users?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCourse = filterCourse === 'all' || note.course_id === filterCourse;
     const matchesAgent = filterAgent === 'all' || note.created_by === filterAgent;
     const matchesType = filterType === 'all' || note.type === filterType;

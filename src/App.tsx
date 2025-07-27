@@ -22,17 +22,8 @@ const About = lazy(() => import("@/pages/About"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const EnrollmentAdmin = lazy(() => import("@/pages/EnrollmentAdmin"));
 
-// Import existing components
-import PasswordReset from "@/pages/PasswordReset";
-import PasswordUpdate from "@/pages/PasswordUpdate";
-import VerifyEmail from "@/pages/VerifyEmail";
+// Import existing components - only the ones that exist
 import Support from "@/pages/Support";
-import SupportAdmin from "@/pages/SupportAdmin";
-import AnnouncementPage from "@/pages/AnnouncementPage";
-import NotificationSettings from "@/pages/NotificationSettings";
-import RafieiPlayer from "@/pages/RafieiPlayer";
-
-// Import CRM Admin page
 import CRMAdmin from "@/pages/CRMAdmin";
 
 const queryClient = new QueryClient();
@@ -40,7 +31,7 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <ThemeProvider>
         <TooltipProvider>
           <NotificationErrorBoundary>
             <NotificationProvider>
@@ -48,26 +39,20 @@ function App() {
                 <LanguageProvider>
                   <ReplyProvider>
                     <BrowserRouter>
-                      <OfflineDetector />
-                      <Suspense fallback={<PurpleLoader />}>
-                        <Routes>
-                          <Route path="/" element={<Landing />} />
-                          <Route path="/home" element={<Home />} />
-                          <Route path="/contact" element={<Contact />} />
-                          <Route path="/about" element={<About />} />
-                          <Route path="/password-reset" element={<PasswordReset />} />
-                          <Route path="/password-update" element={<PasswordUpdate />} />
-                          <Route path="/verify-email" element={<VerifyEmail />} />
-                          <Route path="/support" element={<Support />} />
-                          <Route path="/support/admin" element={<SupportAdmin />} />
-                          <Route path="/announcement/:id" element={<AnnouncementPage />} />
-                          <Route path="/notification-settings" element={<NotificationSettings />} />
-                          <Route path="/rafiei-player" element={<RafieiPlayer />} />
-                          <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
-                          <Route path="/enroll/admin/crm" element={<CRMAdmin />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Suspense>
+                      <OfflineDetector>
+                        <Suspense fallback={<PurpleLoader />}>
+                          <Routes>
+                            <Route path="/" element={<Landing />} />
+                            <Route path="/home" element={<Home />} />
+                            <Route path="/contact" element={<Contact />} />
+                            <Route path="/about" element={<About />} />
+                            <Route path="/support" element={<Support />} />
+                            <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                            <Route path="/enroll/admin/crm" element={<CRMAdmin />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </Suspense>
+                      </OfflineDetector>
                       <Toaster />
                       <Sonner />
                     </BrowserRouter>
