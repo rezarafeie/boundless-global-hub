@@ -76,6 +76,7 @@ interface AgentSummary {
   agent_id: number;
   agent_name: string;
   total_leads: number;
+  assigned_leads?: number; // Optional for backward compatibility
   total_calls: number;
   total_sales: number;
   total_sales_amount: number;
@@ -420,7 +421,20 @@ const LeadManagement: React.FC = () => {
 
       const userMap = new Map(usersData?.map(u => [u.id, u]) || []);
 
-      // Get all assignments for these agents
+      // Get ALL leads (total available leads) - not just assigned ones
+      const { data: totalLeadsData, error: totalLeadsError } = await supabase
+        .from('enrollments')
+        .select('id, payment_amount, payment_status')
+        .in('payment_status', ['success', 'completed']);
+
+      if (totalLeadsError) {
+        console.error('Error fetching total leads:', totalLeadsError);
+      }
+
+      const totalAvailableLeads = totalLeadsData?.length || 0;
+      console.log('Total available leads:', totalAvailableLeads);
+
+      // Get assignments for each agent
       const agentIds = data.map(agent => agent.id);
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('lead_assignments')
@@ -438,7 +452,7 @@ const LeadManagement: React.FC = () => {
 
       console.log('Found assignments:', assignmentsData?.length || 0);
 
-      // Get enrollment data for sales calculations
+      // Get enrollment data for assigned leads only
       const enrollmentIds = assignmentsData?.map(a => a.enrollment_id) || [];
       let enrollmentsData: any[] = [];
       if (enrollmentIds.length > 0) {
@@ -477,9 +491,10 @@ const LeadManagement: React.FC = () => {
           crm.created_by === agentName
         ).length || 0;
         
-        const totalLeads = agentAssignments.length;
+        // Assigned leads count
+        const assignedLeads = agentAssignments.length;
         
-        // Calculate sales
+        // Calculate sales from assigned leads
         const completedSales = agentAssignments.filter(assignment => {
           const enrollment = enrollmentMap.get(assignment.enrollment_id);
           return enrollment && ['success', 'completed'].includes(enrollment.payment_status);
@@ -493,14 +508,15 @@ const LeadManagement: React.FC = () => {
           return sum;
         }, 0);
 
-        const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
+        const conversionRate = assignedLeads > 0 ? (completedSales / assignedLeads) * 100 : 0;
 
-        console.log(`Agent ${agentName}: leads=${totalLeads}, calls=${totalCalls}, sales=${completedSales}, amount=${totalSalesAmount}`);
+        console.log(`Agent ${agentName}: total_leads=${totalAvailableLeads}, assigned=${assignedLeads}, calls=${totalCalls}, sales=${completedSales}, amount=${totalSalesAmount}`);
 
         return {
           agent_id: agent.id,
           agent_name: agentName || 'نامشخص',
-          total_leads: totalLeads,
+          total_leads: totalAvailableLeads, // Show total available leads, not just assigned
+          assigned_leads: assignedLeads, // Add this to show assigned leads separately
           total_calls: totalCalls,
           total_sales: completedSales,
           total_sales_amount: totalSalesAmount,
