@@ -1,4 +1,3 @@
-
 export interface Announcement {
   id: number;
   title: string;
@@ -172,4 +171,17 @@ export interface ShortLinkInsert {
   slug?: string;
   original_url: string;
   created_by?: string;
+}
+
+interface CRMNote {
+  id: string;
+  content: string;
+  type: string;
+  status: string;
+  created_at: string;
+  created_by: string;
+  courses?: {
+    title: string;
+    slug: string;
+  } | null;
 }
