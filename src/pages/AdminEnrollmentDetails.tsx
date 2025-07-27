@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
 
 interface EnrollmentData {
   id: string;
@@ -696,6 +697,11 @@ const AdminEnrollmentDetails: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* CRM Notes Section */}
+          {enrollment.chat_user_id && (
+            <UserCRM userId={enrollment.chat_user_id} />
+          )}
         </div>
       </div>
     </div>
