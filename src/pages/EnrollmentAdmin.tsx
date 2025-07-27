@@ -123,14 +123,14 @@ const EnrollmentAdmin: React.FC = () => {
           .eq('is_active', true)
           .single();
 
-        const isSalesAgent = !error && salesAgent;
+        const isSalesAgent = !!salesAgent && !error;
         
         if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin || isSalesAgent) {
           console.log('User has access');
           setHasAccess(true);
           setUserRole(userRole);
           setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
-          setIsSalesAgent(isSalesAgent || false);
+          setIsSalesAgent(isSalesAgent);
           
           // Set default view based on user role
           if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
@@ -202,6 +202,10 @@ const EnrollmentAdmin: React.FC = () => {
       </div>
     );
   }
+
+  const handleViewChange = (view: string) => {
+    setActiveView(view as typeof activeView);
+  };
 
   const renderContent = () => {
     switch (activeView) {
@@ -319,7 +323,7 @@ const EnrollmentAdmin: React.FC = () => {
       <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
           isOpen={isMobileSidebarOpen}
           onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
         .eq('is_active', true)
         .single();
 
-      setIsSalesAgent(!error && data);
+      setIsSalesAgent(!!data && !error);
     } catch (error) {
       console.error('Error checking sales agent:', error);
     }

@@ -1,352 +1,242 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Phone, Mail, Calendar, Shield, Crown, AlertCircle, MessageSquare, Activity, CreditCard, Key, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Calendar, Shield, Settings, BookOpen, TrendingUp, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import UserRoleManagement from '@/components/Admin/UserProfile/UserRoleManagement';
+import UserOverview from '@/components/Admin/UserProfile/UserOverview';
+import UserActivity from '@/components/Admin/UserProfile/UserActivity';
+import UserEnrollments from '@/components/Admin/UserProfile/UserEnrollments';
+import UserLicenses from '@/components/Admin/UserProfile/UserLicenses';
+import LearningProgress from '@/components/Admin/UserProfile/LearningProgress';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
-import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
-import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
-import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
-import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
-import { UserRoleManagement } from '@/components/Admin/UserProfile/UserRoleManagement';
-import { useIsMobile } from '@/hooks/use-mobile';
 
-interface UserData {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  created_at: string;
-  last_seen: string;
-  is_approved: boolean;
-  is_messenger_admin: boolean;
-  bedoun_marz_approved: boolean;
-  signup_source: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  country_code: string;
-  username: string;
-  bio: string;
-  is_support_agent: boolean;
-  avatar_url: string;
+interface UserDetailParams {
+  id: string;
 }
 
 const UserDetail: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { id } = useParams<UserDetailParams>();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
-  const [user, setUser] = useState<UserData | null>(null);
+  const { toast } = useToast();
+
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const isMobile = useIsMobile();
+  const [user, setUser] = useState<{
+    id: number;
+    name: string;
+    phone: string;
+    email: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    is_approved: boolean;
+    is_messenger_admin: boolean;
+    is_support_agent: boolean;
+    bedoun_marz: boolean;
+    bedoun_marz_approved: boolean;
+    bedoun_marz_request: boolean;
+    role: string | null;
+    created_at: string;
+    updated_at: string;
+    last_seen: string | null;
+    user_id: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    full_name: string | null;
+    country_code: string | null;
+    password_hash: string | null;
+    signup_source: string | null;
+    notification_enabled: boolean;
+    notification_token: string | null;
+  } | null>(null);
 
   useEffect(() => {
-    if (userId) {
-      fetchUser(userId);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    checkAdminRole();
-  }, [currentUser]);
-
-  const checkAdminRole = async () => {
-    if (!currentUser) {
-      console.log('No current user found');
-      return;
-    }
-
-    try {
-      console.log('Checking admin role for user:', currentUser.id);
-      
-      // Force show role management for user 3 (for debugging)
-      if (currentUser.id === '3') {
-        console.log('Force showing role management for user 3');
-        setIsAdmin(true);
-        return;
-      }
-      
-      // Check if user has admin role in user_roles table
-      const { data: userRole, error } = await supabase
-        .from('user_roles')
-        .select('role_name')
-        .eq('user_id', parseInt(currentUser.id))
-        .eq('role_name', 'admin')
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking admin role:', error);
-        setIsAdmin(false);
-        return;
-      }
-
-      const hasAdminRole = !!userRole;
-      console.log('Admin role check result:', hasAdminRole);
-      setIsAdmin(hasAdminRole);
-    } catch (error) {
-      console.error('Error checking admin role:', error);
-      setIsAdmin(false);
-    }
-  };
-
-  const fetchUser = async (id: string) => {
-    try {
+    const fetchUser = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('*')
-        .eq('id', parseInt(id))
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (error) throw error;
-      setUser(data);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    } finally {
-      setLoading(false);
+        if (error) throw error;
+        setUser(data);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        toast({
+          title: "خطا",
+          description: "خطا در دریافت اطلاعات کاربر",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchUser();
     }
-  };
+  }, [id, toast]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('fa-IR', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
-  const handleBack = () => {
-    navigate(-1);
+  const handleRoleUpdate = () => {
+    // Refresh user data after role update
+    if (id) {
+      const fetchUser = async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('chat_users')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+          if (error) throw error;
+          setUser(data);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+          toast({
+            title: "خطا",
+            description: "خطا در دریافت اطلاعات کاربر",
+            variant: "destructive"
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchUser();
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background" dir="rtl">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">در حال بارگذاری اطلاعات کاربر...</p>
-            </div>
-          </div>
-        </div>
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardContent>
+            <p>در حال بارگذاری اطلاعات کاربر...</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background" dir="rtl">
-        <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-md mx-auto">
-            <CardContent className="pt-6 text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">کاربر یافت نشد</h2>
-              <p className="text-muted-foreground mb-4">
-                کاربری با شناسه {userId} یافت نشد.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardContent>
+            <p>کاربر یافت نشد.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  console.log('Rendering UserDetail with isAdmin:', isAdmin);
-
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="hover:bg-accent"
-              >
-                <ArrowLeft className="h-4 w-4 ml-2" />
-                بازگشت
-              </Button>
-              <CardTitle className="text-2xl font-bold">
-                پروفایل کاربر
-              </CardTitle>
-            </div>
-            <div className="flex gap-2">
-              {user.is_approved && (
-                <Badge variant="default">تایید شده</Badge>
-              )}
-              {user.is_messenger_admin && (
-                <Badge variant="destructive">ادمین</Badge>
-              )}
-              {user.bedoun_marz_approved && (
-                <Badge variant="secondary">بدون مرز</Badge>
-              )}
-              {user.is_support_agent && (
-                <Badge variant="outline">پشتیبان</Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="text-right">
-            <div className="grid gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-muted-foreground">نام و نام خانوادگی</div>
-                  <div className="font-bold">{user.name}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">نام کاربری</div>
-                  <div className="font-bold">
-                    {user.username ? `@${user.username}` : 'ندارد'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">ایمیل</div>
-                  <div className="font-bold">{user.email}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">شماره تلفن</div>
-                  <div className="font-bold">{user.phone}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">تاریخ عضویت</div>
-                  <div className="font-bold">{formatDate(user.created_at)}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">آخرین بازدید</div>
-                  <div className="font-bold">{formatDate(user.last_seen)}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">منبع ثبت‌نام</div>
-                  <div className="font-bold">{user.signup_source}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">بیوگرافی</div>
-                  <div className="font-bold">{user.bio || 'ندارد'}</div>
-                </div>
-              </div>
-
-              <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-                <TabsList className={`
-                  w-full
-                  ${isMobile 
-                    ? 'grid-cols-2 gap-1 h-auto p-1' 
-                    : isAdmin 
-                      ? 'grid-cols-6' 
-                      : 'grid-cols-5'
-                  }
-                  grid
-                `}>
-                  <TabsTrigger 
-                    value="overview" 
-                    className={`
-                      flex items-center justify-center gap-1 
-                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
-                      whitespace-nowrap
-                    `}
-                  >
-                    <User className="w-4 h-4" />
-                    <span>نمای کلی</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="enrollments" 
-                    className={`
-                      flex items-center justify-center gap-1 
-                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
-                      whitespace-nowrap
-                    `}
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>ثبت‌نام‌ها</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="licenses" 
-                    className={`
-                      flex items-center justify-center gap-1 
-                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
-                      whitespace-nowrap
-                    `}
-                  >
-                    <Key className="w-4 h-4" />
-                    <span>لایسنس‌ها</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="crm" 
-                    className={`
-                      flex items-center justify-center gap-1 
-                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
-                      whitespace-nowrap
-                    `}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>مدیریت ارتباط</span>
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="activity" 
-                    className={`
-                      flex items-center justify-center gap-1 
-                      ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
-                      whitespace-nowrap
-                    `}
-                  >
-                    <Activity className="w-4 h-4" />
-                    <span>فعالیت‌ها</span>
-                  </TabsTrigger>
-                  {isAdmin && (
-                    <TabsTrigger 
-                      value="roles" 
-                      className={`
-                        flex items-center justify-center gap-1 
-                        ${isMobile ? 'text-xs px-1 py-2 flex-col' : 'gap-2'}
-                        whitespace-nowrap
-                      `}
-                    >
-                      <Shield className="w-4 h-4" />
-                      <span>نقش‌ها</span>
-                    </TabsTrigger>
-                  )}
-                </TabsList>
-                <TabsContent value="overview" className="mt-6 text-right" dir="rtl">
-                  <UserOverview user={user} />
-                </TabsContent>
-                <TabsContent value="enrollments" className="mt-6 text-right" dir="rtl">
-                  <UserEnrollments userId={user.id} />
-                </TabsContent>
-                <TabsContent value="licenses" className="mt-6 text-right" dir="rtl">
-                  <UserLicenses userId={user.id} userPhone={user.phone} />
-                </TabsContent>
-                <TabsContent value="crm" className="mt-6 text-right" dir="rtl">
-                  <UserCRM 
-                    userId={user.id}
-                    userName={user.name}
-                    userPhone={user.phone}
-                    userEmail={user.email}
-                  />
-                </TabsContent>
-                <TabsContent value="activity" className="mt-6 text-right" dir="rtl">
-                  <UserActivity userId={user.id} />
-                </TabsContent>
-                {isAdmin && (
-                  <TabsContent value="roles" className="mt-6 text-right" dir="rtl">
-                    <UserRoleManagement userId={user.id} />
-                  </TabsContent>
-                )}
-              </Tabs>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="container mx-auto p-4">
+      <Button variant="ghost" onClick={() => navigate(-1)}>
+        <ArrowLeft className="w-4 h-4 ml-2" />
+        بازگشت
+      </Button>
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            جزئیات کاربر
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {user.is_approved ? (
+              <Badge variant="outline">تایید شده</Badge>
+            ) : (
+              <Badge variant="destructive">تایید نشده</Badge>
+            )}
+            {user.is_messenger_admin && <Badge variant="secondary">مدیر پیام‌رسان</Badge>}
+            {user.is_support_agent && <Badge variant="secondary">پشتیبان</Badge>}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                اطلاعات کلی
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                فعالیت‌ها
+              </TabsTrigger>
+              <TabsTrigger value="enrollments" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                ثبت‌نام‌ها
+              </TabsTrigger>
+              <TabsTrigger value="licenses" className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                لایسنس‌ها
+              </TabsTrigger>
+              <TabsTrigger value="progress" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                پیشرفت یادگیری
+              </TabsTrigger>
+              <TabsTrigger value="crm" className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                CRM
+              </TabsTrigger>
+              <TabsTrigger value="role" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                مدیریت نقش
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview" className="space-y-4">
+              <UserOverview user={user} />
+            </TabsContent>
+            <TabsContent value="activity" className="space-y-4">
+              <UserActivity userId={user.id} />
+            </TabsContent>
+            <TabsContent value="enrollments" className="space-y-4">
+              <UserEnrollments userId={user.id} />
+            </TabsContent>
+            <TabsContent value="licenses" className="space-y-4">
+              <UserLicenses userId={user.id} />
+            </TabsContent>
+            <TabsContent value="progress" className="space-y-4">
+              <LearningProgress userId={user.id} />
+            </TabsContent>
+            <TabsContent value="crm" className="space-y-4">
+              <UserCRM 
+                userId={user.id}
+                userName={user.full_name || user.name}
+                userPhone={user.phone}
+                userEmail={user.email || ''}
+              />
+            </TabsContent>
+            <TabsContent value="role" className="space-y-4">
+              <UserRoleManagement
+                userId={user.id}
+                userName={user.full_name || user.name}
+                userPhone={user.phone}
+                userEmail={user.email || ''}
+                currentRole={user.role || 'user'}
+                isMessengerAdmin={user.is_messenger_admin}
+                isSupportAgent={user.is_support_agent}
+                onRoleUpdate={handleRoleUpdate}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
