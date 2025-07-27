@@ -32,6 +32,7 @@ const PaginatedUsersTable: React.FC = () => {
   const isMobile = useIsMobile();
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,7 +51,12 @@ const PaginatedUsersTable: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      setLoading(true);
+      // Only set main loading for initial load, use searchLoading for search operations
+      if (!searchTerm) {
+        setLoading(true);
+      } else {
+        setSearchLoading(true);
+      }
       
       // Get total count first
       let countQuery = supabase
@@ -90,6 +96,7 @@ const PaginatedUsersTable: React.FC = () => {
       });
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -148,7 +155,7 @@ const PaginatedUsersTable: React.FC = () => {
             مدیریت کاربران
             <Badge variant="secondary">{totalUsers} کاربر</Badge>
           </div>
-          <div className={isMobile ? "relative space-y-2" : "relative w-80 space-y-2"}>
+          <div className={isMobile ? "space-y-2" : "w-80 space-y-2"}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -158,7 +165,7 @@ const PaginatedUsersTable: React.FC = () => {
                 className="pl-10"
               />
             </div>
-            {loading && searchTerm && (
+            {searchLoading && (
               <div className="flex justify-center py-1">
                 <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
               </div>
