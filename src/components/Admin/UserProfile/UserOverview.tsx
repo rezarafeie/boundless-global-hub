@@ -43,130 +43,60 @@ export function UserOverview({ user }: UserOverviewProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6" dir="rtl">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Personal Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-              اطلاعات شخصی
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">شناسه کاربر</label>
-                <p className="font-medium text-sm sm:text-base">#{user.id}</p>
-              </div>
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">شناسه داخلی</label>
-                <p className="font-medium text-sm sm:text-base">{user.user_id || 'نامشخص'}</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام کامل</label>
-              <button
-                onClick={() => handleViewUserDetails(user.id)}
-                className="font-medium text-sm sm:text-base text-blue-600 hover:text-blue-800 hover:underline block w-full text-right"
-              >
-                {user.name}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام</label>
-                <p className="font-medium text-sm sm:text-base">{user.first_name || 'نامشخص'}</p>
-              </div>
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام خانوادگی</label>
-                <p className="font-medium text-sm sm:text-base">{user.last_name || 'نامشخص'}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-              <div className="flex-1">
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">ایمیل</label>
-                <p className="font-medium text-sm sm:text-base break-all">{user.email || 'نامشخص'}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-              <div className="flex-1">
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">شماره تلفن</label>
-                <p className="font-medium text-sm sm:text-base" dir="ltr">{user.country_code || ''} {user.phone}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Account Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-              وضعیت حساب کاربری
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
-            <div>
-              <label className="text-xs sm:text-sm font-medium text-muted-foreground">وضعیت تایید</label>
-              <div className="mt-1">
-                <Badge variant={user.is_approved ? "default" : "secondary"} className="text-xs">
-                  {user.is_approved ? "تایید شده" : "در انتظار تایید"}
-                </Badge>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs sm:text-sm font-medium text-muted-foreground">سطح دسترسی</label>
-              <div className="mt-1">
-                <Badge variant={user.is_messenger_admin ? "destructive" : "outline"} className="text-xs">
-                  {user.is_messenger_admin ? "مدیر" : "کاربر عادی"}
-                </Badge>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs sm:text-sm font-medium text-muted-foreground">وضعیت بدون مرز</label>
-              <div className="mt-1">
-                <Badge variant={user.bedoun_marz_approved ? "secondary" : "outline"} className="text-xs">
-                  {user.bedoun_marz_approved ? "بدون مرز تایید شده" : "بدون مرز نیست"}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Globe className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
-              <div className="flex-1">
-                <label className="text-xs sm:text-sm font-medium text-muted-foreground">منبع ثبت‌نام</label>
-                <p className="font-medium text-sm sm:text-base">{user.signup_source || 'وب‌سایت'}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Timeline Information */}
+      {/* Personal Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-            زمان‌بندی
+            <User className="w-4 h-4 sm:w-5 sm:h-5" />
+            اطلاعات شخصی
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <CardContent className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="text-xs sm:text-sm font-medium text-muted-foreground">تاریخ ثبت‌نام</label>
-              <p className="font-medium text-sm sm:text-base">{formatDate(user.created_at)}</p>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">شناسه کاربر</label>
+              <p className="font-medium text-sm sm:text-base">#{user.id}</p>
             </div>
             <div>
-              <label className="text-xs sm:text-sm font-medium text-muted-foreground">آخرین بازدید</label>
-              <p className="font-medium text-sm sm:text-base">{formatDate(user.last_seen || '')}</p>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">شناسه داخلی</label>
+              <p className="font-medium text-sm sm:text-base">{user.user_id || 'نامشخص'}</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام کامل</label>
+            <button
+              onClick={() => handleViewUserDetails(user.id)}
+              className="font-medium text-sm sm:text-base text-blue-600 hover:text-blue-800 hover:underline block w-full text-right"
+            >
+              {user.name}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام</label>
+              <p className="font-medium text-sm sm:text-base">{user.first_name || 'نامشخص'}</p>
+            </div>
+            <div>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">نام خانوادگی</label>
+              <p className="font-medium text-sm sm:text-base">{user.last_name || 'نامشخص'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+            <div className="flex-1">
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">ایمیل</label>
+              <p className="font-medium text-sm sm:text-base break-all">{user.email || 'نامشخص'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+            <div className="flex-1">
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">شماره تلفن</label>
+              <p className="font-medium text-sm sm:text-base" dir="ltr">{user.country_code || ''} {user.phone}</p>
             </div>
           </div>
         </CardContent>
