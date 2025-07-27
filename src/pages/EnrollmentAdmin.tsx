@@ -263,13 +263,13 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">{/* Changed min-h-screen to h-screen and added flex flex-col */}
+    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">
       {/* Academy Main Header */}
       <Header />
       
       {/* Mobile Menu Button Overlay */}
       <div className="lg:hidden fixed top-0 left-0 z-[10001] h-16 w-full pointer-events-none">
-        <div className="flex items-center h-full px-4">
+        <div className="flex items-center h-full px-6">
           <Button
             variant="ghost"
             size="icon"
@@ -281,7 +281,7 @@ const EnrollmentAdmin: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex w-full flex-1 h-full pt-16">{/* Added pt-16 to account for fixed header */}
+      <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
           onViewChange={setActiveView}
@@ -290,7 +290,7 @@ const EnrollmentAdmin: React.FC = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>{/* Added h-full */}
+        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               {renderContent()}
