@@ -1,180 +1,132 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
-  LayoutDashboard, 
-  BookOpen, 
   Users, 
+  BookOpen, 
   UserCheck, 
-  Settings,
-  BarChart3,
-  Menu,
+  BarChart3, 
+  Settings, 
+  MessageSquare,
   X,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare
+  LayoutDashboard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm';
-
 interface AdminSidebarProps {
-  activeView: ViewType;
-  onViewChange: (view: ViewType) => void;
-  isOpen?: boolean;
-  onToggle?: () => void;
+  activeView: 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm';
+  onViewChange: (view: 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm') => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 const sidebarItems = [
   {
-    id: 'dashboard',
-    label: 'خانه',
+    key: 'dashboard' as const,
+    label: 'داشبورد',
     icon: LayoutDashboard,
   },
   {
-    id: 'courses',
-    label: 'دوره‌ها',
+    key: 'courses' as const,
+    label: 'مدیریت دوره‌ها',
     icon: BookOpen,
   },
   {
-    id: 'enrollments',
+    key: 'enrollments' as const,
     label: 'ثبت‌نام‌ها',
-    icon: Users,
-  },
-  {
-    id: 'users',
-    label: 'کاربران',
     icon: UserCheck,
   },
   {
-    id: 'crm',
+    key: 'users' as const,
+    label: 'کاربران',
+    icon: Users,
+  },
+  {
+    key: 'crm' as const,
     label: 'CRM',
     icon: MessageSquare,
   },
   {
-    id: 'analytics',
-    label: 'آمار',
+    key: 'analytics' as const,
+    label: 'آمار و گزارشات',
     icon: BarChart3,
   },
   {
-    id: 'settings',
+    key: 'settings' as const,
     label: 'تنظیمات',
     icon: Settings,
   },
 ];
 
-export function AdminSidebar({ activeView, onViewChange, isOpen = false, onToggle }: AdminSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+const SidebarContent = ({ activeView, onViewChange, onClose }: {
+  activeView: AdminSidebarProps['activeView'];
+  onViewChange: AdminSidebarProps['onViewChange'];
+  onClose?: () => void;
+}) => (
+  <div className="flex flex-col h-full bg-white border-r border-gray-200">
+    <div className="p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-800">پنل مدیریت</h2>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="lg:hidden"
+          >
+            <X size={20} />
+          </Button>
+        )}
+      </div>
+    </div>
+    
+    <nav className="flex-1 p-4 space-y-2">
+      {sidebarItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Button
+            key={item.key}
+            variant={activeView === item.key ? 'default' : 'ghost'}
+            className={cn(
+              'w-full justify-start text-right h-11',
+              activeView === item.key && 'bg-primary text-primary-foreground'
+            )}
+            onClick={() => {
+              onViewChange(item.key);
+              onClose?.();
+            }}
+          >
+            <Icon size={20} className="ml-3" />
+            {item.label}
+          </Button>
+        );
+      })}
+    </nav>
+  </div>
+);
 
-  const handleViewChange = (view: ViewType) => {
-    onViewChange(view);
-    // Auto-close sidebar on mobile after selection
-    if (window.innerWidth < 1024 && onToggle) {
-      onToggle();
-    }
-  };
-
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
+export function AdminSidebar({ activeView, onViewChange, isOpen, onToggle }: AdminSidebarProps) {
   return (
     <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={onToggle}
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block w-64 h-full">
+        <SidebarContent 
+          activeView={activeView} 
+          onViewChange={onViewChange}
         />
-      )}
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out",
-        "fixed lg:relative z-50 lg:z-auto h-full",
-        // Mobile styles
-        "lg:translate-x-0",
-        isOpen ? "translate-x-0" : "translate-x-full",
-        // Desktop styles
-        isCollapsed ? "lg:w-20" : "lg:w-72",
-        // Mobile width
-        "w-72"
-      )}>
-        {/* Header */}
-        <div className={cn(
-          "border-b border-gray-100 bg-white transition-all duration-300",
-          isCollapsed ? "p-4" : "p-6"
-        )}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300",
-                isCollapsed ? "w-10 h-10" : "w-12 h-12"
-              )}>
-                <span className="text-white font-bold text-lg">ر</span>
-              </div>
-              {!isCollapsed && (
-                <div className="text-right">
-                  <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
-                  <p className="text-sm text-gray-500">پنل مدیریت</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Desktop Collapse Button */}
-            <button
-              onClick={toggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              {isCollapsed ? (
-                <ChevronLeft className="h-4 w-4 text-gray-500" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
-              )}
-            </button>
-
-            {/* Mobile Close Button */}
-            <button
-              onClick={onToggle}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X className="h-4 w-4 text-gray-500" />
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className={cn(
-          "py-6 bg-white h-full overflow-auto",
-          isCollapsed ? "px-2" : "px-4"
-        )}>
-          <ul className="space-y-1">
-            {sidebarItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => handleViewChange(item.id as ViewType)}
-                  className={cn(
-                    "w-full flex items-center transition-all duration-200 font-medium rounded-xl",
-                    "hover:bg-gray-50",
-                    isCollapsed ? "px-3 py-4 justify-center" : "px-4 py-4 gap-4",
-                    activeView === item.id
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg transform scale-[0.98]"
-                      : "text-gray-700 hover:text-gray-900"
-                  )}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <item.icon className={cn(
-                    "h-5 w-5 flex-shrink-0",
-                    activeView === item.id ? "text-white" : "text-gray-500"
-                  )} />
-                  {!isCollapsed && (
-                    <span className="text-base text-right">{item.label}</span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </aside>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={isOpen} onOpenChange={onToggle}>
+        <SheetContent side="right" className="p-0 w-64">
+          <SidebarContent 
+            activeView={activeView} 
+            onViewChange={onViewChange}
+            onClose={onToggle}
+          />
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
