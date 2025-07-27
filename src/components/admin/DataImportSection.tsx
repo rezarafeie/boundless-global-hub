@@ -264,6 +264,12 @@ export function DataImportSection() {
     });
 
     for (let i = startFromIndex; i < uniqueUserArray.length; i++) {
+      // Add batch break every 20 records to prevent timeouts
+      if (i > 0 && i % 20 === 0) {
+        console.log(`Batch break at record ${i}, waiting 2 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
       // Check if import is paused
       if (isPaused) {
         setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: true } : null);
@@ -300,61 +306,96 @@ export function DataImportSection() {
           currentUser: `${row.first_name} ${row.last_name}`.trim()
         } : null);
 
-        // First, check if user exists in chat_users table
+        // First, check if user exists in chat_users table with optimized query
         let existingUser = null;
         const finalEmail = row.email?.trim() || generatePlaceholderEmail(row.phone);
         
         if ((row.email && row.email.trim()) || (row.phone && row.phone.trim())) {
-          const conditions = [];
-          if (row.email && row.email.trim()) conditions.push(`email.eq.${row.email.trim()}`);
-          if (row.phone && row.phone.trim()) conditions.push(`phone.eq.${row.phone.trim()}`);
-          
-          // Also check for the generated placeholder email if we're going to use one
-          if (!row.email?.trim() && row.phone?.trim()) {
-            conditions.push(`email.eq.${finalEmail}`);
-          }
-          
-          if (conditions.length > 0) {
-            const { data: userData } = await supabase
+          // Use separate queries instead of complex OR conditions to avoid timeouts
+          if (row.email && row.email.trim()) {
+            const { data: userByEmail } = await supabase
               .from('chat_users')
               .select('id, email, phone')
-              .or(conditions.join(','))
+              .eq('email', row.email.trim())
               .maybeSingle();
             
-            existingUser = userData;
+            if (userByEmail) {
+              existingUser = userByEmail;
+            }
+          }
+          
+          // Only check by phone if we didn't find by email
+          if (!existingUser && row.phone && row.phone.trim()) {
+            const { data: userByPhone } = await supabase
+              .from('chat_users')
+              .select('id, email, phone')
+              .eq('phone', row.phone.trim())
+              .maybeSingle();
+            
+            if (userByPhone) {
+              existingUser = userByPhone;
+            }
+          }
+          
+          // Only check for generated placeholder email if we didn't find existing user
+          if (!existingUser && !row.email?.trim() && row.phone?.trim()) {
+            const { data: userByGeneratedEmail } = await supabase
+              .from('chat_users')
+              .select('id, email, phone')
+              .eq('email', finalEmail)
+              .maybeSingle();
+            
+            if (userByGeneratedEmail) {
+              existingUser = userByGeneratedEmail;
+            }
           }
         }
 
-        // Check if enrollment already exists for this course
+        // Check if enrollment already exists for this course - use optimized separate queries
         let existingEnrollment = null;
         
-        // If we found an existing user, check enrollment by user_id first (most reliable)
+        // If we found an existing user, check enrollment by user_id first (most reliable and fast)
         if (existingUser?.id) {
           const { data: enrollmentByUserId } = await supabase
             .from('enrollments')
             .select('id')
             .eq('course_id', courseId)
             .eq('chat_user_id', existingUser.id)
+            .limit(1)
             .maybeSingle();
           
           existingEnrollment = enrollmentByUserId;
         }
 
-        // If no enrollment found by user_id, check by email/phone as fallback
-        if (!existingEnrollment && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
-          const enrollmentConditions = [];
-          if (row.email && row.email.trim()) enrollmentConditions.push(`email.eq.${row.email.trim()}`);
-          if (row.phone && row.phone.trim()) enrollmentConditions.push(`phone.eq.${row.phone.trim()}`);
-          
-          if (enrollmentConditions.length > 0) {
-            const { data: enrollmentByContact } = await supabase
+        // If no enrollment found by user_id, check by email/phone separately for better performance
+        if (!existingEnrollment) {
+          if (row.email && row.email.trim()) {
+            const { data: enrollmentByEmail } = await supabase
               .from('enrollments')
               .select('id')
               .eq('course_id', courseId)
-              .or(enrollmentConditions.join(','))
+              .eq('email', row.email.trim())
+              .limit(1)
               .maybeSingle();
               
-            existingEnrollment = enrollmentByContact;
+            if (enrollmentByEmail) {
+              existingEnrollment = enrollmentByEmail;
+            }
+          }
+          
+          // Only check by phone if we didn't find by email
+          if (!existingEnrollment && row.phone && row.phone.trim()) {
+            const { data: enrollmentByPhone } = await supabase
+              .from('enrollments')
+              .select('id')
+              .eq('course_id', courseId)
+              .eq('phone', row.phone.trim())
+              .limit(1)
+              .maybeSingle();
+              
+            if (enrollmentByPhone) {
+              existingEnrollment = enrollmentByPhone;
+            }
           }
         }
 
@@ -556,14 +597,23 @@ export function DataImportSection() {
         processed++;
         console.log(`Successfully created enrollment for ${row.email || row.phone}`);
 
-        // Add small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Add longer delay to prevent overwhelming the database and avoid timeouts
+        await new Promise(resolve => setTimeout(resolve, 150));
 
       } catch (error) {
         console.error(`Error processing user ${row.email}:`, error);
-        const errorMessage = error instanceof Error ? error.message : 'خطای نامشخص';
-        const rowInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
-        setImportErrors(prev => [...prev, `خطا در پردازش ردیف ${index + 1} (${rowInfo}): ${errorMessage}`]);
+        
+        // Check if it's a timeout error
+        if (error?.message?.includes('timeout') || error?.message?.includes('canceling statement')) {
+          const errorMessage = 'خطای timeout در پایگاه داده - لطفاً فایل کوچکتری آپلود کنید یا دوباره تلاش کنید';
+          const rowInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+          setImportErrors(prev => [...prev, `خطای timeout ردیف ${index + 1} (${rowInfo}): ${errorMessage}`]);
+        } else {
+          const errorMessage = error instanceof Error ? error.message : 'خطای نامشخص';
+          const rowInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+          setImportErrors(prev => [...prev, `خطا در پردازش ردیف ${index + 1} (${rowInfo}): ${errorMessage}`]);
+        }
+        
         errors++;
         setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
       }
