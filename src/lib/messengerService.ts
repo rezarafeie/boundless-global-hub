@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { type ChatRoom, type MessengerMessage } from '@/types/supabase';
 
 // Debug logging function
 const debugLog = (...args: any[]) => {
@@ -515,13 +514,13 @@ export const messengerService = {
     }
   },
 
-  async updateUserRole(userId: number, role: string): Promise<void> {
+  async updateUserRole(userId: number, updateData: Partial<MessengerUser>): Promise<void> {
     try {
-      console.log('Updating user role:', userId, role);
+      console.log('Updating user role:', userId);
       
       const { error } = await supabase
         .from('chat_users')
-        .update({ role })
+        .update(updateData)
         .eq('id', userId);
 
       if (error) {
@@ -740,6 +739,275 @@ export const messengerService = {
     } catch (error) {
       console.error('Error in updateNotificationSettings:', error);
       throw error;
+    }
+  },
+
+  // Additional methods needed by various components
+  async getUserByPhone(phone: string): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user by phone:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getUserByPhone:', error);
+      return null;
+    }
+  },
+
+  async getUserById(userId: number): Promise<MessengerUser | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user by ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getUserById:', error);
+      return null;
+    }
+  },
+
+  async getRoomById(roomId: number): Promise<ChatRoom | null> {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching room by ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getRoomById:', error);
+      return null;
+    }
+  },
+
+  async loginWithPassword(phone: string, password: string): Promise<{ user: MessengerUser; sessionToken: string } | null> {
+    try {
+      // This is a mock implementation - in reality you'd validate password hash
+      const user = await this.getUserByPhone(phone);
+      if (!user) return null;
+
+      const sessionToken = 'mock-session-token';
+      return { user, sessionToken };
+    } catch (error) {
+      console.error('Error in loginWithPassword:', error);
+      return null;
+    }
+  },
+
+  async registerWithPassword(userData: Partial<MessengerUser>, password: string): Promise<MessengerUser | null> {
+    try {
+      // This is a mock implementation - in reality you'd hash the password
+      const { data, error } = await supabase
+        .from('chat_users')
+        .insert([{
+          ...userData,
+          password_hash: 'mock-hash', // In reality, hash the password
+          is_approved: false
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error registering user:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in registerWithPassword:', error);
+      return null;
+    }
+  },
+
+  async createSession(userId: number): Promise<string> {
+    try {
+      const sessionToken = 'mock-session-token-' + Date.now();
+      
+      const { error } = await supabase
+        .from('user_sessions')
+        .insert([{
+          user_id: userId,
+          session_token: sessionToken,
+          is_active: true,
+          last_activity: new Date().toISOString()
+        }]);
+
+      if (error) {
+        console.error('Error creating session:', error);
+        throw error;
+      }
+
+      return sessionToken;
+    } catch (error) {
+      console.error('Error in createSession:', error);
+      throw error;
+    }
+  },
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ password_hash: 'mock-hash' }) // In reality, hash the password
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating password:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserPassword:', error);
+      throw error;
+    }
+  },
+
+  async getSupportMessages(conversationId: number): Promise<MessengerMessage[]> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          id,
+          sender_id,
+          recipient_id,
+          room_id,
+          conversation_id,
+          topic_id,
+          message,
+          message_type,
+          media_url,
+          media_content,
+          is_read,
+          unread_by_support,
+          reply_to_message_id,
+          forwarded_from_message_id,
+          created_at,
+          chat_users!messenger_messages_sender_id_fkey (name, phone)
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching support messages:', error);
+        return [];
+      }
+
+      return (data || []).map(msg => ({
+        ...msg,
+        sender: {
+          name: msg.chat_users?.name || 'Unknown',
+          phone: msg.chat_users?.phone || ''
+        }
+      }));
+    } catch (error) {
+      console.error('Error in getSupportMessages:', error);
+      return [];
+    }
+  },
+
+  async sendSupportMessage(recipientId: number, message: string, conversationId: number, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<MessengerMessage | null> {
+    try {
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .insert([{
+          sender_id: 1, // Support agent ID
+          recipient_id: recipientId,
+          conversation_id: conversationId,
+          message,
+          message_type: mediaType || 'text',
+          media_url: mediaUrl || null,
+          media_content: mediaContent || null,
+          is_read: false,
+          unread_by_support: false
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error sending support message:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in sendSupportMessage:', error);
+      throw error;
+    }
+  },
+
+  async getUsersCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('chat_users')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.error('Error getting users count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    } catch (error) {
+      console.error('Error in getUsersCount:', error);
+      return 0;
+    }
+  },
+
+  async getMessagesCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('messenger_messages')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.error('Error getting messages count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    } catch (error) {
+      console.error('Error in getMessagesCount:', error);
+      return 0;
+    }
+  },
+
+  async getEnrollmentsCount(): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        console.error('Error getting enrollments count:', error);
+        return 0;
+      }
+
+      return count || 0;
+    } catch (error) {
+      console.error('Error in getEnrollmentsCount:', error);
+      return 0;
     }
   }
 };
