@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
+import { supabase } from '@/integrations/supabase/client';
 
 import Header from '@/components/Layout/Header';
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
@@ -18,6 +20,7 @@ import PaginatedEnrollmentsTable from '@/components/Admin/PaginatedEnrollmentsTa
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import AdminSettingsPanel from '@/components/Admin/AdminSettingsPanel';
 import { EnrollmentCRM } from '@/components/Admin/EnrollmentCRM';
+import LeadManagement from '@/components/Admin/LeadManagement';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -72,10 +75,11 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
+  const [isSalesAgent, setIsSalesAgent] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -105,21 +109,34 @@ const EnrollmentAdmin: React.FC = () => {
 
         console.log('User details:', detailedUser);
         
-        // Check if user has admin or enrollments_manager role
-        const allowedRoles = ['admin', 'enrollments_manager'];
+        // Check if user has admin, enrollments_manager role, or is sales agent
+        const allowedRoles = ['admin', 'enrollments_manager', 'sales_agent'];
         const userRole = detailedUser.role || 'user';
         
         console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin);
         
-        if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
+        // Check if user is a sales agent
+        const { data: salesAgent, error } = await supabase
+          .from('sales_agents')
+          .select('*')
+          .eq('user_id', detailedUser.id)
+          .eq('is_active', true)
+          .single();
+
+        const isSalesAgent = !error && salesAgent;
+        
+        if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin || isSalesAgent) {
           console.log('User has access');
           setHasAccess(true);
           setUserRole(userRole);
           setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
+          setIsSalesAgent(isSalesAgent || false);
           
           // Set default view based on user role
           if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
             setActiveView('enrollments'); // Show enrollments by default for enrollment managers
+          } else if (isSalesAgent && !detailedUser.is_messenger_admin) {
+            setActiveView('leads'); // Show leads by default for sales agents
           }
         } else {
           console.log('User does not have required role');
@@ -162,13 +179,14 @@ const EnrollmentAdmin: React.FC = () => {
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-red-700">
-                شما مجوز دسترسی به این بخش را ندارید. این صفحه فقط برای مدیران و مدیران ثبت‌نام‌ها قابل دسترسی است.
+                شما مجوز دسترسی به این بخش را ندارید. این صفحه فقط برای مدیران، مدیران ثبت‌نام‌ها و نمایندگان فروش قابل دسترسی است.
               </p>
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
                 <p className="font-medium mb-1">نقش‌های مجاز:</p>
                 <ul className="text-right space-y-1">
                   <li>• مدیر سیستم</li>
                   <li>• مدیر ثبت‌نام‌ها</li>
+                  <li>• نماینده فروش</li>
                 </ul>
               </div>
               <Button 
@@ -188,8 +206,8 @@ const EnrollmentAdmin: React.FC = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        // Don't show dashboard summary for enrollment managers who are not messenger admins
-        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+        // Don't show dashboard summary for enrollment managers or sales agents who are not messenger admins
+        if ((userRole === 'enrollments_manager' || isSalesAgent) && !isMessengerAdmin) {
           return (
             <div className="space-y-6">
               <ErrorBoundary>
@@ -223,6 +241,14 @@ const EnrollmentAdmin: React.FC = () => {
             </ErrorBoundary>
           </div>
         );
+      case 'leads':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <LeadManagement />
+            </Suspense>
+          </ErrorBoundary>
+        );
       case 'users':
         return (
           <ErrorBoundary>
@@ -250,8 +276,8 @@ const EnrollmentAdmin: React.FC = () => {
           </ErrorBoundary>
         );
       default:
-        // Don't show dashboard summary for enrollment managers who are not messenger admins
-        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+        // Don't show dashboard summary for enrollment managers or sales agents who are not messenger admins
+        if ((userRole === 'enrollments_manager' || isSalesAgent) && !isMessengerAdmin) {
           return (
             <div className="space-y-6">
               <ErrorBoundary>

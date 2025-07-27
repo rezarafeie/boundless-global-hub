@@ -1253,6 +1253,61 @@ export type Database = {
           },
         ]
       }
+      lead_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: number | null
+          created_at: string | null
+          enrollment_id: string | null
+          id: number
+          sales_agent_id: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: number | null
+          created_at?: string | null
+          enrollment_id?: string | null
+          id?: number
+          sales_agent_id?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: number | null
+          created_at?: string | null
+          enrollment_id?: string | null
+          id?: number
+          sales_agent_id?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_assignments_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: true
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_assignments_sales_agent_id_fkey"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
+            referencedRelation: "sales_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_sections: {
         Row: {
           created_at: string | null
@@ -1837,6 +1892,74 @@ export type Database = {
           },
           {
             foreignKeyName: "room_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_agent_courses: {
+        Row: {
+          course_id: string | null
+          created_at: string | null
+          id: number
+          sales_agent_id: number | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string | null
+          id?: number
+          sales_agent_id?: number | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string | null
+          id?: number
+          sales_agent_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_agent_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_agent_courses_sales_agent_id_fkey"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
+            referencedRelation: "sales_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_agents: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          updated_at: string | null
+          user_id: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_agents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
@@ -2591,6 +2714,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_courses_to_sales_agent: {
+        Args: { p_agent_user_id: number; p_course_ids: string[] }
+        Returns: boolean
+      }
+      assign_lead_to_agent: {
+        Args: {
+          p_enrollment_id: string
+          p_agent_user_id: number
+          p_assigned_by: number
+        }
+        Returns: boolean
+      }
       bytea_to_text: {
         Args: { data: string }
         Returns: string
@@ -2598,6 +2733,10 @@ export type Database = {
       cancel_unpaid_zarinpal_enrollments: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      check_sales_agent_lead_access: {
+        Args: { p_agent_user_id: number; p_enrollment_id: string }
+        Returns: boolean
       }
       cleanup_expired_sso_tokens: {
         Args: Record<PropertyKey, never>
@@ -2623,6 +2762,20 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["academy_user_role"]
       }
+      get_lead_assignments: {
+        Args: { agent_user_id: number }
+        Returns: {
+          assignment_id: number
+          enrollment_id: string
+          full_name: string
+          email: string
+          phone: string
+          course_title: string
+          payment_amount: number
+          assigned_at: string
+          status: string
+        }[]
+      }
       get_lesson_by_number: {
         Args: { course_slug_param: string; lesson_num: number }
         Returns: {
@@ -2643,6 +2796,14 @@ export type Database = {
       get_or_create_private_conversation: {
         Args: { p_user1_id: number; p_user2_id: number }
         Returns: number
+      }
+      get_sales_agent_courses: {
+        Args: { agent_user_id: number }
+        Returns: {
+          course_id: string
+          course_title: string
+          course_slug: string
+        }[]
       }
       get_support_room_agents: {
         Args: { room_id_param: number }
@@ -2677,6 +2838,21 @@ export type Database = {
           spotplayer_license_key: string
           spotplayer_license_url: string
           spotplayer_license_id: string
+        }[]
+      }
+      get_user_courses_for_sales_agent: {
+        Args: { agent_user_id: number }
+        Returns: {
+          enrollment_id: string
+          full_name: string
+          email: string
+          phone: string
+          course_title: string
+          payment_status: string
+          payment_amount: number
+          created_at: string
+          is_assigned: boolean
+          assigned_to_agent: string
         }[]
       }
       get_user_from_session: {
@@ -2788,6 +2964,10 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: string
+      }
+      remove_course_from_sales_agent: {
+        Args: { p_agent_user_id: number; p_course_id: string }
+        Returns: boolean
       }
       search_users: {
         Args: { search_term: string }

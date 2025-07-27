@@ -1,224 +1,203 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { UserCog, Shield, Settings, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, Plus, Trash2 } from 'lucide-react';
-
-interface UserRole {
-  id: number;
-  role_name: string;
-  is_active: boolean;
-  granted_at: string;
-}
+import { useToast } from '@/hooks/use-toast';
+import SalesAgentCourseSelector from '@/components/Admin/SalesAgentCourseSelector';
 
 interface UserRoleManagementProps {
   userId: number;
+  userName: string;
+  userPhone: string;
+  userEmail: string;
+  currentRole: string;
+  isMessengerAdmin: boolean;
+  isSupportAgent: boolean;
+  onRoleUpdate: () => void;
 }
 
-const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
+const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
+  userId,
+  userName,
+  userPhone,
+  userEmail,
+  currentRole,
+  isMessengerAdmin,
+  isSupportAgent,
+  onRoleUpdate
+}) => {
   const { toast } = useToast();
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [selectedRole, setSelectedRole] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
-
-  const availableRoles = [
-    { value: 'admin', label: 'مدیر' },
-    { value: 'moderator', label: 'مدیر گروه' },
-    { value: 'user', label: 'کاربر عادی' },
-    { value: 'support', label: 'پشتیبانی' },
-    { value: 'enrollments_manager', label: 'مدیر ثبت‌نام‌ها' }
-  ];
+  const [selectedRole, setSelectedRole] = useState(currentRole);
+  const [updating, setUpdating] = useState(false);
+  const [isSalesAgent, setIsSalesAgent] = useState(false);
+  const [showCourseSelector, setShowCourseSelector] = useState(false);
 
   useEffect(() => {
-    fetchUserRoles();
+    checkSalesAgent();
   }, [userId]);
 
-  const fetchUserRoles = async () => {
+  const checkSalesAgent = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('id, role_name, is_active, granted_at')
+        .from('sales_agents')
+        .select('*')
         .eq('user_id', userId)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .single();
 
-      if (error) throw error;
-      setUserRoles(data || []);
+      setIsSalesAgent(!error && data);
     } catch (error) {
-      console.error('Error fetching user roles:', error);
-      toast({
-        title: 'خطا',
-        description: 'خطا در بارگذاری نقش‌های کاربر',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error checking sales agent:', error);
     }
   };
 
-  const addRole = async () => {
-    if (!selectedRole) return;
-
-    try {
-      setAdding(true);
-      const { error } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: userId,
-          role_name: selectedRole,
-          is_active: true
-        }]);
-
-      if (error) throw error;
-
-      toast({
-        title: 'موفق',
-        description: 'نقش با موفقیت اضافه شد',
-      });
-
-      setSelectedRole('');
-      fetchUserRoles();
-    } catch (error: any) {
-      console.error('Error adding role:', error);
-      toast({
-        title: 'خطا',
-        description: error.message.includes('duplicate') 
-          ? 'این نقش قبلاً به کاربر اختصاص داده شده است'
-          : 'خطا در اضافه کردن نقش',
-        variant: 'destructive',
-      });
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const removeRole = async (roleId: number) => {
+  const handleRoleUpdate = async () => {
+    setUpdating(true);
     try {
       const { error } = await supabase
-        .from('user_roles')
-        .update({ is_active: false })
-        .eq('id', roleId);
+        .from('chat_users')
+        .update({
+          role: selectedRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
 
       if (error) throw error;
 
-      toast({
-        title: 'موفق',
-        description: 'نقش با موفقیت حذف شد',
-      });
+      // If role is sales_agent, create or activate sales agent record
+      if (selectedRole === 'sales_agent') {
+        const { error: salesAgentError } = await supabase
+          .from('sales_agents')
+          .upsert({
+            user_id: userId,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          });
 
-      fetchUserRoles();
+        if (salesAgentError) throw salesAgentError;
+        setIsSalesAgent(true);
+      } else {
+        // If role is not sales_agent, deactivate sales agent record
+        const { error: deactivateError } = await supabase
+          .from('sales_agents')
+          .update({ is_active: false })
+          .eq('user_id', userId);
+
+        if (deactivateError) throw deactivateError;
+        setIsSalesAgent(false);
+      }
+
+      toast({
+        title: "موفق",
+        description: "نقش کاربر با موفقیت به‌روزرسانی شد",
+      });
+      
+      onRoleUpdate();
     } catch (error) {
-      console.error('Error removing role:', error);
+      console.error('Error updating role:', error);
       toast({
-        title: 'خطا',
-        description: 'خطا در حذف نقش',
-        variant: 'destructive',
+        title: "خطا",
+        description: "خطا در به‌روزرسانی نقش کاربر",
+        variant: "destructive"
       });
+    } finally {
+      setUpdating(false);
     }
   };
 
-  const getRoleLabel = (role: string) => {
-    return availableRoles.find(r => r.value === role)?.label || role;
-  };
-
-  const getRoleVariant = (role: string) => {
-    switch (role) {
-      case 'admin': return 'destructive';
-      case 'moderator': return 'default';
-      case 'support': return 'secondary';
-      case 'enrollments_manager': return 'outline';
-      default: return 'default';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const availableRoles = [
+    { value: 'user', label: 'کاربر عادی' },
+    { value: 'admin', label: 'مدیر' },
+    { value: 'enrollments_manager', label: 'مدیر ثبت‌نام‌ها' },
+    { value: 'sales_agent', label: 'نماینده فروش' },
+    { value: 'support_agent', label: 'پشتیبان' },
+    { value: 'moderator', label: 'مدیر محتوا' },
+  ];
 
   return (
-    <div className="w-full max-w-full overflow-hidden" dir="rtl">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-right">
-            <Shield className="h-5 w-5" />
-            مدیریت نقش‌های کاربر
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-right">
-          <div className="space-y-6">
-            {/* Current Roles */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">نقش‌های فعلی</h3>
-              {userRoles.length === 0 ? (
-                <p className="text-muted-foreground">هیچ نقش خاصی تعریف نشده است</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {userRoles.map((userRole) => (
-                    <div key={userRole.id} className="flex items-center gap-2">
-                      <Badge 
-                        variant={getRoleVariant(userRole.role_name)}
-                        className="text-xs"
-                      >
-                        {getRoleLabel(userRole.role_name)}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeRole(userRole.id)}
-                        className="h-6 w-6 p-0 hover:bg-red-100"
-                      >
-                        <Trash2 className="h-3 w-3 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Add New Role */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">اضافه کردن نقش جدید</h3>
-              <div className="flex flex-col sm:flex-row gap-2 w-full">
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger className="w-full sm:w-48 min-w-0">
-                    <SelectValue placeholder="انتخاب نقش" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableRoles
-                      .filter(role => !userRoles.some(ur => ur.role_name === role.value))
-                      .map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
-                          {role.label}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={addRole}
-                  disabled={!selectedRole || adding}
-                  className="flex items-center gap-2 w-full sm:w-auto whitespace-nowrap"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="text-sm">
-                    {adding ? 'در حال افزودن...' : 'افزودن نقش'}
-                  </span>
-                </Button>
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <UserCog className="h-5 w-5" />
+          مدیریت نقش کاربر
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium mb-2">نقش فعلی:</h3>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{currentRole}</Badge>
+              {isMessengerAdmin && <Badge variant="secondary">مدیر پیام‌رسان</Badge>}
+              {isSupportAgent && <Badge variant="secondary">پشتیبان</Badge>}
+              {isSalesAgent && <Badge variant="secondary">نماینده فروش</Badge>}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          <Separator />
+
+          <div>
+            <h3 className="font-medium mb-2">تغییر نقش:</h3>
+            <div className="flex items-center gap-2">
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="انتخاب نقش" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoles.map((role) => (
+                    <SelectItem key={role.value} value={role.value}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleRoleUpdate} 
+                disabled={updating || selectedRole === currentRole}
+              >
+                {updating ? 'در حال به‌روزرسانی...' : 'به‌روزرسانی'}
+              </Button>
+            </div>
+          </div>
+
+          {(selectedRole === 'sales_agent' || isSalesAgent) && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-medium mb-2">تنظیمات نماینده فروش:</h3>
+                <Dialog open={showCourseSelector} onOpenChange={setShowCourseSelector}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      مدیریت دوره‌های واگذار شده
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>مدیریت دوره‌های نماینده فروش</DialogTitle>
+                    </DialogHeader>
+                    <SalesAgentCourseSelector
+                      userId={userId}
+                      userName={userName}
+                      onClose={() => setShowCourseSelector(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+                <p className="text-sm text-muted-foreground mt-2">
+                  انتخاب کنید که این نماینده فروش لیدهای کدام دوره‌ها را می‌تواند مشاهده کند
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-export { UserRoleManagement };
+export default UserRoleManagement;

@@ -41,6 +41,24 @@ export type UserSession = {
   created_at: string;
 };
 
+export type SalesAgent = {
+  id: number;
+  user_id: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LeadAssignment = {
+  id: number;
+  enrollment_id: string;
+  sales_agent_id: number;
+  assigned_by: number;
+  assigned_at: string;
+  status: string;
+  updated_at: string;
+};
+
 // Helper functions for database operations
 export const announcementsService = {
   async getAll(): Promise<Announcement[]> {
@@ -201,6 +219,66 @@ export const chatService = {
       .eq('id', id);
     
     if (error) throw error;
+  }
+};
+
+export const salesAgentService = {
+  async getLeadsForAgent(agentUserId: number) {
+    const { data, error } = await supabase.rpc('get_user_courses_for_sales_agent', {
+      agent_user_id: agentUserId
+    });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getAssignmentsForAgent(agentUserId: number) {
+    const { data, error } = await supabase.rpc('get_lead_assignments', {
+      agent_user_id: agentUserId
+    });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async assignLead(enrollmentId: string, agentUserId: number, assignedBy: number) {
+    const { data, error } = await supabase.rpc('assign_lead_to_agent', {
+      p_enrollment_id: enrollmentId,
+      p_agent_user_id: agentUserId,
+      p_assigned_by: assignedBy
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async assignCoursesToAgent(agentUserId: number, courseIds: string[]) {
+    const { data, error } = await supabase.rpc('assign_courses_to_sales_agent', {
+      p_agent_user_id: agentUserId,
+      p_course_ids: courseIds
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getAgentCourses(agentUserId: number) {
+    const { data, error } = await supabase.rpc('get_sales_agent_courses', {
+      agent_user_id: agentUserId
+    });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async checkLeadAccess(agentUserId: number, enrollmentId: string) {
+    const { data, error } = await supabase.rpc('check_sales_agent_lead_access', {
+      p_agent_user_id: agentUserId,
+      p_enrollment_id: enrollmentId
+    });
+    
+    if (error) throw error;
+    return data;
   }
 };
 
