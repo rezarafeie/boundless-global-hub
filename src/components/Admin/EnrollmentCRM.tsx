@@ -22,13 +22,9 @@ interface CRMNote {
   user_id: number;
   course_id: string | null;
   status: string;
-  chat_users?: {
-    name: string;
-    phone: string;
-  };
-  courses?: {
-    title: string;
-  };
+  user_name?: string;
+  user_phone?: string;
+  course_title?: string;
 }
 
 interface Course {
@@ -68,7 +64,7 @@ export function EnrollmentCRM() {
   const [newNote, setNewNote] = useState({
     type: 'note',
     content: '',
-    course_id: '',
+    course_id: 'none',
     status: 'در انتظار پرداخت'
   });
   
@@ -80,14 +76,10 @@ export function EnrollmentCRM() {
 
   const fetchData = async () => {
     try {
-      // Fetch CRM notes with user and course details
+      // Fetch CRM notes with manual joins
       const { data: notesData, error: notesError } = await supabase
         .from('crm_notes')
-        .select(`
-          *,
-          chat_users (name, phone),
-          courses (title)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (notesError) throw notesError;
@@ -101,11 +93,31 @@ export function EnrollmentCRM() {
 
       if (coursesError) throw coursesError;
 
-      setNotes(notesData || []);
+      // Fetch chat users for user names
+      const { data: chatUsersData, error: chatUsersError } = await supabase
+        .from('chat_users')
+        .select('id, name, phone');
+
+      if (chatUsersError) throw chatUsersError;
+
+      // Enrich notes with user and course data
+      const enrichedNotes = (notesData || []).map(note => {
+        const user = chatUsersData?.find(u => u.id === note.user_id);
+        const course = coursesData?.find(c => c.id === note.course_id);
+        
+        return {
+          ...note,
+          user_name: user?.name || 'نامشخص',
+          user_phone: user?.phone || '',
+          course_title: course?.title || 'بدون دوره'
+        };
+      });
+
+      setNotes(enrichedNotes);
       setCourses(coursesData || []);
       
       // Extract unique agents
-      const uniqueAgents = [...new Set((notesData || []).map(note => note.created_by))];
+      const uniqueAgents = [...new Set(enrichedNotes.map(note => note.created_by))];
       setAgents(uniqueAgents);
       
     } catch (error) {
@@ -130,7 +142,7 @@ export function EnrollmentCRM() {
           user_id: 1, // This should be dynamic based on selected user
           type: newNote.type,
           content: newNote.content,
-          course_id: newNote.course_id || null,
+          course_id: newNote.course_id === 'none' ? null : newNote.course_id,
           status: newNote.status,
           created_by: 'مدیر' // Should be current user
         });
@@ -145,7 +157,7 @@ export function EnrollmentCRM() {
       setNewNote({
         type: 'note',
         content: '',
-        course_id: '',
+        course_id: 'none',
         status: 'در انتظار پرداخت'
       });
       setIsAddingNote(false);
@@ -264,7 +276,7 @@ export function EnrollmentCRM() {
                           <SelectValue placeholder="انتخاب دوره" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">بدون دوره</SelectItem>
+                          <SelectItem value="none">بدون دوره</SelectItem>
                           {courses.map(course => (
                             <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
                           ))}
@@ -398,12 +410,12 @@ export function EnrollmentCRM() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{note.chat_users?.name || 'نامشخص'}</span>
-                          <span className="text-sm text-muted-foreground">{note.chat_users?.phone}</span>
+                          <span className="font-medium">{note.user_name}</span>
+                          <span className="text-sm text-muted-foreground">{note.user_phone}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{note.courses?.title || 'بدون دوره'}</span>
+                        <span className="text-sm">{note.course_title}</span>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-md">
