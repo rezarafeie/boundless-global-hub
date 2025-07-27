@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface Lead {
   enrollment_id: string;
@@ -74,6 +74,8 @@ const LeadManagement: React.FC = () => {
   const [noteType, setNoteType] = useState('call');
   const [leadStatus, setLeadStatus] = useState('در انتظار پرداخت');
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
     fetchLeads();
@@ -230,17 +232,19 @@ const LeadManagement: React.FC = () => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
   };
 
-  const filteredLeads = leads.filter(lead => 
-    lead.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.phone.includes(searchTerm)
-  );
+  const filteredLeads = leads.filter(lead => {
+    if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
+    return lead.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+           lead.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+           lead.phone.includes(debouncedSearchTerm);
+  });
 
-  const filteredAssignments = assignments.filter(assignment => 
-    assignment.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.phone.includes(searchTerm)
-  );
+  const filteredAssignments = assignments.filter(assignment => {
+    if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
+    return assignment.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+           assignment.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+           assignment.phone.includes(debouncedSearchTerm);
+  });
 
   if (loading) {
     return (
@@ -263,7 +267,7 @@ const LeadManagement: React.FC = () => {
             <div className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               <Input
-                placeholder="جستجو نام، ایمیل یا تلفن..."
+                placeholder="جستجو نام، ایمیل یا تلفن... (حداقل ۳ کاراکتر)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64"
@@ -286,13 +290,16 @@ const LeadManagement: React.FC = () => {
               </Button>
             </div>
           </div>
+          {searchTerm.length > 0 && searchTerm.length < 3 && (
+            <p className="text-sm text-muted-foreground">حداقل ۳ کاراکتر برای جستجو وارد کنید</p>
+          )}
         </CardHeader>
         <CardContent>
           {activeTab === 'available' ? (
             <div className="space-y-4">
               {filteredLeads.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  هیچ لیدی یافت نشد
+                  {searchTerm && searchTerm.length >= 3 ? 'هیچ لیدی یافت نشد' : 'هیچ لیدی یافت نشد'}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -363,7 +370,7 @@ const LeadManagement: React.FC = () => {
             <div className="space-y-4">
               {filteredAssignments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  هیچ واگذاری یافت نشد
+                  {searchTerm && searchTerm.length >= 3 ? 'هیچ واگذاری یافت نشد' : 'هیچ واگذاری یافت نشد'}
                 </div>
               ) : (
                 <div className="overflow-x-auto">

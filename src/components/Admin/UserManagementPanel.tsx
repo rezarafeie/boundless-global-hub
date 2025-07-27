@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,14 +17,14 @@ const UserManagementPanel = () => {
   const [selectedUser, setSelectedUser] = useState<MessengerUser | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
-    if (debouncedSearchTerm && debouncedSearchTerm.length >= 2) {
+    if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
       const filtered = users.filter(user =>
         user.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         user.phone.includes(debouncedSearchTerm) ||
@@ -166,12 +165,15 @@ const UserManagementPanel = () => {
             <div className="relative">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
-                placeholder="جستجو بر اساس نام، شماره تلفن یا نام کاربری..."
+                placeholder="جستجو بر اساس نام، شماره تلفن یا نام کاربری... (حداقل ۳ کاراکتر)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pr-10"
               />
             </div>
+            {searchTerm.length > 0 && searchTerm.length < 3 && (
+              <p className="text-sm text-slate-500 mt-1">حداقل ۳ کاراکتر برای جستجو وارد کنید</p>
+            )}
           </div>
 
           {/* Users List */}
@@ -219,7 +221,7 @@ const UserManagementPanel = () => {
               </div>
             ))}
             
-            {filteredUsers.length === 0 && searchTerm.length >= 2 && (
+            {filteredUsers.length === 0 && searchTerm.length >= 3 && (
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-slate-300 mx-auto mb-2" />
                 <p className="text-slate-500">کاربری یافت نشد</p>
