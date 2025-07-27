@@ -60,12 +60,6 @@ export interface ChatRoom {
   is_boundless_only: boolean;
   is_super_group: boolean;
   updated_at: string;
-  last_message?: {
-    message: string;
-    created_at: string;
-    sender_name?: string;
-  };
-  unread_count?: number;
 }
 
 export interface MessengerMessage {
@@ -79,11 +73,6 @@ export interface MessengerMessage {
   media_url?: string;
   message_type?: string;
   media_content?: string;
-  recipient_id?: number;
-  is_read?: boolean;
-  unread_by_support?: boolean;
-  reply_to_message_id?: number;
-  forwarded_from_message_id?: number;
   sender?: {
     name: string;
     phone: string;
@@ -378,72 +367,19 @@ export const messengerService = {
 
   async getRooms(): Promise<ChatRoom[]> {
     try {
-      console.log('Fetching rooms with last message data...');
-      
-      // First get all active rooms
-      const { data: rooms, error: roomsError } = await supabase
+      const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (roomsError) {
-        console.error('Error fetching rooms:', roomsError);
-        throw roomsError;
-      }
-
-      if (!rooms || rooms.length === 0) {
-        console.log('No rooms found');
-        return [];
-      }
-
-      // Get last message for each room
-      const roomsWithLastMessage = await Promise.all(
-        rooms.map(async (room) => {
-          try {
-            // Get the last message for this room
-            const { data: lastMessage } = await supabase
-              .from('messenger_messages')
-              .select(`
-                id,
-                message,
-                created_at,
-                sender_id,
-                chat_users!inner(name)
-              `)
-              .eq('room_id', room.id)
-              .order('created_at', { ascending: false })
-              .limit(1);
-
-            // Get unread count for this room (for now, we'll use 0 as placeholder)
-            // TODO: Implement proper unread count based on user's last read timestamp
-            const unreadCount = 0;
-
-            return {
-              ...room,
-              last_message: lastMessage?.[0] ? {
-                message: lastMessage[0].message,
-                created_at: lastMessage[0].created_at,
-                sender_name: lastMessage[0].chat_users?.name || 'کاربر'
-              } : null,
-              unread_count: unreadCount
-            };
-          } catch (error) {
-            console.error(`Error getting last message for room ${room.id}:`, error);
-            return {
-              ...room,
-              last_message: null,
-              unread_count: 0
-            };
-          }
-        })
-      );
-
-      console.log('Successfully fetched rooms with last message data:', roomsWithLastMessage.length);
-      return roomsWithLastMessage;
+      if (error) throw error;
+      
+      const rooms = data || [];
+      
+      return rooms;
     } catch (error) {
-      console.error('Error in getRooms:', error);
-      throw error;
+      console.error('Error fetching rooms:', error);
+      return [];
     }
   },
 

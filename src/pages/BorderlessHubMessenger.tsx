@@ -385,37 +385,32 @@ const BorderlessHubMessenger: React.FC = () => {
     return colors[index];
   };
 
-  // Process rooms for unified view with real data
+  // Process rooms for unified view
   const roomItems: UnifiedChatItem[] = rooms.map(room => ({
     id: `group-${room.id}`,
     type: 'group' as const,
     name: room.name,
-    lastMessage: room.last_message?.message || 'پیامی وجود ندارد',
-    lastMessageTime: room.last_message?.created_at 
-      ? new Date(room.last_message.created_at).toLocaleTimeString('fa-IR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : '',
-    unreadCount: room.unread_count || 0,
+    lastMessage: 'آخرین پیام',
+    lastMessageTime: '12:00',
+    unreadCount: 0,
     data: room
   }));
 
-  // Process conversations for unified view
-  const conversationItems: UnifiedChatItem[] = conversations.map(conv => ({
-    id: `private-${conv.id}`,
-    type: 'private' as const,
-    name: conv.other_user?.name || 'نامشخص',
-    lastMessage: conv.last_message?.message || 'پیامی وجود ندارد',
-    lastMessageTime: conv.last_message?.created_at 
-      ? new Date(conv.last_message.created_at).toLocaleTimeString('fa-IR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : '',
-    unreadCount: conv.unread_count || 0,
-    data: conv
-  }));
+      // Process conversations for unified view
+      const conversationItems: UnifiedChatItem[] = conversations.map(conv => ({
+        id: `private-${conv.id}`,
+        type: 'private' as const,
+        name: conv.other_user?.name || 'نامشخص',
+        lastMessage: conv.last_message?.message || 'پیامی وجود ندارد',
+        lastMessageTime: conv.last_message?.created_at 
+          ? new Date(conv.last_message.created_at).toLocaleTimeString('fa-IR', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '',
+        unreadCount: conv.unread_count || 0,
+        data: conv
+      }));
 
   // Process support conversations for unified view
   const supportItems: UnifiedChatItem[] = supportConversations.map(conv => ({
@@ -548,18 +543,11 @@ const BorderlessHubMessenger: React.FC = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-sm text-slate-900 dark:text-white">{item.name}</div>
-                    {item.lastMessageTime && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{item.lastMessageTime}</div>
-                    )}
-                  </div>
+                  <div className="font-medium text-sm text-slate-900 dark:text-white">{item.name}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{item.lastMessage}</div>
                 </div>
                 {item.unreadCount > 0 && (
-                  <Badge variant="secondary" className="bg-blue-500 text-white">
-                    {item.unreadCount}
-                  </Badge>
+                  <Badge variant="secondary">{item.unreadCount}</Badge>
                 )}
               </div>
             ))
