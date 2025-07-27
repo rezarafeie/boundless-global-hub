@@ -127,6 +127,8 @@ export function DataImportSection() {
   const [crmProcessedRows, setCrmProcessedRows] = useState<Set<number>>(new Set());
   const [isPaused, setIsPaused] = useState(false);
   const [isCrmPaused, setIsCrmPaused] = useState(false);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [crmImportErrors, setCrmImportErrors] = useState<string[]>([]);
 
   // Fetch courses on component mount
   React.useEffect(() => {
@@ -433,6 +435,9 @@ export function DataImportSection() {
 
           if (userError) {
             console.error(`Error creating user for ${row.email}:`, userError);
+            const errorMessage = userError.message || 'خطای نامشخص در ایجاد کاربر';
+            const rowInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+            setImportErrors(prev => [...prev, `خطا در ایجاد کاربر ردیف ${index + 1} (${rowInfo}): ${errorMessage}`]);
             errors++;
             setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
           } else {
@@ -523,6 +528,9 @@ export function DataImportSection() {
 
         if (enrollmentError) {
           console.error(`Error creating enrollment for ${row.email}:`, enrollmentError);
+          const errorMessage = enrollmentError.message || 'خطای نامشخص در ایجاد ثبت‌نام';
+          const rowInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+          setImportErrors(prev => [...prev, `خطا در ایجاد ثبت‌نام ردیف ${index + 1} (${rowInfo}): ${errorMessage}`]);
           errors++;
           setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
           continue;
@@ -539,6 +547,9 @@ export function DataImportSection() {
 
       } catch (error) {
         console.error(`Error processing user ${row.email}:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'خطای نامشخص';
+        const rowInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+        setImportErrors(prev => [...prev, `خطا در پردازش ردیف ${index + 1} (${rowInfo}): ${errorMessage}`]);
         errors++;
         setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
       }
@@ -965,6 +976,7 @@ export function DataImportSection() {
 
     setIsImporting(true);
     setIsPaused(false);
+    setImportErrors([]);  // Reset errors
 
     try {
       console.log(`Importing ${previewData.length} rows for course ${selectedCourse}`);
@@ -1026,6 +1038,7 @@ export function DataImportSection() {
 
     setIsImporting(true);
     setIsPaused(false);
+    setImportErrors([]);  // Reset errors when resuming
 
     try {
       const startFromIndex = processedRows.size;
@@ -1447,6 +1460,20 @@ export function DataImportSection() {
                       <div className="text-yellow-600">موجود: {importProgress.existing}</div>
                       <div className="text-red-600">خطا: {importProgress.errors}</div>
                       <div className="text-blue-600">پردازش شده: {importProgress.processed}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Import Errors Display */}
+                {importErrors.length > 0 && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h4 className="text-red-800 font-medium mb-2">خطاهای وارد کردن ({importErrors.length} مورد):</h4>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {importErrors.map((error, index) => (
+                        <div key={index} className="text-sm text-red-700 bg-white p-2 rounded border border-red-100">
+                          {error}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
