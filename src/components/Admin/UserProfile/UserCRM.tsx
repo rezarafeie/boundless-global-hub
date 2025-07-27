@@ -32,6 +32,8 @@ interface Course {
 
 interface UserCRMProps {
   userId: number;
+  preselectedCourseId?: string;
+  preselectedCourseTitle?: string;
 }
 
 const CRM_TYPES = [
@@ -49,7 +51,7 @@ const CRM_STATUSES = [
   { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' }
 ];
 
-export function UserCRM({ userId }: UserCRMProps) {
+export function UserCRM({ userId, preselectedCourseId, preselectedCourseTitle }: UserCRMProps) {
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,11 +63,11 @@ export function UserCRM({ userId }: UserCRMProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCourse, setFilterCourse] = useState('all');
   
-  // New note form
+  // New note form with preselected course
   const [newNote, setNewNote] = useState({
     type: 'note',
     content: '',
-    course_id: 'none',
+    course_id: preselectedCourseId || 'none',
     status: 'در انتظار پرداخت'
   });
   
@@ -74,6 +76,16 @@ export function UserCRM({ userId }: UserCRMProps) {
   useEffect(() => {
     fetchData();
   }, [userId]);
+
+  // Update the new note form when preselected course changes
+  useEffect(() => {
+    if (preselectedCourseId) {
+      setNewNote(prev => ({
+        ...prev,
+        course_id: preselectedCourseId
+      }));
+    }
+  }, [preselectedCourseId]);
 
   const fetchData = async () => {
     try {
@@ -95,9 +107,21 @@ export function UserCRM({ userId }: UserCRMProps) {
 
       if (coursesError) throw coursesError;
 
+      // Add preselected course if not in the list
+      let enrichedCourses = coursesData || [];
+      if (preselectedCourseId && preselectedCourseTitle) {
+        const courseExists = enrichedCourses.find(c => c.id === preselectedCourseId);
+        if (!courseExists) {
+          enrichedCourses = [{
+            id: preselectedCourseId,
+            title: preselectedCourseTitle
+          }, ...enrichedCourses];
+        }
+      }
+
       // Enrich notes with course data
       const enrichedNotes = (notesData || []).map(note => {
-        const course = coursesData?.find(c => c.id === note.course_id);
+        const course = enrichedCourses.find(c => c.id === note.course_id);
         return {
           ...note,
           course_title: course?.title || 'بدون دوره'
@@ -105,7 +129,7 @@ export function UserCRM({ userId }: UserCRMProps) {
       });
 
       setNotes(enrichedNotes);
-      setCourses(coursesData || []);
+      setCourses(enrichedCourses);
       
     } catch (error) {
       console.error('Error fetching CRM data:', error);
@@ -268,6 +292,11 @@ export function UserCRM({ userId }: UserCRMProps) {
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
                 فعالیت‌های CRM ({filteredNotes.length})
+                {preselectedCourseTitle && (
+                  <Badge variant="outline" className="mr-2">
+                    {preselectedCourseTitle}
+                  </Badge>
+                )}
               </CardTitle>
               <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
                 <DialogTrigger asChild>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ interface EnrollmentData {
   spotplayer_license_key?: string;
   spotplayer_license_url?: string;
   spotplayer_license_id?: string;
+  chat_user_id?: number;
   courses: {
     id: string;
     title: string;
@@ -700,7 +702,11 @@ const AdminEnrollmentDetails: React.FC = () => {
 
           {/* CRM Notes Section */}
           {enrollment.chat_user_id && (
-            <UserCRM userId={enrollment.chat_user_id} />
+            <UserCRM 
+              userId={enrollment.chat_user_id} 
+              preselectedCourseId={enrollment.course_id}
+              preselectedCourseTitle={enrollment.courses.title}
+            />
           )}
         </div>
       </div>
