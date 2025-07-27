@@ -49,7 +49,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [courseFilter, setCourseFilter] = useState('all');
   
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, 150);
   const enrollmentsPerPage = 50;
   const totalPages = Math.ceil(totalEnrollments / enrollmentsPerPage);
 
@@ -100,7 +100,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
         `)
         .order('created_at', { ascending: false });
         
-      // Apply search filter
+      // Apply search filter - now works from first character
       if (debouncedSearchTerm) {
         const searchFilter = `full_name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`;
         countQuery = countQuery.or(searchFilter);

@@ -17,11 +17,11 @@ const UserManagement: React.FC = () => {
   const [totalResults, setTotalResults] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
   
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
-  // Search function using the same logic as the working support search
+  // Search function with real-time database queries
   const performSearch = async (term: string) => {
-    if (!term || term.length < 3) {
+    if (!term) {
       setSearchResults([]);
       setTotalResults(0);
       setHasSearched(false);
@@ -31,8 +31,8 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       setHasSearched(true);
-      // Search all users (both approved and pending)
-      const result = await chatUserAdminService.getAllUsers(term);
+      // Search all users from first character
+      const result = await chatUserAdminService.getAllUsers(term, 100); // Limit to 100 results
       setSearchResults(result.users);
       setTotalResults(result.total);
       console.log('Search results:', { found: result.users.length, total: result.total, term });
@@ -86,8 +86,7 @@ const UserManagement: React.FC = () => {
 
   const getSearchMessage = () => {
     if (loading) return "در حال جستجو...";
-    if (searchTerm.length === 0) return "برای جستجو، حداقل ۳ کاراکتر وارد کنید";
-    if (searchTerm.length < 3) return "برای جستجو، حداقل ۳ کاراکتر وارد کنید";
+    if (searchTerm.length === 0) return "شروع به تایپ کنید تا جستجو آغاز شود";
     if (hasSearched && totalResults === 0) return "کاربری یافت نشد";
     if (hasSearched && totalResults > 0) return `${totalResults} کاربر یافت شد`;
     return "";
@@ -129,8 +128,8 @@ const UserManagement: React.FC = () => {
               </div>
               
               {loading && (
-                <div className="text-center py-4">
-                  <div className="animate-spin h-6 w-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+                <div className="flex justify-center py-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
                 </div>
               )}
               

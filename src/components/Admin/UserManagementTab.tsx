@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Users, UserCheck, UserX, Search, Shield, Star, Clock, Phone, Calendar, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { useDebounce } from '@/hooks/use-debounce';
 import UserEditModal from './UserEditModal';
 
 const UserManagementTab = () => {
@@ -16,8 +17,11 @@ const UserManagementTab = () => {
   const [filteredUsers, setFilteredUsers] = useState<MessengerUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  
+  const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
   const fetchUsers = async () => {
     try {
@@ -37,22 +41,37 @@ const UserManagementTab = () => {
     }
   };
 
+  const searchUsers = async (term: string) => {
+    if (!term) {
+      setFilteredUsers(allUsers);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      // Fallback to local filtering since searchUsers method doesn't exist yet
+      const filtered = allUsers.filter(user => 
+        user.name.toLowerCase().includes(term.toLowerCase()) ||
+        user.phone.includes(term) ||
+        (user.username && user.username.toLowerCase().includes(term.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    } catch (error) {
+      console.error('Search error:', error);
+      setFilteredUsers(allUsers);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
-    if (searchTerm) {
-      const filtered = allUsers.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone.includes(searchTerm) ||
-        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(allUsers);
-    }
-  }, [allUsers, searchTerm]);
+    searchUsers(debouncedSearchTerm);
+  }, [debouncedSearchTerm, allUsers]);
 
   const handleApproveUser = async (userId: number) => {
     try {
@@ -219,7 +238,7 @@ const UserManagementTab = () => {
       
       {/* Search */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
@@ -229,6 +248,11 @@ const UserManagementTab = () => {
               className="pl-10"
             />
           </div>
+          {searchLoading && (
+            <div className="flex justify-center py-1">
+              <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

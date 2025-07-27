@@ -156,7 +156,7 @@ const LeadManagement: React.FC = () => {
     course_id: 'none'
   });
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
   useEffect(() => {
     checkAdminRole();
