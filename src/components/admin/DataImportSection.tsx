@@ -172,8 +172,15 @@ export function DataImportSection() {
     const lines = csvText.split('\n').filter(line => line.trim());
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     
-    // Validate headers
-    const requiredHeaders = ['first_name', 'last_name', 'email', 'phone'];
+    // Helper function to safely get and clean values
+    const safeGetValue = (values: string[], headerIndex: number): string | null => {
+      if (headerIndex === -1) return null;
+      const value = values[headerIndex]?.trim().replace(/"/g, '');
+      return value && value.length > 0 ? value : null;
+    };
+    
+    // Validate headers - only first_name is truly required
+    const requiredHeaders = ['first_name'];
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
     
     if (missingHeaders.length > 0) {
@@ -183,19 +190,32 @@ export function DataImportSection() {
     const rows: CSVRow[] = [];
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      if (values.length >= 4) {
-        const row: CSVRow = {
-          first_name: values[headers.indexOf('first_name')]?.trim() || null,
-          last_name: values[headers.indexOf('last_name')]?.trim() || null,
-          email: values[headers.indexOf('email')]?.trim() || null,
-          phone: values[headers.indexOf('phone')]?.trim() || null,
-          entry_date: headers.includes('entry_date') ? (values[headers.indexOf('entry_date')]?.trim() || null) : null,
-          payment_method: headers.includes('payment_method') ? (values[headers.indexOf('payment_method')]?.trim() || null) : null,
-          payment_price: headers.includes('payment_price') ? (values[headers.indexOf('payment_price')]?.trim() || null) : null
-        };
-        
-        // Process all rows, even with empty first_name or last_name
+      
+      // Get indices for all headers
+      const firstNameIndex = headers.indexOf('first_name');
+      const lastNameIndex = headers.indexOf('last_name');
+      const emailIndex = headers.indexOf('email');
+      const phoneIndex = headers.indexOf('phone');
+      const entryDateIndex = headers.indexOf('entry_date');
+      const paymentMethodIndex = headers.indexOf('payment_method');
+      const paymentPriceIndex = headers.indexOf('payment_price');
+      
+      // Create row object with null for empty values
+      const row: CSVRow = {
+        first_name: safeGetValue(values, firstNameIndex),
+        last_name: safeGetValue(values, lastNameIndex),
+        email: safeGetValue(values, emailIndex),
+        phone: safeGetValue(values, phoneIndex),
+        entry_date: safeGetValue(values, entryDateIndex),
+        payment_method: safeGetValue(values, paymentMethodIndex),
+        payment_price: safeGetValue(values, paymentPriceIndex)
+      };
+      
+      // Only add row if we have at least first_name or email or phone
+      if (row.first_name || row.email || row.phone) {
         rows.push(row);
+      } else {
+        console.warn(`Skipping row ${i + 1}: No first_name, email, or phone provided`);
       }
     }
 
@@ -336,39 +356,43 @@ export function DataImportSection() {
         if (!existingUser && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
           // Parse entry date for user creation
           let userCreatedAt = new Date().toISOString();
-          if (row.entry_date && row.entry_date.trim()) {
+          if (row.entry_date) {
             try {
               const dateStr = row.entry_date.trim();
-              let parsedDate: Date;
-              
-              if (dateStr.includes(' ')) {
-                const [datePart, timePart] = dateStr.split(' ');
-                if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
-                  const [year, month, day] = datePart.split('-');
-                  const [hour, minute] = timePart.split(':');
-                  parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-                } else {
-                  parsedDate = new Date(dateStr);
-                }
-              } else if (dateStr.includes('/')) {
-                const [day, month, year] = dateStr.split('/');
-                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-              } else if (dateStr.includes('-') && dateStr.length === 10) {
-                if (dateStr.indexOf('-') === 4) {
-                  parsedDate = new Date(dateStr);
-                } else {
-                  const [day, month, year] = dateStr.split('-');
+              if (dateStr.length > 0) {
+                let parsedDate: Date;
+                
+                if (dateStr.includes(' ')) {
+                  const [datePart, timePart] = dateStr.split(' ');
+                  if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
+                    const [year, month, day] = datePart.split('-');
+                    const [hour, minute] = timePart.split(':');
+                    parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+                  } else {
+                    parsedDate = new Date(dateStr);
+                  }
+                } else if (dateStr.includes('/')) {
+                  const [day, month, year] = dateStr.split('/');
                   parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                } else if (dateStr.includes('-') && dateStr.length === 10) {
+                  if (dateStr.indexOf('-') === 4) {
+                    parsedDate = new Date(dateStr);
+                  } else {
+                    const [day, month, year] = dateStr.split('-');
+                    parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                  }
+                } else {
+                  parsedDate = new Date(dateStr);
                 }
-              } else {
-                parsedDate = new Date(dateStr);
-              }
-              
-              if (!isNaN(parsedDate.getTime())) {
-                userCreatedAt = parsedDate.toISOString();
+                
+                if (!isNaN(parsedDate.getTime())) {
+                  userCreatedAt = parsedDate.toISOString();
+                } else {
+                  console.warn(`Invalid date format for ${row.email || row.phone}: ${row.entry_date}, using current date`);
+                }
               }
             } catch (error) {
-              console.warn(`Invalid date format for ${row.email}: ${row.entry_date}, using current date`);
+              console.warn(`Error parsing date for ${row.email || row.phone}: ${row.entry_date}, using current date`);
             }
           }
 
@@ -406,39 +430,43 @@ export function DataImportSection() {
         
         // Parse entry date for enrollment
         let createdAt = new Date().toISOString();
-        if (row.entry_date?.trim()) {
+        if (row.entry_date) {
           try {
             const dateStr = row.entry_date.trim();
-            let parsedDate: Date;
-            
-            if (dateStr.includes(' ')) {
-              const [datePart, timePart] = dateStr.split(' ');
-              if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
-                const [year, month, day] = datePart.split('-');
-                const [hour, minute] = timePart.split(':');
-                parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
-              } else {
-                parsedDate = new Date(dateStr);
-              }
-            } else if (dateStr.includes('/')) {
-              const [day, month, year] = dateStr.split('/');
-              parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-            } else if (dateStr.includes('-') && dateStr.length === 10) {
-              if (dateStr.indexOf('-') === 4) {
-                parsedDate = new Date(dateStr);
-              } else {
-                const [day, month, year] = dateStr.split('-');
+            if (dateStr.length > 0) {
+              let parsedDate: Date;
+              
+              if (dateStr.includes(' ')) {
+                const [datePart, timePart] = dateStr.split(' ');
+                if (datePart.includes('-') && datePart.split('-')[0].length === 4) {
+                  const [year, month, day] = datePart.split('-');
+                  const [hour, minute] = timePart.split(':');
+                  parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+                } else {
+                  parsedDate = new Date(dateStr);
+                }
+              } else if (dateStr.includes('/')) {
+                const [day, month, year] = dateStr.split('/');
                 parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              } else if (dateStr.includes('-') && dateStr.length === 10) {
+                if (dateStr.indexOf('-') === 4) {
+                  parsedDate = new Date(dateStr);
+                } else {
+                  const [day, month, year] = dateStr.split('-');
+                  parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                }
+              } else {
+                parsedDate = new Date(dateStr);
               }
-            } else {
-              parsedDate = new Date(dateStr);
-            }
-            
-            if (!isNaN(parsedDate.getTime())) {
-              createdAt = parsedDate.toISOString();
+              
+              if (!isNaN(parsedDate.getTime())) {
+                createdAt = parsedDate.toISOString();
+              } else {
+                console.warn(`Invalid date format for enrollment ${row.email || row.phone}: ${row.entry_date}, using current date`);
+              }
             }
           } catch (error) {
-            console.warn(`Invalid date format for ${row.email}: ${row.entry_date}, using current date`);
+            console.warn(`Error parsing date for enrollment ${row.email || row.phone}: ${row.entry_date}, using current date`);
           }
         }
 
