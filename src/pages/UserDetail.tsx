@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments'
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
 import { UserRoleManagement } from '@/components/Admin/UserProfile/UserRoleManagement';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserData {
   id: number;
@@ -44,6 +44,7 @@ const UserDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isAdmin, setIsAdmin] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (userId) {
@@ -130,7 +131,7 @@ const UserDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background" dir="rtl">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -145,7 +146,7 @@ const UserDetail: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background" dir="rtl">
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="pt-6 text-center">
@@ -164,7 +165,7 @@ const UserDetail: React.FC = () => {
   console.log('Rendering UserDetail with isAdmin:', isAdmin);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir="rtl">
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -197,7 +198,7 @@ const UserDetail: React.FC = () => {
               )}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-right">
             <div className="grid gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -237,44 +238,44 @@ const UserDetail: React.FC = () => {
               </div>
 
               <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
-                  <TabsTrigger value="overview" className="flex items-center gap-2">
+                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} ${isMobile ? 'grid-cols-2 gap-1' : ''}`}>
+                  <TabsTrigger value="overview" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
                     <User className="w-4 h-4" />
-                    Overview
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>نمای کلی</span>
                   </TabsTrigger>
-                  <TabsTrigger value="enrollments" className="flex items-center gap-2">
+                  <TabsTrigger value="enrollments" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
                     <CreditCard className="w-4 h-4" />
-                    Enrollments
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>ثبت‌نام‌ها</span>
                   </TabsTrigger>
-                  <TabsTrigger value="licenses" className="flex items-center gap-2">
+                  <TabsTrigger value="licenses" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
                     <Key className="w-4 h-4" />
-                    Licenses
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>لایسنس‌ها</span>
                   </TabsTrigger>
-                  <TabsTrigger value="crm" className="flex items-center gap-2">
+                  <TabsTrigger value="crm" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
                     <MessageSquare className="w-4 h-4" />
-                    CRM
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>مدیریت ارتباط</span>
                   </TabsTrigger>
-                  <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <TabsTrigger value="activity" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
                     <Activity className="w-4 h-4" />
-                    Activity
+                    <span className={isMobile ? 'hidden sm:inline' : ''}>فعالیت‌ها</span>
                   </TabsTrigger>
                   {isAdmin && (
-                    <TabsTrigger value="roles" className="flex items-center gap-2">
+                    <TabsTrigger value="roles" className={`flex items-center gap-2 ${isMobile ? 'text-xs px-2' : ''}`}>
                       <Shield className="w-4 h-4" />
-                      Roles
+                      <span className={isMobile ? 'hidden sm:inline' : ''}>نقش‌ها</span>
                     </TabsTrigger>
                   )}
                 </TabsList>
-                <TabsContent value="overview" className="mt-6">
+                <TabsContent value="overview" className="mt-6 text-right">
                   <UserOverview user={user} />
                 </TabsContent>
-                <TabsContent value="enrollments" className="mt-6">
+                <TabsContent value="enrollments" className="mt-6 text-right">
                   <UserEnrollments userId={user.id} />
                 </TabsContent>
-                <TabsContent value="licenses" className="mt-6">
+                <TabsContent value="licenses" className="mt-6 text-right">
                   <UserLicenses userId={user.id} userPhone={user.phone} />
                 </TabsContent>
-                <TabsContent value="crm" className="mt-6">
+                <TabsContent value="crm" className="mt-6 text-right">
                   <UserCRM 
                     userId={user.id}
                     userName={user.name}
@@ -282,11 +283,11 @@ const UserDetail: React.FC = () => {
                     userEmail={user.email}
                   />
                 </TabsContent>
-                <TabsContent value="activity" className="mt-6">
+                <TabsContent value="activity" className="mt-6 text-right">
                   <UserActivity userId={user.id} />
                 </TabsContent>
                 {isAdmin && (
-                  <TabsContent value="roles" className="mt-6">
+                  <TabsContent value="roles" className="mt-6 text-right">
                     <UserRoleManagement userId={user.id} />
                   </TabsContent>
                 )}
