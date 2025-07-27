@@ -321,16 +321,6 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <Shield className="h-4 w-4 mr-2" />
                             مشاهده جزئیات ادمین
                           </Button>
-                          {enrollment.chat_user_id && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                            >
-                              مشاهده کاربر
-                            </Button>
-                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -409,16 +399,6 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             >
                               <Shield className="h-4 w-4" />
                             </Button>
-                            {enrollment.chat_user_id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                                title="مشاهده کاربر"
-                              >
-                                کاربر
-                              </Button>
-                            )}
                           </div>
                         </TableCell>
                       </TableRow>
