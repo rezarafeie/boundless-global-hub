@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,27 +31,54 @@ interface Enrollment {
   };
 }
 
+interface Course {
+  id: string;
+  title: string;
+  slug: string;
+}
+
 const PaginatedEnrollmentsTable: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalEnrollments, setTotalEnrollments] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
   
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const enrollmentsPerPage = 50;
   const totalPages = Math.ceil(totalEnrollments / enrollmentsPerPage);
 
   useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
     fetchEnrollments();
-  }, [currentPage, debouncedSearchTerm, statusFilter]);
+  }, [currentPage, debouncedSearchTerm, statusFilter, courseFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, statusFilter]);
+  }, [debouncedSearchTerm, statusFilter, courseFilter]);
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title, slug')
+        .eq('is_active', true)
+        .order('title');
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
 
   const fetchEnrollments = async () => {
     try {
@@ -90,6 +116,12 @@ const PaginatedEnrollmentsTable: React.FC = () => {
           countQuery = countQuery.eq('payment_status', statusFilter);
           dataQuery = dataQuery.eq('payment_status', statusFilter);
         }
+      }
+
+      // Apply course filter
+      if (courseFilter !== 'all') {
+        countQuery = countQuery.eq('course_id', courseFilter);
+        dataQuery = dataQuery.eq('course_id', courseFilter);
       }
       
       // Get total count
@@ -220,6 +252,19 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                   <SelectItem value="cancelled_payment">لغو شده</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={courseFilter} onValueChange={setCourseFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="همه دوره‌ها" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه دوره‌ها</SelectItem>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -245,6 +290,19 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                   <SelectItem value="cancelled_payment">لغو شده</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={courseFilter} onValueChange={setCourseFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="همه دوره‌ها" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه دوره‌ها</SelectItem>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <div className="relative w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -263,7 +321,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
           <div className="text-center py-8">
             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">
-              {searchTerm || statusFilter !== 'all' ? 'هیچ ثبت‌نامی یافت نشد' : 'هنوز ثبت‌نامی وجود ندارد'}
+              {searchTerm || statusFilter !== 'all' || courseFilter !== 'all' ? 'هیچ ثبت‌نامی یافت نشد' : 'هنوز ثبت‌نامی وجود ندارد'}
             </p>
           </div>
         ) : (
