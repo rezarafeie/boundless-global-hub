@@ -375,15 +375,23 @@ export function EnrollmentCRM() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="relative">
-                    <Input
-                      placeholder="جستجو بر اساس نام یا شماره تلفن..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                      dir="rtl"
-                    />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        placeholder="جستجو بر اساس نام یا شماره تلفن..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                        dir="rtl"
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    </div>
+                    
+                    {isSearching && (
+                      <div className="flex justify-center py-1">
+                        <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
                     
                     {searchResults.length > 0 && (
                       <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">

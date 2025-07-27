@@ -43,6 +43,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalEnrollments, setTotalEnrollments] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,7 +83,12 @@ const PaginatedEnrollmentsTable: React.FC = () => {
 
   const fetchEnrollments = async () => {
     try {
-      setLoading(true);
+      // Only set main loading for initial load, use searchLoading for search operations
+      if (!debouncedSearchTerm && statusFilter === 'all' && courseFilter === 'all' && currentPage === 1) {
+        setLoading(true);
+      } else {
+        setSearchLoading(true);
+      }
       
       // Build base query
       let countQuery = supabase
@@ -146,6 +152,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
       });
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
@@ -265,14 +272,21 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="جستجوی نام، ایمیل، تلفن..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="جستجوی نام، ایمیل، تلفن..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                {searchLoading && (
+                  <div className="flex justify-center py-1">
+                    <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -303,14 +317,21 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="relative w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="جستجوی نام، ایمیل، تلفن..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="w-80 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="جستجوی نام، ایمیل، تلفن..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                {searchLoading && (
+                  <div className="flex justify-center py-1">
+                    <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
               </div>
             </div>
           )}

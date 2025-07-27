@@ -127,6 +127,7 @@ const LeadManagement: React.FC = () => {
   const [agentSummaries, setAgentSummaries] = useState<AgentSummary[]>([]);
   const [courses, setCourses] = useState<{id: string, title: string}[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin'>('available');
@@ -891,14 +892,21 @@ const LeadManagement: React.FC = () => {
           {/* Search and Tabs - Mobile Responsive */}
           <div className="space-y-4">
             {/* Search Input */}
-            <div className="flex items-center gap-2 w-full">
-              <Search className="h-4 w-4 flex-shrink-0" />
-              <Input
-                placeholder="جستجو نام، ایمیل یا تلفن... (حداقل ۳ کاراکتر)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 w-full">
+                <Search className="h-4 w-4 flex-shrink-0" />
+                <Input
+                  placeholder="جستجو نام، ایمیل یا تلفن..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              {searchLoading && (
+                <div className="flex justify-center py-1">
+                  <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                </div>
+              )}
             </div>
             
             {/* Tabs - Mobile Responsive */}
