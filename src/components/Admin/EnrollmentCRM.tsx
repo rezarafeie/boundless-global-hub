@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter } from 'lucide-react';
+import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,6 +62,12 @@ export function EnrollmentCRM() {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // User search states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  
   // Filters
   const [filterCourse, setFilterCourse] = useState('all');
   const [filterAgent, setFilterAgent] = useState('all');
@@ -81,6 +88,67 @@ export function EnrollmentCRM() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Search users with debounce
+  useEffect(() => {
+    if (searchTerm.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      searchUsers();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  const searchUsers = async () => {
+    if (!searchTerm.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('id, name, phone')
+        .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        .eq('is_approved', true)
+        .order('name')
+        .limit(10);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectUser = (user: ChatUser) => {
+    setSelectedUser(user);
+    setNewNote({ ...newNote, user_id: user.id.toString() });
+    setSearchTerm('');
+    setSearchResults([]);
+  };
+
+  const clearSelectedUser = () => {
+    setSelectedUser(null);
+    setNewNote({ ...newNote, user_id: '' });
+  };
+
+  const openAddNoteDialog = () => {
+    if (!selectedUser) {
+      toast({
+        title: "خطا",
+        description: "لطفاً ابتدا کاربر را انتخاب کنید.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsAddingNote(true);
+  };
 
   const fetchData = async () => {
     try {
@@ -281,17 +349,74 @@ export function EnrollmentCRM() {
                 <MessageSquare className="w-5 h-5" />
                 فعالیت‌های CRM ({filteredNotes.length})
               </CardTitle>
-              
-              <Button 
-                onClick={() => {
-                  console.log('Opening dialog...');
-                  setIsAddingNote(true);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                افزودن یادداشت
-              </Button>
+            </div>
+            
+            {/* User Search Section */}
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  <span className="text-sm font-medium">جستجو و انتخاب کاربر:</span>
+                </div>
+                
+                {selectedUser ? (
+                  <div className="flex items-center gap-2 p-3 bg-background rounded-lg border">
+                    <div className="flex-1">
+                      <div className="font-medium">{selectedUser.name}</div>
+                      <div className="text-sm text-muted-foreground">{selectedUser.phone}</div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearSelectedUser}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      placeholder="جستجو بر اساس نام یا شماره تلفن..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                      dir="rtl"
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    
+                    {searchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user.id}
+                            className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                            onClick={() => selectUser(user)}
+                          >
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">{user.phone}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {isSearching && (
+                      <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 p-3 text-center">
+                        <div className="text-sm text-muted-foreground">در حال جستجو...</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <Button 
+                  onClick={openAddNoteDialog}
+                  disabled={!selectedUser}
+                  className="flex items-center gap-2 w-fit"
+                >
+                  <Plus className="w-4 h-4" />
+                  افزودن یادداشت
+                </Button>
+              </div>
             </div>
             
             {/* Filters */}
@@ -415,28 +540,19 @@ export function EnrollmentCRM() {
         </CardContent>
       </Card>
 
-      {/* Separate Dialog outside of Card */}
+      {/* Add Note Dialog */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>افزودن یادداشت CRM</DialogTitle>
           </DialogHeader>
           <div className="space-y-4" dir="rtl">
-            <div>
-              <Label htmlFor="user">کاربر</Label>
-              <Select value={newNote.user_id} onValueChange={(value) => setNewNote({...newNote, user_id: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="انتخاب کاربر" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chatUsers.map(user => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.name} ({user.phone})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {selectedUser && (
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="font-medium">{selectedUser.name}</div>
+                <div className="text-sm text-muted-foreground">{selectedUser.phone}</div>
+              </div>
+            )}
             
             <div>
               <Label htmlFor="type">نوع</Label>
