@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,12 +27,12 @@ import {
   AlertCircle,
   TrendingUp,
   TrendingDown,
-  Minus
+  Minus,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { fa } from 'date-fns/locale';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 
 interface Enrollment {
@@ -128,11 +129,11 @@ const EnrollAdmin: React.FC = () => {
       }
 
       if (filter.dateRange.from) {
-        const fromDate = format(filter.dateRange.from, 'yyyy-MM-dd', { locale: fa });
+        const fromDate = format(filter.dateRange.from, 'yyyy-MM-dd');
         query = query.gte('created_at', fromDate);
       }
       if (filter.dateRange.to) {
-        const toDate = format(filter.dateRange.to, 'yyyy-MM-dd', { locale: fa });
+        const toDate = format(filter.dateRange.to, 'yyyy-MM-dd');
         query = query.lte('created_at', toDate);
       }
 
@@ -329,17 +330,17 @@ const EnrollAdmin: React.FC = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('full_name')}>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
                             نام و نام خانوادگی
                           </Button>
                         </TableHead>
                         <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('email')}>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
                             ایمیل
                           </Button>
                         </TableHead>
                         <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('phone')}>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
                             تلفن
                           </Button>
                         </TableHead>
@@ -347,7 +348,7 @@ const EnrollAdmin: React.FC = () => {
                           دوره
                         </TableHead>
                         <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('payment_status')}>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
                             وضعیت پرداخت
                           </Button>
                         </TableHead>
@@ -411,6 +412,8 @@ const EnrollAdmin: React.FC = () => {
               userName={selectedEnrollment.full_name}
               userPhone={selectedEnrollment.phone}
               userEmail={selectedEnrollment.email}
+              preselectedCourseId={selectedEnrollment.course_id}
+              preselectedCourseTitle={selectedEnrollment.courses?.title}
             />
           )}
         </DialogContent>
