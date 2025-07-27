@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Plus, Phone, FileText, Trash2, Calendar, BookOpen, Video } from 'lucide-react';
+import { MessageSquare, Plus, Phone, FileText, Trash2, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,49 +18,29 @@ interface CRMNote {
   created_by: string;
   created_at: string;
   updated_at: string;
-  course_id: string | null;
-  status: string;
-  courses?: {
-    title: string;
-  };
 }
 
 interface UserCRMProps {
   userId: number;
 }
 
-interface Course {
-  id: string;
-  title: string;
-}
-
 export function UserCRM({ userId }: UserCRMProps) {
   const [notes, setNotes] = useState<CRMNote[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
-  const [newNote, setNewNote] = useState({ 
-    type: 'note', 
-    content: '', 
-    course_id: '',
-    status: 'در انتظار پرداخت'
-  });
+  const [newNote, setNewNote] = useState({ type: 'note', content: '' });
   const [filterType, setFilterType] = useState('all');
   const { toast } = useToast();
 
   useEffect(() => {
     fetchNotes();
-    fetchCourses();
   }, [userId]);
 
   const fetchNotes = async () => {
     try {
       const { data, error } = await supabase
         .from('crm_notes')
-        .select(`
-          *,
-          courses(title)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -78,21 +58,6 @@ export function UserCRM({ userId }: UserCRMProps) {
     }
   };
 
-  const fetchCourses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('id, title')
-        .eq('is_active', true)
-        .order('title');
-
-      if (error) throw error;
-      setCourses(data || []);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-    }
-  };
-
   const addNote = async () => {
     if (!newNote.content.trim()) return;
 
@@ -103,9 +68,7 @@ export function UserCRM({ userId }: UserCRMProps) {
           user_id: userId,
           type: newNote.type,
           content: newNote.content,
-          created_by: 'مدیر',
-          course_id: newNote.course_id || null,
-          status: newNote.status
+          created_by: 'مدیر' // You might want to get this from current user context
         });
 
       if (error) throw error;
@@ -115,12 +78,7 @@ export function UserCRM({ userId }: UserCRMProps) {
         description: "یادداشت CRM با موفقیت اضافه شد."
       });
 
-      setNewNote({ 
-        type: 'note', 
-        content: '', 
-        course_id: '',
-        status: 'در انتظار پرداخت'
-      });
+      setNewNote({ type: 'note', content: '' });
       setIsAddingNote(false);
       fetchNotes();
     } catch (error) {
@@ -164,8 +122,6 @@ export function UserCRM({ userId }: UserCRMProps) {
         return <Phone className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'message':
         return <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />;
-      case 'جلسه مشاوره':
-        return <Video className="w-3 h-3 sm:w-4 sm:h-4" />;
       default:
         return <FileText className="w-3 h-3 sm:w-4 sm:h-4" />;
     }
@@ -175,34 +131,16 @@ export function UserCRM({ userId }: UserCRMProps) {
     const variants: Record<string, any> = {
       note: 'default',
       call: 'secondary',
-      message: 'outline',
-      'جلسه مشاوره': 'destructive'
+      message: 'outline'
     };
     
     const typeLabels: Record<string, string> = {
       note: 'یادداشت',
       call: 'تماس',
-      message: 'پیام',
-      'جلسه مشاوره': 'جلسه مشاوره'
+      message: 'پیام'
     };
     
     return <Badge variant={variants[type] || 'default'} className="text-xs">{typeLabels[type] || type}</Badge>;
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      'در انتظار پرداخت': 'bg-yellow-100 text-yellow-800',
-      'کنسل': 'bg-red-100 text-red-800',
-      'موفق': 'bg-green-100 text-green-800',
-      'پاسخ نداده': 'bg-gray-100 text-gray-800',
-      'امکان مکالمه نداشت': 'bg-orange-100 text-orange-800'
-    };
-    
-    return (
-      <Badge className={`${statusColors[status] || 'bg-gray-100 text-gray-800'} text-xs`}>
-        {status}
-      </Badge>
-    );
   };
 
   const formatDate = (dateString: string) => {
@@ -250,7 +188,6 @@ export function UserCRM({ userId }: UserCRMProps) {
                   <SelectItem value="note">یادداشت‌ها</SelectItem>
                   <SelectItem value="call">تماس‌ها</SelectItem>
                   <SelectItem value="message">پیام‌ها</SelectItem>
-                  <SelectItem value="جلسه مشاوره">جلسه مشاوره</SelectItem>
                 </SelectContent>
               </Select>
               <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
@@ -266,22 +203,6 @@ export function UserCRM({ userId }: UserCRMProps) {
                   </DialogHeader>
                   <div className="space-y-4" dir="rtl">
                     <div>
-                      <Label htmlFor="course">دوره</Label>
-                      <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب دوره" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">هیچ دوره‌ای</SelectItem>
-                          {courses.map(course => (
-                            <SelectItem key={course.id} value={course.id}>
-                              {course.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
                       <Label htmlFor="type">نوع</Label>
                       <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
                         <SelectTrigger>
@@ -291,22 +212,6 @@ export function UserCRM({ userId }: UserCRMProps) {
                           <SelectItem value="note">یادداشت</SelectItem>
                           <SelectItem value="call">گزارش تماس</SelectItem>
                           <SelectItem value="message">پیام</SelectItem>
-                          <SelectItem value="جلسه مشاوره">جلسه مشاوره</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="status">وضعیت</Label>
-                      <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
-                          <SelectItem value="کنسل">کنسل</SelectItem>
-                          <SelectItem value="موفق">موفق</SelectItem>
-                          <SelectItem value="پاسخ نداده">پاسخ نداده</SelectItem>
-                          <SelectItem value="امکان مکالمه نداشت">امکان مکالمه نداشت</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -370,17 +275,6 @@ export function UserCRM({ userId }: UserCRMProps) {
                       </div>
                       
                       <div className="space-y-2">
-                        {note.courses && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <BookOpen className="w-3 h-3" />
-                            {note.courses.title}
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(note.status)}
-                        </div>
-                        
                         <p className="text-sm leading-relaxed">{note.content}</p>
                         
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -402,8 +296,6 @@ export function UserCRM({ userId }: UserCRMProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">نوع</TableHead>
-                      <TableHead className="text-right">دوره</TableHead>
-                      <TableHead className="text-right">وضعیت</TableHead>
                       <TableHead className="text-right">محتوا</TableHead>
                       <TableHead className="text-right">ایجاد شده توسط</TableHead>
                       <TableHead className="text-right">تاریخ</TableHead>
@@ -418,15 +310,6 @@ export function UserCRM({ userId }: UserCRMProps) {
                             {getTypeIcon(note.type)}
                             {getTypeBadge(note.type)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-muted-foreground" />
-                            <span>{note.courses?.title || 'بدون دوره'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(note.status)}
                         </TableCell>
                         <TableCell>
                           <div className="max-w-md">

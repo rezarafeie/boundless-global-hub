@@ -1,265 +1,312 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
-import { ReplyProvider } from "@/contexts/ReplyContext";
-import NotificationErrorBoundary from "@/components/NotificationErrorBoundary";
-import OfflineDetector from "@/components/OfflineDetector";
-import PurpleLoader from "@/components/PurpleLoader";
-import { lazy, Suspense } from "react";
-const Landing = lazy(() => import("@/pages/Index"));
-const Home = lazy(() => import("@/pages/Dashboard"));
-const Pricing = lazy(() => import("@/pages/Pricing"));
-const Contact = lazy(() => import("@/pages/Contact"));
-const About = lazy(() => import("@/pages/About"));
-const Privacy = lazy(() => import("@/pages/Privacy"));
-const Terms = lazy(() => import("@/pages/Terms"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const Chat = lazy(() => import("@/pages/Chat"));
-const Live = lazy(() => import("@/pages/Live"));
-const Profile = lazy(() => import("@/pages/Profile"));
-const Course = lazy(() => import("@/pages/Course"));
-const Courses = lazy(() => import("@/pages/Courses"));
-const Module = lazy(() => import("@/pages/Module"));
-const Enrollment = lazy(() => import("@/pages/Enrollment"));
-const EnrollmentAdmin = lazy(() => import("@/pages/EnrollmentAdmin"));
-const Admin = lazy(() => import("@/pages/Admin"));
-const EmailSettings = lazy(() => import("@/pages/EmailSettings"));
-const ShortLinkLanding = lazy(() => import("@/pages/ShortLinkLanding"));
-const Test = lazy(() => import("@/pages/Test"));
-const CRMAdmin = lazy(() => import("@/pages/CRMAdmin"));
-import PasswordReset from "@/pages/PasswordReset";
-import PasswordUpdate from "@/pages/PasswordUpdate";
-import VerifyEmail from "@/pages/VerifyEmail";
-import Support from "@/pages/Support";
-import SupportAdmin from "@/pages/SupportAdmin";
-import AnnouncementPage from "@/pages/AnnouncementPage";
-import NotificationSettings from "@/pages/NotificationSettings";
-import RafieiPlayer from "@/pages/RafieiPlayer";
-import Messenger from "@/pages/Messenger";
-import MessengerHome from "@/pages/MessengerHome";
-import MessengerSupport from "@/pages/MessengerSupport";
-import MessengerAdmin from "@/pages/MessengerAdmin";
-import MessengerUser from "@/pages/MessengerUser";
-import MessengerRoom from "@/pages/MessengerRoom";
-import MessengerSettings from "@/pages/MessengerSettings";
-import MessengerProfile from "@/pages/MessengerProfile";
-import MessengerChat from "@/pages/MessengerChat";
-import MessengerChatSupport from "@/pages/MessengerChatSupport";
-import MessengerChatAdmin from "@/pages/MessengerChatAdmin";
-import MessengerChatUser from "@/pages/MessengerChatUser";
-import MessengerChatRoom from "@/pages/MessengerChatRoom";
-import MessengerChatSettings from "@/pages/MessengerChatSettings";
-import MessengerChatProfile from "@/pages/MessengerChatProfile";
-import MessengerChatHome from "@/pages/MessengerChatHome";
-import MessengerChatNotFound from "@/pages/MessengerChatNotFound";
-import MessengerChatUnauthorized from "@/pages/MessengerChatUnauthorized";
-import MessengerChatForbidden from "@/pages/MessengerChatForbidden";
-import MessengerChatError from "@/pages/MessengerChatError";
-import MessengerChatLoading from "@/pages/MessengerChatLoading";
-import MessengerChatOffline from "@/pages/MessengerChatOffline";
-import MessengerChatTimeout from "@/pages/MessengerChatTimeout";
-import MessengerChatServerError from "@/pages/MessengerChatServerError";
-import MessengerChatServiceUnavailable from "@/pages/MessengerChatServiceUnavailable";
-import MessengerChatGatewayTimeout from "@/pages/MessengerChatGatewayTimeout";
-import MessengerChatBadGateway from "@/pages/MessengerChatBadGateway";
-import MessengerChatNotFoundPage from "@/pages/MessengerChatNotFoundPage";
-import MessengerChatUnauthorizedPage from "@/pages/MessengerChatUnauthorizedPage";
-import MessengerChatForbiddenPage from "@/pages/MessengerChatForbiddenPage";
-import MessengerChatErrorPage from "@/pages/MessengerChatErrorPage";
-import MessengerChatLoadingPage from "@/pages/MessengerChatLoadingPage";
-import MessengerChatOfflinePage from "@/pages/MessengerChatOfflinePage";
-import MessengerChatTimeoutPage from "@/pages/MessengerChatTimeoutPage";
-import MessengerChatServerErrorPage from "@/pages/MessengerChatServerErrorPage";
-import MessengerChatServiceUnavailablePage from "@/pages/MessengerChatServiceUnavailablePage";
-import MessengerChatGatewayTimeoutPage from "@/pages/MessengerChatGatewayTimeoutPage";
-import MessengerChatBadGatewayPage from "@/pages/MessengerChatBadGatewayPage";
-import MessengerChatNotFoundComponent from "@/components/Messenger/MessengerChatNotFound";
-import MessengerChatUnauthorizedComponent from "@/components/Messenger/MessengerChatUnauthorized";
-import MessengerChatForbiddenComponent from "@/components/Messenger/MessengerChatForbidden";
-import MessengerChatErrorComponent from "@/components/Messenger/MessengerChatError";
-import MessengerChatLoadingComponent from "@/components/Messenger/MessengerChatLoading";
-import MessengerChatOfflineComponent from "@/components/Messenger/MessengerChatOffline";
-import MessengerChatTimeoutComponent from "@/components/Messenger/MessengerChatTimeout";
-import MessengerChatServerErrorComponent from "@/components/Messenger/MessengerChatServerError";
-import MessengerChatServiceUnavailableComponent from "@/components/Messenger/MessengerChatServiceUnavailable";
-import MessengerChatGatewayTimeoutComponent from "@/components/Messenger/MessengerChatGatewayTimeout";
-import MessengerChatBadGatewayComponent from "@/components/Messenger/MessengerChatBadGateway";
-import MessengerChatNotFoundLayout from "@/components/Messenger/MessengerChatNotFoundLayout";
-import MessengerChatUnauthorizedLayout from "@/components/Messenger/MessengerChatUnauthorizedLayout";
-import MessengerChatForbiddenLayout from "@/components/Messenger/MessengerChatForbiddenLayout";
-import MessengerChatErrorLayout from "@/components/Messenger/MessengerChatErrorLayout";
-import MessengerChatLoadingLayout from "@/components/Messenger/MessengerChatLoadingLayout";
-import MessengerChatOfflineLayout from "@/components/Messenger/MessengerChatOfflineLayout";
-import MessengerChatTimeoutLayout from "@/components/Messenger/MessengerChatTimeoutLayout";
-import MessengerChatServerErrorLayout from "@/components/Messenger/MessengerChatServerErrorLayout";
-import MessengerChatServiceUnavailableLayout from "@/components/Messenger/MessengerChatServiceUnavailableLayout";
-import MessengerChatGatewayTimeoutLayout from "@/components/Messenger/MessengerChatGatewayTimeoutLayout";
-import MessengerChatBadGatewayLayout from "@/components/Messenger/MessengerChatBadGatewayLayout";
-import MessengerChatLayout from "@/components/Messenger/MessengerChatLayout";
-import MessengerChatHomeLayout from "@/components/Messenger/MessengerChatHomeLayout";
-import MessengerChatSettingsLayout from "@/components/Messenger/MessengerChatSettingsLayout";
-import MessengerChatProfileLayout from "@/components/Messenger/MessengerChatProfileLayout";
-import MessengerChatChatLayout from "@/components/Messenger/MessengerChatChatLayout";
-import MessengerChatSupportLayout from "@/components/Messenger/MessengerChatSupportLayout";
-import MessengerChatAdminLayout from "@/components/Messenger/MessengerChatAdminLayout";
-import MessengerChatUserLayout from "@/components/Messenger/MessengerChatUserLayout";
-import MessengerChatRoomLayout from "@/components/Messenger/MessengerChatRoomLayout";
-import MessengerChatNotFoundPageLayout from "@/components/Messenger/MessengerChatNotFoundPageLayout";
-import MessengerChatUnauthorizedPageLayout from "@/components/Messenger/MessengerChatUnauthorizedPageLayout";
-import MessengerChatForbiddenPageLayout from "@/components/Messenger/MessengerChatForbiddenPageLayout";
-import MessengerChatErrorPageLayout from "@/components/Messenger/MessengerChatErrorPageLayout";
-import MessengerChatLoadingPageLayout from "@/components/Messenger/MessengerChatLoadingPageLayout";
-import MessengerChatOfflinePageLayout from "@/components/Messenger/MessengerChatOfflinePageLayout";
-import MessengerChatTimeoutPageLayout from "@/components/Messenger/MessengerChatTimeoutPageLayout";
-import MessengerChatServerErrorPageLayout from "@/components/Messenger/MessengerChatServerErrorPageLayout";
-import MessengerChatServiceUnavailablePageLayout from "@/components/Messenger/MessengerChatServiceUnavailablePageLayout";
-import MessengerChatGatewayTimeoutPageLayout from "@/components/Messenger/MessengerChatGatewayTimeoutPageLayout";
-import MessengerChatBadGatewayPageLayout from "@/components/Messenger/MessengerChatBadGatewayPageLayout";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { shouldShowMessengerOnly, shouldShowShortlinkOnly } from "./utils/subdomainDetection";
+
+// Import all pages
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Blog from "./pages/Blog";
+import Magazine from "./pages/Magazine";
+import CourseArchive from "./pages/CourseArchive";
+import FreeCourses from "./pages/FreeCourses";
+import PaidCourses from "./pages/PaidCourses";
+import Support from "./pages/Support";
+import Checkout from "./pages/Checkout";
+import PaymentRequest from "./pages/PaymentRequest";
+import Enroll from "./pages/Enroll";
+import EnrollSuccess from "./pages/EnrollSuccess";
+import EnrollPending from "./pages/EnrollPending";
+import EnrollAdmin from "./pages/EnrollAdmin";
+import EnrollReject from "./pages/EnrollReject";
+import EnrollmentAdmin from "./pages/EnrollmentAdmin";
+import EnrollmentEmailAdmin from "./pages/EnrollmentEmailAdmin";
+import EnrollmentDetails from "./pages/EnrollmentDetails";
+import AdminEnrollmentDetails from "./pages/AdminEnrollmentDetails";
+import CourseManagement from "./pages/Course/CourseManagement";
+import CourseAccess from "./pages/CourseAccess";
+
+// SSO pages
+import SSOAccess from "./pages/SSOAccess";
+import SSOLogin from "./pages/SSOLogin";
+
+// Course pages
+import MetaverseLanding from "./pages/Courses/MetaverseLanding";
+import InstagramLanding from "./pages/Courses/InstagramLanding";
+import InstagramEssentialsLanding from "./pages/Courses/InstagramEssentialsLanding";
+import BoundlessLanding from "./pages/Courses/BoundlessLanding";
+import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
+import SmartPackLanding from "./pages/Courses/SmartPackLanding";
+import ServitLanding from "./pages/Courses/ServitLanding";
+
+// Course access and view pages
+import FreeCourseStart from "./pages/Course/FreeCourseStart";
+import FreeCourseView from "./pages/Course/FreeCourseView";
+import PaidCourseStart from "./pages/Course/PaidCourseStart";
+import PaidCourseView from "./pages/Course/PaidCourseView";
+import MetaverseFreePage from "./pages/Course/MetaverseFreePage";
+import ChangeCoursePage from "./pages/Course/ChangeCoursePage";
+import AmericanBusinessPage from "./pages/Course/AmericanBusinessPage";
+import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
+import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
+
+// Course access pages
+import TaghirAccess from "./pages/Course/Access/TaghirAccess";
+import BoundlessTasteAccess from "./pages/Course/Access/BoundlessTasteAccess";
+import AmericanBusinessAccess from "./pages/Course/Access/AmericanBusinessAccess";
+import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
+
+// Hub and admin pages
+import BorderlessHub from "./pages/BorderlessHub";
+import BorderlessHubChat from "./pages/BorderlessHubChat";
+import BorderlessHubMessenger from "./pages/BorderlessHubMessenger";
+import BorderlessHubAdmin from "./pages/BorderlessHubAdmin";
+import BorderlessHubMessengerAdmin from "./pages/BorderlessHubMessengerAdmin";
+import BorderlessHubUnifiedAdmin from "./pages/BorderlessHubUnifiedAdmin";
+import BorderlessHubSupportDashboard from "./pages/BorderlessHubSupportDashboard";
+import MessengerPending from "./pages/MessengerPending";
+
+// Assessment and other pages
+import AssessmentCenter from "./pages/AssessmentCenter";
+import TestLanding from "./pages/Assessment/TestLanding";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import UserDashboard from "./pages/Dashboard";
+import InstructorProfile from "./pages/InstructorProfile";
+import AIAssistant from "./pages/AIAssistant";
+import SolidarityLanding from "./pages/Solidarity/SolidarityLanding";
+import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
+import Start from "./pages/Start";
+
+// English pages
+import EnIndex from "./pages/en/Index";
+import EnFreeCourses from "./pages/en/FreeCourses";
+import EnPaidCourses from "./pages/en/PaidCourses";
+import EnCourseArchive from "./pages/en/CourseArchive";
+import EnAssessmentCenter from "./pages/en/AssessmentCenter";
+
+// User Hub page
+import UserHub from "./pages/UserHub";
+
+// Messenger App (for subdomain)
+import MessengerApp from "./pages/MessengerApp";
+import MessengerProfile from "./pages/MessengerProfile";
+
+// Short link redirect page
+import ShortLinkRedirect from "./pages/ShortLinkRedirect";
+
+// Import the new component
+import CourseContentManagement from "./pages/Course/CourseContentManagement";
+import CourseCreate from "./pages/Admin/CourseCreate";
+import CourseEdit from "./pages/Admin/CourseEdit";
+
+// User Management components
+import UsersOverview from "./pages/UsersOverview";
+import UserDetail from "./pages/UserDetail";
+
 const queryClient = new QueryClient();
 
-function App() {
+const App = () => {
+  // Check if we're on the shortlink subdomain
+  const isShortlinkOnly = shouldShowShortlinkOnly();
+  
+  if (isShortlinkOnly) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <NotificationProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Routes>
+                      <Route path="/:slug" element={<ShortLinkRedirect />} />
+                      <Route path="/" element={<ShortLinkRedirect />} />
+                    </Routes>
+                  </TooltipProvider>
+                </AuthProvider>
+              </NotificationProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
+
+  // Check if we're on the messenger subdomain
+  const isMessengerOnly = shouldShowMessengerOnly();
+  
+  if (isMessengerOnly) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <NotificationProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Routes>
+                      <Route path="/hub/messenger" element={<MessengerApp />} />
+                      <Route path="*" element={<MessengerApp />} />
+                    </Routes>
+                  </TooltipProvider>
+                </AuthProvider>
+              </NotificationProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <TooltipProvider>
-          <NotificationErrorBoundary>
+      <BrowserRouter>
+        <ThemeProvider>
+          <LanguageProvider>
             <NotificationProvider>
               <AuthProvider>
-                <LanguageProvider>
-                  <ReplyProvider>
-                    <BrowserRouter>
-                      <OfflineDetector />
-                      <Suspense fallback={<PurpleLoader />}>
-                        <Routes>
-                          <Route path="/" element={<Landing />} />
-                          <Route path="/home" element={<Home />} />
-                          <Route path="/pricing" element={<Pricing />} />
-                          <Route path="/contact" element={<Contact />} />
-                          <Route path="/about" element={<About />} />
-                          <Route path="/privacy" element={<Privacy />} />
-                          <Route path="/terms" element={<Terms />} />
-                          <Route path="/password-reset" element={<PasswordReset />} />
-                          <Route path="/password-update" element={<PasswordUpdate />} />
-                          <Route path="/verify-email" element={<VerifyEmail />} />
-                          <Route path="/support" element={<Support />} />
-                          <Route path="/support/admin" element={<SupportAdmin />} />
-                          <Route path="/announcement/:id" element={<AnnouncementPage />} />
-                          <Route path="/notification-settings" element={<NotificationSettings />} />
-                          <Route path="/rafiei-player" element={<RafieiPlayer />} />
-                          <Route path="/chat" element={<Chat />} />
-                          <Route path="/live" element={<Live />} />
-                          <Route path="/profile" element={<Profile />} />
-                          <Route path="/course/:slug" element={<Course />} />
-                          <Route path="/courses" element={<Courses />} />
-                          <Route path="/module/:courseSlug/:moduleId" element={<Module />} />
-                          <Route path="/enroll/:courseSlug" element={<Enrollment />} />
-                          <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
-                          <Route path="/admin" element={<Admin />} />
-                          <Route path="/enroll/admin/email" element={<EmailSettings />} />
-                          <Route path="/enroll/admin/crm" element={<CRMAdmin />} />
-                          <Route path="/s/:slug" element={<ShortLinkLanding />} />
-                          <Route path="/test" element={<Test />} />
-                          <Route path="/messenger" element={<Messenger />}>
-                            <Route element={<MessengerChatLayout />} >
-                              <Route path="home" element={<MessengerHome />} />
-                              <Route path="settings" element={<MessengerSettings />} />
-                              <Route path="profile" element={<MessengerProfile />} />
-                              <Route path="chat" element={<MessengerChat />} />
-                              <Route path="support" element={<MessengerSupport />} />
-                              <Route path="admin" element={<MessengerAdmin />} />
-                              <Route path="user/:userId" element={<MessengerUser />} />
-                              <Route path="room/:roomId" element={<MessengerRoom />} />
-                              <Route path="not-found" element={<MessengerNotFound />} />
-                              <Route path="unauthorized" element={<MessengerUnauthorized />} />
-                              <Route path="forbidden" element={<MessengerForbidden />} />
-                              <Route path="error" element={<MessengerError />} />
-                              <Route path="loading" element={<MessengerLoading />} />
-                              <Route path="offline" element={<MessengerOffline />} />
-                              <Route path="timeout" element={<MessengerTimeout />} />
-                              <Route path="server-error" element={<MessengerServerError />} />
-                              <Route path="service-unavailable" element={<MessengerServiceUnavailable />} />
-                              <Route path="gateway-timeout" element={<MessengerGatewayTimeout />} />
-                              <Route path="bad-gateway" element={<MessengerBadGateway />} />
-                            </Route>
-                            <Route element={<MessengerChatHomeLayout />} >
-                              <Route path="" element={<MessengerChatHome />} />
-                            </Route>
-                            <Route element={<MessengerChatSettingsLayout />} >
-                              <Route path="settings" element={<MessengerChatSettings />} />
-                            </Route>
-                            <Route element={<MessengerChatProfileLayout />} >
-                              <Route path="profile" element={<MessengerChatProfile />} />
-                            </Route>
-                            <Route element={<MessengerChatChatLayout />} >
-                              <Route path="chat" element={<MessengerChatChat />} />
-                            </Route>
-                            <Route element={<MessengerChatSupportLayout />} >
-                              <Route path="support" element={<MessengerChatSupport />} />
-                            </Route>
-                            <Route element={<MessengerChatAdminLayout />} >
-                              <Route path="admin" element={<MessengerChatAdmin />} />
-                            </Route>
-                            <Route element={<MessengerChatUserLayout />} >
-                              <Route path="user/:userId" element={<MessengerChatUser />} />
-                            </Route>
-                            <Route element={<MessengerChatRoomLayout />} >
-                              <Route path="room/:roomId" element={<MessengerChatRoom />} />
-                            </Route>
-                            <Route element={<MessengerChatNotFoundLayout />} >
-                              <Route path="not-found" element={<MessengerChatNotFoundPage />} />
-                            </Route>
-                            <Route element={<MessengerChatUnauthorizedLayout />} >
-                              <Route path="unauthorized" element={<MessengerChatUnauthorizedPage />} />
-                            </Route>
-                            <Route element={<MessengerChatForbiddenLayout />} >
-                              <Route path="forbidden" element={<MessengerChatForbiddenPage />} />
-                            </Route>
-                            <Route element={<MessengerChatErrorLayout />} >
-                              <Route path="error" element={<MessengerChatErrorPage />} />
-                            </Route>
-                            <Route element={<MessengerChatLoadingLayout />} >
-                              <Route path="loading" element={<MessengerChatLoadingPage />} />
-                            </Route>
-                            <Route element={<MessengerChatOfflineLayout />} >
-                              <Route path="offline" element={<MessengerChatOfflinePage />} />
-                            </Route>
-                            <Route element={<MessengerChatTimeoutLayout />} >
-                              <Route path="timeout" element={<MessengerChatTimeoutPage />} />
-                            </Route>
-                            <Route element={<MessengerChatServerErrorLayout />} >
-                              <Route path="server-error" element={<MessengerChatServerErrorPage />} />
-                            </Route>
-                            <Route element={<MessengerChatServiceUnavailableLayout />} >
-                              <Route path="service-unavailable" element={<MessengerChatServiceUnavailablePage />} />
-                            </Route>
-                            <Route element={<MessengerChatGatewayTimeoutLayout />} >
-                              <Route path="gateway-timeout" element={<MessengerChatGatewayTimeoutPage />} />
-                            </Route>
-                            <Route element={<MessengerChatBadGatewayLayout />} >
-                              <Route path="bad-gateway" element={<MessengerChatBadGatewayPage />} />
-                            </Route>
-                          </Route>
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Suspense>
-                      <Toaster />
-                      <Sonner />
-                    </BrowserRouter>
-                  </ReplyProvider>
-                </LanguageProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Routes>
+                    {/* Main pages */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/start" element={<Start />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/magazine" element={<Magazine />} />
+                    <Route path="/mag" element={<Magazine />} />
+                    <Route path="/courses" element={<CourseArchive />} />
+                    <Route path="/course" element={<CourseArchive />} />
+                    <Route path="/free-courses" element={<FreeCourses />} />
+                    <Route path="/paid-courses" element={<PaidCourses />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/payment-request" element={<PaymentRequest />} />
+                    
+                    {/* Enrollment pages */}
+                    <Route path="/enroll" element={<Enroll />} />
+                    <Route path="/enroll/success" element={<EnrollSuccess />} />
+                    <Route path="/enroll/details" element={<EnrollmentDetails />} />
+                    <Route path="/admin-enrollment-details" element={<AdminEnrollmentDetails />} />
+                    <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
+                    <Route path="/enroll/pending" element={<EnrollPending />} />
+                    <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                    <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
+                    <Route path="/admin/course/create" element={<CourseCreate />} />
+                    <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
+                    <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
+                    <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
+                    <Route path="/enroll/reject" element={<EnrollReject />} />
+                    
+                    {/* User Management routes */}
+                    <Route path="/enroll/admin/users" element={<UsersOverview />} />
+                    <Route path="/enroll/admin/users/:userId" element={<UserDetail />} />
+                    <Route path="/user/detail/:userId" element={<UserDetail />} />
+                    <Route path="/user-detail/:userId" element={<UserDetail />} />
+                    
+                    {/* SSO Access routes */}
+                    <Route path="/sso-access" element={<SSOAccess />} />
+                    <Route path="/sso-login" element={<SSOLogin />} />
+                    
+                    {/* Course Access */}
+                    <Route path="/access" element={<CourseAccess />} />
+
+                    {/* Course landing pages */}
+                    <Route path="/courses/metaverse" element={<MetaverseLanding />} />
+                    <Route path="/courses/instagram" element={<InstagramLanding />} />
+                    <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
+                    <Route path="/courses/boundless" element={<BoundlessLanding />} />
+                    <Route path="/courses/free-course" element={
+                      <FreeCourseLanding 
+                        title="Free Course"
+                        englishTitle="Free Course"
+                        description="Start your learning journey with our free course"
+                        benefitOne="Basic concepts"
+                        benefitTwo="Practical exercises"
+                        iconType="book"
+                        iframeUrl="https://example.com/course-iframe"
+                      />
+                    } />
+                    <Route path="/courses/smart-pack" element={<SmartPackLanding />} />
+                    <Route path="/courses/servit" element={<ServitLanding />} />
+
+                    {/* Course access pages */}
+                    <Route path="/course/free-start" element={<FreeCourseStart />} />
+                    <Route path="/course/free-view" element={<FreeCourseView />} />
+                    <Route path="/course/paid-start" element={<PaidCourseStart />} />
+                    <Route path="/course/paid-view" element={<PaidCourseView />} />
+                    <Route path="/course/metaverse-free" element={<MetaverseFreePage />} />
+                    <Route path="/course/change" element={<ChangeCoursePage />} />
+                    <Route path="/taghir" element={<ChangeCoursePage />} />
+                    <Route path="/course/american-business" element={<AmericanBusinessPage />} />
+                    <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
+                    <Route path="/course/passive-income" element={<PassiveIncomePage />} />
+                    <Route path="/daramad" element={<PassiveIncomePage />} />
+
+                    {/* Course access control */}
+                    <Route path="/course/access/taghir" element={<TaghirAccess />} />
+                    <Route path="/course/access/boundless-taste" element={<BoundlessTasteAccess />} />
+                    <Route path="/course/access/american-business" element={<AmericanBusinessAccess />} />
+                    <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
+
+                    {/* Dashboard */}
+                    <Route path="/dashboard" element={<UserDashboard />} />
+
+                    {/* Hub pages */}
+                    <Route path="/hub/*" element={<BorderlessHub />} />
+                    <Route path="/hub/chat" element={<BorderlessHubChat />} />
+                    <Route path="/hub/messenger" element={<MessengerApp />} />
+                    <Route path="/hub/messenger/pending" element={<MessengerPending />} />
+                    <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
+                    <Route path="/hub/support" element={<BorderlessHubSupportDashboard />} />
+                    <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
+                    <Route path="/messenger-pending" element={<MessengerPending />} />
+                    <Route path="/profile" element={<MessengerProfile />} />
+
+                    {/* Assessment */}
+                    <Route path="/assessment" element={<AssessmentCenter />} />
+                    <Route path="/assessment/:slug" element={<TestLanding />} />
+
+                    {/* Other pages */}
+                    <Route path="/instructor" element={<InstructorProfile />} />
+                    <Route path="/ai-assistant" element={<AIAssistant />} />
+                    <Route path="/solidarity" element={<SolidarityLanding />} />
+                    <Route path="/telegram" element={<TelegramRedirect />} />
+
+                    {/* English routes */}
+                    <Route path="/en" element={<EnIndex />} />
+                    <Route path="/en/free-courses" element={<EnFreeCourses />} />
+                    <Route path="/en/paid-courses" element={<EnPaidCourses />} />
+                    <Route path="/en/courses" element={<EnCourseArchive />} />
+                    <Route path="/en/assessment" element={<EnAssessmentCenter />} />
+
+                    {/* User Hub Route */}
+                    <Route path="/user-hub" element={<UserHub />} />
+
+                    {/* 404 fallback */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </TooltipProvider>
               </AuthProvider>
             </NotificationProvider>
-          </NotificationErrorBoundary>
-        </TooltipProvider>
-      </ThemeProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;

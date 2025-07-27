@@ -1,136 +1,174 @@
-
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   BookOpen, 
   Users, 
   UserCheck, 
-  BarChart3, 
-  Settings, 
+  Settings,
+  BarChart3,
+  Menu,
   X,
-  MessageSquare,
-  FileText
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings';
 
 interface AdminSidebarProps {
-  activeView: string;
-  onViewChange: (view: string) => void;
-  isOpen: boolean;
-  onToggle: () => void;
+  activeView: ViewType;
+  onViewChange: (view: ViewType) => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
-const menuItems = [
-  { id: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
-  { id: 'courses', label: 'مدیریت دوره‌ها', icon: BookOpen },
-  { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
-  { id: 'users', label: 'کاربران', icon: Users },
-  { id: 'analytics', label: 'گزارشات', icon: BarChart3 },
-  { id: 'settings', label: 'تنظیمات', icon: Settings },
-];
-
-const externalLinks = [
-  { 
-    href: '/enroll/admin/crm', 
-    label: 'CRM', 
-    icon: MessageSquare,
-    description: 'مدیریت فعالیت‌های CRM'
+const sidebarItems = [
+  {
+    id: 'dashboard',
+    label: 'خانه',
+    icon: LayoutDashboard,
   },
-  { 
-    href: '/enroll/admin/email', 
-    label: 'مدیریت ایمیل', 
-    icon: FileText,
-    description: 'تنظیمات و مدیریت ایمیل'
-  }
+  {
+    id: 'courses',
+    label: 'دوره‌ها',
+    icon: BookOpen,
+  },
+  {
+    id: 'enrollments',
+    label: 'ثبت‌نام‌ها',
+    icon: Users,
+  },
+  {
+    id: 'users',
+    label: 'کاربران',
+    icon: UserCheck,
+  },
+  {
+    id: 'analytics',
+    label: 'آمار',
+    icon: BarChart3,
+  },
+  {
+    id: 'settings',
+    label: 'تنظیمات',
+    icon: Settings,
+  },
 ];
 
-export function AdminSidebar({ activeView, onViewChange, isOpen, onToggle }: AdminSidebarProps) {
-  const location = useLocation();
+export function AdminSidebar({ activeView, onViewChange, isOpen = false, onToggle }: AdminSidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-lg font-semibold">پنل مدیریت</h2>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={onToggle}
-          className="lg:hidden"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      <ScrollArea className="flex-1 px-3 py-4">
-        <div className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-            
-            return (
-              <Button
-                key={item.id}
-                variant={isActive ? "default" : "ghost"}
-                className={cn(
-                  "w-full justify-start text-right h-10",
-                  isActive && "bg-primary text-primary-foreground"
-                )}
-                onClick={() => {
-                  onViewChange(item.id);
-                  onToggle();
-                }}
-              >
-                <Icon className="ml-2 h-4 w-4" />
-                {item.label}
-              </Button>
-            );
-          })}
-          
-          <div className="pt-4 border-t">
-            <h3 className="px-3 text-sm font-medium text-muted-foreground mb-2">لینک‌های خارجی</h3>
-            {externalLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = location.pathname === link.href;
-              
-              return (
-                <Link key={link.href} to={link.href}>
-                  <Button
-                    variant={isActive ? "default" : "ghost"}
-                    className={cn(
-                      "w-full justify-start text-right h-10",
-                      isActive && "bg-primary text-primary-foreground"
-                    )}
-                    onClick={onToggle}
-                  >
-                    <Icon className="ml-2 h-4 w-4" />
-                    {link.label}
-                  </Button>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </ScrollArea>
-    </div>
-  );
+  const handleViewChange = (view: ViewType) => {
+    onViewChange(view);
+    // Auto-close sidebar on mobile after selection
+    if (window.innerWidth < 1024 && onToggle) {
+      onToggle();
+    }
+  };
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 lg:bg-background lg:border-r lg:pt-16">
-        <SidebarContent />
-      </aside>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={isOpen} onOpenChange={onToggle}>
-        <SheetContent side="right" className="w-64 p-0">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={onToggle}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out",
+        "fixed lg:relative z-50 lg:z-auto h-full",
+        // Mobile styles
+        "lg:translate-x-0",
+        isOpen ? "translate-x-0" : "translate-x-full",
+        // Desktop styles
+        isCollapsed ? "lg:w-20" : "lg:w-72",
+        // Mobile width
+        "w-72"
+      )}>
+        {/* Header */}
+        <div className={cn(
+          "border-b border-gray-100 bg-white transition-all duration-300",
+          isCollapsed ? "p-4" : "p-6"
+        )}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300",
+                isCollapsed ? "w-10 h-10" : "w-12 h-12"
+              )}>
+                <span className="text-white font-bold text-lg">ر</span>
+              </div>
+              {!isCollapsed && (
+                <div className="text-right">
+                  <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
+                  <p className="text-sm text-gray-500">پنل مدیریت</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Desktop Collapse Button */}
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:flex p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronLeft className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-gray-500" />
+              )}
+            </button>
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={onToggle}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className={cn(
+          "py-6 bg-white h-full overflow-auto",
+          isCollapsed ? "px-2" : "px-4"
+        )}>
+          <ul className="space-y-1">
+            {sidebarItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => handleViewChange(item.id as ViewType)}
+                  className={cn(
+                    "w-full flex items-center transition-all duration-200 font-medium rounded-xl",
+                    "hover:bg-gray-50",
+                    isCollapsed ? "px-3 py-4 justify-center" : "px-4 py-4 gap-4",
+                    activeView === item.id
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg transform scale-[0.98]"
+                      : "text-gray-700 hover:text-gray-900"
+                  )}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <item.icon className={cn(
+                    "h-5 w-5 flex-shrink-0",
+                    activeView === item.id ? "text-white" : "text-gray-500"
+                  )} />
+                  {!isCollapsed && (
+                    <span className="text-base text-right">{item.label}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
     </>
   );
 }
