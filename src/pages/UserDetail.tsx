@@ -61,9 +61,10 @@ const UserDetail: React.FC = () => {
     try {
       const { data: userRole } = await supabase
         .from('user_roles')
-        .select('role')
-        .eq('user_id', currentUser.id)
-        .eq('role', 'admin')
+        .select('role_name')
+        .eq('user_id', parseInt(currentUser.id))
+        .eq('role_name', 'admin')
+        .eq('is_active', true)
         .single();
 
       setIsAdmin(!!userRole);

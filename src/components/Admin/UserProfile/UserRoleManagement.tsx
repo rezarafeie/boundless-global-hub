@@ -9,8 +9,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Shield, Plus, Trash2 } from 'lucide-react';
 
 interface UserRole {
-  id: string;
-  role: string;
+  id: number;
+  role_name: string;
+  is_active: boolean;
+  granted_at: string;
 }
 
 interface UserRoleManagementProps {
@@ -41,8 +43,9 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('user_roles')
-        .select('id, role')
-        .eq('user_id', userId.toString());
+        .select('id, role_name, is_active, granted_at')
+        .eq('user_id', userId)
+        .eq('is_active', true);
 
       if (error) throw error;
       setUserRoles(data || []);
@@ -66,8 +69,9 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
       const { error } = await supabase
         .from('user_roles')
         .insert([{
-          user_id: userId.toString(),
-          role: selectedRole
+          user_id: userId,
+          role_name: selectedRole,
+          is_active: true
         }]);
 
       if (error) throw error;
@@ -93,11 +97,11 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
     }
   };
 
-  const removeRole = async (roleId: string) => {
+  const removeRole = async (roleId: number) => {
     try {
       const { error } = await supabase
         .from('user_roles')
-        .delete()
+        .update({ is_active: false })
         .eq('id', roleId);
 
       if (error) throw error;
@@ -159,8 +163,8 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
               <div className="flex flex-wrap gap-2">
                 {userRoles.map((userRole) => (
                   <div key={userRole.id} className="flex items-center gap-2">
-                    <Badge variant={getRoleVariant(userRole.role)}>
-                      {getRoleLabel(userRole.role)}
+                    <Badge variant={getRoleVariant(userRole.role_name)}>
+                      {getRoleLabel(userRole.role_name)}
                     </Badge>
                     <Button
                       variant="ghost"
@@ -186,7 +190,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
                 </SelectTrigger>
                 <SelectContent>
                   {availableRoles
-                    .filter(role => !userRoles.some(ur => ur.role === role.value))
+                    .filter(role => !userRoles.some(ur => ur.role_name === role.value))
                     .map((role) => (
                       <SelectItem key={role.value} value={role.value}>
                         {role.label}
