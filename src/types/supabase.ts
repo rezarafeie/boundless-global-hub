@@ -1,3 +1,4 @@
+
 export interface Announcement {
   id: number;
   title: string;
@@ -173,7 +174,7 @@ export interface ShortLinkInsert {
   created_by?: string;
 }
 
-interface CRMNote {
+export interface CRMNote {
   id: string;
   content: string;
   type: string;
