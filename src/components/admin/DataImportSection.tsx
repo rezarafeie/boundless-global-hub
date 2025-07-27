@@ -285,6 +285,14 @@ export function DataImportSection() {
       }
 
       try {
+        // Helper function to generate placeholder email for rows without email
+        const generatePlaceholderEmail = (phone: string | undefined): string => {
+          if (phone?.trim()) {
+            return `${phone.trim()}@rafiei.co`;
+          }
+          return `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}@rafiei.co`;
+        };
+        
         // Update progress
         setImportProgress(prev => prev ? {
           ...prev,
@@ -294,10 +302,17 @@ export function DataImportSection() {
 
         // First, check if user exists in chat_users table
         let existingUser = null;
+        const finalEmail = row.email?.trim() || generatePlaceholderEmail(row.phone);
+        
         if ((row.email && row.email.trim()) || (row.phone && row.phone.trim())) {
           const conditions = [];
           if (row.email && row.email.trim()) conditions.push(`email.eq.${row.email.trim()}`);
           if (row.phone && row.phone.trim()) conditions.push(`phone.eq.${row.phone.trim()}`);
+          
+          // Also check for the generated placeholder email if we're going to use one
+          if (!row.email?.trim() && row.phone?.trim()) {
+            conditions.push(`email.eq.${finalEmail}`);
+          }
           
           if (conditions.length > 0) {
             const { data: userData } = await supabase
@@ -324,14 +339,6 @@ export function DataImportSection() {
           
           existingEnrollment = enrollmentByUserId;
         }
-        
-        // Helper function to generate placeholder email for rows without email
-        const generatePlaceholderEmail = (phone: string | undefined): string => {
-          if (phone?.trim()) {
-            return `${phone.trim()}@rafiei.co`;
-          }
-          return `user-${Date.now()}@rafiei.co`;
-        };
 
         // If no enrollment found by user_id, check by email/phone as fallback
         if (!existingEnrollment && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
@@ -357,10 +364,17 @@ export function DataImportSection() {
           setProcessedRows(prev => new Set([...prev, index]));
           processed++;
           console.log(`Enrollment already exists for ${row.email || row.phone} in course ${courseId}`);
+          const userInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+          setImportErrors(prev => [...prev, `کاربر موجود - ثبت‌نام تکراری ردیف ${index + 1} (${userInfo}): کاربر قبلاً در این دوره ثبت‌نام کرده است`]);
           continue;
         }
 
         console.log(`Creating enrollment for ${existingUser ? 'existing' : 'new'} user: ${row.email || row.phone}`);
+        
+        if (existingUser) {
+          const userInfo = `نام: ${row.first_name || ''} ${row.last_name || ''}, تلفن: ${row.phone || 'ندارد'}, ایمیل: ${row.email || 'ندارد'}`;
+          console.log(`Using existing user for enrollment: ${userInfo}`);
+        }
 
         // If user exists but no enrollment for this course, we'll create the enrollment
 
@@ -411,7 +425,7 @@ export function DataImportSection() {
           }
 
           // Generate email if missing but phone exists
-          const finalEmail = row.email?.trim() || generatePlaceholderEmail(row.phone);
+          // Use the already calculated finalEmail instead of generating again
 
           // Create new user in chat_users
           const { data: newUser, error: userError } = await supabase
@@ -508,14 +522,14 @@ export function DataImportSection() {
         }
 
         // Generate email if missing but phone exists (for enrollment)
-        const enrollmentEmail = row.email?.trim() || generatePlaceholderEmail(row.phone);
+        // Use the already calculated finalEmail
         
         const { error: enrollmentError } = await supabase
           .from('enrollments')
           .insert({
             course_id: courseId,
             full_name: fullName,
-            email: enrollmentEmail,
+            email: finalEmail,
             phone: row.phone || null,
             payment_status: 'completed',
             payment_amount: paymentAmount,
@@ -1003,8 +1017,9 @@ export function DataImportSection() {
         }
 
         // Show success message
+        const errorSummary = importErrors.length > 0 ? `, ${importErrors.length} خطا` : '';
         toast.success(
-          `✅ ${result.totalRows} کاربر پردازش شد، ${result.newEnrollmentsCreated} ثبت‌نام جدید ایجاد شد، ${result.existingEnrollments} ثبت‌نام موجود بود، ${result.errors} خطا`
+          `✅ ${result.totalRows} کاربر پردازش شد، ${result.newEnrollmentsCreated} ثبت‌نام جدید ایجاد شد، ${result.existingEnrollments} ثبت‌نام موجود بود${errorSummary}`
         );
 
         // Reset form
