@@ -56,18 +56,32 @@ const UserDetail: React.FC = () => {
   }, [currentUser]);
 
   const checkAdminRole = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user found');
+      return;
+    }
 
     try {
-      const { data: userRole } = await supabase
+      console.log('Checking admin role for user:', currentUser.id);
+      
+      // Check if user has admin role in user_roles table
+      const { data: userRole, error } = await supabase
         .from('user_roles')
         .select('role_name')
         .eq('user_id', parseInt(currentUser.id))
         .eq('role_name', 'admin')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      setIsAdmin(!!userRole);
+      if (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+        return;
+      }
+
+      const hasAdminRole = !!userRole;
+      console.log('Admin role check result:', hasAdminRole);
+      setIsAdmin(hasAdminRole);
     } catch (error) {
       console.error('Error checking admin role:', error);
       setIsAdmin(false);
@@ -139,6 +153,8 @@ const UserDetail: React.FC = () => {
       </div>
     );
   }
+
+  console.log('Rendering UserDetail with isAdmin:', isAdmin);
 
   return (
     <div className="min-h-screen bg-background">
