@@ -817,39 +817,17 @@ const LeadManagement: React.FC = () => {
                   {searchTerm && searchTerm.length >= 3 ? 'هیچ لیدی یافت نشد' : 'هیچ لیدی یافت نشد'}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>نام و نام خانوادگی</TableHead>
-                        <TableHead>ایمیل</TableHead>
-                        <TableHead>تلفن</TableHead>
-                        <TableHead>دوره</TableHead>
-                        <TableHead>مبلغ</TableHead>
-                        <TableHead>تاریخ ثبت‌نام</TableHead>
-                        <TableHead>وضعیت</TableHead>
-                        <TableHead>عملیات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLeads.map((lead) => (
-                        <TableRow key={lead.enrollment_id}>
-                          <TableCell>{lead.full_name}</TableCell>
-                          <TableCell>{lead.email}</TableCell>
-                          <TableCell>{lead.phone}</TableCell>
-                          <TableCell>{lead.course_title}</TableCell>
-                          <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
-                          <TableCell>{formatDate(lead.created_at)}</TableCell>
-                          <TableCell>
-                            {lead.is_assigned ? (
-                              <Badge variant="secondary">
-                                واگذار شده به {lead.assigned_to_agent}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">موجود</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
+                <>
+                  {/* Mobile Card Layout */}
+                  <div className="block md:hidden space-y-4">
+                    {filteredLeads.map((lead) => (
+                      <Card key={lead.enrollment_id} className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-medium">{lead.full_name}</h3>
+                              <p className="text-sm text-muted-foreground">{lead.phone}</p>
+                            </div>
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
@@ -869,16 +847,106 @@ const LeadManagement: React.FC = () => {
                                   ) : (
                                     <UserPlus className="h-4 w-4" />
                                   )}
-                                  واگذاری
                                 </Button>
                               )}
                             </div>
-                          </TableCell>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">دوره: </span>
+                              <span>{lead.course_title}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">مبلغ: </span>
+                              <span>{formatPrice(lead.payment_amount)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">تاریخ: </span>
+                              <span>{formatDate(lead.created_at)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">وضعیت: </span>
+                              {lead.is_assigned ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  واگذار شده
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">موجود</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {lead.email}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  {/* Desktop Table Layout */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>نام و نام خانوادگی</TableHead>
+                          <TableHead>ایمیل</TableHead>
+                          <TableHead>تلفن</TableHead>
+                          <TableHead>دوره</TableHead>
+                          <TableHead>مبلغ</TableHead>
+                          <TableHead>تاریخ ثبت‌نام</TableHead>
+                          <TableHead>وضعیت</TableHead>
+                          <TableHead>عملیات</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredLeads.map((lead) => (
+                          <TableRow key={lead.enrollment_id}>
+                            <TableCell>{lead.full_name}</TableCell>
+                            <TableCell>{lead.email}</TableCell>
+                            <TableCell>{lead.phone}</TableCell>
+                            <TableCell>{lead.course_title}</TableCell>
+                            <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
+                            <TableCell>{formatDate(lead.created_at)}</TableCell>
+                            <TableCell>
+                              {lead.is_assigned ? (
+                                <Badge variant="secondary">
+                                  واگذار شده به {lead.assigned_to_agent}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">موجود</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openLeadDetail(lead)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {!lead.is_assigned && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleAssignLead(lead.enrollment_id)}
+                                    disabled={assignLoading === lead.enrollment_id}
+                                  >
+                                    {assignLoading === lead.enrollment_id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <UserPlus className="h-4 w-4" />
+                                    )}
+                                    واگذاری
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </div>
           ) : activeTab === 'assigned' ? (
@@ -888,33 +956,17 @@ const LeadManagement: React.FC = () => {
                   {searchTerm && searchTerm.length >= 3 ? 'هیچ واگذاری یافت نشد' : 'هیچ واگذاری یافت نشد'}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>نام و نام خانوادگی</TableHead>
-                        <TableHead>ایمیل</TableHead>
-                        <TableHead>تلفن</TableHead>
-                        <TableHead>دوره</TableHead>
-                        <TableHead>مبلغ</TableHead>
-                        <TableHead>تاریخ واگذاری</TableHead>
-                        <TableHead>وضعیت</TableHead>
-                        <TableHead>عملیات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredAssignments.map((assignment) => (
-                        <TableRow key={assignment.assignment_id}>
-                          <TableCell>{assignment.full_name}</TableCell>
-                          <TableCell>{assignment.email}</TableCell>
-                          <TableCell>{assignment.phone}</TableCell>
-                          <TableCell>{assignment.course_title}</TableCell>
-                          <TableCell>{formatPrice(assignment.payment_amount)}</TableCell>
-                          <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
-                          <TableCell>
-                            <Badge variant="default">{assignment.status}</Badge>
-                          </TableCell>
-                          <TableCell>
+                <>
+                  {/* Mobile Card Layout */}
+                  <div className="block md:hidden space-y-4">
+                    {filteredAssignments.map((assignment) => (
+                      <Card key={assignment.assignment_id} className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-medium">{assignment.full_name}</h3>
+                              <p className="text-sm text-muted-foreground">{assignment.phone}</p>
+                            </div>
                             <Button
                               size="sm"
                               variant="outline"
@@ -923,12 +975,76 @@ const LeadManagement: React.FC = () => {
                               <Eye className="h-4 w-4" />
                               مشاهده
                             </Button>
-                          </TableCell>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">دوره: </span>
+                              <span>{assignment.course_title}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">مبلغ: </span>
+                              <span>{formatPrice(assignment.payment_amount)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">تاریخ واگذاری: </span>
+                              <span>{formatDate(assignment.assigned_at)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">وضعیت: </span>
+                              <Badge variant="default" className="text-xs">{assignment.status}</Badge>
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {assignment.email}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  {/* Desktop Table Layout */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>نام و نام خانوادگی</TableHead>
+                          <TableHead>ایمیل</TableHead>
+                          <TableHead>تلفن</TableHead>
+                          <TableHead>دوره</TableHead>
+                          <TableHead>مبلغ</TableHead>
+                          <TableHead>تاریخ واگذاری</TableHead>
+                          <TableHead>وضعیت</TableHead>
+                          <TableHead>عملیات</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAssignments.map((assignment) => (
+                          <TableRow key={assignment.assignment_id}>
+                            <TableCell>{assignment.full_name}</TableCell>
+                            <TableCell>{assignment.email}</TableCell>
+                            <TableCell>{assignment.phone}</TableCell>
+                            <TableCell>{assignment.course_title}</TableCell>
+                            <TableCell>{formatPrice(assignment.payment_amount)}</TableCell>
+                            <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
+                            <TableCell>
+                              <Badge variant="default">{assignment.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openLeadDetail(assignment)}
+                              >
+                                <Eye className="h-4 w-4" />
+                                مشاهده
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </div>
           ) : (
@@ -1010,85 +1126,143 @@ const LeadManagement: React.FC = () => {
                     <div className="text-center py-8 text-muted-foreground">
                       {searchTerm && searchTerm.length >= 3 ? 'هیچ لیدی یافت نشد' : 'هیچ لیدی یافت نشد'}
                     </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>نام و نام خانوادگی</TableHead>
-                            <TableHead>ایمیل</TableHead>
-                            <TableHead>تلفن</TableHead>
-                            <TableHead>دوره</TableHead>
-                            <TableHead>مبلغ</TableHead>
-                            <TableHead>تاریخ ثبت‌نام</TableHead>
-                            <TableHead>نماینده</TableHead>
-                            <TableHead>وضعیت</TableHead>
-                            <TableHead>عملیات</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredAdminLeads.map((lead) => (
-                            <TableRow key={lead.enrollment_id}>
-                              <TableCell>{lead.full_name}</TableCell>
-                              <TableCell>{lead.email}</TableCell>
-                              <TableCell>{lead.phone}</TableCell>
-                              <TableCell>{lead.course_title}</TableCell>
-                              <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
-                              <TableCell>{formatDate(lead.created_at)}</TableCell>
-                              <TableCell>
-                                {lead.assigned_to_agent ? (
-                                  <Badge variant="secondary">{lead.assigned_to_agent}</Badge>
-                                ) : (
-                                  <Badge variant="outline">واگذار نشده</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="default">
-                                  {lead.assignment_status || 'واگذار نشده'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openLeadDetail(lead)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  مشاهده
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      
-                      {/* Pagination Controls */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="text-sm text-muted-foreground">
-                            صفحه {currentPage} از {totalPages}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentPage(currentPage - 1)}
-                              disabled={currentPage === 1}
-                            >
-                              قبلی
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCurrentPage(currentPage + 1)}
-                              disabled={currentPage === totalPages}
-                            >
-                              بعدی
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                   ) : (
+                     <>
+                       {/* Mobile Card Layout */}
+                       <div className="block md:hidden space-y-4">
+                         {filteredAdminLeads.map((lead) => (
+                           <Card key={lead.enrollment_id} className="p-4">
+                             <div className="space-y-3">
+                               <div className="flex items-start justify-between">
+                                 <div>
+                                   <h3 className="font-medium">{lead.full_name}</h3>
+                                   <p className="text-sm text-muted-foreground">{lead.phone}</p>
+                                 </div>
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   onClick={() => openLeadDetail(lead)}
+                                 >
+                                   <Eye className="h-4 w-4" />
+                                   مشاهده
+                                 </Button>
+                               </div>
+                               <div className="grid grid-cols-2 gap-2 text-sm">
+                                 <div>
+                                   <span className="text-muted-foreground">دوره: </span>
+                                   <span>{lead.course_title}</span>
+                                 </div>
+                                 <div>
+                                   <span className="text-muted-foreground">مبلغ: </span>
+                                   <span>{formatPrice(lead.payment_amount)}</span>
+                                 </div>
+                                 <div>
+                                   <span className="text-muted-foreground">تاریخ: </span>
+                                   <span>{formatDate(lead.created_at)}</span>
+                                 </div>
+                                 <div>
+                                   <span className="text-muted-foreground">نماینده: </span>
+                                   {lead.assigned_to_agent ? (
+                                     <Badge variant="secondary" className="text-xs">{lead.assigned_to_agent}</Badge>
+                                   ) : (
+                                     <Badge variant="outline" className="text-xs">واگذار نشده</Badge>
+                                   )}
+                                 </div>
+                                 <div className="col-span-2">
+                                   <span className="text-muted-foreground">وضعیت: </span>
+                                   <Badge variant="default" className="text-xs">
+                                     {lead.assignment_status || 'واگذار نشده'}
+                                   </Badge>
+                                 </div>
+                               </div>
+                               <div className="text-xs text-muted-foreground">
+                                 {lead.email}
+                               </div>
+                             </div>
+                           </Card>
+                         ))}
+                       </div>
+                       
+                       {/* Desktop Table Layout */}
+                       <div className="hidden md:block overflow-x-auto">
+                         <Table>
+                           <TableHeader>
+                             <TableRow>
+                               <TableHead>نام و نام خانوادگی</TableHead>
+                               <TableHead>ایمیل</TableHead>
+                               <TableHead>تلفن</TableHead>
+                               <TableHead>دوره</TableHead>
+                               <TableHead>مبلغ</TableHead>
+                               <TableHead>تاریخ ثبت‌نام</TableHead>
+                               <TableHead>نماینده</TableHead>
+                               <TableHead>وضعیت</TableHead>
+                               <TableHead>عملیات</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {filteredAdminLeads.map((lead) => (
+                               <TableRow key={lead.enrollment_id}>
+                                 <TableCell>{lead.full_name}</TableCell>
+                                 <TableCell>{lead.email}</TableCell>
+                                 <TableCell>{lead.phone}</TableCell>
+                                 <TableCell>{lead.course_title}</TableCell>
+                                 <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
+                                 <TableCell>{formatDate(lead.created_at)}</TableCell>
+                                 <TableCell>
+                                   {lead.assigned_to_agent ? (
+                                     <Badge variant="secondary">{lead.assigned_to_agent}</Badge>
+                                   ) : (
+                                     <Badge variant="outline">واگذار نشده</Badge>
+                                   )}
+                                 </TableCell>
+                                 <TableCell>
+                                   <Badge variant="default">
+                                     {lead.assignment_status || 'واگذار نشده'}
+                                   </Badge>
+                                 </TableCell>
+                                 <TableCell>
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => openLeadDetail(lead)}
+                                   >
+                                     <Eye className="h-4 w-4" />
+                                     مشاهده
+                                   </Button>
+                                 </TableCell>
+                               </TableRow>
+                             ))}
+                           </TableBody>
+                         </Table>
+                       </div>
+                     </>
+                   )}
+                   
+                   {/* Pagination Controls - show on both mobile and desktop */}
+                   {totalPages > 1 && (
+                     <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                       <div className="text-sm text-muted-foreground">
+                         صفحه {currentPage} از {totalPages}
+                       </div>
+                       <div className="flex items-center gap-2">
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setCurrentPage(currentPage - 1)}
+                           disabled={currentPage === 1}
+                         >
+                           قبلی
+                         </Button>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setCurrentPage(currentPage + 1)}
+                           disabled={currentPage === totalPages}
+                         >
+                           بعدی
+                         </Button>
+                       </div>
+                     </div>
                   )}
                 </CardContent>
               </Card>
