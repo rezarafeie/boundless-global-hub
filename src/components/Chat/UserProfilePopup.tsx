@@ -8,7 +8,7 @@ import { X, User, CreditCard, Key, MessageSquare, Activity } from 'lucide-react'
 import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
 import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
-import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
+import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
 import { supabase } from '@/integrations/supabase/client';
 

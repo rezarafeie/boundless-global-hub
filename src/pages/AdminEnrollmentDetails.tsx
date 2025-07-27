@@ -703,6 +703,9 @@ const AdminEnrollmentDetails: React.FC = () => {
           {enrollment.chat_user_id && (
             <UserCRM 
               userId={enrollment.chat_user_id} 
+              userName={enrollment.full_name}
+              userPhone={enrollment.phone}
+              userEmail={enrollment.email}
               preselectedCourseId={enrollment.course_id}
               preselectedCourseTitle={enrollment.courses.title}
             />
