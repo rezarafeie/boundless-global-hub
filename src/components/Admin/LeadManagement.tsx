@@ -445,18 +445,25 @@ const LeadManagement: React.FC = () => {
       // Apply agent filter after formatting (since it requires assignment data)
       if (selectedAgent !== 'all') {
         if (selectedAgent === 'unassigned') {
+          // Only show unassigned leads
           formattedLeads = formattedLeads.filter(lead => !lead.assigned_to_agent);
-        } else {
+        }
+        // For specific agent selection, show all leads (both assigned to that agent and unassigned)
+        // This allows admins to see what leads are available to assign to the selected agent
+        // If you want to show only leads assigned to the specific agent, uncomment the else block below:
+        /*
+        else {
           formattedLeads = formattedLeads.filter(lead => 
             lead.assigned_to_agent && lead.assigned_to_agent.includes(selectedAgent)
           );
         }
+        */
         
-        // Update pagination based on filtered results
-        // Note: This is a simplified approach. For better performance with large datasets,
-        // the filtering should be done at the database level with proper joins
-        const filteredCount = formattedLeads.length;
-        setTotalPages(Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE)));
+        // Update pagination based on filtered results only for unassigned filter
+        if (selectedAgent === 'unassigned') {
+          const filteredCount = formattedLeads.length;
+          setTotalPages(Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE)));
+        }
       }
 
       console.log('Formatted leads:', formattedLeads.length);
