@@ -1,174 +1,141 @@
-import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Users, 
-  UserCheck, 
-  Settings,
-  BarChart3,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-
-type ViewType = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings';
+import { Button } from '@/components/ui/button';
+import { FileText, LayoutDashboard, ListChecks, Users, TrendingUp, Settings, Menu, ExternalLink } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AdminSidebarProps {
-  activeView: ViewType;
-  onViewChange: (view: ViewType) => void;
-  isOpen?: boolean;
-  onToggle?: () => void;
+  activeView: 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings';
+  onViewChange: (view: string) => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-const sidebarItems = [
-  {
-    id: 'dashboard',
-    label: 'خانه',
-    icon: LayoutDashboard,
-  },
-  {
-    id: 'courses',
-    label: 'دوره‌ها',
-    icon: BookOpen,
-  },
-  {
-    id: 'enrollments',
-    label: 'ثبت‌نام‌ها',
-    icon: Users,
-  },
-  {
-    id: 'users',
-    label: 'کاربران',
-    icon: UserCheck,
-  },
-  {
-    id: 'analytics',
-    label: 'آمار',
-    icon: BarChart3,
-  },
-  {
-    id: 'settings',
-    label: 'تنظیمات',
-    icon: Settings,
-  },
-];
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
+  activeView, 
+  onViewChange, 
+  isOpen, 
+  onToggle 
+}) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
-export function AdminSidebar({ activeView, onViewChange, isOpen = false, onToggle }: AdminSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const sidebarClasses = cn(
+    "fixed inset-y-0 z-[80] flex flex-col border-r bg-secondary/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in data-[state=closed]:zoom-out data-[state=open]:zoom-in data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left lg:hidden",
+    isOpen ? "data-[state=open]" : "data-[state=closed]",
+    "w-72",
+  );
 
-  const handleViewChange = (view: ViewType) => {
-    onViewChange(view);
-    // Auto-close sidebar on mobile after selection
-    if (window.innerWidth < 1024 && onToggle) {
+  const isCurrentPath = (path: string) => {
+    return location.pathname.startsWith(path);
+  };
+
+  const handleViewChange = (view: string) => {
+    onViewChange(view as any);
+    if (isMobile) {
       onToggle();
     }
   };
 
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+  const handleEnrollmentManagement = () => {
+    window.open('/admin/enrollments', '_blank');
   };
 
   return (
     <>
-
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={onToggle}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out",
-        "fixed lg:relative z-50 lg:z-auto h-full",
-        // Mobile styles
-        "lg:translate-x-0",
-        isOpen ? "translate-x-0" : "translate-x-full",
-        // Desktop styles
-        isCollapsed ? "lg:w-20" : "lg:w-72",
-        // Mobile width
-        "w-72"
-      )}>
-        {/* Header */}
-        <div className={cn(
-          "border-b border-gray-100 bg-white transition-all duration-300",
-          isCollapsed ? "p-4" : "p-6"
-        )}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300",
-                isCollapsed ? "w-10 h-10" : "w-12 h-12"
-              )}>
-                <span className="text-white font-bold text-lg">ر</span>
-              </div>
-              {!isCollapsed && (
-                <div className="text-right">
-                  <h2 className="font-bold text-lg text-gray-900">آکادمی رفیعی</h2>
-                  <p className="text-sm text-gray-500">پنل مدیریت</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Desktop Collapse Button */}
-            <button
-              onClick={toggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              {isCollapsed ? (
-                <ChevronLeft className="h-4 w-4 text-gray-500" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
-              )}
-            </button>
-
-            {/* Mobile Close Button */}
-            <button
-              onClick={onToggle}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X className="h-4 w-4 text-gray-500" />
-            </button>
+      {/* Mobile Menu Button Overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[80] bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in lg:hidden",
+          isOpen ? "data-[state=open]" : "data-[state=closed]"
+        )}
+        style={{ display: isOpen ? 'block' : 'none' }}
+        onClick={onToggle}
+      />
+      
+      <div className={`${sidebarClasses} bg-white shadow-lg border-r border-gray-200`}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex-shrink-0 px-6 py-4">
+            <h1 className="text-lg font-semibold">پنل مدیریت</h1>
           </div>
+          
+          <nav className="flex-1 px-4 py-4">
+            <div className="space-y-2">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "justify-start w-full pl-3.5 font-normal",
+                  activeView === 'dashboard' && "bg-secondary text-foreground",
+                )}
+                onClick={() => handleViewChange('dashboard')}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                داشبورد
+              </Button>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "justify-start w-full pl-3.5 font-normal",
+                  activeView === 'courses' && "bg-secondary text-foreground",
+                )}
+                onClick={() => handleViewChange('courses')}
+              >
+                <ListChecks className="h-4 w-4 mr-2" />
+                مدیریت دوره‌ها
+              </Button>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "justify-start w-full pl-3.5 font-normal",
+                  activeView === 'users' && "bg-secondary text-foreground",
+                )}
+                onClick={() => handleViewChange('users')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                مدیریت کاربران
+              </Button>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "justify-start w-full pl-3.5 font-normal",
+                  activeView === 'analytics' && "bg-secondary text-foreground",
+                )}
+                onClick={() => handleViewChange('analytics')}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                گزارش‌ها
+              </Button>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "justify-start w-full pl-3.5 font-normal",
+                  activeView === 'settings' && "bg-secondary text-foreground",
+                )}
+                onClick={() => handleViewChange('settings')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                تنظیمات
+              </Button>
+              
+              {/* Add enrollment management link */}
+              <button
+                onClick={handleEnrollmentManagement}
+                className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors"
+              >
+                <FileText className="ml-3 h-5 w-5" />
+                مدیریت ثبت‌نام‌ها
+                <ExternalLink className="mr-2 h-4 w-4" />
+              </button>
+              
+            </div>
+          </nav>
         </div>
-
-        {/* Navigation Menu */}
-        <nav className={cn(
-          "py-6 bg-white h-full overflow-auto",
-          isCollapsed ? "px-2" : "px-4"
-        )}>
-          <ul className="space-y-1">
-            {sidebarItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => handleViewChange(item.id as ViewType)}
-                  className={cn(
-                    "w-full flex items-center transition-all duration-200 font-medium rounded-xl",
-                    "hover:bg-gray-50",
-                    isCollapsed ? "px-3 py-4 justify-center" : "px-4 py-4 gap-4",
-                    activeView === item.id
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg transform scale-[0.98]"
-                      : "text-gray-700 hover:text-gray-900"
-                  )}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <item.icon className={cn(
-                    "h-5 w-5 flex-shrink-0",
-                    activeView === item.id ? "text-white" : "text-gray-500"
-                  )} />
-                  {!isCollapsed && (
-                    <span className="text-base text-right">{item.label}</span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
+      </div>
     </>
   );
-}
+};
+
+export default AdminSidebar;
