@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Phone, Mail, Calendar, Shield, Crown, AlertCircle, MessageSquare, Activity, CreditCard, Key } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Shield, Crown, AlertCircle, MessageSquare, Activity, CreditCard, Key, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
 import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
+import { UserRoleManagement } from '@/components/Admin/UserProfile/UserRoleManagement';
 
 interface UserData {
   id: number;
@@ -36,15 +38,40 @@ interface UserData {
 
 const UserDetail: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (userId) {
       fetchUser(userId);
     }
   }, [userId]);
+
+  useEffect(() => {
+    checkAdminRole();
+  }, [currentUser]);
+
+  const checkAdminRole = async () => {
+    if (!currentUser) return;
+
+    try {
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .eq('role', 'admin')
+        .single();
+
+      setIsAdmin(!!userRole);
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+      setIsAdmin(false);
+    }
+  };
 
   const fetchUser = async (id: string) => {
     try {
@@ -73,6 +100,10 @@ const UserDetail: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   if (loading) {
@@ -113,9 +144,20 @@ const UserDetail: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-2xl font-bold">
-              پروفایل کاربر
-            </CardTitle>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="hover:bg-accent"
+              >
+                <ArrowLeft className="h-4 w-4 ml-2" />
+                بازگشت
+              </Button>
+              <CardTitle className="text-2xl font-bold">
+                پروفایل کاربر
+              </CardTitle>
+            </div>
             <div className="flex gap-2">
               {user.is_approved && (
                 <Badge variant="default">تایید شده</Badge>
@@ -171,7 +213,7 @@ const UserDetail: React.FC = () => {
               </div>
 
               <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
                   <TabsTrigger value="overview" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Overview
@@ -192,6 +234,12 @@ const UserDetail: React.FC = () => {
                     <Activity className="w-4 h-4" />
                     Activity
                   </TabsTrigger>
+                  {isAdmin && (
+                    <TabsTrigger value="roles" className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Roles
+                    </TabsTrigger>
+                  )}
                 </TabsList>
                 <TabsContent value="overview" className="mt-6">
                   <UserOverview user={user} />
@@ -213,6 +261,11 @@ const UserDetail: React.FC = () => {
                 <TabsContent value="activity" className="mt-6">
                   <UserActivity userId={user.id} />
                 </TabsContent>
+                {isAdmin && (
+                  <TabsContent value="roles" className="mt-6">
+                    <UserRoleManagement userId={user.id} />
+                  </TabsContent>
+                )}
               </Tabs>
             </div>
           </CardContent>
