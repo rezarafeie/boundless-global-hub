@@ -89,6 +89,10 @@ interface CRMNote {
   status: string;
   created_at: string;
   created_by: string;
+  courses?: {
+    title: string;
+    slug: string;
+  } | null;
 }
 
 const CRM_TYPES = [
@@ -129,6 +133,11 @@ const LeadManagement: React.FC = () => {
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ITEMS_PER_PAGE = 50;
+  
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,10 +156,10 @@ const LeadManagement: React.FC = () => {
     fetchAssignments();
     fetchCourses();
     if (isAdmin) {
-      fetchAdminLeads();
+      fetchAdminLeads(currentPage);
       fetchAgentSummaries();
     }
-  }, [isAdmin]);
+  }, [isAdmin, currentPage]);
 
   const fetchCourses = async () => {
     try {
@@ -226,12 +235,25 @@ const LeadManagement: React.FC = () => {
     }
   };
 
-  const fetchAdminLeads = async () => {
+  const fetchAdminLeads = async (page: number = 1) => {
     setAdminLoading(true);
     try {
-      console.log('Fetching admin leads...');
+      console.log('Fetching admin leads for page:', page);
       
-      // First get all enrollments with successful payments
+      // First get total count
+      const { count, error: countError } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .in('payment_status', ['success', 'completed']);
+
+      if (countError) {
+        console.error('Error counting enrollments:', countError);
+        throw countError;
+      }
+
+      setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
+      
+      // Get enrollments with pagination
       const { data: enrollmentsData, error: enrollmentsError } = await supabase
         .from('enrollments')
         .select(`
@@ -245,7 +267,8 @@ const LeadManagement: React.FC = () => {
           course_id
         `)
         .in('payment_status', ['success', 'completed'])
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
       if (enrollmentsError) {
         console.error('Error fetching enrollments:', enrollmentsError);
@@ -994,6 +1017,33 @@ const LeadManagement: React.FC = () => {
                           ))}
                         </TableBody>
                       </Table>
+                      
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-4">
+                          <div className="text-sm text-muted-foreground">
+                            صفحه {currentPage} از {totalPages}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(currentPage - 1)}
+                              disabled={currentPage === 1}
+                            >
+                              قبلی
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                            >
+                              بعدی
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1057,11 +1107,11 @@ const LeadManagement: React.FC = () => {
                             <div className="flex items-center gap-2">
                               {getTypeBadge(note.type)}
                               {getStatusBadge(note.status)}
-                              {note.courses && (
-                                <Badge variant="outline" className="bg-gray-50">
-                                  {note.courses.title}
-                                </Badge>
-                              )}
+                               {note.courses && (
+                                 <Badge variant="outline" className="bg-gray-50">
+                                   {note.courses.title}
+                                 </Badge>
+                               )}
                             </div>
                             <span className="text-sm text-muted-foreground">
                               {formatDate(note.created_at)} - {note.created_by}
