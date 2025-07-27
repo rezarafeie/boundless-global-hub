@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Percent } from 'lucide-react';
 import {
@@ -10,17 +9,17 @@ import {
 } from "@/components/ui/tabs"
 import { CourseManagement } from '@/components/Admin/CourseManagement';
 import { PaginatedEnrollmentsTable } from '@/components/Admin/PaginatedEnrollmentsTable';
-import { EmailSettings } from '@/components/Admin/EmailSettings';
-import { EmailTemplateManager } from '@/components/Admin/EmailTemplateManager';
-import { NotificationManagementSection } from '@/components/Admin/NotificationManagementSection';
-import { AnalyticsReports } from '@/components/Admin/AnalyticsReports';
+import { EmailSettings } from '@/components/Admin/Settings/EmailSettings';
+import { EmailTemplateManager } from '@/components/Admin/Settings/EmailTemplateManager';
+import { NotificationManagementSection } from '@/components/Admin/Settings/NotificationManagementSection';
+import { AnalyticsReports } from '@/components/Admin/Analytics/AnalyticsReports';
 import { PendingApprovalPayments } from '@/components/Admin/PendingApprovalPayments';
 import { CreateCourseModal } from '@/components/Admin/Modals/CreateCourseModal';
 import { DiscountManagementModal } from '@/components/Admin/Modals/DiscountManagementModal';
 import { LeadManagement } from '@/components/Admin/LeadManagement';
 import { SalesAgentCourseManager } from '@/components/Admin/SalesAgentCourseManager';
 
-export default function EnrollmentAdmin() {
+export function EnrollmentAdmin() {
   const [activeTab, setActiveTab] = useState("enrollments");
   const [isCreateCourseModalOpen, setIsCreateCourseModalOpen] = useState(false);
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
