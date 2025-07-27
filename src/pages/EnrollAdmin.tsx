@@ -7,27 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Users, 
   CreditCard, 
-  Clock, 
   CheckCircle, 
-  XCircle,
   Eye,
-  User,
-  Phone,
-  Mail,
-  Calendar,
-  DollarSign,
   Search,
   Filter,
   Download,
   FileText,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   Loader2,
   MessageSquare
 } from 'lucide-react';
@@ -71,6 +60,7 @@ const EnrollAdmin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('list');
   const [filter, setFilter] = useState<FilterState>({
     fullName: '',
     email: '',
@@ -88,8 +78,18 @@ const EnrollAdmin: React.FC = () => {
   const [isUserCRMPopupOpen, setIsUserCRMPopupOpen] = useState(false);
 
   useEffect(() => {
-    fetchEnrollments();
     fetchCourses();
+    // Only fetch enrollments if we're on the list tab
+    if (activeTab === 'list') {
+      fetchEnrollments();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    // Only fetch enrollments if we're on the list tab
+    if (activeTab === 'list') {
+      fetchEnrollments();
+    }
   }, [filter, sortOrder, sortBy]);
 
   const fetchEnrollments = async () => {
@@ -183,13 +183,6 @@ const EnrollAdmin: React.FC = () => {
     }));
   };
 
-  const handleDateRangeChange = (date: { from: Date | null; to: Date | null }) => {
-    setFilter(prevFilter => ({
-      ...prevFilter,
-      dateRange: date
-    }));
-  };
-
   const handleSortChange = (newSortBy: 'created_at' | 'payment_amount') => {
     if (sortBy === newSortBy) {
       setSortOrder(prevSortOrder => (prevSortOrder === 'asc' ? 'desc' : 'asc'));
@@ -241,7 +234,7 @@ const EnrollAdmin: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="list" className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -321,6 +314,7 @@ const EnrollAdmin: React.FC = () => {
                   </CardContent>
                 </Card>
               )}
+              
               {loading ? (
                 <div className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
@@ -341,24 +335,10 @@ const EnrollAdmin: React.FC = () => {
                             نام و نام خانوادگی
                           </Button>
                         </TableHead>
-                        <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
-                            ایمیل
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
-                            تلفن
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          دوره
-                        </TableHead>
-                        <TableHead>
-                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
-                            وضعیت پرداخت
-                          </Button>
-                        </TableHead>
+                        <TableHead>ایمیل</TableHead>
+                        <TableHead>تلفن</TableHead>
+                        <TableHead>دوره</TableHead>
+                        <TableHead>وضعیت پرداخت</TableHead>
                         <TableHead className="text-right">
                           <Button variant="ghost" size="sm" onClick={() => handleSortChange('payment_amount')}>
                             مبلغ پرداخت
