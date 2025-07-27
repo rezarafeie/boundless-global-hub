@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
+import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 
 interface EnrollmentData {
   id: string;
