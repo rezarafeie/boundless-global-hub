@@ -85,7 +85,7 @@ const LeadManagement: React.FC = () => {
     
     try {
       const { data, error } = await supabase.rpc('get_user_courses_for_sales_agent', {
-        agent_user_id: user.id
+        agent_user_id: parseInt(user.id.toString())
       });
 
       if (error) throw error;
@@ -105,7 +105,7 @@ const LeadManagement: React.FC = () => {
     
     try {
       const { data, error } = await supabase.rpc('get_lead_assignments', {
-        agent_user_id: user.id
+        agent_user_id: parseInt(user.id.toString())
       });
 
       if (error) throw error;
@@ -130,8 +130,8 @@ const LeadManagement: React.FC = () => {
     try {
       const { data, error } = await supabase.rpc('assign_lead_to_agent', {
         p_enrollment_id: enrollmentId,
-        p_agent_user_id: user.id,
-        p_assigned_by: user.id
+        p_agent_user_id: parseInt(user.id.toString()),
+        p_assigned_by: parseInt(user.id.toString())
       });
 
       if (error) throw error;
@@ -184,7 +184,7 @@ const LeadManagement: React.FC = () => {
       const { error } = await supabase
         .from('crm_notes')
         .insert([{
-          user_id: user.id,
+          user_id: parseInt(user.id.toString()),
           content: newNote,
           type: noteType,
           status: leadStatus,
@@ -194,7 +194,7 @@ const LeadManagement: React.FC = () => {
       if (error) throw error;
 
       setNewNote('');
-      await fetchCRMNotes(user.id);
+      await fetchCRMNotes(parseInt(user.id.toString()));
       
       toast({
         title: "موفق",
@@ -214,7 +214,7 @@ const LeadManagement: React.FC = () => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
     if (user?.id) {
-      await fetchCRMNotes(user.id);
+      await fetchCRMNotes(parseInt(user.id.toString()));
     }
   };
 

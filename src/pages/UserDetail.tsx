@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,19 +10,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import UserRoleManagement from '@/components/Admin/UserProfile/UserRoleManagement';
-import UserOverview from '@/components/Admin/UserProfile/UserOverview';
-import UserActivity from '@/components/Admin/UserProfile/UserActivity';
-import UserEnrollments from '@/components/Admin/UserProfile/UserEnrollments';
-import UserLicenses from '@/components/Admin/UserProfile/UserLicenses';
+import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
+import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
+import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
+import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import LearningProgress from '@/components/Admin/UserProfile/LearningProgress';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 
-interface UserDetailParams {
-  id: string;
-}
-
 const UserDetail: React.FC = () => {
-  const { id } = useParams<UserDetailParams>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -62,7 +59,7 @@ const UserDetail: React.FC = () => {
         const { data, error } = await supabase
           .from('chat_users')
           .select('*')
-          .eq('id', id)
+          .eq('id', parseInt(id!))
           .single();
 
         if (error) throw error;
@@ -101,7 +98,7 @@ const UserDetail: React.FC = () => {
           const { data, error } = await supabase
             .from('chat_users')
             .select('*')
-            .eq('id', id)
+            .eq('id', parseInt(id))
             .single();
 
           if (error) throw error;
