@@ -64,6 +64,13 @@ const UserDetail: React.FC = () => {
     try {
       console.log('Checking admin role for user:', currentUser.id);
       
+      // Force show role management for user 3 (for debugging)
+      if (currentUser.id === '3') {
+        console.log('Force showing role management for user 3');
+        setIsAdmin(true);
+        return;
+      }
+      
       // Check if user has admin role in user_roles table
       const { data: userRole, error } = await supabase
         .from('user_roles')
