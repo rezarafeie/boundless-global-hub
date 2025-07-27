@@ -762,6 +762,30 @@ const LeadManagement: React.FC = () => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
   };
 
+  // Helper function to blur phone number if not assigned to current user
+  const formatPhoneNumber = (phone: string, assignedToAgent: string | null, isAssigned: boolean = false) => {
+    // If user is admin, always show full phone
+    if (isAdmin) {
+      return phone;
+    }
+    
+    // If lead is assigned to current user, show full phone
+    if (assignedToAgent && user?.name && assignedToAgent === user.name) {
+      return phone;
+    }
+    
+    // If this is in the "assigned" tab, show full phone (user's own assignments)
+    if (isAssigned) {
+      return phone;
+    }
+    
+    // Otherwise blur the phone number
+    if (phone.length > 4) {
+      return phone.substring(0, 4) + '****' + phone.substring(phone.length - 2);
+    }
+    return '****';
+  };
+
   const filteredLeads = leads.filter(lead => {
     if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
     return lead.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -880,7 +904,7 @@ const LeadManagement: React.FC = () => {
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="font-medium">{lead.full_name}</h3>
-                              <p className="text-sm text-muted-foreground">{lead.phone}</p>
+                              <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button
@@ -955,7 +979,7 @@ const LeadManagement: React.FC = () => {
                         {filteredLeads.map((lead) => (
                           <TableRow key={lead.enrollment_id}>
                             <TableCell>{lead.full_name}</TableCell>
-                            <TableCell>{lead.phone}</TableCell>
+                            <TableCell>{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</TableCell>
                             <TableCell>{lead.course_title}</TableCell>
                             <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
                             <TableCell>{formatDate(lead.created_at)}</TableCell>
@@ -1017,7 +1041,7 @@ const LeadManagement: React.FC = () => {
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="font-medium">{assignment.full_name}</h3>
-                              <p className="text-sm text-muted-foreground">{assignment.phone}</p>
+                              <p className="text-sm text-muted-foreground">{formatPhoneNumber(assignment.phone, user?.name || '', true)}</p>
                             </div>
                             <Button
                               size="sm"
@@ -1072,7 +1096,7 @@ const LeadManagement: React.FC = () => {
                         {filteredAssignments.map((assignment) => (
                           <TableRow key={assignment.assignment_id}>
                             <TableCell>{assignment.full_name}</TableCell>
-                            <TableCell>{assignment.phone}</TableCell>
+                            <TableCell>{formatPhoneNumber(assignment.phone, user?.name || '', true)}</TableCell>
                             <TableCell>{assignment.course_title}</TableCell>
                             <TableCell>{formatPrice(assignment.payment_amount)}</TableCell>
                             <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
@@ -1224,7 +1248,7 @@ const LeadManagement: React.FC = () => {
                                <div className="flex items-start justify-between">
                                  <div>
                                    <h3 className="font-medium">{lead.full_name}</h3>
-                                   <p className="text-sm text-muted-foreground">{lead.phone}</p>
+                                   <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</p>
                                  </div>
                                  <Button
                                    size="sm"
@@ -1290,7 +1314,7 @@ const LeadManagement: React.FC = () => {
                              {filteredAdminLeads.map((lead) => (
                                <TableRow key={lead.enrollment_id}>
                                  <TableCell>{lead.full_name}</TableCell>
-                                 <TableCell>{lead.phone}</TableCell>
+                                 <TableCell>{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</TableCell>
                                  <TableCell>{lead.course_title}</TableCell>
                                  <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
                                  <TableCell>{formatDate(lead.created_at)}</TableCell>
