@@ -60,6 +60,12 @@ export interface ChatRoom {
   is_boundless_only: boolean;
   is_super_group: boolean;
   updated_at: string;
+  last_message?: {
+    message: string;
+    created_at: string;
+    sender_name?: string;
+  };
+  unread_count?: number;
 }
 
 export interface MessengerMessage {
@@ -73,6 +79,11 @@ export interface MessengerMessage {
   media_url?: string;
   message_type?: string;
   media_content?: string;
+  recipient_id?: number;
+  is_read?: boolean;
+  unread_by_support?: boolean;
+  reply_to_message_id?: number;
+  forwarded_from_message_id?: number;
   sender?: {
     name: string;
     phone: string;
@@ -367,16 +378,62 @@ export const messengerService = {
 
   async getRooms(): Promise<ChatRoom[]> {
     try {
-      const { data, error } = await supabase
+      // Get all active rooms with their last message and unread count
+      const { data: rooms, error } = await supabase
         .from('chat_rooms')
-        .select('*')
+        .select(`
+          *,
+          last_message:messenger_messages(
+            message,
+            created_at,
+            sender:chat_users!messenger_messages_sender_id_fkey(name)
+          )
+        `)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      const rooms = data || [];
-      
-      return rooms;
+      if (!rooms) return [];
+
+      // Process each room to get the actual last message and unread count
+      const processedRooms = await Promise.all(
+        rooms.map(async (room) => {
+          // Get the actual last message for this room
+          const { data: lastMessage } = await supabase
+            .from('messenger_messages')
+            .select(`
+              message,
+              created_at,
+              sender:chat_users!messenger_messages_sender_id_fkey(name)
+            `)
+            .eq('room_id', room.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          // Get unread count for this room
+          // For now, we'll use a simple count of recent messages
+          // In a real implementation, you'd track read status per user
+          const { count: unreadCount } = await supabase
+            .from('messenger_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('room_id', room.id)
+            .eq('is_read', false);
+
+          return {
+            ...room,
+            last_message: lastMessage ? {
+              message: lastMessage.message,
+              created_at: lastMessage.created_at,
+              sender_name: lastMessage.sender?.name
+            } : undefined,
+            unread_count: unreadCount || 0
+          };
+        })
+      );
+
+      return processedRooms;
     } catch (error) {
       console.error('Error fetching rooms:', error);
       return [];
