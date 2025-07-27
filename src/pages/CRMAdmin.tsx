@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,10 +76,13 @@ const CRMAdmin: React.FC = () => {
 
       if (error) throw error;
       
-      // Filter out any notes with invalid chat_users data
+      // Filter and properly type the data
       const validNotes = (data || []).filter(note => 
-        !note.chat_users || (note.chat_users && typeof note.chat_users === 'object' && 'name' in note.chat_users)
-      );
+        note && (
+          !note.chat_users || 
+          (typeof note.chat_users === 'object' && note.chat_users !== null && 'name' in note.chat_users)
+        )
+      ) as CRMNote[];
       
       setNotes(validNotes);
       
