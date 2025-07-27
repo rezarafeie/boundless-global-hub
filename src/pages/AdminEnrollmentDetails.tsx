@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -82,9 +83,11 @@ interface ActivationStatus {
 
 const AdminEnrollmentDetails: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const { id } = useParams();
   const { toast } = useToast();
   
-  const enrollmentId = searchParams.get('id');
+  // Get enrollment ID from either URL params or search params
+  const enrollmentId = id || searchParams.get('id');
   
   const [loading, setLoading] = useState(true);
   const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -200,6 +201,7 @@ const App = () => {
                     <Route path="/enroll/success" element={<EnrollSuccess />} />
                     <Route path="/enroll/details" element={<EnrollmentDetails />} />
                     <Route path="/admin-enrollment-details" element={<AdminEnrollmentDetails />} />
+                    <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
