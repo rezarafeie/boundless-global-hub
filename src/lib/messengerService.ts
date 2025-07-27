@@ -60,6 +60,12 @@ export interface ChatRoom {
   is_boundless_only: boolean;
   is_super_group: boolean;
   updated_at: string;
+  last_message?: {
+    message: string;
+    created_at: string;
+    sender_name?: string;
+  };
+  unread_count?: number;
 }
 
 export interface MessengerMessage {
@@ -367,16 +373,65 @@ export const messengerService = {
 
   async getRooms(): Promise<ChatRoom[]> {
     try {
-      const { data, error } = await supabase
+      // First, get all rooms
+      const { data: rooms, error: roomsError } = await supabase
         .from('chat_rooms')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (roomsError) throw roomsError;
       
-      const rooms = data || [];
-      
-      return rooms;
+      if (!rooms || rooms.length === 0) {
+        return [];
+      }
+
+      // Then, for each room, get the last message and unread count
+      const roomsWithMessages = await Promise.all(
+        rooms.map(async (room) => {
+          try {
+            // Get the last message for this room
+            const { data: lastMessage, error: messageError } = await supabase
+              .from('messenger_messages')
+              .select(`
+                message,
+                created_at,
+                sender:chat_users!messenger_messages_sender_id_fkey (
+                  name
+                )
+              `)
+              .eq('room_id', room.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
+
+            // Get unread count (this is a simplified version - in a real app you'd need user context)
+            const { count: unreadCount } = await supabase
+              .from('messenger_messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('room_id', room.id)
+              .eq('is_read', false);
+
+            return {
+              ...room,
+              last_message: lastMessage ? {
+                message: lastMessage.message,
+                created_at: lastMessage.created_at,
+                sender_name: lastMessage.sender?.name || 'Unknown'
+              } : undefined,
+              unread_count: unreadCount || 0
+            };
+          } catch (error) {
+            console.error(`Error fetching data for room ${room.id}:`, error);
+            return {
+              ...room,
+              last_message: undefined,
+              unread_count: 0
+            };
+          }
+        })
+      );
+
+      return roomsWithMessages;
     } catch (error) {
       console.error('Error fetching rooms:', error);
       return [];
