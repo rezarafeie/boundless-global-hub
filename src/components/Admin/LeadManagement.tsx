@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,7 +126,7 @@ const LeadManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('chat_users')
         .select('is_messenger_admin')
-        .eq('id', user.id)
+        .eq('id', Number(user.id))
         .single();
 
       if (error) throw error;
@@ -140,7 +141,7 @@ const LeadManagement: React.FC = () => {
     
     try {
       const { data, error } = await supabase.rpc('get_user_courses_for_sales_agent', {
-        agent_user_id: parseInt(user.id.toString())
+        agent_user_id: Number(user.id)
       });
 
       if (error) throw error;
@@ -160,7 +161,7 @@ const LeadManagement: React.FC = () => {
     
     try {
       const { data, error } = await supabase.rpc('get_lead_assignments', {
-        agent_user_id: parseInt(user.id.toString())
+        agent_user_id: Number(user.id)
       });
 
       if (error) throw error;
@@ -241,39 +242,50 @@ const LeadManagement: React.FC = () => {
               payment_amount,
               payment_status
             )
-          ),
-          crm_notes(
-            type
           )
         `)
         .eq('is_active', true);
 
       if (error) throw error;
 
-      const summaries: AgentSummary[] = data.map(agent => {
-        const totalLeads = agent.lead_assignments?.length || 0;
-        const totalCalls = agent.crm_notes?.filter(note => note.type === 'call').length || 0;
-        const completedSales = agent.lead_assignments?.filter(
-          assignment => assignment.enrollments?.payment_status === 'success'
-        ).length || 0;
-        const totalSalesAmount = agent.lead_assignments?.reduce((sum, assignment) => {
-          if (assignment.enrollments?.payment_status === 'success') {
-            return sum + (assignment.enrollments?.payment_amount || 0);
-          }
-          return sum;
-        }, 0) || 0;
-        const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
+      // Get CRM notes count separately for each agent
+      const summaries: AgentSummary[] = await Promise.all(
+        data.map(async (agent) => {
+          // Get calls count from CRM notes
+          const { data: crmData, error: crmError } = await supabase
+            .from('crm_notes')
+            .select('id')
+            .eq('user_id', agent.id)
+            .eq('type', 'call');
 
-        return {
-          agent_id: agent.id,
-          agent_name: agent.chat_users?.name || 'نامشخص',
-          total_leads: totalLeads,
-          total_calls: totalCalls,
-          total_sales: completedSales,
-          total_sales_amount: totalSalesAmount,
-          conversion_rate: conversionRate
-        };
-      });
+          if (crmError) {
+            console.error('Error fetching CRM notes:', crmError);
+          }
+
+          const totalLeads = agent.lead_assignments?.length || 0;
+          const totalCalls = crmData?.length || 0;
+          const completedSales = agent.lead_assignments?.filter(
+            assignment => assignment.enrollments?.payment_status === 'success'
+          ).length || 0;
+          const totalSalesAmount = agent.lead_assignments?.reduce((sum, assignment) => {
+            if (assignment.enrollments?.payment_status === 'success') {
+              return sum + (assignment.enrollments?.payment_amount || 0);
+            }
+            return sum;
+          }, 0) || 0;
+          const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
+
+          return {
+            agent_id: agent.id,
+            agent_name: agent.chat_users?.name || 'نامشخص',
+            total_leads: totalLeads,
+            total_calls: totalCalls,
+            total_sales: completedSales,
+            total_sales_amount: totalSalesAmount,
+            conversion_rate: conversionRate
+          };
+        })
+      );
 
       setAgentSummaries(summaries);
     } catch (error) {
@@ -294,8 +306,8 @@ const LeadManagement: React.FC = () => {
     try {
       const { data, error } = await supabase.rpc('assign_lead_to_agent', {
         p_enrollment_id: enrollmentId,
-        p_agent_user_id: parseInt(user.id.toString()),
-        p_assigned_by: parseInt(user.id.toString())
+        p_agent_user_id: Number(user.id),
+        p_assigned_by: Number(user.id)
       });
 
       if (error) throw error;
@@ -348,7 +360,7 @@ const LeadManagement: React.FC = () => {
       const { error } = await supabase
         .from('crm_notes')
         .insert([{
-          user_id: parseInt(user.id.toString()),
+          user_id: Number(user.id),
           content: newNote,
           type: noteType,
           status: leadStatus,
@@ -358,7 +370,7 @@ const LeadManagement: React.FC = () => {
       if (error) throw error;
 
       setNewNote('');
-      await fetchCRMNotes(parseInt(user.id.toString()));
+      await fetchCRMNotes(Number(user.id));
       
       toast({
         title: "موفق",
@@ -378,7 +390,7 @@ const LeadManagement: React.FC = () => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
     if (user?.id) {
-      await fetchCRMNotes(parseInt(user.id.toString()));
+      await fetchCRMNotes(Number(user.id));
     }
   };
 
