@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Plus, Edit, Trash2, User, Calendar, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +43,26 @@ interface UserCRMProps {
   preselectedCourseTitle?: string;
 }
 
+const CRM_TYPES = [
+  { value: 'note', label: 'یادداشت' },
+  { value: 'call', label: 'تماس' },
+  { value: 'message', label: 'پیام' },
+  { value: 'consultation', label: 'جلسه مشاوره' },
+  { value: 'follow_up', label: 'پیگیری' },
+  { value: 'payment', label: 'پرداخت' },
+  { value: 'support', label: 'پشتیبانی' }
+];
+
+const CRM_STATUSES = [
+  { value: 'در انتظار پرداخت', label: 'در انتظار پرداخت' },
+  { value: 'کنسل', label: 'کنسل' },
+  { value: 'موفق', label: 'موفق' },
+  { value: 'پاسخ نداده', label: 'پاسخ نداده' },
+  { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' },
+  { value: 'تکمیل شده', label: 'تکمیل شده' },
+  { value: 'لغو شده', label: 'لغو شده' }
+];
+
 const UserCRM: React.FC<UserCRMProps> = ({ 
   userId, 
   userName, 
@@ -54,12 +76,13 @@ const UserCRM: React.FC<UserCRMProps> = ({
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form states
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNote, setNewNote] = useState({
     content: '',
-    type: 'follow_up',
+    type: 'note',
     status: 'در انتظار پرداخت',
     course_id: preselectedCourseId || 'none'
   });
@@ -108,15 +131,18 @@ const UserCRM: React.FC<UserCRMProps> = ({
   };
 
   const handleAddNote = async () => {
+    console.log('Adding note with data:', newNote);
+    
     if (!newNote.content.trim()) {
       toast({
         title: "خطا",
-        description: "لطفا محتوای یادداشت را وارد کنید",
+        description: "محتوای یادداشت نمی‌تواند خالی باشد.",
         variant: "destructive"
       });
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('crm_notes')
@@ -126,31 +152,38 @@ const UserCRM: React.FC<UserCRMProps> = ({
           type: newNote.type,
           status: newNote.status,
           course_id: newNote.course_id === 'none' ? null : newNote.course_id,
-          created_by: 'Admin'
+          created_by: 'مدیر'
         });
 
       if (error) throw error;
 
       toast({
-        title: "موفقیت",
-        description: "یادداشت با موفقیت اضافه شد"
+        title: "موفق",
+        description: "یادداشت CRM با موفقیت اضافه شد."
       });
 
+      // Reset form
       setNewNote({
         content: '',
-        type: 'follow_up',
+        type: 'note',
         status: 'در انتظار پرداخت',
         course_id: preselectedCourseId || 'none'
       });
+      
+      // Close dialog
       setIsAddingNote(false);
-      fetchCRMNotes();
+      
+      // Refresh data
+      await fetchCRMNotes();
     } catch (error) {
-      console.error('Error adding note:', error);
+      console.error('Error adding CRM note:', error);
       toast({
         title: "خطا",
-        description: "خطا در افزودن یادداشت",
+        description: "خطا در افزودن یادداشت CRM.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -184,29 +217,22 @@ const UserCRM: React.FC<UserCRMProps> = ({
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'تکمیل شده':
-        return <Badge className="bg-green-100 text-green-800">{status}</Badge>;
-      case 'در انتظار پرداخت':
-        return <Badge className="bg-yellow-100 text-yellow-800">{status}</Badge>;
-      case 'لغو شده':
-        return <Badge variant="destructive">{status}</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+    const variants: Record<string, any> = {
+      'موفق': 'default',
+      'کنسل': 'destructive',
+      'تکمیل شده': 'default',
+      'در انتظار پرداخت': 'secondary',
+      'پاسخ نداده': 'outline',
+      'امکان مکالمه نداشت': 'destructive',
+      'لغو شده': 'destructive'
+    };
+    
+    return <Badge variant={variants[status] || 'default'} className="text-xs">{status}</Badge>;
   };
 
   const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'follow_up':
-        return <Badge variant="outline">پیگیری</Badge>;
-      case 'payment':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">پرداخت</Badge>;
-      case 'support':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700">پشتیبانی</Badge>;
-      default:
-        return <Badge variant="outline">{type}</Badge>;
-    }
+    const typeLabel = CRM_TYPES.find(t => t.value === type)?.label || type;
+    return <Badge variant="outline" className="text-xs">{typeLabel}</Badge>;
   };
 
   return (
@@ -246,77 +272,6 @@ const UserCRM: React.FC<UserCRMProps> = ({
                 افزودن یادداشت
               </Button>
             </div>
-
-            {isAddingNote && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>افزودن یادداشت جدید</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">نوع</label>
-                      <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="follow_up">پیگیری</SelectItem>
-                          <SelectItem value="payment">پرداخت</SelectItem>
-                          <SelectItem value="support">پشتیبانی</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">وضعیت</label>
-                      <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
-                          <SelectItem value="تکمیل شده">تکمیل شده</SelectItem>
-                          <SelectItem value="لغو شده">لغو شده</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">دوره</label>
-                      <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب دوره" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">هیچ دوره‌ای</SelectItem>
-                          {courses.map((course) => (
-                            <SelectItem key={course.id} value={course.id}>
-                              {course.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">محتوا</label>
-                    <Textarea
-                      value={newNote.content}
-                      onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                      placeholder="محتوای یادداشت..."
-                      rows={4}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleAddNote}>
-                      ذخیره یادداشت
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsAddingNote(false)}>
-                      انصراف
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             <div className="space-y-3">
               {loading ? (
@@ -372,6 +327,84 @@ const UserCRM: React.FC<UserCRMProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Note Dialog - Same as EnrollmentCRM */}
+      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4" dir="rtl">
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="font-medium">{userName}</div>
+              <div className="text-sm text-muted-foreground">{userPhone}</div>
+            </div>
+            
+            <div>
+              <Label htmlFor="type">نوع</Label>
+              <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="course">دوره</Label>
+              <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون دوره</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="status">وضعیت</Label>
+              <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="content">محتوا</Label>
+              <Textarea
+                id="content"
+                placeholder="محتوای یادداشت خود را وارد کنید..."
+                value={newNote.content}
+                onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                rows={4}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingNote(false)}>
+                لغو
+              </Button>
+              <Button onClick={handleAddNote} disabled={isSubmitting}>
+                {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
