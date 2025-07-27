@@ -84,25 +84,38 @@ const SalesAgentCourseSelector: React.FC<SalesAgentCourseSelectorProps> = ({
     setSaving(true);
     
     try {
+      console.log('Saving courses for user:', userId, 'courses:', selectedCourses);
+      
       const { data, error } = await supabase.rpc('assign_courses_to_sales_agent', {
         p_agent_user_id: userId,
         p_course_ids: selectedCourses
       });
 
-      if (error) throw error;
+      console.log('RPC response:', { data, error });
+
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
       
-      if (data) {
+      // Check if the operation was successful
+      if (data === true || data === null) {
         toast({
           title: "موفق",
           description: "دوره‌ها با موفقیت واگذار شدند",
         });
-        onClose?.();
+        
+        // Refresh the assigned courses to confirm the save
+        await fetchAssignedCourses();
+        
+        // Close modal after successful save
+        if (onClose) {
+          setTimeout(() => {
+            onClose();
+          }, 1000);
+        }
       } else {
-        toast({
-          title: "خطا",
-          description: "خطا در واگذاری دوره‌ها",
-          variant: "destructive"
-        });
+        throw new Error('عملیات ناموفق بود');
       }
     } catch (error) {
       console.error('Error assigning courses:', error);
@@ -180,7 +193,7 @@ const SalesAgentCourseSelector: React.FC<SalesAgentCourseSelectorProps> = ({
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
             انصراف
           </Button>
           <Button onClick={handleSave} disabled={saving}>
