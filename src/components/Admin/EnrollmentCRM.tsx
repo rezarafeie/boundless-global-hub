@@ -339,32 +339,37 @@ export function EnrollmentCRM() {
 
   const handleCreateCRMForEnrollment = async (enrollment: EnrollmentWithoutCRM) => {
     try {
-      const { error } = await supabase
-        .from('crm_notes')
-        .insert({
-          user_id: enrollment.chat_user_id,
-          content: `پیگیری ثبت‌نام ${enrollment.full_name} برای دوره ${enrollment.courses.title}`,
-          type: 'follow_up',
-          status: 'در انتظار پرداخت',
-          course_id: enrollment.course_id,
-          created_by: 'مدیر'
+      // Find the user in chatUsers array
+      const user = chatUsers.find(u => u.id === enrollment.chat_user_id);
+      
+      if (!user) {
+        toast({
+          title: "خطا",
+          description: "کاربر یافت نشد",
+          variant: "destructive"
         });
+        return;
+      }
 
-      if (error) throw error;
-
-      toast({
-        title: "موفقیت",
-        description: "پیگیری CRM ایجاد شد"
+      // Set the selected user
+      setSelectedUser(user);
+      
+      // Pre-fill the new note form with enrollment data
+      setNewNote({
+        type: 'note',
+        content: `پیگیری ثبت‌نام ${enrollment.full_name} برای دوره ${enrollment.courses.title}`,
+        course_id: enrollment.course_id,
+        status: 'در انتظار پرداخت',
+        user_id: user.id.toString()
       });
 
-      // Refresh data
-      await fetchData();
-      await fetchEnrollmentsWithoutCRM();
+      // Open the add note dialog
+      setIsAddingNote(true);
     } catch (error) {
-      console.error('Error creating CRM for enrollment:', error);
+      console.error('Error preparing CRM for enrollment:', error);
       toast({
         title: "خطا",
-        description: "خطا در ایجاد پیگیری CRM",
+        description: "خطا در آماده‌سازی CRM",
         variant: "destructive"
       });
     }
