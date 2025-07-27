@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -175,17 +176,17 @@ function App() {
                               <Route path="admin" element={<MessengerAdmin />} />
                               <Route path="user/:userId" element={<MessengerUser />} />
                               <Route path="room/:roomId" element={<MessengerRoom />} />
-                              <Route path="not-found" element={<MessengerNotFound />} />
-                              <Route path="unauthorized" element={<MessengerUnauthorized />} />
-                              <Route path="forbidden" element={<MessengerForbidden />} />
-                              <Route path="error" element={<MessengerError />} />
-                              <Route path="loading" element={<MessengerLoading />} />
-                              <Route path="offline" element={<MessengerOffline />} />
-                              <Route path="timeout" element={<MessengerTimeout />} />
-                              <Route path="server-error" element={<MessengerServerError />} />
-                              <Route path="service-unavailable" element={<MessengerServiceUnavailable />} />
-                              <Route path="gateway-timeout" element={<MessengerGatewayTimeout />} />
-                              <Route path="bad-gateway" element={<MessengerBadGateway />} />
+                              <Route path="not-found" element={<MessengerChatNotFound />} />
+                              <Route path="unauthorized" element={<MessengerChatUnauthorized />} />
+                              <Route path="forbidden" element={<MessengerChatForbidden />} />
+                              <Route path="error" element={<MessengerChatError />} />
+                              <Route path="loading" element={<MessengerChatLoading />} />
+                              <Route path="offline" element={<MessengerChatOffline />} />
+                              <Route path="timeout" element={<MessengerChatTimeout />} />
+                              <Route path="server-error" element={<MessengerChatServerError />} />
+                              <Route path="service-unavailable" element={<MessengerChatServiceUnavailable />} />
+                              <Route path="gateway-timeout" element={<MessengerChatGatewayTimeout />} />
+                              <Route path="bad-gateway" element={<MessengerChatBadGateway />} />
                             </Route>
                             <Route element={<MessengerChatHomeLayout />} >
                               <Route path="" element={<MessengerChatHome />} />
