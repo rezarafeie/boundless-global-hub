@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye, Clock, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -22,7 +21,6 @@ interface Enrollment {
   payment_amount: number;
   payment_method: string | null;
   created_at: string;
-  updated_at: string;
   course_id: string;
   receipt_url: string | null;
   admin_notes: string | null;
@@ -126,30 +124,12 @@ const PaginatedEnrollmentsTable: React.FC = () => {
     return new Date(dateString).toLocaleDateString('fa-IR');
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('fa-IR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('fa-IR'),
-      time: date.toLocaleTimeString('fa-IR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-    };
-  };
-
   const handleViewEnrollmentDetails = (enrollmentId: string) => {
     window.open(`/enroll/details?id=${enrollmentId}`, '_blank');
   };
 
-  const handleViewAdminEnrollmentDetails = (enrollmentId: string) => {
-    window.open(`/admin/enrollment/${enrollmentId}`, '_blank');
+  const handleViewEnrollDetails = (enrollmentId: string) => {
+    window.open(`/enroll/details?id=${enrollmentId}`, '_blank');
   };
 
   const handleViewUserDetails = (chatUserId: number | null) => {
@@ -279,93 +259,70 @@ const PaginatedEnrollmentsTable: React.FC = () => {
             {/* Enrollments Table/Cards */}
             {isMobile ? (
               <div className="space-y-3">
-                {enrollments.map((enrollment) => {
-                  const dateTime = formatDateTime(enrollment.created_at);
-                  const updatedDateTime = formatDateTime(enrollment.updated_at);
-                  
-                  return (
-                    <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <button
-                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
-                            >
-                              {enrollment.full_name}
-                            </button>
-                            {getStatusBadge(enrollment)}
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <span className="font-medium">دوره:</span> {enrollment.courses.title}
-                              <div className="text-xs text-muted-foreground">{enrollment.courses.slug}</div>
-                            </div>
-                            <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
-                            <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">مبلغ:</span>
-                              <DollarSign className="h-3 w-3" />
-                              {formatPrice(enrollment.payment_amount)}
-                            </div>
-                            <div><span className="font-medium">روش پرداخت:</span> {getPaymentMethodBadge(enrollment.payment_method)}</div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span className="font-medium">تاریخ:</span> {dateTime.date} - {dateTime.time}
-                            </div>
-                            {enrollment.updated_at !== enrollment.created_at && (
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                <span className="font-medium">به‌روزرسانی:</span> {updatedDateTime.date} - {updatedDateTime.time}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            {enrollment.receipt_url && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full"
-                                onClick={() => window.open(enrollment.receipt_url!, '_blank')}
-                              >
-                                <ExternalLink className="h-4 w-4 mr-2" />
-                                مشاهده رسید
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              مشاهده ثبت‌نام
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full"
-                              onClick={() => handleViewAdminEnrollmentDetails(enrollment.id)}
-                            >
-                              <Settings className="h-4 w-4 mr-2" />
-                              مدیریت ثبت‌نام
-                            </Button>
-                            {enrollment.chat_user_id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full"
-                                onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                              >
-                                مشاهده کاربر
-                              </Button>
-                            )}
-                          </div>
+                {enrollments.map((enrollment) => (
+                  <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                          >
+                            {enrollment.full_name}
+                          </button>
+                          {getStatusBadge(enrollment)}
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">دوره:</span> {enrollment.courses.title}
+                            <div className="text-xs text-muted-foreground">{enrollment.courses.slug}</div>
+                          </div>
+                          <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
+                          <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">مبلغ:</span>
+                            <DollarSign className="h-3 w-3" />
+                            {formatPrice(enrollment.payment_amount)}
+                          </div>
+                          <div><span className="font-medium">روش پرداخت:</span> {getPaymentMethodBadge(enrollment.payment_method)}</div>
+                          <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {enrollment.receipt_url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              مشاهده رسید
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            مشاهده ثبت‌نام
+                          </Button>
+                          {enrollment.chat_user_id && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            >
+                              مشاهده کاربر
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -379,101 +336,72 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                       <TableHead>مبلغ</TableHead>
                       <TableHead>روش پرداخت</TableHead>
                       <TableHead>وضعیت</TableHead>
-                      <TableHead>تاریخ ثبت‌نام</TableHead>
-                      <TableHead>آخرین به‌روزرسانی</TableHead>
+                      <TableHead>تاریخ</TableHead>
                       <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {enrollments.map((enrollment) => {
-                      const dateTime = formatDateTime(enrollment.created_at);
-                      const updatedDateTime = formatDateTime(enrollment.updated_at);
-                      
-                      return (
-                        <TableRow key={enrollment.id}>
-                          <TableCell>
-                            <button
-                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-right"
-                            >
-                              {enrollment.full_name}
-                            </button>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{enrollment.courses.title}</div>
-                              <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{enrollment.phone}</TableCell>
-                          <TableCell>{enrollment.email}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="h-4 w-4" />
-                              {formatPrice(enrollment.payment_amount)}
-                            </div>
-                          </TableCell>
-                          <TableCell>{getPaymentMethodBadge(enrollment.payment_method)}</TableCell>
-                          <TableCell>{getStatusBadge(enrollment)}</TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <div>{dateTime.date}</div>
-                              <div className="text-muted-foreground">{dateTime.time}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {enrollment.updated_at !== enrollment.created_at ? (
-                              <div className="text-sm">
-                                <div>{updatedDateTime.date}</div>
-                                <div className="text-muted-foreground">{updatedDateTime.time}</div>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                    {enrollments.map((enrollment) => (
+                      <TableRow key={enrollment.id}>
+                        <TableCell>
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-right"
+                          >
+                            {enrollment.full_name}
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{enrollment.courses.title}</div>
+                            <div className="text-sm text-muted-foreground">{enrollment.courses.slug}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{enrollment.phone}</TableCell>
+                        <TableCell>{enrollment.email}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4" />
+                            {formatPrice(enrollment.payment_amount)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{getPaymentMethodBadge(enrollment.payment_method)}</TableCell>
+                        <TableCell>{getStatusBadge(enrollment)}</TableCell>
+                        <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {enrollment.receipt_url && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(enrollment.receipt_url!, '_blank')}
+                                title="مشاهده رسید"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
                             )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {enrollment.receipt_url && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => window.open(enrollment.receipt_url!, '_blank')}
-                                  title="مشاهده رسید"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewEnrollmentDetails(enrollment.id)}
+                              title="مشاهده ثبت‌نام"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {enrollment.chat_user_id && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                                title="مشاهده ثبت‌نام"
+                                onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                                title="مشاهده کاربر"
                               >
-                                <Eye className="h-4 w-4" />
+                                کاربر
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewAdminEnrollmentDetails(enrollment.id)}
-                                title="مدیریت ثبت‌نام"
-                              >
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                              {enrollment.chat_user_id && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                                  title="مشاهده کاربر"
-                                >
-                                  کاربر
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>

@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
 
 import Header from '@/components/Layout/Header';
-import AdminSidebar from '@/components/Admin/AdminSidebar';
+import { AdminSidebar } from '@/components/Admin/AdminSidebar';
 import AdminDashboard from '@/components/Admin/AdminDashboard';
 import CourseManagement from '@/components/Admin/CourseManagement';
 import EmailSettings from '@/components/Admin/EmailSettings';
