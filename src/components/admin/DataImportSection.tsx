@@ -285,31 +285,50 @@ export function DataImportSection() {
         }
 
         // Check if enrollment already exists for this course
-        let existingEnrollmentQuery = supabase
-          .from('enrollments')
-          .select('id')
-          .eq('course_id', courseId);
+        let existingEnrollment = null;
         
-        const enrollmentConditions = [];
-        if (row.email && row.email.trim()) enrollmentConditions.push(`email.eq.${row.email.trim()}`);
-        if (row.phone && row.phone.trim()) enrollmentConditions.push(`phone.eq.${row.phone.trim()}`);
-        
-        if (enrollmentConditions.length > 0) {
-          existingEnrollmentQuery = existingEnrollmentQuery.or(enrollmentConditions.join(','));
-        } else {
-          existingEnrollmentQuery = existingEnrollmentQuery.limit(0);
+        // If we found an existing user, check enrollment by user_id first (most reliable)
+        if (existingUser?.id) {
+          const { data: enrollmentByUserId } = await supabase
+            .from('enrollments')
+            .select('id')
+            .eq('course_id', courseId)
+            .eq('chat_user_id', existingUser.id)
+            .maybeSingle();
+          
+          existingEnrollment = enrollmentByUserId;
         }
         
-        const { data: existingEnrollment } = await existingEnrollmentQuery.maybeSingle();
+        // If no enrollment found by user_id, check by email/phone as fallback
+        if (!existingEnrollment && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
+          const enrollmentConditions = [];
+          if (row.email && row.email.trim()) enrollmentConditions.push(`email.eq.${row.email.trim()}`);
+          if (row.phone && row.phone.trim()) enrollmentConditions.push(`phone.eq.${row.phone.trim()}`);
+          
+          if (enrollmentConditions.length > 0) {
+            const { data: enrollmentByContact } = await supabase
+              .from('enrollments')
+              .select('id')
+              .eq('course_id', courseId)
+              .or(enrollmentConditions.join(','))
+              .maybeSingle();
+              
+            existingEnrollment = enrollmentByContact;
+          }
+        }
 
         if (existingEnrollment) {
           existingEnrollments++;
           setImportProgress(prev => prev ? { ...prev, existing: prev.existing + 1 } : null);
           setProcessedRows(prev => new Set([...prev, index]));
           processed++;
-          console.log(`Enrollment already exists for ${row.email || row.phone}`);
+          console.log(`Enrollment already exists for ${row.email || row.phone} in course ${courseId}`);
           continue;
         }
+
+        console.log(`Creating enrollment for ${existingUser ? 'existing' : 'new'} user: ${row.email || row.phone}`);
+
+        // If user exists but no enrollment for this course, we'll create the enrollment
 
         // Create or update user in chat_users if needed
         let chatUserId = existingUser?.id;
