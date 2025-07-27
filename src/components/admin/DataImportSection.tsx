@@ -323,6 +323,14 @@ export function DataImportSection() {
           existingEnrollment = enrollmentByUserId;
         }
         
+        // Helper function to generate placeholder email for rows without email
+        const generatePlaceholderEmail = (phone: string | undefined): string => {
+          if (phone?.trim()) {
+            return `${phone.trim()}@rafiei.co`;
+          }
+          return `user-${Date.now()}@rafiei.co`;
+        };
+
         // If no enrollment found by user_id, check by email/phone as fallback
         if (!existingEnrollment && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
           const enrollmentConditions = [];
@@ -400,13 +408,16 @@ export function DataImportSection() {
             }
           }
 
+          // Generate email if missing but phone exists
+          const finalEmail = row.email?.trim() || generatePlaceholderEmail(row.phone);
+
           // Create new user in chat_users
           const { data: newUser, error: userError } = await supabase
             .from('chat_users')
             .insert({
               name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر بدون نام',
               phone: row.phone || null,
-              email: row.email || null,
+              email: finalEmail,
               first_name: row.first_name || null,
               last_name: row.last_name || null,
               full_name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'کاربر بدون نام',
@@ -490,13 +501,16 @@ export function DataImportSection() {
             paymentAmount = customPrice;
           }
         }
+
+        // Generate email if missing but phone exists (for enrollment)
+        const enrollmentEmail = row.email?.trim() || generatePlaceholderEmail(row.phone);
         
         const { error: enrollmentError } = await supabase
           .from('enrollments')
           .insert({
             course_id: courseId,
             full_name: fullName,
-            email: row.email || null,
+            email: enrollmentEmail,
             phone: row.phone || null,
             payment_status: 'completed',
             payment_amount: paymentAmount,
