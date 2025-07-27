@@ -237,7 +237,11 @@ export function DataImportSection() {
     // Process unique users only (remove duplicates within CSV)
     const uniqueUsers = new Map<string, { row: CSVRow; index: number }>();
     csvRows.forEach((row, index) => {
-      const userKey = `${row.email?.trim().toLowerCase()}-${row.phone?.trim()}`;
+      // Create unique key using available identifiers (email, phone, or first_name+last_name)
+      const email = row.email?.trim().toLowerCase() || '';
+      const phone = row.phone?.trim() || '';
+      const name = `${row.first_name?.trim() || ''}-${row.last_name?.trim() || ''}`;
+      const userKey = `${email}-${phone}-${name}`;
       if (!uniqueUsers.has(userKey)) {
         uniqueUsers.set(userKey, { row, index });
       }
@@ -353,7 +357,7 @@ export function DataImportSection() {
         // Create or update user in chat_users if needed
         let chatUserId = existingUser?.id;
         
-        if (!existingUser && ((row.email && row.email.trim()) || (row.phone && row.phone.trim()))) {
+        if (!existingUser && (row.first_name?.trim() || row.email?.trim() || row.phone?.trim())) {
           // Parse entry date for user creation
           let userCreatedAt = new Date().toISOString();
           if (row.entry_date) {
