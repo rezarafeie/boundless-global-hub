@@ -841,6 +841,18 @@ const LeadManagement: React.FC = () => {
     return '****';
   };
 
+  // Helper function to render phone as clickable link
+  const renderPhoneLink = (phone: string) => {
+    return (
+      <a 
+        href={`tel:${phone}`}
+        className="text-blue-600 hover:text-blue-800 hover:underline"
+      >
+        {phone}
+      </a>
+    );
+  };
+
   const filteredLeads = leads.filter(lead => {
     if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
     return lead.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -995,7 +1007,6 @@ const LeadManagement: React.FC = () => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>نام و نام خانوادگی</TableHead>
-                          <TableHead>تلفن</TableHead>
                           <TableHead>دوره</TableHead>
                           <TableHead>مبلغ</TableHead>
                           <TableHead>تاریخ ثبت‌نام</TableHead>
@@ -1007,7 +1018,6 @@ const LeadManagement: React.FC = () => {
                         {filteredLeads.map((lead) => (
                           <TableRow key={lead.enrollment_id}>
                             <TableCell>{lead.full_name}</TableCell>
-                            <TableCell>{formatPhoneNumber(lead.phone, lead.assigned_to_agent, false)}</TableCell>
                             <TableCell>{lead.course_title}</TableCell>
                             <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
                             <TableCell>{formatDate(lead.created_at)}</TableCell>
@@ -1069,7 +1079,7 @@ const LeadManagement: React.FC = () => {
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="font-medium">{assignment.full_name}</h3>
-                              <p className="text-sm text-muted-foreground">{formatPhoneNumber(assignment.phone, user?.name || '', true)}</p>
+                              <p className="text-sm text-muted-foreground">{renderPhoneLink(assignment.phone)}</p>
                             </div>
                             <Button
                               size="sm"
@@ -1124,7 +1134,7 @@ const LeadManagement: React.FC = () => {
                         {filteredAssignments.map((assignment) => (
                           <TableRow key={assignment.assignment_id}>
                             <TableCell>{assignment.full_name}</TableCell>
-                            <TableCell>{formatPhoneNumber(assignment.phone, user?.name || '', true)}</TableCell>
+                            <TableCell>{renderPhoneLink(assignment.phone)}</TableCell>
                             <TableCell>{assignment.course_title}</TableCell>
                             <TableCell>{formatPrice(assignment.payment_amount)}</TableCell>
                             <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
