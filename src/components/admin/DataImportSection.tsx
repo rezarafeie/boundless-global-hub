@@ -235,6 +235,14 @@ export function DataImportSection() {
     if (!course) {
       throw new Error('دوره انتخاب شده یافت نشد');
     }
+    
+    // Process in very small batches to prevent timeouts
+    const BATCH_SIZE = 3; // Very small batches
+    const BATCH_DELAY = 5000; // 5 seconds between batches
+    const ROW_DELAY = 2000; // 2 seconds between each row
+    
+    console.log(`Starting optimized import with ${csvRows.length} rows in batches of ${BATCH_SIZE}`);
+    console.log(`Each batch will have a ${BATCH_DELAY/1000}s delay, each row will have a ${ROW_DELAY/1000}s delay`);
 
     // Process unique users only (remove duplicates within CSV)
     const uniqueUsers = new Map<string, { row: CSVRow; index: number }>();
@@ -263,14 +271,8 @@ export function DataImportSection() {
       canResume: false
     });
 
-    for (let i = startFromIndex; i < uniqueUserArray.length; i++) {
-      // Add batch break every 20 records to prevent timeouts
-      if (i > 0 && i % 20 === 0) {
-        console.log(`Batch break at record ${i}, waiting 2 seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-      
-      // Check if import is paused
+    // Process in small batches to prevent database timeouts
+    for (let batchStart = startFromIndex; batchStart < uniqueUserArray.length; batchStart += BATCH_SIZE) {
       if (isPaused) {
         setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: true } : null);
         return {
@@ -281,6 +283,24 @@ export function DataImportSection() {
           processed
         };
       }
+
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, uniqueUserArray.length);
+      const batchNumber = Math.floor(batchStart / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(uniqueUserArray.length / BATCH_SIZE);
+      
+      console.log(`Processing batch ${batchNumber}/${totalBatches}: rows ${batchStart + 1} to ${batchEnd}`);
+      
+      for (let i = batchStart; i < batchEnd; i++) {
+        if (isPaused) {
+          setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: true } : null);
+          return {
+            totalRows: uniqueUserArray.length,
+            newEnrollmentsCreated,
+            existingEnrollments,
+            errors,
+            processed
+          };
+        }
 
       const { row, index } = uniqueUserArray[i];
       
@@ -597,8 +617,14 @@ export function DataImportSection() {
         processed++;
         console.log(`Successfully created enrollment for ${row.email || row.phone}`);
 
-        // Add longer delay to prevent overwhelming the database and avoid timeouts
-        await new Promise(resolve => setTimeout(resolve, 150));
+        // Significantly longer delay to prevent timeouts
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Extra long pause every 5 records to give database time to recover
+        if ((index + 1) % 5 === 0) {
+          console.log(`Processed ${index + 1} records, taking a 3-second break...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
 
       } catch (error) {
         console.error(`Error processing user ${row.email}:`, error);
@@ -617,10 +643,24 @@ export function DataImportSection() {
         errors++;
         setImportProgress(prev => prev ? { ...prev, errors: prev.errors + 1 } : null);
       }
+      
+      // Delay between rows within batch
+      if (i < batchEnd - 1) {
+        await new Promise(resolve => setTimeout(resolve, ROW_DELAY));
+      }
+      
+      setImportProgress(prev => prev ? { ...prev, processed: i + 1 } : null);
     }
 
-    // Mark import as completed
-    setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: false } : null);
+    // Delay between batches (except for the last batch)
+    if (batchEnd < uniqueUserArray.length && !isPaused) {
+      console.log(`Batch ${batchNumber} complete. Waiting ${BATCH_DELAY/1000} seconds before next batch...`);
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+    }
+  }
+
+  // Mark import as completed
+  setImportProgress(prev => prev ? { ...prev, isRunning: false, canResume: false } : null);
 
     return {
       totalRows: uniqueUserArray.length,

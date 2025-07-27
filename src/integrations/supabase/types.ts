@@ -2948,6 +2948,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      is_academy_admin_safe: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       is_iranian_phone: {
         Args: { phone_number: string }
         Returns: boolean
