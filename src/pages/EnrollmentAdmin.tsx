@@ -17,7 +17,7 @@ import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import PendingApprovalPayments from '@/components/Admin/PendingApprovalPayments';
 import { LeadManagement } from '@/components/Admin/LeadManagement';
 import { SalesAgentCourseManager } from '@/components/Admin/SalesAgentCourseManager';
-import DiscountManagement from '@/components/Admin/DiscountManagement';
+import { DiscountManagement } from '@/components/Admin/DiscountManagement';
 
 export default function EnrollmentAdmin() {
   const [activeTab, setActiveTab] = useState("enrollments");
