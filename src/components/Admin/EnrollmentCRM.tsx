@@ -144,6 +144,8 @@ export function EnrollmentCRM() {
   };
 
   const addNote = async () => {
+    console.log('Adding note with data:', newNote);
+    
     if (!newNote.content.trim()) {
       toast({
         title: "خطا",
@@ -172,7 +174,7 @@ export function EnrollmentCRM() {
           content: newNote.content,
           course_id: newNote.course_id === 'none' ? null : newNote.course_id,
           status: newNote.status,
-          created_by: 'مدیر' // Should be current user
+          created_by: 'مدیر'
         });
 
       if (error) throw error;
@@ -182,6 +184,7 @@ export function EnrollmentCRM() {
         description: "یادداشت CRM با موفقیت اضافه شد."
       });
 
+      // Reset form
       setNewNote({
         type: 'note',
         content: '',
@@ -189,8 +192,12 @@ export function EnrollmentCRM() {
         status: 'در انتظار پرداخت',
         user_id: ''
       });
+      
+      // Close dialog
       setIsAddingNote(false);
-      fetchData();
+      
+      // Refresh data
+      await fetchData();
     } catch (error) {
       console.error('Error adding CRM note:', error);
       toast({
@@ -274,99 +281,17 @@ export function EnrollmentCRM() {
                 <MessageSquare className="w-5 h-5" />
                 فعالیت‌های CRM ({filteredNotes.length})
               </CardTitle>
-              <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    افزودن یادداشت
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>افزودن یادداشت CRM</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4" dir="rtl">
-                    <div>
-                      <Label htmlFor="user">کاربر</Label>
-                      <Select value={newNote.user_id} onValueChange={(value) => setNewNote({...newNote, user_id: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب کاربر" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {chatUsers.map(user => (
-                            <SelectItem key={user.id} value={user.id.toString()}>
-                              {user.name} ({user.phone})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="type">نوع</Label>
-                      <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CRM_TYPES.map(type => (
-                            <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="course">دوره</Label>
-                      <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="انتخاب دوره" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">بدون دوره</SelectItem>
-                          {courses.map(course => (
-                            <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="status">وضعیت</Label>
-                      <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CRM_STATUSES.map(status => (
-                            <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="content">محتوا</Label>
-                      <Textarea
-                        id="content"
-                        placeholder="محتوای یادداشت خود را وارد کنید..."
-                        value={newNote.content}
-                        onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                        rows={4}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsAddingNote(false)}>
-                        لغو
-                      </Button>
-                      <Button onClick={addNote} disabled={isSubmitting}>
-                        {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              
+              <Button 
+                onClick={() => {
+                  console.log('Opening dialog...');
+                  setIsAddingNote(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                افزودن یادداشت
+              </Button>
             </div>
             
             {/* Filters */}
@@ -489,6 +414,95 @@ export function EnrollmentCRM() {
           )}
         </CardContent>
       </Card>
+
+      {/* Separate Dialog outside of Card */}
+      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4" dir="rtl">
+            <div>
+              <Label htmlFor="user">کاربر</Label>
+              <Select value={newNote.user_id} onValueChange={(value) => setNewNote({...newNote, user_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب کاربر" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chatUsers.map(user => (
+                    <SelectItem key={user.id} value={user.id.toString()}>
+                      {user.name} ({user.phone})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="type">نوع</Label>
+              <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="course">دوره</Label>
+              <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون دوره</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="status">وضعیت</Label>
+              <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="content">محتوا</Label>
+              <Textarea
+                id="content"
+                placeholder="محتوای یادداشت خود را وارد کنید..."
+                value={newNote.content}
+                onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                rows={4}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingNote(false)}>
+                لغو
+              </Button>
+              <Button onClick={addNote} disabled={isSubmitting}>
+                {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
