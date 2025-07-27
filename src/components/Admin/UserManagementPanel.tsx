@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Edit, Users, UserCheck, Shield } from 'lucide-react';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { useDebounce } from '@/hooks/use-debounce';
 import UserEditModal from './UserEditModal';
 
 const UserManagementPanel = () => {
@@ -16,22 +18,24 @@ const UserManagementPanel = () => {
   const [selectedUser, setSelectedUser] = useState<MessengerUser | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
   useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
-    if (searchTerm) {
+    if (debouncedSearchTerm && debouncedSearchTerm.length >= 2) {
       const filtered = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone.includes(searchTerm) ||
-        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+        user.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        user.phone.includes(debouncedSearchTerm) ||
+        (user.username && user.username.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
       );
       setFilteredUsers(filtered);
     } else {
       setFilteredUsers(users);
     }
-  }, [searchTerm, users]);
+  }, [debouncedSearchTerm, users]);
 
   const loadUsers = async () => {
     try {
@@ -215,7 +219,7 @@ const UserManagementPanel = () => {
               </div>
             ))}
             
-            {filteredUsers.length === 0 && (
+            {filteredUsers.length === 0 && searchTerm.length >= 2 && (
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-slate-300 mx-auto mb-2" />
                 <p className="text-slate-500">کاربری یافت نشد</p>
