@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Edit, Trash2, User, Calendar, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,7 +61,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
     content: '',
     type: 'follow_up',
     status: 'در انتظار پرداخت',
-    course_id: preselectedCourseId || ''
+    course_id: preselectedCourseId || 'none'
   });
 
   useEffect(() => {
@@ -126,7 +125,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
           content: newNote.content,
           type: newNote.type,
           status: newNote.status,
-          course_id: newNote.course_id || null,
+          course_id: newNote.course_id === 'none' ? null : newNote.course_id,
           created_by: 'Admin'
         });
 
@@ -141,7 +140,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
         content: '',
         type: 'follow_up',
         status: 'در انتظار پرداخت',
-        course_id: preselectedCourseId || ''
+        course_id: preselectedCourseId || 'none'
       });
       setIsAddingNote(false);
       fetchCRMNotes();
@@ -288,7 +287,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
                           <SelectValue placeholder="انتخاب دوره" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">هیچ دوره‌ای</SelectItem>
+                          <SelectItem value="none">هیچ دوره‌ای</SelectItem>
                           {courses.map((course) => (
                             <SelectItem key={course.id} value={course.id}>
                               {course.title}
