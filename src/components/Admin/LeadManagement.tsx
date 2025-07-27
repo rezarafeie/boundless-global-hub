@@ -447,23 +447,16 @@ const LeadManagement: React.FC = () => {
         if (selectedAgent === 'unassigned') {
           // Only show unassigned leads
           formattedLeads = formattedLeads.filter(lead => !lead.assigned_to_agent);
-        }
-        // For specific agent selection, show all leads (both assigned to that agent and unassigned)
-        // This allows admins to see what leads are available to assign to the selected agent
-        // If you want to show only leads assigned to the specific agent, uncomment the else block below:
-        /*
-        else {
+        } else {
+          // Show only leads assigned to the specific agent
           formattedLeads = formattedLeads.filter(lead => 
             lead.assigned_to_agent && lead.assigned_to_agent.includes(selectedAgent)
           );
         }
-        */
         
-        // Update pagination based on filtered results only for unassigned filter
-        if (selectedAgent === 'unassigned') {
-          const filteredCount = formattedLeads.length;
-          setTotalPages(Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE)));
-        }
+        // Update pagination based on filtered results
+        const filteredCount = formattedLeads.length;
+        setTotalPages(Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE)));
       }
 
       console.log('Formatted leads:', formattedLeads.length);
@@ -1270,9 +1263,17 @@ const LeadManagement: React.FC = () => {
                            ))}
                          </SelectContent>
                        </Select>
-                     </div>
-                   </div>
-                 </CardHeader>
+                      </div>
+                    </div>
+                    
+                    {selectedAgent !== 'all' && selectedAgent !== 'unassigned' && (
+                      <div className="bg-muted p-3 rounded-lg mt-4">
+                        <p className="text-sm">
+                          لیدهای واگذار شده به <strong>{selectedAgent}</strong>: {filteredAdminLeads.length} لید
+                        </p>
+                      </div>
+                    )}
+                  </CardHeader>
                 <CardContent>
                   {adminLoading ? (
                     <div className="flex items-center justify-center py-8">
