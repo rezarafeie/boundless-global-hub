@@ -5,11 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Phone, Mail, Calendar, Shield, Crown, AlertCircle, MessageSquare, Activity, CreditCard, Key } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Shield, Crown, AlertCircle, MessageSquare, Activity, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
-import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
 
@@ -171,14 +170,10 @@ const UserDetail: React.FC = () => {
               </div>
 
               <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="enrollments" className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" />
-                    Enrollments
                   </TabsTrigger>
                   <TabsTrigger value="licenses" className="flex items-center gap-2">
                     <Key className="w-4 h-4" />
@@ -195,9 +190,6 @@ const UserDetail: React.FC = () => {
                 </TabsList>
                 <TabsContent value="overview" className="mt-6">
                   <UserOverview user={user} />
-                </TabsContent>
-                <TabsContent value="enrollments" className="mt-6">
-                  <UserEnrollments userId={user.id} />
                 </TabsContent>
                 <TabsContent value="licenses" className="mt-6">
                   <UserLicenses userId={user.id} userPhone={user.phone} />
