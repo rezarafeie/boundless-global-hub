@@ -96,6 +96,7 @@ const LeadManagement: React.FC = () => {
   const [adminLeads, setAdminLeads] = useState<AdminLead[]>([]);
   const [agentSummaries, setAgentSummaries] = useState<AgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin'>('available');
   const [searchTerm, setSearchTerm] = useState('');
@@ -179,8 +180,12 @@ const LeadManagement: React.FC = () => {
   };
 
   const fetchAdminLeads = async () => {
+    setAdminLoading(true);
     try {
-      const { data, error } = await supabase
+      console.log('Fetching admin leads...');
+      
+      // First get all enrollments with successful payments
+      const { data: enrollmentsData, error: enrollmentsError } = await supabase
         .from('enrollments')
         .select(`
           id,
@@ -190,34 +195,112 @@ const LeadManagement: React.FC = () => {
           payment_amount,
           payment_status,
           created_at,
-          courses!inner(title),
-          lead_assignments(
-            status,
-            assigned_at,
-            sales_agents!inner(
-              chat_users!inner(name)
-            )
-          )
+          course_id
         `)
-        .eq('payment_status', 'success')
+        .in('payment_status', ['success', 'completed'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const formattedLeads: AdminLead[] = data.map(enrollment => ({
-        enrollment_id: enrollment.id,
-        full_name: enrollment.full_name,
-        email: enrollment.email,
-        phone: enrollment.phone,
-        course_title: enrollment.courses?.title || 'نامشخص',
-        payment_amount: enrollment.payment_amount,
-        payment_status: enrollment.payment_status,
-        created_at: enrollment.created_at,
-        assigned_to_agent: enrollment.lead_assignments?.[0]?.sales_agents?.chat_users?.name || null,
-        assignment_status: enrollment.lead_assignments?.[0]?.status || null,
-        assigned_at: enrollment.lead_assignments?.[0]?.assigned_at || null
-      }));
+      if (enrollmentsError) {
+        console.error('Error fetching enrollments:', enrollmentsError);
+        throw enrollmentsError;
+      }
 
+      console.log('Enrollments fetched:', enrollmentsData?.length || 0);
+
+      if (!enrollmentsData || enrollmentsData.length === 0) {
+        setAdminLeads([]);
+        return;
+      }
+
+      // Get course information
+      const courseIds = [...new Set(enrollmentsData.map(e => e.course_id))];
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title')
+        .in('id', courseIds);
+
+      if (coursesError) {
+        console.error('Error fetching courses:', coursesError);
+        throw coursesError;
+      }
+
+      // Get lead assignments
+      const enrollmentIds = enrollmentsData.map(e => e.id);
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('lead_assignments')
+        .select(`
+          enrollment_id,
+          status,
+          assigned_at,
+          sales_agent_id
+        `)
+        .in('enrollment_id', enrollmentIds);
+
+      if (assignmentsError) {
+        console.error('Error fetching assignments:', assignmentsError);
+      }
+
+      // Get sales agents information
+      const agentIds = assignmentsData?.map(a => a.sales_agent_id).filter(Boolean) || [];
+      let agentsData: any[] = [];
+      if (agentIds.length > 0) {
+        const { data: salesAgentsData, error: salesAgentsError } = await supabase
+          .from('sales_agents')
+          .select(`
+            id,
+            user_id
+          `)
+          .in('id', agentIds);
+
+        if (salesAgentsError) {
+          console.error('Error fetching sales agents:', salesAgentsError);
+        } else {
+          const userIds = salesAgentsData?.map(sa => sa.user_id).filter(Boolean) || [];
+          if (userIds.length > 0) {
+            const { data: usersData, error: usersError } = await supabase
+              .from('chat_users')
+              .select('id, name')
+              .in('id', userIds);
+
+            if (usersError) {
+              console.error('Error fetching users:', usersError);
+            } else {
+              agentsData = salesAgentsData?.map(sa => ({
+                ...sa,
+                user: usersData?.find(u => u.id === sa.user_id)
+              })) || [];
+            }
+          }
+        }
+      }
+
+      // Create lookup maps
+      const courseMap = new Map(coursesData?.map(c => [c.id, c]) || []);
+      const assignmentMap = new Map(assignmentsData?.map(a => [a.enrollment_id, a]) || []);
+      const agentMap = new Map(agentsData.map(a => [a.id, a]));
+
+      // Format the data for the UI
+      const formattedLeads: AdminLead[] = enrollmentsData.map(enrollment => {
+        const course = courseMap.get(enrollment.course_id);
+        const assignment = assignmentMap.get(enrollment.id);
+        const agent = assignment ? agentMap.get(assignment.sales_agent_id) : null;
+
+        return {
+          enrollment_id: enrollment.id,
+          full_name: enrollment.full_name,
+          email: enrollment.email,
+          phone: enrollment.phone,
+          course_title: course?.title || 'نامشخص',
+          payment_amount: enrollment.payment_amount,
+          payment_status: enrollment.payment_status,
+          created_at: enrollment.created_at,
+          assigned_to_agent: agent?.user?.name || null,
+          assignment_status: assignment?.status || null,
+          assigned_at: assignment?.assigned_at || null
+        };
+      });
+
+      console.log('Formatted leads:', formattedLeads.length);
       setAdminLeads(formattedLeads);
     } catch (error) {
       console.error('Error fetching admin leads:', error);
@@ -226,6 +309,8 @@ const LeadManagement: React.FC = () => {
         description: "خطا در دریافت لیدهای ادمین",
         variant: "destructive"
       });
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -235,49 +320,102 @@ const LeadManagement: React.FC = () => {
         .from('sales_agents')
         .select(`
           id,
-          chat_users!inner(name),
-          lead_assignments(
-            status,
-            enrollments!inner(
-              payment_amount,
-              payment_status
-            )
-          )
+          user_id,
+          is_active
         `)
         .eq('is_active', true);
 
       if (error) throw error;
 
-      // Get CRM notes count separately for each agent
+      if (!data || data.length === 0) {
+        setAgentSummaries([]);
+        return;
+      }
+
+      // Get user names
+      const userIds = data.map(agent => agent.user_id);
+      const { data: usersData, error: usersError } = await supabase
+        .from('chat_users')
+        .select('id, name')
+        .in('id', userIds);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+      }
+
+      const userMap = new Map(usersData?.map(u => [u.id, u]) || []);
+
+      // Get assignments for each agent
+      const agentIds = data.map(agent => agent.id);
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('lead_assignments')
+        .select(`
+          sales_agent_id,
+          enrollment_id
+        `)
+        .in('sales_agent_id', agentIds);
+
+      if (assignmentsError) {
+        console.error('Error fetching assignments:', assignmentsError);
+      }
+
+      // Get enrollment data for sales calculations
+      const enrollmentIds = assignmentsData?.map(a => a.enrollment_id) || [];
+      let enrollmentsData: any[] = [];
+      if (enrollmentIds.length > 0) {
+        const { data: enrollData, error: enrollError } = await supabase
+          .from('enrollments')
+          .select('id, payment_amount, payment_status')
+          .in('id', enrollmentIds);
+
+        if (enrollError) {
+          console.error('Error fetching enrollments:', enrollError);
+        } else {
+          enrollmentsData = enrollData || [];
+        }
+      }
+
+      const enrollmentMap = new Map(enrollmentsData.map(e => [e.id, e]));
+
+      // Calculate summaries for each agent
       const summaries: AgentSummary[] = await Promise.all(
         data.map(async (agent) => {
-          // Get calls count from CRM notes
+          const user = userMap.get(agent.user_id);
+          const agentAssignments = assignmentsData?.filter(a => a.sales_agent_id === agent.id) || [];
+          
+          // Get CRM notes count for calls
           const { data: crmData, error: crmError } = await supabase
             .from('crm_notes')
             .select('id')
-            .eq('user_id', agent.id)
+            .eq('user_id', agent.user_id)
             .eq('type', 'call');
 
           if (crmError) {
             console.error('Error fetching CRM notes:', crmError);
           }
 
-          const totalLeads = agent.lead_assignments?.length || 0;
+          const totalLeads = agentAssignments.length;
           const totalCalls = crmData?.length || 0;
-          const completedSales = agent.lead_assignments?.filter(
-            assignment => assignment.enrollments?.payment_status === 'success'
-          ).length || 0;
-          const totalSalesAmount = agent.lead_assignments?.reduce((sum, assignment) => {
-            if (assignment.enrollments?.payment_status === 'success') {
-              return sum + (assignment.enrollments?.payment_amount || 0);
+          
+          // Calculate sales
+          const completedSales = agentAssignments.filter(assignment => {
+            const enrollment = enrollmentMap.get(assignment.enrollment_id);
+            return enrollment && ['success', 'completed'].includes(enrollment.payment_status);
+          }).length;
+
+          const totalSalesAmount = agentAssignments.reduce((sum, assignment) => {
+            const enrollment = enrollmentMap.get(assignment.enrollment_id);
+            if (enrollment && ['success', 'completed'].includes(enrollment.payment_status)) {
+              return sum + (enrollment.payment_amount || 0);
             }
             return sum;
-          }, 0) || 0;
+          }, 0);
+
           const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
 
           return {
             agent_id: agent.id,
-            agent_name: agent.chat_users?.name || 'نامشخص',
+            agent_name: user?.name || 'نامشخص',
             total_leads: totalLeads,
             total_calls: totalCalls,
             total_sales: completedSales,
@@ -666,10 +804,16 @@ const LeadManagement: React.FC = () => {
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
                     تمام لیدها
+                    {adminLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {filteredAdminLeads.length === 0 ? (
+                  {adminLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <span className="mr-2">در حال بارگذاری لیدها...</span>
+                    </div>
+                  ) : filteredAdminLeads.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       {searchTerm && searchTerm.length >= 3 ? 'هیچ لیدی یافت نشد' : 'هیچ لیدی یافت نشد'}
                     </div>
