@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -206,7 +205,7 @@ const UserDetail: React.FC = () => {
               <UserEnrollments userId={user.id} />
             </TabsContent>
             <TabsContent value="licenses" className="space-y-4">
-              <UserLicenses userId={user.id} />
+              <UserLicenses userId={user.id} userPhone={user.phone} />
             </TabsContent>
             <TabsContent value="progress" className="space-y-4">
               <LearningProgress userId={user.id} />
