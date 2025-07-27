@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { type ChatRoom, type MessengerMessage } from '@/types/supabase';
 
@@ -36,6 +37,10 @@ export interface MessengerUser {
   signup_source: string | null;
   notification_enabled: boolean;
   notification_token: string | null;
+  sender?: {
+    name: string;
+    phone?: string;
+  };
 }
 
 export interface ChatRoom {
@@ -71,6 +76,20 @@ export interface MessengerMessage {
   reply_to_message_id: number | null;
   forwarded_from_message_id: number | null;
   created_at: string;
+  sender?: {
+    name: string;
+    phone?: string;
+  };
+}
+
+export interface ChatTopic {
+  id: number;
+  title: string;
+  description: string | null;
+  room_id: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export const messengerService = {
@@ -173,6 +192,7 @@ export const messengerService = {
       return [];
     }
   },
+
   async getOrCreateChatUser(email: string): Promise<MessengerUser> {
     try {
       console.log('Getting or creating chat user for email:', email);
@@ -219,6 +239,7 @@ export const messengerService = {
       throw error;
     }
   },
+
   async createRoom(roomData: { name: string; description?: string; type: string }): Promise<ChatRoom> {
     try {
       console.log('Creating room:', roomData.name);
@@ -253,6 +274,7 @@ export const messengerService = {
       throw error;
     }
   },
+
   async sendMessage(senderId: number, message: string, roomId?: number, recipientId?: number, conversationId?: number, topicId?: number, mediaUrl?: string, mediaType?: string, mediaContent?: string): Promise<MessengerMessage | null> {
     try {
       console.log('Sending message:', { senderId, roomId, recipientId, conversationId, topicId });
@@ -286,6 +308,7 @@ export const messengerService = {
       throw error;
     }
   },
+
   async getMessages(roomId?: number, conversationId?: number, topicId?: number): Promise<MessengerMessage[]> {
     try {
       console.log('Fetching messages for:', { roomId, conversationId, topicId });
@@ -339,6 +362,315 @@ export const messengerService = {
       return [];
     }
   },
+
+  async getAllMessages(): Promise<MessengerMessage[]> {
+    try {
+      console.log('Fetching all messages...');
+      
+      const { data, error } = await supabase
+        .from('messenger_messages')
+        .select(`
+          id,
+          sender_id,
+          recipient_id,
+          room_id,
+          conversation_id,
+          topic_id,
+          message,
+          message_type,
+          media_url,
+          media_content,
+          is_read,
+          unread_by_support,
+          reply_to_message_id,
+          forwarded_from_message_id,
+          created_at,
+          chat_users!messenger_messages_sender_id_fkey (name, phone)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all messages:', error);
+        return [];
+      }
+
+      const messages = (data || []).map(msg => ({
+        ...msg,
+        sender_name: msg.chat_users?.name || 'Unknown',
+        sender: {
+          name: msg.chat_users?.name || 'Unknown',
+          phone: msg.chat_users?.phone || ''
+        }
+      }));
+
+      console.log('All messages fetched successfully:', messages.length);
+      return messages;
+    } catch (error) {
+      console.error('Error in getAllMessages:', error);
+      return [];
+    }
+  },
+
+  async deleteMessage(messageId: number): Promise<void> {
+    try {
+      console.log('Deleting message:', messageId);
+      
+      const { error } = await supabase
+        .from('messenger_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        throw error;
+      }
+
+      console.log('Message deleted successfully:', messageId);
+    } catch (error) {
+      console.error('Error in deleteMessage:', error);
+      throw error;
+    }
+  },
+
+  async validateSession(sessionToken: string): Promise<MessengerUser | null> {
+    try {
+      console.log('Validating session token...');
+      
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .select(`
+          user_id,
+          is_active,
+          last_activity,
+          chat_users!user_sessions_user_id_fkey (*)
+        `)
+        .eq('session_token', sessionToken)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        console.error('Session validation failed:', error);
+        return null;
+      }
+
+      // Check if session is still valid (within 24 hours)
+      const lastActivity = new Date(data.last_activity);
+      const now = new Date();
+      const timeDiff = now.getTime() - lastActivity.getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+      if (hoursDiff > 24) {
+        console.log('Session expired');
+        return null;
+      }
+
+      console.log('Session validated successfully for user:', data.user_id);
+      return data.chat_users;
+    } catch (error) {
+      console.error('Error in validateSession:', error);
+      return null;
+    }
+  },
+
+  async getAllUsers(): Promise<MessengerUser[]> {
+    try {
+      console.log('Fetching all users...');
+      
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+
+      console.log('All users fetched successfully:', data.length);
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      return [];
+    }
+  },
+
+  async updateUser(userId: number, updateData: Partial<MessengerUser>): Promise<void> {
+    try {
+      console.log('Updating user:', userId);
+      
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user:', error);
+        throw error;
+      }
+
+      console.log('User updated successfully:', userId);
+    } catch (error) {
+      console.error('Error in updateUser:', error);
+      throw error;
+    }
+  },
+
+  async updateUserRole(userId: number, role: string): Promise<void> {
+    try {
+      console.log('Updating user role:', userId, role);
+      
+      const { error } = await supabase
+        .from('chat_users')
+        .update({ role })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+
+      console.log('User role updated successfully:', userId);
+    } catch (error) {
+      console.error('Error in updateUserRole:', error);
+      throw error;
+    }
+  },
+
+  async updateRoom(roomId: number, updateData: Partial<ChatRoom>): Promise<void> {
+    try {
+      console.log('Updating room:', roomId);
+      
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update(updateData)
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error updating room:', error);
+        throw error;
+      }
+
+      console.log('Room updated successfully:', roomId);
+    } catch (error) {
+      console.error('Error in updateRoom:', error);
+      throw error;
+    }
+  },
+
+  async deleteRoom(roomId: number): Promise<void> {
+    try {
+      console.log('Deleting room:', roomId);
+      
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update({ is_active: false })
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Error deleting room:', error);
+        throw error;
+      }
+
+      console.log('Room deleted successfully:', roomId);
+    } catch (error) {
+      console.error('Error in deleteRoom:', error);
+      throw error;
+    }
+  },
+
+  async getTopics(): Promise<ChatTopic[]> {
+    try {
+      console.log('Fetching topics...');
+      
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching topics:', error);
+        return [];
+      }
+
+      console.log('Topics fetched successfully:', data.length);
+      return data || [];
+    } catch (error) {
+      console.error('Error in getTopics:', error);
+      return [];
+    }
+  },
+
+  async createTopic(topicData: { title: string; description?: string; room_id?: number }): Promise<ChatTopic> {
+    try {
+      console.log('Creating topic:', topicData.title);
+      
+      const { data, error } = await supabase
+        .from('chat_topics')
+        .insert([{
+          title: topicData.title,
+          description: topicData.description || '',
+          room_id: topicData.room_id || null,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating topic:', error);
+        throw error;
+      }
+
+      console.log('Topic created successfully:', data.id);
+      return data;
+    } catch (error) {
+      console.error('Error in createTopic:', error);
+      throw error;
+    }
+  },
+
+  async updateTopic(topicId: number, updateData: Partial<ChatTopic>): Promise<void> {
+    try {
+      console.log('Updating topic:', topicId);
+      
+      const { error } = await supabase
+        .from('chat_topics')
+        .update(updateData)
+        .eq('id', topicId);
+
+      if (error) {
+        console.error('Error updating topic:', error);
+        throw error;
+      }
+
+      console.log('Topic updated successfully:', topicId);
+    } catch (error) {
+      console.error('Error in updateTopic:', error);
+      throw error;
+    }
+  },
+
+  async deleteTopic(topicId: number): Promise<void> {
+    try {
+      console.log('Deleting topic:', topicId);
+      
+      const { error } = await supabase
+        .from('chat_topics')
+        .update({ is_active: false })
+        .eq('id', topicId);
+
+      if (error) {
+        console.error('Error deleting topic:', error);
+        throw error;
+      }
+
+      console.log('Topic deleted successfully:', topicId);
+    } catch (error) {
+      console.error('Error in deleteTopic:', error);
+      throw error;
+    }
+  },
+
   async getConversations(userId: number): Promise<any[]> {
     try {
       console.log('Fetching conversations for user:', userId);
@@ -389,79 +721,8 @@ export const messengerService = {
       return [];
     }
   },
+
   async updateNotificationSettings(userId: number, enabled: boolean): Promise<void> {
-    try {
-      console.log('Updating notification settings for user:', userId, 'enabled:', enabled);
-      
-      const { error } = await supabase
-        .from('chat_users')
-        .update({ notification_enabled: enabled })
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Error updating notification settings:', error);
-        throw error;
-      }
-
-      console.log('Notification settings updated successfully');
-    } catch (error) {
-      console.error('Error in updateNotificationSettings:', error);
-      throw error;
-    }
-  },
-  
-  getConversations: async (userId: number): Promise<any[]> => {
-    try {
-      console.log('Fetching conversations for user:', userId);
-      
-      const { data, error } = await supabase
-        .from('messenger_messages')
-        .select(`
-          id,
-          sender_id,
-          recipient_id,
-          conversation_id,
-          message,
-          created_at,
-          chat_users!messenger_messages_sender_id_fkey (name, avatar_url)
-        `)
-        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-        .not('conversation_id', 'is', null)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching conversations:', error);
-        return [];
-      }
-
-      // Group by conversation_id and get latest message for each
-      const conversationMap = new Map();
-      
-      (data || []).forEach(msg => {
-        const convId = msg.conversation_id;
-        if (!conversationMap.has(convId) || 
-            new Date(msg.created_at) > new Date(conversationMap.get(convId).created_at)) {
-          conversationMap.set(convId, msg);
-        }
-      });
-
-      const conversations = Array.from(conversationMap.values()).map(msg => ({
-        id: msg.conversation_id,
-        last_message: msg.message,
-        last_message_time: msg.created_at,
-        chat_users: msg.chat_users,
-        unread_count: 0 // Simplified for now
-      }));
-
-      console.log('Conversations fetched successfully:', conversations.length);
-      return conversations;
-    } catch (error) {
-      console.error('Error in getConversations:', error);
-      return [];
-    }
-  },
-
-  updateNotificationSettings: async (userId: number, enabled: boolean): Promise<void> => {
     try {
       console.log('Updating notification settings for user:', userId, 'enabled:', enabled);
       
