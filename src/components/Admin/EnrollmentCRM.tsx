@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,6 @@ interface ChatUser {
 interface EnrollmentWithoutCRM {
   id: string;
   full_name: string;
-  email: string;
   phone: string;
   payment_status: string;
   payment_amount: number;
@@ -258,7 +256,6 @@ export function EnrollmentCRM() {
         .select(`
           id,
           full_name,
-          email,
           phone,
           payment_status,
           payment_amount,
@@ -590,7 +587,6 @@ export function EnrollmentCRM() {
                                 </div>
                                 <div className="space-y-2 text-sm">
                                   <div><span className="font-medium">دوره:</span> {enrollment.courses.title}</div>
-                                  <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
                                   <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
                                   <div><span className="font-medium">مبلغ:</span> {formatPrice(enrollment.payment_amount)}</div>
                                   <div><span className="font-medium">تاریخ:</span> {formatDate(enrollment.created_at)}</div>
@@ -614,7 +610,6 @@ export function EnrollmentCRM() {
                               <TableRow>
                                 <TableHead>نام</TableHead>
                                 <TableHead>دوره</TableHead>
-                                <TableHead>ایمیل</TableHead>
                                 <TableHead>تلفن</TableHead>
                                 <TableHead>مبلغ</TableHead>
                                 <TableHead>تاریخ ثبت‌نام</TableHead>
@@ -626,7 +621,6 @@ export function EnrollmentCRM() {
                                 <TableRow key={enrollment.id} className="hover:bg-orange-50">
                                   <TableCell className="font-medium">{enrollment.full_name}</TableCell>
                                   <TableCell>{enrollment.courses.title}</TableCell>
-                                  <TableCell>{enrollment.email}</TableCell>
                                   <TableCell>{enrollment.phone}</TableCell>
                                   <TableCell>{formatPrice(enrollment.payment_amount)}</TableCell>
                                   <TableCell>{formatDate(enrollment.created_at)}</TableCell>
