@@ -13,6 +13,7 @@ import { UserPlus, Eye, Phone, Mail, Calendar, Filter, Search } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { EnrollmentCRM } from '@/components/Admin/EnrollmentCRM';
 
 interface Lead {
   id: string;
@@ -47,6 +48,7 @@ export function LeadManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isCRMDialogOpen, setIsCRMDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -67,7 +69,7 @@ export function LeadManagement() {
       const { data: userRoles } = await supabase
         .from('user_roles')
         .select('role_name')
-        .eq('user_id', user?.id)
+        .eq('user_id', user?.id || 0)
         .eq('is_active', true);
 
       const isAdmin = userRoles?.some(role => role.role_name === 'admin');
@@ -89,60 +91,39 @@ export function LeadManagement() {
         `)
         .in('payment_status', ['pending', 'completed', 'success']);
 
-      // If user is sales agent, only show leads for courses they have access to
-      if (isSalesAgent && !isAdmin) {
-        // For now, we'll use a direct query since the types aren't updated yet
-        const { data: agentCourses } = await supabase.rpc('get_user_courses_for_sales_agent', {
-          agent_id: user?.id
-        }).then(result => {
-          // If RPC function doesn't exist, return empty array
-          if (result.error) {
-            console.log('Sales agent courses function not found, showing all leads for now');
-            return { data: [] };
-          }
-          return result;
-        });
-
-        if (agentCourses && agentCourses.length > 0) {
-          const courseIds = agentCourses.map((ac: any) => ac.course_id);
-          leadsQuery = leadsQuery.in('course_id', courseIds);
-        } else {
-          // For now, show all leads if no specific courses are assigned
-          console.log('No courses assigned to sales agent, showing all leads');
-        }
-      }
-
       const { data: enrollments, error: enrollmentsError } = await leadsQuery
         .order('created_at', { ascending: false });
 
       if (enrollmentsError) throw enrollmentsError;
 
-      // Get lead assignments using direct query
+      // Get lead assignments - use direct query since RPC doesn't exist
       const { data: assignments } = await supabase
-        .rpc('get_lead_assignments')
-        .then(result => {
-          if (result.error) {
-            console.log('Lead assignments function not found, using empty array');
-            return { data: [] };
-          }
-          return result;
-        });
+        .from('lead_assignments')
+        .select(`
+          id,
+          enrollment_id,
+          sales_agent_id,
+          chat_users!sales_agent_id(id, name, phone)
+        `);
 
       // Combine data
-      const enrichedLeads = enrollments?.map(enrollment => ({
-        id: enrollment.id,
-        full_name: enrollment.full_name,
-        phone: enrollment.phone,
-        email: enrollment.email,
-        payment_amount: enrollment.payment_amount,
-        payment_status: enrollment.payment_status,
-        created_at: enrollment.created_at,
-        course_id: enrollment.course_id,
-        course_title: enrollment.courses?.title || 'نامشخص',
-        chat_user_id: enrollment.chat_user_id,
-        assigned_agent: assignments?.find((a: any) => a.enrollment_id === enrollment.id)?.chat_users || undefined,
-        assignment_id: assignments?.find((a: any) => a.enrollment_id === enrollment.id)?.id || undefined
-      })) || [];
+      const enrichedLeads = enrollments?.map(enrollment => {
+        const assignment = assignments?.find(a => a.enrollment_id === enrollment.id);
+        return {
+          id: enrollment.id,
+          full_name: enrollment.full_name,
+          phone: enrollment.phone,
+          email: enrollment.email,
+          payment_amount: enrollment.payment_amount,
+          payment_status: enrollment.payment_status,
+          created_at: enrollment.created_at,
+          course_id: enrollment.course_id,
+          course_title: enrollment.courses?.title || 'نامشخص',
+          chat_user_id: enrollment.chat_user_id,
+          assigned_agent: assignment?.chat_users || undefined,
+          assignment_id: assignment?.id || undefined
+        };
+      }) || [];
 
       setLeads(enrichedLeads);
 
@@ -187,19 +168,16 @@ export function LeadManagement() {
     if (!selectedLead || !selectedAgent) return;
 
     try {
-      // Use RPC function to assign lead
-      const { error } = await supabase.rpc('assign_lead_to_agent', {
-        enrollment_id: selectedLead.id,
-        agent_id: parseInt(selectedAgent),
-        assigned_by: user?.id,
-        notes: assignmentNotes || null
-      });
+      const { error } = await supabase
+        .from('lead_assignments')
+        .insert({
+          enrollment_id: selectedLead.id,
+          sales_agent_id: parseInt(selectedAgent),
+          assigned_by: user?.id || 0,
+          notes: assignmentNotes || null
+        });
 
-      if (error) {
-        console.error('RPC function not found, using direct insert');
-        // Fallback to direct insert if RPC doesn't exist
-        throw new Error('Assignment function not available');
-      }
+      if (error) throw error;
 
       toast({
         title: "موفق",
@@ -466,7 +444,10 @@ export function LeadManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(`/user/${lead.chat_user_id}`, '_blank')}
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setIsCRMDialogOpen(true);
+                            }}
                             className="flex items-center gap-1"
                           >
                             <Eye className="w-4 h-4" />
@@ -482,6 +463,25 @@ export function LeadManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* CRM Dialog */}
+      <Dialog open={isCRMDialogOpen} onOpenChange={setIsCRMDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>جزئیات لید و CRM</DialogTitle>
+          </DialogHeader>
+          {selectedLead && (
+            <EnrollmentCRM 
+              userId={selectedLead.chat_user_id}
+              userInfo={{
+                name: selectedLead.full_name,
+                phone: selectedLead.phone,
+                email: selectedLead.email
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

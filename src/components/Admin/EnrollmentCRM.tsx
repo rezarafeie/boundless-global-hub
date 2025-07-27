@@ -51,8 +51,13 @@ export function EnrollmentCRM({ userId, userInfo }: EnrollmentCRMProps) {
   useEffect(() => {
     checkCRMAccess();
     fetchUserEnrollments();
-    fetchNotes();
   }, [userId]);
+
+  useEffect(() => {
+    if (canAccessCRM) {
+      fetchNotes();
+    }
+  }, [canAccessCRM]);
 
   const checkCRMAccess = async () => {
     try {
@@ -60,7 +65,7 @@ export function EnrollmentCRM({ userId, userInfo }: EnrollmentCRMProps) {
       const { data: userRoles } = await supabase
         .from('user_roles')
         .select('role_name')
-        .eq('user_id', user?.id)
+        .eq('user_id', user?.id || 0)
         .eq('is_active', true);
 
       const isAdmin = userRoles?.some(role => role.role_name === 'admin');
@@ -74,19 +79,12 @@ export function EnrollmentCRM({ userId, userInfo }: EnrollmentCRMProps) {
       if (isSalesAgent) {
         // Check if sales agent has any assigned leads for this user
         const { data: assignedLeads } = await supabase
-          .rpc('check_sales_agent_lead_access', {
-            agent_id: user?.id,
-            target_user_id: userId
-          })
-          .then(result => {
-            if (result.error) {
-              console.log('Lead access check function not found, allowing access for now');
-              return { data: true };
-            }
-            return result;
-          });
+          .from('lead_assignments')
+          .select('id')
+          .eq('sales_agent_id', user?.id || 0)
+          .limit(1);
 
-        setCanAccessCRM(assignedLeads || false);
+        setCanAccessCRM(assignedLeads && assignedLeads.length > 0);
       }
     } catch (error) {
       console.error('Error checking CRM access:', error);
@@ -115,8 +113,6 @@ export function EnrollmentCRM({ userId, userInfo }: EnrollmentCRMProps) {
   };
 
   const fetchNotes = async () => {
-    if (!canAccessCRM) return;
-
     try {
       setLoading(true);
       const { data, error } = await supabase

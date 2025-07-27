@@ -3,9 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Settings, Plus, Trash2, BookOpen } from 'lucide-react';
@@ -62,24 +60,24 @@ export function SalesAgentCourseManager() {
       const salesAgentIds = salesAgentRoles?.map(r => r.user_id) || [];
       const salesAgentsData = agents?.filter(agent => salesAgentIds.includes(agent.id)) || [];
 
-      // Get course assignments for each sales agent using RPC
+      // Get course assignments for each sales agent
       const { data: assignments } = await supabase
-        .rpc('get_sales_agent_courses')
-        .then(result => {
-          if (result.error) {
-            console.log('Sales agent courses function not found, using empty array');
-            return { data: [] };
-          }
-          return result;
-        });
+        .from('sales_agent_courses')
+        .select(`
+          id,
+          sales_agent_id,
+          course_id,
+          created_at,
+          courses(title)
+        `);
 
       // Combine data
       const enrichedAgents = salesAgentsData.map(agent => ({
         ...agent,
-        assigned_courses: assignments?.filter((a: any) => a.sales_agent_id === agent.id).map((a: any) => ({
+        assigned_courses: assignments?.filter(a => a.sales_agent_id === agent.id).map(a => ({
           id: a.id,
           course_id: a.course_id,
-          course_title: a.course_title || 'نامشخص',
+          course_title: a.courses?.title || 'نامشخص',
           created_at: a.created_at
         })) || []
       }));
@@ -111,16 +109,23 @@ export function SalesAgentCourseManager() {
     if (!selectedAgent || selectedCourses.length === 0) return;
 
     try {
-      // Use RPC function to assign courses
-      const { error } = await supabase.rpc('assign_courses_to_sales_agent', {
-        agent_id: selectedAgent.id,
-        course_ids: selectedCourses
-      });
+      // First, remove existing assignments
+      await supabase
+        .from('sales_agent_courses')
+        .delete()
+        .eq('sales_agent_id', selectedAgent.id);
 
-      if (error) {
-        console.error('RPC function not found, assignment not available yet');
-        throw new Error('Assignment function not available');
-      }
+      // Then add new assignments
+      const assignments = selectedCourses.map(courseId => ({
+        sales_agent_id: selectedAgent.id,
+        course_id: courseId
+      }));
+
+      const { error } = await supabase
+        .from('sales_agent_courses')
+        .insert(assignments);
+
+      if (error) throw error;
 
       toast({
         title: "موفق",
@@ -143,14 +148,12 @@ export function SalesAgentCourseManager() {
 
   const handleRemoveCourse = async (assignmentId: string) => {
     try {
-      const { error } = await supabase.rpc('remove_course_from_sales_agent', {
-        assignment_id: assignmentId
-      });
+      const { error } = await supabase
+        .from('sales_agent_courses')
+        .delete()
+        .eq('id', assignmentId);
 
-      if (error) {
-        console.error('RPC function not found, removal not available yet');
-        throw new Error('Removal function not available');
-      }
+      if (error) throw error;
 
       toast({
         title: "موفق",
