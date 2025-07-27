@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, FileText, DollarSign, ExternalLink, Eye, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -136,6 +136,10 @@ const PaginatedEnrollmentsTable: React.FC = () => {
     if (chatUserId) {
       window.open(`/enroll/admin/users/${chatUserId}`, '_blank');
     }
+  };
+
+  const handleViewAdminDetails = (enrollmentId: string) => {
+    window.open(`/enroll/admin/enrollment/${enrollmentId}`, '_blank');
   };
 
   const getStatusBadge = (enrollment: Enrollment) => {
@@ -308,6 +312,15 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <Eye className="h-4 w-4 mr-2" />
                             مشاهده ثبت‌نام
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleViewAdminDetails(enrollment.id)}
+                          >
+                            <Shield className="h-4 w-4 mr-2" />
+                            مشاهده جزئیات ادمین
+                          </Button>
                           {enrollment.chat_user_id && (
                             <Button
                               size="sm"
@@ -387,6 +400,14 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                               title="مشاهده ثبت‌نام"
                             >
                               <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewAdminDetails(enrollment.id)}
+                              title="مشاهده جزئیات ادمین"
+                            >
+                              <Shield className="h-4 w-4" />
                             </Button>
                             {enrollment.chat_user_id && (
                               <Button
