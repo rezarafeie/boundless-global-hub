@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CRMNote {
   id: string;
@@ -61,6 +62,7 @@ export function EnrollmentCRM() {
   const [loading, setLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   
   // User search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,10 +86,32 @@ export function EnrollmentCRM() {
   });
   
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
+    fetchUserRoles();
     fetchData();
   }, []);
+
+  const fetchUserRoles = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role_name')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setUserRoles(data?.map(r => r.role_name) || []);
+    } catch (error) {
+      console.error('Error fetching user roles:', error);
+    }
+  };
+
+  // Check if user has access to CRM
+  const hasAccess = userRoles.includes('admin') || userRoles.includes('sales_agent');
 
   // Search users with debounce
   useEffect(() => {
@@ -151,13 +175,53 @@ export function EnrollmentCRM() {
   };
 
   const fetchData = async () => {
+    if (!hasAccess) return;
+    
     try {
-      // Fetch CRM notes with manual joins
-      const { data: notesData, error: notesError } = await supabase
+      
+      const isSalesAgent = userRoles.includes('sales_agent') && !userRoles.includes('admin');
+      
+      let notesQuery = supabase
         .from('crm_notes')
         .select('*')
         .order('created_at', { ascending: false });
 
+      // If user is sales agent, only show notes for their assigned leads
+      if (isSalesAgent) {
+        const { data: assignedLeads } = await supabase
+          .from('lead_assignments')
+          .select('enrollment_id')
+          .eq('sales_agent_id', user?.id);
+
+        if (assignedLeads && assignedLeads.length > 0) {
+          // Get user IDs from assigned enrollments
+          const enrollmentIds = assignedLeads.map(al => al.enrollment_id);
+          const { data: enrollments } = await supabase
+            .from('enrollments')
+            .select('chat_user_id')
+            .in('id', enrollmentIds)
+            .not('chat_user_id', 'is', null);
+
+          const userIds = enrollments?.map(e => e.chat_user_id).filter(Boolean) || [];
+          
+          if (userIds.length > 0) {
+            notesQuery = notesQuery.in('user_id', userIds);
+          } else {
+            // No assigned leads, show empty results
+            setNotes([]);
+            setLoading(false);
+            return;
+          }
+        } else {
+          // No assigned leads, show empty results
+          setNotes([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { data: notesData, error: notesError } = await notesQuery;
+      
       if (notesError) throw notesError;
 
       // Fetch courses
@@ -333,6 +397,18 @@ export function EnrollmentCRM() {
         <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8 text-muted-foreground">
+            شما به این بخش دسترسی ندارید.
           </div>
         </CardContent>
       </Card>
