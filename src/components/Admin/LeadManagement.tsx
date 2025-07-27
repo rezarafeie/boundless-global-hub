@@ -421,6 +421,9 @@ const LeadManagement: React.FC = () => {
 
       const userMap = new Map(usersData?.map(u => [u.id, u]) || []);
 
+      // Debug: Check what agents we have
+      console.log('Sales agents:', data.map(a => ({ id: a.id, user_id: a.user_id, name: userMap.get(a.user_id)?.name })));
+
       // Get ALL leads (total available leads) - not just assigned ones
       const { data: totalLeadsData, error: totalLeadsError } = await supabase
         .from('enrollments')
@@ -485,6 +488,8 @@ const LeadManagement: React.FC = () => {
         const user = userMap.get(agent.user_id);
         const agentAssignments = assignmentsData?.filter(a => a.sales_agent_id === agent.id) || [];
         
+        console.log(`Agent ${user?.name || 'Unknown'} (ID: ${agent.id}) assignments:`, agentAssignments);
+        
         // Count calls made by this agent (using agent's name in created_by)
         const agentName = user?.name || '';
         const totalCalls = allCrmData?.filter(crm => 
@@ -493,6 +498,7 @@ const LeadManagement: React.FC = () => {
         
         // Assigned leads count
         const assignedLeads = agentAssignments.length;
+        console.log(`Agent ${agentName}: assigned leads count = ${assignedLeads}`);
         
         // Calculate sales from assigned leads
         const completedSales = agentAssignments.filter(assignment => {
