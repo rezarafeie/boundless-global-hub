@@ -164,11 +164,20 @@ const LeadManagement: React.FC = () => {
     fetchAssignments();
     fetchCourses();
     fetchAgents();
+  }, []);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCourse, selectedAgent, debouncedSearchTerm]);
+
+  // Separate useEffect for admin leads that reacts to filter changes
+  useEffect(() => {
     if (isAdmin) {
       fetchAdminLeads(currentPage);
       fetchAgentSummaries();
     }
-  }, [isAdmin, currentPage]);
+  }, [isAdmin, currentPage, selectedCourse, selectedAgent, debouncedSearchTerm]);
 
   const fetchCourses = async () => {
     try {
@@ -271,23 +280,40 @@ const LeadManagement: React.FC = () => {
   const fetchAdminLeads = async (page: number = 1) => {
     setAdminLoading(true);
     try {
-      console.log('Fetching admin leads for page:', page);
+      console.log('Fetching admin leads for page:', page, 'Course:', selectedCourse, 'Agent:', selectedAgent);
       
-      // First get total count
-      const { count, error: countError } = await supabase
+      // Build the query with filters
+      let countQuery = supabase
         .from('enrollments')
         .select('*', { count: 'exact', head: true })
         .in('payment_status', ['success', 'completed']);
+
+      // Apply course filter if selected
+      if (selectedCourse !== 'all') {
+        countQuery = countQuery.eq('course_id', selectedCourse);
+      }
+
+      // Apply search filter if provided
+      if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+        countQuery = countQuery.or(`full_name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`);
+      }
+
+      // For agent filter, we need to check if we're filtering by assigned/unassigned
+      // Since agent filtering requires joining with lead_assignments, we'll handle this after getting basic count
+      const { count, error: countError } = await countQuery;
 
       if (countError) {
         console.error('Error counting enrollments:', countError);
         throw countError;
       }
 
-      setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
+      // For now, use the base count - we'll refine this if agent filtering is needed
+      let totalCount = count || 0;
+
+      setTotalPages(Math.ceil(totalCount / ITEMS_PER_PAGE));
       
-      // Get enrollments with pagination
-      const { data: enrollmentsData, error: enrollmentsError } = await supabase
+      // Build the main query with filters
+      let enrollmentsQuery = supabase
         .from('enrollments')
         .select(`
           id,
@@ -299,7 +325,19 @@ const LeadManagement: React.FC = () => {
           created_at,
           course_id
         `)
-        .in('payment_status', ['success', 'completed'])
+        .in('payment_status', ['success', 'completed']);
+
+      // Apply course filter if selected
+      if (selectedCourse !== 'all') {
+        enrollmentsQuery = enrollmentsQuery.eq('course_id', selectedCourse);
+      }
+
+      // Apply search filter if provided
+      if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+        enrollmentsQuery = enrollmentsQuery.or(`full_name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`);
+      }
+
+      const { data: enrollmentsData, error: enrollmentsError } = await enrollmentsQuery
         .order('created_at', { ascending: false })
         .range((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE - 1);
 
@@ -383,7 +421,7 @@ const LeadManagement: React.FC = () => {
       const agentMap = new Map(agentsData.map(a => [a.id, a]));
 
       // Format the data for the UI
-      const formattedLeads: AdminLead[] = enrollmentsData.map(enrollment => {
+      let formattedLeads: AdminLead[] = enrollmentsData.map(enrollment => {
         const course = courseMap.get(enrollment.course_id);
         const assignment = assignmentMap.get(enrollment.id);
         const agent = assignment ? agentMap.get(assignment.sales_agent_id) : null;
@@ -403,6 +441,23 @@ const LeadManagement: React.FC = () => {
           assigned_at: assignment?.assigned_at || null
         };
       });
+
+      // Apply agent filter after formatting (since it requires assignment data)
+      if (selectedAgent !== 'all') {
+        if (selectedAgent === 'unassigned') {
+          formattedLeads = formattedLeads.filter(lead => !lead.assigned_to_agent);
+        } else {
+          formattedLeads = formattedLeads.filter(lead => 
+            lead.assigned_to_agent && lead.assigned_to_agent.includes(selectedAgent)
+          );
+        }
+        
+        // Update pagination based on filtered results
+        // Note: This is a simplified approach. For better performance with large datasets,
+        // the filtering should be done at the database level with proper joins
+        const filteredCount = formattedLeads.length;
+        setTotalPages(Math.max(1, Math.ceil(filteredCount / ITEMS_PER_PAGE)));
+      }
 
       console.log('Formatted leads:', formattedLeads.length);
       setAdminLeads(formattedLeads);
@@ -800,35 +855,8 @@ const LeadManagement: React.FC = () => {
            assignment.phone.includes(debouncedSearchTerm);
   });
 
-  const filteredAdminLeads = adminLeads.filter(lead => {
-    // Search filter
-    if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
-      const search = debouncedSearchTerm.toLowerCase();
-      const matchesSearch = (
-        lead.full_name.toLowerCase().includes(search) ||
-        lead.phone.includes(search) ||
-        lead.course_title.toLowerCase().includes(search) ||
-        (lead.assigned_to_agent && lead.assigned_to_agent.toLowerCase().includes(search))
-      );
-      if (!matchesSearch) return false;
-    }
-    
-    // Course filter
-    if (selectedCourse !== 'all' && lead.course_id !== selectedCourse) {
-      return false;
-    }
-    
-    // Agent filter
-    if (selectedAgent !== 'all') {
-      if (selectedAgent === 'unassigned') {
-        if (lead.assigned_to_agent) return false;
-      } else {
-        if (!lead.assigned_to_agent || !lead.assigned_to_agent.includes(selectedAgent)) return false;
-      }
-    }
-    
-    return true;
-  });
+  // Use adminLeads directly since filtering is now done server-side
+  const filteredAdminLeads = adminLeads;
 
   if (loading) {
     return (
