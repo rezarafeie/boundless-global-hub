@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import EnhancedIframe from "@/components/EnhancedIframe";
 import Header from "@/components/Layout/Header";
 
 const SmartFallback = () => {
   const [iframeFailed, setIframeFailed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const iframeSrc = `https://auth.rafiei.co${location.pathname}`;
 
@@ -14,6 +16,16 @@ const SmartFallback = () => {
 
   const handleIframeError = () => {
     setIframeFailed(true);
+  };
+
+  // Check if we're on an enrollment details route
+  const isEnrollmentDetailsRoute = location.pathname.match(/^\/enroll\/admin\/enrollment\/(.+)$/);
+  const enrollmentId = isEnrollmentDetailsRoute ? isEnrollmentDetailsRoute[1] : null;
+
+  const handleEnrollmentDetails = () => {
+    if (enrollmentId) {
+      navigate(`/enroll/admin/enrollment/${enrollmentId}`);
+    }
   };
 
   return (
@@ -31,12 +43,23 @@ const SmartFallback = () => {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               صفحه مورد نظر در هیچ‌یک از پلتفرم‌های آکادمی و auth موجود نیست.
             </p>
-            <button
-              onClick={() => window.history.back()}
-              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              بازگشت
-            </button>
+            <div className="flex flex-col gap-3">
+              {/* Show enrollment details button if we're on enrollment route */}
+              {enrollmentId && (
+                <button
+                  onClick={handleEnrollmentDetails}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  جزییات ثبت‌نام
+                </button>
+              )}
+              <button
+                onClick={() => window.history.back()}
+                className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                بازگشت
+              </button>
+            </div>
           </div>
         </div>
       )}
