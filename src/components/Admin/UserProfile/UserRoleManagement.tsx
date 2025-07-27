@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, Plus, Trash2 } from 'lucide-react';
-import { SalesAgentCourseManagement } from '../SalesAgentCourseManagement';
 
 interface UserRole {
   id: number;
@@ -26,15 +25,13 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [isSalesAgent, setIsSalesAgent] = useState(false);
 
   const availableRoles = [
     { value: 'admin', label: 'مدیر' },
     { value: 'moderator', label: 'مدیر گروه' },
     { value: 'user', label: 'کاربر عادی' },
     { value: 'support', label: 'پشتیبانی' },
-    { value: 'enrollments_manager', label: 'مدیر ثبت‌نام‌ها' },
-    { value: 'sales_agent', label: 'نماینده فروش' }
+    { value: 'enrollments_manager', label: 'مدیر ثبت‌نام‌ها' }
   ];
 
   useEffect(() => {
@@ -52,10 +49,6 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
 
       if (error) throw error;
       setUserRoles(data || []);
-      
-      // Check if user is a sales agent
-      const hasSalesAgentRole = data?.some(role => role.role_name === 'sales_agent');
-      setIsSalesAgent(hasSalesAgentRole || false);
     } catch (error) {
       console.error('Error fetching user roles:', error);
       toast({
@@ -139,7 +132,6 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
       case 'moderator': return 'default';
       case 'support': return 'secondary';
       case 'enrollments_manager': return 'outline';
-      case 'sales_agent': return 'default';
       default: return 'default';
     }
   };
@@ -153,7 +145,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
   }
 
   return (
-    <div className="w-full max-w-full overflow-hidden space-y-6" dir="rtl">
+    <div className="w-full max-w-full overflow-hidden" dir="rtl">
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-right">
@@ -225,11 +217,6 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Sales Agent Course Management */}
-      {isSalesAgent && (
-        <SalesAgentCourseManagement userId={userId} />
-      )}
     </div>
   );
 };

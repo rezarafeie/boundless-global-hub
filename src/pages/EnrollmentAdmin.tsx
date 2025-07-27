@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { messengerService } from '@/lib/messengerService';
-import { supabase } from '@/integrations/supabase/client';
-import LeadManagement from '@/components/Admin/LeadManagement';
 
 import Header from '@/components/Layout/Header';
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
@@ -70,18 +67,15 @@ const LoadingSpinner = () => (
   </div>
 );
 
-type ActiveView = 'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm' | 'leads';
-
 const EnrollmentAdmin: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'users' | 'analytics' | 'settings' | 'crm'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
-  const [isSalesAgent, setIsSalesAgent] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -111,37 +105,20 @@ const EnrollmentAdmin: React.FC = () => {
 
         console.log('User details:', detailedUser);
         
-        // Check if user has admin, enrollments_manager, or sales_agent role
-        const allowedRoles = ['admin', 'enrollments_manager', 'sales_agent'];
+        // Check if user has admin or enrollments_manager role
+        const allowedRoles = ['admin', 'enrollments_manager'];
         const userRole = detailedUser.role || 'user';
         
-        // Check for sales_agent role specifically
-        const { data: salesAgentData } = await supabase
-          .from('user_roles')
-          .select('role_name')
-          .eq('user_id', detailedUser.id)
-          .eq('role_name', 'sales_agent')
-          .eq('is_active', true)
-          .single();
+        console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin);
         
-        const hasSalesAgentRole = !!salesAgentData;
-        
-        console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin, 'Is sales agent:', hasSalesAgentRole);
-        
-        // Check if user has access - include system admin check
-        const isSystemAdmin = userRole === 'admin' || detailedUser.is_messenger_admin;
-        
-        if (allowedRoles.includes(userRole) || isSystemAdmin || hasSalesAgentRole) {
+        if (allowedRoles.includes(userRole) || detailedUser.is_messenger_admin) {
           console.log('User has access');
           setHasAccess(true);
           setUserRole(userRole);
           setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
-          setIsSalesAgent(hasSalesAgentRole);
           
           // Set default view based on user role
-          if (hasSalesAgentRole && !detailedUser.is_messenger_admin) {
-            setActiveView('leads'); // Show leads by default for sales agents
-          } else if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
+          if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
             setActiveView('enrollments'); // Show enrollments by default for enrollment managers
           }
         } else {
@@ -192,7 +169,6 @@ const EnrollmentAdmin: React.FC = () => {
                 <ul className="text-right space-y-1">
                   <li>• مدیر سیستم</li>
                   <li>• مدیر ثبت‌نام‌ها</li>
-                  <li>• نماینده فروش</li>
                 </ul>
               </div>
               <Button 
@@ -209,15 +185,11 @@ const EnrollmentAdmin: React.FC = () => {
     );
   }
 
-  const handleViewChange = (view: string) => {
-    setActiveView(view as ActiveView);
-  };
-
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        // Don't show dashboard summary for enrollment managers or sales agents who are not messenger admins
-        if ((userRole === 'enrollments_manager' || isSalesAgent) && !isMessengerAdmin) {
+        // Don't show dashboard summary for enrollment managers who are not messenger admins
+        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
           return (
             <div className="space-y-6">
               <ErrorBoundary>
@@ -277,17 +249,9 @@ const EnrollmentAdmin: React.FC = () => {
             </Suspense>
           </ErrorBoundary>
         );
-      case 'leads':
-        return (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-              <LeadManagement />
-            </Suspense>
-          </ErrorBoundary>
-        );
       default:
-        // Don't show dashboard summary for enrollment managers or sales agents who are not messenger admins
-        if ((userRole === 'enrollments_manager' || isSalesAgent) && !isMessengerAdmin) {
+        // Don't show dashboard summary for enrollment managers who are not messenger admins
+        if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
           return (
             <div className="space-y-6">
               <ErrorBoundary>
@@ -329,12 +293,9 @@ const EnrollmentAdmin: React.FC = () => {
       <div className="flex w-full flex-1 h-full pt-16">
         <AdminSidebar 
           activeView={activeView} 
-          onViewChange={handleViewChange}
+          onViewChange={setActiveView}
           isOpen={isMobileSidebarOpen}
           onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          userRole={userRole}
-          isMessengerAdmin={isMessengerAdmin}
-          isSalesAgent={isSalesAgent}
         />
         
         {/* Main Content */}
