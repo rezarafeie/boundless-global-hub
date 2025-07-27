@@ -17,7 +17,11 @@ import {
   DollarSign,
   Search,
   Filter,
-  Loader2
+  Loader2,
+  BarChart3,
+  TrendingUp,
+  Target,
+  Award
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +54,30 @@ interface Assignment {
   status: string;
 }
 
+interface AdminLead {
+  enrollment_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  course_title: string;
+  payment_amount: number;
+  payment_status: string;
+  created_at: string;
+  assigned_to_agent: string | null;
+  assignment_status: string | null;
+  assigned_at: string | null;
+}
+
+interface AgentSummary {
+  agent_id: number;
+  agent_name: string;
+  total_leads: number;
+  total_calls: number;
+  total_sales: number;
+  total_sales_amount: number;
+  conversion_rate: number;
+}
+
 interface CRMNote {
   id: string;
   content: string;
@@ -64,23 +92,48 @@ const LeadManagement: React.FC = () => {
   const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [adminLeads, setAdminLeads] = useState<AdminLead[]>([]);
+  const [agentSummaries, setAgentSummaries] = useState<AgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin'>('available');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLead, setSelectedLead] = useState<Lead | Assignment | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [newNote, setNewNote] = useState('');
   const [noteType, setNoteType] = useState('call');
   const [leadStatus, setLeadStatus] = useState('در انتظار پرداخت');
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
+    checkAdminRole();
     fetchLeads();
     fetchAssignments();
-  }, []);
+    if (isAdmin) {
+      fetchAdminLeads();
+      fetchAgentSummaries();
+    }
+  }, [isAdmin]);
+
+  const checkAdminRole = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('is_messenger_admin')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setIsAdmin(data?.is_messenger_admin || false);
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+    }
+  };
 
   const fetchLeads = async () => {
     if (!user?.id) return;
@@ -121,6 +174,115 @@ const LeadManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdminLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          payment_amount,
+          payment_status,
+          created_at,
+          courses!inner(title),
+          lead_assignments(
+            status,
+            assigned_at,
+            sales_agents!inner(
+              chat_users!inner(name)
+            )
+          )
+        `)
+        .eq('payment_status', 'success')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const formattedLeads: AdminLead[] = data.map(enrollment => ({
+        enrollment_id: enrollment.id,
+        full_name: enrollment.full_name,
+        email: enrollment.email,
+        phone: enrollment.phone,
+        course_title: enrollment.courses?.title || 'نامشخص',
+        payment_amount: enrollment.payment_amount,
+        payment_status: enrollment.payment_status,
+        created_at: enrollment.created_at,
+        assigned_to_agent: enrollment.lead_assignments?.[0]?.sales_agents?.chat_users?.name || null,
+        assignment_status: enrollment.lead_assignments?.[0]?.status || null,
+        assigned_at: enrollment.lead_assignments?.[0]?.assigned_at || null
+      }));
+
+      setAdminLeads(formattedLeads);
+    } catch (error) {
+      console.error('Error fetching admin leads:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت لیدهای ادمین",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchAgentSummaries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sales_agents')
+        .select(`
+          id,
+          chat_users!inner(name),
+          lead_assignments(
+            status,
+            enrollments!inner(
+              payment_amount,
+              payment_status
+            )
+          ),
+          crm_notes(
+            type
+          )
+        `)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const summaries: AgentSummary[] = data.map(agent => {
+        const totalLeads = agent.lead_assignments?.length || 0;
+        const totalCalls = agent.crm_notes?.filter(note => note.type === 'call').length || 0;
+        const completedSales = agent.lead_assignments?.filter(
+          assignment => assignment.enrollments?.payment_status === 'success'
+        ).length || 0;
+        const totalSalesAmount = agent.lead_assignments?.reduce((sum, assignment) => {
+          if (assignment.enrollments?.payment_status === 'success') {
+            return sum + (assignment.enrollments?.payment_amount || 0);
+          }
+          return sum;
+        }, 0) || 0;
+        const conversionRate = totalLeads > 0 ? (completedSales / totalLeads) * 100 : 0;
+
+        return {
+          agent_id: agent.id,
+          agent_name: agent.chat_users?.name || 'نامشخص',
+          total_leads: totalLeads,
+          total_calls: totalCalls,
+          total_sales: completedSales,
+          total_sales_amount: totalSalesAmount,
+          conversion_rate: conversionRate
+        };
+      });
+
+      setAgentSummaries(summaries);
+    } catch (error) {
+      console.error('Error fetching agent summaries:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت خلاصه نمایندگان",
+        variant: "destructive"
+      });
     }
   };
 
@@ -212,7 +374,7 @@ const LeadManagement: React.FC = () => {
     }
   };
 
-  const openLeadDetail = async (lead: Lead | Assignment) => {
+  const openLeadDetail = async (lead: Lead | Assignment | AdminLead) => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
     if (user?.id) {
@@ -244,6 +406,14 @@ const LeadManagement: React.FC = () => {
     return assignment.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
            assignment.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
            assignment.phone.includes(debouncedSearchTerm);
+  });
+
+  const filteredAdminLeads = adminLeads.filter(lead => {
+    if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
+    return lead.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+           lead.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+           lead.phone.includes(debouncedSearchTerm) ||
+           (lead.assigned_to_agent && lead.assigned_to_agent.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
   });
 
   if (loading) {
@@ -288,6 +458,15 @@ const LeadManagement: React.FC = () => {
               >
                 واگذار شده‌ها
               </Button>
+              {isAdmin && (
+                <Button
+                  variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('admin')}
+                >
+                  مدیریت ادمین
+                </Button>
+              )}
             </div>
           </div>
           {searchTerm.length > 0 && searchTerm.length < 3 && (
@@ -366,7 +545,7 @@ const LeadManagement: React.FC = () => {
                 </div>
               )}
             </div>
-          ) : (
+          ) : activeTab === 'assigned' ? (
             <div className="space-y-4">
               {filteredAssignments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -416,6 +595,128 @@ const LeadManagement: React.FC = () => {
                 </div>
               )}
             </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Agent Summaries */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {agentSummaries.map((summary) => (
+                  <Card key={summary.agent_id} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-600" />
+                        {summary.agent_name}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">لیدها:</span>
+                        </div>
+                        <Badge variant="secondary">{summary.total_leads}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm">تماس‌ها:</span>
+                        </div>
+                        <Badge variant="secondary">{summary.total_calls}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Award className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm">فروش:</span>
+                        </div>
+                        <Badge variant="secondary">{summary.total_sales}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">مبلغ:</span>
+                        </div>
+                        <Badge variant="secondary">{formatPrice(summary.total_sales_amount)}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-orange-600" />
+                          <span className="text-sm">تبدیل:</span>
+                        </div>
+                        <Badge variant="secondary">{summary.conversion_rate.toFixed(1)}%</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* All Leads Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    تمام لیدها
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {filteredAdminLeads.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      {searchTerm && searchTerm.length >= 3 ? 'هیچ لیدی یافت نشد' : 'هیچ لیدی یافت نشد'}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>نام و نام خانوادگی</TableHead>
+                            <TableHead>ایمیل</TableHead>
+                            <TableHead>تلفن</TableHead>
+                            <TableHead>دوره</TableHead>
+                            <TableHead>مبلغ</TableHead>
+                            <TableHead>تاریخ ثبت‌نام</TableHead>
+                            <TableHead>نماینده</TableHead>
+                            <TableHead>وضعیت</TableHead>
+                            <TableHead>عملیات</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredAdminLeads.map((lead) => (
+                            <TableRow key={lead.enrollment_id}>
+                              <TableCell>{lead.full_name}</TableCell>
+                              <TableCell>{lead.email}</TableCell>
+                              <TableCell>{lead.phone}</TableCell>
+                              <TableCell>{lead.course_title}</TableCell>
+                              <TableCell>{formatPrice(lead.payment_amount)}</TableCell>
+                              <TableCell>{formatDate(lead.created_at)}</TableCell>
+                              <TableCell>
+                                {lead.assigned_to_agent ? (
+                                  <Badge variant="secondary">{lead.assigned_to_agent}</Badge>
+                                ) : (
+                                  <Badge variant="outline">واگذار نشده</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="default">
+                                  {lead.assignment_status || 'واگذار نشده'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openLeadDetail(lead)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  مشاهده
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -442,7 +743,7 @@ const LeadManagement: React.FC = () => {
                   <div className="space-y-1">
                     <p><strong>دوره:</strong> {selectedLead.course_title}</p>
                     <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
-                    <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : selectedLead.assigned_at)}</p>
+                    <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
                   </div>
                 </div>
               </div>
