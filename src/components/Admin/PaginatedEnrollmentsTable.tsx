@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface Enrollment {
   id: string;
   full_name: string;
+  email: string;
   phone: string;
   payment_status: string;
   manual_payment_status: string | null;
@@ -102,7 +102,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
         
       // Apply search filter
       if (debouncedSearchTerm) {
-        const searchFilter = `full_name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`;
+        const searchFilter = `full_name.ilike.%${debouncedSearchTerm}%,email.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`;
         countQuery = countQuery.or(searchFilter);
         dataQuery = dataQuery.or(searchFilter);
       }
@@ -268,7 +268,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="جستجوی نام، تلفن..."
+                  placeholder="جستجوی نام، ایمیل، تلفن..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -306,7 +306,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
               <div className="relative w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="جستجوی نام، تلفن..."
+                  placeholder="جستجوی نام، ایمیل، تلفن..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -348,6 +348,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                             <div className="text-xs text-muted-foreground">{enrollment.courses.slug}</div>
                           </div>
                           <div><span className="font-medium">تلفن:</span> {enrollment.phone}</div>
+                          <div><span className="font-medium">ایمیل:</span> {enrollment.email}</div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium">مبلغ:</span>
                             <DollarSign className="h-3 w-3" />
@@ -405,6 +406,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                       <TableHead>نام</TableHead>
                       <TableHead>دوره</TableHead>
                       <TableHead>تلفن</TableHead>
+                      <TableHead>ایمیل</TableHead>
                       <TableHead>مبلغ</TableHead>
                       <TableHead>روش پرداخت</TableHead>
                       <TableHead>وضعیت</TableHead>
@@ -431,6 +433,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>{enrollment.phone}</TableCell>
+                        <TableCell>{enrollment.email}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-4 w-4" />
