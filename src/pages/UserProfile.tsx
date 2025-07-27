@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  ArrowRight, 
   User, 
-  CreditCard, 
-  Key, 
+  Phone, 
+  Mail, 
+  Calendar, 
+  Shield, 
+  Crown, 
+  AlertCircle, 
   MessageSquare, 
-  Activity,
-  ChevronDown,
-  ChevronUp,
-  UserCheck,
-  Calendar
+  Activity, 
+  CreditCard, 
+  Key,
+  ExternalLink
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
 import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
-import { UserCRM } from '@/components/Admin/UserProfile/UserCRM';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
-import { supabase } from '@/integrations/supabase/client';
 
-interface User {
+interface UserData {
   id: number;
   name: string;
   email: string;
@@ -38,34 +41,33 @@ interface User {
   first_name: string;
   last_name: string;
   country_code: string;
+  username: string;
+  bio: string;
+  is_support_agent: boolean;
+  avatar_url: string;
 }
 
-export default function UserProfile() {
-  const { userId } = useParams<{ userId: string }>();
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+const UserProfile: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const phone = searchParams.get('phone');
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [openSections, setOpenSections] = useState({
-    overview: true,
-    enrollments: false,
-    licenses: false,
-    crm: false,
-    activity: true
-  });
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (userId) {
-      fetchUser(parseInt(userId));
+    if (phone) {
+      fetchUser(phone);
     }
-  }, [userId]);
+  }, [phone]);
 
-  const fetchUser = async (id: number) => {
+  const fetchUser = async (phone: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('chat_users')
         .select('*')
-        .eq('id', id)
-        .maybeSingle();
+        .eq('phone', phone)
+        .single();
 
       if (error) throw error;
       setUser(data);
@@ -76,23 +78,16 @@ export default function UserProfile() {
     }
   };
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
-  const getStatusBadges = (user: User) => {
+  const getStatusBadges = (user: UserData) => {
     const badges = [];
-    if (user.is_approved) badges.push(<Badge key="approved" variant="default">تایید شده</Badge>);
-    if (user.is_messenger_admin) badges.push(<Badge key="admin" variant="destructive">مدیر</Badge>);
-    if (user.bedoun_marz_approved) badges.push(<Badge key="boundless" variant="secondary">بدون مرز</Badge>);
+    if (user.is_approved) badges.push(<Badge key="approved" variant="default">Approved</Badge>);
+    if (user.is_messenger_admin) badges.push(<Badge key="admin" variant="destructive">Admin</Badge>);
+    if (user.bedoun_marz_approved) badges.push(<Badge key="boundless" variant="secondary">Boundless</Badge>);
     return badges;
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'نامشخص';
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('fa-IR', {
       year: 'numeric',
       month: 'long',
@@ -102,160 +97,159 @@ export default function UserProfile() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]" dir="rtl">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">در حال بارگذاری پروفایل کاربر...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-3 sm:p-6" dir="rtl">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold mb-4">کاربر یافت نشد</h1>
-            <p className="text-muted-foreground mb-4">کاربر درخواست شده پیدا نشد.</p>
-            <Button onClick={() => navigate('/enroll/admin/users')}>
-              <ArrowRight className="w-4 h-4 ml-2" />
-              بازگشت به لیست کاربران
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const sections = [
-    {
-      id: 'overview',
-      title: 'اطلاعات کلی',
-      icon: User,
-      component: <UserOverview user={user} />
-    },
-    {
-      id: 'enrollments',
-      title: 'ثبت‌نام‌ها در دوره‌ها',
-      icon: CreditCard,
-      component: <UserEnrollments userId={user.id} />
-    },
-    {
-      id: 'licenses',
-      title: 'لایسنس‌ها',
-      icon: Key,
-      component: <UserLicenses userId={user.id} userPhone={user.phone} />
-    },
-    {
-      id: 'crm',
-      title: 'مدیریت ارتباط با مشتری',
-      icon: MessageSquare,
-      component: <UserCRM userId={user.id} />
-    },
-    {
-      id: 'activity',
-      title: 'پیشرفت تحصیلی و فعالیت‌ها',
-      icon: Activity,
-      component: <UserActivity userId={user.id} />
-    }
-  ];
+  if (!phone) return <div>No phone number provided.</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-3 sm:p-6" dir="rtl">
-      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/enroll/admin/users')}
-                className="self-start flex items-center gap-2"
-                size="sm"
-              >
-                <ArrowRight className="w-4 h-4" />
-                بازگشت به لیست کاربران
-              </Button>
-              <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{user.name}</h1>
-                <p className="text-muted-foreground text-sm">شناسه کاربر: #{user.id}</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {getStatusBadges(user)}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <User className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold">User Profile</h1>
+              <p className="text-muted-foreground">View and manage user details</p>
             </div>
           </div>
         </div>
 
-        {/* Quick Info Card */}
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                  <User className="w-6 h-6 sm:w-8 sm:h-8" />
-                </div>
-                <p className="font-medium text-sm sm:text-base">{user.name}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">{user.phone}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg sm:text-2xl font-bold text-primary">{formatDate(user.created_at).split(' ')[0]}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">تاریخ ثبت‌نام</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg sm:text-2xl font-bold text-accent">{formatDate(user.last_seen).split(' ')[0]}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">آخرین بازدید</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg sm:text-2xl font-bold text-secondary">{user.signup_source || 'وب‌سایت'}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">منبع ثبت‌نام</p>
-              </div>
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading user profile...</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        ) : !user ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <h2 className="text-xl font-bold mb-2">User Not Found</h2>
+              <p className="text-muted-foreground">The requested user could not be found.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* User Info Card */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h1 className="text-3xl font-bold">{user.name}</h1>
+                    <p className="text-muted-foreground">User ID: #{user.id}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {getStatusBadges(user)}
+                  </div>
+                </div>
 
-        {/* Collapsible Sections */}
-        <div className="space-y-4">
-          {sections.map((section) => {
-            const IconComponent = section.icon;
-            const isOpen = openSections[section.id as keyof typeof openSections];
-            
-            return (
-              <Collapsible
-                key={section.id}
-                open={isOpen}
-                onOpenChange={() => toggleSection(section.id as keyof typeof openSections)}
-              >
-                <Card>
-                  <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors p-4 sm:p-6">
-                      <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
-                          {section.title}
-                        </div>
-                        {isOpen ? (
-                          <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                        )}
-                      </CardTitle>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <CardContent className="p-4 sm:p-6 pt-0">
-                      {section.component}
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            );
-          })}
-        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <Avatar className="w-32 h-32 mx-auto mb-4">
+                      <AvatarImage src={user.avatar_url} alt={user.name} />
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {user.first_name?.charAt(0)}
+                        {user.last_name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-sm text-muted-foreground">{user.phone}</p>
+                    {user.username && (
+                      <a 
+                        href={`https://t.me/${user.username}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-blue-500 hover:underline text-sm flex items-center justify-center gap-1 mt-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        @{user.username}
+                      </a>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Joined: {formatDate(user.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Phone: {user.phone}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Email: {user.email}
+                      </p>
+                    </div>
+                    {user.bio && (
+                      <div className="mt-4 p-3 rounded-md bg-secondary">
+                        <p className="text-sm text-muted-foreground">{user.bio}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="enrollments" className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Enrollments
+                </TabsTrigger>
+                <TabsTrigger value="licenses" className="flex items-center gap-2">
+                  <Key className="w-4 h-4" />
+                  Licenses
+                </TabsTrigger>
+                <TabsTrigger value="crm" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  CRM
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Activity
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="mt-6">
+                <UserOverview user={user} />
+              </TabsContent>
+
+              <TabsContent value="enrollments" className="mt-6">
+                <UserEnrollments userId={user.id} />
+              </TabsContent>
+
+              <TabsContent value="licenses" className="mt-6">
+                <UserLicenses userId={user.id} userPhone={user.phone} />
+              </TabsContent>
+
+              <TabsContent value="crm" className="mt-6">
+                <UserCRM 
+                  userId={user.id}
+                  userName={user.name}
+                  userPhone={user.phone}
+                  userEmail={user.email}
+                />
+              </TabsContent>
+
+              <TabsContent value="activity" className="mt-6">
+                <UserActivity userId={user.id} />
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default UserProfile;
