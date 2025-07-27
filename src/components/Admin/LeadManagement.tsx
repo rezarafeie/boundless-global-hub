@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { 
   Users, 
   UserPlus, 
@@ -22,7 +22,10 @@ import {
   BarChart3,
   TrendingUp,
   Target,
-  Award
+  Award,
+  Plus,
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -88,6 +91,26 @@ interface CRMNote {
   created_by: string;
 }
 
+const CRM_TYPES = [
+  { value: 'note', label: 'یادداشت' },
+  { value: 'call', label: 'تماس' },
+  { value: 'message', label: 'پیام' },
+  { value: 'consultation', label: 'جلسه مشاوره' },
+  { value: 'follow_up', label: 'پیگیری' },
+  { value: 'payment', label: 'پرداخت' },
+  { value: 'support', label: 'پشتیبانی' }
+];
+
+const CRM_STATUSES = [
+  { value: 'در انتظار پرداخت', label: 'در انتظار پرداخت' },
+  { value: 'کنسل', label: 'کنسل' },
+  { value: 'موفق', label: 'موفق' },
+  { value: 'پاسخ نداده', label: 'پاسخ نداده' },
+  { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' },
+  { value: 'تکمیل شده', label: 'تکمیل شده' },
+  { value: 'لغو شده', label: 'لغو شده' }
+];
+
 const LeadManagement: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -95,6 +118,7 @@ const LeadManagement: React.FC = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [adminLeads, setAdminLeads] = useState<AdminLead[]>([]);
   const [agentSummaries, setAgentSummaries] = useState<AgentSummary[]>([]);
+  const [courses, setCourses] = useState<{id: string, title: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
@@ -102,11 +126,18 @@ const LeadManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
-  const [newNote, setNewNote] = useState('');
-  const [noteType, setNoteType] = useState('call');
-  const [leadStatus, setLeadStatus] = useState('در انتظار پرداخت');
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // CRM popup states
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newNote, setNewNote] = useState({
+    content: '',
+    type: 'note',
+    status: 'در انتظار پرداخت',
+    course_id: 'none'
+  });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -114,11 +145,27 @@ const LeadManagement: React.FC = () => {
     checkAdminRole();
     fetchLeads();
     fetchAssignments();
+    fetchCourses();
     if (isAdmin) {
       fetchAdminLeads();
       fetchAgentSummaries();
     }
   }, [isAdmin]);
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title')
+        .eq('is_active', true)
+        .order('title');
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
 
   const checkAdminRole = async () => {
     if (!user?.id) return;
@@ -480,7 +527,13 @@ const LeadManagement: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('crm_notes')
-        .select('*')
+        .select(`
+          *,
+          courses (
+            title,
+            slug
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -492,23 +545,63 @@ const LeadManagement: React.FC = () => {
   };
 
   const handleAddNote = async () => {
-    if (!newNote.trim() || !selectedLead || !user?.id) return;
+    if (!newNote.content.trim() || !selectedLead || !user?.id) return;
 
+    // Get user ID from selected lead
+    let targetUserId: number;
+    
+    // Try to find the user in chat_users table using email or phone
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('chat_users')
+        .select('id')
+        .or(`email.eq.${selectedLead.email},phone.eq.${selectedLead.phone}`)
+        .single();
+
+      if (userError || !userData) {
+        toast({
+          title: "خطا",
+          description: "کاربر در سیستم چت یافت نشد",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      targetUserId = userData.id;
+    } catch (error) {
+      console.error('Error finding user:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در یافتن کاربر",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('crm_notes')
         .insert([{
-          user_id: Number(user.id),
-          content: newNote,
-          type: noteType,
-          status: leadStatus,
-          created_by: user.name || 'Unknown'
+          user_id: targetUserId,
+          content: newNote.content,
+          type: newNote.type,
+          status: newNote.status,
+          course_id: newNote.course_id === 'none' ? null : newNote.course_id,
+          created_by: user.name || 'مدیر'
         }]);
 
       if (error) throw error;
 
-      setNewNote('');
-      await fetchCRMNotes(Number(user.id));
+      setNewNote({
+        content: '',
+        type: 'note',
+        status: 'در انتظار پرداخت',
+        course_id: 'none'
+      });
+      
+      await fetchCRMNotes(targetUserId);
+      setIsAddingNote(false);
       
       toast({
         title: "موفق",
@@ -521,15 +614,48 @@ const LeadManagement: React.FC = () => {
         description: "خطا در افزودن یادداشت",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const openLeadDetail = async (lead: Lead | Assignment | AdminLead) => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
-    if (user?.id) {
-      await fetchCRMNotes(Number(user.id));
+    
+    // Find user ID and fetch CRM notes
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('chat_users')
+        .select('id')
+        .or(`email.eq.${lead.email},phone.eq.${lead.phone}`)
+        .single();
+
+      if (userData && !userError) {
+        await fetchCRMNotes(userData.id);
+      }
+    } catch (error) {
+      console.error('Error finding user for CRM notes:', error);
     }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, any> = {
+      'موفق': 'default',
+      'کنسل': 'destructive',
+      'تکمیل شده': 'default',
+      'در انتظار پرداخت': 'secondary',
+      'پاسخ نداده': 'outline',
+      'امکان مکالمه نداشت': 'destructive',
+      'لغو شده': 'destructive'
+    };
+    
+    return <Badge variant={variants[status] || 'default'} className="text-xs">{status}</Badge>;
+  };
+
+  const getTypeBadge = (type: string) => {
+    const typeLabel = CRM_TYPES.find(t => t.value === type)?.label || type;
+    return <Badge variant="outline" className="text-xs">{typeLabel}</Badge>;
   };
 
   const formatDate = (dateString: string) => {
@@ -905,67 +1031,131 @@ const LeadManagement: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                <h3 className="font-semibold">افزودن یادداشت CRM</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select value={noteType} onValueChange={setNoteType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="نوع یادداشت" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="call">تماس</SelectItem>
-                      <SelectItem value="email">ایمیل</SelectItem>
-                      <SelectItem value="meeting">جلسه</SelectItem>
-                      <SelectItem value="note">یادداشت</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={leadStatus} onValueChange={setLeadStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="وضعیت لید" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
-                      <SelectItem value="پرداخت شده">پرداخت شده</SelectItem>
-                      <SelectItem value="لغو شده">لغو شده</SelectItem>
-                      <SelectItem value="در حال پیگیری">در حال پیگیری</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">یادداشت‌های CRM</h3>
+                  <Button 
+                    onClick={() => setIsAddingNote(true)}
+                    className="flex items-center gap-2"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    افزودن یادداشت
+                  </Button>
                 </div>
-                <Textarea
-                  placeholder="متن یادداشت..."
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  rows={3}
-                />
-                <Button onClick={handleAddNote} disabled={!newNote.trim()}>
-                  افزودن یادداشت
-                </Button>
-              </div>
 
-              <div className="space-y-4">
-                <h3 className="font-semibold">تاریخچه یادداشت‌ها</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-3 max-h-60 overflow-y-auto">
                   {crmNotes.length === 0 ? (
-                    <p className="text-muted-foreground">هیچ یادداشتی یافت نشد</p>
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">هنوز یادداشتی وجود ندارد</p>
+                    </div>
                   ) : (
                     crmNotes.map((note) => (
-                      <div key={note.id} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{note.type}</Badge>
-                            <Badge variant="secondary">{note.status}</Badge>
+                      <Card key={note.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {getTypeBadge(note.type)}
+                              {getStatusBadge(note.status)}
+                              {note.courses && (
+                                <Badge variant="outline" className="bg-gray-50">
+                                  {note.courses.title}
+                                </Badge>
+                              )}
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {formatDate(note.created_at)} - {note.created_by}
+                            </span>
                           </div>
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(note.created_at)} - {note.created_by}
-                          </span>
-                        </div>
-                        <p className="text-sm">{note.content}</p>
-                      </div>
+                          <p className="text-sm text-gray-700">{note.content}</p>
+                        </CardContent>
+                      </Card>
                     ))
                   )}
                 </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Note Dialog - Main CRM Popup */}
+      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4" dir="rtl">
+            {selectedLead && (
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="font-medium">{selectedLead.full_name}</div>
+                <div className="text-sm text-muted-foreground">{selectedLead.phone}</div>
+              </div>
+            )}
+            
+            <div>
+              <Label htmlFor="type">نوع</Label>
+              <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="course">دوره</Label>
+              <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون دوره</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="status">وضعیت</Label>
+              <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="content">محتوا</Label>
+              <Textarea
+                id="content"
+                placeholder="محتوای یادداشت خود را وارد کنید..."
+                value={newNote.content}
+                onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                rows={4}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingNote(false)}>
+                لغو
+              </Button>
+              <Button onClick={handleAddNote} disabled={isSubmitting}>
+                {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
