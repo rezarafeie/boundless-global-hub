@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, User, Phone, Mail, Calendar, Shield, Settings, BookOpen, TrendingUp, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
 import UserRoleManagement from '@/components/Admin/UserProfile/UserRoleManagement';
 import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
@@ -16,49 +16,62 @@ import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import LearningProgress from '@/components/Admin/UserProfile/LearningProgress';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 
+interface UserData {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  is_approved: boolean;
+  is_messenger_admin: boolean;
+  is_support_agent: boolean;
+  bedoun_marz: boolean;
+  bedoun_marz_approved: boolean;
+  bedoun_marz_request: boolean;
+  role: string | null;
+  created_at: string;
+  updated_at: string;
+  last_seen: string | null;
+  user_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string | null;
+  country_code: string | null;
+  password_hash: string | null;
+  signup_source: string | null;
+  notification_enabled: boolean;
+  notification_token: string | null;
+}
+
 const UserDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, userId } = useParams<{ id?: string; userId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{
-    id: number;
-    name: string;
-    phone: string;
-    email: string | null;
-    username: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-    is_approved: boolean;
-    is_messenger_admin: boolean;
-    is_support_agent: boolean;
-    bedoun_marz: boolean;
-    bedoun_marz_approved: boolean;
-    bedoun_marz_request: boolean;
-    role: string | null;
-    created_at: string;
-    updated_at: string;
-    last_seen: string | null;
-    user_id: string | null;
-    first_name: string | null;
-    last_name: string | null;
-    full_name: string | null;
-    country_code: string | null;
-    password_hash: string | null;
-    signup_source: string | null;
-    notification_enabled: boolean;
-    notification_token: string | null;
-  } | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+
+  const userIdToFetch = id || userId;
 
   useEffect(() => {
     const fetchUser = async () => {
+      if (!userIdToFetch) {
+        toast({
+          title: "خطا",
+          description: "شناسه کاربر معتبر نیست",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from('chat_users')
           .select('*')
-          .eq('id', parseInt(id!))
+          .eq('id', parseInt(userIdToFetch))
           .single();
 
         if (error) throw error;
@@ -75,29 +88,18 @@ const UserDetail: React.FC = () => {
       }
     };
 
-    if (id) {
-      fetchUser();
-    }
-  }, [id, toast]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fa-IR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+    fetchUser();
+  }, [userIdToFetch, toast]);
 
   const handleRoleUpdate = () => {
-    // Refresh user data after role update
-    if (id) {
+    if (userIdToFetch) {
       const fetchUser = async () => {
         setLoading(true);
         try {
           const { data, error } = await supabase
             .from('chat_users')
             .select('*')
-            .eq('id', parseInt(id))
+            .eq('id', parseInt(userIdToFetch))
             .single();
 
           if (error) throw error;
@@ -121,8 +123,11 @@ const UserDetail: React.FC = () => {
     return (
       <div className="container mx-auto p-4">
         <Card>
-          <CardContent>
-            <p>در حال بارگذاری اطلاعات کاربر...</p>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mr-4">در حال بارگذاری اطلاعات کاربر...</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -133,8 +138,8 @@ const UserDetail: React.FC = () => {
     return (
       <div className="container mx-auto p-4">
         <Card>
-          <CardContent>
-            <p>کاربر یافت نشد.</p>
+          <CardContent className="p-6">
+            <p className="text-center py-8">کاربر یافت نشد.</p>
           </CardContent>
         </Card>
       </div>
@@ -143,12 +148,13 @@ const UserDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <Button variant="ghost" onClick={() => navigate(-1)}>
+      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
         <ArrowLeft className="w-4 h-4 ml-2" />
         بازگشت
       </Button>
+      
       <Card>
-        <CardHeader className="flex items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
             جزئیات کاربر
@@ -165,7 +171,7 @@ const UserDetail: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 اطلاعات کلی
@@ -195,21 +201,27 @@ const UserDetail: React.FC = () => {
                 مدیریت نقش
               </TabsTrigger>
             </TabsList>
+            
             <TabsContent value="overview" className="space-y-4">
               <UserOverview user={user} />
             </TabsContent>
+            
             <TabsContent value="activity" className="space-y-4">
               <UserActivity userId={user.id} />
             </TabsContent>
+            
             <TabsContent value="enrollments" className="space-y-4">
               <UserEnrollments userId={user.id} />
             </TabsContent>
+            
             <TabsContent value="licenses" className="space-y-4">
               <UserLicenses userId={user.id} userPhone={user.phone} />
             </TabsContent>
+            
             <TabsContent value="progress" className="space-y-4">
               <LearningProgress userId={user.id} />
             </TabsContent>
+            
             <TabsContent value="crm" className="space-y-4">
               <UserCRM 
                 userId={user.id}
@@ -218,6 +230,7 @@ const UserDetail: React.FC = () => {
                 userEmail={user.email || ''}
               />
             </TabsContent>
+            
             <TabsContent value="role" className="space-y-4">
               <UserRoleManagement
                 userId={user.id}
