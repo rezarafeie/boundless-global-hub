@@ -295,7 +295,7 @@ const LeadManagement: React.FC = () => {
       }
 
       // Apply search filter if provided
-      if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+      if (debouncedSearchTerm) {
         countQuery = countQuery.or(`full_name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`);
       }
 
@@ -334,7 +334,7 @@ const LeadManagement: React.FC = () => {
       }
 
       // Apply search filter if provided
-      if (debouncedSearchTerm && debouncedSearchTerm.length >= 3) {
+      if (debouncedSearchTerm) {
         enrollmentsQuery = enrollmentsQuery.or(`full_name.ilike.%${debouncedSearchTerm}%,phone.ilike.%${debouncedSearchTerm}%`);
       }
 
@@ -854,19 +854,19 @@ const LeadManagement: React.FC = () => {
     );
   };
 
-  const filteredLeads = leads.filter(lead => {
-    if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
-    return lead.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-           lead.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-           lead.phone.includes(debouncedSearchTerm);
-  });
+  const filteredLeads = searchTerm ? 
+    leads.filter(lead => 
+      lead.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.phone.includes(searchTerm)
+    ) : leads;
 
-  const filteredAssignments = assignments.filter(assignment => {
-    if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return true;
-    return assignment.full_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-           assignment.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-           assignment.phone.includes(debouncedSearchTerm);
-  });
+  const filteredAssignments = searchTerm ? 
+    assignments.filter(assignment => 
+      assignment.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      assignment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      assignment.phone.includes(searchTerm)
+    ) : assignments;
 
   // Use adminLeads directly since filtering is now done server-side
   const filteredAdminLeads = adminLeads;

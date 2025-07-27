@@ -133,7 +133,96 @@ const PaginatedUsersTable: React.FC = () => {
     window.location.href = `/enroll/admin/users/${userId}`;
   };
 
-  if (loading && currentPage === 1) {
+  const renderUserCards = () => (
+    <div className="space-y-3">
+      {users.map((user) => (
+        <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleUserClick(user.id)}>
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">{user.name}</h3>
+                {getStatusBadge(user)}
+              </div>
+              <div className="space-y-2 text-sm">
+                 <div><span className="font-medium">تلفن:</span> {user.phone}</div>
+                {user.username && (
+                  <div><span className="font-medium">نام کاربری:</span> <code className="bg-muted px-1 py-0.5 rounded text-xs">@{user.username}</code></div>
+                )}
+                <div><span className="font-medium">تاریخ عضویت:</span> {formatDate(user.created_at)}</div>
+              </div>
+              {getRoleBadges(user).length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {getRoleBadges(user)}
+                </div>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUserClick(user.id);
+                }}
+              >
+                مشاهده جزئیات
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  const renderUserTable = () => (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+             <TableHead>نام</TableHead>
+             <TableHead>تلفن</TableHead>
+             <TableHead>نام کاربری</TableHead>
+             <TableHead>وضعیت</TableHead>
+             <TableHead>نقش‌ها</TableHead>
+             <TableHead>تاریخ عضویت</TableHead>
+             <TableHead>عملیات</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
+               <TableCell className="font-medium">{user.name}</TableCell>
+               <TableCell>{user.phone}</TableCell>
+               <TableCell>
+                {user.username ? (
+                  <code className="bg-muted px-2 py-1 rounded text-sm">@{user.username}</code>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
+              <TableCell>{getStatusBadge(user)}</TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1">
+                  {getRoleBadges(user)}
+                </div>
+              </TableCell>
+              <TableCell>{formatDate(user.created_at)}</TableCell>
+              <TableCell>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUserClick(user.id)}
+                >
+                  مشاهده
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  if (loading && currentPage === 1 && !searchTerm) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -174,136 +263,66 @@ const PaginatedUsersTable: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {users.length === 0 && !loading ? (
-          <div className="text-center py-8">
-            <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">
-              {searchTerm ? 'هیچ کاربری یافت نشد' : 'هنوز کاربری ثبت نشده است'}
-            </p>
-          </div>
+        {/* Show search results when searching, otherwise show all records */}
+        {searchTerm ? (
+          // Search mode - only show search results
+          users.length === 0 && !loading && !searchLoading ? (
+            <div className="text-center py-8">
+              <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">هیچ کاربری یافت نشد</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Users Table/Cards for search results */}
+              {isMobile ? renderUserCards() : renderUserTable()}
+            </div>
+          )
         ) : (
-          <div className="space-y-4">
-            {/* Users Table/Cards */}
-            {isMobile ? (
-              <div className="space-y-3">
-                {users.map((user) => (
-                  <Card key={user.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleUserClick(user.id)}>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">{user.name}</h3>
-                          {getStatusBadge(user)}
-                        </div>
-                        <div className="space-y-2 text-sm">
-                           <div><span className="font-medium">تلفن:</span> {user.phone}</div>
-                          {user.username && (
-                            <div><span className="font-medium">نام کاربری:</span> <code className="bg-muted px-1 py-0.5 rounded text-xs">@{user.username}</code></div>
-                          )}
-                          <div><span className="font-medium">تاریخ عضویت:</span> {formatDate(user.created_at)}</div>
-                        </div>
-                        {getRoleBadges(user).length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {getRoleBadges(user)}
-                          </div>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUserClick(user.id);
-                          }}
-                        >
-                          مشاهده جزئیات
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                       <TableHead>نام</TableHead>
-                       <TableHead>تلفن</TableHead>
-                       <TableHead>نام کاربری</TableHead>
-                       <TableHead>وضعیت</TableHead>
-                       <TableHead>نقش‌ها</TableHead>
-                       <TableHead>تاریخ عضویت</TableHead>
-                       <TableHead>عملیات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
-                         <TableCell className="font-medium">{user.name}</TableCell>
-                         <TableCell>{user.phone}</TableCell>
-                         <TableCell>
-                          {user.username ? (
-                            <code className="bg-muted px-2 py-1 rounded text-sm">@{user.username}</code>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(user)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {getRoleBadges(user)}
-                          </div>
-                        </TableCell>
-                        <TableCell>{formatDate(user.created_at)}</TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUserClick(user.id)}
-                          >
-                            مشاهده
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+          // Normal mode - show all records with pagination
+          users.length === 0 && !loading && !searchLoading ? (
+            <div className="text-center py-8">
+              <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">هنوز کاربری ثبت نشده است</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Users Table/Cards for all records */}
+              {isMobile ? renderUserCards() : renderUserTable()}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  نمایش {(currentPage - 1) * usersPerPage + 1} تا{' '}
-                  {Math.min(currentPage * usersPerPage, totalUsers)} از {totalUsers} کاربر
+              {/* Pagination - only show when not searching */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    نمایش {(currentPage - 1) * usersPerPage + 1} تا{' '}
+                    {Math.min(currentPage * usersPerPage, totalUsers)} از {totalUsers} کاربر
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1 || loading}
+                    >
+                      <ChevronRight className="h-4 w-4 mr-2" />
+                      قبلی
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      صفحه {currentPage} از {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages || loading}
+                    >
+                      بعدی
+                      <ChevronLeft className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1 || loading}
-                  >
-                    <ChevronRight className="h-4 w-4 mr-2" />
-                    قبلی
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    صفحه {currentPage} از {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages || loading}
-                  >
-                    بعدی
-                    <ChevronLeft className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )
         )}
       </CardContent>
     </Card>
