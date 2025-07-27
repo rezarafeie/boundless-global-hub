@@ -385,32 +385,64 @@ const BorderlessHubMessenger: React.FC = () => {
     return colors[index];
   };
 
-  // Process rooms for unified view
+  const formatLastMessageTime = (timeString: string) => {
+    const date = new Date(timeString);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('fa-IR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } else {
+      return date.toLocaleDateString('fa-IR', {
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+  };
+
+  const formatLastMessage = (message: string, messageType: string) => {
+    if (messageType === 'text') {
+      return message.length > 50 ? message.substring(0, 50) + '...' : message;
+    } else if (messageType === 'image') {
+      return '🖼️ تصویر';
+    } else if (messageType === 'voice') {
+      return '🎵 پیام صوتی';
+    } else if (messageType === 'file') {
+      return '📎 فایل';
+    }
+    return message;
+  };
+
+  // Process rooms for unified view with enhanced last message data
   const roomItems: UnifiedChatItem[] = rooms.map(room => ({
     id: `group-${room.id}`,
     type: 'group' as const,
     name: room.name,
-    lastMessage: 'آخرین پیام',
-    lastMessageTime: '12:00',
-    unreadCount: 0,
+    lastMessage: room.last_message 
+      ? formatLastMessage(room.last_message.message, room.last_message.message_type)
+      : 'پیامی وجود ندارد',
+    lastMessageTime: room.last_message_time 
+      ? formatLastMessageTime(room.last_message_time)
+      : '',
+    unreadCount: room.unread_count || 0,
     data: room
   }));
 
-      // Process conversations for unified view
-      const conversationItems: UnifiedChatItem[] = conversations.map(conv => ({
-        id: `private-${conv.id}`,
-        type: 'private' as const,
-        name: conv.other_user?.name || 'نامشخص',
-        lastMessage: conv.last_message?.message || 'پیامی وجود ندارد',
-        lastMessageTime: conv.last_message?.created_at 
-          ? new Date(conv.last_message.created_at).toLocaleTimeString('fa-IR', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : '',
-        unreadCount: conv.unread_count || 0,
-        data: conv
-      }));
+  // Process conversations for unified view
+  const conversationItems: UnifiedChatItem[] = conversations.map(conv => ({
+    id: `private-${conv.id}`,
+    type: 'private' as const,
+    name: conv.other_user?.name || 'نامشخص',
+    lastMessage: conv.last_message?.message || 'پیامی وجود ندارد',
+    lastMessageTime: conv.last_message?.created_at 
+      ? formatLastMessageTime(conv.last_message.created_at)
+      : '',
+    unreadCount: conv.unread_count || 0,
+    data: conv
+  }));
 
   // Process support conversations for unified view
   const supportItems: UnifiedChatItem[] = supportConversations.map(conv => ({
@@ -533,22 +565,37 @@ const BorderlessHubMessenger: React.FC = () => {
                   }
                 }}
               >
-                <Avatar className="w-8 h-8">
+                <Avatar className="w-10 h-10">
                   <AvatarImage src={(item.data as any).avatar_url || (item.data as any).other_user?.avatar_url} alt={item.name} />
                   <AvatarFallback 
                     style={{ backgroundColor: getAvatarColor(item.name) }}
-                    className="text-white font-medium text-xs"
+                    className="text-white font-medium text-sm"
                   >
                     {item.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-slate-900 dark:text-white">{item.name}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{item.lastMessage}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                      {item.name}
+                    </div>
+                    {item.lastMessageTime && (
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
+                        {item.lastMessageTime}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {item.lastMessage}
+                    </div>
+                    {item.unreadCount > 0 && (
+                      <Badge variant="destructive" className="text-xs h-5 min-w-5 px-1">
+                        {item.unreadCount}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                {item.unreadCount > 0 && (
-                  <Badge variant="secondary">{item.unreadCount}</Badge>
-                )}
               </div>
             ))
           )}
