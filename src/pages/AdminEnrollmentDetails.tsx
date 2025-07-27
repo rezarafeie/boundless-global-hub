@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -105,6 +104,12 @@ const AdminEnrollmentDetails: React.FC = () => {
       setLoading(false);
     }
   }, [enrollmentId]);
+
+  const handleUserClick = () => {
+    if (enrollment?.phone) {
+      window.open(`/user-detail?phone=${encodeURIComponent(enrollment.phone)}`, '_blank');
+    }
+  };
 
   const fetchActivationStatus = async () => {
     if (!enrollmentId) return;
@@ -504,7 +509,12 @@ const AdminEnrollmentDetails: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">نام و نام خانوادگی:</span>
-                    <span className="font-medium">{enrollment.full_name}</span>
+                    <button 
+                      onClick={handleUserClick}
+                      className="font-medium text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                    >
+                      {enrollment.full_name}
+                    </button>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">ایمیل:</span>
@@ -519,16 +529,6 @@ const AdminEnrollmentDetails: React.FC = () => {
                     <span className="font-medium">
                       {enrollment.payment_method === 'manual' ? 'واریز دستی' : 'آنلاین'}
                     </span>
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(`/user-detail?phone=${encodeURIComponent(enrollment.phone)}`, '_blank')}
-                      className="w-full"
-                    >
-                      <UserCheck className="h-4 w-4 mr-2" />
-                      مشاهده جزئیات کاربر
-                    </Button>
                   </div>
                 </div>
                 <div className="space-y-3">
