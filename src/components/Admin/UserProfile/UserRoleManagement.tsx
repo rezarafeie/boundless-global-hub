@@ -145,72 +145,79 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({ userId }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          مدیریت نقش‌های کاربر
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {/* Current Roles */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">نقش‌های فعلی</h3>
-            {userRoles.length === 0 ? (
-              <p className="text-muted-foreground">هیچ نقش خاصی تعریف نشده است</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {userRoles.map((userRole) => (
-                  <div key={userRole.id} className="flex items-center gap-2">
-                    <Badge variant={getRoleVariant(userRole.role_name)}>
-                      {getRoleLabel(userRole.role_name)}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeRole(userRole.id)}
-                      className="h-6 w-6 p-0 hover:bg-red-100"
-                    >
-                      <Trash2 className="h-3 w-3 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+    <div className="w-full max-w-full overflow-hidden" dir="rtl">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-right">
+            <Shield className="h-5 w-5" />
+            مدیریت نقش‌های کاربر
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-right">
+          <div className="space-y-6">
+            {/* Current Roles */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">نقش‌های فعلی</h3>
+              {userRoles.length === 0 ? (
+                <p className="text-muted-foreground">هیچ نقش خاصی تعریف نشده است</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {userRoles.map((userRole) => (
+                    <div key={userRole.id} className="flex items-center gap-2">
+                      <Badge 
+                        variant={getRoleVariant(userRole.role_name)}
+                        className="text-xs"
+                      >
+                        {getRoleLabel(userRole.role_name)}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeRole(userRole.id)}
+                        className="h-6 w-6 p-0 hover:bg-red-100"
+                      >
+                        <Trash2 className="h-3 w-3 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Add New Role */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">اضافه کردن نقش جدید</h3>
-            <div className="flex gap-2">
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="انتخاب نقش" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles
-                    .filter(role => !userRoles.some(ur => ur.role_name === role.value))
-                    .map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={addRole}
-                disabled={!selectedRole || adding}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                {adding ? 'در حال افزودن...' : 'افزودن نقش'}
-              </Button>
+            {/* Add New Role */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">اضافه کردن نقش جدید</h3>
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="w-full sm:w-48 min-w-0">
+                    <SelectValue placeholder="انتخاب نقش" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles
+                      .filter(role => !userRoles.some(ur => ur.role_name === role.value))
+                      .map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={addRole}
+                  disabled={!selectedRole || adding}
+                  className="flex items-center gap-2 w-full sm:w-auto whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-sm">
+                    {adding ? 'در حال افزودن...' : 'افزودن نقش'}
+                  </span>
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
