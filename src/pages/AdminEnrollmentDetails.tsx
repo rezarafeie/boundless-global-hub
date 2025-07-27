@@ -108,8 +108,8 @@ const AdminEnrollmentDetails: React.FC = () => {
   }, [enrollmentId]);
 
   const handleUserClick = () => {
-    if (enrollment?.phone) {
-      window.open(`/user-detail?phone=${encodeURIComponent(enrollment.phone)}`, '_blank');
+    if (enrollment?.chat_user_id) {
+      window.open(`/enroll/admin/users/${enrollment.chat_user_id}`, '_blank');
     }
   };
 
