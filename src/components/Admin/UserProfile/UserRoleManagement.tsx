@@ -2,37 +2,44 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { UserCog, Plus, Trash2, Calendar, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserRole {
-  id: number;
+  id: string;
   role_name: string;
   is_active: boolean;
-  assigned_by: number;
+  assigned_by: string;
   assigned_at: string;
+  notes?: string;
 }
 
 interface UserRoleManagementProps {
   userId: number;
 }
 
+const AVAILABLE_ROLES = [
+  { value: 'admin', label: 'مدیر', description: 'دسترسی کامل به سیستم' },
+  { value: 'moderator', label: 'مدیر محتوا', description: 'مدیریت محتوا و کاربران' },
+  { value: 'support', label: 'پشتیبان', description: 'پاسخگویی به کاربران' },
+  { value: 'sales_agent', label: 'نماینده فروش', description: 'مدیریت لیدها و CRM' },
+  { value: 'user', label: 'کاربر عادی', description: 'دسترسی محدود' }
+];
+
 export function UserRoleManagement({ userId }: UserRoleManagementProps) {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddingRole, setIsAddingRole] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>('');
+  const [roleNotes, setRoleNotes] = useState<string>('');
   const { toast } = useToast();
-
-  const availableRoles = [
-    { value: 'admin', label: 'مدیر' },
-    { value: 'sales_agent', label: 'نماینده فروش' },
-    { value: 'moderator', label: 'مدیر بخش' },
-    { value: 'user', label: 'کاربر عادی' }
-  ];
 
   useEffect(() => {
     fetchUserRoles();
@@ -45,20 +52,10 @@ export function UserRoleManagement({ userId }: UserRoleManagementProps) {
         .from('user_roles')
         .select('*')
         .eq('user_id', userId)
-        .order('granted_at', { ascending: false });
+        .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Map the data to match our interface
-      const mappedRoles = data?.map(role => ({
-        id: role.id,
-        role_name: role.role_name,
-        is_active: role.is_active,
-        assigned_by: role.granted_by,
-        assigned_at: role.granted_at
-      })) || [];
-      
-      setUserRoles(mappedRoles);
+      setUserRoles(data || []);
     } catch (error) {
       console.error('Error fetching user roles:', error);
       toast({
@@ -75,25 +72,13 @@ export function UserRoleManagement({ userId }: UserRoleManagementProps) {
     if (!selectedRole) return;
 
     try {
-      // Check if role already exists
-      const existingRole = userRoles.find(role => role.role_name === selectedRole && role.is_active);
-      if (existingRole) {
-        toast({
-          title: "خطا",
-          description: "این نقش قبلاً برای کاربر تعریف شده است.",
-          variant: "destructive"
-        });
-        return;
-      }
-
       const { error } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
           role_name: selectedRole,
           is_active: true,
-          granted_by: 1, // Should be current admin user ID
-          granted_at: new Date().toISOString()
+          notes: roleNotes || null
         });
 
       if (error) throw error;
@@ -104,7 +89,8 @@ export function UserRoleManagement({ userId }: UserRoleManagementProps) {
       });
 
       setSelectedRole('');
-      setIsAddingRole(false);
+      setRoleNotes('');
+      setIsAdding(false);
       fetchUserRoles();
     } catch (error) {
       console.error('Error adding role:', error);
@@ -116,11 +102,36 @@ export function UserRoleManagement({ userId }: UserRoleManagementProps) {
     }
   };
 
-  const handleRemoveRole = async (roleId: number) => {
+  const handleToggleRole = async (roleId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('user_roles')
-        .update({ is_active: false })
+        .update({ is_active: !currentStatus })
+        .eq('id', roleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "موفق",
+        description: `نقش ${!currentStatus ? 'فعال' : 'غیرفعال'} شد.`
+      });
+
+      fetchUserRoles();
+    } catch (error) {
+      console.error('Error toggling role:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در تغییر وضعیت نقش.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveRole = async (roleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
         .eq('id', roleId);
 
       if (error) throw error;
@@ -142,23 +153,38 @@ export function UserRoleManagement({ userId }: UserRoleManagementProps) {
   };
 
   const getRoleLabel = (roleName: string) => {
-    const role = availableRoles.find(r => r.value === roleName);
+    const role = AVAILABLE_ROLES.find(r => r.value === roleName);
     return role ? role.label : roleName;
   };
 
-  const getRoleColor = (roleName: string) => {
-    const colors: Record<string, string> = {
-      'admin': 'bg-red-100 text-red-800',
-      'sales_agent': 'bg-green-100 text-green-800',
-      'moderator': 'bg-blue-100 text-blue-800',
-      'user': 'bg-gray-100 text-gray-800'
-    };
-    return colors[roleName] || 'bg-gray-100 text-gray-800';
+  const getRoleVariant = (roleName: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (roleName) {
+      case 'admin':
+        return 'destructive';
+      case 'moderator':
+        return 'default';
+      case 'support':
+        return 'secondary';
+      case 'sales_agent':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fa-IR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (loading) {
     return (
-      <Card>
+      <Card className="w-full max-w-full overflow-hidden">
         <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -169,86 +195,154 @@ export function UserRoleManagement({ userId }: UserRoleManagementProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            مدیریت نقش‌ها
-          </CardTitle>
-          <Button
-            onClick={() => setIsAddingRole(true)}
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            <Plus className="w-4 h-4" />
-            افزودن نقش
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Add Role Form */}
-        {isAddingRole && (
-          <div className="mb-6 p-4 bg-muted rounded-lg">
-            <div className="space-y-4">
-              <div>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="انتخاب نقش" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableRoles.map(role => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleAddRole} disabled={!selectedRole}>
-                  افزودن
-                </Button>
-                <Button variant="outline" onClick={() => setIsAddingRole(false)}>
-                  لغو
-                </Button>
-              </div>
-            </div>
+    <div dir="rtl" className="w-full max-w-full overflow-hidden">
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <UserCog className="w-5 h-5" />
+              مدیریت نقش‌ها
+            </CardTitle>
+            <Button 
+              onClick={() => setIsAdding(true)}
+              size="sm"
+              className="flex items-center gap-2 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              افزودن نقش
+            </Button>
           </div>
-        )}
-
-        {/* Roles List */}
-        {userRoles.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            هیچ نقشی برای این کاربر تعریف نشده است.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {userRoles
-              .filter(role => role.is_active)
-              .map((role) => (
-                <div key={role.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Badge className={getRoleColor(role.role_name)}>
-                      {getRoleLabel(role.role_name)}
-                    </Badge>
-                    <div className="text-sm text-muted-foreground">
-                      تاریخ تعیین: {new Date(role.assigned_at).toLocaleDateString('fa-IR')}
-                    </div>
+        </CardHeader>
+        
+        <CardContent className="p-3 sm:p-6">
+          {isAdding && (
+            <div className="mb-6 p-4 border rounded-lg bg-muted/50">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="role">نقش</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب نقش" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVAILABLE_ROLES.map(role => (
+                          <SelectItem key={role.value} value={role.value}>
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">{role.label}</span>
+                              <span className="text-sm text-muted-foreground">{role.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveRole(role.id)}
-                    className="text-destructive hover:text-destructive"
+                </div>
+                
+                <div>
+                  <Label htmlFor="notes">یادداشت (اختیاری)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="یادداشت در مورد اختصاص این نقش..."
+                    value={roleNotes}
+                    onChange={(e) => setRoleNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    onClick={handleAddRole}
+                    disabled={!selectedRole}
+                    className="flex items-center gap-2"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Plus className="w-4 h-4" />
+                    افزودن نقش
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsAdding(false);
+                      setSelectedRole('');
+                      setRoleNotes('');
+                    }}
+                  >
+                    لغو
                   </Button>
                 </div>
-              ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              </div>
+            </div>
+          )}
+
+          {userRoles.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              هیچ نقش خاصی برای این کاربر تعریف نشده است.
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <Table className="w-full min-w-[500px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">نقش</TableHead>
+                    <TableHead className="text-right">وضعیت</TableHead>
+                    <TableHead className="text-right">تاریخ تخصیص</TableHead>
+                    <TableHead className="text-right">یادداشت</TableHead>
+                    <TableHead className="text-right">عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {userRoles.map((role) => (
+                    <TableRow key={role.id}>
+                      <TableCell>
+                        <Badge variant={getRoleVariant(role.role_name)}>
+                          {getRoleLabel(role.role_name)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={role.is_active}
+                            onCheckedChange={() => handleToggleRole(role.id, role.is_active)}
+                          />
+                          <span className="text-sm">
+                            {role.is_active ? 'فعال' : 'غیرفعال'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">{formatDate(role.assigned_at)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {role.notes ? (
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">{role.notes}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveRole(role.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
