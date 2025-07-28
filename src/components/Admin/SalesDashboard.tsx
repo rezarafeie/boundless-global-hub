@@ -98,18 +98,29 @@ const SalesDashboard: React.FC = () => {
 
   const fetchUniqueUnassignedLeads = async () => {
     try {
-      // Get all enrollments that don't have assignments (unassigned leads)
-      const { data: unassignedEnrollments, error } = await supabase
+      // Get all successful enrollments
+      const { data: allEnrollments, error: enrollmentsError } = await supabase
         .from('enrollments')
         .select('id')
-        .in('payment_status', ['success', 'completed'])
-        .not('id', 'in', `(SELECT enrollment_id FROM lead_assignments WHERE enrollment_id IS NOT NULL)`);
-        
-      if (error) throw error;
+        .in('payment_status', ['success', 'completed']);
       
-      // Count unique enrollments
-      const uniqueCount = new Set(unassignedEnrollments?.map(e => e.id) || []).size;
-      setUniqueUnassignedLeads(uniqueCount);
+      if (enrollmentsError) throw enrollmentsError;
+      
+      // Get all assigned enrollment IDs
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('lead_assignments')
+        .select('enrollment_id');
+      
+      if (assignmentsError) throw assignmentsError;
+      
+      // Create a set of assigned enrollment IDs for fast lookup
+      const assignedIds = new Set(assignments?.map(a => a.enrollment_id) || []);
+      
+      // Filter out assigned enrollments to get unassigned ones
+      const unassignedEnrollments = allEnrollments?.filter(e => !assignedIds.has(e.id)) || [];
+      
+      setUniqueUnassignedLeads(unassignedEnrollments.length);
+      console.log('Unassigned leads count:', unassignedEnrollments.length);
     } catch (error) {
       console.error('Error fetching unique unassigned leads:', error);
     }
