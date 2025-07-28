@@ -44,7 +44,11 @@ interface EnrollmentData {
   payment_amount: number;
   payment_method?: string;
   zarinpal_ref_id?: string;
+  zarinpal_authority?: string;
+  woocommerce_order_id?: number;
+  country_code?: string;
   created_at: string;
+  updated_at: string;
   approved_at?: string;
   receipt_url?: string;
   admin_notes?: string;
@@ -605,9 +609,29 @@ const AdminEnrollmentDetails: React.FC = () => {
                     <span className="font-medium">{enrollment.phone}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">کد کشور:</span>
+                    <span className="font-medium">{enrollment.country_code || '+98'}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">روش پرداخت:</span>
                     <span className="font-medium">
-                      {enrollment.payment_method === 'manual' ? 'واریز دستی' : 'آنلاین'}
+                      {enrollment.payment_method === 'manual' ? 'واریز دستی' : 
+                       enrollment.payment_method === 'zarinpal' ? 'زرین‌پال' : 'آنلاین'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">وضعیت پرداخت:</span>
+                    <span className="font-medium">
+                      <Badge variant={
+                        enrollment.payment_status === 'completed' || enrollment.payment_status === 'success' ? 'default' :
+                        enrollment.payment_status === 'pending' ? 'secondary' : 'destructive'
+                      }>
+                        {enrollment.payment_status === 'completed' ? 'تکمیل شده' :
+                         enrollment.payment_status === 'success' ? 'موفق' :
+                         enrollment.payment_status === 'pending' ? 'در انتظار' :
+                         enrollment.payment_status === 'cancelled_payment' ? 'لغو شده' :
+                         enrollment.payment_status}
+                      </Badge>
                     </span>
                   </div>
                 </div>
@@ -630,6 +654,18 @@ const AdminEnrollmentDetails: React.FC = () => {
                       }).format(new Date(enrollment.created_at))}
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">تاریخ به‌روزرسانی:</span>
+                    <span className="font-medium">
+                      {new Intl.DateTimeFormat('fa-IR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }).format(new Date(enrollment.updated_at))}
+                    </span>
+                  </div>
                   {enrollment.approved_at && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">تاریخ تایید:</span>
@@ -644,10 +680,28 @@ const AdminEnrollmentDetails: React.FC = () => {
                       </span>
                     </div>
                   )}
+                  {enrollment.approved_by && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">تایید شده توسط:</span>
+                      <span className="font-medium">{enrollment.approved_by}</span>
+                    </div>
+                  )}
                   {enrollment.zarinpal_ref_id && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">کد رهگیری:</span>
+                      <span className="text-muted-foreground">کد رهگیری زرین‌پال:</span>
                       <span className="font-mono font-medium">{enrollment.zarinpal_ref_id}</span>
+                    </div>
+                  )}
+                  {enrollment.zarinpal_authority && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Authority زرین‌پال:</span>
+                      <span className="font-mono font-medium text-xs">{enrollment.zarinpal_authority}</span>
+                    </div>
+                  )}
+                  {enrollment.woocommerce_order_id && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">شماره سفارش WooCommerce:</span>
+                      <span className="font-medium">#{enrollment.woocommerce_order_id}</span>
                     </div>
                   )}
                 </div>
