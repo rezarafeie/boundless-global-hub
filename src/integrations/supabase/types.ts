@@ -1257,6 +1257,7 @@ export type Database = {
         Row: {
           assigned_at: string | null
           assigned_by: number | null
+          assignment_type: string | null
           created_at: string | null
           enrollment_id: string | null
           id: number
@@ -1267,6 +1268,7 @@ export type Database = {
         Insert: {
           assigned_at?: string | null
           assigned_by?: number | null
+          assignment_type?: string | null
           created_at?: string | null
           enrollment_id?: string | null
           id?: number
@@ -1277,6 +1279,7 @@ export type Database = {
         Update: {
           assigned_at?: string | null
           assigned_by?: number | null
+          assignment_type?: string | null
           created_at?: string | null
           enrollment_id?: string | null
           id?: number
