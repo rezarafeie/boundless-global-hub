@@ -329,7 +329,17 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const executePercentageDistribution = async () => {
-    if (!selectedCourse || !user?.id) return;
+    console.log('🚀 executePercentageDistribution called!', { selectedCourse, userId: user?.id, userObject: user });
+    
+    if (!selectedCourse || !user?.id) {
+      console.log('❌ Missing requirements:', { selectedCourse, userId: user?.id });
+      toast({
+        title: "خطا",
+        description: "دوره انتخاب نشده یا کاربر وارد نشده",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -489,7 +499,17 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const executeManualAssignment = async () => {
-    if (!selectedAgent || selectedEnrollments.length === 0 || !user?.id) return;
+    console.log('🚀 executeManualAssignment called!', { selectedAgent, selectedEnrollments, userId: user?.id });
+    
+    if (!selectedAgent || selectedEnrollments.length === 0 || !user?.id) {
+      console.log('❌ Missing requirements for manual assignment:', { selectedAgent, enrollmentCount: selectedEnrollments.length, userId: user?.id });
+      toast({
+        title: "خطا", 
+        description: "فروشنده انتخاب نشده، لیدی انتخاب نشده یا کاربر وارد نشده",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setLoading(true);
     try {
