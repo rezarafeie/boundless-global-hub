@@ -751,7 +751,7 @@ const LeadDistributionSystem: React.FC = () => {
             </TabsList>
 
             <TabsContent value="percentage" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <Label htmlFor="course">دوره</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -783,6 +783,31 @@ const LeadDistributionSystem: React.FC = () => {
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="paymentStatus">وضعیت پرداخت</Label>
+                  <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه</SelectItem>
+                      <SelectItem value="paid">پرداخت شده</SelectItem>
+                      <SelectItem value="pending">در انتظار پرداخت</SelectItem>
+                      <SelectItem value="cancelled">لغو شده</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Copy className="h-4 w-4" />
+                  <Label htmlFor="removeDuplicates">حذف تکراری</Label>
+                  <Switch
+                    id="removeDuplicates"
+                    checked={removeDuplicates}
+                    onCheckedChange={setRemoveDuplicates}
                   />
                 </div>
               </div>
