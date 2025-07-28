@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Users, 
   BookOpen, 
@@ -16,10 +19,13 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  CalendarIcon,
+  Filter
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -45,6 +51,26 @@ const AdminDashboard: React.FC = () => {
     pendingEnrollmentsList: []
   });
   const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [selectedDateRange, setSelectedDateRange] = useState<string>('last_24_hours');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+
+  // Default to boundless course on initial load
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    if (courses.length > 0 && !selectedCourse) {
+      // Set boundless course as default
+      const boundlessCourse = courses.find(course => course.slug === 'boundless-taste');
+      if (boundlessCourse) {
+        setSelectedCourse(boundlessCourse.id);
+      }
+    }
+  }, [courses]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -69,43 +95,117 @@ const AdminDashboard: React.FC = () => {
     return () => {
       supabase.removeChannel(enrollmentsChannel);
     };
-  }, []);
+  }, [selectedCourse, selectedDateRange, customDateFrom, customDateTo]);
+
+  const fetchCourses = async () => {
+    try {
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('id, title, slug')
+        .eq('is_active', true)
+        .order('title');
+
+      setCourses(coursesData || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
+
+  const getDateRange = () => {
+    const now = new Date();
+    let fromDate: Date, toDate: Date;
+
+    switch (selectedDateRange) {
+      case 'last_24_hours':
+        fromDate = subDays(now, 1);
+        toDate = now;
+        break;
+      case 'last_7_days':
+        fromDate = subDays(now, 7);
+        toDate = now;
+        break;
+      case 'last_30_days':
+        fromDate = subDays(now, 30);
+        toDate = now;
+        break;
+      case 'custom':
+        if (customDateFrom && customDateTo) {
+          fromDate = startOfDay(customDateFrom);
+          toDate = endOfDay(customDateTo);
+        } else {
+          fromDate = subDays(now, 1);
+          toDate = now;
+        }
+        break;
+      default:
+        fromDate = subDays(now, 1);
+        toDate = now;
+    }
+
+    return { fromDate, toDate };
+  };
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
 
-      // Fetch total revenue from successful enrollments
-      const { data: revenueData } = await supabase
+      const { fromDate, toDate } = getDateRange();
+
+      // Fetch total revenue from successful enrollments with filters
+      let revenueQuery = supabase
         .from('enrollments')
         .select('payment_amount')
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString())
         .in('payment_status', ['completed', 'success']);
+      
+      // Apply course filter if selected
+      if (selectedCourse) {
+        revenueQuery = revenueQuery.eq('course_id', selectedCourse);
+      }
 
+      const { data: revenueData } = await revenueQuery;
       const totalRevenue = revenueData?.reduce((sum, enrollment) => sum + (enrollment.payment_amount || 0), 0) || 0;
 
-      // Fetch total enrollments
-      const { count: totalEnrollments } = await supabase
+      // Fetch total enrollments with filters
+      let enrollmentsCountQuery = supabase
         .from('enrollments')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString());
+      
+      // Apply course filter if selected
+      if (selectedCourse) {
+        enrollmentsCountQuery = enrollmentsCountQuery.eq('course_id', selectedCourse);
+      }
 
-      // Fetch active courses
+      const { count: totalEnrollments } = await enrollmentsCountQuery;
+
+      // Fetch active courses (not filtered by date)
       const { count: activeCourses } = await supabase
         .from('courses')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
-      // Fetch approved users
+      // Fetch approved users (not filtered by date)
       const { count: approvedUsers } = await supabase
         .from('chat_users')
         .select('*', { count: 'exact', head: true })
         .eq('is_approved', true);
 
       // Fetch pending payments count with correct filtering for manual payments
-      const { data: pendingPaymentsData } = await supabase
+      let pendingQuery = supabase
         .from('enrollments')
         .select('*')
         .eq('payment_method', 'manual')
         .in('payment_status', ['pending', 'awaiting_approval']);
+
+      // Apply course filter to pending payments if selected
+      if (selectedCourse) {
+        pendingQuery = pendingQuery.eq('course_id', selectedCourse);
+      }
+
+      const { data: pendingPaymentsData } = await pendingQuery;
 
       // Filter for manual payments that haven't been approved or rejected yet
       const filteredPendingPayments = pendingPaymentsData?.filter(enrollment => 
@@ -119,7 +219,7 @@ const AdminDashboard: React.FC = () => {
       const pendingPayments = filteredPendingPayments.length;
 
       // Fetch pending payments list (limited to 5 for dashboard) with course info
-      const { data: pendingEnrollmentsList } = await supabase
+      let pendingListQuery = supabase
         .from('enrollments')
         .select(`
           *,
@@ -130,6 +230,13 @@ const AdminDashboard: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
+      // Apply course filter to pending payments list if selected
+      if (selectedCourse) {
+        pendingListQuery = pendingListQuery.eq('course_id', selectedCourse);
+      }
+
+      const { data: pendingEnrollmentsList } = await pendingListQuery;
+
       // Filter the list as well
       const filteredPendingList = pendingEnrollmentsList?.filter(enrollment => 
         enrollment.payment_method === 'manual' && 
@@ -139,28 +246,41 @@ const AdminDashboard: React.FC = () => {
          enrollment.manual_payment_status === 'pending')
       ) || [];
 
-      // Fetch recent enrollments
-      const { data: recentEnrollments } = await supabase
+      // Fetch recent enrollments with filters
+      let recentQuery = supabase
         .from('enrollments')
         .select(`
           *,
           courses(title)
         `)
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
 
-      // Fetch popular courses by enrollment count
+      // Apply course filter if selected
+      if (selectedCourse) {
+        recentQuery = recentQuery.eq('course_id', selectedCourse);
+      }
+
+      const { data: recentEnrollments } = await recentQuery;
+
+      // Fetch popular courses by enrollment count (with date filter but not course filter)
       const { data: popularCourses } = await supabase
         .from('courses')
         .select(`
           *,
-          enrollments(id, payment_amount)
+          enrollments!inner(id, payment_amount, created_at)
         `)
         .eq('is_active', true)
+        .gte('enrollments.created_at', fromDate.toISOString())
+        .lte('enrollments.created_at', toDate.toISOString())
         .limit(5);
 
       console.log('Pending payments count:', pendingPayments);
       console.log('Filtered pending enrollments list:', filteredPendingList);
+      console.log('Date range:', { fromDate, toDate });
+      console.log('Selected course:', selectedCourse);
 
       setStats({
         totalRevenue,
@@ -359,6 +479,99 @@ const AdminDashboard: React.FC = () => {
           بروزرسانی
         </Button>
       </div>
+
+      {/* Filters Section */}
+      <Card className="border-0 shadow-sm bg-white">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Filter className="h-5 w-5 text-blue-600" />
+            فیلترها
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Course Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">دوره</label>
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <SelectTrigger>
+                  <SelectValue placeholder="همه دوره‌ها" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">همه دوره‌ها</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">بازه زمانی</label>
+              <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="last_24_hours">۲۴ ساعت گذشته</SelectItem>
+                  <SelectItem value="last_7_days">۷ روز گذشته</SelectItem>
+                  <SelectItem value="last_30_days">۳۰ روز گذشته</SelectItem>
+                  <SelectItem value="custom">سفارشی</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom Date From */}
+            {selectedDateRange === 'custom' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">از تاریخ</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-right">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateFrom ? format(customDateFrom, 'yyyy/MM/dd') : 'انتخاب تاریخ'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customDateFrom}
+                      onSelect={setCustomDateFrom}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
+            {/* Custom Date To */}
+            {selectedDateRange === 'custom' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">تا تاریخ</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-right">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateTo ? format(customDateTo, 'yyyy/MM/dd') : 'انتخاب تاریخ'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customDateTo}
+                      onSelect={setCustomDateTo}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
