@@ -31,6 +31,7 @@ const menuItems = [
   { id: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
   { id: 'courses', label: 'دوره‌ها', icon: BookOpen },
   { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
+  { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
   { id: 'users', label: 'کاربران', icon: Users },
   { id: 'analytics', label: 'آنالیتیکس', icon: TrendingUp },

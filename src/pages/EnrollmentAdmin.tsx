@@ -22,6 +22,7 @@ const AnalyticsReports = React.lazy(() => import('@/components/Admin/AnalyticsRe
 const AdminSettingsPanel = React.lazy(() => import('@/components/Admin/AdminSettingsPanel'));
 const EnrollmentCRM = React.lazy(() => import('@/components/Admin/EnrollmentCRM').then(module => ({ default: module.EnrollmentCRM })));
 const LeadManagement = React.lazy(() => import('@/components/Admin/LeadManagement'));
+const SalesDashboard = React.lazy(() => import('@/components/Admin/SalesDashboard'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -76,7 +77,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -257,6 +258,14 @@ const EnrollmentAdmin: React.FC = () => {
               </Suspense>
             </ErrorBoundary>
           </div>
+        );
+      case 'sales':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SalesDashboard />
+            </Suspense>
+          </ErrorBoundary>
         );
       case 'leads':
         return (
