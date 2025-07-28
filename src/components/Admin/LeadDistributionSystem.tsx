@@ -849,53 +849,6 @@ const LeadDistributionSystem: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Display filtered leads table for percentage distribution */}
-                  <div className="border rounded-lg">
-                    <Table>
-                       <TableHeader>
-                         <TableRow>
-                           <TableHead>نام</TableHead>
-                           <TableHead>ایمیل</TableHead>
-                           <TableHead>تلفن</TableHead>
-                           <TableHead>مبلغ</TableHead>
-                           <TableHead>وضعیت پرداخت</TableHead>
-                           <TableHead>تاریخ ثبت‌نام</TableHead>
-                           <TableHead>وضعیت واگذاری</TableHead>
-                         </TableRow>
-                       </TableHeader>
-                      <TableBody>
-                        {enrollments.map((enrollment) => (
-                          <TableRow key={enrollment.id}>
-                             <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                             <TableCell>{enrollment.email}</TableCell>
-                             <TableCell>{enrollment.phone}</TableCell>
-                             <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
-                             <TableCell>
-                               <Badge variant={
-                                 enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
-                                   ? "default" 
-                                   : enrollment.payment_status === 'pending' 
-                                     ? "secondary" 
-                                     : "destructive"
-                               }>
-                                 {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
-                                   ? "پرداخت شده" 
-                                   : enrollment.payment_status === 'pending' 
-                                     ? "در انتظار پرداخت" 
-                                     : "لغو شده"}
-                               </Badge>
-                             </TableCell>
-                             <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
-                             <TableCell>
-                               <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
-                                 {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
-                               </Badge>
-                             </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
                 </div>
               )}
 
