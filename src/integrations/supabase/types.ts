@@ -1303,6 +1303,13 @@ export type Database = {
             foreignKeyName: "lead_assignments_sales_agent_id_fkey"
             columns: ["sales_agent_id"]
             isOneToOne: false
+            referencedRelation: "sales_agent_performance"
+            referencedColumns: ["sales_agent_id"]
+          },
+          {
+            foreignKeyName: "lead_assignments_sales_agent_id_fkey"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
             referencedRelation: "sales_agents"
             referencedColumns: ["id"]
           },
@@ -1980,6 +1987,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "courses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_agent_courses_sales_agent_id_fkey"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
+            referencedRelation: "sales_agent_performance"
+            referencedColumns: ["sales_agent_id"]
           },
           {
             foreignKeyName: "sales_agent_courses_sales_agent_id_fkey"
@@ -2766,7 +2780,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      sales_agent_performance: {
+        Row: {
+          agent_name: string | null
+          agent_phone: string | null
+          agent_user_id: number | null
+          claimed_leads: number | null
+          conversion_rate_percentage: number | null
+          crm_activities_count: number | null
+          sales_agent_id: number | null
+          successful_conversions: number | null
+          total_amount_sold: number | null
+          total_assigned_leads: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_agents_user_id_fkey"
+            columns: ["agent_user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_dashboard_stats: {
+        Row: {
+          enrollments_month: number | null
+          enrollments_today: number | null
+          enrollments_week: number | null
+          enrollments_yesterday: number | null
+          leads_assigned_today: number | null
+          revenue_month: number | null
+          revenue_today: number | null
+          revenue_week: number | null
+          revenue_yesterday: number | null
+          unassigned_leads_total: number | null
+          untouched_leads_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       assign_courses_to_sales_agent: {
@@ -3009,6 +3061,10 @@ export type Database = {
       }
       is_iranian_phone: {
         Args: { phone_number: string }
+        Returns: boolean
+      }
+      is_sales_manager: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       is_session_valid: {

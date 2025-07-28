@@ -28,12 +28,14 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Loader2
+  Loader2,
+  BarChart3
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
+import SalesDashboard from '@/components/Admin/SalesDashboard';
 
 interface Enrollment {
   id: string;
@@ -240,10 +242,14 @@ const EnrollAdmin: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="list" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-1">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 لیست ثبت‌نام‌ها
+              </TabsTrigger>
+              <TabsTrigger value="sales" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                داشبورد فروش
               </TabsTrigger>
             </TabsList>
             <TabsContent value="list" className="space-y-4">
@@ -395,6 +401,10 @@ const EnrollAdmin: React.FC = () => {
                   </Table>
                 </div>
               )}
+            </TabsContent>
+            
+            <TabsContent value="sales" className="space-y-4">
+              <SalesDashboard />
             </TabsContent>
           </Tabs>
         </CardContent>
