@@ -168,7 +168,10 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-3 safe-area-padding-bottom">
       {/* Reply Preview */}
       {replyingTo && (
-        <div className="max-w-6xl mx-auto mb-2 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border-l-4 border-blue-500 animate-fade-in">
+        <div className="max-w-6xl mx-auto mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500 animate-fade-in"
+             style={{
+               animation: 'slideDown 0.3s ease-out'
+             }}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">

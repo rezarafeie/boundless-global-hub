@@ -32,6 +32,12 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
 
   
   const handleReply = () => {
+    console.log('Reply clicked for message:', message.id, message.message);
+    console.log('Setting reply to:', {
+      id: message.id,
+      message: message.message,
+      sender_name: message.sender?.name || 'User'
+    });
     setReplyingTo({
       id: message.id,
       message: message.message,
@@ -151,7 +157,9 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             } ${!isOwnMessage ? 'cursor-pointer' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
+              console.log('Message clicked. isOwnMessage:', isOwnMessage, 'messageId:', message.id);
               if (!isOwnMessage) {
+                console.log('Calling handleReply for message:', message.id);
                 handleReply();
               } else {
                 doubleTapHandler();
