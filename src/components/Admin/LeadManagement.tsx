@@ -1468,7 +1468,7 @@ const LeadManagement: React.FC = () => {
            ) : activeTab === 'distribution' ? (
              <LeadDistributionSystem />
            ) : null}
-         </CardContent>
+        </CardContent>
        </Card>
 
       {/* Lead Detail Dialog */}
