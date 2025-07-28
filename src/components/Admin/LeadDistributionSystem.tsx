@@ -46,6 +46,7 @@ interface Enrollment {
   phone: string;
   course_title: string;
   payment_amount: number;
+  payment_status: string;
   created_at: string;
   is_assigned: boolean;
 }
@@ -265,11 +266,18 @@ const LeadDistributionSystem: React.FC = () => {
           email,
           phone,
           payment_amount,
+          payment_status,
           created_at,
           courses!inner(title)
         `)
-        .eq('course_id', selectedCourse)
-        .in('payment_status', ['success', 'completed']);
+        .eq('course_id', selectedCourse);
+
+      // Add payment status filter based on enrollment status
+      if (enrollmentStatus === 'all') {
+        query = query.in('payment_status', ['success', 'completed', 'pending', 'cancelled_payment']);
+      } else {
+        query = query.in('payment_status', ['success', 'completed']);
+      }
 
       // Add date filters
       if (dateFrom) {
@@ -282,8 +290,22 @@ const LeadDistributionSystem: React.FC = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
 
+      // Remove duplicates by email and phone (keep the latest one)
+      const uniqueEnrollments = data?.reduce((acc, enrollment) => {
+        const key = `${enrollment.email}-${enrollment.phone}`;
+        const existing = acc.get(key);
+        
+        if (!existing || new Date(enrollment.created_at) > new Date(existing.created_at)) {
+          acc.set(key, enrollment);
+        }
+        
+        return acc;
+      }, new Map()) || new Map();
+
+      const deduplicatedData = Array.from(uniqueEnrollments.values());
+
       // Check which ones are assigned
-      const enrollmentIds = data?.map(e => e.id) || [];
+      const enrollmentIds = deduplicatedData.map(e => e.id);
       const { data: assignments, error: assignmentError } = await supabase
         .from('lead_assignments')
         .select('enrollment_id')
@@ -293,16 +315,17 @@ const LeadDistributionSystem: React.FC = () => {
 
       const assignedSet = new Set(assignments?.map(a => a.enrollment_id) || []);
 
-      const formattedEnrollments = data?.map(enrollment => ({
+      const formattedEnrollments = deduplicatedData.map(enrollment => ({
         id: enrollment.id,
         full_name: enrollment.full_name,
         email: enrollment.email,
         phone: enrollment.phone,
         course_title: (enrollment as any).courses.title,
         payment_amount: enrollment.payment_amount,
+        payment_status: enrollment.payment_status,
         created_at: enrollment.created_at,
         is_assigned: assignedSet.has(enrollment.id)
-      })) || [];
+      }));
 
       // Apply status filter
       let filteredEnrollments = formattedEnrollments;
@@ -962,28 +985,29 @@ const LeadDistributionSystem: React.FC = () => {
 
                   <div className="border rounded-lg">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={selectedEnrollments.length === enrollments.length}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedEnrollments(enrollments.map(e => e.id));
-                                } else {
-                                  setSelectedEnrollments([]);
-                                }
-                              }}
-                            />
-                          </TableHead>
-                          <TableHead>نام</TableHead>
-                          <TableHead>ایمیل</TableHead>
-                          <TableHead>تلفن</TableHead>
-                          <TableHead>مبلغ</TableHead>
-                          <TableHead>تاریخ ثبت‌نام</TableHead>
-                          <TableHead>وضعیت</TableHead>
-                        </TableRow>
-                      </TableHeader>
+                       <TableHeader>
+                         <TableRow>
+                           <TableHead className="w-12">
+                             <Checkbox
+                               checked={selectedEnrollments.length === enrollments.length}
+                               onCheckedChange={(checked) => {
+                                 if (checked) {
+                                   setSelectedEnrollments(enrollments.map(e => e.id));
+                                 } else {
+                                   setSelectedEnrollments([]);
+                                 }
+                               }}
+                             />
+                           </TableHead>
+                           <TableHead>نام</TableHead>
+                           <TableHead>ایمیل</TableHead>
+                           <TableHead>تلفن</TableHead>
+                           <TableHead>مبلغ</TableHead>
+                           <TableHead>وضعیت پرداخت</TableHead>
+                           <TableHead>تاریخ ثبت‌نام</TableHead>
+                           <TableHead>وضعیت واگذاری</TableHead>
+                         </TableRow>
+                       </TableHeader>
                       <TableBody>
                         {enrollments.map((enrollment) => (
                           <TableRow key={enrollment.id}>
@@ -999,16 +1023,31 @@ const LeadDistributionSystem: React.FC = () => {
                                 }}
                               />
                             </TableCell>
-                            <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                            <TableCell>{enrollment.email}</TableCell>
-                            <TableCell>{enrollment.phone}</TableCell>
-                            <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
-                            <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
-                            <TableCell>
-                              <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
-                                {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
-                              </Badge>
-                            </TableCell>
+                             <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                             <TableCell>{enrollment.email}</TableCell>
+                             <TableCell>{enrollment.phone}</TableCell>
+                             <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
+                             <TableCell>
+                               <Badge variant={
+                                 enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                   ? "default" 
+                                   : enrollment.payment_status === 'pending' 
+                                     ? "secondary" 
+                                     : "destructive"
+                               }>
+                                 {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                   ? "پرداخت شده" 
+                                   : enrollment.payment_status === 'pending' 
+                                     ? "در انتظار پرداخت" 
+                                     : "لغو شده"}
+                               </Badge>
+                             </TableCell>
+                             <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
+                             <TableCell>
+                               <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
+                                 {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
+                               </Badge>
+                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
