@@ -306,12 +306,29 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const generatePreview = () => {
+    console.log('🔍 generatePreview called!', { 
+      totalPercentage: getTotalPercentage(), 
+      unassignedCount,
+      percentages: percentages.filter(p => p.percentage > 0)
+    });
+    
     const total = getTotalPercentage();
     if (total !== 100) {
+      console.log('❌ Invalid percentage total:', total);
       toast({
         title: "خطا",
         description: "مجموع درصدها باید ۱۰۰٪ باشد",
         variant: "destructive"
+      });
+      return;
+    }
+
+    if (unassignedCount === 0) {
+      console.log('❌ No unassigned leads');
+      toast({
+        title: "اطلاع",
+        description: "لیدی برای توزیع وجود ندارد",
+        variant: "default"
       });
       return;
     }
@@ -324,6 +341,7 @@ const LeadDistributionSystem: React.FC = () => {
         count: Math.round((unassignedCount * p.percentage) / 100)
       }));
 
+    console.log('✅ Generated preview:', preview);
     setPreviewData(preview);
     setShowPreview(true);
   };
@@ -752,7 +770,10 @@ const LeadDistributionSystem: React.FC = () => {
 
                     <div className="flex gap-3">
                       <Button
-                        onClick={generatePreview}
+                        onClick={() => {
+                          console.log('🖱️ Preview button clicked!', { isPercentageValid, unassignedCount, totalPercentage: getTotalPercentage() });
+                          generatePreview();
+                        }}
                         disabled={!isPercentageValid || unassignedCount === 0}
                         variant="outline"
                       >
@@ -778,7 +799,10 @@ const LeadDistributionSystem: React.FC = () => {
                               ))}
                               <div className="flex gap-3">
                                 <Button
-                                  onClick={executePercentageDistribution}
+                                  onClick={() => {
+                                    console.log('🖱️ Execute Distribution button clicked!', { loading, showPreview });
+                                    executePercentageDistribution();
+                                  }}
                                   disabled={loading}
                                   className="flex-1"
                                 >
@@ -886,7 +910,10 @@ const LeadDistributionSystem: React.FC = () => {
                             </SelectContent>
                           </Select>
                           <Button
-                            onClick={executeManualAssignment}
+                            onClick={() => {
+                              console.log('🖱️ Manual Assignment button clicked!', { selectedAgent, selectedEnrollments: selectedEnrollments.length, loading });
+                              executeManualAssignment();
+                            }}
                             disabled={!selectedAgent || loading}
                             size="sm"
                           >
