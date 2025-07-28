@@ -812,6 +812,36 @@ const LeadDistributionSystem: React.FC = () => {
                 </div>
               </div>
 
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => {
+                    console.log('🖱️ Show List button clicked for percentage distribution!', { selectedCourse, paymentStatus, assignmentStatus, removeDuplicates });
+                    fetchEnrollments();
+                  }}
+                  disabled={!selectedCourse}
+                  className="w-full sm:w-auto"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  نمایش لیست
+                </Button>
+              </div>
+
+              {enrollments.length > 0 && (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-green-800 dark:text-green-200">
+                        {enrollments.length} ثبت‌نام یافت شد
+                      </span>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                        فیلتر شده
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {selectedCourse && (
                 <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
                   <div className="flex items-center gap-2 mb-4">
