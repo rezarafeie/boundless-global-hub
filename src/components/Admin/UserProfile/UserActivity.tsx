@@ -118,6 +118,7 @@ export function UserActivity({ userId }: UserActivityProps) {
             case 'lesson_time_spent':
               const lessonTitleTime = log.metadata?.lesson_title || 'نامشخص';
               const timeSpentMinutes = log.metadata?.time_spent_minutes || 0;
+              console.log('lesson_time_spent metadata:', log.metadata, 'timeSpentMinutes:', timeSpentMinutes);
               description = `${timeSpentMinutes} دقیقه در درس ${lessonTitleTime} صرف شد`;
               break;
             case 'material_downloaded':
