@@ -113,6 +113,7 @@ const AdminEnrollmentDetails: React.FC = () => {
   const [activationStatus, setActivationStatus] = useState<ActivationStatus | null>(null);
   const [userActivity, setUserActivity] = useState<UserActivity[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (enrollmentId) {
@@ -243,6 +244,48 @@ const AdminEnrollmentDetails: React.FC = () => {
       });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleApproveReject = async (action: 'approve' | 'reject') => {
+    if (!enrollmentId) return;
+    
+    try {
+      setIsUpdating(true);
+      
+      const { data: responseData, error } = await supabase.functions.invoke('admin-enrollment-access', {
+        body: { 
+          enrollmentId, 
+          action, 
+          notes,
+          adminId: 'admin_action'
+        }
+      });
+
+      if (error || !responseData?.success) {
+        console.error('Error updating enrollment:', error);
+        toast({
+          title: 'خطا',
+          description: 'خطا در به‌روزرسانی ثبت‌نام',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setEnrollment(responseData.enrollment);
+      toast({
+        title: 'موفق',
+        description: action === 'approve' ? 'ثبت‌نام تایید شد' : 'ثبت‌نام رد شد',
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: 'خطا',
+        description: 'خطا در انجام عملیات',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -717,6 +760,45 @@ const AdminEnrollmentDetails: React.FC = () => {
                   <p className="text-sm">{enrollment.admin_notes}</p>
                 </div>
               )}
+
+              {/* Admin Actions */}
+              <div className="mt-6 flex gap-2">
+                <Button
+                  onClick={() => handleApproveReject('approve')}
+                  disabled={isUpdating}
+                  className="flex-1"
+                >
+                  {isUpdating ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      در حال پردازش...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      تایید ثبت‌نام
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleApproveReject('reject')}
+                  disabled={isUpdating}
+                  className="flex-1"
+                >
+                  {isUpdating ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      در حال پردازش...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4" />
+                      رد ثبت‌نام
+                    </span>
+                  )}
+                </Button>
+              </div>
 
               {/* Receipt */}
               {enrollment.receipt_url && (
