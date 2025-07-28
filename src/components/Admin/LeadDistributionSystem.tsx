@@ -94,14 +94,10 @@ const LeadDistributionSystem: React.FC = () => {
   useEffect(() => {
     if (selectedCourse) {
       fetchUnassignedCount();
-      // Reset percentages when course changes
-      setPercentages(salesAgents.map(agent => ({
-        agent_id: agent.id,
-        agent_name: agent.name,
-        percentage: 0
-      })));
+      // Fetch agents with access to this course and reset percentages
+      fetchCourseAgents(selectedCourse);
     }
-  }, [selectedCourse, dateFrom, dateTo, salesAgents]);
+  }, [selectedCourse, dateFrom, dateTo]);
 
   const fetchCourses = async () => {
     try {
@@ -144,12 +140,8 @@ const LeadDistributionSystem: React.FC = () => {
       
       setSalesAgents(agentsData);
       
-      // Initialize percentages
-      setPercentages(agentsData.map(agent => ({
-        agent_id: agent.id,
-        agent_name: agent.name,
-        percentage: 0
-      })));
+      // Initialize percentages - will be filtered by course access later
+      setPercentages([]);
     } catch (error) {
       console.error('Error fetching sales agents:', error);
       toast({
@@ -157,6 +149,49 @@ const LeadDistributionSystem: React.FC = () => {
         description: "خطا در دریافت فروشندگان",
         variant: "destructive"
       });
+    }
+  };
+
+  // New function to fetch agents with access to specific course
+  const fetchCourseAgents = async (courseId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('sales_agent_courses')
+        .select(`
+          sales_agents!inner(
+            id,
+            user_id,
+            is_active,
+            chat_users!inner(name)
+          )
+        `)
+        .eq('course_id', courseId)
+        .eq('sales_agents.is_active', true);
+
+      if (error) throw error;
+      
+      const courseAgents = data?.map(item => ({
+        id: (item as any).sales_agents.id,
+        name: (item as any).sales_agents.chat_users.name,
+        user_id: (item as any).sales_agents.user_id
+      })) || [];
+      
+      // Initialize percentages for agents with course access
+      setPercentages(courseAgents.map(agent => ({
+        agent_id: agent.id,
+        agent_name: agent.name,
+        percentage: 0
+      })));
+      
+      return courseAgents;
+    } catch (error) {
+      console.error('Error fetching course agents:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت فروشندگان دوره",
+        variant: "destructive"
+      });
+      return [];
     }
   };
 
@@ -902,9 +937,9 @@ const LeadDistributionSystem: React.FC = () => {
                               <SelectValue placeholder="انتخاب فروشنده" />
                             </SelectTrigger>
                             <SelectContent>
-                              {salesAgents.map(agent => (
-                                <SelectItem key={agent.id} value={agent.id.toString()}>
-                                  {agent.name}
+                              {percentages.map(distribution => (
+                                <SelectItem key={distribution.agent_id} value={distribution.agent_id.toString()}>
+                                  {distribution.agent_name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
