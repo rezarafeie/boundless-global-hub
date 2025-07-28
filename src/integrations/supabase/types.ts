@@ -3067,7 +3067,7 @@ export type Database = {
       }
     }
     Enums: {
-      academy_user_role: "student" | "admin"
+      academy_user_role: "student" | "admin" | "sales_manager"
       course_status: "active" | "closed" | "full"
       course_type: "free" | "paid"
       enrollment_status: "enrolled" | "completed"
@@ -3233,7 +3233,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      academy_user_role: ["student", "admin"],
+      academy_user_role: ["student", "admin", "sales_manager"],
       course_status: ["active", "closed", "full"],
       course_type: ["free", "paid"],
       enrollment_status: ["enrolled", "completed"],
