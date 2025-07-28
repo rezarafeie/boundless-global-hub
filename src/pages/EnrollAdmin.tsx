@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import SalesDashboard from '@/components/Admin/SalesDashboard';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Enrollment {
   id: string;
@@ -86,45 +87,12 @@ const EnrollAdmin: React.FC = () => {
   const [sortBy, setSortBy] = useState<'created_at' | 'payment_amount'>('created_at');
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [isUserCRMPopupOpen, setIsUserCRMPopupOpen] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'sales_manager' | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const { role: userRole, loading: roleLoading, isAdmin, canViewSales } = useUserRole();
 
   useEffect(() => {
-    checkUserRole();
     fetchEnrollments();
     fetchCourses();
   }, [filter, sortOrder, sortBy]);
-
-  const checkUserRole = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        setUserRole(null);
-        setRoleLoading(false);
-        return;
-      }
-
-      // Check user role from academy_users table
-      const { data: userData, error } = await supabase
-        .from('academy_users')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching user role:', error);
-        setUserRole(null);
-      } else {
-        setUserRole(userData?.role === 'admin' || userData?.role === 'sales_manager' ? userData.role : null);
-      }
-    } catch (error) {
-      console.error('Error checking user role:', error);
-      setUserRole(null);
-    } finally {
-      setRoleLoading(false);
-    }
-  };
 
   const fetchEnrollments = async () => {
     setLoading(true);
@@ -255,8 +223,6 @@ const EnrollAdmin: React.FC = () => {
     setSelectedEnrollment(null);
   };
 
-  // Check if user has access to sales dashboard
-  const canViewSales = userRole === 'admin' || userRole === 'sales_manager';
 
   if (roleLoading) {
     return (

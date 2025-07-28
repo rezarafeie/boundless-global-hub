@@ -29,23 +29,30 @@ export const useUserRole = (): UserRoleInfo => {
           return;
         }
 
-        // Check user role from academy_users table
-        const { data: userData, error } = await supabase
+        // First check academy_users table
+        const { data: academyUserData, error: academyError } = await supabase
           .from('academy_users')
           .select('role')
           .eq('id', user.id)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error fetching user role:', error);
-          toast({
-            title: "خطا",
-            description: "خطا در دریافت نقش کاربر",
-            variant: "destructive"
-          });
-          setRole(null);
+        if (academyUserData?.role) {
+          setRole(academyUserData.role);
+          setLoading(false);
+          return;
+        }
+
+        // If not found in academy_users, check messenger users (chat_users)
+        const { data: chatUserData, error: chatError } = await supabase
+          .from('chat_users')
+          .select('role, is_messenger_admin')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (chatUserData?.is_messenger_admin || chatUserData?.role === 'admin') {
+          setRole('admin');
         } else {
-          setRole(userData?.role || 'student');
+          setRole('student');
         }
       } catch (error) {
         console.error('Error checking user role:', error);
