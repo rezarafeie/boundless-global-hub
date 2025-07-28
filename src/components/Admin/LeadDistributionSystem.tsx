@@ -836,10 +836,65 @@ const LeadDistributionSystem: React.FC = () => {
                         </span>
                         <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                       </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 text-xs sm:text-sm w-fit self-end sm:self-auto">
-                        فیلتر شده
-                      </Badge>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-end">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 text-xs sm:text-sm w-fit self-end sm:self-auto">
+                          فیلتر شده
+                        </Badge>
+                        {removeDuplicates && (
+                          <Badge variant="outline" className="text-xs sm:text-sm w-fit self-end sm:self-auto">
+                            تکراری‌ها حذف شد
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Display filtered leads table for percentage distribution */}
+                  <div className="border rounded-lg">
+                    <Table>
+                       <TableHeader>
+                         <TableRow>
+                           <TableHead>نام</TableHead>
+                           <TableHead>ایمیل</TableHead>
+                           <TableHead>تلفن</TableHead>
+                           <TableHead>مبلغ</TableHead>
+                           <TableHead>وضعیت پرداخت</TableHead>
+                           <TableHead>تاریخ ثبت‌نام</TableHead>
+                           <TableHead>وضعیت واگذاری</TableHead>
+                         </TableRow>
+                       </TableHeader>
+                      <TableBody>
+                        {enrollments.map((enrollment) => (
+                          <TableRow key={enrollment.id}>
+                             <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                             <TableCell>{enrollment.email}</TableCell>
+                             <TableCell>{enrollment.phone}</TableCell>
+                             <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
+                             <TableCell>
+                               <Badge variant={
+                                 enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                   ? "default" 
+                                   : enrollment.payment_status === 'pending' 
+                                     ? "secondary" 
+                                     : "destructive"
+                               }>
+                                 {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                   ? "پرداخت شده" 
+                                   : enrollment.payment_status === 'pending' 
+                                     ? "در انتظار پرداخت" 
+                                     : "لغو شده"}
+                               </Badge>
+                             </TableCell>
+                             <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
+                             <TableCell>
+                               <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
+                                 {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
+                               </Badge>
+                             </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               )}
