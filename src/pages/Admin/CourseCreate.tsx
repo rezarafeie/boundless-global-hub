@@ -42,7 +42,9 @@ const CourseCreate: React.FC = () => {
     support_activation_required: false,
     telegram_activation_required: false,
     smart_activation_enabled: false,
-    smart_activation_telegram_link: ''
+    smart_activation_telegram_link: '',
+    use_enrollments_as_leads: false,
+    lead_start_date: ''
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -127,7 +129,9 @@ const CourseCreate: React.FC = () => {
         support_activation_required: formData.support_activation_required,
         telegram_activation_required: formData.telegram_activation_required,
         smart_activation_enabled: formData.smart_activation_enabled,
-        smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null
+        smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
+        use_enrollments_as_leads: formData.use_enrollments_as_leads,
+        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
 
       const { error } = await supabase
@@ -596,6 +600,48 @@ mba
                     جایگزین کردن لینک خارجی با صفحه ثبت‌نام داخلی (/enroll?course=slug)
                   </p>
                 </div>
+              </div>
+
+              {/* Lead Generation Section */}
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  تولید لید از ثبت‌نام‌ها
+                </h3>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="use_enrollments_as_leads"
+                    checked={formData.use_enrollments_as_leads}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, use_enrollments_as_leads: checked }))}
+                  />
+                  <Label htmlFor="use_enrollments_as_leads">استفاده از ثبت‌نام‌های این دوره به‌عنوان لید</Label>
+                </div>
+
+                {formData.use_enrollments_as_leads && (
+                  <div className="space-y-4">
+                    <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <h4 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2">نحوه عملکرد تولید لید</h4>
+                      <p className="text-sm text-muted-foreground">
+                        تمام ثبت‌نام‌هایی که پس از تاریخ انتخابی برای این دوره انجام شوند، به‌عنوان لید در سیستم مدیریت لید قابل دسترسی خواهند بود.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="lead_start_date">تاریخ شروع تولید لید *</Label>
+                      <Input
+                        id="lead_start_date"
+                        type="datetime-local"
+                        value={formData.lead_start_date}
+                        onChange={(e) => setFormData(prev => ({ ...prev, lead_start_date: e.target.value }))}
+                        required={formData.use_enrollments_as_leads}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        ثبت‌نام‌های انجام شده پس از این تاریخ به‌عنوان لید محسوب می‌شوند
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">

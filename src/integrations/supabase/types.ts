@@ -775,6 +775,7 @@ export type Database = {
           is_free_access: boolean | null
           is_sale_enabled: boolean | null
           is_spotplayer_enabled: boolean | null
+          lead_start_date: string | null
           price: number
           redirect_url: string | null
           sale_expires_at: string | null
@@ -791,6 +792,7 @@ export type Database = {
           updated_at: string
           usd_price: number | null
           use_dollar_price: boolean
+          use_enrollments_as_leads: boolean
           use_landing_page_merge: boolean
           woocommerce_create_access: boolean | null
           woocommerce_product_id: number | null
@@ -806,6 +808,7 @@ export type Database = {
           is_free_access?: boolean | null
           is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
+          lead_start_date?: string | null
           price?: number
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -822,6 +825,7 @@ export type Database = {
           updated_at?: string
           usd_price?: number | null
           use_dollar_price?: boolean
+          use_enrollments_as_leads?: boolean
           use_landing_page_merge?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
@@ -837,6 +841,7 @@ export type Database = {
           is_free_access?: boolean | null
           is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
+          lead_start_date?: string | null
           price?: number
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -853,6 +858,7 @@ export type Database = {
           updated_at?: string
           usd_price?: number | null
           use_dollar_price?: boolean
+          use_enrollments_as_leads?: boolean
           use_landing_page_merge?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
