@@ -30,7 +30,16 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
   const [reactions, setReactions] = useState<any[]>([]);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
+  
   const handleReply = () => {
+    setReplyingTo({
+      id: message.id,
+      message: message.message,
+      sender_name: message.sender_name || 'User'
+    });
+  };
+
+  const handleTimestampClick = () => {
     setReplyingTo({
       id: message.id,
       message: message.message,
@@ -187,6 +196,26 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
               </div>
             )}
             
+            {/* Replied Message Display */}
+            {(message as any).reply_to_message_id && (
+              <div className={`mb-2 p-2 rounded-md border-l-2 ${
+                isOwnMessage 
+                  ? 'bg-blue-600/20 border-blue-300' 
+                  : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600'
+              }`}>
+                <div className={`text-xs font-medium ${
+                  isOwnMessage ? 'text-blue-100' : 'text-slate-600 dark:text-slate-400'
+                }`}>
+                  پاسخ به {(message as any).replied_to?.sender_name || 'کاربر'}
+                </div>
+                <div className={`text-xs mt-1 ${
+                  isOwnMessage ? 'text-blue-100' : 'text-slate-700 dark:text-slate-300'
+                }`}>
+                  {(message as any).replied_to?.message || 'پیام'}
+                </div>
+              </div>
+            )}
+            
             {/* Message content */}
             <p className={`text-sm leading-relaxed ${
               isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
@@ -217,7 +246,10 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
                 {message.is_pinned && isOwnMessage && (
                   <Pin className="w-3 h-3 mr-1" />
                 )}
-                <span>
+                <span 
+                  className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  onClick={handleTimestampClick}
+                >
                   {new Date(message.created_at).toLocaleTimeString('fa-IR', {
                     hour: '2-digit',
                     minute: '2-digit'

@@ -172,7 +172,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
-                Reply to {replyingTo.sender_name}
+                پاسخ به {replyingTo.sender_name}
               </div>
               <div className="text-sm text-slate-600 dark:text-slate-300 truncate">
                 {replyingTo.message}
@@ -182,7 +182,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setReplyingTo(null)}
-              className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700"
+              className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
             >
               <X className="w-4 h-4" />
             </Button>
