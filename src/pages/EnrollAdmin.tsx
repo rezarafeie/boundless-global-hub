@@ -86,11 +86,45 @@ const EnrollAdmin: React.FC = () => {
   const [sortBy, setSortBy] = useState<'created_at' | 'payment_amount'>('created_at');
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [isUserCRMPopupOpen, setIsUserCRMPopupOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'sales_manager' | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
+    checkUserRole();
     fetchEnrollments();
     fetchCourses();
   }, [filter, sortOrder, sortBy]);
+
+  const checkUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setUserRole(null);
+        setRoleLoading(false);
+        return;
+      }
+
+      // Check user role from academy_users table
+      const { data: userData, error } = await supabase
+        .from('academy_users')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setUserRole(null);
+      } else {
+        setUserRole(userData?.role === 'admin' || userData?.role === 'sales_manager' ? userData.role : null);
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setUserRole(null);
+    } finally {
+      setRoleLoading(false);
+    }
+  };
 
   const fetchEnrollments = async () => {
     setLoading(true);
@@ -221,6 +255,30 @@ const EnrollAdmin: React.FC = () => {
     setSelectedEnrollment(null);
   };
 
+  // Check if user has access to sales dashboard
+  const canViewSales = userRole === 'admin' || userRole === 'sales_manager';
+
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>در حال بررسی دسترسی...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userRole) {
+    return (
+      <div className="text-center py-8">
+        <AlertCircle className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+        <p className="text-lg font-medium">دسترسی غیرمجاز</p>
+        <p className="text-sm text-muted-foreground">شما به این بخش دسترسی ندارید.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Card>
@@ -242,15 +300,17 @@ const EnrollAdmin: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="list" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className={`grid w-full ${canViewSales ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 لیست ثبت‌نام‌ها
               </TabsTrigger>
-              <TabsTrigger value="sales" className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                داشبورد فروش
-              </TabsTrigger>
+              {canViewSales && (
+                <TabsTrigger value="sales" className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  داشبورد فروش
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="list" className="space-y-4">
               {isFilterOpen && (
