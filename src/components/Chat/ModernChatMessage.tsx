@@ -147,10 +147,16 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
               isOwnMessage
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md'
-                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
-            }`}
-            onClick={doubleTapHandler}
-            style={{ cursor: 'pointer' }}
+                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+            } ${!isOwnMessage ? 'cursor-pointer' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOwnMessage) {
+                handleReply();
+              } else {
+                doubleTapHandler();
+              }
+            }}
           >
             {/* Heart Animation */}
             {showHeartAnimation && (
@@ -227,17 +233,9 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             }`}>
               <div className="flex items-center">
                 {!isOwnMessage && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReply();
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md"
-                  >
-                    <Reply className="w-3 h-3" />
-                  </Button>
+                  <span className="text-xs opacity-70">
+                    کلیک کنید برای پاسخ
+                  </span>
                 )}
               </div>
               <div className="flex items-center">
@@ -246,7 +244,12 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
                 )}
                 <span 
                   className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  onClick={handleTimestampClick}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isOwnMessage) {
+                      handleReply();
+                    }
+                  }}
                 >
                   {new Date(message.created_at).toLocaleTimeString('fa-IR', {
                     hour: '2-digit',
