@@ -26,13 +26,15 @@ import {
   Award,
   Plus,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Share2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/use-debounce';
+import LeadDistributionSystem from './LeadDistributionSystem';
 
 interface Lead {
   enrollment_id: string;
@@ -130,7 +132,7 @@ const LeadManagement: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution'>('available');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
@@ -928,16 +930,27 @@ const LeadManagement: React.FC = () => {
                 >
                   واگذار شده‌ها
                 </Button>
-                {isAdmin && (
-                  <Button
-                    variant={activeTab === 'admin' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setActiveTab('admin')}
-                    className="w-full sm:w-auto text-sm whitespace-nowrap"
-                  >
-                    مدیریت ادمین
-                  </Button>
-                )}
+                 {isAdmin && (
+                   <>
+                     <Button
+                       variant={activeTab === 'admin' ? 'default' : 'ghost'}
+                       size="sm"
+                       onClick={() => setActiveTab('admin')}
+                       className="w-full sm:w-auto text-sm whitespace-nowrap"
+                     >
+                       مدیریت ادمین
+                     </Button>
+                     <Button
+                       variant={activeTab === 'distribution' ? 'default' : 'ghost'}
+                       size="sm"
+                       onClick={() => setActiveTab('distribution')}
+                       className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                     >
+                       <Share2 className="h-4 w-4" />
+                       توزیع لید
+                     </Button>
+                   </>
+                 )}
               </div>
             </div>
           </div>
@@ -1446,15 +1459,18 @@ const LeadManagement: React.FC = () => {
                          >
                            بعدی
                          </Button>
-                       </div>
-                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                        </div>
+                      </div>
+                   )}
+                 </CardContent>
+               </Card>
+             </div>
+           ) : activeTab === 'distribution' ? (
+             <LeadDistributionSystem />
+           ) : null
+           }
+         </CardContent>
+       </Card>
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>

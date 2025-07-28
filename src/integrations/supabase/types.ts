@@ -1308,6 +1308,61 @@ export type Database = {
           },
         ]
       }
+      lead_distribution_logs: {
+        Row: {
+          admin_id: number
+          count: number
+          course_id: string
+          created_at: string
+          id: string
+          method: string
+          note: string | null
+          sales_agent_id: number
+        }
+        Insert: {
+          admin_id: number
+          count?: number
+          course_id: string
+          created_at?: string
+          id?: string
+          method: string
+          note?: string | null
+          sales_agent_id: number
+        }
+        Update: {
+          admin_id?: number
+          count?: number
+          course_id?: string
+          created_at?: string
+          id?: string
+          method?: string
+          note?: string | null
+          sales_agent_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_admin_id"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_course_id"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_sales_agent_id"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_sections: {
         Row: {
           created_at: string | null
