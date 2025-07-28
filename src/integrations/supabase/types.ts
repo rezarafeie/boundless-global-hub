@@ -2867,6 +2867,14 @@ export type Database = {
         Args: { phone_number: string }
         Returns: string
       }
+      distribute_lead_to_agent: {
+        Args: {
+          p_enrollment_id: string
+          p_agent_user_id: number
+          p_assigned_by: number
+        }
+        Returns: boolean
+      }
       generate_lesson_numbers: {
         Args: Record<PropertyKey, never>
         Returns: undefined

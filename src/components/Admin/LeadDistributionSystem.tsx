@@ -458,7 +458,7 @@ const LeadDistributionSystem: React.FC = () => {
 
             console.log(`🔄 Assigning enrollment ${enrollment.id} to agent ${distribution.agent_name} (user_id: ${agentUserId})`);
 
-            const { error: assignError } = await supabase.rpc('assign_lead_to_agent', {
+            const { error: assignError } = await supabase.rpc('distribute_lead_to_agent', {
               p_enrollment_id: enrollment.id,
               p_agent_user_id: agentUserId,
               p_assigned_by: assignedById
