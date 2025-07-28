@@ -333,6 +333,14 @@ const LeadDistributionSystem: React.FC = () => {
 
     setLoading(true);
     try {
+      console.log('🔍 Starting percentage distribution...', { selectedCourse, userId: user.id });
+      
+      // Get the current user's chat_users ID for assigned_by field
+      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
+      if (!assignedById) {
+        throw new Error('Cannot determine user ID for assignment');
+      }
+
       // Get unassigned enrollments
       let query = supabase
         .from('enrollments')
@@ -350,6 +358,8 @@ const LeadDistributionSystem: React.FC = () => {
       const { data: allEnrollments, error: enrollmentError } = await query;
       if (enrollmentError) throw enrollmentError;
 
+      console.log('📊 Found enrollments:', allEnrollments?.length);
+
       // Filter out assigned enrollments
       const { data: assignments, error: assignmentError } = await supabase
         .from('lead_assignments')
@@ -361,54 +371,105 @@ const LeadDistributionSystem: React.FC = () => {
       const assignedSet = new Set(assignments?.map(a => a.enrollment_id) || []);
       const unassignedEnrollments = allEnrollments?.filter(e => !assignedSet.has(e.id)) || [];
 
+      console.log('📊 Unassigned enrollments:', unassignedEnrollments.length);
+
+      if (unassignedEnrollments.length === 0) {
+        toast({
+          title: "اطلاع",
+          description: "لیدی برای توزیع وجود ندارد",
+          variant: "default"
+        });
+        return;
+      }
+
       // Shuffle the array for random distribution
       const shuffled = [...unassignedEnrollments].sort(() => Math.random() - 0.5);
 
       // Distribute based on percentages
       let currentIndex = 0;
+      let totalAssigned = 0;
+      const errors: string[] = [];
+
       for (const distribution of percentages) {
         if (distribution.percentage === 0) continue;
 
         const count = Math.round((shuffled.length * distribution.percentage) / 100);
         const enrollmentsToAssign = shuffled.slice(currentIndex, currentIndex + count);
 
-        // Assign these enrollments to the agent
-        for (const enrollment of enrollmentsToAssign) {
-          const { error: assignError } = await supabase.rpc('assign_lead_to_agent', {
-            p_enrollment_id: enrollment.id,
-            p_agent_user_id: salesAgents.find(a => a.id === distribution.agent_id)?.user_id,
-            p_assigned_by: Number(user.id)
-          });
+        console.log(`📊 Assigning ${enrollmentsToAssign.length} leads to agent ${distribution.agent_name}`);
 
-          if (assignError) {
-            console.error('Error assigning lead:', assignError);
+        // Assign these enrollments to the agent
+        let successCount = 0;
+        for (const enrollment of enrollmentsToAssign) {
+          try {
+            const agentUserId = salesAgents.find(a => a.id === distribution.agent_id)?.user_id;
+            if (!agentUserId) {
+              throw new Error(`Agent user ID not found for agent ${distribution.agent_id}`);
+            }
+
+            const { error: assignError } = await supabase.rpc('assign_lead_to_agent', {
+              p_enrollment_id: enrollment.id,
+              p_agent_user_id: agentUserId,
+              p_assigned_by: assignedById
+            });
+
+            if (assignError) {
+              console.error('❌ Error assigning lead:', assignError);
+              errors.push(`خطا در واگذاری لید ${enrollment.id}: ${assignError.message}`);
+            } else {
+              successCount++;
+              console.log('✅ Successfully assigned lead:', enrollment.id);
+            }
+          } catch (err) {
+            console.error('❌ Exception assigning lead:', err);
+            errors.push(`خطا در واگذاری لید ${enrollment.id}: ${err}`);
           }
         }
 
         // Log the distribution
-        const { error: logError } = await supabase
-          .from('lead_distribution_logs')
-          .insert({
-            admin_id: Number(user.id),
-            sales_agent_id: distribution.agent_id,
-            method: 'percentage',
-            course_id: selectedCourse,
-            count: enrollmentsToAssign.length,
-            note
-          });
+        if (successCount > 0) {
+          try {
+            const { error: logError } = await supabase
+              .from('lead_distribution_logs')
+              .insert({
+                admin_id: assignedById,
+                sales_agent_id: distribution.agent_id,
+                method: 'percentage',
+                course_id: selectedCourse,
+                count: successCount,
+                note
+              });
 
-        if (logError) {
-          console.error('Error logging distribution:', logError);
+            if (logError) {
+              console.error('❌ Error logging distribution:', logError);
+              errors.push(`خطا در ثبت لاگ: ${logError.message}`);
+            } else {
+              console.log('✅ Successfully logged distribution');
+            }
+          } catch (err) {
+            console.error('❌ Exception logging distribution:', err);
+            errors.push(`خطا در ثبت لاگ: ${err}`);
+          }
         }
 
+        totalAssigned += successCount;
         currentIndex += count;
       }
 
-      toast({
-        title: "موفق",
-        description: `${currentIndex} لید با موفقیت توزیع شد`,
-        variant: "default"
-      });
+      if (errors.length > 0) {
+        console.error('❌ Distribution completed with errors:', errors);
+        toast({
+          title: "توزیع با خطا",
+          description: `${totalAssigned} لید توزیع شد، اما ${errors.length} خطا رخ داد. جزئیات در کنسول موجود است.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "موفق",
+          description: `${totalAssigned} لید با موفقیت توزیع شد`,
+          variant: "default"
+        });
+      }
 
       // Reset form
       setShowPreview(false);
@@ -416,10 +477,10 @@ const LeadDistributionSystem: React.FC = () => {
       fetchUnassignedCount();
 
     } catch (error) {
-      console.error('Error executing distribution:', error);
+      console.error('❌ Error executing distribution:', error);
       toast({
         title: "خطا",
-        description: "خطا در توزیع لیدها",
+        description: `خطا در توزیع لیدها: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
@@ -432,43 +493,84 @@ const LeadDistributionSystem: React.FC = () => {
 
     setLoading(true);
     try {
+      console.log('🔍 Starting manual assignment...', { selectedAgent, enrollmentCount: selectedEnrollments.length });
+      
+      // Get the current user's chat_users ID for assigned_by field
+      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
+      if (!assignedById) {
+        throw new Error('Cannot determine user ID for assignment');
+      }
+
       const agentUserId = salesAgents.find(a => a.id === Number(selectedAgent))?.user_id;
       if (!agentUserId) throw new Error('Agent not found');
 
-      // Assign selected enrollments
-      for (const enrollmentId of selectedEnrollments) {
-        const { error: assignError } = await supabase.rpc('assign_lead_to_agent', {
-          p_enrollment_id: enrollmentId,
-          p_agent_user_id: agentUserId,
-          p_assigned_by: Number(user.id)
-        });
+      console.log('📊 Assignment details:', { agentUserId, assignedById, enrollmentIds: selectedEnrollments });
 
-        if (assignError) {
-          console.error('Error assigning lead:', assignError);
+      // Assign selected enrollments
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (const enrollmentId of selectedEnrollments) {
+        try {
+          const { error: assignError } = await supabase.rpc('assign_lead_to_agent', {
+            p_enrollment_id: enrollmentId,
+            p_agent_user_id: agentUserId,
+            p_assigned_by: assignedById
+          });
+
+          if (assignError) {
+            console.error('❌ Error assigning lead:', assignError);
+            errors.push(`خطا در واگذاری لید ${enrollmentId}: ${assignError.message}`);
+          } else {
+            successCount++;
+            console.log('✅ Successfully assigned lead:', enrollmentId);
+          }
+        } catch (err) {
+          console.error('❌ Exception assigning lead:', err);
+          errors.push(`خطا در واگذاری لید ${enrollmentId}: ${err}`);
         }
       }
 
       // Log the assignment
-      const { error: logError } = await supabase
-        .from('lead_distribution_logs')
-        .insert({
-          admin_id: Number(user.id),
-          sales_agent_id: Number(selectedAgent),
-          method: 'manual',
-          course_id: selectedCourse,
-          count: selectedEnrollments.length,
-          note
-        });
+      if (successCount > 0) {
+        try {
+          const { error: logError } = await supabase
+            .from('lead_distribution_logs')
+            .insert({
+              admin_id: assignedById,
+              sales_agent_id: Number(selectedAgent),
+              method: 'manual',
+              course_id: selectedCourse,
+              count: successCount,
+              note
+            });
 
-      if (logError) {
-        console.error('Error logging assignment:', logError);
+          if (logError) {
+            console.error('❌ Error logging assignment:', logError);
+            errors.push(`خطا در ثبت لاگ: ${logError.message}`);
+          } else {
+            console.log('✅ Successfully logged assignment');
+          }
+        } catch (err) {
+          console.error('❌ Exception logging assignment:', err);
+          errors.push(`خطا در ثبت لاگ: ${err}`);
+        }
       }
 
-      toast({
-        title: "موفق",
-        description: `${selectedEnrollments.length} لید با موفقیت واگذار شد`,
-        variant: "default"
-      });
+      if (errors.length > 0) {
+        console.error('❌ Manual assignment completed with errors:', errors);
+        toast({
+          title: "واگذاری با خطا",
+          description: `${successCount} لید واگذار شد، اما ${errors.length} خطا رخ داد. جزئیات در کنسول موجود است.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "موفق",
+          description: `${successCount} لید با موفقیت واگذار شد`,
+          variant: "default"
+        });
+      }
 
       // Reset form
       setSelectedEnrollments([]);
@@ -477,10 +579,10 @@ const LeadDistributionSystem: React.FC = () => {
       fetchEnrollments();
 
     } catch (error) {
-      console.error('Error executing manual assignment:', error);
+      console.error('❌ Error executing manual assignment:', error);
       toast({
         title: "خطا",
-        description: "خطا در واگذاری لیدها",
+        description: `خطا در واگذاری لیدها: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
