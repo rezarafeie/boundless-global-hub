@@ -329,7 +329,7 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const executePercentageDistribution = async () => {
-    console.log('🚀 executePercentageDistribution called!', { selectedCourse, userId: user?.id, userObject: user });
+    console.log('🚀 executePercentageDistribution called!', { selectedCourse, userId: user?.id, userObject: user, percentages, unassignedCount });
     
     if (!selectedCourse || !user?.id) {
       console.log('❌ Missing requirements:', { selectedCourse, userId: user?.id });
@@ -337,6 +337,25 @@ const LeadDistributionSystem: React.FC = () => {
         title: "خطا",
         description: "دوره انتخاب نشده یا کاربر وارد نشده",
         variant: "destructive"
+      });
+      return;
+    }
+
+    const totalPercentage = percentages.reduce((sum, p) => sum + p.percentage, 0);
+    if (totalPercentage !== 100) {
+      toast({
+        title: "خطا",
+        description: "مجموع درصدها باید ۱۰۰٪ باشد",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (unassignedCount === 0) {
+      toast({
+        title: "اطلاع",
+        description: "لیدی برای توزیع وجود ندارد",
+        variant: "default"
       });
       return;
     }
