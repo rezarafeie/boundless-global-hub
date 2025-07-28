@@ -82,10 +82,12 @@ const SalesDashboard: React.FC = () => {
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [reportLoading, setReportLoading] = useState(false);
+  const [uniqueUnassignedLeads, setUniqueUnassignedLeads] = useState<number>(0);
 
   useEffect(() => {
     fetchSalesData();
     fetchCourses();
+    fetchUniqueUnassignedLeads();
   }, []);
 
   useEffect(() => {
@@ -93,6 +95,25 @@ const SalesDashboard: React.FC = () => {
       fetchCustomReport();
     }
   }, [selectedCourse, dateFilter, customStartDate, customEndDate]);
+
+  const fetchUniqueUnassignedLeads = async () => {
+    try {
+      // Get all enrollments that don't have assignments (unassigned leads)
+      const { data: unassignedEnrollments, error } = await supabase
+        .from('enrollments')
+        .select('id')
+        .in('payment_status', ['success', 'completed'])
+        .not('id', 'in', `(SELECT enrollment_id FROM lead_assignments WHERE enrollment_id IS NOT NULL)`);
+        
+      if (error) throw error;
+      
+      // Count unique enrollments
+      const uniqueCount = new Set(unassignedEnrollments?.map(e => e.id) || []).size;
+      setUniqueUnassignedLeads(uniqueCount);
+    } catch (error) {
+      console.error('Error fetching unique unassigned leads:', error);
+    }
+  };
 
   const fetchSalesData = async () => {
     setLoading(true);
@@ -362,7 +383,7 @@ const SalesDashboard: React.FC = () => {
               <AlertCircle className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{salesStats?.unassigned_leads_total || 0}</div>
+              <div className="text-2xl font-bold text-orange-600">{uniqueUnassignedLeads}</div>
             </CardContent>
           </Card>
 
