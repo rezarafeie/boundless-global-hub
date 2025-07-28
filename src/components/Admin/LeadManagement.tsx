@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useUserRole } from '@/hooks/useUserRole';
 import LeadDistributionSystem from './LeadDistributionSystem';
 
 interface Lead {
@@ -124,6 +125,8 @@ const CRM_STATUSES = [
 const LeadManagement: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { role, isAdmin, isSalesManager, canManageLeads } = useUserRole();
+  
   const [leads, setLeads] = useState<Lead[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [adminLeads, setAdminLeads] = useState<AdminLead[]>([]);
@@ -134,12 +137,13 @@ const LeadManagement: React.FC = () => {
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution'>(
+    isAdmin ? 'admin' : 'available'
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -164,7 +168,6 @@ const LeadManagement: React.FC = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
   useEffect(() => {
-    checkAdminRole();
     fetchLeads();
     fetchAssignments();
     fetchCourses();
@@ -223,22 +226,6 @@ const LeadManagement: React.FC = () => {
     }
   };
 
-  const checkAdminRole = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('chat_users')
-        .select('is_messenger_admin')
-        .eq('id', Number(user.id))
-        .single();
-
-      if (error) throw error;
-      setIsAdmin(data?.is_messenger_admin || false);
-    } catch (error) {
-      console.error('Error checking admin role:', error);
-    }
-  };
 
   const fetchLeads = async () => {
     if (!user?.id) return;
@@ -949,22 +936,27 @@ const LeadManagement: React.FC = () => {
             {/* Tabs - Mobile Responsive */}
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex flex-col sm:flex-row rounded-md bg-muted p-1 gap-1 sm:gap-0 w-full sm:w-auto">
-                <Button
-                  variant={activeTab === 'available' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('available')}
-                  className="w-full sm:w-auto text-sm whitespace-nowrap"
-                >
-                  لیدهای موجود
-                </Button>
-                <Button
-                  variant={activeTab === 'assigned' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('assigned')}
-                  className="w-full sm:w-auto text-sm whitespace-nowrap"
-                >
-                  واگذار شده‌ها
-                </Button>
+                {/* Only show these tabs for sales agents (not admin or sales manager) */}
+                {!isAdmin && !isSalesManager && (
+                  <>
+                    <Button
+                      variant={activeTab === 'available' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveTab('available')}
+                      className="w-full sm:w-auto text-sm whitespace-nowrap"
+                    >
+                      لیدهای موجود
+                    </Button>
+                    <Button
+                      variant={activeTab === 'assigned' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveTab('assigned')}
+                      className="w-full sm:w-auto text-sm whitespace-nowrap"
+                    >
+                      واگذار شده‌ها
+                    </Button>
+                  </>
+                )}
                  {isAdmin && (
                    <>
                      <Button

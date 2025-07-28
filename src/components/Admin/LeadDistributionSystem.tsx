@@ -1011,37 +1011,53 @@ const LeadDistributionSystem: React.FC = () => {
 
               {enrollments.length > 0 && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>{enrollments.length} ثبت‌نام یافت شد</span>
-                    <div className="flex items-center gap-3">
-                      <span>{selectedEnrollments.length} انتخاب شده</span>
-                      {selectedEnrollments.length > 0 && (
-                        <div className="flex items-center gap-3">
-                          <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                            <SelectTrigger className="w-48">
-                              <SelectValue placeholder="انتخاب فروشنده" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {percentages.map(distribution => (
-                                <SelectItem key={distribution.agent_id} value={distribution.agent_id.toString()}>
-                                  {distribution.agent_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={() => {
-                              console.log('🖱️ Manual Assignment button clicked!', { selectedAgent, selectedEnrollments: selectedEnrollments.length, loading });
-                              executeManualAssignment();
-                            }}
-                            disabled={!selectedAgent || loading}
-                            size="sm"
-                          >
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            واگذاری
-                          </Button>
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span className="font-semibold text-green-800 dark:text-green-200">
+                            {enrollments.length} ثبت‌نام یافت شد
+                          </span>
                         </div>
-                      )}
+                        {enrollments.length > 0 && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                            فیلتر شده
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">
+                          {selectedEnrollments.length} انتخاب شده
+                        </span>
+                        {selectedEnrollments.length > 0 && (
+                          <div className="flex items-center gap-3">
+                            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                              <SelectTrigger className="w-48">
+                                <SelectValue placeholder="انتخاب فروشنده" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {percentages.map(distribution => (
+                                  <SelectItem key={distribution.agent_id} value={distribution.agent_id.toString()}>
+                                    {distribution.agent_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              onClick={() => {
+                                console.log('🖱️ Manual Assignment button clicked!', { selectedAgent, selectedEnrollments: selectedEnrollments.length, loading });
+                                executeManualAssignment();
+                              }}
+                              disabled={!selectedAgent || loading}
+                              size="sm"
+                            >
+                              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                              واگذاری
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
