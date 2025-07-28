@@ -1365,7 +1365,14 @@ export type Database = {
             foreignKeyName: "fk_sales_agent_id"
             columns: ["sales_agent_id"]
             isOneToOne: false
-            referencedRelation: "chat_users"
+            referencedRelation: "sales_agent_performance"
+            referencedColumns: ["sales_agent_id"]
+          },
+          {
+            foreignKeyName: "fk_sales_agent_id"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
+            referencedRelation: "sales_agents"
             referencedColumns: ["id"]
           },
         ]

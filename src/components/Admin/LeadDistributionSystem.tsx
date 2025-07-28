@@ -433,8 +433,12 @@ const LeadDistributionSystem: React.FC = () => {
           try {
             const agentUserId = salesAgents.find(a => a.id === distribution.agent_id)?.user_id;
             if (!agentUserId) {
-              throw new Error(`Agent user ID not found for agent ${distribution.agent_id}`);
+              console.error('❌ Agent user ID not found for agent:', distribution.agent_id);
+              errors.push(`فروشنده با شناسه ${distribution.agent_id} یافت نشد`);
+              continue;
             }
+
+            console.log(`🔄 Assigning enrollment ${enrollment.id} to agent ${distribution.agent_name} (user_id: ${agentUserId})`);
 
             const { error: assignError } = await supabase.rpc('assign_lead_to_agent', {
               p_enrollment_id: enrollment.id,
@@ -443,7 +447,7 @@ const LeadDistributionSystem: React.FC = () => {
             });
 
             if (assignError) {
-              console.error('❌ Error assigning lead:', assignError);
+              console.error('❌ RPC Error assigning lead:', assignError);
               errors.push(`خطا در واگذاری لید ${enrollment.id}: ${assignError.message}`);
             } else {
               successCount++;
@@ -458,6 +462,8 @@ const LeadDistributionSystem: React.FC = () => {
         // Log the distribution
         if (successCount > 0) {
           try {
+            console.log(`📝 Logging distribution: agent_id=${distribution.agent_id}, admin_id=${assignedById}, count=${successCount}`);
+            
             const { error: logError } = await supabase
               .from('lead_distribution_logs')
               .insert({
@@ -466,7 +472,7 @@ const LeadDistributionSystem: React.FC = () => {
                 method: 'percentage',
                 course_id: selectedCourse,
                 count: successCount,
-                note
+                note: note || null
               });
 
             if (logError) {
@@ -573,6 +579,8 @@ const LeadDistributionSystem: React.FC = () => {
       // Log the assignment
       if (successCount > 0) {
         try {
+          console.log(`📝 Logging manual assignment: agent_id=${selectedAgent}, admin_id=${assignedById}, count=${successCount}`);
+          
           const { error: logError } = await supabase
             .from('lead_distribution_logs')
             .insert({
@@ -581,7 +589,7 @@ const LeadDistributionSystem: React.FC = () => {
               method: 'manual',
               course_id: selectedCourse,
               count: successCount,
-              note
+              note: note || null
             });
 
           if (logError) {
