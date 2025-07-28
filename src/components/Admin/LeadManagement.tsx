@@ -27,7 +27,8 @@ import {
   Plus,
   FileText,
   MessageSquare,
-  Share2
+  Share2,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -132,6 +133,7 @@ const LeadManagement: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
+  const [removeLoading, setRemoveLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution'>('available');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
