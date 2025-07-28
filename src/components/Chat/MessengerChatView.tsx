@@ -615,7 +615,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
           selectedTopic?.id,
           mediaUrl,
           mediaType,
-          mediaContent
+          mediaContent,
+          replyToId
         );
         
         if (selectedTopic) {
@@ -658,7 +659,8 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
             mediaUrl,
             mediaType,
             mediaContent,
-            sessionToken
+            sessionToken,
+            replyToId
           );
           debugLog('Private message sent successfully', {
             messageId: sentMessage?.id || sentMessage

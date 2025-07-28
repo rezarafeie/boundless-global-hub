@@ -207,7 +207,12 @@ export const privateMessageService = {
           is_read,
           created_at,
           reply_to_message_id,
-          forwarded_from_message_id
+          forwarded_from_message_id,
+          replied_to:private_messages!private_messages_reply_to_message_id_fkey (
+            id,
+            message,
+            sender_id
+          )
         `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
@@ -227,7 +232,7 @@ export const privateMessageService = {
     }
   },
 
-  async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string, sessionToken?: string): Promise<PrivateMessage | null> {
+  async sendMessage(senderId: number, recipientId: number, message: string, mediaUrl?: string, mediaType?: string, mediaContent?: string, sessionToken?: string, replyToMessageId?: number): Promise<PrivateMessage | null> {
     try {
       debugLog('Sending private message from', senderId, 'to', recipientId, 'with session:', sessionToken ? 'provided' : 'none');
       
@@ -260,7 +265,8 @@ export const privateMessageService = {
           message_type: mediaType || 'text',
           media_url: mediaUrl,
           media_content: mediaContent,
-          is_read: false
+          is_read: false,
+          reply_to_message_id: replyToMessageId
         }])
         .select('*')
         .single();

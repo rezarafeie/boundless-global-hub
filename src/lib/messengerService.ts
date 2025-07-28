@@ -415,9 +415,16 @@ export const messengerService = {
           message_type,
           media_content,
           conversation_id,
+          reply_to_message_id,
           sender:chat_users!messenger_messages_sender_id_fkey (
             name,
             phone
+          ),
+          replied_to:messenger_messages!messenger_messages_reply_to_message_id_fkey (
+            id,
+            message,
+            sender_id,
+            sender:chat_users!messenger_messages_sender_id_fkey (name)
           )
         `)
         .eq('room_id', roomId)
@@ -470,7 +477,8 @@ export const messengerService = {
     topicId?: number,
     mediaUrl?: string,
     mediaType?: string,
-    mediaContent?: string
+    mediaContent?: string,
+    replyToMessageId?: number
   ): Promise<{ id: number }> {
     try {
       const { data, error } = await supabase
@@ -482,7 +490,8 @@ export const messengerService = {
           topic_id: topicId,
           media_url: mediaUrl,
           message_type: mediaType,
-          media_content: mediaContent
+          media_content: mediaContent,
+          reply_to_message_id: replyToMessageId
         })
         .select('id')
         .single();
