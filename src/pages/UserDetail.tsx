@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Phone, Mail, Calendar, Shield, Settings, BookOpen, TrendingUp, MessageSquare } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Calendar, Shield, Settings, BookOpen, TrendingUp, MessageSquare, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleManagement from '@/components/Admin/UserProfile/UserRoleManagement';
@@ -15,6 +15,7 @@ import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments'
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import LearningProgress from '@/components/Admin/UserProfile/LearningProgress';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
+import UserEditModal from '@/components/Admin/UserEditModal';
 
 interface UserData {
   id: number;
@@ -52,6 +53,7 @@ const UserDetail: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserData | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const userIdToFetch = id || userId;
 
@@ -160,6 +162,15 @@ const UserDetail: React.FC = () => {
             جزئیات کاربر
           </CardTitle>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="w-4 h-4" />
+              ویرایش پروفایل
+            </Button>
             {user.is_approved ? (
               <Badge variant="outline">تایید شده</Badge>
             ) : (
@@ -248,6 +259,13 @@ const UserDetail: React.FC = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      <UserEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        user={user}
+        onUserUpdate={handleRoleUpdate}
+      />
     </div>
   );
 };
