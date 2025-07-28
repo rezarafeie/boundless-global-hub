@@ -207,12 +207,7 @@ export const privateMessageService = {
           is_read,
           created_at,
           reply_to_message_id,
-          forwarded_from_message_id,
-          replied_to:private_messages!private_messages_reply_to_message_id_fkey (
-            id,
-            message,
-            sender_id
-          )
+          forwarded_from_message_id
         `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });

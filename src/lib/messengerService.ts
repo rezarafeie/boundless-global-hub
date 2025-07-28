@@ -419,12 +419,6 @@ export const messengerService = {
           sender:chat_users!messenger_messages_sender_id_fkey (
             name,
             phone
-          ),
-          replied_to:messenger_messages!messenger_messages_reply_to_message_id_fkey (
-            id,
-            message,
-            sender_id,
-            sender:chat_users!messenger_messages_sender_id_fkey (name)
           )
         `)
         .eq('room_id', roomId)
