@@ -117,7 +117,8 @@ export function UserActivity({ userId }: UserActivityProps) {
               break;
             case 'lesson_time_spent':
               const lessonTitleTime = log.metadata?.lesson_title || 'نامشخص';
-              description = `زمان صرف شده در درس ${lessonTitleTime}`;
+              const timeSpentMinutes = log.metadata?.time_spent_minutes || 0;
+              description = `${timeSpentMinutes} دقیقه در درس ${lessonTitleTime} صرف شد`;
               break;
             case 'material_downloaded':
               description = `فایل دانلود شد`;
