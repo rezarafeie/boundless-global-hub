@@ -3,11 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -18,6 +13,7 @@ import {
   CheckCircle,
   AlertCircle,
   Eye,
+  Calendar,
   BarChart3,
   UserCheck,
   Phone,
@@ -59,129 +55,24 @@ const SalesDashboard: React.FC = () => {
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [agentPerformance, setAgentPerformance] = useState<AgentPerformance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState('boundless-taste');
-  const [dateFilter, setDateFilter] = useState('24h');
-  const [customStartDate, setCustomStartDate] = useState<Date>();
-  const [customEndDate, setCustomEndDate] = useState<Date>();
 
   useEffect(() => {
-    fetchCourses();
     fetchSalesData();
   }, []);
-
-  useEffect(() => {
-    fetchSalesData();
-  }, [selectedCourse, dateFilter, customStartDate, customEndDate]);
-
-  const fetchCourses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('id, title, slug')
-        .eq('is_active', true)
-        .order('title');
-
-      if (error) throw error;
-      setCourses(data || []);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-    }
-  };
-
-  const getDateRange = () => {
-    const now = new Date();
-    let startDate: Date;
-    let endDate = now;
-
-    switch (dateFilter) {
-      case '24h':
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '30d':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case 'custom':
-        startDate = customStartDate || new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        endDate = customEndDate || now;
-        break;
-      default:
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    }
-
-    return { startDate, endDate };
-  };
 
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      const { startDate, endDate } = getDateRange();
-      
-      // Build query for enrollments with filters
-      let enrollmentsQuery = supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses!inner(id, title, slug)
-        `)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .in('payment_status', ['completed', 'success']);
+      // Fetch sales dashboard stats
+      const { data: statsData, error: statsError } = await supabase
+        .from('sales_dashboard_stats')
+        .select('*')
+        .single();
 
-      if (selectedCourse !== 'all') {
-        enrollmentsQuery = enrollmentsQuery.eq('courses.slug', selectedCourse);
-      }
+      if (statsError) throw statsError;
+      setSalesStats(statsData);
 
-      const { data: enrollmentsData, error: enrollmentsError } = await enrollmentsQuery;
-      if (enrollmentsError) throw enrollmentsError;
-
-      // Calculate stats from filtered data
-      const totalEnrollments = enrollmentsData?.length || 0;
-      const totalRevenue = enrollmentsData?.reduce((sum, e) => sum + (e.payment_amount || 0), 0) || 0;
-
-      // Get yesterday's data for comparison
-      const yesterdayStart = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
-      const yesterdayEnd = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
-      
-      let yesterdayQuery = supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses!inner(id, title, slug)
-        `)
-        .gte('created_at', yesterdayStart.toISOString())
-        .lte('created_at', yesterdayEnd.toISOString())
-        .in('payment_status', ['completed', 'success']);
-
-      if (selectedCourse !== 'all') {
-        yesterdayQuery = yesterdayQuery.eq('courses.slug', selectedCourse);
-      }
-
-      const { data: yesterdayData } = await yesterdayQuery;
-      const yesterdayEnrollments = yesterdayData?.length || 0;
-      const yesterdayRevenue = yesterdayData?.reduce((sum, e) => sum + (e.payment_amount || 0), 0) || 0;
-
-      // Mock stats structure for compatibility
-      const calculatedStats: SalesStats = {
-        enrollments_today: totalEnrollments,
-        enrollments_yesterday: yesterdayEnrollments,
-        enrollments_week: totalEnrollments,
-        enrollments_month: totalEnrollments,
-        revenue_today: totalRevenue,
-        revenue_yesterday: yesterdayRevenue,
-        revenue_week: totalRevenue,
-        revenue_month: totalRevenue,
-        leads_assigned_today: 0,
-        unassigned_leads_total: 0,
-        untouched_leads_total: 0
-      };
-
-      setSalesStats(calculatedStats);
-
-      // Fetch agent performance (this stays global for now)
+      // Fetch agent performance
       const { data: agentData, error: agentError } = await supabase
         .from('sales_agent_performance')
         .select('*')
@@ -228,85 +119,6 @@ const SalesDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 p-4 bg-card rounded-lg border">
-        <div className="flex-1">
-          <label className="text-sm font-medium mb-2 block">دوره</label>
-          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-            <SelectTrigger>
-              <SelectValue placeholder="انتخاب دوره" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">همه دوره‌ها</SelectItem>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.slug}>
-                  {course.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex-1">
-          <label className="text-sm font-medium mb-2 block">بازه زمانی</label>
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="انتخاب بازه زمانی" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="24h">۲۴ ساعت گذشته</SelectItem>
-              <SelectItem value="7d">۷ روز گذشته</SelectItem>
-              <SelectItem value="30d">۳۰ روز گذشته</SelectItem>
-              <SelectItem value="custom">سفارشی</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {dateFilter === 'custom' && (
-          <>
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">از تاریخ</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customStartDate ? format(customStartDate, 'yyyy-MM-dd') : 'انتخاب تاریخ'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={customStartDate}
-                    onSelect={setCustomStartDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">تا تاریخ</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customEndDate ? format(customEndDate, 'yyyy-MM-dd') : 'انتخاب تاریخ'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={customEndDate}
-                    onSelect={setCustomEndDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </>
-        )}
-      </div>
-
       {/* Daily Sales Summary */}
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -353,7 +165,7 @@ const SalesDashboard: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">فروش هفته</CardTitle>
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{salesStats ? formatPrice(salesStats.revenue_week) : '0 تومان'}</div>
