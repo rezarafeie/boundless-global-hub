@@ -86,7 +86,8 @@ const LeadDistributionSystem: React.FC = () => {
   const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [manualLoading, setManualLoading] = useState(false);
-  const [enrollmentStatus, setEnrollmentStatus] = useState<string>('all');
+  const [paymentStatus, setPaymentStatus] = useState<string>('all');
+  const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
   const [note, setNote] = useState<string>('');
   const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
 
@@ -275,11 +276,15 @@ const LeadDistributionSystem: React.FC = () => {
         `)
         .eq('course_id', selectedCourse);
 
-      // Add payment status filter based on enrollment status
-      if (enrollmentStatus === 'all') {
+      // Add payment status filter
+      if (paymentStatus === 'all') {
         query = query.in('payment_status', ['success', 'completed', 'pending', 'cancelled_payment']);
-      } else {
+      } else if (paymentStatus === 'paid') {
         query = query.in('payment_status', ['success', 'completed']);
+      } else if (paymentStatus === 'pending') {
+        query = query.in('payment_status', ['pending']);
+      } else if (paymentStatus === 'cancelled') {
+        query = query.in('payment_status', ['cancelled_payment']);
       }
 
       // Add date filters
@@ -334,11 +339,11 @@ const LeadDistributionSystem: React.FC = () => {
         is_assigned: assignedSet.has(enrollment.id)
       }));
 
-      // Apply status filter
+      // Apply assignment status filter
       let filteredEnrollments = formattedEnrollments;
-      if (enrollmentStatus === 'assigned') {
+      if (assignmentStatus === 'assigned') {
         filteredEnrollments = formattedEnrollments.filter(e => e.is_assigned);
-      } else if (enrollmentStatus === 'unassigned') {
+      } else if (assignmentStatus === 'unassigned') {
         filteredEnrollments = formattedEnrollments.filter(e => !e.is_assigned);
       }
 
@@ -928,8 +933,23 @@ const LeadDistributionSystem: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="status">وضعیت</Label>
-                  <Select value={enrollmentStatus} onValueChange={setEnrollmentStatus}>
+                  <Label htmlFor="paymentStatus">وضعیت پرداخت</Label>
+                  <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه</SelectItem>
+                      <SelectItem value="paid">پرداخت شده</SelectItem>
+                      <SelectItem value="pending">در انتظار پرداخت</SelectItem>
+                      <SelectItem value="cancelled">لغو شده</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="assignmentStatus">وضعیت واگذاری</Label>
+                  <Select value={assignmentStatus} onValueChange={setAssignmentStatus}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
