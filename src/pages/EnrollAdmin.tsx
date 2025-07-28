@@ -89,6 +89,8 @@ const EnrollAdmin: React.FC = () => {
   const [isUserCRMPopupOpen, setIsUserCRMPopupOpen] = useState(false);
   const { role: userRole, loading: roleLoading, isAdmin, canViewSales } = useUserRole();
 
+  console.log('📊 EnrollAdmin: Role info:', { userRole, roleLoading, isAdmin, canViewSales });
+
   useEffect(() => {
     fetchEnrollments();
     fetchCourses();
