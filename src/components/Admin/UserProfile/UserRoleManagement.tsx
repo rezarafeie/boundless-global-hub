@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { UserCog, Shield, Settings, BookOpen } from 'lucide-react';
+import { UserCog, Shield, Settings, BookOpen, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import SalesAgentCourseSelector from '@/components/Admin/SalesAgentCourseSelector';
@@ -19,6 +19,9 @@ interface UserRoleManagementProps {
   currentRole: string;
   isMessengerAdmin: boolean;
   isSupportAgent: boolean;
+  isApproved: boolean;
+  bedounMarz: boolean;
+  notificationEnabled: boolean;
   onRoleUpdate: () => void;
 }
 
@@ -36,6 +39,9 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
   currentRole,
   isMessengerAdmin,
   isSupportAgent,
+  isApproved,
+  bedounMarz,
+  notificationEnabled,
   onRoleUpdate
 }) => {
   const { toast } = useToast();
@@ -248,6 +254,72 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
                 </div>
               </>
             )}
+
+            <Separator />
+            
+            {/* Permissions and Access Section */}
+            <div className="text-right">
+              <h3 className="font-medium mb-4 text-right flex items-center gap-2 justify-end">
+                <Key className="h-5 w-5" />
+                مجوزها و دسترسی‌ها
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Basic Permissions */}
+                <div className="space-y-3 p-4 bg-background/50 rounded-lg border">
+                  <h4 className="font-medium text-sm text-right">دسترسی‌های پایه</h4>
+                  <div className="space-y-2">
+                     <div className="flex items-center justify-between text-sm">
+                       <Badge variant={isApproved ? "default" : "destructive"} className="text-xs">
+                         {isApproved ? "فعال" : "غیرفعال"}
+                       </Badge>
+                       <span>ورود به سیستم</span>
+                     </div>
+                     <div className="flex items-center justify-between text-sm">
+                       <Badge variant={bedounMarz ? "default" : "secondary"} className="text-xs">
+                         {bedounMarz ? "فعال" : "غیرفعال"}
+                       </Badge>
+                       <span>دسترسی بدون مرز</span>
+                     </div>
+                     <div className="flex items-center justify-between text-sm">
+                       <Badge variant={notificationEnabled ? "default" : "secondary"} className="text-xs">
+                         {notificationEnabled ? "فعال" : "غیرفعال"}
+                       </Badge>
+                       <span>اعلان‌ها</span>
+                     </div>
+                  </div>
+                </div>
+
+                {/* Administrative Permissions */}
+                <div className="space-y-3 p-4 bg-background/50 rounded-lg border">
+                  <h4 className="font-medium text-sm text-right">دسترسی‌های مدیریتی</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <Badge variant={isMessengerAdmin ? "default" : "secondary"} className="text-xs">
+                        {isMessengerAdmin ? "فعال" : "غیرفعال"}
+                      </Badge>
+                      <span>مدیریت پیام‌رسان</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <Badge variant={isSupportAgent ? "default" : "secondary"} className="text-xs">
+                        {isSupportAgent ? "فعال" : "غیرفعال"}
+                      </Badge>
+                      <span>پشتیبانی</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <Badge variant={isSalesAgent ? "default" : "secondary"} className="text-xs">
+                        {isSalesAgent ? "فعال" : "غیرفعال"}
+                      </Badge>
+                      <span>نمایندگی فروش</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mt-3 text-right">
+                دسترسی‌ها بر اساس نقش کاربر و تنظیمات سیستم تعیین می‌شوند
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

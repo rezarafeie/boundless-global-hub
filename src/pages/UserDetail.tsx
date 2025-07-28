@@ -252,6 +252,9 @@ const UserDetail: React.FC = () => {
                   currentRole={user.role || 'user'}
                   isMessengerAdmin={user.is_messenger_admin}
                   isSupportAgent={user.is_support_agent}
+                  isApproved={user.is_approved}
+                  bedounMarz={user.bedoun_marz}
+                  notificationEnabled={user.notification_enabled}
                   onRoleUpdate={handleRoleUpdate}
                 />
               </div>
