@@ -495,6 +495,54 @@ export const messengerService = {
     }
   },
 
+  async addMessageReaction(messageId: number, userId: number, reaction: string): Promise<void> {
+    try {
+      // First check if user already has this reaction on this message
+      const { data: existingReaction } = await supabase
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', userId)
+        .eq('reaction', reaction)
+        .single();
+
+      if (existingReaction) {
+        // Remove existing reaction (toggle off)
+        await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existingReaction.id);
+      } else {
+        // Add new reaction
+        await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: userId,
+            reaction: reaction
+          });
+      }
+    } catch (error) {
+      console.error('Error adding message reaction:', error);
+      throw error;
+    }
+  },
+
+  async getMessageReactions(messageId: number): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('message_reactions')
+        .select('*')
+        .eq('message_id', messageId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching message reactions:', error);
+      return [];
+    }
+  },
+
   async sendSupportMessage(
     senderId: number,
     message: string,

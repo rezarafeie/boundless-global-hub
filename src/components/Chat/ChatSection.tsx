@@ -262,6 +262,8 @@ const ChatSection: React.FC = () => {
                 message={message}
                 isOwnMessage={message.user_id === currentUserId}
                 senderAvatarUrl={message.user_id ? userAvatars[message.user_id] : undefined}
+                currentUserId={currentUserId}
+                sessionToken={sessionToken || undefined}
               />
             ))
           )}

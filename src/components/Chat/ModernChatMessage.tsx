@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Pin, Reply } from 'lucide-react';
+import { Pin, Reply, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { ChatMessage } from '@/types/supabase';
 import { useReply } from '@/contexts/ReplyContext';
+import { useDoubleTap } from '@/hooks/useDoubleTap';
+import { messengerService } from '@/lib/messengerService';
 import UserProfile from './UserProfile';
 
 interface ModernChatMessageProps {
@@ -12,17 +14,21 @@ interface ModernChatMessageProps {
   isOwnMessage?: boolean;
   senderAvatarUrl?: string;
   currentUserId?: number;
+  sessionToken?: string;
 }
 
 const ModernChatMessage: React.FC<ModernChatMessageProps> = ({ 
   message, 
   isOwnMessage = false,
   senderAvatarUrl,
-  currentUserId
+  currentUserId,
+  sessionToken
 }) => {
   const { setReplyingTo } = useReply();
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [profileUser, setProfileUser] = useState<any>(null);
+  const [reactions, setReactions] = useState<any[]>([]);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
   const handleReply = () => {
     setReplyingTo({
@@ -31,6 +37,41 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
       sender_name: message.sender_name || 'User'
     });
   };
+
+  const handleDoubleTapLike = async () => {
+    if (!currentUserId || !sessionToken) return;
+    
+    try {
+      await messengerService.addMessageReaction(message.id, currentUserId, '❤️');
+      
+      // Show heart animation
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+      
+      // Refresh reactions
+      loadReactions();
+    } catch (error) {
+      console.error('Error adding like reaction:', error);
+    }
+  };
+
+  const doubleTapHandler = useDoubleTap({
+    onDoubleTap: handleDoubleTapLike,
+    delay: 300
+  });
+
+  const loadReactions = async () => {
+    try {
+      const messageReactions = await messengerService.getMessageReactions(message.id);
+      setReactions(messageReactions);
+    } catch (error) {
+      console.error('Error loading reactions:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadReactions();
+  }, [message.id]);
   
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -99,9 +140,20 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md'
                 : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
             }`}
-            onClick={!isOwnMessage ? handleReply : undefined}
-            style={{ cursor: !isOwnMessage ? 'pointer' : 'default' }}
+            onClick={doubleTapHandler}
+            style={{ cursor: 'pointer' }}
           >
+            {/* Heart Animation */}
+            {showHeartAnimation && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <Heart 
+                  className="w-8 h-8 text-red-500 fill-current animate-ping"
+                  style={{
+                    animation: 'heartPulse 1s ease-out'
+                  }}
+                />
+              </div>
+            )}
             {/* Header - show sender name and role only for other users */}
             {!isOwnMessage && (
               <div className="flex items-center gap-2 mb-1">
@@ -174,6 +226,38 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
               </div>
             </div>
           </div>
+          
+          {/* Reactions Display */}
+          {reactions.length > 0 && (
+            <div className="flex items-center gap-1 mt-1 mr-2">
+              {reactions.reduce((acc: any[], reaction) => {
+                const existing = acc.find(r => r.reaction === reaction.reaction);
+                if (existing) {
+                  existing.count += 1;
+                  existing.users.push(reaction.user_id);
+                } else {
+                  acc.push({
+                    reaction: reaction.reaction,
+                    count: 1,
+                    users: [reaction.user_id]
+                  });
+                }
+                return acc;
+              }, []).map((reactionGroup) => (
+                <div
+                  key={reactionGroup.reaction}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-all ${
+                    reactionGroup.users.includes(currentUserId)
+                      ? 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300'
+                      : 'bg-muted border-border text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  <span>{reactionGroup.reaction}</span>
+                  <span className="font-medium">{reactionGroup.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

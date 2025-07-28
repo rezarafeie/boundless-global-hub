@@ -11,12 +11,14 @@ interface ChatTopicMessagesProps {
   messages: ChatMessage[];
   loading: boolean;
   currentUserId: number | null;
+  sessionToken?: string;
 }
 
 const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({ 
   messages, 
   loading, 
-  currentUserId 
+  currentUserId,
+  sessionToken
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userAvatars, setUserAvatars] = useState<Record<number, string>>({});
@@ -125,6 +127,8 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
               message={message}
               isOwnMessage={message.user_id === currentUserId}
               senderAvatarUrl={message.user_id ? userAvatars[message.user_id] : undefined}
+              currentUserId={currentUserId}
+              sessionToken={sessionToken}
             />
           ))
         )}
