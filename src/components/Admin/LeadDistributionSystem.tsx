@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Share2, 
@@ -21,7 +22,8 @@ import {
   AlertCircle,
   Loader2,
   Eye,
-  UserCheck
+  UserCheck,
+  Copy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -86,6 +88,7 @@ const LeadDistributionSystem: React.FC = () => {
   const [manualLoading, setManualLoading] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<string>('all');
   const [note, setNote] = useState<string>('');
+  const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
 
   useEffect(() => {
     fetchCourses();
@@ -290,22 +293,26 @@ const LeadDistributionSystem: React.FC = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
 
-      // Remove duplicates by email and phone (keep the latest one)
-      const uniqueEnrollments = data?.reduce((acc, enrollment) => {
-        const key = `${enrollment.email}-${enrollment.phone}`;
-        const existing = acc.get(key);
-        
-        if (!existing || new Date(enrollment.created_at) > new Date(existing.created_at)) {
-          acc.set(key, enrollment);
-        }
-        
-        return acc;
-      }, new Map()) || new Map();
+      // Conditionally remove duplicates by email and phone (keep the latest one)
+      let processedData = data || [];
+      
+      if (removeDuplicates) {
+        const uniqueEnrollments = data?.reduce((acc, enrollment) => {
+          const key = `${enrollment.email}-${enrollment.phone}`;
+          const existing = acc.get(key);
+          
+          if (!existing || new Date(enrollment.created_at) > new Date(existing.created_at)) {
+            acc.set(key, enrollment);
+          }
+          
+          return acc;
+        }, new Map()) || new Map();
 
-      const deduplicatedData = Array.from(uniqueEnrollments.values());
+        processedData = Array.from(uniqueEnrollments.values());
+      }
 
       // Check which ones are assigned
-      const enrollmentIds = deduplicatedData.map(e => e.id);
+      const enrollmentIds = processedData.map(e => e.id);
       const { data: assignments, error: assignmentError } = await supabase
         .from('lead_assignments')
         .select('enrollment_id')
@@ -315,7 +322,7 @@ const LeadDistributionSystem: React.FC = () => {
 
       const assignedSet = new Set(assignments?.map(a => a.enrollment_id) || []);
 
-      const formattedEnrollments = deduplicatedData.map(enrollment => ({
+      const formattedEnrollments = processedData.map(enrollment => ({
         id: enrollment.id,
         full_name: enrollment.full_name,
         email: enrollment.email,
@@ -935,7 +942,7 @@ const LeadDistributionSystem: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-center">
                 <Button
                   onClick={fetchEnrollments}
                   disabled={!selectedCourse || manualLoading}
@@ -945,6 +952,16 @@ const LeadDistributionSystem: React.FC = () => {
                   <Filter className="h-4 w-4 mr-2" />
                   نمایش لیست
                 </Button>
+                
+                <div className="flex items-center gap-2">
+                  <Copy className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="removeDuplicates" className="text-sm">حذف تکراری‌ها</Label>
+                  <Switch
+                    id="removeDuplicates"
+                    checked={removeDuplicates}
+                    onCheckedChange={setRemoveDuplicates}
+                  />
+                </div>
               </div>
 
               {enrollments.length > 0 && (
