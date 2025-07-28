@@ -675,6 +675,39 @@ const LeadManagement: React.FC = () => {
     }
   };
 
+  const handleRemoveAssignment = async (assignmentId: number) => {
+    setRemoveLoading(assignmentId.toString());
+    try {
+      const { error } = await supabase
+        .from('lead_assignments')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "موفقیت",
+        description: "واگذاری لید با موفقیت حذف شد",
+      });
+
+      // Refresh assignments and leads
+      fetchAssignments();
+      fetchLeads();
+      if (isAdmin) {
+        fetchAdminLeads();
+      }
+    } catch (error) {
+      console.error('Error removing assignment:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در حذف واگذاری لید",
+        variant: "destructive",
+      });
+    } finally {
+      setRemoveLoading(null);
+    }
+  };
+
   const fetchCRMNotes = async (userId: number) => {
     try {
       const { data, error } = await supabase
@@ -1129,6 +1162,20 @@ const LeadManagement: React.FC = () => {
                                 <Eye className="h-4 w-4" />
                                 <span>مشاهده</span>
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                disabled={removeLoading === assignment.assignment_id.toString()}
+                                className="w-full sm:w-auto flex items-center gap-1"
+                              >
+                                {removeLoading === assignment.assignment_id.toString() ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                                <span>حذف</span>
+                              </Button>
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-sm">
@@ -1183,14 +1230,28 @@ const LeadManagement: React.FC = () => {
                               <Badge variant="default">{assignment.status}</Badge>
                             </TableCell>
                             <TableCell>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openLeadDetail(assignment)}
-                              >
-                                <Eye className="h-4 w-4" />
-                                مشاهده
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openLeadDetail(assignment)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  مشاهده
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRemoveAssignment(assignment.assignment_id)}
+                                  disabled={removeLoading === assignment.assignment_id.toString()}
+                                >
+                                  {removeLoading === assignment.assignment_id.toString() ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
