@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,7 +11,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
 import { TetherlandService } from '@/lib/tetherlandService';
-import CourseFormModal from './CourseFormModal';
 
 interface Course {
   id: string;
@@ -28,8 +28,6 @@ interface Course {
   create_test_license?: boolean;
   woocommerce_create_access?: boolean;
   use_landing_page_merge?: boolean;
-  use_enrollments_as_leads?: boolean;
-  lead_start_date?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -45,14 +43,13 @@ interface Enrollment {
 }
 
 const CourseManagement: React.FC = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showEnrollmentsModal, setShowEnrollmentsModal] = useState(false);
-  const [showCourseModal, setShowCourseModal] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState('');
   const [enrollmentTotal, setEnrollmentTotal] = useState(0);
   const [enrollmentPage, setEnrollmentPage] = useState(1);
@@ -135,22 +132,11 @@ const CourseManagement: React.FC = () => {
   };
 
   const handleEditCourse = (course: Course) => {
-    setEditingCourse(course);
-    setShowCourseModal(true);
+    navigate(`/admin/course/edit/${course.id}`);
   };
 
   const handleCreateCourse = () => {
-    setEditingCourse(null);
-    setShowCourseModal(true);
-  };
-
-  const handleCourseModalClose = () => {
-    setShowCourseModal(false);
-    setEditingCourse(null);
-  };
-
-  const handleCourseSuccess = () => {
-    fetchCourses();
+    navigate('/admin/course/create');
   };
 
 
@@ -421,14 +407,6 @@ const CourseManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Course Form Modal */}
-      <CourseFormModal
-        isOpen={showCourseModal}
-        onClose={handleCourseModalClose}
-        course={editingCourse}
-        onSuccess={handleCourseSuccess}
-      />
     </div>
   );
 };
