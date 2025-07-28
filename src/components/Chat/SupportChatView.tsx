@@ -9,6 +9,7 @@ import type { SupportMessage } from '@/lib/supportMessageService';
 import SupportResponseInput from './SupportResponseInput';
 import MediaMessage from './MediaMessage';
 import UserProfilePopup from './UserProfilePopup';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SupportRoom {
   id: string;
@@ -97,6 +98,62 @@ const SupportChatView: React.FC<SupportChatViewProps> = ({
       loadMessages();
     }
   }, [conversationId]);
+
+  // Realtime subscription for new support messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    console.log('Setting up realtime subscription for support conversation:', conversationId);
+    
+    const channel = supabase
+      .channel(`support_messages_conversation_${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messenger_messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('New support message received via realtime:', payload);
+          const newMessage = payload.new as any;
+          
+          // Convert to SupportMessage format
+          const supportMessage: SupportMessage = {
+            id: newMessage.id,
+            conversation_id: newMessage.conversation_id,
+            sender_id: newMessage.sender_id,
+            recipient_id: newMessage.recipient_id,
+            message: newMessage.message,
+            message_type: newMessage.message_type || 'text',
+            media_url: newMessage.media_url,
+            created_at: newMessage.created_at,
+            sender: {
+              name: newMessage.sender_id === currentUser.id ? currentUser.name : 'پشتیبانی',
+              phone: ''
+            }
+          };
+          
+          setMessages(prev => {
+            // Check if message already exists to avoid duplicates
+            const exists = prev.find(msg => msg.id === supportMessage.id);
+            if (exists) return prev;
+            
+            // Add new message and sort by creation time
+            return [...prev, supportMessage].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up realtime subscription for support conversation:', conversationId);
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, currentUser.id, currentUser.name]);
 
   const handleMessageSent = () => {
     console.log('Message sent, refreshing conversation messages');

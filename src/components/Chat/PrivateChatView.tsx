@@ -1,8 +1,10 @@
 // @ts-nocheck
+import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 import { Send, Loader2, UserPlus, Search, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { privateMessageService, type PrivateMessage, type PrivateConversation } from '@/lib/privateMessageService';
@@ -75,6 +77,63 @@ const PrivateChatView: React.FC<PrivateChatViewProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Realtime subscription for new messages
+  useEffect(() => {
+    if (!conversation?.id) return;
+
+    console.log('Setting up realtime subscription for conversation:', conversation.id);
+    
+    const channel = supabase
+      .channel(`private_messages_conversation_${conversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'private_messages',
+          filter: `conversation_id=eq.${conversation.id}`
+        },
+        (payload) => {
+          console.log('New private message received via realtime:', payload);
+          const newMessage = payload.new as PrivateMessage;
+          
+          setMessages(prev => {
+            // Check if message already exists to avoid duplicates
+            const exists = prev.find(msg => msg.id === newMessage.id);
+            if (exists) return prev;
+            
+            // Add new message and sort by creation time
+            return [...prev, newMessage].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'private_messages',
+          filter: `conversation_id=eq.${conversation.id}`
+        },
+        (payload) => {
+          console.log('Private message updated via realtime:', payload);
+          const updatedMessage = payload.new as PrivateMessage;
+          
+          setMessages(prev => prev.map(msg => 
+            msg.id === updatedMessage.id ? updatedMessage : msg
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up realtime subscription for conversation:', conversation.id);
+      supabase.removeChannel(channel);
+    };
+  }, [conversation?.id]);
 
   const loadMessages = async () => {
     try {
