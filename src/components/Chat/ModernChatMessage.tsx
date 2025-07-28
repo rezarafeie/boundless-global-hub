@@ -3,14 +3,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Pin, Reply, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { ChatMessage } from '@/types/supabase';
+import type { MessengerMessage } from '@/lib/messengerService';
 import { useReply } from '@/contexts/ReplyContext';
 import { useDoubleTap } from '@/hooks/useDoubleTap';
 import { messengerService } from '@/lib/messengerService';
 import UserProfile from './UserProfile';
 
 interface ModernChatMessageProps {
-  message: ChatMessage;
+  message: MessengerMessage;
   isOwnMessage?: boolean;
   senderAvatarUrl?: string;
   currentUserId?: number;
@@ -35,7 +35,7 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
     setReplyingTo({
       id: message.id,
       message: message.message,
-      sender_name: message.sender_name || 'User'
+      sender_name: message.sender?.name || 'User'
     });
   };
 
@@ -43,7 +43,7 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
     setReplyingTo({
       id: message.id,
       message: message.message,
-      sender_name: message.sender_name || 'User'
+      sender_name: message.sender?.name || 'User'
     });
   };
 
@@ -119,8 +119,8 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             className="w-8 h-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => {
               setProfileUser({
-                id: message.user_id || 0,
-                name: message.sender_name || 'User',
+                id: message.sender_id || 0,
+                name: message.sender?.name || 'User',
                 username: null,
                 avatar_url: senderAvatarUrl,
                 bio: null,
@@ -132,12 +132,12 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
               setShowUserProfile(true);
             }}
           >
-            <AvatarImage src={senderAvatarUrl} alt={message.sender_name || 'User'} />
+            <AvatarImage src={senderAvatarUrl} alt={message.sender?.name || 'User'} />
             <AvatarFallback 
               className="text-white font-bold text-xs"
-              style={{ backgroundColor: getAvatarColor(message.sender_name || 'User') }}
+              style={{ backgroundColor: getAvatarColor(message.sender?.name || 'User') }}
             >
-              {getInitial(message.sender_name || 'U')}
+              {getInitial(message.sender?.name || 'U')}
             </AvatarFallback>
           </Avatar>
         )}
@@ -170,8 +170,8 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     setProfileUser({
-                      id: message.user_id || 0,
-                      name: message.sender_name || 'User',
+                      id: message.sender_id || 0,
+                      name: message.sender?.name || 'User',
                       username: null,
                       avatar_url: senderAvatarUrl,
                       bio: null,
@@ -183,14 +183,12 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
                     setShowUserProfile(true);
                   }}
                 >
-                  {message.sender_name}
+                  {message.sender?.name}
                 </span>
-                {message.sender_role && message.sender_role !== 'member' && (
-                  <Badge className={`${getRoleColor(message.sender_role)} text-xs px-1.5 py-0.5 border`}>
-                    {getRoleText(message.sender_role)}
-                  </Badge>
-                )}
-                {message.is_pinned && (
+                <Badge className="bg-slate-500/20 text-slate-300 border-slate-500/30 text-xs px-1.5 py-0.5 border">
+                  عضو
+                </Badge>
+                {false && (
                   <Pin className="w-3 h-3 text-amber-500" />
                 )}
               </div>
@@ -243,7 +241,7 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
                 )}
               </div>
               <div className="flex items-center">
-                {message.is_pinned && isOwnMessage && (
+                {false && isOwnMessage && (
                   <Pin className="w-3 h-3 mr-1" />
                 )}
                 <span 

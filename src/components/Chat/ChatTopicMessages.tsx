@@ -124,7 +124,12 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
           regularMessages.map((message) => (
             <ModernChatMessage
               key={message.id}
-              message={message}
+              message={{
+                ...message,
+                room_id: 0,
+                sender_id: message.user_id || 0,
+                sender: { name: message.sender_name || 'User', phone: '' }
+              }}
               isOwnMessage={message.user_id === currentUserId}
               senderAvatarUrl={message.user_id ? userAvatars[message.user_id] : undefined}
               currentUserId={currentUserId}
