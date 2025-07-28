@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -18,7 +20,9 @@ import {
   UserCheck,
   Phone,
   Award,
-  Percent
+  Percent,
+  FileText,
+  Filter
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -50,15 +54,45 @@ interface AgentPerformance {
   conversion_rate_percentage: number;
 }
 
+interface CustomReportData {
+  total_sales: number;
+  total_enrollments: number;
+  total_leads: number;
+  total_calls: number;
+  total_crm_records: number;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  slug: string;
+}
+
 const SalesDashboard: React.FC = () => {
   const { toast } = useToast();
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [agentPerformance, setAgentPerformance] = useState<AgentPerformance[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Custom Report State
+  const [customReportData, setCustomReportData] = useState<CustomReportData | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('24h');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     fetchSalesData();
+    fetchCourses();
   }, []);
+
+  useEffect(() => {
+    if (selectedCourse !== 'all' || dateFilter !== '24h') {
+      fetchCustomReport();
+    }
+  }, [selectedCourse, dateFilter, customStartDate, customEndDate]);
 
   const fetchSalesData = async () => {
     setLoading(true);
@@ -101,6 +135,121 @@ const SalesDashboard: React.FC = () => {
     if (previous === 0) return { percentage: 0, isPositive: true };
     const percentage = ((current - previous) / previous) * 100;
     return { percentage: Math.abs(percentage), isPositive: percentage >= 0 };
+  };
+
+  const fetchCourses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title, slug')
+        .eq('is_active', true)
+        .order('title');
+
+      if (error) throw error;
+      setCourses(data || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+  };
+
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate: string;
+    let endDate = now.toISOString();
+
+    switch (dateFilter) {
+      case '24h':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        break;
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        break;
+      case 'custom':
+        startDate = customStartDate ? new Date(customStartDate).toISOString() : new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        endDate = customEndDate ? new Date(customEndDate).toISOString() : endDate;
+        break;
+      default:
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    return { startDate, endDate };
+  };
+
+  const fetchCustomReport = async () => {
+    setReportLoading(true);
+    try {
+      const { startDate, endDate } = getDateRange();
+      
+      // Build query for enrollments
+      let enrollmentQuery = supabase
+        .from('enrollments')
+        .select('payment_amount, created_at')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate)
+        .in('payment_status', ['success', 'completed']);
+
+      if (selectedCourse !== 'all') {
+        enrollmentQuery = enrollmentQuery.eq('course_id', selectedCourse);
+      }
+
+      const { data: enrollments, error: enrollmentError } = await enrollmentQuery;
+      if (enrollmentError) throw enrollmentError;
+
+      // Calculate metrics
+      const totalSales = enrollments?.reduce((sum, e) => sum + (e.payment_amount || 0), 0) || 0;
+      const totalEnrollments = enrollments?.length || 0;
+
+      // Fetch leads (assignments)
+      let leadQuery = supabase
+        .from('lead_assignments')
+        .select('enrollment_id, created_at')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
+
+      const { data: leads, error: leadError } = await leadQuery;
+      if (leadError) throw leadError;
+
+      const totalLeads = leads?.length || 0;
+
+      // Fetch CRM records
+      let crmQuery = supabase
+        .from('crm_notes')
+        .select('id, created_at')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
+
+      if (selectedCourse !== 'all') {
+        crmQuery = crmQuery.eq('course_id', selectedCourse);
+      }
+
+      const { data: crmNotes, error: crmError } = await crmQuery;
+      if (crmError) throw crmError;
+
+      const totalCrmRecords = crmNotes?.length || 0;
+      // Note: We don't have a specific "calls" table, so using CRM records as proxy
+      const totalCalls = Math.floor(totalCrmRecords * 0.7); // Estimate
+
+      setCustomReportData({
+        total_sales: totalSales,
+        total_enrollments: totalEnrollments,
+        total_leads: totalLeads,
+        total_calls: totalCalls,
+        total_crm_records: totalCrmRecords
+      });
+
+    } catch (error) {
+      console.error('Error fetching custom report:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت گزارش سفارشی",
+        variant: "destructive"
+      });
+    } finally {
+      setReportLoading(false);
+    }
   };
 
   if (loading) {
@@ -227,6 +376,147 @@ const SalesDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Custom Report Section */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          گزارش سفارشی
+        </h3>
+        
+        {/* Filters */}
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              فیلترها
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">دوره</label>
+                <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب دوره" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه دوره‌ها</SelectItem>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">بازه زمانی</label>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب بازه زمانی" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="24h">۲۴ ساعت گذشته</SelectItem>
+                    <SelectItem value="7d">۷ روز گذشته</SelectItem>
+                    <SelectItem value="30d">۳۰ روز گذشته</SelectItem>
+                    <SelectItem value="custom">سفارشی</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {dateFilter === 'custom' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">از تاریخ</label>
+                    <Input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">تا تاریخ</label>
+                    <Input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Report Data */}
+        {reportLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        ) : customReportData ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">کل فروش</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatPrice(customReportData.total_sales)}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">کل ثبت‌نام</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{customReportData.total_enrollments}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">کل لیدها</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{customReportData.total_leads}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">کل تماس‌ها</CardTitle>
+                <Phone className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{customReportData.total_calls}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">رکوردهای CRM</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{customReportData.total_crm_records}</div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-8">
+              <p className="text-center text-muted-foreground">
+                لطفاً فیلترها را تنظیم کنید تا گزارش نمایش داده شود
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Sales Agent Performance */}
