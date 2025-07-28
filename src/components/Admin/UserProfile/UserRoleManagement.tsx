@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { UserCog, Shield, Settings, BookOpen, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -50,6 +51,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
   const [isSalesAgent, setIsSalesAgent] = useState(false);
   const [assignedCourses, setAssignedCourses] = useState<AssignedCourse[]>([]);
   const [showCourseSelector, setShowCourseSelector] = useState(false);
+  const [updatingPermissions, setUpdatingPermissions] = useState(false);
 
   useEffect(() => {
     checkSalesAgent();
@@ -148,6 +150,56 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handlePermissionToggle = async (permission: string, value: boolean) => {
+    setUpdatingPermissions(true);
+    try {
+      let updateData: any = { updated_at: new Date().toISOString() };
+      
+      switch (permission) {
+        case 'messenger_admin':
+          updateData.is_messenger_admin = value;
+          break;
+        case 'support_agent':
+          updateData.is_support_agent = value;
+          break;
+        case 'approved':
+          updateData.is_approved = value;
+          break;
+        case 'bedoun_marz':
+          updateData.bedoun_marz = value;
+          break;
+        case 'notification_enabled':
+          updateData.notification_enabled = value;
+          break;
+        default:
+          throw new Error('Invalid permission type');
+      }
+
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "موفق",
+        description: "دسترسی با موفقیت به‌روزرسانی شد",
+      });
+      
+      onRoleUpdate();
+    } catch (error) {
+      console.error('Error updating permission:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در به‌روزرسانی دسترسی",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingPermissions(false);
     }
   };
 
@@ -268,63 +320,74 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
                 {/* Basic Permissions */}
                 <div className="space-y-3 p-4 bg-background/50 rounded-lg border">
                   <h4 className="font-medium text-sm text-right">دسترسی‌های پایه</h4>
-                  <div className="space-y-2">
+                   <div className="space-y-3">
                      <div className="flex items-center justify-between text-sm">
-                       <Badge variant={isApproved ? "default" : "destructive"} className="text-xs">
-                         {isApproved ? "فعال" : "غیرفعال"}
-                       </Badge>
+                       <Switch 
+                         checked={isApproved}
+                         onCheckedChange={(checked) => handlePermissionToggle('approved', checked)}
+                         disabled={updatingPermissions}
+                       />
                        <span>ورود به سیستم</span>
                      </div>
                      <div className="flex items-center justify-between text-sm">
-                       <Badge variant={bedounMarz ? "default" : "secondary"} className="text-xs">
-                         {bedounMarz ? "فعال" : "غیرفعال"}
-                       </Badge>
+                       <Switch 
+                         checked={bedounMarz}
+                         onCheckedChange={(checked) => handlePermissionToggle('bedoun_marz', checked)}
+                         disabled={updatingPermissions}
+                       />
                        <span>دسترسی بدون مرز</span>
                      </div>
                      <div className="flex items-center justify-between text-sm">
-                       <Badge variant={notificationEnabled ? "default" : "secondary"} className="text-xs">
-                         {notificationEnabled ? "فعال" : "غیرفعال"}
-                       </Badge>
+                       <Switch 
+                         checked={notificationEnabled}
+                         onCheckedChange={(checked) => handlePermissionToggle('notification_enabled', checked)}
+                         disabled={updatingPermissions}
+                       />
                        <span>اعلان‌ها</span>
                      </div>
-                  </div>
-                </div>
+                   </div>
+                 </div>
 
-                {/* Administrative Permissions */}
-                <div className="space-y-3 p-4 bg-background/50 rounded-lg border">
-                  <h4 className="font-medium text-sm text-right">دسترسی‌های مدیریتی</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <Badge variant={isMessengerAdmin ? "default" : "secondary"} className="text-xs">
-                        {isMessengerAdmin ? "فعال" : "غیرفعال"}
-                      </Badge>
-                      <span>مدیریت پیام‌رسان</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <Badge variant={isSupportAgent ? "default" : "secondary"} className="text-xs">
-                        {isSupportAgent ? "فعال" : "غیرفعال"}
-                      </Badge>
-                      <span>پشتیبانی</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <Badge variant={isSalesAgent ? "default" : "secondary"} className="text-xs">
-                        {isSalesAgent ? "فعال" : "غیرفعال"}
-                      </Badge>
-                      <span>نمایندگی فروش</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <p className="text-xs text-muted-foreground mt-3 text-right">
-                دسترسی‌ها بر اساس نقش کاربر و تنظیمات سیستم تعیین می‌شوند
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+                 {/* Administrative Permissions */}
+                 <div className="space-y-3 p-4 bg-background/50 rounded-lg border">
+                   <h4 className="font-medium text-sm text-right">دسترسی‌های مدیریتی</h4>
+                   <div className="space-y-3">
+                     <div className="flex items-center justify-between text-sm">
+                       <Switch 
+                         checked={isMessengerAdmin}
+                         onCheckedChange={(checked) => handlePermissionToggle('messenger_admin', checked)}
+                         disabled={updatingPermissions}
+                       />
+                       <span>مدیریت پیام‌رسان</span>
+                     </div>
+                     <div className="flex items-center justify-between text-sm">
+                       <Switch 
+                         checked={isSupportAgent}
+                         onCheckedChange={(checked) => handlePermissionToggle('support_agent', checked)}
+                         disabled={updatingPermissions}
+                       />
+                       <span>پشتیبانی</span>
+                     </div>
+                     <div className="flex items-center justify-between text-sm">
+                       <Badge variant={isSalesAgent ? "default" : "secondary"} className="text-xs">
+                         {isSalesAgent ? "فعال" : "غیرفعال"}
+                       </Badge>
+                       <span>نمایندگی فروش</span>
+                       <p className="text-xs text-muted-foreground">از طریق تغییر نقش</p>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+               
+               <p className="text-xs text-muted-foreground mt-3 text-right">
+                 دسترسی‌ها بر اساس نقش کاربر و تنظیمات سیستم تعیین می‌شوند. نمایندگی فروش از طریق تغییر نقش فعال می‌شود.
+               </p>
+             </div>
+           </div>
+         </CardContent>
+       </Card>
+     </div>
+   );
+ };
 
 export default UserRoleManagement;
