@@ -292,24 +292,17 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('name-confirm');
           } else {
             // Send OTP for linking Iranian users
-            await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-
-            if (error) {
-              console.error('Edge function error:', error);
-              throw error;
-            }
-
-            if (data.success) {
-              // Use the formatted phone returned by the edge function for consistency
-              setFormattedPhoneForOTP(data.formattedPhone);
-              console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+            try {
+              const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+              console.log('📱 OTP sent successfully for linking:', response);
               
               setCurrentStep('otp-link');
               toast.success('کد تأیید ارسال شد', {
                 description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
               });
-            } else {
-              throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            } catch (otpError: any) {
+              console.error('OTP send error for linking:', otpError);
+              throw new Error(otpError.message || 'خطا در ارسال کد تأیید');
             }
           }
         } else {
@@ -337,24 +330,17 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('password');
           } else {
             // Send OTP for verification for Iranian users
-            await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-
-            if (error) {
-              console.error('Edge function error:', error);
-              throw error;
-            }
-
-            if (data.success) {
-              // Use the formatted phone returned by the edge function for consistency
-              setFormattedPhoneForOTP(data.formattedPhone);
-              console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+            try {
+              const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+              console.log('📱 OTP sent successfully:', response);
               
               setCurrentStep('otp-login');
               toast.success('کد تأیید ارسال شد', {
                 description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
               });
-            } else {
-              throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            } catch (otpError: any) {
+              console.error('OTP send error:', otpError);
+              throw new Error(otpError.message || 'خطا در ارسال کد تأیید');
             }
           }
         } else if (prefillData?.email && !user.email) {
@@ -374,24 +360,17 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('name-confirm');
           } else {
             // Send OTP for verification for Iranian users
-            await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-
-            if (error) {
-              console.error('Edge function error:', error);
-              throw error;
-            }
-
-            if (data.success) {
-              // Use the formatted phone returned by the edge function for consistency
-              setFormattedPhoneForOTP(data.formattedPhone);
-              console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+            try {
+              const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+              console.log('📱 OTP sent successfully for Google linking:', response);
               
               setCurrentStep('otp-link');
               toast.success('کد تأیید ارسال شد', {
                 description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
               });
-            } else {
-              throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            } catch (otpError: any) {
+              console.error('OTP send error for Google linking:', otpError);
+              throw new Error(otpError.message || 'خطا در ارسال کد تأیید');
             }
           }
         } else {
@@ -485,27 +464,15 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Send OTP for login
-      await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data.success) {
-        // Use the formatted phone returned by the edge function for consistency
-        setFormattedPhoneForOTP(data.formattedPhone);
-        console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
-        
-        setCurrentStep('otp-login');
-        toast.success('کد تأیید ارسال شد', {
-          description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
-        });
-      } else {
-        throw new Error(data.error || 'خطا در ارسال کد تأیید');
-      }
-    } catch (error) {
-      console.error('Error sending OTP:', error);
+      const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+      console.log('📱 OTP sent successfully for login:', response);
+      
+      setCurrentStep('otp-login');
+      toast.success('کد تأیید ارسال شد', {
+        description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+      });
+    } catch (error: any) {
+      console.error('OTP send error for login:', error);
       toast.error('خطا در ارسال کد تأیید');
     } finally {
       setLoading(false);
@@ -628,17 +595,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       console.log('🔐 Verifying OTP for login:', phoneForVerification, 'Code:', code);
       
       await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
-
-      console.log('✅ OTP verification response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data && data.success) {
-        console.log('✅ OTP verified successfully for login');
-        setOtpVerified(true);
+      console.log('✅ OTP verified successfully for login');
+      setOtpVerified(true);
         
         if (existingUser) {
           if (!existingUser.is_approved) {
@@ -660,14 +618,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         } else {
           toast.error('کاربر یافت نشد');
         }
-      } else {
-        console.log('❌ OTP verification failed');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
-        setOtpCode('');
-        return;
-      }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
       toast.error(error.message || 'کد وارد شده اشتباه است');
@@ -693,16 +643,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       console.log('🔐 Verifying OTP for phone:', phoneForVerification, 'Code:', code);
       
       await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
-
-      console.log('✅ OTP verification response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data && data.success) {
-        console.log('✅ OTP verified successfully, moving to name confirmation');
+      console.log('✅ OTP verified successfully, moving to name confirmation');
         setOtpVerified(true);
         
         // Ensure names are properly set from existing user before showing confirmation
@@ -717,14 +658,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         toast.success('کد تأیید شد', {
           description: 'اطلاعات خود را بررسی و تأیید کنید'
         });
-      } else {
-        console.log('❌ OTP verification failed');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
-        setOtpCode('');
-        return;
-      }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
       toast.error(error.message || 'کد وارد شده اشتباه است');
@@ -908,16 +841,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       await rafieiAuth.verifyOTP(formattedPhoneForOTP, code, countryCode);
-      if (error) throw error;
-      if (data?.success) {
-        setCurrentStep('reset-password');
-        setOtpVerified(true);
-        setOtpCode('');
-        toast.success('کد تأیید شد');
-      } else {
-        toast.error('کد اشتباه است');
-        setOtpCode('');
-      }
+      setCurrentStep('reset-password');
+      setOtpVerified(true);
+      setOtpCode('');
+      toast.success('کد تأیید شد');
     } catch (error: any) {
       toast.error('خطا در تأیید کد');
       setOtpCode('');
