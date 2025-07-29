@@ -111,8 +111,8 @@ const EnrollmentAdmin: React.FC = () => {
 
         console.log('User details:', detailedUser);
         
-        // Check if user has admin, enrollments_manager role, or is sales agent
-        const allowedRoles = ['admin', 'enrollments_manager', 'sales_agent'];
+        // Check if user has admin, enrollments_manager role, sales_manager, or is sales agent
+        const allowedRoles = ['admin', 'enrollments_manager', 'sales_manager', 'sales_agent'];
         const userRole = detailedUser.role || 'user';
         
         console.log('User role:', userRole, 'Is messenger admin:', detailedUser.is_messenger_admin);
