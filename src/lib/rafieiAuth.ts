@@ -215,14 +215,8 @@ class RafieiAuthService {
   }
 
   // Send SMS OTP using existing edge function
-  async sendSMSOTP(phone: string, countryCode: string = '+98'): Promise<void> {
+  async sendSMSOTP(phone: string): Promise<void> {
     const normalizedPhone = this.normalizePhone(phone);
-    
-    // Skip OTP for non-Iranian users
-    if (countryCode !== '+98') {
-      console.log('🌍 Non-Iranian user, skipping OTP');
-      return;
-    }
     
     // Check if it's Iranian phone
     const isIranian = await this.isIranianPhone(normalizedPhone);
@@ -234,7 +228,7 @@ class RafieiAuthService {
     const { data, error } = await supabase.functions.invoke('send-otp', {
       body: { 
         phone: normalizedPhone,
-        countryCode: countryCode
+        countryCode: '+98'
       }
     });
 
@@ -246,14 +240,8 @@ class RafieiAuthService {
   }
 
   // Verify OTP using existing edge function
-  async verifyOTP(phone: string, otpCode: string, countryCode: string = '+98'): Promise<void> {
+  async verifyOTP(phone: string, otpCode: string): Promise<void> {
     const normalizedPhone = this.normalizePhone(phone);
-    
-    // Skip OTP verification for non-Iranian users
-    if (countryCode !== '+98') {
-      console.log('🌍 Non-Iranian user, skipping OTP verification');
-      return;
-    }
     
     const { data, error } = await supabase.functions.invoke('verify-otp', {
       body: { 

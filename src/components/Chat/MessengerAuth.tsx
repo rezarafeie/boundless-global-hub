@@ -130,36 +130,29 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         setExistingUser(userExists);
         setCurrentStep('login');
       } else {
-        // For non-Iranian users, skip OTP and go directly to password setup
-        if (formData.countryCode !== '+98') {
-          console.log('Non-Iranian user, skipping OTP');
-          setFormattedPhoneNumber(formattedPhone);
-          setCurrentStep('password');
-        } else {
-          // Send OTP for new Iranian user
-          console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
-          const { data, error } = await supabase.functions.invoke('send-otp', {
-            body: {
-              phone: formData.phone,
-              countryCode: formData.countryCode
-            }
+        // Send OTP for new user
+        console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
+        const { data, error } = await supabase.functions.invoke('send-otp', {
+          body: {
+            phone: formData.phone,
+            countryCode: formData.countryCode
+          }
+        });
+
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
+        }
+
+        console.log('OTP Response:', data);
+        if (data.success) {
+          setFormattedPhoneNumber(data.formattedPhone);
+          setCurrentStep('otp');
+          toast.success('کد تأیید ارسال شد', {
+            description: 'کد ۴ رقمی به شماره شما ارسال شد'
           });
-
-          if (error) {
-            console.error('Edge function error:', error);
-            throw error;
-          }
-
-          console.log('OTP Response:', data);
-          if (data.success) {
-            setFormattedPhoneNumber(data.formattedPhone);
-            setCurrentStep('otp');
-            toast.success('کد تأیید ارسال شد', {
-              description: 'کد ۴ رقمی به شماره شما ارسال شد'
-            });
-          } else {
-            throw new Error(data.error || 'خطا در ارسال کد تأیید');
-          }
+        } else {
+          throw new Error(data.error || 'خطا در ارسال کد تأیید');
         }
       }
     } catch (error: any) {
