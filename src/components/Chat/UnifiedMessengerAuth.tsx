@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import useGoogleAuthSettings from '@/hooks/useGoogleAuthSettings';
+import { rafieiAuth } from '@/lib/rafieiAuth';
 
 interface UnifiedMessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
