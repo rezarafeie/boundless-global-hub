@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type UserRole = 'admin' | 'sales_manager' | 'student' | null;
+export type UserRole = 'admin' | 'sales_agent' | 'student' | null;
 
 interface UserRoleInfo {
   role: UserRole;
@@ -41,8 +41,8 @@ export const useUserRole = (): UserRoleInfo => {
         
         if (messengerData.is_messenger_admin || messengerData.role === 'admin') {
           setRole('admin');
-        } else if (messengerData.role === 'sales_manager') {
-          setRole('sales_manager');
+        } else if (messengerData.role === 'sales_agent') {
+          setRole('sales_agent');
         } else {
           setRole('student');
         }
@@ -57,7 +57,7 @@ export const useUserRole = (): UserRoleInfo => {
   }, [user, authLoading]);
 
   const isAdmin = role === 'admin';
-  const isSalesManager = role === 'sales_manager';
+  const isSalesManager = role === 'sales_agent';
   const canManageLeads = isAdmin || isSalesManager;
   const canViewSales = isAdmin || isSalesManager;
 
