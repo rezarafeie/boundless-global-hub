@@ -285,30 +285,37 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           setFirstName(userFirstName);
           setLastName(userLastName);
           
-          // Send OTP for linking
-          const { data, error } = await supabase.functions.invoke('send-otp', {
-            body: {
-              phone: phoneNumber,
-              countryCode: countryCode
-            }
-          });
-
-          if (error) {
-            console.error('Edge function error:', error);
-            throw error;
-          }
-
-          if (data.success) {
-            // Use the formatted phone returned by the edge function for consistency
-            setFormattedPhoneForOTP(data.formattedPhone);
-            console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
-            
-            setCurrentStep('otp-link');
-            toast.success('کد تأیید ارسال شد', {
-              description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
-            });
+          // Skip OTP for non-Iranian users in linking flow
+          if (countryCode !== '+98') {
+            console.log('🌍 Non-Iranian user linking, skipping OTP');
+            setOtpVerified(true);
+            setCurrentStep('name-confirm');
           } else {
-            throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            // Send OTP for linking Iranian users
+            const { data, error } = await supabase.functions.invoke('send-otp', {
+              body: {
+                phone: phoneNumber,
+                countryCode: countryCode
+              }
+            });
+
+            if (error) {
+              console.error('Edge function error:', error);
+              throw error;
+            }
+
+            if (data.success) {
+              // Use the formatted phone returned by the edge function for consistency
+              setFormattedPhoneForOTP(data.formattedPhone);
+              console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+              
+              setCurrentStep('otp-link');
+              toast.success('کد تأیید ارسال شد', {
+                description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
+              });
+            } else {
+              throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            }
           }
         } else {
           // Phone number doesn't exist, need to create new user with linking data
@@ -329,30 +336,36 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           console.log('🔐 User has no password, sending OTP automatically');
           setIsLogin(true);
           
-          // Send OTP for verification
-          const { data, error } = await supabase.functions.invoke('send-otp', {
-            body: {
-              phone: phoneNumber,
-              countryCode: countryCode
-            }
-          });
-
-          if (error) {
-            console.error('Edge function error:', error);
-            throw error;
-          }
-
-          if (data.success) {
-            // Use the formatted phone returned by the edge function for consistency
-            setFormattedPhoneForOTP(data.formattedPhone);
-            console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
-            
-            setCurrentStep('otp-login');
-            toast.success('کد تأیید ارسال شد', {
-              description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
-            });
+          // Skip OTP for non-Iranian users without password
+          if (countryCode !== '+98') {
+            console.log('🌍 Non-Iranian user without password, redirecting to password setup');
+            setCurrentStep('password');
           } else {
-            throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            // Send OTP for verification for Iranian users
+            const { data, error } = await supabase.functions.invoke('send-otp', {
+              body: {
+                phone: phoneNumber,
+                countryCode: countryCode
+              }
+            });
+
+            if (error) {
+              console.error('Edge function error:', error);
+              throw error;
+            }
+
+            if (data.success) {
+              // Use the formatted phone returned by the edge function for consistency
+              setFormattedPhoneForOTP(data.formattedPhone);
+              console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+              
+              setCurrentStep('otp-login');
+              toast.success('کد تأیید ارسال شد', {
+                description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+              });
+            } else {
+              throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            }
           }
         } else if (prefillData?.email && !user.email) {
           console.log('🔗 Google user wants to link to existing phone number');
@@ -364,30 +377,37 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           setFirstName(userFirstName);
           setLastName(userLastName);
           
-          // Send OTP for verification
-          const { data, error } = await supabase.functions.invoke('send-otp', {
-            body: {
-              phone: phoneNumber,
-              countryCode: countryCode
-            }
-          });
-
-          if (error) {
-            console.error('Edge function error:', error);
-            throw error;
-          }
-
-          if (data.success) {
-            // Use the formatted phone returned by the edge function for consistency
-            setFormattedPhoneForOTP(data.formattedPhone);
-            console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
-            
-            setCurrentStep('otp-link');
-            toast.success('کد تأیید ارسال شد', {
-              description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
-            });
+          // Skip OTP for non-Iranian users linking Google account
+          if (countryCode !== '+98') {
+            console.log('🌍 Non-Iranian user linking Google account, skipping OTP');
+            setOtpVerified(true);
+            setCurrentStep('name-confirm');
           } else {
-            throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            // Send OTP for verification for Iranian users
+            const { data, error } = await supabase.functions.invoke('send-otp', {
+              body: {
+                phone: phoneNumber,
+                countryCode: countryCode
+              }
+            });
+
+            if (error) {
+              console.error('Edge function error:', error);
+              throw error;
+            }
+
+            if (data.success) {
+              // Use the formatted phone returned by the edge function for consistency
+              setFormattedPhoneForOTP(data.formattedPhone);
+              console.log('📱 Using formatted phone from edge function:', data.formattedPhone);
+              
+              setCurrentStep('otp-link');
+              toast.success('کد تأیید ارسال شد', {
+                description: 'کد ۴ رقمی برای ربط حساب Google به شماره شما ارسال شد'
+              });
+            } else {
+              throw new Error(data.error || 'خطا در ارسال کد تأیید');
+            }
           }
         } else {
           // Normal login flow - user has password
@@ -396,7 +416,13 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         }
       } else {
         setIsLogin(false);
-        setCurrentStep('password');
+        // Skip OTP for non-Iranian new users
+        if (countryCode !== '+98') {
+          console.log('🌍 Non-Iranian new user, skipping OTP');
+          setCurrentStep('password');
+        } else {
+          setCurrentStep('password');
+        }
       }
     } catch (error) {
       console.error('Error checking phone:', error);
@@ -459,8 +485,14 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
         setLoading(false);
       }
     } else {
-      // Continue to name step for registration
-      setCurrentStep('name');
+      // For non-Iranian users, skip OTP and go to name step
+      if (countryCode !== '+98') {
+        console.log('🌍 Non-Iranian user registration, skipping OTP');
+        setCurrentStep('name');
+      } else {
+        // Continue to name step for Iranian users (they will do OTP after password)
+        setCurrentStep('name');
+      }
     }
   };
 
