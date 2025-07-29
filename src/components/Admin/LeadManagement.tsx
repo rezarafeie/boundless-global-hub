@@ -138,7 +138,7 @@ const LeadManagement: React.FC = () => {
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution'>(
-    isAdmin ? 'admin' : 'available'
+    (isAdmin || isSalesManager) ? 'admin' : 'available'
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
@@ -181,11 +181,11 @@ const LeadManagement: React.FC = () => {
 
   // Separate useEffect for admin leads that reacts to filter changes
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isSalesManager) {
       fetchAdminLeads(currentPage);
       fetchAgentSummaries();
     }
-  }, [isAdmin, currentPage, selectedCourse, selectedAgent, debouncedSearchTerm]);
+  }, [isAdmin, isSalesManager, currentPage, selectedCourse, selectedAgent, debouncedSearchTerm]);
 
   const fetchCourses = async () => {
     try {
@@ -956,8 +956,8 @@ const LeadManagement: React.FC = () => {
                       واگذار شده‌ها
                     </Button>
                   </>
-                )}
-                 {isAdmin && (
+                 )}
+                 {(isAdmin || isSalesManager) && (
                    <>
                      <Button
                        variant={activeTab === 'admin' ? 'default' : 'ghost'}
