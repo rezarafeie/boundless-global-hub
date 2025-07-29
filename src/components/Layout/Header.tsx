@@ -51,7 +51,7 @@ const Header = () => {
 
   // Check if user has admin access
   const hasAdminAccess = () => {
-    return isMessengerAdmin || ['admin', 'enrollments_manager'].includes(userRole || '');
+    return isMessengerAdmin || ['admin', 'enrollments_manager', 'sales_manager', 'sales_agent'].includes(userRole || '');
   };
 
   // Use different logos for light/dark modes with proper fallbacks
