@@ -25,8 +25,13 @@ Deno.serve(async (req) => {
     // Format phone number according to requirements
     let formattedPhone = phone;
     if (countryCode === '+98') {
-      // For Iran, keep the + sign
-      formattedPhone = `${countryCode}${phone}`;
+      // For Iran, handle different phone formats
+      let cleanPhone = phone;
+      // Remove leading 0 if present (09xxxxxxxxx -> 9xxxxxxxxx)
+      if (cleanPhone.startsWith('0')) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      formattedPhone = `${countryCode}${cleanPhone}`;
     } else {
       // For other countries, replace + with 00
       formattedPhone = `00${countryCode.slice(1)}${phone}`;

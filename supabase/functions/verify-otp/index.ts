@@ -19,15 +19,26 @@ Deno.serve(async (req) => {
   try {
     const { phone, otpCode }: VerifyOTPRequest = await req.json();
     
+    // Format phone number consistently with send-otp function
+    let formattedPhone = phone;
+    // Handle Iranian phone numbers (remove leading 0 and add +98)
+    if (phone.startsWith('0') && phone.length === 11) {
+      formattedPhone = `+98${phone.substring(1)}`;
+    } else if (phone.length === 10 && phone.startsWith('9')) {
+      formattedPhone = `+98${phone}`;
+    } else if (!phone.startsWith('+98')) {
+      formattedPhone = `+98${phone}`;
+    }
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Check if OTP exists and is valid
+    // Check if OTP exists and is valid using the formatted phone
     const { data: otpData, error: otpError } = await supabase
       .from('otp_verifications')
       .select('*')
-      .eq('phone', phone)
+      .eq('phone', formattedPhone)
       .eq('otp_code', otpCode)
       .eq('verified', false)
       .gt('expires_at', new Date().toISOString())
@@ -50,7 +61,7 @@ Deno.serve(async (req) => {
     const { error: updateError } = await supabase
       .from('otp_verifications')
       .update({ verified: true })
-      .eq('phone', phone)
+      .eq('phone', formattedPhone)
       .eq('otp_code', otpCode);
     
     if (updateError) {
