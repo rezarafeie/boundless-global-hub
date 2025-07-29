@@ -224,11 +224,7 @@ class RafieiAuthService {
       return;
     }
     
-    // Check if it's Iranian phone
-    const isIranian = await this.isIranianPhone(normalizedPhone);
-    if (!isIranian) {
-      throw new Error('ارسال پیامک به این کشور در حال حاضر امکان‌پذیر نیست، از ورود با ایمیل استفاده کنید');
-    }
+    console.log('📱 Sending OTP for phone:', normalizedPhone, 'Country:', countryCode);
 
     // Call the existing send-otp edge function
     const { data, error } = await supabase.functions.invoke('send-otp', {

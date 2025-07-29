@@ -330,17 +330,23 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('password');
           } else {
             // Send OTP for verification for Iranian users
+            console.log('📱 About to send OTP for Iranian user:', phoneNumber, 'Country code:', countryCode);
             try {
               const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
               console.log('📱 OTP sent successfully:', response);
+              
+              // Store the phone number in the format expected for verification
+              setFormattedPhoneForOTP(phoneNumber);
               
               setCurrentStep('otp-login');
               toast.success('کد تأیید ارسال شد', {
                 description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
               });
             } catch (otpError: any) {
-              console.error('OTP send error:', otpError);
-              throw new Error(otpError.message || 'خطا در ارسال کد تأیید');
+              console.error('❌ OTP send error:', otpError);
+              // If OTP fails, still allow password setup
+              setCurrentStep('password');
+              toast.error('خطا در ارسال کد تأیید، لطفاً رمز عبور تعین کنید');
             }
           }
         } else if (prefillData?.email && !user.email) {
