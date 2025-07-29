@@ -137,6 +137,8 @@ const EnrollmentAdmin: React.FC = () => {
           // Set default view based on user role
           if (userRole === 'enrollments_manager' && !detailedUser.is_messenger_admin) {
             setActiveView('enrollments'); // Show enrollments by default for enrollment managers
+          } else if (userRole === 'sales_manager' && !detailedUser.is_messenger_admin) {
+            setActiveView('sales'); // Show sales dashboard by default for sales managers
           } else if (isSalesAgent && !detailedUser.is_messenger_admin) {
             setActiveView('leads'); // Show leads by default for sales agents
           }
@@ -360,6 +362,9 @@ const EnrollmentAdmin: React.FC = () => {
           onViewChange={handleViewChange}
           isOpen={isMobileSidebarOpen}
           onToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          userRole={userRole}
+          isMessengerAdmin={isMessengerAdmin}
+          isSalesAgent={isSalesAgent}
         />
         
         {/* Main Content */}

@@ -25,6 +25,9 @@ interface AdminSidebarProps {
   onViewChange: (view: string) => void;
   isOpen: boolean;
   onToggle: () => void;
+  userRole?: string | null;
+  isMessengerAdmin?: boolean;
+  isSalesAgent?: boolean;
 }
 
 const menuItems = [
@@ -42,7 +45,32 @@ const menuItems = [
 const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> = ({
   activeView,
   onViewChange,
+  userRole,
+  isMessengerAdmin,
+  isSalesAgent,
 }) => {
+  // Filter menu items based on user role
+  const getFilteredMenuItems = () => {
+    // Sales manager only gets sales and leads tabs
+    if (userRole === 'sales_manager' && !isMessengerAdmin) {
+      return menuItems.filter(item => ['sales', 'leads'].includes(item.id));
+    }
+    
+    // Sales agent only gets leads tab
+    if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
+      return menuItems.filter(item => item.id === 'leads');
+    }
+    
+    // Enrollment managers get specific tabs
+    if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
+      return menuItems.filter(item => ['enrollments', 'users', 'crm'].includes(item.id));
+    }
+    
+    // Admin and messenger admin get all tabs
+    return menuItems;
+  };
+
+  const filteredMenuItems = getFilteredMenuItems();
   return (
     <div className="flex flex-col h-full bg-background border-l border-border" dir="rtl" style={{ direction: 'rtl' }}>
       {/* Header */}
@@ -61,7 +89,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
       {/* Menu Items */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-1">
-          {menuItems.map((item, index) => (
+          {filteredMenuItems.map((item, index) => (
             <div key={item.id}>
               <Button
                 variant="ghost"
@@ -112,6 +140,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onViewChange,
   isOpen,
   onToggle,
+  userRole,
+  isMessengerAdmin,
+  isSalesAgent,
 }) => {
   return (
     <>
@@ -140,14 +171,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </Button>
           </div>
           <div className="h-[calc(100vh-4rem)]">
-            <SidebarContent activeView={activeView} onViewChange={onViewChange} />
+            <SidebarContent 
+              activeView={activeView} 
+              onViewChange={onViewChange}
+              userRole={userRole}
+              isMessengerAdmin={isMessengerAdmin}
+              isSalesAgent={isSalesAgent}
+            />
           </div>
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:block w-72 h-full shadow-sm border-l border-border">
-        <SidebarContent activeView={activeView} onViewChange={onViewChange} />
+        <SidebarContent 
+          activeView={activeView} 
+          onViewChange={onViewChange}
+          userRole={userRole}
+          isMessengerAdmin={isMessengerAdmin}
+          isSalesAgent={isSalesAgent}
+        />
       </div>
     </>
   );
