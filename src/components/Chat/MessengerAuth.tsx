@@ -12,6 +12,7 @@ import { privateMessageService } from '@/lib/privateMessageService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
+import { rafieiAuth } from '@/lib/rafieiAuth';
 
 interface MessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -138,28 +139,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
         } else {
           // Send OTP for new Iranian user
           console.log('Sending OTP to:', formData.phone, 'with country code:', formData.countryCode);
-          const { data, error } = await supabase.functions.invoke('send-otp', {
-            body: {
-              phone: formData.phone,
-              countryCode: formData.countryCode
-            }
+          await rafieiAuth.sendSMSOTP(formData.phone, formData.countryCode);
+
+          setCurrentStep('otp');
+          toast.success('کد تأیید ارسال شد', {
+            description: 'کد ۴ رقمی به شماره شما ارسال شد'
           });
-
-          if (error) {
-            console.error('Edge function error:', error);
-            throw error;
-          }
-
-          console.log('OTP Response:', data);
-          if (data.success) {
-            setFormattedPhoneNumber(data.formattedPhone);
-            setCurrentStep('otp');
-            toast.success('کد تأیید ارسال شد', {
-              description: 'کد ۴ رقمی به شماره شما ارسال شد'
-            });
-          } else {
-            throw new Error(data.error || 'خطا در ارسال کد تأیید');
-          }
         }
       }
     } catch (error: any) {
@@ -217,27 +202,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     
     try {
       console.log('Sending OTP for login to:', formattedPhoneNumber);
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: {
-          phone: formData.phone,
-          countryCode: formData.countryCode
-        }
+      await rafieiAuth.sendSMSOTP(formData.phone, formData.countryCode);
+
+      setCurrentStep('login-otp');
+      toast.success('کد تأیید ارسال شد', {
+        description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
       });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      console.log('OTP Response for login:', data);
-      if (data.success) {
-        setCurrentStep('login-otp');
-        toast.success('کد تأیید ارسال شد', {
-          description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
-        });
-      } else {
-        throw new Error(data.error || 'خطا در ارسال کد تأیید');
-      }
     } catch (error: any) {
       console.error('Error sending OTP for login:', error);
       toast.error('خطا', {
@@ -254,33 +224,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: {
-          phone: formattedPhoneNumber,
-          otpCode: code
-        }
-      });
+      await rafieiAuth.verifyOTP(formattedPhoneNumber, code, formData.countryCode);
 
-      console.log('Login OTP verification response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data && data.success) {
-        // OTP verified, log in the user
-        if (existingUser) {
-          const sessionToken = await messengerService.createSession(existingUser.id);
-          onAuthenticated(sessionToken, existingUser.name, existingUser);
-        }
-      } else {
-        console.log('Login OTP verification failed, showing error toast');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
-        setOtpCode('');
-        return;
+      // OTP verified, log in the user
+      if (existingUser) {
+        const sessionToken = await messengerService.createSession(existingUser.id);
+        onAuthenticated(sessionToken, existingUser.name, existingUser);
       }
     } catch (error: any) {
       console.error('Error verifying login OTP:', error);
@@ -299,33 +248,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: {
-          phone: formattedPhoneNumber,
-          otpCode: code
-        }
+      await rafieiAuth.verifyOTP(formattedPhoneNumber, code, formData.countryCode);
+
+      setCurrentStep('password');
+      toast.success('کد تأیید شد', {
+        description: 'اکنون رمز عبور خود را تعیین کنید'
       });
-
-      console.log('OTP verification response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data && data.success) {
-        setCurrentStep('password');
-        toast.success('کد تأیید شد', {
-          description: 'اکنون رمز عبور خود را تعیین کنید'
-        });
-      } else {
-        console.log('OTP verification failed, showing error toast');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
-        setOtpCode('');
-        return;
-      }
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
       toast.error('خطا در تأیید کد', {
@@ -454,27 +382,12 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     
     try {
       console.log('Sending forgot password OTP to:', formattedPhoneNumber);
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: {
-          phone: formData.phone,
-          countryCode: formData.countryCode
-        }
+      await rafieiAuth.sendSMSOTP(formData.phone, formData.countryCode);
+
+      setCurrentStep('forgot-otp');
+      toast.success('کد بازیابی ارسال شد', {
+        description: 'کد ۴ رقمی برای بازیابی رمز عبور به شماره شما ارسال شد'
       });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      console.log('Forgot password OTP Response:', data);
-      if (data.success) {
-        setCurrentStep('forgot-otp');
-        toast.success('کد بازیابی ارسال شد', {
-          description: 'کد ۴ رقمی برای بازیابی رمز عبور به شماره شما ارسال شد'
-        });
-      } else {
-        throw new Error(data.error || 'خطا در ارسال کد بازیابی');
-      }
     } catch (error: any) {
       console.error('Error sending forgot password OTP:', error);
       toast.error('خطا', {
@@ -491,34 +404,13 @@ const MessengerAuth: React.FC<MessengerAuthProps> = ({ onAuthenticated }) => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: {
-          phone: formattedPhoneNumber,
-          otpCode: code
-        }
+      await rafieiAuth.verifyOTP(formattedPhoneNumber, code, formData.countryCode);
+
+      setCurrentStep('reset-password');
+      toast.success('کد تأیید شد', {
+        description: 'رمز عبور جدید خود را وارد کنید'
       });
-
-      console.log('Forgot password OTP verification response:', { data, error });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data && data.success) {
-        setCurrentStep('reset-password');
-        toast.success('کد تأیید شد', {
-          description: 'رمز عبور جدید خود را وارد کنید'
-        });
-        setOtpCode('');
-      } else {
-        console.log('Forgot password OTP verification failed, showing error toast');
-        toast.error('کد اشتباه است', {
-          description: 'کد وارد شده صحیح نیست. لطفاً دوباره تلاش کنید'
-        });
-        setOtpCode('');
-        return;
-      }
+      setOtpCode('');
     } catch (error: any) {
       console.error('Error verifying forgot password OTP:', error);
       toast.error('خطا در تأیید کد', {

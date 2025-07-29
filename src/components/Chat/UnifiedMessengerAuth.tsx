@@ -292,12 +292,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('name-confirm');
           } else {
             // Send OTP for linking Iranian users
-            const { data, error } = await supabase.functions.invoke('send-otp', {
-              body: {
-                phone: phoneNumber,
-                countryCode: countryCode
-              }
-            });
+            await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
 
             if (error) {
               console.error('Edge function error:', error);
@@ -342,12 +337,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('password');
           } else {
             // Send OTP for verification for Iranian users
-            const { data, error } = await supabase.functions.invoke('send-otp', {
-              body: {
-                phone: phoneNumber,
-                countryCode: countryCode
-              }
-            });
+            await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
 
             if (error) {
               console.error('Edge function error:', error);
@@ -384,12 +374,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
             setCurrentStep('name-confirm');
           } else {
             // Send OTP for verification for Iranian users
-            const { data, error } = await supabase.functions.invoke('send-otp', {
-              body: {
-                phone: phoneNumber,
-                countryCode: countryCode
-              }
-            });
+            await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
 
             if (error) {
               console.error('Edge function error:', error);
@@ -500,12 +485,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       // Send OTP for login
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: {
-          phone: phoneNumber,
-          countryCode: countryCode
-        }
-      });
+      await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
 
       if (error) {
         console.error('Edge function error:', error);
@@ -647,12 +627,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
       console.log('🔐 Verifying OTP for login:', phoneForVerification, 'Code:', code);
       
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: {
-          phone: phoneForVerification,
-          otpCode: code
-        }
-      });
+      await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
 
       console.log('✅ OTP verification response:', { data, error });
 
@@ -717,12 +692,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
 
       console.log('🔐 Verifying OTP for phone:', phoneForVerification, 'Code:', code);
       
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: {
-          phone: phoneForVerification,
-          otpCode: code
-        }
-      });
+      await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
 
       console.log('✅ OTP verification response:', { data, error });
 
@@ -922,15 +892,10 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleForgotPasswordOTP = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { phone: phoneNumber, countryCode: countryCode }
-      });
-      if (error) throw error;
-      if (data.success) {
-        setFormattedPhoneForOTP(data.formattedPhone);
-        setCurrentStep('forgot-otp');
-        toast.success('کد بازیابی ارسال شد');
-      }
+      await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+      setFormattedPhoneForOTP(phoneNumber);
+      setCurrentStep('forgot-otp');
+      toast.success('کد بازیابی ارسال شد');
     } catch (error: any) {
       toast.error('خطا در ارسال کد بازیابی');
     } finally {
@@ -942,9 +907,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     if (code.length !== 4) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { phone: formattedPhoneForOTP, otpCode: code }
-      });
+      await rafieiAuth.verifyOTP(formattedPhoneForOTP, code, countryCode);
       if (error) throw error;
       if (data?.success) {
         setCurrentStep('reset-password');
