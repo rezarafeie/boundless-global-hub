@@ -207,6 +207,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
     { value: 'user', label: 'کاربر عادی' },
     { value: 'admin', label: 'مدیر' },
     { value: 'enrollments_manager', label: 'مدیر ثبت‌نام‌ها' },
+    { value: 'sales_manager', label: 'مدیر فروش' },
     { value: 'sales_agent', label: 'نماینده فروش' },
     { value: 'support_agent', label: 'پشتیبان' },
     { value: 'moderator', label: 'مدیر محتوا' },
