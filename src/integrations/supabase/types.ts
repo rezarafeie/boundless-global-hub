@@ -892,6 +892,77 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_followups: {
+        Row: {
+          assigned_to: number
+          completed_at: string | null
+          created_at: string
+          crm_activity_id: string
+          deal_id: string | null
+          due_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          assigned_to: number
+          completed_at?: string | null
+          created_at?: string
+          crm_activity_id: string
+          deal_id?: string | null
+          due_at: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          assigned_to?: number
+          completed_at?: string | null
+          created_at?: string
+          crm_activity_id?: string
+          deal_id?: string | null
+          due_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_followups_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_followups_crm_activity_id_fkey"
+            columns: ["crm_activity_id"]
+            isOneToOne: false
+            referencedRelation: "crm_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_followups_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_followups_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_notes: {
         Row: {
           content: string
