@@ -2475,7 +2475,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Add CRM Note Dialog */}
       <Dialog open={isAddingQuickNote} onOpenChange={setIsAddingQuickNote}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto z-[100000]" style={{zIndex: 100000}}>
           <DialogHeader>
             <DialogTitle>افزودن یادداشت CRM</DialogTitle>
           </DialogHeader>
