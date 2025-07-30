@@ -51,14 +51,14 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
 }) => {
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
-    // Sales manager only gets sales and leads tabs
+    // Sales manager gets sales, leads, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
-      return menuItems.filter(item => ['sales', 'leads'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
     }
     
-    // Sales agent only gets leads tab
+    // Sales agent gets leads and crm tabs
     if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
-      return menuItems.filter(item => item.id === 'leads');
+      return menuItems.filter(item => ['leads', 'crm'].includes(item.id));
     }
     
     // Enrollment managers get specific tabs
