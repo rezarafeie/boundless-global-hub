@@ -336,9 +336,17 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
               console.log('📱 OTP sent successfully:', response);
               
-              // Store the normalized phone number in the format expected for verification
-              const normalizedPhone = rafieiAuth.normalizePhone(phoneNumber);
-              setFormattedPhoneForOTP(normalizedPhone);
+              // Store the formatted phone in the same format used by send-otp function
+              // Convert to international format that matches what's stored in database
+              let formattedPhone = phoneNumber;
+              if (countryCode === '+98') {
+                let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+                if (cleanPhone.startsWith('0')) {
+                  cleanPhone = cleanPhone.substring(1);
+                }
+                formattedPhone = `${countryCode}${cleanPhone}`;
+              }
+              setFormattedPhoneForOTP(formattedPhone);
               
               setCurrentStep('otp-login');
               toast.success('کد تأیید ارسال شد', {
@@ -834,8 +842,16 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-      const normalizedPhone = rafieiAuth.normalizePhone(phoneNumber);
-      setFormattedPhoneForOTP(normalizedPhone);
+      // Store the formatted phone in the same format used by send-otp function
+      let formattedPhone = phoneNumber;
+      if (countryCode === '+98') {
+        let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+        if (cleanPhone.startsWith('0')) {
+          cleanPhone = cleanPhone.substring(1);
+        }
+        formattedPhone = `${countryCode}${cleanPhone}`;
+      }
+      setFormattedPhoneForOTP(formattedPhone);
       setCurrentStep('forgot-otp');
       toast.success('کد بازیابی ارسال شد');
     } catch (error: any) {

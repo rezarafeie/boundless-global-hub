@@ -249,22 +249,12 @@ class RafieiAuthService {
       return;
     }
     
-    // Convert phone to the same format used in send-otp function
-    let formattedPhone = phone;
-    if (countryCode === '+98') {
-      // Remove leading 0 if present (09xxxxxxxxx -> 9xxxxxxxxx)
-      let cleanPhone = phone.replace(/\s|-/g, '');
-      if (cleanPhone.startsWith('0')) {
-        cleanPhone = cleanPhone.substring(1);
-      }
-      formattedPhone = `${countryCode}${cleanPhone}`;
-    }
-    
-    console.log('🔐 Verifying OTP with formatted phone:', formattedPhone, 'Code:', otpCode);
+    // The phone should already be in the correct format (+989xxxxxxxx) from the UI
+    console.log('🔐 Verifying OTP with phone:', phone, 'Code:', otpCode);
     
     const { data, error } = await supabase.functions.invoke('verify-otp', {
       body: { 
-        phone: formattedPhone,
+        phone: phone,
         otpCode: otpCode
       }
     });
