@@ -2036,28 +2036,102 @@ const LeadManagement: React.FC = () => {
                             <p className="text-muted-foreground text-sm sm:text-base">هیچ فعالیتی ثبت نشده است</p>
                           </div>
                         ) : (
-                          userActivity.map((activity, index) => (
-                            <Card key={index}>
-                              <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">{activity.event_type}</Badge>
+                          userActivity.map((activity, index) => {
+                            // Generate human-readable description
+                            let description = '';
+                            
+                            // Check if event_description exists in metadata (for lesson activities with Persian text)
+                            if (activity.metadata?.event_description) {
+                              description = activity.metadata.event_description;
+                            } else {
+                              // Fallback to default descriptions
+                              switch (activity.event_type) {
+                                case 'user_logged_in':
+                                  description = 'کاربر وارد وب‌سایت شد';
+                                  break;
+                                case 'support_activated':
+                                  description = 'پشتیبانی فعال شد';
+                                  break;
+                                case 'telegram_joined':
+                                  description = 'عضو کانال تلگرام شد';
+                                  break;
+                                case 'smart_activation_clicked':
+                                  description = 'لینک فعال‌سازی هوشمند کلیک شد';
+                                  break;
+                                case 'support_link_clicked':
+                                  description = 'لینک پشتیبانی کلیک شد';
+                                  break;
+                                case 'telegram_link_clicked':
+                                  description = 'لینک تلگرام کلیک شد';
+                                  break;
+                                case 'gifts_link_clicked':
+                                  description = 'لینک هدایا کلیک شد';
+                                  break;
+                                case 'course_page_visited':
+                                  const courseTitle = activity.metadata?.course_title || 'دوره';
+                                  description = `بازدید صفحه دوره: ${courseTitle}`;
+                                  break;
+                                case 'lesson_opened':
+                                  const lessonTitleOpen = activity.metadata?.lesson_title || 'نامشخص';
+                                  description = `درس ${lessonTitleOpen} باز شد`;
+                                  break;
+                                case 'lesson_completed':
+                                  const lessonTitleComplete = activity.metadata?.lesson_title || 'نامشخص';
+                                  description = `درس ${lessonTitleComplete} تکمیل شد`;
+                                  break;
+                                case 'lesson_time_spent':
+                                  const lessonTitleTime = activity.metadata?.lesson_title || 'نامشخص';
+                                  const timeSpentMinutes = activity.metadata?.time_spent_minutes || 0;
+                                  description = `${timeSpentMinutes} دقیقه در درس ${lessonTitleTime} صرف شد`;
+                                  break;
+                                case 'material_downloaded':
+                                  description = 'فایل دانلود شد';
+                                  break;
+                                default:
+                                  description = activity.event_type.replace(/_/g, ' ');
+                              }
+                            }
+
+                            // Get activity badge
+                            const getBadgeVariant = (eventType: string) => {
+                              const types: Record<string, string> = {
+                                user_registered: 'ثبت‌نام در سایت',
+                                user_logged_in: 'ورود به سایت',
+                                course_enrolled: 'ثبت‌نام در دوره',
+                                support_activated: 'فعالسازی پشتیبانی',
+                                telegram_joined: 'عضویت در تلگرام',
+                                smart_activation_clicked: 'فعال‌سازی هوشمند',
+                                support_link_clicked: 'کلیک لینک پشتیبانی',
+                                telegram_link_clicked: 'کلیک لینک تلگرام',
+                                gifts_link_clicked: 'کلیک لینک هدایا',
+                                course_page_visited: 'بازدید صفحه دوره',
+                                lesson_opened: 'باز کردن درس',
+                                lesson_completed: 'تکمیل درس',
+                                lesson_time_spent: 'زمان صرف شده',
+                                material_downloaded: 'دانلود مطالب',
+                                payment_completed: 'پرداخت تکمیل شده'
+                              };
+                              return types[eventType] || eventType.replace(/_/g, ' ');
+                            };
+
+                            return (
+                              <Card key={index}>
+                                <CardContent className="p-3 sm:p-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">{getBadgeVariant(activity.event_type)}</Badge>
+                                    </div>
+                                    <span className="text-xs sm:text-sm text-muted-foreground">
+                                      {formatDate(activity.created_at)}
+                                    </span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-muted-foreground">
-                                    {formatDate(activity.created_at)}
-                                  </span>
-                                </div>
-                                {activity.reference && (
-                                  <p className="text-xs sm:text-sm text-gray-600 mb-1 break-words">مرجع: {activity.reference}</p>
-                                )}
-                                {activity.metadata && Object.keys(activity.metadata).length > 0 && (
-                                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto max-w-full">
-                                    {JSON.stringify(activity.metadata, null, 2)}
-                                  </pre>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))
+                                  <p className="text-xs sm:text-sm leading-relaxed">
+                                    {description}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            );
+                          })
                         )}
                       </div>
                     </div>
