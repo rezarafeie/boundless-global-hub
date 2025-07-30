@@ -760,7 +760,7 @@ export function EnrollmentCRM() {
 
             {/* Follow-up Scheduling Section */}
             <div className="border-t pt-4 space-y-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2" dir="rtl">
                 <Checkbox
                   id="schedule_followup"
                   checked={newNote.schedule_followup}
@@ -768,7 +768,7 @@ export function EnrollmentCRM() {
                     setNewNote({...newNote, schedule_followup: checked as boolean})
                   }
                 />
-                <Label htmlFor="schedule_followup" className="flex items-center gap-2">
+                <Label htmlFor="schedule_followup" className="flex items-center gap-2 cursor-pointer">
                   <Clock className="w-4 h-4" />
                   زمان‌بندی پیگیری
                 </Label>
