@@ -41,6 +41,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import LeadDistributionSystem from './LeadDistributionSystem';
 import UserCRM from './UserProfile/UserCRM';
 import UserEditModal from './UserEditModal';
+import DealsPipeline from './DealsPipeline';
 
 interface Lead {
   enrollment_id: string;
@@ -141,7 +142,7 @@ const LeadManagement: React.FC = () => {
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution'>(
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution' | 'pipeline'>(
     (isAdmin || isSalesManager) ? 'admin' : 'available'
   );
   const [searchTerm, setSearchTerm] = useState('');
@@ -1149,15 +1150,24 @@ const LeadManagement: React.FC = () => {
                      >
                        مدیریت ادمین
                      </Button>
-                     <Button
-                       variant={activeTab === 'distribution' ? 'default' : 'ghost'}
-                       size="sm"
-                       onClick={() => setActiveTab('distribution')}
-                       className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
-                     >
-                       <Share2 className="h-4 w-4" />
-                       توزیع لید
-                     </Button>
+                      <Button
+                        variant={activeTab === 'distribution' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActiveTab('distribution')}
+                        className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        توزیع لید
+                      </Button>
+                      <Button
+                        variant={activeTab === 'pipeline' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActiveTab('pipeline')}
+                        className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                      >
+                        <Target className="h-4 w-4" />
+                        پایپ‌لاین فروش
+                      </Button>
                    </>
                  )}
               </div>
@@ -1702,9 +1712,11 @@ const LeadManagement: React.FC = () => {
                  </CardContent>
                </Card>
              </div>
-           ) : activeTab === 'distribution' ? (
-             <LeadDistributionSystem />
-           ) : null}
+            ) : activeTab === 'distribution' ? (
+              <LeadDistributionSystem />
+            ) : activeTab === 'pipeline' ? (
+              <DealsPipeline />
+            ) : null}
         </CardContent>
        </Card>
 

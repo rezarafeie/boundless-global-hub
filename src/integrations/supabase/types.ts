@@ -936,6 +936,122 @@ export type Database = {
           },
         ]
       }
+      deal_activities: {
+        Row: {
+          admin_id: number
+          created_at: string
+          deal_id: string
+          description: string
+          id: string
+          result: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id: number
+          created_at?: string
+          deal_id: string
+          description: string
+          id?: string
+          result?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: number
+          created_at?: string
+          deal_id?: string
+          description?: string
+          id?: string
+          result?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_activities_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          assigned_by_id: number
+          assigned_salesperson_id: number
+          closed_at: string | null
+          course_id: string
+          created_at: string
+          enrollment_id: string
+          id: string
+          price: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by_id: number
+          assigned_salesperson_id: number
+          closed_at?: string | null
+          course_id: string
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          price?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by_id?: number
+          assigned_salesperson_id?: number
+          closed_at?: string | null
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          price?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_assigned_by_id_fkey"
+            columns: ["assigned_by_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_assigned_salesperson_id_fkey"
+            columns: ["assigned_salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_codes: {
         Row: {
           code: string
