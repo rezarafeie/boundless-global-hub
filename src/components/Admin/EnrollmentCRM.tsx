@@ -491,59 +491,105 @@ export function EnrollmentCRM() {
               هیچ فعالیت CRM یافت نشد.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">نوع</TableHead>
-                    <TableHead className="text-right">کاربر</TableHead>
-                    <TableHead className="text-right">دوره</TableHead>
-                    <TableHead className="text-right">محتوا</TableHead>
-                    <TableHead className="text-right">وضعیت</TableHead>
-                    <TableHead className="text-right">نماینده</TableHead>
-                    <TableHead className="text-right">تاریخ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredNotes.map((note) => (
-                    <TableRow key={note.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getTypeIcon(note.type)}
-                          {getTypeBadge(note.type)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{note.user_name}</span>
-                          <span className="text-sm text-muted-foreground">{note.user_phone}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{note.course_title}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-md">
-                          <p className="text-sm leading-relaxed">{note.content}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
+            <>
+              {/* Mobile cards view */}
+              <div className="block md:hidden space-y-4">
+                {filteredNotes.map((note) => (
+                  <div key={note.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      {getTypeIcon(note.type)}
+                      {getTypeBadge(note.type)}
+                      <div className="mr-auto">
                         {getStatusBadge(note.status)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{formatDate(note.created_at)}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground">کاربر</div>
+                        <div className="font-medium">{note.user_name}</div>
+                        <div className="text-sm text-muted-foreground">{note.user_phone}</div>
+                      </div>
+                      
+                      {note.course_title && (
+                        <div>
+                          <div className="text-xs text-muted-foreground">دوره</div>
+                          <div className="text-sm">{note.course_title}</div>
                         </div>
-                      </TableCell>
+                      )}
+                      
+                      <div>
+                        <div className="text-xs text-muted-foreground">محتوا</div>
+                        <p className="text-sm leading-relaxed">{note.content}</p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(note.created_at)}
+                        </div>
+                        <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-right">نوع</TableHead>
+                      <TableHead className="text-right">کاربر</TableHead>
+                      <TableHead className="text-right">دوره</TableHead>
+                      <TableHead className="text-right">محتوا</TableHead>
+                      <TableHead className="text-right">وضعیت</TableHead>
+                      <TableHead className="text-right">نماینده</TableHead>
+                      <TableHead className="text-right">تاریخ</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredNotes.map((note) => (
+                      <TableRow key={note.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getTypeIcon(note.type)}
+                            {getTypeBadge(note.type)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{note.user_name}</span>
+                            <span className="text-sm text-muted-foreground">{note.user_phone}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{note.course_title}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-md">
+                            <p className="text-sm leading-relaxed">{note.content}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(note.status)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{note.created_by}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">{formatDate(note.created_at)}</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
