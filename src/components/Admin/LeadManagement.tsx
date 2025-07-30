@@ -1622,36 +1622,65 @@ const LeadManagement: React.FC = () => {
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
         <DialogContent className="max-w-full w-full h-[calc(100vh-80px)] top-[80px] left-0 right-0 bottom-0 translate-x-0 translate-y-0 overflow-y-auto z-[100] p-0 fixed">
-          <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-0 z-20 p-6">
-            <DialogTitle>جزئیات لید</DialogTitle>
+          <DialogHeader className="sticky top-0 bg-background border-b pb-3 mb-0 z-20 p-4 sm:p-6">
+            <DialogTitle className="text-lg sm:text-xl">جزئیات لید</DialogTitle>
           </DialogHeader>
           {selectedLead && (
-            <div className="space-y-6 p-6 pt-4">
-              {/* Basic Info Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-2 sm:pt-4">
+              {/* Basic Info Section - Mobile First */}
+              <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
                 <div className="space-y-2">
-                  <h3 className="font-semibold">اطلاعات کاربر</h3>
-                  <div className="space-y-1">
+                  <h3 className="font-semibold text-base sm:text-lg">اطلاعات کاربر</h3>
+                  <div className="space-y-1 text-sm sm:text-base">
                     <p><strong>نام:</strong> {selectedLead.full_name}</p>
-                    <p><strong>ایمیل:</strong> {selectedLead.email}</p>
+                    <p><strong>ایمیل:</strong> <span className="break-all">{selectedLead.email}</span></p>
                     <p><strong>تلفن:</strong> {selectedLead.phone}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-semibold">اطلاعات ثبت‌نام</h3>
-                  <div className="space-y-1">
-                    <p><strong>دوره:</strong> {selectedLead.course_title}</p>
+                  <h3 className="font-semibold text-base sm:text-lg">اطلاعات ثبت‌نام</h3>
+                  <div className="space-y-1 text-sm sm:text-base">
+                    <p><strong>دوره:</strong> <span className="break-words">{selectedLead.course_title}</span></p>
                     <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
                     <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Tabs Section */}
-              <div className="border rounded-lg">
-                <div className="flex border-b">
+              {/* Mobile-First Tabs Section */}
+              <div className="border rounded-lg overflow-hidden">
+                {/* Mobile: Dropdown-style tabs */}
+                <div className="sm:hidden">
+                  <select 
+                    value={activeDetailTab} 
+                    onChange={(e) => {
+                      const newTab = e.target.value as 'notes' | 'activity' | 'enrollments' | 'payments';
+                      setActiveDetailTab(newTab);
+                      if (selectedLead) {
+                        if (newTab === 'activity' && userActivity.length === 0) {
+                          fetchUserActivityData(selectedLead.phone);
+                        }
+                        if (newTab === 'enrollments' && userEnrollments.length === 0) {
+                          fetchUserEnrollmentsData(selectedLead.phone);
+                        }
+                        if (newTab === 'payments' && userPayments.length === 0) {
+                          fetchUserPaymentsData(selectedLead.phone);
+                        }
+                      }
+                    }}
+                    className="w-full p-3 border-b bg-background text-sm font-medium"
+                  >
+                    <option value="notes">یادداشت‌های CRM</option>
+                    <option value="activity">فعالیت کاربر</option>
+                    <option value="enrollments">ثبت‌نام‌ها</option>
+                    <option value="payments">پرداخت‌ها</option>
+                  </select>
+                </div>
+
+                {/* Desktop: Horizontal tabs */}
+                <div className="hidden sm:flex border-b overflow-x-auto">
                   <button
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeDetailTab === 'notes' 
                         ? 'border-primary text-primary bg-primary/5' 
                         : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
@@ -1663,7 +1692,7 @@ const LeadManagement: React.FC = () => {
                     یادداشت‌های CRM
                   </button>
                   <button
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeDetailTab === 'activity' 
                         ? 'border-primary text-primary bg-primary/5' 
                         : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
@@ -1678,7 +1707,7 @@ const LeadManagement: React.FC = () => {
                     فعالیت کاربر
                   </button>
                   <button
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeDetailTab === 'enrollments' 
                         ? 'border-primary text-primary bg-primary/5' 
                         : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
@@ -1693,7 +1722,7 @@ const LeadManagement: React.FC = () => {
                     ثبت‌نام‌ها
                   </button>
                   <button
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeDetailTab === 'payments' 
                         ? 'border-primary text-primary bg-primary/5' 
                         : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
@@ -1709,14 +1738,15 @@ const LeadManagement: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="p-4">
+                {/* Tab Content */}
+                <div className="p-3 sm:p-4">
                   {activeDetailTab === 'notes' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">یادداشت‌های CRM</h3>
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <h3 className="font-semibold text-base sm:text-lg">یادداشت‌های CRM</h3>
                         <Button 
                           onClick={() => setIsAddingNote(true)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 w-full sm:w-auto"
                           size="sm"
                         >
                           <Plus className="h-4 w-4" />
@@ -1724,31 +1754,31 @@ const LeadManagement: React.FC = () => {
                         </Button>
                       </div>
 
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
                         {crmNotes.length === 0 ? (
-                          <div className="text-center py-8">
-                            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground">هنوز یادداشتی وجود ندارد</p>
+                          <div className="text-center py-6 sm:py-8">
+                            <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                            <p className="text-muted-foreground text-sm sm:text-base">هنوز یادداشتی وجود ندارد</p>
                           </div>
                         ) : (
                           crmNotes.map((note) => (
                             <Card key={note.id}>
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex items-center gap-2">
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                                     {getTypeBadge(note.type)}
                                     {getStatusBadge(note.status)}
                                      {note.courses && (
-                                       <Badge variant="outline" className="bg-gray-50">
+                                       <Badge variant="outline" className="bg-gray-50 text-xs">
                                          {note.courses.title}
                                        </Badge>
                                      )}
                                   </div>
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">
                                     {formatDate(note.created_at)} - {note.created_by}
                                   </span>
                                 </div>
-                                <p className="text-sm text-gray-700">{note.content}</p>
+                                <p className="text-xs sm:text-sm text-gray-700 break-words">{note.content}</p>
                               </CardContent>
                             </Card>
                           ))
@@ -1758,31 +1788,31 @@ const LeadManagement: React.FC = () => {
                   )}
 
                   {activeDetailTab === 'activity' && (
-                    <div className="space-y-4">
-                      <h3 className="font-semibold">فعالیت کاربر</h3>
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-3 sm:space-y-4">
+                      <h3 className="font-semibold text-base sm:text-lg">فعالیت کاربر</h3>
+                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
                         {userActivity.length === 0 ? (
-                          <div className="text-center py-8">
-                            <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground">هیچ فعالیتی ثبت نشده است</p>
+                          <div className="text-center py-6 sm:py-8">
+                            <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                            <p className="text-muted-foreground text-sm sm:text-base">هیچ فعالیتی ثبت نشده است</p>
                           </div>
                         ) : (
                           userActivity.map((activity, index) => (
                             <Card key={index}>
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-2">
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
                                   <div className="flex items-center gap-2">
-                                    <Badge variant="outline">{activity.event_type}</Badge>
+                                    <Badge variant="outline" className="text-xs">{activity.event_type}</Badge>
                                   </div>
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-xs sm:text-sm text-muted-foreground">
                                     {formatDate(activity.created_at)}
                                   </span>
                                 </div>
                                 {activity.reference && (
-                                  <p className="text-sm text-gray-600 mb-1">مرجع: {activity.reference}</p>
+                                  <p className="text-xs sm:text-sm text-gray-600 mb-1 break-words">مرجع: {activity.reference}</p>
                                 )}
                                 {activity.metadata && Object.keys(activity.metadata).length > 0 && (
-                                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto">
+                                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto max-w-full">
                                     {JSON.stringify(activity.metadata, null, 2)}
                                   </pre>
                                 )}
@@ -1795,34 +1825,37 @@ const LeadManagement: React.FC = () => {
                   )}
 
                   {activeDetailTab === 'enrollments' && (
-                    <div className="space-y-4">
-                      <h3 className="font-semibold">ثبت‌نام‌ها</h3>
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-3 sm:space-y-4">
+                      <h3 className="font-semibold text-base sm:text-lg">ثبت‌نام‌ها</h3>
+                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
                         {userEnrollments.length === 0 ? (
-                          <div className="text-center py-8">
-                            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground">هیچ ثبت‌نامی یافت نشد</p>
+                          <div className="text-center py-6 sm:py-8">
+                            <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                            <p className="text-muted-foreground text-sm sm:text-base">هیچ ثبت‌نامی یافت نشد</p>
                           </div>
                         ) : (
                           userEnrollments.map((enrollment) => (
                             <Card key={enrollment.id}>
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div>
-                                    <h4 className="font-medium">{enrollment.course_title}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      مبلغ: {formatPrice(enrollment.payment_amount)}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge 
-                                      variant={enrollment.payment_status === 'completed' || enrollment.payment_status === 'success' ? 'default' : 'secondary'}
-                                    >
-                                      {enrollment.payment_status}
-                                    </Badge>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      {formatDate(enrollment.created_at)}
-                                    </p>
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-sm sm:text-base break-words">{enrollment.course_title}</h4>
+                                      <p className="text-xs sm:text-sm text-muted-foreground">
+                                        مبلغ: {formatPrice(enrollment.payment_amount)}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col sm:text-right gap-1">
+                                      <Badge 
+                                        variant={enrollment.payment_status === 'completed' || enrollment.payment_status === 'success' ? 'default' : 'secondary'}
+                                        className="text-xs w-fit"
+                                      >
+                                        {enrollment.payment_status}
+                                      </Badge>
+                                      <p className="text-xs sm:text-sm text-muted-foreground">
+                                        {formatDate(enrollment.created_at)}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </CardContent>
@@ -1834,42 +1867,45 @@ const LeadManagement: React.FC = () => {
                   )}
 
                   {activeDetailTab === 'payments' && (
-                    <div className="space-y-4">
-                      <h3 className="font-semibold">پرداخت‌ها</h3>
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-3 sm:space-y-4">
+                      <h3 className="font-semibold text-base sm:text-lg">پرداخت‌ها</h3>
+                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
                         {userPayments.length === 0 ? (
-                          <div className="text-center py-8">
-                            <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground">هیچ پرداختی یافت نشد</p>
+                          <div className="text-center py-6 sm:py-8">
+                            <DollarSign className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                            <p className="text-muted-foreground text-sm sm:text-base">هیچ پرداختی یافت نشد</p>
                           </div>
                         ) : (
                           userPayments.map((payment) => (
                             <Card key={payment.id}>
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                  <div>
-                                    <h4 className="font-medium">{payment.course_title}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      روش پرداخت: {payment.payment_method || 'نامشخص'}
-                                    </p>
-                                    {payment.zarinpal_authority && (
-                                      <p className="text-xs text-gray-500">
-                                        کد پیگیری: {payment.zarinpal_authority}
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-sm sm:text-base break-words">{payment.course_title}</h4>
+                                      <p className="text-xs sm:text-sm text-muted-foreground">
+                                        روش پرداخت: {payment.payment_method || 'نامشخص'}
                                       </p>
-                                    )}
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-medium text-lg">
-                                      {formatPrice(payment.payment_amount)}
-                                    </p>
-                                    <Badge 
-                                      variant={payment.payment_status === 'completed' || payment.payment_status === 'success' ? 'default' : 'secondary'}
-                                    >
-                                      {payment.payment_status}
-                                    </Badge>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      {formatDate(payment.created_at)}
-                                    </p>
+                                      {payment.zarinpal_authority && (
+                                        <p className="text-xs text-gray-500 break-all">
+                                          کد پیگیری: {payment.zarinpal_authority}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col sm:text-right gap-1">
+                                      <p className="font-medium text-base sm:text-lg">
+                                        {formatPrice(payment.payment_amount)}
+                                      </p>
+                                      <Badge 
+                                        variant={payment.payment_status === 'completed' || payment.payment_status === 'success' ? 'default' : 'secondary'}
+                                        className="text-xs w-fit"
+                                      >
+                                        {payment.payment_status}
+                                      </Badge>
+                                      <p className="text-xs sm:text-sm text-muted-foreground">
+                                        {formatDate(payment.created_at)}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </CardContent>
