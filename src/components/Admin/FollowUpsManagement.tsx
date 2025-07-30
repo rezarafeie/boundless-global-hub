@@ -51,6 +51,10 @@ interface NewFollowUp {
   schedule_followup: boolean;
 }
 
+interface DealStatusUpdate {
+  status: 'won' | 'lost' | null;
+}
+
 export function FollowUpsManagement() {
   const { user } = useAuth();
   const { isAdmin, isSalesManager, isSalesAgent } = useUserRole();
@@ -67,6 +71,9 @@ export function FollowUpsManagement() {
     followup_custom_date: '',
     followup_time: new Date().getHours() + ':00',
     schedule_followup: false
+  });
+  const [dealStatus, setDealStatus] = useState<DealStatusUpdate>({
+    status: null
   });
 
   const { toast } = useToast();
@@ -153,6 +160,8 @@ export function FollowUpsManagement() {
   const markAsCompleted = async (followUpId: string, scheduleNext: boolean = false) => {
     setIsSubmitting(true);
     try {
+      const currentFollowUp = followUps.find(f => f.id === followUpId);
+      
       // Mark current follow-up as completed
       const { error: updateError } = await supabase
         .from('crm_followups')
@@ -164,9 +173,22 @@ export function FollowUpsManagement() {
 
       if (updateError) throw updateError;
 
+      // If NOT scheduling next follow-up and deal status is selected, update deal status
+      if (!scheduleNext && !nextFollowUp.schedule_followup && dealStatus.status && currentFollowUp?.deal_id) {
+        const { error: dealUpdateError } = await supabase
+          .from('deals')
+          .update({
+            status: dealStatus.status,
+            closed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentFollowUp.deal_id);
+
+        if (dealUpdateError) throw dealUpdateError;
+      }
+
       // If scheduling next follow-up
       if (scheduleNext && nextFollowUp.schedule_followup && nextFollowUp.title.trim()) {
-        const currentFollowUp = followUps.find(f => f.id === followUpId);
         if (currentFollowUp) {
           const followUpDateTime = calculateFollowUpDate(
             nextFollowUp.followup_date_option,
@@ -190,11 +212,17 @@ export function FollowUpsManagement() {
         }
       }
 
+      let description = "پیگیری با موفقیت تکمیل شد.";
+      if (scheduleNext && nextFollowUp.schedule_followup) {
+        description = "پیگیری تکمیل شد و پیگیری بعدی ایجاد شد.";
+      } else if (dealStatus.status) {
+        const statusText = dealStatus.status === 'won' ? 'موفق' : 'لغو شده';
+        description = `پیگیری تکمیل شد و وضعیت معامله به "${statusText}" تغییر یافت.`;
+      }
+
       toast({
         title: "موفق",
-        description: scheduleNext && nextFollowUp.schedule_followup 
-          ? "پیگیری تکمیل شد و پیگیری بعدی ایجاد شد."
-          : "پیگیری با موفقیت تکمیل شد."
+        description
       });
 
       // Reset form and close dialog
@@ -205,6 +233,7 @@ export function FollowUpsManagement() {
         followup_time: new Date().getHours() + ':00',
         schedule_followup: false
       });
+      setDealStatus({ status: null });
       setIsCompletingFollowUp(false);
       setSelectedFollowUp(null);
 
@@ -501,15 +530,38 @@ export function FollowUpsManagement() {
               </div>
             )}
 
+            {/* Deal Status Selection - Only show when NOT scheduling next follow-up */}
+            {!nextFollowUp.schedule_followup && selectedFollowUp?.deal_id && (
+              <div className="border-t pt-4 space-y-3">
+                <Label className="text-sm font-medium">وضعیت معامله</Label>
+                <Select 
+                  value={dealStatus.status || ''} 
+                  onValueChange={(value) => setDealStatus({status: value as 'won' | 'lost'})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب وضعیت معامله" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="won">موفق</SelectItem>
+                    <SelectItem value="lost">لغو شده</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Next Follow-up Scheduling */}
             <div className="border-t pt-4 space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="schedule_next_followup"
                   checked={nextFollowUp.schedule_followup}
-                  onCheckedChange={(checked) => 
-                    setNextFollowUp({...nextFollowUp, schedule_followup: checked as boolean})
-                  }
+                  onCheckedChange={(checked) => {
+                    setNextFollowUp({...nextFollowUp, schedule_followup: checked as boolean});
+                    // Reset deal status when scheduling next follow-up
+                    if (checked) {
+                      setDealStatus({status: null});
+                    }
+                  }}
                 />
                 <Label htmlFor="schedule_next_followup" className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
@@ -580,7 +632,11 @@ export function FollowUpsManagement() {
               </Button>
               <Button 
                 onClick={() => markAsCompleted(selectedFollowUp?.id || '', nextFollowUp.schedule_followup)} 
-                disabled={isSubmitting || (nextFollowUp.schedule_followup && !nextFollowUp.title.trim())}
+                disabled={
+                  isSubmitting || 
+                  (nextFollowUp.schedule_followup && !nextFollowUp.title.trim()) ||
+                  (!nextFollowUp.schedule_followup && selectedFollowUp?.deal_id && !dealStatus.status)
+                }
               >
                 {isSubmitting ? 'در حال تکمیل...' : 'تکمیل پیگیری'}
               </Button>
