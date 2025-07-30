@@ -150,7 +150,7 @@ const LeadManagement: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState<'notes' | 'activity' | 'enrollments' | 'payments' | 'deals'>('notes');
+  const [activeDetailTab, setActiveDetailTab] = useState<'activity' | 'enrollments' | 'payments' | 'deals'>('activity');
   const [userActivity, setUserActivity] = useState<any[]>([]);
   const [leadDeals, setLeadDeals] = useState<any[]>([]);
   const [userEnrollments, setUserEnrollments] = useState<any[]>([]);
@@ -168,19 +168,13 @@ const LeadManagement: React.FC = () => {
   
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
-  const [isAddingQuickNote, setIsAddingQuickNote] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserChatId, setSelectedUserChatId] = useState<number | null>(null);
   
   // User edit modal states
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
-  const [newNote, setNewNote] = useState({
-    content: '',
-    type: 'note',
-    status: 'در انتظار پرداخت',
-    course_id: 'none'
-  });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
@@ -890,7 +884,7 @@ const LeadManagement: React.FC = () => {
   const openLeadDetail = async (lead: Lead | Assignment | AdminLead) => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
-    setActiveDetailTab('notes');
+    setActiveDetailTab('activity');
     
     // Find user ID and fetch CRM notes
     try {
@@ -1901,23 +1895,58 @@ const LeadManagement: React.FC = () => {
                     </Card>
                   </div>
 
+                  {/* CRM Section */}
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-primary" />
+                          مدیریت CRM
+                        </h3>
+                        <Button
+                          onClick={() => setIsAddingNote(true)}
+                          className="text-xs"
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 ml-1" />
+                          مدیریت کامل CRM
+                        </Button>
+                      </div>
+                      
+                      {selectedUserChatId ? (
+                        <div className="border rounded-lg p-4 bg-muted/20">
+                          <div className="text-sm text-muted-foreground mb-2">
+                            برای مدیریت کامل CRM و افزودن یادداشت‌ها روی دکمه "مدیریت کامل CRM" کلیک کنید
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            کاربر: {selectedLead?.full_name} | تلفن: {selectedLead?.phone}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                          کاربر در سیستم چت یافت نشد
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   {/* Enhanced Tabs Section */}
                   <Card className="border-0 shadow-sm">
                     <CardContent className="p-0">
                       {/* Mobile-First Tab Navigation */}
                       <div className="flex border-b bg-muted/30 overflow-x-auto scrollbar-hide">
                         <button
-                          className={`px-3 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1 sm:gap-2 whitespace-nowrap flex-shrink-0 ${
-                            activeDetailTab === 'notes' 
+                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                            activeDetailTab === 'activity' 
                               ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
                               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           }`}
                           onClick={() => {
-                            setActiveDetailTab('notes');
+                            setActiveDetailTab('activity');
                           }}
                         >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden xs:inline">یادداشت‌های</span> CRM
+                          <BarChart3 className="h-4 w-4" />
+                        فعالیت
                         </button>
                         <button
                           className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
@@ -1984,7 +2013,7 @@ const LeadManagement: React.FC = () => {
 
                   {/* Tab Content */}
                   <div className="p-2 sm:p-3 md:p-4">
-                    {activeDetailTab === 'notes' && (
+                    {/* Notes tab content removed - CRM is now a separate section */}
                         <div className="space-y-2 sm:space-y-3 md:space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                             <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
