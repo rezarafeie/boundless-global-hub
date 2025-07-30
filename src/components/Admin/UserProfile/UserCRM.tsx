@@ -444,7 +444,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
               <div className="text-sm text-muted-foreground">{userPhone}</div>
             </div>
 
-            {/* Update User Details Section */}
+            {/* Update User Details Section - Available for all roles */}
             <Collapsible open={isEditingUser} onOpenChange={setIsEditingUser}>
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full flex items-center gap-2">
