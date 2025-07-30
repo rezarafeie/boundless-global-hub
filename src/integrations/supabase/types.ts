@@ -1046,7 +1046,7 @@ export type Database = {
           {
             foreignKeyName: "deals_enrollment_id_fkey"
             columns: ["enrollment_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "enrollments"
             referencedColumns: ["id"]
           },
@@ -3015,6 +3015,16 @@ export type Database = {
       detect_country_code_from_phone: {
         Args: { phone_number: string }
         Returns: string
+      }
+      distribute_lead_and_create_deal: {
+        Args: {
+          p_enrollment_id: string
+          p_agent_user_id: number
+          p_assigned_by: number
+          p_deal_course_id: string
+          p_deal_price: number
+        }
+        Returns: boolean
       }
       distribute_lead_to_agent: {
         Args: {
