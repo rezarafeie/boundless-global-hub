@@ -1709,8 +1709,8 @@ const LeadManagement: React.FC = () => {
       {/* Lead Detail Dialog */}
       {/* Fullscreen Lead Detail Overlay */}
       {isLeadDetailOpen && (
-        <div className="fixed inset-0 z-[99999] bg-background" style={{zIndex: 99999}}>
-          <div className="flex flex-col h-screen w-screen">
+        <div className="fixed top-0 left-0 right-0 bottom-0 z-[99999] bg-background" style={{zIndex: 99999}}>
+          <div className="flex flex-col h-full w-full">
             {/* Simplified Full Window Header */}
             <div className="flex items-center justify-between p-4 border-b bg-background shadow-sm">
               <div className="flex items-center gap-3">

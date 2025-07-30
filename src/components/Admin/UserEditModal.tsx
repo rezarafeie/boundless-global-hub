@@ -120,7 +120,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-[999999]" style={{zIndex: 999999}}>
         <DialogHeader>
           <DialogTitle>ویرایش کاربر</DialogTitle>
         </DialogHeader>
