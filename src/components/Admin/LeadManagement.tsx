@@ -2060,218 +2060,14 @@ const LeadManagement: React.FC = () => {
                         <div className="space-y-2 sm:space-y-3 md:space-y-4">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                             <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
-                            <Popover open={isAddingQuickNote} onOpenChange={setIsAddingQuickNote}>
-                              <PopoverTrigger asChild>
-                                <Button 
-                                  className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
-                                  size="sm"
-                                >
-                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                                  افزودن یادداشت
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent 
-                                className="w-[420px] z-[99999] max-h-[75vh] overflow-y-auto" 
-                                side="top" 
-                                align="end" 
-                                style={{zIndex: 99999}} 
-                                sideOffset={20}
-                                avoidCollisions={true}
-                                collisionPadding={20}
-                              >
-                                <div className="space-y-4">
-                                  <h4 className="font-medium text-sm">افزودن یادداشت جدید</h4>
-                                  
-                                  <div className="space-y-3">
-                                    <div>
-                                      <Label htmlFor="note-content" className="text-xs">متن یادداشت</Label>
-                                      <Textarea
-                                        id="note-content"
-                                        placeholder="متن یادداشت خود را وارد کنید..."
-                                        value={newNote.content}
-                                        onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
-                                        className="mt-1 min-h-[80px] text-sm"
-                                      />
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <Label htmlFor="note-type" className="text-xs">نوع</Label>
-                                        <Select
-                                          value={newNote.type}
-                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, type: value }))}
-                                        >
-                                          <SelectTrigger className="mt-1 text-xs h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent className="z-[100000]">
-                                            {CRM_TYPES.map((type) => (
-                                              <SelectItem key={type.value} value={type.value} className="text-xs">
-                                                {type.label}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      
-                                      <div>
-                                        <Label htmlFor="note-status" className="text-xs">وضعیت</Label>
-                                        <Select
-                                          value={newNote.status}
-                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, status: value }))}
-                                        >
-                                          <SelectTrigger className="mt-1 text-xs h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent className="z-[100000]">
-                                            {CRM_STATUSES.map((status) => (
-                                              <SelectItem key={status.value} value={status.value} className="text-xs">
-                                                {status.label}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                    </div>
-                                    
-                                    <div>
-                                      <Label htmlFor="note-course" className="text-xs">دوره</Label>
-                                      <Select
-                                        value={newNote.course_id}
-                                        onValueChange={(value) => setNewNote(prev => ({ ...prev, course_id: value }))}
-                                      >
-                                        <SelectTrigger className="mt-1 text-xs h-8">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[100000]">
-                                          <SelectItem value="none" className="text-xs">انتخاب نکنید</SelectItem>
-                                          {courses.map((course) => (
-                                            <SelectItem key={course.id} value={course.id} className="text-xs">
-                                              {course.title}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                     </div>
-
-                                     {/* Follow-up Scheduling Section */}
-                                     <div className="border-t pt-3 space-y-3">
-                                       <div className="flex items-center gap-2" dir="rtl">
-                                         <Checkbox
-                                           id="schedule_followup_quick"
-                                           checked={newNote.schedule_followup}
-                                           onCheckedChange={(checked) => 
-                                             setNewNote(prev => ({...prev, schedule_followup: checked as boolean}))
-                                           }
-                                         />
-                                         <Label htmlFor="schedule_followup_quick" className="flex items-center gap-2 cursor-pointer text-xs">
-                                           <Clock className="w-3 h-3" />
-                                           زمان‌بندی پیگیری
-                                         </Label>
-                                       </div>
-
-                                       {newNote.schedule_followup && (
-                                         <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
-                                           <div>
-                                             <Label htmlFor="followup_title_quick" className="text-xs">عنوان پیگیری</Label>
-                                             <Input
-                                               id="followup_title_quick"
-                                               placeholder="مثال: پیگیری پرداخت"
-                                               value={newNote.followup_title}
-                                               onChange={(e) => setNewNote(prev => ({...prev, followup_title: e.target.value}))}
-                                               className="mt-1 text-xs h-8"
-                                             />
-                                           </div>
-
-                                           <div className="grid grid-cols-2 gap-2">
-                                             <div>
-                                               <Label htmlFor="followup_date_quick" className="text-xs">زمان پیگیری</Label>
-                                               <Select
-                                                 value={newNote.followup_date_option}
-                                                 onValueChange={(value) => setNewNote(prev => ({...prev, followup_date_option: value}))}
-                                               >
-                                                 <SelectTrigger className="mt-1 text-xs h-8">
-                                                   <SelectValue placeholder="انتخاب زمان" />
-                                                 </SelectTrigger>
-                                                 <SelectContent>
-                                                   <SelectItem value="tomorrow" className="text-xs">فردا</SelectItem>
-                                                   <SelectItem value="day_after_tomorrow" className="text-xs">پس‌فردا</SelectItem>
-                                                   <SelectItem value="next_week" className="text-xs">هفته آینده</SelectItem>
-                                                   <SelectItem value="custom" className="text-xs">تاریخ دلخواه</SelectItem>
-                                                 </SelectContent>
-                                               </Select>
-                                             </div>
-
-                                             <div>
-                                               <Label htmlFor="followup_time_quick" className="text-xs">ساعت</Label>
-                                               <Input
-                                                 id="followup_time_quick"
-                                                 type="time"
-                                                 value={newNote.followup_time}
-                                                 onChange={(e) => setNewNote(prev => ({...prev, followup_time: e.target.value}))}
-                                                 className="mt-1 text-xs h-8"
-                                               />
-                                             </div>
-                                           </div>
-
-                                           {newNote.followup_date_option === 'custom' && (
-                                             <div>
-                                               <Label htmlFor="followup_custom_date_quick" className="text-xs">تاریخ دلخواه</Label>
-                                               <Input
-                                                 id="followup_custom_date_quick"
-                                                 type="date"
-                                                 value={newNote.followup_custom_date}
-                                                 onChange={(e) => setNewNote(prev => ({...prev, followup_custom_date: e.target.value}))}
-                                                 className="mt-1 text-xs h-8"
-                                               />
-                                             </div>
-                                           )}
-                                         </div>
-                                       )}
-                                     </div>
-                                   </div>
-                                  
-                                  <div className="flex justify-end gap-2 pt-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setIsAddingQuickNote(false);
-                                        setNewNote({
-                                          content: '',
-                                          type: 'note',
-                                          status: 'در انتظار پرداخت',
-                                          course_id: 'none',
-                                          schedule_followup: false,
-                                          followup_title: '',
-                                          followup_date_option: 'tomorrow',
-                                          followup_time: '09:00',
-                                          followup_custom_date: ''
-                                        });
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      لغو
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={handleSubmitQuickNote}
-                                      disabled={isSubmitting || !newNote.content.trim()}
-                                      className="text-xs"
-                                    >
-                                      {isSubmitting ? (
-                                        <>
-                                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                                          در حال ذخیره...
-                                        </>
-                                      ) : (
-                                        'ذخیره'
-                                      )}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
+                             <Button 
+                               className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
+                               size="sm"
+                               onClick={() => setIsAddingQuickNote(true)}
+                             >
+                               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                               افزودن یادداشت
+                             </Button>
                           </div>
 
                         <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[60vh] md:max-h-96 overflow-y-auto">
@@ -2673,6 +2469,159 @@ const LeadManagement: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add CRM Note Dialog */}
+      <Dialog open={isAddingQuickNote} onOpenChange={setIsAddingQuickNote}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4" dir="rtl">
+            {selectedLead && (
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="font-medium">{'name' in selectedLead ? String(selectedLead.name) : 'نامشخص'}</div>
+                <div className="text-sm text-muted-foreground">{'phone' in selectedLead ? String(selectedLead.phone) : 'نامشخص'}</div>
+              </div>
+            )}
+            
+            <div>
+              <Label htmlFor="type">نوع</Label>
+              <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="course">دوره</Label>
+              <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون دوره</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="status">وضعیت</Label>
+              <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CRM_STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="content">محتوا</Label>
+              <Textarea
+                id="content"
+                placeholder="محتوای یادداشت خود را وارد کنید..."
+                value={newNote.content}
+                onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                rows={4}
+              />
+            </div>
+
+            {/* Follow-up Scheduling Section */}
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center gap-2" dir="rtl">
+                <Checkbox
+                  id="schedule_followup"
+                  checked={newNote.schedule_followup}
+                  onCheckedChange={(checked) => 
+                    setNewNote({...newNote, schedule_followup: checked as boolean})
+                  }
+                />
+                <Label htmlFor="schedule_followup" className="flex items-center gap-2 cursor-pointer">
+                  <Clock className="w-4 h-4" />
+                  زمان‌بندی پیگیری
+                </Label>
+              </div>
+
+              {newNote.schedule_followup && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <Label htmlFor="followup_title">عنوان پیگیری</Label>
+                    <Input
+                      id="followup_title"
+                      placeholder="مثال: پیگیری پرداخت"
+                      value={newNote.followup_title}
+                      onChange={(e) => setNewNote({...newNote, followup_title: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="followup_date">زمان پیگیری</Label>
+                      <Select
+                        value={newNote.followup_date_option}
+                        onValueChange={(value) => setNewNote({...newNote, followup_date_option: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب زمان" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tomorrow">فردا</SelectItem>
+                          <SelectItem value="day_after_tomorrow">پس‌فردا</SelectItem>
+                          <SelectItem value="next_week">هفته آینده</SelectItem>
+                          <SelectItem value="custom">تاریخ دلخواه</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="followup_time">ساعت</Label>
+                      <Input
+                        id="followup_time"
+                        type="time"
+                        value={newNote.followup_time}
+                        onChange={(e) => setNewNote({...newNote, followup_time: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {newNote.followup_date_option === 'custom' && (
+                    <div>
+                      <Label htmlFor="followup_custom_date">تاریخ دلخواه</Label>
+                      <Input
+                        id="followup_custom_date"
+                        type="date"
+                        value={newNote.followup_custom_date}
+                        onChange={(e) => setNewNote({...newNote, followup_custom_date: e.target.value})}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddingQuickNote(false)}>
+                لغو
+              </Button>
+              <Button onClick={handleSubmitQuickNote} disabled={isSubmitting}>
+                {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
