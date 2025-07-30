@@ -1708,7 +1708,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 rounded-none bg-background">
+        <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 rounded-none bg-background z-[9999]" style={{zIndex: 9999}}>
           <div className="flex flex-col h-full">
             {/* Full Window Header with Close Button */}
             <div className="flex items-center justify-between p-4 border-b bg-background shadow-sm">
