@@ -95,6 +95,9 @@ const LeadDistributionSystem: React.FC = () => {
   const [dealCourse, setDealCourse] = useState<string>('');
   const [dealPrice, setDealPrice] = useState<string>('');
   const [createDeals, setCreateDeals] = useState<boolean>(true);
+  
+  // Available agents for manual assignment (course-filtered)
+  const [availableAgents, setAvailableAgents] = useState<SalesAgent[]>([]);
 
   useEffect(() => {
     fetchCourses();
@@ -108,6 +111,13 @@ const LeadDistributionSystem: React.FC = () => {
       fetchCourseAgents(selectedCourse);
     }
   }, [selectedCourse, dateFrom, dateTo]);
+
+  // Fetch course price when deal course changes
+  useEffect(() => {
+    if (dealCourse && createDeals) {
+      fetchCoursePrice(dealCourse);
+    }
+  }, [dealCourse, createDeals]);
 
   const fetchCourses = async () => {
     try {
@@ -186,6 +196,9 @@ const LeadDistributionSystem: React.FC = () => {
         user_id: (item as any).sales_agents.user_id
       })) || [];
       
+      // Set available agents for manual assignment
+      setAvailableAgents(courseAgents);
+      
       // Initialize percentages for agents with course access
       setPercentages(courseAgents.map(agent => ({
         agent_id: agent.id,
@@ -202,6 +215,25 @@ const LeadDistributionSystem: React.FC = () => {
         variant: "destructive"
       });
       return [];
+    }
+  };
+
+  const fetchCoursePrice = async (courseId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('price')
+        .eq('id', courseId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data?.price) {
+        setDealPrice(data.price.toString());
+      }
+    } catch (error) {
+      console.error('Error fetching course price:', error);
+      // Don't show error toast for price fetching, it's not critical
     }
   };
 
@@ -1209,9 +1241,9 @@ const LeadDistributionSystem: React.FC = () => {
                             <SelectValue placeholder="انتخاب فروشنده" />
                           </SelectTrigger>
                           <SelectContent>
-                            {percentages.map(distribution => (
-                              <SelectItem key={distribution.agent_id} value={distribution.agent_id.toString()}>
-                                {distribution.agent_name}
+                            {availableAgents.map(agent => (
+                              <SelectItem key={agent.id} value={agent.id.toString()}>
+                                {agent.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
