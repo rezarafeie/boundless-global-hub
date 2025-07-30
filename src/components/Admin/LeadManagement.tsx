@@ -30,9 +30,7 @@ import {
   MessageSquare,
   Share2,
   Trash2,
-  X,
-  CheckCircle,
-  XCircle
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -152,7 +150,7 @@ const LeadManagement: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState<'activity' | 'enrollments' | 'payments' | 'deals' | 'crm'>('activity');
+  const [activeDetailTab, setActiveDetailTab] = useState<'notes' | 'activity' | 'enrollments' | 'payments' | 'deals'>('notes');
   const [userActivity, setUserActivity] = useState<any[]>([]);
   const [leadDeals, setLeadDeals] = useState<any[]>([]);
   const [userEnrollments, setUserEnrollments] = useState<any[]>([]);
@@ -170,19 +168,19 @@ const LeadManagement: React.FC = () => {
   
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isAddingQuickNote, setIsAddingQuickNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserChatId, setSelectedUserChatId] = useState<number | null>(null);
-  const [isAddingQuickNote, setIsAddingQuickNote] = useState(false);
+  
+  // User edit modal states
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
   const [newNote, setNewNote] = useState({
     content: '',
     type: 'note',
     status: 'در انتظار پرداخت',
     course_id: 'none'
   });
-  
-  // User edit modal states
-  const [isEditingUser, setIsEditingUser] = useState(false);
-  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
 
@@ -892,7 +890,7 @@ const LeadManagement: React.FC = () => {
   const openLeadDetail = async (lead: Lead | Assignment | AdminLead) => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
-    setActiveDetailTab('activity');
+    setActiveDetailTab('notes');
     
     // Find user ID and fetch CRM notes
     try {
@@ -1023,37 +1021,6 @@ const LeadManagement: React.FC = () => {
     } catch (error) {
       console.error('Error fetching lead deals:', error);
       setLeadDeals([]);
-    }
-  };
-
-  const updateDealStatus = async (dealId: string, status: 'won' | 'lost') => {
-    if (!selectedLead) return;
-    
-    try {
-      const { error } = await supabase
-        .from('deals')
-        .update({ 
-          status: status,
-          closed_at: new Date().toISOString()
-        })
-        .eq('id', dealId);
-
-      if (error) throw error;
-
-      // Refresh deals data
-      await fetchLeadDeals(selectedLead.enrollment_id);
-      
-      toast({
-        title: "موفقیت",
-        description: status === 'won' ? "معامله به عنوان موفق ثبت شد" : "معامله به عنوان لغو شده ثبت شد",
-      });
-    } catch (error) {
-      console.error('Error updating deal status:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در بروزرسانی وضعیت معامله",
-        variant: "destructive"
-      });
     }
   };
 
@@ -1934,17 +1901,29 @@ const LeadManagement: React.FC = () => {
                     </Card>
                   </div>
 
-
                   {/* Enhanced Tabs Section */}
                   <Card className="border-0 shadow-sm">
                     <CardContent className="p-0">
                       {/* Mobile-First Tab Navigation */}
                       <div className="flex border-b bg-muted/30 overflow-x-auto scrollbar-hide">
                         <button
-                          className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                          className={`px-3 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1 sm:gap-2 whitespace-nowrap flex-shrink-0 ${
+                            activeDetailTab === 'notes' 
+                              ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                          onClick={() => {
+                            setActiveDetailTab('notes');
+                          }}
+                        >
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden xs:inline">یادداشت‌های</span> CRM
+                        </button>
+                        <button
+                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                             activeDetailTab === 'activity' 
-                              ? 'border-primary text-primary bg-primary/5' 
-                              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                              ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           }`}
                           onClick={() => {
                             setActiveDetailTab('activity');
@@ -1953,20 +1932,9 @@ const LeadManagement: React.FC = () => {
                             }
                           }}
                         >
-                          <BarChart3 className="h-4 w-4 ml-1" />
-                          فعالیت
-                        </button>
-                        <button
-                          className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                            activeDetailTab === 'crm' 
-                              ? 'border-primary text-primary bg-primary/5' 
-                              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                          }`}
-                          onClick={() => setActiveDetailTab('crm')}
-                        >
-                          <FileText className="h-4 w-4 ml-1" />
-                          CRM
-                        </button>
+                          <BarChart3 className="h-4 w-4" />
+                        فعالیت
+                    </button>
                     <button
                       className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                         activeDetailTab === 'enrollments' 
@@ -2016,6 +1984,167 @@ const LeadManagement: React.FC = () => {
 
                   {/* Tab Content */}
                   <div className="p-2 sm:p-3 md:p-4">
+                    {activeDetailTab === 'notes' && (
+                        <div className="space-y-2 sm:space-y-3 md:space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                            <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
+                            <Popover open={isAddingQuickNote} onOpenChange={setIsAddingQuickNote}>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
+                                  size="sm"
+                                >
+                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  افزودن یادداشت
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80 z-[99999] max-h-[500px] overflow-y-auto" side="bottom" align="end" style={{zIndex: 99999}}>
+                                <div className="space-y-4">
+                                  <h4 className="font-medium text-sm">افزودن یادداشت جدید</h4>
+                                  
+                                  <div className="space-y-3">
+                                    <div>
+                                      <Label htmlFor="note-content" className="text-xs">متن یادداشت</Label>
+                                      <Textarea
+                                        id="note-content"
+                                        placeholder="متن یادداشت خود را وارد کنید..."
+                                        value={newNote.content}
+                                        onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
+                                        className="mt-1 min-h-[80px] text-sm"
+                                      />
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <Label htmlFor="note-type" className="text-xs">نوع</Label>
+                                        <Select
+                                          value={newNote.type}
+                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, type: value }))}
+                                        >
+                                          <SelectTrigger className="mt-1 text-xs h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {CRM_TYPES.map((type) => (
+                                              <SelectItem key={type.value} value={type.value} className="text-xs">
+                                                {type.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      
+                                      <div>
+                                        <Label htmlFor="note-status" className="text-xs">وضعیت</Label>
+                                        <Select
+                                          value={newNote.status}
+                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, status: value }))}
+                                        >
+                                          <SelectTrigger className="mt-1 text-xs h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {CRM_STATUSES.map((status) => (
+                                              <SelectItem key={status.value} value={status.value} className="text-xs">
+                                                {status.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    
+                                    <div>
+                                      <Label htmlFor="note-course" className="text-xs">دوره</Label>
+                                      <Select
+                                        value={newNote.course_id}
+                                        onValueChange={(value) => setNewNote(prev => ({ ...prev, course_id: value }))}
+                                      >
+                                        <SelectTrigger className="mt-1 text-xs h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none" className="text-xs">انتخاب نکنید</SelectItem>
+                                          {courses.map((course) => (
+                                            <SelectItem key={course.id} value={course.id} className="text-xs">
+                                              {course.title}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setIsAddingQuickNote(false);
+                                        setNewNote({
+                                          content: '',
+                                          type: 'note',
+                                          status: 'در انتظار پرداخت',
+                                          course_id: 'none'
+                                        });
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      لغو
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSubmitQuickNote}
+                                      disabled={isSubmitting || !newNote.content.trim()}
+                                      className="text-xs"
+                                    >
+                                      {isSubmitting ? (
+                                        <>
+                                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                                          در حال ذخیره...
+                                        </>
+                                      ) : (
+                                        'ذخیره'
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+
+                        <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[60vh] md:max-h-96 overflow-y-auto">
+                          {crmNotes.length === 0 ? (
+                            <div className="text-center py-4 sm:py-6 md:py-8">
+                              <FileText className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto mb-2 sm:mb-3 md:mb-4 text-muted-foreground" />
+                              <p className="text-muted-foreground text-xs sm:text-sm md:text-base">هنوز یادداشتی وجود ندارد</p>
+                            </div>
+                          ) : (
+                            crmNotes.map((note) => (
+                              <Card key={note.id} className="shadow-sm">
+                                <CardContent className="p-2 sm:p-3 md:p-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-2">
+                                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                                      {getTypeBadge(note.type)}
+                                      {getStatusBadge(note.status)}
+                                       {note.courses && (
+                                         <Badge variant="outline" className="bg-gray-50 text-xs">
+                                           {note.courses.title}
+                                         </Badge>
+                                       )}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDate(note.created_at)} - {note.created_by}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs sm:text-sm text-gray-700 break-words leading-relaxed">{note.content}</p>
+                                </CardContent>
+                              </Card>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                   {activeDetailTab === 'activity' && (
                     <div className="space-y-3 sm:space-y-4">
@@ -2288,31 +2417,8 @@ const LeadManagement: React.FC = () => {
                                          <p className="text-xs sm:text-sm text-muted-foreground">
                                            {formatDate(deal.created_at)}
                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {/* Deal Action Buttons */}
-                                      {deal.status === 'in_progress' && (
-                                        <div className="flex gap-2 pt-2">
-                                          <Button
-                                            size="sm"
-                                            onClick={() => updateDealStatus(deal.id, 'won')}
-                                            className="flex items-center gap-1 text-xs"
-                                          >
-                                            <CheckCircle className="h-3 w-3" />
-                                            معامله موفق
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => updateDealStatus(deal.id, 'lost')}
-                                            className="flex items-center gap-1 text-xs"
-                                          >
-                                            <XCircle className="h-3 w-3" />
-                                            معامله لغو شده
-                                          </Button>
-                                        </div>
-                                      )}
+                                       </div>
+                                     </div>
 
                                      {deal.deal_activities && deal.deal_activities.length > 0 && (
                                        <div className="border-t pt-3">
@@ -2371,30 +2477,7 @@ const LeadManagement: React.FC = () => {
                          )}
                        </div>
                      </div>
-                    )}
-
-                    {activeDetailTab === 'crm' && (
-                      <div className="space-y-3 sm:space-y-4">
-                        <h3 className="font-semibold text-base sm:text-lg">مدیریت CRM</h3>
-                        {selectedUserChatId ? (
-                          <UserCRM 
-                            userId={selectedUserChatId}
-                            userName={selectedLead?.full_name || ''}
-                            userPhone={selectedLead?.phone || ''}
-                            userEmail={selectedLead?.email || ''}
-                            preselectedCourseId={('course_id' in selectedLead!) ? selectedLead.course_id : undefined}
-                            preselectedCourseTitle={('course_title' in selectedLead!) ? selectedLead.course_title : undefined}
-                          />
-                        ) : (
-                          <div className="text-center py-8">
-                            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground">
-                              کاربر در سیستم چت یافت نشد
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                   )}
                       </div>
                     </CardContent>
                   </Card>
