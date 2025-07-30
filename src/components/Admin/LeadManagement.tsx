@@ -1937,7 +1937,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Add Note Dialog - UserCRM Component Only */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[60]">
           <DialogHeader>
             <DialogTitle>CRM - دوره شروع بدون مرز</DialogTitle>
           </DialogHeader>
