@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 
 interface FollowUp {
@@ -50,6 +52,8 @@ interface NewFollowUp {
 }
 
 export function FollowUpsManagement() {
+  const { user } = useAuth();
+  const { isAdmin, isSalesManager, isSalesAgent } = useUserRole();
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'done' | 'overdue'>('all');
@@ -73,15 +77,21 @@ export function FollowUpsManagement() {
 
   const fetchFollowUps = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('crm_followups')
         .select(`
           *,
           chat_users!crm_followups_user_id_fkey(name, phone),
           chat_users!crm_followups_assigned_to_fkey(name),
           deals(courses(title))
-        `)
-        .order('due_at', { ascending: true });
+        `);
+
+      // For sales agents, only show follow-ups assigned to them
+      if (isSalesAgent && user?.id) {
+        query = query.eq('assigned_to', parseInt(user.id));
+      }
+
+      const { data, error } = await query.order('due_at', { ascending: true });
 
       if (error) throw error;
 

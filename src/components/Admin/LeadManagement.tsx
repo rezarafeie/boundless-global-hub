@@ -1183,6 +1183,18 @@ const LeadManagement: React.FC = () => {
                     </Button>
                   </>
                  )}
+                 {/* Follow-ups tab - available for all roles */}
+                 {canManageLeads && (
+                   <Button
+                     variant={activeTab === 'followups' ? 'default' : 'ghost'}
+                     size="sm"
+                     onClick={() => setActiveTab('followups')}
+                     className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                   >
+                     <Clock className="h-4 w-4" />
+                     پیگیری‌ها
+                   </Button>
+                 )}
                  {(isAdmin || isSalesManager) && (
                    <>
                      <Button
@@ -1193,24 +1205,15 @@ const LeadManagement: React.FC = () => {
                      >
                        مدیریت ادمین
                      </Button>
-                       <Button
-                         variant={activeTab === 'distribution' ? 'default' : 'ghost'}
-                         size="sm"
-                         onClick={() => setActiveTab('distribution')}
-                         className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
-                       >
-                         <Share2 className="h-4 w-4" />
-                         توزیع لید
-                       </Button>
-                       <Button
-                         variant={activeTab === 'followups' ? 'default' : 'ghost'}
-                         size="sm"
-                         onClick={() => setActiveTab('followups')}
-                         className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
-                       >
-                         <Clock className="h-4 w-4" />
-                         پیگیری‌ها
-                       </Button>
+                      <Button
+                        variant={activeTab === 'distribution' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setActiveTab('distribution')}
+                        className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        توزیع لید
+                      </Button>
                       <Button
                         variant={activeTab === 'pipeline' ? 'default' : 'ghost'}
                         size="sm"
