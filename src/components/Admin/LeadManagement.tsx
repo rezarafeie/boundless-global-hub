@@ -1830,7 +1830,7 @@ const LeadManagement: React.FC = () => {
                           }}
                         >
                           <BarChart3 className="h-4 w-4" />
-                      فعالیت کاربر
+                        فعالیت
                     </button>
                     <button
                       className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
