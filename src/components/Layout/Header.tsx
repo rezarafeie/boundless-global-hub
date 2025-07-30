@@ -49,9 +49,12 @@ const Header = () => {
     navigate('/hub/messenger');
   };
 
-  // Check if user has admin access
+  // Check if user has admin access - Including sales agents
   const hasAdminAccess = () => {
-    return isMessengerAdmin || ['admin', 'enrollments_manager', 'sales_manager', 'sales_agent'].includes(userRole || '');
+    return isMessengerAdmin || 
+           ['admin', 'enrollments_manager', 'sales_manager', 'sales_agent'].includes(userRole || '') ||
+           (userRole === 'sales_agent') ||
+           (userRole === 'user' && isMessengerAdmin); // fallback for legacy users
   };
 
   // Use different logos for light/dark modes with proper fallbacks
