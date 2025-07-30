@@ -444,20 +444,25 @@ export type Database = {
       }
       chat_users: {
         Row: {
+          age: number | null
           avatar_url: string | null
           bedoun_marz: boolean | null
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
           bio: string | null
+          country: string | null
           country_code: string | null
           created_at: string | null
+          education: string | null
           email: string | null
           first_name: string | null
           full_name: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
           id: number
           is_approved: boolean | null
           is_messenger_admin: boolean | null
           is_support_agent: boolean | null
+          job: string | null
           last_name: string | null
           last_seen: string | null
           name: string
@@ -465,27 +470,36 @@ export type Database = {
           notification_token: string | null
           password_hash: string | null
           phone: string
+          province: Database["public"]["Enums"]["iran_province_type"] | null
           role: string | null
           signup_source: string | null
+          specialized_program:
+            | Database["public"]["Enums"]["specialized_program_type"]
+            | null
           updated_at: string | null
           user_id: string | null
           username: string | null
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           bio?: string | null
+          country?: string | null
           country_code?: string | null
           created_at?: string | null
+          education?: string | null
           email?: string | null
           first_name?: string | null
           full_name?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: number
           is_approved?: boolean | null
           is_messenger_admin?: boolean | null
           is_support_agent?: boolean | null
+          job?: string | null
           last_name?: string | null
           last_seen?: string | null
           name: string
@@ -493,27 +507,36 @@ export type Database = {
           notification_token?: string | null
           password_hash?: string | null
           phone: string
+          province?: Database["public"]["Enums"]["iran_province_type"] | null
           role?: string | null
           signup_source?: string | null
+          specialized_program?:
+            | Database["public"]["Enums"]["specialized_program_type"]
+            | null
           updated_at?: string | null
           user_id?: string | null
           username?: string | null
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           bio?: string | null
+          country?: string | null
           country_code?: string | null
           created_at?: string | null
+          education?: string | null
           email?: string | null
           first_name?: string | null
           full_name?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: number
           is_approved?: boolean | null
           is_messenger_admin?: boolean | null
           is_support_agent?: boolean | null
+          job?: string | null
           last_name?: string | null
           last_seen?: string | null
           name?: string
@@ -521,8 +544,12 @@ export type Database = {
           notification_token?: string | null
           password_hash?: string | null
           phone?: string
+          province?: Database["public"]["Enums"]["iran_province_type"] | null
           role?: string | null
           signup_source?: string | null
+          specialized_program?:
+            | Database["public"]["Enums"]["specialized_program_type"]
+            | null
           updated_at?: string | null
           user_id?: string | null
           username?: string | null
@@ -3151,7 +3178,45 @@ export type Database = {
       course_status: "active" | "closed" | "full"
       course_type: "free" | "paid"
       enrollment_status: "enrolled" | "completed"
+      gender_type: "male" | "female"
+      iran_province_type:
+        | "آذربایجان شرقی"
+        | "آذربایجان غربی"
+        | "اردبیل"
+        | "اصفهان"
+        | "البرز"
+        | "ایلام"
+        | "بوشهر"
+        | "تهران"
+        | "چهارمحال و بختیاری"
+        | "خراسان جنوبی"
+        | "خراسان رضوی"
+        | "خراسان شمالی"
+        | "خوزستان"
+        | "زنجان"
+        | "سمنان"
+        | "سیستان و بلوچستان"
+        | "فارس"
+        | "قزوین"
+        | "قم"
+        | "کردستان"
+        | "کرمان"
+        | "کرمانشاه"
+        | "کهگیلویه و بویراحمد"
+        | "گلستان"
+        | "گیلان"
+        | "لرستان"
+        | "مازندران"
+        | "مرکزی"
+        | "هرمزگان"
+        | "همدان"
+        | "یزد"
       manual_payment_status: "pending" | "approved" | "rejected"
+      specialized_program_type:
+        | "drop_shipping"
+        | "drop_servicing"
+        | "digital_goods"
+        | "ai"
       support_tag:
         | "technical"
         | "billing"
@@ -3317,7 +3382,47 @@ export const Constants = {
       course_status: ["active", "closed", "full"],
       course_type: ["free", "paid"],
       enrollment_status: ["enrolled", "completed"],
+      gender_type: ["male", "female"],
+      iran_province_type: [
+        "آذربایجان شرقی",
+        "آذربایجان غربی",
+        "اردبیل",
+        "اصفهان",
+        "البرز",
+        "ایلام",
+        "بوشهر",
+        "تهران",
+        "چهارمحال و بختیاری",
+        "خراسان جنوبی",
+        "خراسان رضوی",
+        "خراسان شمالی",
+        "خوزستان",
+        "زنجان",
+        "سمنان",
+        "سیستان و بلوچستان",
+        "فارس",
+        "قزوین",
+        "قم",
+        "کردستان",
+        "کرمان",
+        "کرمانشاه",
+        "کهگیلویه و بویراحمد",
+        "گلستان",
+        "گیلان",
+        "لرستان",
+        "مازندران",
+        "مرکزی",
+        "هرمزگان",
+        "همدان",
+        "یزد",
+      ],
       manual_payment_status: ["pending", "approved", "rejected"],
+      specialized_program_type: [
+        "drop_shipping",
+        "drop_servicing",
+        "digital_goods",
+        "ai",
+      ],
       support_tag: [
         "technical",
         "billing",

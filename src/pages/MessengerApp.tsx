@@ -110,7 +110,15 @@ const MessengerApp = () => {
             notification_enabled: true,
             notification_token: null,
             password_hash: null,
-            avatar_url: null
+            avatar_url: null,
+            // New profile fields
+            gender: null,
+            age: null,
+            education: null,
+            job: null,
+            specialized_program: null,
+            country: null,
+            province: null
           };
           login(mockUser, token);
           setForceOffline(true);
@@ -152,7 +160,15 @@ const MessengerApp = () => {
           notification_enabled: true,
           notification_token: null,
           password_hash: null,
-          avatar_url: null
+          avatar_url: null,
+          // New profile fields
+          gender: null,
+          age: null,
+          education: null,
+          job: null,
+          specialized_program: null,
+          country: null,
+          province: null
         };
         login(mockUser, token);
         setForceOffline(true);

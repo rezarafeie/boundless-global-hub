@@ -44,6 +44,14 @@ interface UserData {
   signup_source: string | null;
   notification_enabled: boolean;
   notification_token: string | null;
+  // New profile fields
+  gender: 'male' | 'female' | null;
+  age: number | null;
+  education: string | null;
+  job: string | null;
+  specialized_program: 'drop_shipping' | 'drop_servicing' | 'digital_goods' | 'ai' | null;
+  country: string | null;
+  province: string | null;
 }
 
 const UserDetail: React.FC = () => {

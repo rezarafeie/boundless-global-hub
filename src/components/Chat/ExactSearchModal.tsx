@@ -145,7 +145,15 @@ const ExactSearchModal: React.FC<ExactSearchModalProps> = ({
       notification_enabled: true,
       notification_token: null,
       password_hash: null,
-      avatar_url: undefined
+      avatar_url: undefined,
+      // New profile fields
+      gender: null,
+      age: null,
+      education: null,
+      job: null,
+      specialized_program: null,
+      country: null,
+      province: null
     };
 
     handleUserSelect(supportMessengerUser);

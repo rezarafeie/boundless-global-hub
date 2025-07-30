@@ -32,7 +32,15 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
     email: user?.email || '',
     username: user?.username || '',
     bedoun_marz: user?.bedoun_marz || false,
-    password: '' // For password reset
+    password: '', // For password reset
+    // New profile fields
+    gender: user?.gender || '',
+    age: user?.age || '',
+    education: user?.education || '',
+    job: user?.job || '',
+    specialized_program: user?.specialized_program || '',
+    country: user?.country || '',
+    province: user?.province || ''
   });
 
   React.useEffect(() => {
@@ -45,7 +53,15 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
         email: user.email || '',
         username: user.username || '',
         bedoun_marz: user.bedoun_marz || false,
-        password: ''
+        password: '',
+        // New profile fields
+        gender: user.gender || '',
+        age: user.age || '',
+        education: user.education || '',
+        job: user.job || '',
+        specialized_program: user.specialized_program || '',
+        country: user.country || '',
+        province: user.province || ''
       });
     }
   }, [user]);
@@ -63,7 +79,15 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
         phone: formData.phone,
         email: formData.email || null,
         username: formData.username || null,
-        bedoun_marz: formData.bedoun_marz
+        bedoun_marz: formData.bedoun_marz,
+        // New profile fields
+        gender: formData.gender || null,
+        age: formData.age ? parseInt(formData.age.toString()) : null,
+        education: formData.education || null,
+        job: formData.job || null,
+        specialized_program: formData.specialized_program || null,
+        country: formData.country || null,
+        province: formData.province || null
       };
 
       // Include password if provided
@@ -176,6 +200,125 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="رمز عبور جدید (در صورت تمایل به تغییر)"
               />
+            </div>
+
+            {/* New Profile Fields */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="gender">جنسیت</Label>
+                <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب جنسیت" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">انتخاب نکنید</SelectItem>
+                    <SelectItem value="male">مرد</SelectItem>
+                    <SelectItem value="female">زن</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="age">سن</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  placeholder="سن"
+                  min="1"
+                  max="150"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="education">تحصیلات</Label>
+              <Input
+                id="education"
+                value={formData.education}
+                onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                placeholder="سطح تحصیلات"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="job">شغل</Label>
+              <Input
+                id="job"
+                value={formData.job}
+                onChange={(e) => setFormData({ ...formData, job: e.target.value })}
+                placeholder="شغل"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="specialized_program">برنامه تخصصی</Label>
+              <Select value={formData.specialized_program} onValueChange={(value) => setFormData({ ...formData, specialized_program: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب برنامه تخصصی" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">انتخاب نکنید</SelectItem>
+                  <SelectItem value="drop_shipping">دراپ شیپینگ</SelectItem>
+                  <SelectItem value="drop_servicing">دراپ سرویسینگ</SelectItem>
+                  <SelectItem value="digital_goods">کالاهای دیجیتال</SelectItem>
+                  <SelectItem value="ai">هوش مصنوعی</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="country">کشور</Label>
+              <Input
+                id="country"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                placeholder="کشور"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="province">استان</Label>
+              <Select value={formData.province} onValueChange={(value) => setFormData({ ...formData, province: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب استان" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">انتخاب نکنید</SelectItem>
+                  <SelectItem value="آذربایجان شرقی">آذربایجان شرقی</SelectItem>
+                  <SelectItem value="آذربایجان غربی">آذربایجان غربی</SelectItem>
+                  <SelectItem value="اردبیل">اردبیل</SelectItem>
+                  <SelectItem value="اصفهان">اصفهان</SelectItem>
+                  <SelectItem value="البرز">البرز</SelectItem>
+                  <SelectItem value="ایلام">ایلام</SelectItem>
+                  <SelectItem value="بوشهر">بوشهر</SelectItem>
+                  <SelectItem value="تهران">تهران</SelectItem>
+                  <SelectItem value="چهارمحال و بختیاری">چهارمحال و بختیاری</SelectItem>
+                  <SelectItem value="خراسان جنوبی">خراسان جنوبی</SelectItem>
+                  <SelectItem value="خراسان رضوی">خراسان رضوی</SelectItem>
+                  <SelectItem value="خراسان شمالی">خراسان شمالی</SelectItem>
+                  <SelectItem value="خوزستان">خوزستان</SelectItem>
+                  <SelectItem value="زنجان">زنجان</SelectItem>
+                  <SelectItem value="سمنان">سمنان</SelectItem>
+                  <SelectItem value="سیستان و بلوچستان">سیستان و بلوچستان</SelectItem>
+                  <SelectItem value="فارس">فارس</SelectItem>
+                  <SelectItem value="قزوین">قزوین</SelectItem>
+                  <SelectItem value="قم">قم</SelectItem>
+                  <SelectItem value="کردستان">کردستان</SelectItem>
+                  <SelectItem value="کرمان">کرمان</SelectItem>
+                  <SelectItem value="کرمانشاه">کرمانشاه</SelectItem>
+                  <SelectItem value="کهگیلویه و بویراحمد">کهگیلویه و بویراحمد</SelectItem>
+                  <SelectItem value="گلستان">گلستان</SelectItem>
+                  <SelectItem value="گیلان">گیلان</SelectItem>
+                  <SelectItem value="لرستان">لرستان</SelectItem>
+                  <SelectItem value="مازندران">مازندران</SelectItem>
+                  <SelectItem value="مرکزی">مرکزی</SelectItem>
+                  <SelectItem value="هرمزگان">هرمزگان</SelectItem>
+                  <SelectItem value="همدان">همدان</SelectItem>
+                  <SelectItem value="یزد">یزد</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center justify-between">

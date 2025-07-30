@@ -29,7 +29,15 @@ const MessengerProfile: React.FC = () => {
     username: '',
     phone: '',
     bio: '',
-    notification_enabled: true
+    notification_enabled: true,
+    // New profile fields
+    gender: '',
+    age: '',
+    education: '',
+    job: '',
+    specialized_program: '',
+    country: '',
+    province: ''
   });
   
   // Password change states
@@ -64,7 +72,15 @@ const MessengerProfile: React.FC = () => {
         username: user.username || '',
         phone: user.phone || '',
         bio: user.bio || '',
-        notification_enabled: user.notification_enabled ?? true
+        notification_enabled: user.notification_enabled ?? true,
+        // New profile fields
+        gender: user.gender || '',
+        age: user.age?.toString() || '',
+        education: user.education || '',
+        job: user.job || '',
+        specialized_program: user.specialized_program || '',
+        country: user.country || '',
+        province: user.province || ''
       });
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -111,7 +127,15 @@ const MessengerProfile: React.FC = () => {
         name: formData.name,
         username: formData.username,
         bio: formData.bio,
-        notification_enabled: formData.notification_enabled
+        notification_enabled: formData.notification_enabled,
+        // New profile fields
+        gender: formData.gender || null,
+        age: formData.age ? parseInt(formData.age) : null,
+        education: formData.education || null,
+        job: formData.job || null,
+        specialized_program: formData.specialized_program || null,
+        country: formData.country || null,
+        province: formData.province || null
       }, currentUser.id);
 
       setCurrentUser(updatedUser);

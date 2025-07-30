@@ -47,6 +47,14 @@ export interface MessengerUser {
   notification_enabled: boolean | null;
   notification_token: string | null;
   password_hash: string | null;
+  // New profile fields
+  gender: 'male' | 'female' | null;
+  age: number | null;
+  education: string | null;
+  job: string | null;
+  specialized_program: 'drop_shipping' | 'drop_servicing' | 'digital_goods' | 'ai' | null;
+  country: string | null;
+  province: string | null;
 }
 
 export interface ChatRoom {
@@ -685,14 +693,17 @@ export const messengerService = {
     }
   },
 
-  async updateUser(userId: number, updates: { is_support_agent?: boolean; is_messenger_admin?: boolean; is_approved?: boolean; }): Promise<void> {
+  async updateUser(userId: number, updates: any): Promise<MessengerUser> {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chat_users')
         .update(updates)
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('*')
+        .single();
 
       if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -703,7 +714,7 @@ export const messengerService = {
     return this.updateUser(userId, updates);
   },
 
-  async updateUserProfile(sessionToken: string, updates: Partial<MessengerUser>, userId?: number): Promise<MessengerUser> {
+  async updateUserProfile(sessionToken: string, updates: any, userId?: number): Promise<MessengerUser> {
     let targetUserId = userId;
     if (!targetUserId) {
       targetUserId = await getUserFromSession(sessionToken);
