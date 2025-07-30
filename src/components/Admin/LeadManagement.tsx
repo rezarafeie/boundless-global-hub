@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Users, 
   UserPlus, 
@@ -30,7 +31,9 @@ import {
   MessageSquare,
   Share2,
   Trash2,
-  X
+  X,
+  Settings,
+  ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -165,13 +168,32 @@ const LeadManagement: React.FC = () => {
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isAddingQuickNote, setIsAddingQuickNote] = useState(false);
+  const [isEditingUser, setIsEditingUser] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   const [selectedUserChatId, setSelectedUserChatId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [newNote, setNewNote] = useState({
     content: '',
     type: 'note',
     status: 'در انتظار پرداخت',
     course_id: 'none'
+  });
+  const [userFormData, setUserFormData] = useState({
+    name: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    username: '',
+    bio: '',
+    gender: '',
+    age: '',
+    education: '',
+    job: '',
+    specialized_program: '',
+    country: '',
+    province: ''
   });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
@@ -846,6 +868,88 @@ const LeadManagement: React.FC = () => {
     }
   };
 
+  const handleUpdateUser = async () => {
+    if (!currentUser || !selectedUserChatId) return;
+
+    setIsUpdatingUser(true);
+    try {
+      const updateData = {
+        name: userFormData.name,
+        first_name: userFormData.first_name,
+        last_name: userFormData.last_name,
+        phone: userFormData.phone,
+        email: userFormData.email || null,
+        username: userFormData.username || null,
+        bio: userFormData.bio || null,
+        gender: (userFormData.gender as 'male' | 'female') || null,
+        age: userFormData.age ? parseInt(userFormData.age) : null,
+        education: userFormData.education || null,
+        job: userFormData.job || null,
+        specialized_program: userFormData.specialized_program as any || null,
+        country: userFormData.country || null,
+        province: userFormData.province as any || null
+      };
+
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updateData)
+        .eq('id', selectedUserChatId);
+
+      if (error) throw error;
+
+      toast({
+        title: "موفق",
+        description: "اطلاعات کاربر با موفقیت به‌روزرسانی شد"
+      });
+
+      setIsEditingUser(false);
+      await fetchUserData(); // Refresh user data
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در به‌روزرسانی اطلاعات کاربر",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
+  const fetchUserData = async () => {
+    if (!selectedUserChatId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', selectedUserChatId)
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentUser(data);
+      setUserFormData({
+        name: data.name || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        username: data.username || '',
+        bio: data.bio || '',
+        gender: data.gender || '',
+        age: data.age?.toString() || '',
+        education: data.education || '',
+        job: data.job || '',
+        specialized_program: data.specialized_program || '',
+        country: data.country || '',
+        province: data.province || ''
+      });
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
   const openLeadDetail = async (lead: Lead | Assignment | AdminLead) => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
@@ -862,6 +966,7 @@ const LeadManagement: React.FC = () => {
       if (userData && !userError) {
         setSelectedUserChatId(userData.id); // Store the chat user ID for UserCRM component
         await fetchCRMNotes(userData.id);
+        await fetchUserDataForLead(userData.id); // Fetch user data for editing
       } else {
         setSelectedUserChatId(null);
       }
@@ -873,8 +978,40 @@ const LeadManagement: React.FC = () => {
     // Initialize other data arrays - will be loaded when tabs are clicked
     setUserActivity([]);
     setUserEnrollments([]);
+    setUserEnrollments([]);
     setUserPayments([]);
   };
+  
+  const fetchUserDataForLead = async (userId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentUser(data);
+      setUserFormData({
+        name: data.name || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        username: data.username || '',
+        bio: data.bio || '',
+        gender: data.gender || '',
+        age: data.age?.toString() || '',
+        education: data.education || '',
+        job: data.job || '',
+        specialized_program: data.specialized_program || '',
+        country: data.country || '',
+        province: data.province || ''
+      });
+    } catch (error) {
+      console.error('Error fetching user data for lead:', error);
+    }
   
   const fetchUserActivityData = async (phone: string) => {
     try {
@@ -1786,117 +1923,17 @@ const LeadManagement: React.FC = () => {
                                   افزودن یادداشت
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-80 z-[9999] max-h-[500px] overflow-y-auto" side="bottom" align="end">
-                                <div className="space-y-4">
-                                  <h4 className="font-medium text-sm">افزودن یادداشت جدید</h4>
-                                  
-                                  <div className="space-y-3">
-                                    <div>
-                                      <Label htmlFor="note-content" className="text-xs">متن یادداشت</Label>
-                                      <Textarea
-                                        id="note-content"
-                                        placeholder="متن یادداشت خود را وارد کنید..."
-                                        value={newNote.content}
-                                        onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
-                                        className="mt-1 min-h-[80px] text-sm"
-                                      />
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <Label htmlFor="note-type" className="text-xs">نوع</Label>
-                                        <Select
-                                          value={newNote.type}
-                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, type: value }))}
-                                        >
-                                          <SelectTrigger className="mt-1 text-xs h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {CRM_TYPES.map((type) => (
-                                              <SelectItem key={type.value} value={type.value} className="text-xs">
-                                                {type.label}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      
-                                      <div>
-                                        <Label htmlFor="note-status" className="text-xs">وضعیت</Label>
-                                        <Select
-                                          value={newNote.status}
-                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, status: value }))}
-                                        >
-                                          <SelectTrigger className="mt-1 text-xs h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {CRM_STATUSES.map((status) => (
-                                              <SelectItem key={status.value} value={status.value} className="text-xs">
-                                                {status.label}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                    </div>
-                                    
-                                    <div>
-                                      <Label htmlFor="note-course" className="text-xs">دوره</Label>
-                                      <Select
-                                        value={newNote.course_id}
-                                        onValueChange={(value) => setNewNote(prev => ({ ...prev, course_id: value }))}
-                                      >
-                                        <SelectTrigger className="mt-1 text-xs h-8">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="none" className="text-xs">انتخاب نکنید</SelectItem>
-                                          {courses.map((course) => (
-                                            <SelectItem key={course.id} value={course.id} className="text-xs">
-                                              {course.title}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="flex justify-end gap-2 pt-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setIsAddingQuickNote(false);
-                                        setNewNote({
-                                          content: '',
-                                          type: 'note',
-                                          status: 'در انتظار پرداخت',
-                                          course_id: 'none'
-                                        });
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      لغو
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={handleSubmitQuickNote}
-                                      disabled={isSubmitting || !newNote.content.trim()}
-                                      className="text-xs"
-                                    >
-                                      {isSubmitting ? (
-                                        <>
-                                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                                          در حال ذخیره...
-                                        </>
-                                      ) : (
-                                        'ذخیره'
-                                      )}
-                                    </Button>
-                                  </div>
-                                </div>
+                              <PopoverContent className="w-[600px] max-w-[90vw] z-[9999] max-h-[80vh] overflow-y-auto" side="bottom" align="end">
+                                {selectedLead && selectedUserChatId && (
+                                  <UserCRM 
+                                    userId={selectedUserChatId}
+                                    userName={selectedLead.full_name}
+                                    userPhone={selectedLead.phone}
+                                    userEmail={selectedLead.email}
+                                    preselectedCourseId={('course_id' in selectedLead) ? selectedLead.course_id : undefined}
+                                    preselectedCourseTitle={('course_title' in selectedLead) ? selectedLead.course_title : undefined}
+                                  />
+                                )}
                               </PopoverContent>
                             </Popover>
                           </div>
@@ -2061,7 +2098,7 @@ const LeadManagement: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  )}
+                   )}
                   </div>
                 </div>
               </div>
