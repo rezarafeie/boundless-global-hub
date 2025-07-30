@@ -689,7 +689,7 @@ export function EnrollmentCRM() {
 
       {/* Add Note Dialog */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>افزودن یادداشت CRM</DialogTitle>
             <DialogDescription>
