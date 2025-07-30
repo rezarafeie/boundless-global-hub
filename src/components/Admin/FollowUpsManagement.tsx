@@ -98,9 +98,9 @@ export function FollowUpsManagement() {
       const enrichedFollowUps: FollowUp[] = (data || []).map(followUp => ({
         ...followUp,
         status: followUp.status as 'open' | 'done',
-        user_name: (followUp as any).chat_users?.name || 'نامشخص',
-        user_phone: (followUp as any).chat_users?.phone || '',
-        assigned_to_name: (followUp as any).chat_users?.name || 'نامشخص',
+        user_name: (followUp as any).user?.name || 'نامشخص',
+        user_phone: (followUp as any).user?.phone || '',
+        assigned_to_name: (followUp as any).assignee?.name || 'نامشخص',
         deal_course_title: (followUp as any).deals?.courses?.title || null
       }));
 
