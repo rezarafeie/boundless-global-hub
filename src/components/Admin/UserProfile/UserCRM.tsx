@@ -9,10 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, User, Calendar, FileText } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Plus, Edit, Trash2, User, Calendar, FileText, ChevronDown, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { messengerService, type MessengerUser } from '@/lib/messengerService';
 
 interface CRMNote {
   id: string;
@@ -87,10 +89,112 @@ const UserCRM: React.FC<UserCRMProps> = ({
     course_id: preselectedCourseId || 'none'
   });
 
+  // User editing states
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [currentUser, setCurrentUser] = useState<MessengerUser | null>(null);
+  const [userFormData, setUserFormData] = useState({
+    name: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    username: '',
+    bio: '',
+    gender: '',
+    age: '',
+    education: '',
+    job: '',
+    specialized_program: '',
+    country: '',
+    province: ''
+  });
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
+
   useEffect(() => {
     fetchCourses();
     fetchCRMNotes();
+    fetchUserData();
   }, [userId]);
+
+  const fetchUserData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentUser(data);
+      setUserFormData({
+        name: data.name || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        username: data.username || '',
+        bio: data.bio || '',
+        gender: data.gender || '',
+        age: data.age?.toString() || '',
+        education: data.education || '',
+        job: data.job || '',
+        specialized_program: data.specialized_program || '',
+        country: data.country || '',
+        province: data.province || ''
+      });
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!currentUser) return;
+
+    setIsUpdatingUser(true);
+    try {
+      const updateData = {
+        name: userFormData.name,
+        first_name: userFormData.first_name,
+        last_name: userFormData.last_name,
+        phone: userFormData.phone,
+        email: userFormData.email || null,
+        username: userFormData.username || null,
+        bio: userFormData.bio || null,
+        gender: (userFormData.gender as 'male' | 'female') || null,
+        age: userFormData.age ? parseInt(userFormData.age) : null,
+        education: userFormData.education || null,
+        job: userFormData.job || null,
+        specialized_program: userFormData.specialized_program as any || null,
+        country: userFormData.country || null,
+        province: userFormData.province as any || null
+      };
+
+      const { error } = await supabase
+        .from('chat_users')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "موفق",
+        description: "اطلاعات کاربر با موفقیت به‌روزرسانی شد"
+      });
+
+      setIsEditingUser(false);
+      await fetchUserData(); // Refresh user data
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در به‌روزرسانی اطلاعات کاربر",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
@@ -330,7 +434,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
       {/* Add Note Dialog - Same as EnrollmentCRM */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>افزودن یادداشت CRM</DialogTitle>
           </DialogHeader>
@@ -339,6 +443,229 @@ const UserCRM: React.FC<UserCRMProps> = ({
               <div className="font-medium">{userName}</div>
               <div className="text-sm text-muted-foreground">{userPhone}</div>
             </div>
+
+            {/* Update User Details Section */}
+            <Collapsible open={isEditingUser} onOpenChange={setIsEditingUser}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  به‌روزرسانی اطلاعات کاربر
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isEditingUser ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4">
+                <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
+                  <h4 className="font-medium text-sm">اطلاعات شخصی</h4>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="user_name">نام کامل</Label>
+                      <Input
+                        id="user_name"
+                        value={userFormData.name}
+                        onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                        placeholder="نام کامل"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user_phone">شماره تماس</Label>
+                      <Input
+                        id="user_phone"
+                        value={userFormData.phone}
+                        onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                        placeholder="شماره تماس"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="user_first_name">نام</Label>
+                      <Input
+                        id="user_first_name"
+                        value={userFormData.first_name}
+                        onChange={(e) => setUserFormData({ ...userFormData, first_name: e.target.value })}
+                        placeholder="نام"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user_last_name">نام خانوادگی</Label>
+                      <Input
+                        id="user_last_name"
+                        value={userFormData.last_name}
+                        onChange={(e) => setUserFormData({ ...userFormData, last_name: e.target.value })}
+                        placeholder="نام خانوادگی"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="user_email">ایمیل</Label>
+                      <Input
+                        id="user_email"
+                        type="email"
+                        value={userFormData.email}
+                        onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                        placeholder="ایمیل"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user_username">نام کاربری</Label>
+                      <Input
+                        id="user_username"
+                        value={userFormData.username}
+                        onChange={(e) => setUserFormData({ ...userFormData, username: e.target.value })}
+                        placeholder="نام کاربری"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="user_gender">جنسیت</Label>
+                      <Select value={userFormData.gender} onValueChange={(value) => setUserFormData({ ...userFormData, gender: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب جنسیت" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">مرد</SelectItem>
+                          <SelectItem value="female">زن</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="user_age">سن</Label>
+                      <Input
+                        id="user_age"
+                        type="number"
+                        value={userFormData.age}
+                        onChange={(e) => setUserFormData({ ...userFormData, age: e.target.value })}
+                        placeholder="سن"
+                        min="1"
+                        max="150"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="user_education">تحصیلات</Label>
+                      <Input
+                        id="user_education"
+                        value={userFormData.education}
+                        onChange={(e) => setUserFormData({ ...userFormData, education: e.target.value })}
+                        placeholder="سطح تحصیلات"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user_job">شغل</Label>
+                      <Input
+                        id="user_job"
+                        value={userFormData.job}
+                        onChange={(e) => setUserFormData({ ...userFormData, job: e.target.value })}
+                        placeholder="شغل"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="user_specialized_program">برنامه تخصصی</Label>
+                    <Select value={userFormData.specialized_program} onValueChange={(value) => setUserFormData({ ...userFormData, specialized_program: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب برنامه تخصصی" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="drop_shipping">دراپ شیپینگ</SelectItem>
+                        <SelectItem value="drop_servicing">دراپ سرویسینگ</SelectItem>
+                        <SelectItem value="digital_goods">کالاهای دیجیتال</SelectItem>
+                        <SelectItem value="ai">هوش مصنوعی</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="user_country">کشور</Label>
+                      <Input
+                        id="user_country"
+                        value={userFormData.country}
+                        onChange={(e) => setUserFormData({ ...userFormData, country: e.target.value })}
+                        placeholder="کشور"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user_province">استان</Label>
+                      <Select value={userFormData.province} onValueChange={(value) => setUserFormData({ ...userFormData, province: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب استان" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="آذربایجان شرقی">آذربایجان شرقی</SelectItem>
+                          <SelectItem value="آذربایجان غربی">آذربایجان غربی</SelectItem>
+                          <SelectItem value="اردبیل">اردبیل</SelectItem>
+                          <SelectItem value="اصفهان">اصفهان</SelectItem>
+                          <SelectItem value="البرز">البرز</SelectItem>
+                          <SelectItem value="ایلام">ایلام</SelectItem>
+                          <SelectItem value="بوشهر">بوشهر</SelectItem>
+                          <SelectItem value="تهران">تهران</SelectItem>
+                          <SelectItem value="چهارمحال و بختیاری">چهارمحال و بختیاری</SelectItem>
+                          <SelectItem value="خراسان جنوبی">خراسان جنوبی</SelectItem>
+                          <SelectItem value="خراسان رضوی">خراسان رضوی</SelectItem>
+                          <SelectItem value="خراسان شمالی">خراسان شمالی</SelectItem>
+                          <SelectItem value="خوزستان">خوزستان</SelectItem>
+                          <SelectItem value="زنجان">زنجان</SelectItem>
+                          <SelectItem value="سمنان">سمنان</SelectItem>
+                          <SelectItem value="سیستان و بلوچستان">سیستان و بلوچستان</SelectItem>
+                          <SelectItem value="فارس">فارس</SelectItem>
+                          <SelectItem value="قزوین">قزوین</SelectItem>
+                          <SelectItem value="قم">قم</SelectItem>
+                          <SelectItem value="کردستان">کردستان</SelectItem>
+                          <SelectItem value="کرمان">کرمان</SelectItem>
+                          <SelectItem value="کرمانشاه">کرمانشاه</SelectItem>
+                          <SelectItem value="کهگیلویه و بویراحمد">کهگیلویه و بویراحمد</SelectItem>
+                          <SelectItem value="گلستان">گلستان</SelectItem>
+                          <SelectItem value="گیلان">گیلان</SelectItem>
+                          <SelectItem value="لرستان">لرستان</SelectItem>
+                          <SelectItem value="مازندران">مازندران</SelectItem>
+                          <SelectItem value="مرکزی">مرکزی</SelectItem>
+                          <SelectItem value="هرمزگان">هرمزگان</SelectItem>
+                          <SelectItem value="همدان">همدان</SelectItem>
+                          <SelectItem value="یزد">یزد</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="user_bio">بیوگرافی</Label>
+                    <Textarea
+                      id="user_bio"
+                      value={userFormData.bio}
+                      onChange={(e) => setUserFormData({ ...userFormData, bio: e.target.value })}
+                      placeholder="بیوگرافی کاربر"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsEditingUser(false)}
+                      disabled={isUpdatingUser}
+                    >
+                      لغو
+                    </Button>
+                    <Button 
+                      onClick={handleUpdateUser}
+                      disabled={isUpdatingUser || !userFormData.name.trim()}
+                    >
+                      {isUpdatingUser ? 'در حال به‌روزرسانی...' : 'به‌روزرسانی اطلاعات'}
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
             
             <div>
               <Label htmlFor="type">نوع</Label>
