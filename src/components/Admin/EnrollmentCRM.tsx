@@ -375,7 +375,7 @@ export function EnrollmentCRM() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="relative space-y-2">
                     <div className="relative">
                       <Input
                         placeholder="جستجو بر اساس نام یا شماره تلفن..."
@@ -394,7 +394,7 @@ export function EnrollmentCRM() {
                     )}
                     
                     {searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 z-50 bg-background border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
                         {searchResults.map((user) => (
                           <div
                             key={user.id}
@@ -408,9 +408,9 @@ export function EnrollmentCRM() {
                       </div>
                     )}
                     
-                    {isSearching && (
-                      <div className="absolute top-full left-0 right-0 z-10 bg-background border rounded-md shadow-lg mt-1 p-3 text-center">
-                        <div className="text-sm text-muted-foreground">در حال جستجو...</div>
+                    {searchTerm.trim() && !isSearching && searchResults.length === 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 bg-background border rounded-md shadow-lg mt-1 p-3 text-center">
+                        <div className="text-sm text-muted-foreground">کاربری یافت نشد</div>
                       </div>
                     )}
                   </div>
