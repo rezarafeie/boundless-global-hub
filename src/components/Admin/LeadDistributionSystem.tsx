@@ -196,10 +196,11 @@ const LeadDistributionSystem: React.FC = () => {
         user_id: (item as any).sales_agents.user_id
       })) || [];
       
-      // Set available agents for manual assignment
-      setAvailableAgents(courseAgents);
+      // For manual assignment, show all active sales agents
+      // For percentage distribution, show only agents assigned to this course
+      setAvailableAgents(salesAgents); // Use all sales agents for manual assignment
       
-      // Initialize percentages for agents with course access
+      // Initialize percentages for agents with course access only
       setPercentages(courseAgents.map(agent => ({
         agent_id: agent.id,
         agent_name: agent.name,
