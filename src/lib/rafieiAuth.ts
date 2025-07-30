@@ -47,7 +47,7 @@ class RafieiAuthService {
   }
 
   // Normalize phone number
-  normalizePhone(phone: string): string {
+  public normalizePhone(phone: string): string {
     let normalized = phone.replace(/\s|-/g, '');
     
     // Remove country code prefixes and standardize to 09xxxxxxxxx format

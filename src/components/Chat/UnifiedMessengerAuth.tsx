@@ -336,8 +336,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
               console.log('📱 OTP sent successfully:', response);
               
-              // Store the phone number in the format expected for verification
-              setFormattedPhoneForOTP(phoneNumber);
+              // Store the normalized phone number in the format expected for verification
+              const normalizedPhone = rafieiAuth.normalizePhone(phoneNumber);
+              setFormattedPhoneForOTP(normalizedPhone);
               
               setCurrentStep('otp-login');
               toast.success('کد تأیید ارسال شد', {
@@ -833,7 +834,8 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     try {
       await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-      setFormattedPhoneForOTP(phoneNumber);
+      const normalizedPhone = rafieiAuth.normalizePhone(phoneNumber);
+      setFormattedPhoneForOTP(normalizedPhone);
       setCurrentStep('forgot-otp');
       toast.success('کد بازیابی ارسال شد');
     } catch (error: any) {
