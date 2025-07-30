@@ -150,8 +150,9 @@ const LeadManagement: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState<'notes' | 'activity' | 'enrollments' | 'payments'>('notes');
+  const [activeDetailTab, setActiveDetailTab] = useState<'notes' | 'activity' | 'enrollments' | 'payments' | 'deals'>('notes');
   const [userActivity, setUserActivity] = useState<any[]>([]);
+  const [leadDeals, setLeadDeals] = useState<any[]>([]);
   const [userEnrollments, setUserEnrollments] = useState<any[]>([]);
   const [userPayments, setUserPayments] = useState<any[]>([]);
   
@@ -914,6 +915,7 @@ const LeadManagement: React.FC = () => {
     setUserActivity([]);
     setUserEnrollments([]);
     setUserPayments([]);
+    setLeadDeals([]);
   };
   
   const fetchUserActivityData = async (phone: string) => {
@@ -990,6 +992,35 @@ const LeadManagement: React.FC = () => {
     } catch (error) {
       console.error('Error fetching user payments:', error);
       setUserPayments([]);
+    }
+  };
+  
+  const fetchLeadDeals = async (enrollmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          enrollments!inner(full_name, email, phone),
+          courses!inner(title),
+          chat_users!deals_assigned_salesperson_id_fkey(name),
+          deal_activities(
+            id,
+            type,
+            description,
+            result,
+            created_at,
+            chat_users!deal_activities_admin_id_fkey(name)
+          )
+        `)
+        .eq('enrollment_id', enrollmentId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setLeadDeals(data || []);
+    } catch (error) {
+      console.error('Error fetching lead deals:', error);
+      setLeadDeals([]);
     }
   };
 
@@ -1882,9 +1913,24 @@ const LeadManagement: React.FC = () => {
                           fetchUserPaymentsData(selectedLead.phone);
                         }
                       }}
-                    >
-                      پرداخت‌ها
-                    </button>
+                     >
+                       پرداخت‌ها
+                     </button>
+                     <button
+                       className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                         activeDetailTab === 'deals' 
+                           ? 'border-primary text-primary bg-primary/5' 
+                           : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                       }`}
+                       onClick={() => {
+                         setActiveDetailTab('deals');
+                         if (selectedLead && leadDeals.length === 0) {
+                           fetchLeadDeals(selectedLead.enrollment_id);
+                         }
+                       }}
+                     >
+                       معاملات
+                     </button>
                   </div>
 
                   {/* Tab Content */}
@@ -2252,7 +2298,137 @@ const LeadManagement: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  )}
+                   )}
+
+                   {activeDetailTab === 'deals' && (
+                     <div className="space-y-3 sm:space-y-4">
+                       <h3 className="font-semibold text-base sm:text-lg">معاملات مرتبط</h3>
+                       <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
+                         {leadDeals.length === 0 ? (
+                           <div className="text-center py-6 sm:py-8">
+                             <Target className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                             <p className="text-muted-foreground text-sm sm:text-base">هیچ معامله‌ای یافت نشد</p>
+                           </div>
+                         ) : (
+                           leadDeals.map((deal) => {
+                             const getStatusBadge = (status: string) => {
+                               const variants: Record<string, any> = {
+                                 'in_progress': 'secondary',
+                                 'won': 'default',
+                                 'lost': 'destructive'
+                               };
+                               
+                               const labels: Record<string, string> = {
+                                 'in_progress': 'در حال پیگیری',
+                                 'won': 'موفق',
+                                 'lost': 'ناموفق'
+                               };
+
+                               return <Badge variant={variants[status]} className="text-xs">{labels[status]}</Badge>;
+                             };
+
+                             const getActivityIcon = (type: string) => {
+                               switch (type) {
+                                 case 'call': return <Phone className="h-3 w-3" />;
+                                 case 'meeting': return <Calendar className="h-3 w-3" />;
+                                 case 'message': return <MessageSquare className="h-3 w-3" />;
+                                 case 'note': return <FileText className="h-3 w-3" />;
+                                 default: return <FileText className="h-3 w-3" />;
+                               }
+                             };
+
+                             const getActivityTypeLabel = (type: string) => {
+                               const types: Record<string, string> = {
+                                 call: 'تماس',
+                                 meeting: 'جلسه',
+                                 message: 'پیام',
+                                 note: 'یادداشت'
+                               };
+                               return types[type] || type;
+                             };
+
+                             return (
+                               <Card key={deal.id} className="border-l-4 border-l-blue-500">
+                                 <CardContent className="p-3 sm:p-4">
+                                   <div className="space-y-3">
+                                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                       <div className="flex-1 min-w-0">
+                                         <h4 className="font-medium text-sm sm:text-base break-words">
+                                           معامله {deal.courses?.title || 'نامشخص'}
+                                         </h4>
+                                         <p className="text-xs sm:text-sm text-muted-foreground">
+                                           مسئول فروش: {deal.chat_users?.name || 'نامشخص'}
+                                         </p>
+                                       </div>
+                                       <div className="flex flex-col sm:text-right gap-1">
+                                         {getStatusBadge(deal.status)}
+                                         <p className="font-medium text-sm sm:text-base">
+                                           {formatPrice(deal.price)}
+                                         </p>
+                                         <p className="text-xs sm:text-sm text-muted-foreground">
+                                           {formatDate(deal.created_at)}
+                                         </p>
+                                       </div>
+                                     </div>
+
+                                     {deal.deal_activities && deal.deal_activities.length > 0 && (
+                                       <div className="border-t pt-3">
+                                         <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                                           آخرین فعالیت‌ها:
+                                         </h5>
+                                         <div className="space-y-2">
+                                           {deal.deal_activities.slice(0, 3).map((activity: any) => (
+                                             <div key={activity.id} className="flex items-start gap-2 text-xs">
+                                               {getActivityIcon(activity.type)}
+                                               <div className="flex-1">
+                                                 <div className="flex items-center gap-2">
+                                                   <span className="font-medium">
+                                                     {getActivityTypeLabel(activity.type)}
+                                                   </span>
+                                                   {activity.result && (
+                                                     <Badge variant="outline" className="text-xs">
+                                                       {activity.result}
+                                                     </Badge>
+                                                   )}
+                                                   <span className="text-muted-foreground">
+                                                     {formatDate(activity.created_at)}
+                                                   </span>
+                                                 </div>
+                                                 <p className="text-muted-foreground text-xs mt-1">
+                                                   {activity.description}
+                                                 </p>
+                                                 <p className="text-muted-foreground text-xs">
+                                                   توسط: {activity.chat_users?.name || 'نامشخص'}
+                                                 </p>
+                                               </div>
+                                             </div>
+                                           ))}
+                                           {deal.deal_activities.length > 3 && (
+                                             <p className="text-xs text-muted-foreground text-center">
+                                               و {deal.deal_activities.length - 3} فعالیت دیگر
+                                             </p>
+                                           )}
+                                         </div>
+                                       </div>
+                                     )}
+
+                                     {deal.closed_at && (
+                                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                         <Calendar className="h-3 w-3" />
+                                         <span>
+                                           تاریخ بسته‌شدن: {formatDate(deal.closed_at)}
+                                         </span>
+                                       </div>
+                                     )}
+                                   </div>
+                                 </CardContent>
+                               </Card>
+                             );
+                           })
+                         )}
+                       </div>
+                     </div>
+                   )}
                       </div>
                     </CardContent>
                   </Card>
