@@ -1707,9 +1707,10 @@ const LeadManagement: React.FC = () => {
        </Card>
 
       {/* Lead Detail Dialog */}
-      <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 rounded-none bg-background z-[9999]" style={{zIndex: 9999}}>
-          <div className="flex flex-col h-full">
+      {/* Fullscreen Lead Detail Overlay */}
+      {isLeadDetailOpen && (
+        <div className="fixed inset-0 z-[99999] bg-background" style={{zIndex: 99999}}>
+          <div className="flex flex-col h-screen w-screen">
             {/* Full Window Header with Close Button */}
             <div className="flex items-center justify-between p-4 border-b bg-background shadow-sm">
               <div className="flex items-center gap-3">
@@ -2172,8 +2173,8 @@ const LeadManagement: React.FC = () => {
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Add Note Dialog - UserCRM Component Only */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
