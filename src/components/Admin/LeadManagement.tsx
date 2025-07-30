@@ -1737,67 +1737,108 @@ const LeadManagement: React.FC = () => {
               </div>
             </div>
             {selectedLead && (
-              <div className="flex-1 overflow-y-auto h-full">
-              <div className="space-y-4 p-4 sm:p-6">
-                {/* Basic Info Section - Mobile First */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-base">اطلاعات کاربر</h3>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleEditUser}
-                        className="text-xs"
-                      >
-                        بروزرسانی اطلاعات کاربر
-                      </Button>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <p className="break-words"><strong>نام:</strong> {selectedLead.full_name}</p>
-                      <p className="break-all"><strong>ایمیل:</strong> {selectedLead.email}</p>
-                      <p><strong>تلفن:</strong> {selectedLead.phone}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-base">اطلاعات ثبت‌نام</h3>
-                    <div className="space-y-1 text-sm">
-                      <p className="break-words"><strong>دوره:</strong> {selectedLead.course_title}</p>
-                      <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
-                      <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex-1 overflow-y-auto h-full bg-background">
+                <div className="p-6 space-y-6">
+                  {/* User Information Cards */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* User Info Card */}
+                    <Card className="border-0 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="font-semibold text-lg flex items-center gap-2">
+                            <Users className="h-5 w-5 text-primary" />
+                            اطلاعات کاربر
+                          </h3>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleEditUser}
+                            className="text-xs hover:bg-primary hover:text-primary-foreground"
+                          >
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            بروزرسانی
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">نام:</span>
+                            <span className="text-sm">{selectedLead.full_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">ایمیل:</span>
+                            <span className="text-sm break-all">{selectedLead.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">تلفن:</span>
+                            <span className="text-sm">{selectedLead.phone}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                {/* Responsive Tabs Section */}
-                <div className="border rounded-lg overflow-hidden">
-                  {/* Horizontal tabs for all screen sizes */}
-                  <div className="flex border-b overflow-x-auto scrollbar-hide">
-                    <button
-                      className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                        activeDetailTab === 'notes' 
-                          ? 'border-primary text-primary bg-primary/5' 
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setActiveDetailTab('notes');
-                      }}
-                    >
-                      یادداشت‌های CRM
-                    </button>
-                    <button
-                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                        activeDetailTab === 'activity' 
-                          ? 'border-primary text-primary bg-primary/5' 
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setActiveDetailTab('activity');
-                        if (selectedLead && userActivity.length === 0) {
-                          fetchUserActivityData(selectedLead.phone);
-                        }
-                      }}
-                    >
+                    {/* Enrollment Info Card */}
+                    <Card className="border-0 shadow-sm">
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg flex items-center gap-2 mb-4">
+                          <Target className="h-5 w-5 text-primary" />
+                          اطلاعات ثبت‌نام
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Award className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">دوره:</span>
+                            <span className="text-sm">{selectedLead.course_title}</span>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">مبلغ:</span>
+                            <span className="text-sm font-semibold text-green-600">{formatPrice(selectedLead.payment_amount)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">تاریخ:</span>
+                            <span className="text-sm">{formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Enhanced Tabs Section */}
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-0">
+                      {/* Modern Tab Navigation */}
+                      <div className="flex border-b bg-muted/30">
+                        <button
+                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                            activeDetailTab === 'notes' 
+                              ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                          onClick={() => {
+                            setActiveDetailTab('notes');
+                          }}
+                        >
+                          <FileText className="h-4 w-4" />
+                          یادداشت‌های CRM
+                        </button>
+                        <button
+                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                            activeDetailTab === 'activity' 
+                              ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                          onClick={() => {
+                            setActiveDetailTab('activity');
+                            if (selectedLead && userActivity.length === 0) {
+                              fetchUserActivityData(selectedLead.phone);
+                            }
+                          }}
+                        >
+                          <BarChart3 className="h-4 w-4" />
                       فعالیت کاربر
                     </button>
                     <button
@@ -2124,10 +2165,11 @@ const LeadManagement: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
-            </div>
             )}
           </div>
         </DialogContent>
