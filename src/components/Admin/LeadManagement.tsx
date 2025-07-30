@@ -2070,7 +2070,15 @@ const LeadManagement: React.FC = () => {
                                   افزودن یادداشت
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-96 z-[99999] max-h-[80vh] overflow-y-auto" side="bottom" align="end" style={{zIndex: 99999}} sideOffset={10}>
+                              <PopoverContent 
+                                className="w-[420px] z-[99999] max-h-[75vh] overflow-y-auto" 
+                                side="top" 
+                                align="end" 
+                                style={{zIndex: 99999}} 
+                                sideOffset={20}
+                                avoidCollisions={true}
+                                collisionPadding={20}
+                              >
                                 <div className="space-y-4">
                                   <h4 className="font-medium text-sm">افزودن یادداشت جدید</h4>
                                   
