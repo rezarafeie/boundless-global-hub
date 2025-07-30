@@ -2096,7 +2096,7 @@ const LeadManagement: React.FC = () => {
                                           <SelectTrigger className="mt-1 text-xs h-8">
                                             <SelectValue />
                                           </SelectTrigger>
-                                          <SelectContent>
+                                          <SelectContent className="z-[100000]">
                                             {CRM_TYPES.map((type) => (
                                               <SelectItem key={type.value} value={type.value} className="text-xs">
                                                 {type.label}
@@ -2115,7 +2115,7 @@ const LeadManagement: React.FC = () => {
                                           <SelectTrigger className="mt-1 text-xs h-8">
                                             <SelectValue />
                                           </SelectTrigger>
-                                          <SelectContent>
+                                          <SelectContent className="z-[100000]">
                                             {CRM_STATUSES.map((status) => (
                                               <SelectItem key={status.value} value={status.value} className="text-xs">
                                                 {status.label}
@@ -2135,7 +2135,7 @@ const LeadManagement: React.FC = () => {
                                         <SelectTrigger className="mt-1 text-xs h-8">
                                           <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="z-[100000]">
                                           <SelectItem value="none" className="text-xs">انتخاب نکنید</SelectItem>
                                           {courses.map((course) => (
                                             <SelectItem key={course.id} value={course.id} className="text-xs">
