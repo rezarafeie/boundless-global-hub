@@ -174,17 +174,23 @@ export function FollowUpsManagement() {
       if (updateError) throw updateError;
 
       // If NOT scheduling next follow-up and deal status is selected, update deal status
-      if (!scheduleNext && !nextFollowUp.schedule_followup && dealStatus.status && currentFollowUp?.deal_id) {
-        const { error: dealUpdateError } = await supabase
-          .from('deals')
-          .update({
-            status: dealStatus.status,
-            closed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentFollowUp.deal_id);
+      if (!scheduleNext && !nextFollowUp.schedule_followup && dealStatus.status) {
+        // Update deal status if deal_id exists
+        if (currentFollowUp?.deal_id) {
+          const { error: dealUpdateError } = await supabase
+            .from('deals')
+            .update({
+              status: dealStatus.status,
+              closed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', currentFollowUp.deal_id);
 
-        if (dealUpdateError) throw dealUpdateError;
+          if (dealUpdateError) throw dealUpdateError;
+        } else {
+          // Log that no deal was found for this follow-up
+          console.log('No deal_id found for follow-up:', followUpId, 'but deal status was selected:', dealStatus.status);
+        }
       }
 
       // If scheduling next follow-up
@@ -530,10 +536,10 @@ export function FollowUpsManagement() {
               </div>
             )}
 
-            {/* Deal Status Selection - Only show when NOT scheduling next follow-up */}
-            {!nextFollowUp.schedule_followup && selectedFollowUp?.deal_id && (
+            {/* Deal Status Selection - Always show when NOT scheduling next follow-up */}
+            {!nextFollowUp.schedule_followup && (
               <div className="border-t pt-4 space-y-3">
-                <Label className="text-sm font-medium">وضعیت معامله</Label>
+                <Label className="text-sm font-medium">وضعیت نهایی معامله *</Label>
                 <Select 
                   value={dealStatus.status || ''} 
                   onValueChange={(value) => setDealStatus({status: value as 'won' | 'lost'})}
@@ -546,6 +552,9 @@ export function FollowUpsManagement() {
                     <SelectItem value="lost">لغو شده</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  در صورت عدم زمان‌بندی پیگیری بعدی، باید وضعیت نهایی معامله را مشخص کنید.
+                </p>
               </div>
             )}
 
@@ -643,10 +652,10 @@ export function FollowUpsManagement() {
                   }
                   
                   // Validation for deal status when NOT scheduling next follow-up
-                  if (!nextFollowUp.schedule_followup && selectedFollowUp?.deal_id && !dealStatus.status) {
+                  if (!nextFollowUp.schedule_followup && !dealStatus.status) {
                     toast({
                       title: "خطا", 
-                      description: "لطفاً وضعیت معامله را انتخاب کنید.",
+                      description: "لطفاً وضعیت نهایی معامله را انتخاب کنید.",
                       variant: "destructive"
                     });
                     return;
