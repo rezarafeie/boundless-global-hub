@@ -49,6 +49,3 @@ verify_jwt = false
 
 [functions.delete-message-public]
 verify_jwt = false
-
-[functions.create-deals-from-leads]
-verify_jwt = false
