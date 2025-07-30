@@ -28,10 +28,10 @@ import {
   Plus,
   FileText,
   MessageSquare,
+  Clock,
   Share2,
   Trash2,
   X,
-  Clock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Checkbox } from '@/components/ui/checkbox';
 import LeadDistributionSystem from './LeadDistributionSystem';
 import UserCRM from './UserProfile/UserCRM';
 import UserEditModal from './UserEditModal';
@@ -181,7 +182,12 @@ const LeadManagement: React.FC = () => {
     content: '',
     type: 'note',
     status: 'در انتظار پرداخت',
-    course_id: 'none'
+    course_id: 'none',
+    schedule_followup: false,
+    followup_title: '',
+    followup_date_option: 'tomorrow',
+    followup_time: '09:00',
+    followup_custom_date: ''
   });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 150);
@@ -788,7 +794,12 @@ const LeadManagement: React.FC = () => {
         content: '',
         type: 'note',
         status: 'در انتظار پرداخت',
-        course_id: 'none'
+        course_id: 'none',
+        schedule_followup: false,
+        followup_title: '',
+        followup_date_option: 'tomorrow',
+        followup_time: '09:00',
+        followup_custom_date: ''
       });
       
       await fetchCRMNotes(targetUserId);
@@ -843,8 +854,58 @@ const LeadManagement: React.FC = () => {
     }
   };
 
+  const calculateFollowUpDate = (): Date => {
+    const now = new Date();
+    let targetDate: Date;
+
+    switch (newNote.followup_date_option) {
+      case 'tomorrow':
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 1);
+        break;
+      case 'day_after_tomorrow':
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 2);
+        break;
+      case 'next_week':
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 7);
+        break;
+      case 'custom':
+        if (newNote.followup_custom_date) {
+          targetDate = new Date(newNote.followup_custom_date);
+        } else {
+          targetDate = new Date(now);
+          targetDate.setDate(now.getDate() + 1);
+        }
+        break;
+      default:
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 1);
+    }
+
+    // Set the time
+    if (newNote.followup_time) {
+      const [hours, minutes] = newNote.followup_time.split(':');
+      targetDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+      targetDate.setHours(9, 0, 0, 0); // Default to 9 AM
+    }
+
+    return targetDate;
+  };
+
   const handleSubmitQuickNote = async () => {
     if (!newNote.content.trim() || !selectedLead || !user?.id || !selectedUserChatId) return;
+
+    if (newNote.schedule_followup && !newNote.followup_title.trim()) {
+      toast({
+        title: "خطا",
+        description: "عنوان پیگیری نمی‌تواند خالی باشد.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -861,12 +922,56 @@ const LeadManagement: React.FC = () => {
 
       if (error) throw error;
 
+      // If follow-up is scheduled, create the follow-up entry
+      if (newNote.schedule_followup) {
+        const followUpDate = calculateFollowUpDate();
+        
+        // First get the created CRM note ID
+        const { data: crmNoteData, error: getCrmError } = await supabase
+          .from('crm_notes')
+          .select('id')
+          .eq('user_id', selectedUserChatId)
+          .eq('content', newNote.content)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (getCrmError) {
+          console.error('Error getting CRM note ID:', getCrmError);
+        } else if (crmNoteData) {
+          const { error: followUpError } = await supabase
+            .from('crm_followups')
+            .insert({
+              user_id: selectedUserChatId,
+              title: newNote.followup_title,
+              due_at: followUpDate.toISOString(),
+              status: 'open',
+              assigned_to: parseInt(user.id),
+              crm_activity_id: crmNoteData.id
+            });
+
+          if (followUpError) {
+            console.error('Error creating follow-up:', followUpError);
+            toast({
+              title: "هشدار",
+              description: "یادداشت ایجاد شد اما پیگیری ثبت نشد.",
+              variant: "destructive"
+            });
+          }
+        }
+      }
+
       // Reset form
       setNewNote({
         content: '',
         type: 'note',
         status: 'در انتظار پرداخت',
-        course_id: 'none'
+        course_id: 'none',
+        schedule_followup: false,
+        followup_title: '',
+        followup_date_option: 'tomorrow',
+        followup_time: '09:00',
+        followup_custom_date: ''
       });
       
       // Refresh CRM notes
@@ -2039,8 +2144,84 @@ const LeadManagement: React.FC = () => {
                                           ))}
                                         </SelectContent>
                                       </Select>
-                                    </div>
-                                  </div>
+                                     </div>
+
+                                     {/* Follow-up Scheduling Section */}
+                                     <div className="border-t pt-3 space-y-3">
+                                       <div className="flex items-center gap-2" dir="rtl">
+                                         <Checkbox
+                                           id="schedule_followup_quick"
+                                           checked={newNote.schedule_followup}
+                                           onCheckedChange={(checked) => 
+                                             setNewNote(prev => ({...prev, schedule_followup: checked as boolean}))
+                                           }
+                                         />
+                                         <Label htmlFor="schedule_followup_quick" className="flex items-center gap-2 cursor-pointer text-xs">
+                                           <Clock className="w-3 h-3" />
+                                           زمان‌بندی پیگیری
+                                         </Label>
+                                       </div>
+
+                                       {newNote.schedule_followup && (
+                                         <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                                           <div>
+                                             <Label htmlFor="followup_title_quick" className="text-xs">عنوان پیگیری</Label>
+                                             <Input
+                                               id="followup_title_quick"
+                                               placeholder="مثال: پیگیری پرداخت"
+                                               value={newNote.followup_title}
+                                               onChange={(e) => setNewNote(prev => ({...prev, followup_title: e.target.value}))}
+                                               className="mt-1 text-xs h-8"
+                                             />
+                                           </div>
+
+                                           <div className="grid grid-cols-2 gap-2">
+                                             <div>
+                                               <Label htmlFor="followup_date_quick" className="text-xs">زمان پیگیری</Label>
+                                               <Select
+                                                 value={newNote.followup_date_option}
+                                                 onValueChange={(value) => setNewNote(prev => ({...prev, followup_date_option: value}))}
+                                               >
+                                                 <SelectTrigger className="mt-1 text-xs h-8">
+                                                   <SelectValue placeholder="انتخاب زمان" />
+                                                 </SelectTrigger>
+                                                 <SelectContent>
+                                                   <SelectItem value="tomorrow" className="text-xs">فردا</SelectItem>
+                                                   <SelectItem value="day_after_tomorrow" className="text-xs">پس‌فردا</SelectItem>
+                                                   <SelectItem value="next_week" className="text-xs">هفته آینده</SelectItem>
+                                                   <SelectItem value="custom" className="text-xs">تاریخ دلخواه</SelectItem>
+                                                 </SelectContent>
+                                               </Select>
+                                             </div>
+
+                                             <div>
+                                               <Label htmlFor="followup_time_quick" className="text-xs">ساعت</Label>
+                                               <Input
+                                                 id="followup_time_quick"
+                                                 type="time"
+                                                 value={newNote.followup_time}
+                                                 onChange={(e) => setNewNote(prev => ({...prev, followup_time: e.target.value}))}
+                                                 className="mt-1 text-xs h-8"
+                                               />
+                                             </div>
+                                           </div>
+
+                                           {newNote.followup_date_option === 'custom' && (
+                                             <div>
+                                               <Label htmlFor="followup_custom_date_quick" className="text-xs">تاریخ دلخواه</Label>
+                                               <Input
+                                                 id="followup_custom_date_quick"
+                                                 type="date"
+                                                 value={newNote.followup_custom_date}
+                                                 onChange={(e) => setNewNote(prev => ({...prev, followup_custom_date: e.target.value}))}
+                                                 className="mt-1 text-xs h-8"
+                                               />
+                                             </div>
+                                           )}
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
                                   
                                   <div className="flex justify-end gap-2 pt-2">
                                     <Button
@@ -2052,7 +2233,12 @@ const LeadManagement: React.FC = () => {
                                           content: '',
                                           type: 'note',
                                           status: 'در انتظار پرداخت',
-                                          course_id: 'none'
+                                          course_id: 'none',
+                                          schedule_followup: false,
+                                          followup_title: '',
+                                          followup_date_option: 'tomorrow',
+                                          followup_time: '09:00',
+                                          followup_custom_date: ''
                                         });
                                       }}
                                       className="text-xs"
