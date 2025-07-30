@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, Save, LogOut, User, Lock, Bell, BellOff, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Camera, Save, LogOut, User, Lock, Bell, BellOff, ChevronDown, MapPin, Briefcase, GraduationCap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from '@/components/ui/sonner';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { IPDetectionService } from '@/lib/ipDetectionService';
+import { getCountryByCode } from '@/lib/countryCodeUtils';
 
 const MessengerProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +52,19 @@ const MessengerProfile: React.FC = () => {
 
   useEffect(() => {
     checkAuth();
+    detectUserCountry();
   }, []);
+
+  const detectUserCountry = async () => {
+    try {
+      const location = await IPDetectionService.getUserLocation();
+      if (location?.country_name && !formData.country) {
+        setFormData(prev => ({ ...prev, country: location.country_name }));
+      }
+    } catch (error) {
+      console.log('Could not detect user location:', error);
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -394,6 +409,163 @@ const MessengerProfile: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   placeholder="درباره خود بنویسید..."
                 />
+              </div>
+
+              <Separator />
+              
+              {/* Demographics Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  اطلاعات شخصی
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">جنسیت</Label>
+                    <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">مرد</SelectItem>
+                        <SelectItem value="female">زن</SelectItem>
+                        <SelectItem value="other">سایر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="age">سن</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      placeholder="سن شما"
+                      min="1"
+                      max="120"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Professional Information */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  اطلاعات شغلی و تحصیلی
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="education">تحصیلات</Label>
+                    <Select value={formData.education} onValueChange={(value) => setFormData({ ...formData, education: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="سطح تحصیلات خود را انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="diploma">دیپلم</SelectItem>
+                        <SelectItem value="associate">کاردانی</SelectItem>
+                        <SelectItem value="bachelor">کارشناسی</SelectItem>
+                        <SelectItem value="master">کارشناسی ارشد</SelectItem>
+                        <SelectItem value="phd">دکتری</SelectItem>
+                        <SelectItem value="other">سایر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="job">شغل</Label>
+                    <Input
+                      id="job"
+                      value={formData.job}
+                      onChange={(e) => setFormData({ ...formData, job: e.target.value })}
+                      placeholder="شغل فعلی شما"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="specialized_program">برنامه تخصصی</Label>
+                    <Select value={formData.specialized_program} onValueChange={(value) => setFormData({ ...formData, specialized_program: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="برنامه تخصصی مورد علاقه خود را انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="passive_income">درآمد غیرفعال</SelectItem>
+                        <SelectItem value="american_business">کسب‌وکار آمریکایی</SelectItem>
+                        <SelectItem value="boundless_taste">طعم بی‌کران</SelectItem>
+                        <SelectItem value="instagram_marketing">بازاریابی اینستاگرام</SelectItem>
+                        <SelectItem value="other">سایر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Information */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  اطلاعات مکانی
+                </h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="country">کشور</Label>
+                    <Input
+                      id="country"
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      placeholder="کشور محل سکونت"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="province">استان/منطقه</Label>
+                    <Select value={formData.province} onValueChange={(value) => setFormData({ ...formData, province: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="استان خود را انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tehran">تهران</SelectItem>
+                        <SelectItem value="isfahan">اصفهان</SelectItem>
+                        <SelectItem value="shiraz">شیراز</SelectItem>
+                        <SelectItem value="mashhad">مشهد</SelectItem>
+                        <SelectItem value="tabriz">تبریز</SelectItem>
+                        <SelectItem value="ahvaz">اهواز</SelectItem>
+                        <SelectItem value="qom">قم</SelectItem>
+                        <SelectItem value="karaj">کرج</SelectItem>
+                        <SelectItem value="urmia">ارومیه</SelectItem>
+                        <SelectItem value="zahedan">زاهدان</SelectItem>
+                        <SelectItem value="rasht">رشت</SelectItem>
+                        <SelectItem value="kerman">کرمان</SelectItem>
+                        <SelectItem value="hamadan">همدان</SelectItem>
+                        <SelectItem value="yazd">یزد</SelectItem>
+                        <SelectItem value="ardebil">اردبیل</SelectItem>
+                        <SelectItem value="bandar_abbas">بندرعباس</SelectItem>
+                        <SelectItem value="arak">اراک</SelectItem>
+                        <SelectItem value="eslamshahr">اسلامشهر</SelectItem>
+                        <SelectItem value="zanjan">زنجان</SelectItem>
+                        <SelectItem value="qazvin">قزوین</SelectItem>
+                        <SelectItem value="khorramabad">خرم‌آباد</SelectItem>
+                        <SelectItem value="gorgan">گرگان</SelectItem>
+                        <SelectItem value="sabzevar">سبزوار</SelectItem>
+                        <SelectItem value="dezful">دزفول</SelectItem>
+                        <SelectItem value="sari">ساری</SelectItem>
+                        <SelectItem value="abadan">آبادان</SelectItem>
+                        <SelectItem value="bushehr">بوشهر</SelectItem>
+                        <SelectItem value="sanandaj">سنندج</SelectItem>
+                        <SelectItem value="khorramshahr">خرمشهر</SelectItem>
+                        <SelectItem value="shahrud">شاهرود</SelectItem>
+                        <SelectItem value="varamin">ورامین</SelectItem>
+                        <SelectItem value="yasuj">یاسوج</SelectItem>
+                        <SelectItem value="international">خارج از کشور</SelectItem>
+                        <SelectItem value="other">سایر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
               <Button onClick={handleSaveProfile} disabled={saving} className="w-full">

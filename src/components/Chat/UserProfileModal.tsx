@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MessageCircle, Calendar, User, Edit, Save, X } from 'lucide-react';
+import { MessageCircle, Calendar, User, Edit, Save, X, MapPin, Briefcase, GraduationCap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messengerService } from '@/lib/messengerService';
 import type { MessengerUser } from '@/lib/messengerService';
@@ -242,6 +242,38 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <Calendar className="w-4 h-4" />
                   <span>عضویت: {formatDate(user.created_at)}</span>
                 </div>
+                
+                {user.age && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="w-4 h-4" />
+                    <span>سن: {user.age} سال</span>
+                  </div>
+                )}
+
+                {user.education && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <GraduationCap className="w-4 h-4" />
+                    <span>تحصیلات: {user.education === 'diploma' ? 'دیپلم' : 
+                               user.education === 'associate' ? 'کاردانی' :
+                               user.education === 'bachelor' ? 'کارشناسی' :
+                               user.education === 'master' ? 'کارشناسی ارشد' :
+                               user.education === 'phd' ? 'دکتری' : user.education}</span>
+                  </div>
+                )}
+
+                {user.job && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Briefcase className="w-4 h-4" />
+                    <span>شغل: {user.job}</span>
+                  </div>
+                )}
+
+                {user.country && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span>{user.country}{user.province ? `, ${user.province}` : ''}</span>
+                  </div>
+                )}
                 
                 {user.bedoun_marz && (
                   <div className="flex items-center gap-2 text-blue-600">
