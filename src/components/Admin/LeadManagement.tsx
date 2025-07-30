@@ -1708,22 +1708,36 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden z-[50] p-0">
-          <DialogHeader className="border-b pb-3 mb-0 p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-semibold">جزئیات لید</DialogTitle>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setIsLeadDetailOpen(false)}
-                className="h-8 w-8 p-0 hover:bg-accent rounded-full"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+        <DialogContent className="fixed inset-0 w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 rounded-none bg-background">
+          <div className="flex flex-col h-full">
+            {/* Full Window Header with Close Button */}
+            <div className="flex items-center justify-between p-4 border-b bg-background shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 cursor-pointer transition-colors"
+                       onClick={() => setIsLeadDetailOpen(false)}
+                       title="بستن"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <h2 className="font-semibold text-lg mr-2">جزئیات لید</h2>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  {selectedLead?.enrollment_id}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setIsLeadDetailOpen(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </DialogHeader>
-          {selectedLead && (
-            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-120px)]">
+            {selectedLead && (
+              <div className="flex-1 overflow-y-auto h-full">
               <div className="space-y-4 p-4 sm:p-6">
                 {/* Basic Info Section - Mobile First */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2114,7 +2128,8 @@ const LeadManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
