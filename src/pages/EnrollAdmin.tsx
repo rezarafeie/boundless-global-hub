@@ -87,7 +87,7 @@ const EnrollAdmin: React.FC = () => {
   const [sortBy, setSortBy] = useState<'created_at' | 'payment_amount'>('created_at');
   const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
   const [isUserCRMPopupOpen, setIsUserCRMPopupOpen] = useState(false);
-  const { role: userRole, loading: roleLoading, isAdmin, canViewSales, canAccessCRM } = useUserRole();
+  const { role: userRole, loading: roleLoading, isAdmin, canViewSales } = useUserRole();
 
   useEffect(() => {
     fetchEnrollments();
@@ -416,12 +416,10 @@ const EnrollAdmin: React.FC = () => {
                           <TableCell className="text-right">{formatPrice(enrollment.payment_amount)}</TableCell>
                           <TableCell>{formatDate(enrollment.created_at)}</TableCell>
                           <TableCell className="text-center">
-                            {canAccessCRM && (
-                              <Button size="sm" onClick={() => handleOpenUserCRM(enrollment)}>
-                                <Eye className="h-4 w-4 ml-2" />
-                                CRM
-                              </Button>
-                            )}
+                            <Button size="sm" onClick={() => handleOpenUserCRM(enrollment)}>
+                              <Eye className="h-4 w-4 ml-2" />
+                              CRM
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}

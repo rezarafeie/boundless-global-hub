@@ -28,8 +28,7 @@ import {
   FileText,
   MessageSquare,
   Share2,
-  Trash2,
-  X
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -146,10 +145,6 @@ const LeadManagement: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState<'notes' | 'activity' | 'enrollments' | 'payments'>('notes');
-  const [userActivity, setUserActivity] = useState<any[]>([]);
-  const [userEnrollments, setUserEnrollments] = useState<any[]>([]);
-  const [userPayments, setUserPayments] = useState<any[]>([]);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -801,7 +796,6 @@ const LeadManagement: React.FC = () => {
   const openLeadDetail = async (lead: Lead | Assignment | AdminLead) => {
     setSelectedLead(lead);
     setIsLeadDetailOpen(true);
-    setActiveDetailTab('notes');
     
     // Find user ID and fetch CRM notes
     try {
@@ -820,88 +814,6 @@ const LeadManagement: React.FC = () => {
     } catch (error) {
       console.error('Error finding user for CRM notes:', error);
       setSelectedUserChatId(null);
-    }
-    
-    // Initialize other data arrays - will be loaded when tabs are clicked
-    setUserActivity([]);
-    setUserEnrollments([]);
-    setUserPayments([]);
-  };
-  
-  const fetchUserActivityData = async (phone: string) => {
-    try {
-      // Get chat user ID first
-      const { data: chatUser } = await supabase
-        .from('chat_users')
-        .select('id')
-        .eq('phone', phone)
-        .single();
-      
-      if (chatUser) {
-        const { data, error } = await supabase
-          .from('user_activity_logs')
-          .select('*')
-          .eq('user_id', chatUser.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-        
-        if (error) throw error;
-        setUserActivity(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching user activity:', error);
-      setUserActivity([]);
-    }
-  };
-  
-  const fetchUserEnrollmentsData = async (phone: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses!inner(title)
-        `)
-        .eq('phone', phone)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      const formattedData = data?.map(enrollment => ({
-        ...enrollment,
-        course_title: enrollment.courses?.title || 'نامشخص'
-      })) || [];
-      
-      setUserEnrollments(formattedData);
-    } catch (error) {
-      console.error('Error fetching user enrollments:', error);
-      setUserEnrollments([]);
-    }
-  };
-  
-  const fetchUserPaymentsData = async (phone: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses!inner(title)
-        `)
-        .eq('phone', phone)
-        .in('payment_status', ['completed', 'success', 'pending'])
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      const formattedData = data?.map(payment => ({
-        ...payment,
-        course_title: payment.courses?.title || 'نامشخص'
-      })) || [];
-      
-      setUserPayments(formattedData);
-    } catch (error) {
-      console.error('Error fetching user payments:', error);
-      setUserPayments([]);
     }
   };
 
@@ -1622,284 +1534,73 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden z-[50] p-0">
-          <DialogHeader className="border-b pb-3 mb-0 p-4 sm:p-6">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-semibold">جزئیات لید</DialogTitle>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setIsLeadDetailOpen(false)}
-                className="h-8 w-8 p-0 hover:bg-accent rounded-full"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>جزئیات لید</DialogTitle>
           </DialogHeader>
           {selectedLead && (
-            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="space-y-4 p-4 sm:p-6">
-                {/* Basic Info Section - Mobile First */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-base">اطلاعات کاربر</h3>
-                    <div className="space-y-1 text-sm">
-                      <p className="break-words"><strong>نام:</strong> {selectedLead.full_name}</p>
-                      <p className="break-all"><strong>ایمیل:</strong> {selectedLead.email}</p>
-                      <p><strong>تلفن:</strong> {selectedLead.phone}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-base">اطلاعات ثبت‌نام</h3>
-                    <div className="space-y-1 text-sm">
-                      <p className="break-words"><strong>دوره:</strong> {selectedLead.course_title}</p>
-                      <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
-                      <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
-                    </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="font-semibold">اطلاعات کاربر</h3>
+                  <div className="space-y-1">
+                    <p><strong>نام:</strong> {selectedLead.full_name}</p>
+                    <p><strong>ایمیل:</strong> {selectedLead.email}</p>
+                    <p><strong>تلفن:</strong> {selectedLead.phone}</p>
                   </div>
                 </div>
-
-                {/* Responsive Tabs Section */}
-                <div className="border rounded-lg overflow-hidden">
-                  {/* Horizontal tabs for all screen sizes */}
-                  <div className="flex border-b overflow-x-auto scrollbar-hide">
-                    <button
-                      className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                        activeDetailTab === 'notes' 
-                          ? 'border-primary text-primary bg-primary/5' 
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setActiveDetailTab('notes');
-                      }}
-                    >
-                      یادداشت‌های CRM
-                    </button>
-                    <button
-                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                        activeDetailTab === 'activity' 
-                          ? 'border-primary text-primary bg-primary/5' 
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setActiveDetailTab('activity');
-                        if (selectedLead && userActivity.length === 0) {
-                          fetchUserActivityData(selectedLead.phone);
-                        }
-                      }}
-                    >
-                      فعالیت کاربر
-                    </button>
-                    <button
-                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                        activeDetailTab === 'enrollments' 
-                          ? 'border-primary text-primary bg-primary/5' 
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setActiveDetailTab('enrollments');
-                        if (selectedLead && userEnrollments.length === 0) {
-                          fetchUserEnrollmentsData(selectedLead.phone);
-                        }
-                      }}
-                    >
-                      ثبت‌نام‌ها
-                    </button>
-                    <button
-                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
-                        activeDetailTab === 'payments' 
-                          ? 'border-primary text-primary bg-primary/5' 
-                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setActiveDetailTab('payments');
-                        if (selectedLead && userPayments.length === 0) {
-                          fetchUserPaymentsData(selectedLead.phone);
-                        }
-                      }}
-                    >
-                      پرداخت‌ها
-                    </button>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">اطلاعات ثبت‌نام</h3>
+                  <div className="space-y-1">
+                    <p><strong>دوره:</strong> {selectedLead.course_title}</p>
+                    <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
+                    <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
                   </div>
+                </div>
+              </div>
 
-                  {/* Tab Content */}
-                  <div className="p-2 sm:p-3 md:p-4">
-                    {activeDetailTab === 'notes' && (
-                      <div className="space-y-2 sm:space-y-3 md:space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-                          <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
-                          <Button 
-                            onClick={() => setIsAddingNote(true)}
-                            className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
-                            size="sm"
-                          >
-                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                            افزودن یادداشت
-                          </Button>
-                        </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">یادداشت‌های CRM</h3>
+                  <Button 
+                    onClick={() => setIsAddingNote(true)}
+                    className="flex items-center gap-2"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    افزودن یادداشت
+                  </Button>
+                </div>
 
-                        <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[60vh] md:max-h-96 overflow-y-auto">
-                          {crmNotes.length === 0 ? (
-                            <div className="text-center py-4 sm:py-6 md:py-8">
-                              <FileText className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto mb-2 sm:mb-3 md:mb-4 text-muted-foreground" />
-                              <p className="text-muted-foreground text-xs sm:text-sm md:text-base">هنوز یادداشتی وجود ندارد</p>
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {crmNotes.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">هنوز یادداشتی وجود ندارد</p>
+                    </div>
+                  ) : (
+                    crmNotes.map((note) => (
+                      <Card key={note.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {getTypeBadge(note.type)}
+                              {getStatusBadge(note.status)}
+                               {note.courses && (
+                                 <Badge variant="outline" className="bg-gray-50">
+                                   {note.courses.title}
+                                 </Badge>
+                               )}
                             </div>
-                          ) : (
-                            crmNotes.map((note) => (
-                              <Card key={note.id} className="shadow-sm">
-                                <CardContent className="p-2 sm:p-3 md:p-4">
-                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-2">
-                                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                                      {getTypeBadge(note.type)}
-                                      {getStatusBadge(note.status)}
-                                       {note.courses && (
-                                         <Badge variant="outline" className="bg-gray-50 text-xs">
-                                           {note.courses.title}
-                                         </Badge>
-                                       )}
-                                    </div>
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatDate(note.created_at)} - {note.created_by}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs sm:text-sm text-gray-700 break-words leading-relaxed">{note.content}</p>
-                                </CardContent>
-                              </Card>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                  {activeDetailTab === 'activity' && (
-                    <div className="space-y-3 sm:space-y-4">
-                      <h3 className="font-semibold text-base sm:text-lg">فعالیت کاربر</h3>
-                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
-                        {userActivity.length === 0 ? (
-                          <div className="text-center py-6 sm:py-8">
-                            <BarChart3 className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground text-sm sm:text-base">هیچ فعالیتی ثبت نشده است</p>
+                            <span className="text-sm text-muted-foreground">
+                              {formatDate(note.created_at)} - {note.created_by}
+                            </span>
                           </div>
-                        ) : (
-                          userActivity.map((activity, index) => (
-                            <Card key={index}>
-                              <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">{activity.event_type}</Badge>
-                                  </div>
-                                  <span className="text-xs sm:text-sm text-muted-foreground">
-                                    {formatDate(activity.created_at)}
-                                  </span>
-                                </div>
-                                {activity.reference && (
-                                  <p className="text-xs sm:text-sm text-gray-600 mb-1 break-words">مرجع: {activity.reference}</p>
-                                )}
-                                {activity.metadata && Object.keys(activity.metadata).length > 0 && (
-                                  <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto max-w-full">
-                                    {JSON.stringify(activity.metadata, null, 2)}
-                                  </pre>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    </div>
+                          <p className="text-sm text-gray-700">{note.content}</p>
+                        </CardContent>
+                      </Card>
+                    ))
                   )}
-
-                  {activeDetailTab === 'enrollments' && (
-                    <div className="space-y-3 sm:space-y-4">
-                      <h3 className="font-semibold text-base sm:text-lg">ثبت‌نام‌ها</h3>
-                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
-                        {userEnrollments.length === 0 ? (
-                          <div className="text-center py-6 sm:py-8">
-                            <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground text-sm sm:text-base">هیچ ثبت‌نامی یافت نشد</p>
-                          </div>
-                        ) : (
-                          userEnrollments.map((enrollment) => (
-                            <Card key={enrollment.id}>
-                              <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="font-medium text-sm sm:text-base break-words">{enrollment.course_title}</h4>
-                                      <p className="text-xs sm:text-sm text-muted-foreground">
-                                        مبلغ: {formatPrice(enrollment.payment_amount)}
-                                      </p>
-                                    </div>
-                                    <div className="flex flex-col sm:text-right gap-1">
-                                      <Badge 
-                                        variant={enrollment.payment_status === 'completed' || enrollment.payment_status === 'success' ? 'default' : 'secondary'}
-                                        className="text-xs w-fit"
-                                      >
-                                        {enrollment.payment_status}
-                                      </Badge>
-                                      <p className="text-xs sm:text-sm text-muted-foreground">
-                                        {formatDate(enrollment.created_at)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeDetailTab === 'payments' && (
-                    <div className="space-y-3 sm:space-y-4">
-                      <h3 className="font-semibold text-base sm:text-lg">پرداخت‌ها</h3>
-                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
-                        {userPayments.length === 0 ? (
-                          <div className="text-center py-6 sm:py-8">
-                            <DollarSign className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground text-sm sm:text-base">هیچ پرداختی یافت نشد</p>
-                          </div>
-                        ) : (
-                          userPayments.map((payment) => (
-                            <Card key={payment.id}>
-                              <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="font-medium text-sm sm:text-base break-words">{payment.course_title}</h4>
-                                      <p className="text-xs sm:text-sm text-muted-foreground">
-                                        روش پرداخت: {payment.payment_method || 'نامشخص'}
-                                      </p>
-                                      {payment.zarinpal_authority && (
-                                        <p className="text-xs text-gray-500 break-all">
-                                          کد پیگیری: {payment.zarinpal_authority}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex flex-col sm:text-right gap-1">
-                                      <p className="font-medium text-base sm:text-lg">
-                                        {formatPrice(payment.payment_amount)}
-                                      </p>
-                                      <Badge 
-                                        variant={payment.payment_status === 'completed' || payment.payment_status === 'success' ? 'default' : 'secondary'}
-                                        className="text-xs w-fit"
-                                      >
-                                        {payment.payment_status}
-                                      </Badge>
-                                      <p className="text-xs sm:text-sm text-muted-foreground">
-                                        {formatDate(payment.created_at)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -1909,7 +1610,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Add Note Dialog - UserCRM Component Only */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[9999] !important" style={{zIndex: 9999}}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>CRM - دوره شروع بدون مرز</DialogTitle>
           </DialogHeader>
