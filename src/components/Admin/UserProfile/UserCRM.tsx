@@ -536,7 +536,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
       {/* Add Note Dialog - Same as EnrollmentCRM */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[85vh] overflow-y-auto mx-2">
+        <DialogContent className="max-w-[95vw] w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>افزودن یادداشت CRM</DialogTitle>
             <DialogDescription>
@@ -572,7 +572,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
                 <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
                   <h4 className="font-medium text-sm">اطلاعات شخصی</h4>
                   
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="user_name">نام کامل</Label>
                       <Input
@@ -593,7 +593,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="user_first_name">نام</Label>
                       <Input
@@ -614,7 +614,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="user_email">ایمیل</Label>
                       <Input
@@ -636,7 +636,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="user_gender">جنسیت</Label>
                       <Select value={userFormData.gender} onValueChange={(value) => setUserFormData({ ...userFormData, gender: value })}>
@@ -663,7 +663,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="user_education">تحصیلات</Label>
                       <Input
