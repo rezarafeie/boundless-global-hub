@@ -26,19 +26,32 @@ const Header = () => {
   useEffect(() => {
     const checkUserRole = async () => {
       if (!user?.phone) {
+        console.log('Header: No user phone, setting role to null');
         setUserRole(null);
         setIsMessengerAdmin(false);
         return;
       }
 
       try {
+        console.log('Header: Checking role for phone:', user.phone);
         const detailedUser = await messengerService.getUserByPhone(user.phone);
         if (detailedUser) {
+          console.log('Header: User found:', {
+            role: detailedUser.role,
+            is_messenger_admin: detailedUser.is_messenger_admin,
+            name: detailedUser.name
+          });
           setUserRole(detailedUser.role || 'user');
           setIsMessengerAdmin(detailedUser.is_messenger_admin || false);
+        } else {
+          console.log('Header: No user found for phone:', user.phone);
+          setUserRole(null);
+          setIsMessengerAdmin(false);
         }
       } catch (error) {
-        console.error('Error checking user role:', error);
+        console.error('Header: Error checking user role:', error);
+        setUserRole(null);
+        setIsMessengerAdmin(false);
       }
     };
 
@@ -51,10 +64,20 @@ const Header = () => {
 
   // Check if user has admin access - Including sales agents
   const hasAdminAccess = () => {
-    return isMessengerAdmin || 
+    const result = isMessengerAdmin || 
            ['admin', 'enrollments_manager', 'sales_manager', 'sales_agent'].includes(userRole || '') ||
            (userRole === 'sales_agent') ||
            (userRole === 'user' && isMessengerAdmin); // fallback for legacy users
+    
+    console.log('Header: hasAdminAccess check:', {
+      userRole,
+      isMessengerAdmin,
+      isAuthenticated,
+      result,
+      user: user?.name || user?.phone
+    });
+    
+    return result;
   };
 
   // Use different logos for light/dark modes with proper fallbacks
