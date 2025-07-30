@@ -243,17 +243,28 @@ class RafieiAuthService {
 
   // Verify OTP using existing edge function
   async verifyOTP(phone: string, otpCode: string, countryCode: string = '+98'): Promise<void> {
-    const normalizedPhone = this.normalizePhone(phone);
-    
     // Skip OTP verification for non-Iranian users
     if (countryCode !== '+98') {
       console.log('🌍 Non-Iranian user, skipping OTP verification');
       return;
     }
     
+    // Convert phone to the same format used in send-otp function
+    let formattedPhone = phone;
+    if (countryCode === '+98') {
+      // Remove leading 0 if present (09xxxxxxxxx -> 9xxxxxxxxx)
+      let cleanPhone = phone.replace(/\s|-/g, '');
+      if (cleanPhone.startsWith('0')) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      formattedPhone = `${countryCode}${cleanPhone}`;
+    }
+    
+    console.log('🔐 Verifying OTP with formatted phone:', formattedPhone, 'Code:', otpCode);
+    
     const { data, error } = await supabase.functions.invoke('verify-otp', {
       body: { 
-        phone: normalizedPhone,
+        phone: formattedPhone,
         otpCode: otpCode
       }
     });
