@@ -444,14 +444,19 @@ const UserCRM: React.FC<UserCRMProps> = ({
               <div className="text-sm text-muted-foreground">{userPhone}</div>
             </div>
 
-            {/* Update User Details Section - Always visible for all users */}
-            <div className="w-full">
+            {/* Update User Details Section - FORCED VISIBLE FOR ALL USERS */}
+            <div className="w-full block">
               <Collapsible open={isEditingUser} onOpenChange={setIsEditingUser}>
                 <CollapsibleTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="w-full flex items-center gap-2" 
-                    style={{ display: 'flex' }}
+                    className="w-full flex items-center gap-2 border border-gray-300 !block !visible !opacity-100" 
+                    style={{ 
+                      display: 'flex',
+                      visibility: 'visible',
+                      opacity: 1,
+                      pointerEvents: 'auto'
+                    }}
                   >
                     <Settings className="h-4 w-4" />
                     به‌روزرسانی اطلاعات کاربر
