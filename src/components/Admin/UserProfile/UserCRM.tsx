@@ -444,15 +444,20 @@ const UserCRM: React.FC<UserCRMProps> = ({
               <div className="text-sm text-muted-foreground">{userPhone}</div>
             </div>
 
-            {/* Update User Details Section - Available for all roles */}
-            <Collapsible open={isEditingUser} onOpenChange={setIsEditingUser}>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" className="w-full flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  به‌روزرسانی اطلاعات کاربر
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isEditingUser ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
+            {/* Update User Details Section - Always visible for all users */}
+            <div className="w-full">
+              <Collapsible open={isEditingUser} onOpenChange={setIsEditingUser}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center gap-2" 
+                    style={{ display: 'flex' }}
+                  >
+                    <Settings className="h-4 w-4" />
+                    به‌روزرسانی اطلاعات کاربر
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isEditingUser ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 mt-4">
                 <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
                   <h4 className="font-medium text-sm">اطلاعات شخصی</h4>
@@ -665,7 +670,8 @@ const UserCRM: React.FC<UserCRMProps> = ({
                   </div>
                 </div>
               </CollapsibleContent>
-            </Collapsible>
+              </Collapsible>
+            </div>
             
             <div>
               <Label htmlFor="type">نوع</Label>
