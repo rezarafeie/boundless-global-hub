@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, Edit, Trash2, User, Calendar, FileText, ChevronDown, Settings } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Edit, Trash2, User, Calendar, FileText, ChevronDown, Settings, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -86,7 +87,12 @@ const UserCRM: React.FC<UserCRMProps> = ({
     content: '',
     type: 'note',
     status: 'در انتظار پرداخت',
-    course_id: preselectedCourseId || 'none'
+    course_id: preselectedCourseId || 'none',
+    schedule_followup: false,
+    followup_title: '',
+    followup_date_option: 'tomorrow',
+    followup_time: '09:00',
+    followup_custom_date: ''
   });
 
   // User editing states
@@ -234,6 +240,47 @@ const UserCRM: React.FC<UserCRMProps> = ({
     }
   };
 
+  const calculateFollowUpDate = (): Date => {
+    const now = new Date();
+    let targetDate: Date;
+
+    switch (newNote.followup_date_option) {
+      case 'tomorrow':
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 1);
+        break;
+      case 'day_after_tomorrow':
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 2);
+        break;
+      case 'next_week':
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 7);
+        break;
+      case 'custom':
+        if (newNote.followup_custom_date) {
+          targetDate = new Date(newNote.followup_custom_date);
+        } else {
+          targetDate = new Date(now);
+          targetDate.setDate(now.getDate() + 1);
+        }
+        break;
+      default:
+        targetDate = new Date(now);
+        targetDate.setDate(now.getDate() + 1);
+    }
+
+    // Set the time
+    if (newNote.followup_time) {
+      const [hours, minutes] = newNote.followup_time.split(':');
+      targetDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+      targetDate.setHours(9, 0, 0, 0); // Default to 9 AM
+    }
+
+    return targetDate;
+  };
+
   const handleAddNote = async () => {
     console.log('Adding note with data:', newNote);
     
@@ -241,6 +288,15 @@ const UserCRM: React.FC<UserCRMProps> = ({
       toast({
         title: "خطا",
         description: "محتوای یادداشت نمی‌تواند خالی باشد.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newNote.schedule_followup && !newNote.followup_title.trim()) {
+      toast({
+        title: "خطا",
+        description: "عنوان پیگیری نمی‌تواند خالی باشد.",
         variant: "destructive"
       });
       return;
@@ -261,9 +317,50 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
       if (error) throw error;
 
+      // If follow-up is scheduled, create the follow-up entry
+      if (newNote.schedule_followup) {
+        const followUpDate = calculateFollowUpDate();
+        
+        // First get the created CRM note ID
+        const { data: crmNoteData, error: getCrmError } = await supabase
+          .from('crm_notes')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('content', newNote.content)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (getCrmError) {
+          console.error('Error getting CRM note ID:', getCrmError);
+        } else if (crmNoteData) {
+          const { error: followUpError } = await supabase
+            .from('crm_followups')
+            .insert({
+              user_id: userId,
+              title: newNote.followup_title,
+              due_at: followUpDate.toISOString(),
+              status: 'open',
+              assigned_to: 1, // Default admin assignment
+              crm_activity_id: crmNoteData.id
+            });
+
+          if (followUpError) {
+            console.error('Error creating follow-up:', followUpError);
+            toast({
+              title: "هشدار",
+              description: "یادداشت ایجاد شد اما پیگیری ثبت نشد.",
+              variant: "destructive"
+            });
+          }
+        }
+      }
+
       toast({
         title: "موفق",
-        description: "یادداشت CRM با موفقیت اضافه شد."
+        description: newNote.schedule_followup 
+          ? "یادداشت CRM و پیگیری با موفقیت اضافه شد."
+          : "یادداشت CRM با موفقیت اضافه شد."
       });
 
       // Reset form
@@ -271,7 +368,12 @@ const UserCRM: React.FC<UserCRMProps> = ({
         content: '',
         type: 'note',
         status: 'در انتظار پرداخت',
-        course_id: preselectedCourseId || 'none'
+        course_id: preselectedCourseId || 'none',
+        schedule_followup: false,
+        followup_title: '',
+        followup_date_option: 'tomorrow',
+        followup_time: '09:00',
+        followup_custom_date: ''
       });
       
       // Close dialog
@@ -730,6 +832,79 @@ const UserCRM: React.FC<UserCRMProps> = ({
                 onChange={(e) => setNewNote({...newNote, content: e.target.value})}
                 rows={4}
               />
+            </div>
+
+            {/* Follow-up Scheduling Section */}
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="schedule_followup"
+                  checked={newNote.schedule_followup}
+                  onCheckedChange={(checked) => 
+                    setNewNote({...newNote, schedule_followup: checked as boolean})
+                  }
+                />
+                <Label htmlFor="schedule_followup" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  زمان‌بندی پیگیری
+                </Label>
+              </div>
+
+              {newNote.schedule_followup && (
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <Label htmlFor="followup_title">عنوان پیگیری</Label>
+                    <Input
+                      id="followup_title"
+                      placeholder="مثال: پیگیری پرداخت"
+                      value={newNote.followup_title}
+                      onChange={(e) => setNewNote({...newNote, followup_title: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="followup_date">زمان پیگیری</Label>
+                      <Select
+                        value={newNote.followup_date_option}
+                        onValueChange={(value) => setNewNote({...newNote, followup_date_option: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="انتخاب زمان" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tomorrow">فردا</SelectItem>
+                          <SelectItem value="day_after_tomorrow">پس‌فردا</SelectItem>
+                          <SelectItem value="next_week">هفته آینده</SelectItem>
+                          <SelectItem value="custom">تاریخ دلخواه</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="followup_time">ساعت</Label>
+                      <Input
+                        id="followup_time"
+                        type="time"
+                        value={newNote.followup_time}
+                        onChange={(e) => setNewNote({...newNote, followup_time: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {newNote.followup_date_option === 'custom' && (
+                    <div>
+                      <Label htmlFor="followup_custom_date">تاریخ دلخواه</Label>
+                      <Input
+                        id="followup_custom_date"
+                        type="date"
+                        value={newNote.followup_custom_date}
+                        onChange={(e) => setNewNote({...newNote, followup_custom_date: e.target.value})}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end gap-2">

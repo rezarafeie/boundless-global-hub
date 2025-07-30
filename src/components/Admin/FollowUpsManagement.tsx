@@ -81,8 +81,8 @@ export function FollowUpsManagement() {
         .from('crm_followups')
         .select(`
           *,
-          chat_users!crm_followups_user_id_fkey(name, phone),
-          chat_users!crm_followups_assigned_to_fkey(name),
+          user:chat_users!crm_followups_user_id_fkey(name, phone),
+          assignee:chat_users!crm_followups_assigned_to_fkey(name),
           deals(courses(title))
         `);
 
