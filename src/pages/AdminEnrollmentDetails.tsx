@@ -33,6 +33,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
+import EnrollmentDeals from '@/components/Admin/EnrollmentDeals';
 
 interface EnrollmentData {
   id: string;
@@ -912,6 +913,12 @@ const AdminEnrollmentDetails: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Deals Section */}
+          <EnrollmentDeals 
+            enrollmentId={enrollmentId} 
+            customerName={enrollment.full_name}
+          />
 
           {/* CRM Notes Section */}
           {enrollment.chat_user_id && (
