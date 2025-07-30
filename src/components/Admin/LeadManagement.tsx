@@ -28,7 +28,8 @@ import {
   FileText,
   MessageSquare,
   Share2,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -1621,171 +1622,182 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="max-w-full w-full h-[calc(100vh-80px)] top-[80px] left-0 right-0 bottom-0 translate-x-0 translate-y-0 overflow-y-auto z-[100] p-0 fixed">
-          <DialogHeader className="sticky top-0 bg-background border-b pb-3 mb-0 z-20 p-4 sm:p-6">
-            <DialogTitle className="text-lg sm:text-xl">جزئیات لید</DialogTitle>
+        <DialogContent className="max-w-full w-full h-[calc(100vh-80px)] top-[80px] left-0 right-0 bottom-0 translate-x-0 translate-y-0 overflow-hidden z-[100] p-0 fixed">
+          <DialogHeader className="sticky top-0 bg-background border-b pb-3 mb-0 z-20 p-3 sm:p-4 md:p-6">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold">جزئیات لید</DialogTitle>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsLeadDetailOpen(false)}
+                className="h-8 w-8 p-0 hover:bg-accent rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </DialogHeader>
           {selectedLead && (
-            <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-2 sm:pt-4">
-              {/* Basic Info Section - Mobile First */}
-              <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-base sm:text-lg">اطلاعات کاربر</h3>
-                  <div className="space-y-1 text-sm sm:text-base">
-                    <p><strong>نام:</strong> {selectedLead.full_name}</p>
-                    <p><strong>ایمیل:</strong> <span className="break-all">{selectedLead.email}</span></p>
-                    <p><strong>تلفن:</strong> {selectedLead.phone}</p>
+            <div className="flex-1 overflow-y-auto">
+              <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
+                {/* Basic Info Section - Mobile First */}
+                <div className="space-y-3 sm:space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 xl:gap-6 lg:space-y-0">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-sm sm:text-base md:text-lg">اطلاعات کاربر</h3>
+                    <div className="space-y-1 text-xs sm:text-sm md:text-base">
+                      <p className="break-words"><strong>نام:</strong> {selectedLead.full_name}</p>
+                      <p className="break-all"><strong>ایمیل:</strong> {selectedLead.email}</p>
+                      <p><strong>تلفن:</strong> {selectedLead.phone}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-sm sm:text-base md:text-lg">اطلاعات ثبت‌نام</h3>
+                    <div className="space-y-1 text-xs sm:text-sm md:text-base">
+                      <p className="break-words"><strong>دوره:</strong> {selectedLead.course_title}</p>
+                      <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
+                      <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-base sm:text-lg">اطلاعات ثبت‌نام</h3>
-                  <div className="space-y-1 text-sm sm:text-base">
-                    <p><strong>دوره:</strong> <span className="break-words">{selectedLead.course_title}</span></p>
-                    <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
-                    <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Mobile-First Tabs Section */}
-              <div className="border rounded-lg overflow-hidden">
-                {/* Mobile: Dropdown-style tabs */}
-                <div className="sm:hidden">
-                  <select 
-                    value={activeDetailTab} 
-                    onChange={(e) => {
-                      const newTab = e.target.value as 'notes' | 'activity' | 'enrollments' | 'payments';
-                      setActiveDetailTab(newTab);
-                      if (selectedLead) {
-                        if (newTab === 'activity' && userActivity.length === 0) {
+                {/* Mobile-First Tabs Section */}
+                <div className="border rounded-lg overflow-hidden">
+                  {/* Mobile: Dropdown-style tabs */}
+                  <div className="sm:hidden">
+                    <select 
+                      value={activeDetailTab} 
+                      onChange={(e) => {
+                        const newTab = e.target.value as 'notes' | 'activity' | 'enrollments' | 'payments';
+                        setActiveDetailTab(newTab);
+                        if (selectedLead) {
+                          if (newTab === 'activity' && userActivity.length === 0) {
+                            fetchUserActivityData(selectedLead.phone);
+                          }
+                          if (newTab === 'enrollments' && userEnrollments.length === 0) {
+                            fetchUserEnrollmentsData(selectedLead.phone);
+                          }
+                          if (newTab === 'payments' && userPayments.length === 0) {
+                            fetchUserPaymentsData(selectedLead.phone);
+                          }
+                        }
+                      }}
+                      className="w-full p-2 sm:p-3 border-b bg-background text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                      <option value="notes">یادداشت‌های CRM</option>
+                      <option value="activity">فعالیت کاربر</option>
+                      <option value="enrollments">ثبت‌نام‌ها</option>
+                      <option value="payments">پرداخت‌ها</option>
+                    </select>
+                  </div>
+
+                  {/* Desktop: Horizontal tabs */}
+                  <div className="hidden sm:flex border-b overflow-x-auto scrollbar-hide">
+                    <button
+                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                        activeDetailTab === 'notes' 
+                          ? 'border-primary text-primary bg-primary/5' 
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                      }`}
+                      onClick={() => {
+                        setActiveDetailTab('notes');
+                      }}
+                    >
+                      یادداشت‌های CRM
+                    </button>
+                    <button
+                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                        activeDetailTab === 'activity' 
+                          ? 'border-primary text-primary bg-primary/5' 
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                      }`}
+                      onClick={() => {
+                        setActiveDetailTab('activity');
+                        if (selectedLead && userActivity.length === 0) {
                           fetchUserActivityData(selectedLead.phone);
                         }
-                        if (newTab === 'enrollments' && userEnrollments.length === 0) {
+                      }}
+                    >
+                      فعالیت کاربر
+                    </button>
+                    <button
+                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                        activeDetailTab === 'enrollments' 
+                          ? 'border-primary text-primary bg-primary/5' 
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                      }`}
+                      onClick={() => {
+                        setActiveDetailTab('enrollments');
+                        if (selectedLead && userEnrollments.length === 0) {
                           fetchUserEnrollmentsData(selectedLead.phone);
                         }
-                        if (newTab === 'payments' && userPayments.length === 0) {
+                      }}
+                    >
+                      ثبت‌نام‌ها
+                    </button>
+                    <button
+                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                        activeDetailTab === 'payments' 
+                          ? 'border-primary text-primary bg-primary/5' 
+                          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                      }`}
+                      onClick={() => {
+                        setActiveDetailTab('payments');
+                        if (selectedLead && userPayments.length === 0) {
                           fetchUserPaymentsData(selectedLead.phone);
                         }
-                      }
-                    }}
-                    className="w-full p-3 border-b bg-background text-sm font-medium"
-                  >
-                    <option value="notes">یادداشت‌های CRM</option>
-                    <option value="activity">فعالیت کاربر</option>
-                    <option value="enrollments">ثبت‌نام‌ها</option>
-                    <option value="payments">پرداخت‌ها</option>
-                  </select>
-                </div>
+                      }}
+                    >
+                      پرداخت‌ها
+                    </button>
+                  </div>
 
-                {/* Desktop: Horizontal tabs */}
-                <div className="hidden sm:flex border-b overflow-x-auto">
-                  <button
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                      activeDetailTab === 'notes' 
-                        ? 'border-primary text-primary bg-primary/5' 
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                    }`}
-                    onClick={() => {
-                      setActiveDetailTab('notes');
-                    }}
-                  >
-                    یادداشت‌های CRM
-                  </button>
-                  <button
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                      activeDetailTab === 'activity' 
-                        ? 'border-primary text-primary bg-primary/5' 
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                    }`}
-                    onClick={() => {
-                      setActiveDetailTab('activity');
-                      if (selectedLead && userActivity.length === 0) {
-                        fetchUserActivityData(selectedLead.phone);
-                      }
-                    }}
-                  >
-                    فعالیت کاربر
-                  </button>
-                  <button
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                      activeDetailTab === 'enrollments' 
-                        ? 'border-primary text-primary bg-primary/5' 
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                    }`}
-                    onClick={() => {
-                      setActiveDetailTab('enrollments');
-                      if (selectedLead && userEnrollments.length === 0) {
-                        fetchUserEnrollmentsData(selectedLead.phone);
-                      }
-                    }}
-                  >
-                    ثبت‌نام‌ها
-                  </button>
-                  <button
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                      activeDetailTab === 'payments' 
-                        ? 'border-primary text-primary bg-primary/5' 
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                    }`}
-                    onClick={() => {
-                      setActiveDetailTab('payments');
-                      if (selectedLead && userPayments.length === 0) {
-                        fetchUserPaymentsData(selectedLead.phone);
-                      }
-                    }}
-                  >
-                    پرداخت‌ها
-                  </button>
-                </div>
+                  {/* Tab Content */}
+                  <div className="p-2 sm:p-3 md:p-4">
+                    {activeDetailTab === 'notes' && (
+                      <div className="space-y-2 sm:space-y-3 md:space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                          <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
+                          <Button 
+                            onClick={() => setIsAddingNote(true)}
+                            className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
+                            size="sm"
+                          >
+                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            افزودن یادداشت
+                          </Button>
+                        </div>
 
-                {/* Tab Content */}
-                <div className="p-3 sm:p-4">
-                  {activeDetailTab === 'notes' && (
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <h3 className="font-semibold text-base sm:text-lg">یادداشت‌های CRM</h3>
-                        <Button 
-                          onClick={() => setIsAddingNote(true)}
-                          className="flex items-center gap-2 w-full sm:w-auto"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4" />
-                          افزودن یادداشت
-                        </Button>
-                      </div>
-
-                      <div className="space-y-3 max-h-[60vh] sm:max-h-96 overflow-y-auto">
-                        {crmNotes.length === 0 ? (
-                          <div className="text-center py-6 sm:py-8">
-                            <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
-                            <p className="text-muted-foreground text-sm sm:text-base">هنوز یادداشتی وجود ندارد</p>
-                          </div>
-                        ) : (
-                          crmNotes.map((note) => (
-                            <Card key={note.id}>
-                              <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                                    {getTypeBadge(note.type)}
-                                    {getStatusBadge(note.status)}
-                                     {note.courses && (
-                                       <Badge variant="outline" className="bg-gray-50 text-xs">
-                                         {note.courses.title}
-                                       </Badge>
-                                     )}
+                        <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[60vh] md:max-h-96 overflow-y-auto">
+                          {crmNotes.length === 0 ? (
+                            <div className="text-center py-4 sm:py-6 md:py-8">
+                              <FileText className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 mx-auto mb-2 sm:mb-3 md:mb-4 text-muted-foreground" />
+                              <p className="text-muted-foreground text-xs sm:text-sm md:text-base">هنوز یادداشتی وجود ندارد</p>
+                            </div>
+                          ) : (
+                            crmNotes.map((note) => (
+                              <Card key={note.id} className="shadow-sm">
+                                <CardContent className="p-2 sm:p-3 md:p-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-2">
+                                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                                      {getTypeBadge(note.type)}
+                                      {getStatusBadge(note.status)}
+                                       {note.courses && (
+                                         <Badge variant="outline" className="bg-gray-50 text-xs">
+                                           {note.courses.title}
+                                         </Badge>
+                                       )}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDate(note.created_at)} - {note.created_by}
+                                    </span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-muted-foreground">
-                                    {formatDate(note.created_at)} - {note.created_by}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm text-gray-700 break-words">{note.content}</p>
-                              </CardContent>
-                            </Card>
-                          ))
-                        )}
+                                  <p className="text-xs sm:text-sm text-gray-700 break-words leading-relaxed">{note.content}</p>
+                                </CardContent>
+                              </Card>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {activeDetailTab === 'activity' && (
                     <div className="space-y-3 sm:space-y-4">
@@ -1915,6 +1927,7 @@ const LeadManagement: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
             </div>
