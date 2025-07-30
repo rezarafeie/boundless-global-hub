@@ -34,8 +34,13 @@ import {
   Lock,
   Bell,
   BellOff,
-  ChevronDown
+  ChevronDown,
+  MapPin,
+  Briefcase,
+  GraduationCap
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { IPDetectionService } from '@/lib/ipDetectionService';
 
 interface EnrolledCourse {
   id: string;
@@ -106,7 +111,15 @@ const Dashboard = () => {
     email: '',
     firstName: '',
     lastName: '',
-    notification_enabled: true
+    notification_enabled: true,
+    // New profile fields
+    gender: '',
+    age: '',
+    education: '',
+    job: '',
+    specialized_program: '',
+    country: '',
+    province: ''
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -121,17 +134,62 @@ const Dashboard = () => {
     }
     fetchDashboardData();
     initializeProfileData();
+    detectUserCountry();
   }, [isAuthenticated, navigate]);
 
-  const initializeProfileData = () => {
+  const detectUserCountry = async () => {
+    try {
+      const location = await IPDetectionService.getUserLocation();
+      if (location?.country_name && !formData.country) {
+        setFormData(prev => ({ ...prev, country: location.country_name }));
+      }
+    } catch (error) {
+      console.log('Could not detect user location:', error);
+    }
+  };
+
+  const initializeProfileData = async () => {
     if (user) {
-      setFormData({
-        name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || '',
-        email: user.email || '',
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        notification_enabled: true
-      });
+      // Try to get additional profile data from chat_users table if available
+      try {
+        const { data: chatUser } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('email', user.email)
+          .single();
+
+        setFormData({
+          name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || '',
+          email: user.email || '',
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          notification_enabled: true,
+          // Set additional fields from chat_users if available
+          gender: chatUser?.gender || '',
+          age: chatUser?.age?.toString() || '',
+          education: chatUser?.education || '',
+          job: chatUser?.job || '',
+          specialized_program: chatUser?.specialized_program || '',
+          country: chatUser?.country || '',
+          province: chatUser?.province || ''
+        });
+      } catch (error) {
+        // If no chat_users record, just set basic data
+        setFormData({
+          name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || '',
+          email: user.email || '',
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          notification_enabled: true,
+          gender: '',
+          age: '',
+          education: '',
+          job: '',
+          specialized_program: '',
+          country: '',
+          province: ''
+        });
+      }
     }
   };
 
@@ -368,13 +426,70 @@ const Dashboard = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // Here you would update the user profile
-      // For now, just show success
+      // Update academy_users table if user exists there
+      const { data: academyUser } = await supabase
+        .from('academy_users')
+        .select('id')
+        .eq('id', user?.id)
+        .single();
+
+      if (academyUser) {
+        await supabase
+          .from('academy_users')
+          .update({
+            first_name: formData.firstName,
+            last_name: formData.lastName
+          })
+          .eq('id', user?.id);
+      }
+
+      // Update or create chat_users record for additional profile fields
+      if (user?.email) {
+        const { data: existingChatUser } = await supabase
+          .from('chat_users')
+          .select('id')
+          .eq('email', user.email)
+          .single();
+
+        const updateData: any = {
+          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.email,
+          email: formData.email,
+          first_name: formData.firstName || null,
+          last_name: formData.lastName || null,
+          age: formData.age ? parseInt(formData.age) : null,
+          education: formData.education || null,
+          job: formData.job || null,
+          country: formData.country || null
+        };
+
+        if (formData.gender) updateData.gender = formData.gender;
+        if (formData.specialized_program) updateData.specialized_program = formData.specialized_program;
+        if (formData.province) updateData.province = formData.province;
+
+        if (existingChatUser) {
+          await supabase
+            .from('chat_users')
+            .update(updateData)
+            .eq('id', existingChatUser.id);
+        } else {
+          // Create new chat_users record
+          await supabase
+            .from('chat_users')
+            .insert({
+              ...updateData,
+              phone: '+98000000000', // Placeholder phone
+              is_approved: true,
+              signup_source: 'academy'
+            });
+        }
+      }
+
       toast({
         title: 'موفق',
         description: 'پروفایل با موفقیت به‌روزرسانی شد'
       });
     } catch (error) {
+      console.error('Profile update error:', error);
       toast({
         title: 'خطا',
         description: 'خطا در به‌روزرسانی پروفایل',
@@ -823,7 +938,7 @@ const Dashboard = () => {
                 <Separator />
 
                 {/* Profile Form */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">نام</Label>
@@ -856,6 +971,163 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">
                       ایمیل قابل تغییر نیست
                     </p>
+                  </div>
+
+                  <Separator />
+                  
+                  {/* Demographics Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      اطلاعات شخصی
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="gender">جنسیت</Label>
+                        <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب کنید" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">مرد</SelectItem>
+                            <SelectItem value="female">زن</SelectItem>
+                            <SelectItem value="other">سایر</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="age">سن</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          value={formData.age}
+                          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                          placeholder="سن شما"
+                          min="1"
+                          max="120"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Professional Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      اطلاعات شغلی و تحصیلی
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="education">تحصیلات</Label>
+                        <Select value={formData.education} onValueChange={(value) => setFormData({ ...formData, education: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="سطح تحصیلات خود را انتخاب کنید" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diploma">دیپلم</SelectItem>
+                            <SelectItem value="associate">کاردانی</SelectItem>
+                            <SelectItem value="bachelor">کارشناسی</SelectItem>
+                            <SelectItem value="master">کارشناسی ارشد</SelectItem>
+                            <SelectItem value="phd">دکتری</SelectItem>
+                            <SelectItem value="other">سایر</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="job">شغل</Label>
+                        <Input
+                          id="job"
+                          value={formData.job}
+                          onChange={(e) => setFormData({ ...formData, job: e.target.value })}
+                          placeholder="شغل فعلی شما"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="specialized_program">برنامه تخصصی</Label>
+                        <Select value={formData.specialized_program} onValueChange={(value) => setFormData({ ...formData, specialized_program: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="برنامه تخصصی مورد علاقه خود را انتخاب کنید" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="passive_income">درآمد غیرفعال</SelectItem>
+                            <SelectItem value="american_business">کسب‌وکار آمریکایی</SelectItem>
+                            <SelectItem value="boundless_taste">طعم بی‌کران</SelectItem>
+                            <SelectItem value="instagram_marketing">بازاریابی اینستاگرام</SelectItem>
+                            <SelectItem value="other">سایر</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      اطلاعات مکانی
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="country">کشور</Label>
+                        <Input
+                          id="country"
+                          value={formData.country}
+                          onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                          placeholder="کشور محل سکونت"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="province">استان/منطقه</Label>
+                        <Select value={formData.province} onValueChange={(value) => setFormData({ ...formData, province: value })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="استان خود را انتخاب کنید" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="tehran">تهران</SelectItem>
+                            <SelectItem value="isfahan">اصفهان</SelectItem>
+                            <SelectItem value="shiraz">شیراز</SelectItem>
+                            <SelectItem value="mashhad">مشهد</SelectItem>
+                            <SelectItem value="tabriz">تبریز</SelectItem>
+                            <SelectItem value="ahvaz">اهواز</SelectItem>
+                            <SelectItem value="qom">قم</SelectItem>
+                            <SelectItem value="karaj">کرج</SelectItem>
+                            <SelectItem value="urmia">ارومیه</SelectItem>
+                            <SelectItem value="zahedan">زاهدان</SelectItem>
+                            <SelectItem value="rasht">رشت</SelectItem>
+                            <SelectItem value="kerman">کرمان</SelectItem>
+                            <SelectItem value="hamadan">همدان</SelectItem>
+                            <SelectItem value="yazd">یزد</SelectItem>
+                            <SelectItem value="ardebil">اردبیل</SelectItem>
+                            <SelectItem value="bandar_abbas">بندرعباس</SelectItem>
+                            <SelectItem value="arak">اراک</SelectItem>
+                            <SelectItem value="eslamshahr">اسلامشهر</SelectItem>
+                            <SelectItem value="zanjan">زنجان</SelectItem>
+                            <SelectItem value="qazvin">قزوین</SelectItem>
+                            <SelectItem value="khorramabad">خرم‌آباد</SelectItem>
+                            <SelectItem value="gorgan">گرگان</SelectItem>
+                            <SelectItem value="sabzevar">سبزوار</SelectItem>
+                            <SelectItem value="dezful">دزفول</SelectItem>
+                            <SelectItem value="sari">ساری</SelectItem>
+                            <SelectItem value="abadan">آبادان</SelectItem>
+                            <SelectItem value="bushehr">بوشهر</SelectItem>
+                            <SelectItem value="sanandaj">سنندج</SelectItem>
+                            <SelectItem value="khorramshahr">خرمشهر</SelectItem>
+                            <SelectItem value="shahrud">شاهرود</SelectItem>
+                            <SelectItem value="varamin">ورامین</SelectItem>
+                            <SelectItem value="yasuj">یاسوج</SelectItem>
+                            <SelectItem value="international">خارج از کشور</SelectItem>
+                            <SelectItem value="other">سایر</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
 
                   <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
