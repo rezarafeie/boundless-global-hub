@@ -1621,7 +1621,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="max-w-full max-h-full w-full h-full overflow-y-auto z-[100] p-0">
+        <DialogContent className="max-w-full w-full h-[calc(100vh-80px)] top-[80px] left-0 right-0 bottom-0 translate-x-0 translate-y-0 overflow-y-auto z-[100] p-0 fixed">
           <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-0 z-20 p-6">
             <DialogTitle>جزئیات لید</DialogTitle>
           </DialogHeader>
