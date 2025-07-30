@@ -91,6 +91,11 @@ const LeadDistributionSystem: React.FC = () => {
   const [note, setNote] = useState<string>('');
   const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
 
+  // Deal creation state
+  const [dealCourse, setDealCourse] = useState<string>('');
+  const [dealPrice, setDealPrice] = useState<string>('');
+  const [createDeals, setCreateDeals] = useState<boolean>(true);
+
   useEffect(() => {
     fetchCourses();
     fetchSalesAgents();
@@ -528,11 +533,20 @@ const LeadDistributionSystem: React.FC = () => {
 
             console.log(`🔄 Assigning enrollment ${enrollment.id} to agent ${distribution.agent_name} (user_id: ${agentUserId})`);
 
-            const { error: assignError } = await supabase.rpc('distribute_lead_to_agent', {
+            const rpcFunction = createDeals ? 'distribute_lead_and_create_deal' : 'distribute_lead_to_agent';
+            const rpcParams: any = {
               p_enrollment_id: enrollment.id,
               p_agent_user_id: agentUserId,
               p_assigned_by: assignedById
-            });
+            };
+
+            // Add deal-specific parameters if creating deals
+            if (createDeals) {
+              rpcParams.p_deal_course_id = dealCourse || selectedCourse;
+              rpcParams.p_deal_price = parseFloat(dealPrice) || 0;
+            }
+
+            const { error: assignError } = await supabase.rpc(rpcFunction, rpcParams);
 
             if (assignError) {
               console.error('❌ RPC Error assigning lead:', assignError);
@@ -645,11 +659,20 @@ const LeadDistributionSystem: React.FC = () => {
 
       for (const enrollmentId of selectedEnrollments) {
         try {
-          const { error: assignError } = await supabase.rpc('distribute_lead_to_agent', {
+          const rpcFunction = createDeals ? 'distribute_lead_and_create_deal' : 'distribute_lead_to_agent';
+          const rpcParams: any = {
             p_enrollment_id: enrollmentId,
             p_agent_user_id: agentUserId,
             p_assigned_by: assignedById
-          });
+          };
+
+          // Add deal-specific parameters if creating deals
+          if (createDeals) {
+            rpcParams.p_deal_course_id = dealCourse || selectedCourse;
+            rpcParams.p_deal_price = parseFloat(dealPrice) || 0;
+          }
+
+          const { error: assignError } = await supabase.rpc(rpcFunction, rpcParams);
 
           if (assignError) {
             console.error('❌ Error assigning lead:', assignError);
@@ -809,6 +832,61 @@ const LeadDistributionSystem: React.FC = () => {
                     checked={removeDuplicates}
                     onCheckedChange={setRemoveDuplicates}
                   />
+                </div>
+              </div>
+
+              {/* Deal Creation Section */}
+              <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">تنظیمات ایجاد معامله</span>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={createDeals}
+                      onCheckedChange={setCreateDeals}
+                    />
+                    <Label htmlFor="createDeals">ایجاد خودکار معامله‌ها هنگام توزیع لیدها</Label>
+                  </div>
+                  
+                  {createDeals && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="dealCourse">دوره معامله</Label>
+                        <Select value={dealCourse} onValueChange={setDealCourse}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب دوره (پیش‌فرض: دوره فیلتر)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map(course => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          در صورت عدم انتخاب، دوره فیلتر شده استفاده خواهد شد
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="dealPrice">قیمت معامله (تومان)</Label>
+                        <Input
+                          type="number"
+                          id="dealPrice"
+                          value={dealPrice}
+                          onChange={(e) => setDealPrice(e.target.value)}
+                          placeholder="0"
+                          min="0"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          قیمت قابل تنظیم برای معامله
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1024,6 +1102,61 @@ const LeadDistributionSystem: React.FC = () => {
                       <SelectItem value="unassigned">واگذار نشده</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Deal Creation Section for Manual Tab */}
+              <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">تنظیمات ایجاد معامله</span>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={createDeals}
+                      onCheckedChange={setCreateDeals}
+                    />
+                    <Label htmlFor="createDeals">ایجاد خودکار معامله‌ها هنگام واگذاری لیدها</Label>
+                  </div>
+                  
+                  {createDeals && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="dealCourse">دوره معامله</Label>
+                        <Select value={dealCourse} onValueChange={setDealCourse}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب دوره (پیش‌فرض: دوره فیلتر)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map(course => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          در صورت عدم انتخاب، دوره فیلتر شده استفاده خواهد شد
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="dealPrice">قیمت معامله (تومان)</Label>
+                        <Input
+                          type="number"
+                          id="dealPrice"
+                          value={dealPrice}
+                          onChange={(e) => setDealPrice(e.target.value)}
+                          placeholder="0"
+                          min="0"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          قیمت قابل تنظیم برای معامله
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
