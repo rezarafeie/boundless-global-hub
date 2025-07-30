@@ -319,11 +319,6 @@ export function UserActivity({ userId }: UserActivityProps) {
                     <p className="text-xs sm:text-sm leading-relaxed mb-2">
                       {activity.description}
                     </p>
-                    {activity.reference && (
-                      <p className="text-xs text-muted-foreground mb-1">
-                        مرجع: {activity.reference}
-                      </p>
-                    )}
                     <div className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
                       <Calendar className="w-3 h-3" />
                       {formatDate(activity.created_at)}
