@@ -2493,7 +2493,7 @@ const LeadManagement: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100001]">
                   {CRM_TYPES.map(type => (
                     <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                   ))}
@@ -2507,7 +2507,7 @@ const LeadManagement: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="انتخاب دوره" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100001]">
                   <SelectItem value="none">بدون دوره</SelectItem>
                   {courses.map(course => (
                     <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
@@ -2522,7 +2522,7 @@ const LeadManagement: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100001]">
                   {CRM_STATUSES.map(status => (
                     <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
                   ))}
