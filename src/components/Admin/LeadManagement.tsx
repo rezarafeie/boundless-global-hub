@@ -2651,7 +2651,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Add Note Dialog - UserCRM Component Only */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[9999] !important" style={{zIndex: 9999}}>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto z-[9999] !important" style={{zIndex: 9999}}>
           <DialogHeader>
             <DialogTitle>CRM - دوره شروع بدون مرز</DialogTitle>
           </DialogHeader>
