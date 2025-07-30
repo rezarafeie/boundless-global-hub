@@ -40,6 +40,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { useUserRole } from '@/hooks/useUserRole';
 import LeadDistributionSystem from './LeadDistributionSystem';
 import UserCRM from './UserProfile/UserCRM';
+import UserEditModal from './UserEditModal';
 
 interface Lead {
   enrollment_id: string;
@@ -167,6 +168,10 @@ const LeadManagement: React.FC = () => {
   const [isAddingQuickNote, setIsAddingQuickNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserChatId, setSelectedUserChatId] = useState<number | null>(null);
+  
+  // User edit modal states
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
   const [newNote, setNewNote] = useState({
     content: '',
     type: 'note',
@@ -797,6 +802,39 @@ const LeadManagement: React.FC = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedLead) return;
+    
+    try {
+      // Find the user in chat_users table based on phone or email
+      const { data: chatUser, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .or(`phone.eq.${selectedLead.phone},email.eq.${selectedLead.email}`)
+        .single();
+
+      if (error) {
+        console.error('Error finding user:', error);
+        toast({
+          title: "خطا",
+          description: "کاربر در سیستم چت یافت نشد",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setSelectedUserForEdit(chatUser);
+      setIsEditingUser(true);
+    } catch (error) {
+      console.error('Error finding user:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در یافتن کاربر",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1690,7 +1728,17 @@ const LeadManagement: React.FC = () => {
                 {/* Basic Info Section - Mobile First */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-base">اطلاعات کاربر</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-base">اطلاعات کاربر</h3>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEditUser}
+                        className="text-xs"
+                      >
+                        بروزرسانی اطلاعات کاربر
+                      </Button>
+                    </div>
                     <div className="space-y-1 text-sm">
                       <p className="break-words"><strong>نام:</strong> {selectedLead.full_name}</p>
                       <p className="break-all"><strong>ایمیل:</strong> {selectedLead.email}</p>
@@ -2097,6 +2145,24 @@ const LeadManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* User Edit Modal */}
+      <UserEditModal
+        isOpen={isEditingUser}
+        onClose={() => {
+          setIsEditingUser(false);
+          setSelectedUserForEdit(null);
+        }}
+        user={selectedUserForEdit}
+        onUserUpdate={() => {
+          setIsEditingUser(false);
+          setSelectedUserForEdit(null);
+          toast({
+            title: "موفقیت",
+            description: "اطلاعات کاربر با موفقیت بروزرسانی شد",
+          });
+        }}
+      />
     </div>
   );
 };
