@@ -1534,12 +1534,12 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="max-w-full max-h-full w-full h-full overflow-y-auto z-[100]">
-          <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-4 z-10">
+        <DialogContent className="max-w-full max-h-full w-full h-full overflow-y-auto z-[100] p-0">
+          <DialogHeader className="sticky top-0 bg-background border-b pb-4 mb-0 z-20 p-6">
             <DialogTitle>جزئیات لید</DialogTitle>
           </DialogHeader>
           {selectedLead && (
-            <div className="space-y-6 p-4">
+            <div className="space-y-6 p-6 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <h3 className="font-semibold">اطلاعات کاربر</h3>
