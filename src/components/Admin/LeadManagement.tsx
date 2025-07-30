@@ -1608,107 +1608,30 @@ const LeadManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Note Dialog - Main CRM Popup with UserCRM Component */}
+      {/* Add Note Dialog - UserCRM Component Only */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>افزودن یادداشت CRM و مدیریت اطلاعات کاربر</DialogTitle>
+            <DialogTitle>CRM - دوره شروع بدون مرز</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" dir="rtl">
-            {/* Left Column - Add Note Section */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">افزودن یادداشت CRM</h3>
-              {selectedLead && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">{selectedLead.full_name}</div>
-                  <div className="text-sm text-muted-foreground">{selectedLead.phone}</div>
+          <div className="space-y-4" dir="rtl">
+            {selectedLead && selectedUserChatId && (
+              <UserCRM 
+                userId={selectedUserChatId}
+                userName={selectedLead.full_name}
+                userPhone={selectedLead.phone}
+                userEmail={selectedLead.email}
+                preselectedCourseId={('course_id' in selectedLead) ? selectedLead.course_id : undefined}
+                preselectedCourseTitle={('course_title' in selectedLead) ? selectedLead.course_title : undefined}
+              />
+            )}
+            {(!selectedUserChatId) && (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground">
+                  کاربر در سیستم چت یافت نشد
                 </div>
-              )}
-              
-              <div>
-                <Label htmlFor="type">نوع</Label>
-                <Select value={newNote.type} onValueChange={(value) => setNewNote({...newNote, type: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CRM_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
-              
-              <div>
-                <Label htmlFor="course">دوره</Label>
-                <Select value={newNote.course_id} onValueChange={(value) => setNewNote({...newNote, course_id: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="انتخاب دوره" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">بدون دوره</SelectItem>
-                    {courses.map(course => (
-                      <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="status">وضعیت</Label>
-                <Select value={newNote.status} onValueChange={(value) => setNewNote({...newNote, status: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CRM_STATUSES.map(status => (
-                      <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="content">محتوا</Label>
-                <Textarea
-                  id="content"
-                  placeholder="محتوای یادداشت خود را وارد کنید..."
-                  value={newNote.content}
-                  onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                  rows={4}
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddingNote(false)}>
-                  لغو
-                </Button>
-                <Button onClick={handleAddNote} disabled={isSubmitting}>
-                  {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
-                </Button>
-              </div>
-            </div>
-
-            {/* Right Column - UserCRM Component for updating user details */}
-            <div className="border-r pr-6">
-              {selectedLead && selectedUserChatId && (
-                <UserCRM 
-                  userId={selectedUserChatId}
-                  userName={selectedLead.full_name}
-                  userPhone={selectedLead.phone}
-                  userEmail={selectedLead.email}
-                  preselectedCourseId={('course_id' in selectedLead) ? selectedLead.course_id : undefined}
-                  preselectedCourseTitle={('course_title' in selectedLead) ? selectedLead.course_title : undefined}
-                />
-              )}
-              {(!selectedUserChatId) && (
-                <div className="text-center py-8">
-                  <div className="text-muted-foreground">
-                    کاربر در سیستم چت یافت نشد
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
