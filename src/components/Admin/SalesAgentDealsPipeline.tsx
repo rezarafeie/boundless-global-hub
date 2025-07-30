@@ -39,6 +39,10 @@ interface Deal {
     phone: string;
     payment_amount: number;
     created_at: string;
+    course_id: string;
+    original_course: {
+      title: string;
+    };
   };
   course: {
     id: string;
@@ -107,7 +111,9 @@ const SalesAgentDealsPipeline: React.FC = () => {
             email,
             phone,
             payment_amount,
-            created_at
+            created_at,
+            course_id,
+            original_course:courses(title)
           ),
           courses!inner(
             id,
@@ -144,7 +150,9 @@ const SalesAgentDealsPipeline: React.FC = () => {
           email: deal.enrollments.email,
           phone: deal.enrollments.phone,
           payment_amount: deal.enrollments.payment_amount,
-          created_at: deal.enrollments.created_at
+          created_at: deal.enrollments.created_at,
+          course_id: deal.enrollments.course_id,
+          original_course: deal.enrollments.original_course
         },
         course: {
           id: deal.courses.id,
@@ -411,10 +419,15 @@ const SalesAgentDealsPipeline: React.FC = () => {
                     <CardContent className="p-4">
                       <div className="space-y-3">
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{deal.enrollment.full_name}</h4>
-                            <p className="text-xs text-muted-foreground">{deal.course.title}</p>
-                          </div>
+                           <div className="flex-1">
+                             <h4 className="font-medium text-sm">{deal.enrollment.full_name}</h4>
+                             <p className="text-xs text-muted-foreground">{deal.course.title}</p>
+                             {deal.enrollment.original_course && (
+                               <p className="text-xs text-muted-foreground">
+                                 لید از: {deal.enrollment.original_course.title}
+                               </p>
+                             )}
+                           </div>
                           {getStatusBadge(deal.status)}
                         </div>
                         
@@ -463,6 +476,12 @@ const SalesAgentDealsPipeline: React.FC = () => {
                                     <Label className="text-sm font-medium">دوره</Label>
                                     <p className="text-sm">{deal.course.title}</p>
                                   </div>
+                                  {deal.enrollment.original_course && (
+                                    <div>
+                                      <Label className="text-sm font-medium">لید از دوره</Label>
+                                      <p className="text-sm">{deal.enrollment.original_course.title}</p>
+                                    </div>
+                                  )}
                                   <div>
                                     <Label className="text-sm font-medium">مبلغ معامله</Label>
                                     <p className="text-sm">{formatPrice(deal.price)}</p>

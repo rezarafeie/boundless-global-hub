@@ -27,6 +27,10 @@ interface Deal {
     email: string;
     phone: string;
     created_at: string;
+    course_id: string;
+    original_course: {
+      title: string;
+    };
   };
   course?: {
     title: string;
@@ -75,7 +79,10 @@ const DealsPipeline: React.FC = () => {
         .from('deals')
         .select(`
           *,
-          enrollment:enrollments(full_name, email, phone, created_at),
+          enrollment:enrollments(
+            full_name, email, phone, created_at, course_id,
+            original_course:courses(title)
+          ),
           course:courses(title),
           salesperson:chat_users!deals_assigned_salesperson_id_fkey(name),
           activities:deal_activities(
@@ -282,11 +289,16 @@ const DealsPipeline: React.FC = () => {
               <Card key={deal.id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
-                        <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
-                      </div>
+                     <div className="flex justify-between items-start">
+                       <div>
+                         <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                         <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
+                         {deal.enrollment?.original_course && (
+                           <p className="text-xs text-muted-foreground">
+                             لید از: {deal.enrollment.original_course.title}
+                           </p>
+                         )}
+                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -354,11 +366,16 @@ const DealsPipeline: React.FC = () => {
               <Card key={deal.id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
-                        <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
-                      </div>
+                     <div className="flex justify-between items-start">
+                       <div>
+                         <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                         <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
+                         {deal.enrollment?.original_course && (
+                           <p className="text-xs text-muted-foreground">
+                             لید از: {deal.enrollment.original_course.title}
+                           </p>
+                         )}
+                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -404,11 +421,16 @@ const DealsPipeline: React.FC = () => {
               <Card key={deal.id} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
-                        <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
-                      </div>
+                     <div className="flex justify-between items-start">
+                       <div>
+                         <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                         <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
+                         {deal.enrollment?.original_course && (
+                           <p className="text-xs text-muted-foreground">
+                             لید از: {deal.enrollment.original_course.title}
+                           </p>
+                         )}
+                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -463,6 +485,12 @@ const DealsPipeline: React.FC = () => {
                   <label className="text-sm font-medium">دوره</label>
                   <p className="text-sm text-muted-foreground">{selectedDeal.course?.title}</p>
                 </div>
+                {selectedDeal.enrollment?.original_course && (
+                  <div>
+                    <label className="text-sm font-medium">لید از دوره</label>
+                    <p className="text-sm text-muted-foreground">{selectedDeal.enrollment.original_course.title}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium">قیمت</label>
                   <p className="text-sm text-muted-foreground">{formatPrice(selectedDeal.price)}</p>
