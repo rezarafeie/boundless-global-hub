@@ -1622,10 +1622,10 @@ const LeadManagement: React.FC = () => {
 
       {/* Lead Detail Dialog */}
       <Dialog open={isLeadDetailOpen} onOpenChange={setIsLeadDetailOpen}>
-        <DialogContent className="max-w-full w-full h-[calc(100vh-80px)] top-[80px] left-0 right-0 bottom-0 translate-x-0 translate-y-0 overflow-hidden z-[100] p-0 fixed">
-          <DialogHeader className="sticky top-0 bg-background border-b pb-3 mb-0 z-20 p-3 sm:p-4 md:p-6">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden z-[50] p-0">
+          <DialogHeader className="border-b pb-3 mb-0 p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-base sm:text-lg md:text-xl font-semibold">جزئیات لید</DialogTitle>
+              <DialogTitle className="text-lg font-semibold">جزئیات لید</DialogTitle>
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -1637,21 +1637,21 @@ const LeadManagement: React.FC = () => {
             </div>
           </DialogHeader>
           {selectedLead && (
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 pt-2 sm:pt-3 md:pt-4">
+            <div className="flex-1 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="space-y-4 p-4 sm:p-6">
                 {/* Basic Info Section - Mobile First */}
-                <div className="space-y-3 sm:space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 xl:gap-6 lg:space-y-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-sm sm:text-base md:text-lg">اطلاعات کاربر</h3>
-                    <div className="space-y-1 text-xs sm:text-sm md:text-base">
+                    <h3 className="font-semibold text-base">اطلاعات کاربر</h3>
+                    <div className="space-y-1 text-sm">
                       <p className="break-words"><strong>نام:</strong> {selectedLead.full_name}</p>
                       <p className="break-all"><strong>ایمیل:</strong> {selectedLead.email}</p>
                       <p><strong>تلفن:</strong> {selectedLead.phone}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-sm sm:text-base md:text-lg">اطلاعات ثبت‌نام</h3>
-                    <div className="space-y-1 text-xs sm:text-sm md:text-base">
+                    <h3 className="font-semibold text-base">اطلاعات ثبت‌نام</h3>
+                    <div className="space-y-1 text-sm">
                       <p className="break-words"><strong>دوره:</strong> {selectedLead.course_title}</p>
                       <p><strong>مبلغ:</strong> {formatPrice(selectedLead.payment_amount)}</p>
                       <p><strong>تاریخ:</strong> {formatDate('created_at' in selectedLead ? selectedLead.created_at : 'assigned_at' in selectedLead ? selectedLead.assigned_at : '')}</p>
@@ -1659,40 +1659,12 @@ const LeadManagement: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Mobile-First Tabs Section */}
+                {/* Responsive Tabs Section */}
                 <div className="border rounded-lg overflow-hidden">
-                  {/* Mobile: Dropdown-style tabs */}
-                  <div className="sm:hidden">
-                    <select 
-                      value={activeDetailTab} 
-                      onChange={(e) => {
-                        const newTab = e.target.value as 'notes' | 'activity' | 'enrollments' | 'payments';
-                        setActiveDetailTab(newTab);
-                        if (selectedLead) {
-                          if (newTab === 'activity' && userActivity.length === 0) {
-                            fetchUserActivityData(selectedLead.phone);
-                          }
-                          if (newTab === 'enrollments' && userEnrollments.length === 0) {
-                            fetchUserEnrollmentsData(selectedLead.phone);
-                          }
-                          if (newTab === 'payments' && userPayments.length === 0) {
-                            fetchUserPaymentsData(selectedLead.phone);
-                          }
-                        }
-                      }}
-                      className="w-full p-2 sm:p-3 border-b bg-background text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    >
-                      <option value="notes">یادداشت‌های CRM</option>
-                      <option value="activity">فعالیت کاربر</option>
-                      <option value="enrollments">ثبت‌نام‌ها</option>
-                      <option value="payments">پرداخت‌ها</option>
-                    </select>
-                  </div>
-
-                  {/* Desktop: Horizontal tabs */}
-                  <div className="hidden sm:flex border-b overflow-x-auto scrollbar-hide">
+                  {/* Horizontal tabs for all screen sizes */}
+                  <div className="flex border-b overflow-x-auto scrollbar-hide">
                     <button
-                      className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                      className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                         activeDetailTab === 'notes' 
                           ? 'border-primary text-primary bg-primary/5' 
                           : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
@@ -1937,7 +1909,7 @@ const LeadManagement: React.FC = () => {
 
       {/* Add Note Dialog - UserCRM Component Only */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[60]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto z-[9999] !important" style={{zIndex: 9999}}>
           <DialogHeader>
             <DialogTitle>CRM - دوره شروع بدون مرز</DialogTitle>
           </DialogHeader>
