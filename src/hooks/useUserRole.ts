@@ -13,6 +13,7 @@ interface UserRoleInfo {
   canViewSales: boolean;
   canDistributeLeads: boolean;
   canAccessSalesTab: boolean;
+  canAccessCRM: boolean;
 }
 
 export const useUserRole = (): UserRoleInfo => {
@@ -68,6 +69,7 @@ export const useUserRole = (): UserRoleInfo => {
   const canViewSales = isAdmin || isSalesManager;
   const canDistributeLeads = isAdmin || isSalesManager;
   const canAccessSalesTab = isAdmin || isSalesManager;
+  const canAccessCRM = isAdmin || isSalesManager || isSalesAgent;
 
   return {
     role,
@@ -79,5 +81,6 @@ export const useUserRole = (): UserRoleInfo => {
     canViewSales,
     canDistributeLeads,
     canAccessSalesTab,
+    canAccessCRM,
   };
 };
