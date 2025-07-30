@@ -30,7 +30,9 @@ import {
   MessageSquare,
   Share2,
   Trash2,
-  X
+  X,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -150,7 +152,7 @@ const LeadManagement: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | Assignment | AdminLead | null>(null);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [isLeadDetailOpen, setIsLeadDetailOpen] = useState(false);
-  const [activeDetailTab, setActiveDetailTab] = useState<'activity' | 'enrollments' | 'payments' | 'deals'>('activity');
+  const [activeDetailTab, setActiveDetailTab] = useState<'activity' | 'enrollments' | 'payments' | 'deals' | 'crm'>('activity');
   const [userActivity, setUserActivity] = useState<any[]>([]);
   const [leadDeals, setLeadDeals] = useState<any[]>([]);
   const [userEnrollments, setUserEnrollments] = useState<any[]>([]);
@@ -1021,6 +1023,37 @@ const LeadManagement: React.FC = () => {
     } catch (error) {
       console.error('Error fetching lead deals:', error);
       setLeadDeals([]);
+    }
+  };
+
+  const updateDealStatus = async (dealId: string, status: 'won' | 'lost') => {
+    if (!selectedLead) return;
+    
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ 
+          status: status,
+          closed_at: new Date().toISOString()
+        })
+        .eq('id', dealId);
+
+      if (error) throw error;
+
+      // Refresh deals data
+      await fetchLeadDeals(selectedLead.enrollment_id);
+      
+      toast({
+        title: "موفقیت",
+        description: status === 'won' ? "معامله به عنوان موفق ثبت شد" : "معامله به عنوان لغو شده ثبت شد",
+      });
+    } catch (error) {
+      console.error('Error updating deal status:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بروزرسانی وضعیت معامله",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1901,40 +1934,6 @@ const LeadManagement: React.FC = () => {
                     </Card>
                   </div>
 
-                  {/* CRM Section */}
-                  <Card className="border-0 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          مدیریت CRM
-                        </h3>
-                        <Button
-                          onClick={() => setIsAddingNote(true)}
-                          className="text-xs"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4 ml-1" />
-                          مدیریت کامل CRM
-                        </Button>
-                      </div>
-                      
-                      {selectedUserChatId ? (
-                        <div className="border rounded-lg p-4 bg-muted/20">
-                          <div className="text-sm text-muted-foreground mb-2">
-                            برای مدیریت کامل CRM و افزودن یادداشت‌ها روی دکمه "مدیریت کامل CRM" کلیک کنید
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            کاربر: {selectedLead?.full_name} | تلفن: {selectedLead?.phone}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-muted-foreground text-sm">
-                          کاربر در سیستم چت یافت نشد
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
 
                   {/* Enhanced Tabs Section */}
                   <Card className="border-0 shadow-sm">
@@ -1942,23 +1941,10 @@ const LeadManagement: React.FC = () => {
                       {/* Mobile-First Tab Navigation */}
                       <div className="flex border-b bg-muted/30 overflow-x-auto scrollbar-hide">
                         <button
-                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                             activeDetailTab === 'activity' 
-                              ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                          }`}
-                          onClick={() => {
-                            setActiveDetailTab('activity');
-                          }}
-                        >
-                          <BarChart3 className="h-4 w-4" />
-                        فعالیت
-                        </button>
-                        <button
-                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                            activeDetailTab === 'activity' 
-                              ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              ? 'border-primary text-primary bg-primary/5' 
+                              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
                           }`}
                           onClick={() => {
                             setActiveDetailTab('activity');
@@ -1967,9 +1953,20 @@ const LeadManagement: React.FC = () => {
                             }
                           }}
                         >
-                          <BarChart3 className="h-4 w-4" />
-                        فعالیت
-                    </button>
+                          <BarChart3 className="h-4 w-4 ml-1" />
+                          فعالیت
+                        </button>
+                        <button
+                          className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                            activeDetailTab === 'crm' 
+                              ? 'border-primary text-primary bg-primary/5' 
+                              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                          }`}
+                          onClick={() => setActiveDetailTab('crm')}
+                        >
+                          <FileText className="h-4 w-4 ml-1" />
+                          CRM
+                        </button>
                     <button
                       className={`px-3 py-2 md:px-4 md:py-3 text-xs sm:text-sm md:text-base font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                         activeDetailTab === 'enrollments' 
@@ -2291,8 +2288,31 @@ const LeadManagement: React.FC = () => {
                                          <p className="text-xs sm:text-sm text-muted-foreground">
                                            {formatDate(deal.created_at)}
                                          </p>
-                                       </div>
-                                     </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Deal Action Buttons */}
+                                      {deal.status === 'in_progress' && (
+                                        <div className="flex gap-2 pt-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() => updateDealStatus(deal.id, 'won')}
+                                            className="flex items-center gap-1 text-xs"
+                                          >
+                                            <CheckCircle className="h-3 w-3" />
+                                            معامله موفق
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => updateDealStatus(deal.id, 'lost')}
+                                            className="flex items-center gap-1 text-xs"
+                                          >
+                                            <XCircle className="h-3 w-3" />
+                                            معامله لغو شده
+                                          </Button>
+                                        </div>
+                                      )}
 
                                      {deal.deal_activities && deal.deal_activities.length > 0 && (
                                        <div className="border-t pt-3">
@@ -2351,7 +2371,30 @@ const LeadManagement: React.FC = () => {
                          )}
                        </div>
                      </div>
-                   )}
+                    )}
+
+                    {activeDetailTab === 'crm' && (
+                      <div className="space-y-3 sm:space-y-4">
+                        <h3 className="font-semibold text-base sm:text-lg">مدیریت CRM</h3>
+                        {selectedUserChatId ? (
+                          <UserCRM 
+                            userId={selectedUserChatId}
+                            userName={selectedLead?.full_name || ''}
+                            userPhone={selectedLead?.phone || ''}
+                            userEmail={selectedLead?.email || ''}
+                            preselectedCourseId={('course_id' in selectedLead!) ? selectedLead.course_id : undefined}
+                            preselectedCourseTitle={('course_title' in selectedLead!) ? selectedLead.course_title : undefined}
+                          />
+                        ) : (
+                          <div className="text-center py-8">
+                            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                            <p className="text-muted-foreground">
+                              کاربر در سیستم چت یافت نشد
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                       </div>
                     </CardContent>
                   </Card>
