@@ -42,8 +42,6 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Checkbox } from '@/components/ui/checkbox';
 import LeadDistributionSystem from './LeadDistributionSystem';
 import UserCRM from './UserProfile/UserCRM';
-import { EnrollmentCRM } from './EnrollmentCRM';
-import { AddCRMNoteDialog } from './AddCRMNoteDialog';
 import UserEditModal from './UserEditModal';
 import DealsPipeline from './DealsPipeline';
 import SalesAgentDealsPipeline from './SalesAgentDealsPipeline';
@@ -2651,21 +2649,33 @@ const LeadManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Add Note Dialog - Using AddCRMNoteDialog Component */}
-      {selectedLead && selectedUserChatId && (
-        <AddCRMNoteDialog
-          isOpen={isAddingNote}
-          onClose={() => setIsAddingNote(false)}
-          userId={selectedUserChatId}
-          userName={selectedLead.full_name}
-          userPhone={selectedLead.phone}
-          preselectedCourseId={('course_id' in selectedLead) ? selectedLead.course_id : undefined}
-          onNoteAdded={() => {
-            // Refresh data if needed
-            setIsAddingNote(false);
-          }}
-        />
-      )}
+      {/* Add Note Dialog - UserCRM Component Only */}
+      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+        <DialogContent className="max-w-[90vw] sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto z-[9999] !important mx-2" style={{zIndex: 9999}}>
+          <DialogHeader>
+            <DialogTitle>CRM - دوره شروع بدون مرز</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4" dir="rtl">
+            {selectedLead && selectedUserChatId && (
+              <UserCRM 
+                userId={selectedUserChatId}
+                userName={selectedLead.full_name}
+                userPhone={selectedLead.phone}
+                userEmail={selectedLead.email}
+                preselectedCourseId={('course_id' in selectedLead) ? selectedLead.course_id : undefined}
+                preselectedCourseTitle={('course_title' in selectedLead) ? selectedLead.course_title : undefined}
+              />
+            )}
+            {(!selectedUserChatId) && (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground">
+                  کاربر در سیستم چت یافت نشد
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* User Edit Modal */}
       <UserEditModal
