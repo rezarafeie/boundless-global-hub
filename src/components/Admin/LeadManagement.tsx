@@ -1766,6 +1766,8 @@ const LeadManagement: React.FC = () => {
              </div>
             ) : activeTab === 'distribution' ? (
               <LeadDistributionSystem />
+            ) : activeTab === 'followups' ? (
+              <FollowUpsManagement />
             ) : activeTab === 'pipeline' ? (
               // Show appropriate pipeline component based on user role
               (isAdmin || isSalesManager) ? <DealsPipeline /> : <SalesAgentDealsPipeline />
