@@ -42,6 +42,7 @@ import LeadDistributionSystem from './LeadDistributionSystem';
 import UserCRM from './UserProfile/UserCRM';
 import UserEditModal from './UserEditModal';
 import DealsPipeline from './DealsPipeline';
+import SalesAgentDealsPipeline from './SalesAgentDealsPipeline';
 
 interface Lead {
   enrollment_id: string;
@@ -1138,6 +1139,15 @@ const LeadManagement: React.FC = () => {
                     >
                       واگذار شده‌ها
                     </Button>
+                    <Button
+                      variant={activeTab === 'pipeline' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setActiveTab('pipeline')}
+                      className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                    >
+                      <Target className="h-4 w-4" />
+                      پایپ‌لاین فروش
+                    </Button>
                   </>
                  )}
                  {(isAdmin || isSalesManager) && (
@@ -1715,7 +1725,8 @@ const LeadManagement: React.FC = () => {
             ) : activeTab === 'distribution' ? (
               <LeadDistributionSystem />
             ) : activeTab === 'pipeline' ? (
-              <DealsPipeline />
+              // Show appropriate pipeline component based on user role
+              (isAdmin || isSalesManager) ? <DealsPipeline /> : <SalesAgentDealsPipeline />
             ) : null}
         </CardContent>
        </Card>
