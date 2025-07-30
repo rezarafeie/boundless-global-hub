@@ -1121,6 +1121,55 @@ const LeadManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Migration Button for Admins */}
+      {isAdmin && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-orange-800">مهاجرت داده‌ها</h3>
+                <p className="text-sm text-orange-700">ایجاد معاملات برای تمام لیدهای موجود</p>
+              </div>
+              <Button
+                onClick={async () => {
+                  if (!confirm('آیا مطمئن هستید که می‌خواهید معاملات را برای تمام لیدها ایجاد کنید؟')) {
+                    return;
+                  }
+                  
+                  try {
+                    setLoading(true);
+                    const { data, error } = await supabase.functions.invoke('create-deals-from-leads');
+                    
+                    if (error) throw error;
+                    
+                    toast({
+                      title: "موفق",
+                      description: `${data.summary.deals_created} معامله ایجاد شد`,
+                    });
+                    
+                    console.log('Migration result:', data);
+                  } catch (error) {
+                    console.error('Migration error:', error);
+                    toast({
+                      title: "خطا",
+                      description: "خطا در ایجاد معاملات",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                ایجاد معاملات
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <Card>
         <CardHeader className="space-y-4">
           <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
