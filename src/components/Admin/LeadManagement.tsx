@@ -1711,31 +1711,19 @@ const LeadManagement: React.FC = () => {
       {isLeadDetailOpen && (
         <div className="fixed inset-0 z-[99999] bg-background" style={{zIndex: 99999}}>
           <div className="flex flex-col h-screen w-screen">
-            {/* Full Window Header with Close Button */}
+            {/* Simplified Full Window Header */}
             <div className="flex items-center justify-between p-4 border-b bg-background shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 cursor-pointer transition-colors"
-                       onClick={() => setIsLeadDetailOpen(false)}
-                       title="بستن"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <h2 className="font-semibold text-lg mr-2">جزئیات لید</h2>
+                <h2 className="font-semibold text-xl">جزئیات لید</h2>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-muted-foreground">
-                  {selectedLead?.enrollment_id}
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setIsLeadDetailOpen(false)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsLeadDetailOpen(false)}
+                className="h-8 w-8 p-0 hover:bg-accent"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
             {selectedLead && (
               <div className="flex-1 overflow-y-auto h-full bg-background">
@@ -1811,10 +1799,10 @@ const LeadManagement: React.FC = () => {
                   {/* Enhanced Tabs Section */}
                   <Card className="border-0 shadow-sm">
                     <CardContent className="p-0">
-                      {/* Modern Tab Navigation */}
-                      <div className="flex border-b bg-muted/30">
+                      {/* Mobile-First Tab Navigation */}
+                      <div className="flex border-b bg-muted/30 overflow-x-auto scrollbar-hide">
                         <button
-                          className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          className={`px-3 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1 sm:gap-2 whitespace-nowrap flex-shrink-0 ${
                             activeDetailTab === 'notes' 
                               ? 'border-b-2 border-primary text-primary bg-background shadow-sm' 
                               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -1823,8 +1811,8 @@ const LeadManagement: React.FC = () => {
                             setActiveDetailTab('notes');
                           }}
                         >
-                          <FileText className="h-4 w-4" />
-                          یادداشت‌های CRM
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden xs:inline">یادداشت‌های</span> CRM
                         </button>
                         <button
                           className={`px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
@@ -1890,7 +1878,7 @@ const LeadManagement: React.FC = () => {
                                   افزودن یادداشت
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-80 z-[9999] max-h-[500px] overflow-y-auto" side="bottom" align="end">
+                              <PopoverContent className="w-80 z-[99999] max-h-[500px] overflow-y-auto" side="bottom" align="end" style={{zIndex: 99999}}>
                                 <div className="space-y-4">
                                   <h4 className="font-medium text-sm">افزودن یادداشت جدید</h4>
                                   
