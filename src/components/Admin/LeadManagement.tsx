@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -163,6 +164,7 @@ const LeadManagement: React.FC = () => {
   
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [isAddingQuickNote, setIsAddingQuickNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedUserChatId, setSelectedUserChatId] = useState<number | null>(null);
   const [newNote, setNewNote] = useState({
@@ -781,6 +783,52 @@ const LeadManagement: React.FC = () => {
       
       await fetchCRMNotes(targetUserId);
       setIsAddingNote(false);
+      
+      toast({
+        title: "موفق",
+        description: "یادداشت اضافه شد",
+      });
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در افزودن یادداشت",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitQuickNote = async () => {
+    if (!newNote.content.trim() || !selectedLead || !user?.id || !selectedUserChatId) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('crm_notes')
+        .insert([{
+          user_id: selectedUserChatId,
+          content: newNote.content,
+          type: newNote.type,
+          status: newNote.status,
+          course_id: newNote.course_id === 'none' ? null : newNote.course_id,
+          created_by: user.name || 'مدیر'
+        }]);
+
+      if (error) throw error;
+
+      // Reset form
+      setNewNote({
+        content: '',
+        type: 'note',
+        status: 'در انتظار پرداخت',
+        course_id: 'none'
+      });
+      
+      // Refresh CRM notes
+      await fetchCRMNotes(selectedUserChatId);
+      setIsAddingQuickNote(false);
       
       toast({
         title: "موفق",
@@ -1725,18 +1773,133 @@ const LeadManagement: React.FC = () => {
                   {/* Tab Content */}
                   <div className="p-2 sm:p-3 md:p-4">
                     {activeDetailTab === 'notes' && (
-                      <div className="space-y-2 sm:space-y-3 md:space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-                          <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
-                          <Button 
-                            onClick={() => setIsAddingNote(true)}
-                            className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
-                            size="sm"
-                          >
-                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                            افزودن یادداشت
-                          </Button>
-                        </div>
+                        <div className="space-y-2 sm:space-y-3 md:space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                            <h3 className="font-semibold text-sm sm:text-base md:text-lg">یادداشت‌های CRM</h3>
+                            <Popover open={isAddingQuickNote} onOpenChange={setIsAddingQuickNote}>
+                              <PopoverTrigger asChild>
+                                <Button 
+                                  className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm"
+                                  size="sm"
+                                >
+                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  افزودن یادداشت
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80 z-[9999] max-h-[500px] overflow-y-auto" side="bottom" align="end">
+                                <div className="space-y-4">
+                                  <h4 className="font-medium text-sm">افزودن یادداشت جدید</h4>
+                                  
+                                  <div className="space-y-3">
+                                    <div>
+                                      <Label htmlFor="note-content" className="text-xs">متن یادداشت</Label>
+                                      <Textarea
+                                        id="note-content"
+                                        placeholder="متن یادداشت خود را وارد کنید..."
+                                        value={newNote.content}
+                                        onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
+                                        className="mt-1 min-h-[80px] text-sm"
+                                      />
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <Label htmlFor="note-type" className="text-xs">نوع</Label>
+                                        <Select
+                                          value={newNote.type}
+                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, type: value }))}
+                                        >
+                                          <SelectTrigger className="mt-1 text-xs h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {CRM_TYPES.map((type) => (
+                                              <SelectItem key={type.value} value={type.value} className="text-xs">
+                                                {type.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      
+                                      <div>
+                                        <Label htmlFor="note-status" className="text-xs">وضعیت</Label>
+                                        <Select
+                                          value={newNote.status}
+                                          onValueChange={(value) => setNewNote(prev => ({ ...prev, status: value }))}
+                                        >
+                                          <SelectTrigger className="mt-1 text-xs h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {CRM_STATUSES.map((status) => (
+                                              <SelectItem key={status.value} value={status.value} className="text-xs">
+                                                {status.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    
+                                    <div>
+                                      <Label htmlFor="note-course" className="text-xs">دوره</Label>
+                                      <Select
+                                        value={newNote.course_id}
+                                        onValueChange={(value) => setNewNote(prev => ({ ...prev, course_id: value }))}
+                                      >
+                                        <SelectTrigger className="mt-1 text-xs h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none" className="text-xs">انتخاب نکنید</SelectItem>
+                                          {courses.map((course) => (
+                                            <SelectItem key={course.id} value={course.id} className="text-xs">
+                                              {course.title}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setIsAddingQuickNote(false);
+                                        setNewNote({
+                                          content: '',
+                                          type: 'note',
+                                          status: 'در انتظار پرداخت',
+                                          course_id: 'none'
+                                        });
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      لغو
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSubmitQuickNote}
+                                      disabled={isSubmitting || !newNote.content.trim()}
+                                      className="text-xs"
+                                    >
+                                      {isSubmitting ? (
+                                        <>
+                                          <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                                          در حال ذخیره...
+                                        </>
+                                      ) : (
+                                        'ذخیره'
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
 
                         <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[60vh] md:max-h-96 overflow-y-auto">
                           {crmNotes.length === 0 ? (
