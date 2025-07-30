@@ -536,7 +536,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
       {/* Add Note Dialog - Same as EnrollmentCRM */}
       <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-md lg:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>افزودن یادداشت CRM</DialogTitle>
             <DialogDescription>
