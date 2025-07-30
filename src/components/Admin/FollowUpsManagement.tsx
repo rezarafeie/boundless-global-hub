@@ -631,12 +631,30 @@ export function FollowUpsManagement() {
                 لغو
               </Button>
               <Button 
-                onClick={() => markAsCompleted(selectedFollowUp?.id || '', nextFollowUp.schedule_followup)} 
-                disabled={
-                  isSubmitting || 
-                  (nextFollowUp.schedule_followup && !nextFollowUp.title.trim()) ||
-                  (!nextFollowUp.schedule_followup && selectedFollowUp?.deal_id && !dealStatus.status)
-                }
+                onClick={() => {
+                  // Validation for scheduling next follow-up
+                  if (nextFollowUp.schedule_followup && !nextFollowUp.title.trim()) {
+                    toast({
+                      title: "خطا",
+                      description: "لطفاً عنوان پیگیری بعدی را وارد کنید.",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
+                  // Validation for deal status when NOT scheduling next follow-up
+                  if (!nextFollowUp.schedule_followup && selectedFollowUp?.deal_id && !dealStatus.status) {
+                    toast({
+                      title: "خطا", 
+                      description: "لطفاً وضعیت معامله را انتخاب کنید.",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
+                  markAsCompleted(selectedFollowUp?.id || '', nextFollowUp.schedule_followup);
+                }} 
+                disabled={isSubmitting}
               >
                 {isSubmitting ? 'در حال تکمیل...' : 'تکمیل پیگیری'}
               </Button>
