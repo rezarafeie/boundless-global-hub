@@ -917,10 +917,17 @@ const LeadDistributionSystem: React.FC = () => {
       setSelectedLeadForMove('');
       setNewAgentForMove('');
       
-      // Refresh the enrollments list
-      console.log('🔄 Refreshing data after move...');
-      await fetchEnrollments();
-      await fetchSalesAgents();
+      // Force refresh all data including lead assignments
+      console.log('🔄 Refreshing all data after move...');
+      await Promise.all([
+        fetchEnrollments(),
+        fetchSalesAgents(),
+        fetchUnassignedCount()
+      ]);
+      
+      // Force a component re-render by updating state
+      setEnrollments(prev => [...prev]);
+      console.log('✅ Data refresh completed after lead move');
 
     } catch (error) {
       console.error('❌ Error moving lead:', error);
