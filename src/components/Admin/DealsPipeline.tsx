@@ -20,6 +20,7 @@ interface Deal {
   assigned_by_id: number;
   created_at: string;
   closed_at?: string;
+  crm_status?: 'none' | 'has_records' | 'has_calls';
   
   // Related data
   enrollment?: {
@@ -28,6 +29,7 @@ interface Deal {
     phone: string;
     created_at: string;
     course_id: string;
+    chat_user_id?: number;
     original_course: {
       title: string;
     };
@@ -65,6 +67,19 @@ const DealsPipeline: React.FC = () => {
   const { toast } = useToast();
   const { canViewSales, isAdmin, isSalesManager } = useUserRole();
 
+  // Function to get CRM status indicator
+  const getCRMStatusIcon = (crmStatus?: string) => {
+    switch (crmStatus) {
+      case 'has_calls':
+        return '📞';
+      case 'has_records':
+        return '✅';
+      case 'none':
+      default:
+        return '⚠️';
+    }
+  };
+
   useEffect(() => {
     if (canViewSales) {
       fetchDeals();
@@ -80,7 +95,7 @@ const DealsPipeline: React.FC = () => {
         .select(`
           *,
           enrollment:enrollments(
-            full_name, email, phone, created_at, course_id,
+            full_name, email, phone, created_at, course_id, chat_user_id,
             original_course:courses(title)
           ),
           course:courses(title),
@@ -95,7 +110,40 @@ const DealsPipeline: React.FC = () => {
 
       if (error) throw error;
 
-      setDeals((data || []) as Deal[]);
+      // Fetch CRM status for each deal
+      const userIds = (data || [])
+        .map((deal: any) => deal.enrollment?.chat_user_id)
+        .filter(id => id !== null && id !== undefined);
+      
+      let crmStatusMap: Record<number, string> = {};
+      
+      if (userIds.length > 0) {
+        const { data: crmData } = await supabase
+          .from('crm_notes')
+          .select('user_id, type')
+          .in('user_id', userIds);
+
+        // Build CRM status map
+        crmStatusMap = (crmData || []).reduce((acc, note) => {
+          if (!acc[note.user_id]) {
+            acc[note.user_id] = 'has_records';
+          }
+          if (note.type === 'call') {
+            acc[note.user_id] = 'has_calls';
+          }
+          return acc;
+        }, {} as Record<number, string>);
+      }
+
+      // Add CRM status to deals
+      const dealsWithCRM = (data || []).map((deal: any) => ({
+        ...deal,
+        crm_status: deal.enrollment?.chat_user_id ? 
+          (crmStatusMap[deal.enrollment.chat_user_id] as 'none' | 'has_records' | 'has_calls' || 'none') : 
+          'none'
+      }));
+
+      setDeals(dealsWithCRM as Deal[]);
     } catch (error) {
       console.error('Error fetching deals:', error);
       toast({
@@ -291,7 +339,19 @@ const DealsPipeline: React.FC = () => {
                   <div className="space-y-3">
                      <div className="flex justify-between items-start">
                        <div>
-                         <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                         <div className="flex items-center gap-2">
+                           <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                           <span 
+                             className="text-lg"
+                             title={
+                               deal.crm_status === 'has_calls' ? 'دارای تماس تلفنی' :
+                               deal.crm_status === 'has_records' ? 'دارای یادداشت CRM' :
+                               'بدون یادداشت CRM'
+                             }
+                           >
+                             {getCRMStatusIcon(deal.crm_status)}
+                           </span>
+                         </div>
                          <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
                          {deal.enrollment?.original_course && (
                            <p className="text-xs text-muted-foreground">
@@ -368,7 +428,19 @@ const DealsPipeline: React.FC = () => {
                   <div className="space-y-3">
                      <div className="flex justify-between items-start">
                        <div>
-                         <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                         <div className="flex items-center gap-2">
+                           <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                           <span 
+                             className="text-lg"
+                             title={
+                               deal.crm_status === 'has_calls' ? 'دارای تماس تلفنی' :
+                               deal.crm_status === 'has_records' ? 'دارای یادداشت CRM' :
+                               'بدون یادداشت CRM'
+                             }
+                           >
+                             {getCRMStatusIcon(deal.crm_status)}
+                           </span>
+                         </div>
                          <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
                          {deal.enrollment?.original_course && (
                            <p className="text-xs text-muted-foreground">
@@ -423,7 +495,19 @@ const DealsPipeline: React.FC = () => {
                   <div className="space-y-3">
                      <div className="flex justify-between items-start">
                        <div>
-                         <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                         <div className="flex items-center gap-2">
+                           <h4 className="font-medium">{deal.enrollment?.full_name}</h4>
+                           <span 
+                             className="text-lg"
+                             title={
+                               deal.crm_status === 'has_calls' ? 'دارای تماس تلفنی' :
+                               deal.crm_status === 'has_records' ? 'دارای یادداشت CRM' :
+                               'بدون یادداشت CRM'
+                             }
+                           >
+                             {getCRMStatusIcon(deal.crm_status)}
+                           </span>
+                         </div>
                          <p className="text-sm text-muted-foreground">{deal.course?.title}</p>
                          {deal.enrollment?.original_course && (
                            <p className="text-xs text-muted-foreground">

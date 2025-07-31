@@ -54,6 +54,8 @@ interface Enrollment {
   is_assigned: boolean;
   assigned_agent_id?: number | null;
   assigned_agent_name?: string | null;
+  chat_user_id?: number | null;
+  crm_status?: 'none' | 'has_records' | 'has_calls';
 }
 
 interface PercentageDistribution {
@@ -95,6 +97,19 @@ const LeadDistributionSystem: React.FC = () => {
   const [note, setNote] = useState<string>('');
   const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>('all');
+
+  // Function to get CRM status indicator
+  const getCRMStatusIcon = (crmStatus?: string) => {
+    switch (crmStatus) {
+      case 'has_calls':
+        return '📞';
+      case 'has_records':
+        return '✅';
+      case 'none':
+      default:
+        return '⚠️';
+    }
+  };
 
   // Deal creation state
   const [dealCourse, setDealCourse] = useState<string>('');
@@ -325,6 +340,7 @@ const LeadDistributionSystem: React.FC = () => {
           payment_amount,
           payment_status,
           created_at,
+          chat_user_id,
           courses!inner(title)
         `)
         .eq('course_id', selectedCourse);
@@ -403,6 +419,28 @@ const LeadDistributionSystem: React.FC = () => {
 
       const assignedSet = new Set(assignmentCheck?.map(a => a.enrollment_id) || []);
 
+      // Fetch CRM status for each enrollment
+      const enrollmentUserIds = processedData.map(e => e.chat_user_id).filter(id => id !== null);
+      let crmStatusMap: Record<number, string> = {};
+      
+      if (enrollmentUserIds.length > 0) {
+        const { data: crmData } = await supabase
+          .from('crm_notes')
+          .select('user_id, type')
+          .in('user_id', enrollmentUserIds);
+
+        // Build CRM status map
+        crmStatusMap = (crmData || []).reduce((acc, note) => {
+          if (!acc[note.user_id]) {
+            acc[note.user_id] = 'has_records';
+          }
+          if (note.type === 'call') {
+            acc[note.user_id] = 'has_calls';
+          }
+          return acc;
+        }, {} as Record<number, string>);
+      }
+
       const formattedEnrollments = processedData.map(enrollment => {
         const assignmentInfo = assignmentMap.get(enrollment.id);
         return {
@@ -416,7 +454,9 @@ const LeadDistributionSystem: React.FC = () => {
           created_at: enrollment.created_at,
           is_assigned: assignedSet.has(enrollment.id),
           assigned_agent_id: assignmentInfo?.agentId || null,
-          assigned_agent_name: assignmentInfo?.agentName || null
+          assigned_agent_name: assignmentInfo?.agentName || null,
+          chat_user_id: enrollment.chat_user_id,
+          crm_status: enrollment.chat_user_id ? (crmStatusMap[enrollment.chat_user_id] as 'none' | 'has_records' | 'has_calls' || 'none') : 'none'
         };
       });
 
@@ -1578,15 +1618,16 @@ const LeadDistributionSystem: React.FC = () => {
                                }}
                              />
                            </TableHead>
-                            <TableHead>نام</TableHead>
-                            <TableHead>ایمیل</TableHead>
-                            <TableHead>تلفن</TableHead>
-                            <TableHead>مبلغ</TableHead>
-                            <TableHead>وضعیت پرداخت</TableHead>
-                            <TableHead>تاریخ ثبت‌نام</TableHead>
-                            <TableHead>فروشنده واگذاری</TableHead>
-                            <TableHead>وضعیت واگذاری</TableHead>
-                            <TableHead>عملیات</TableHead>
+                             <TableHead>نام</TableHead>
+                             <TableHead>ایمیل</TableHead>
+                             <TableHead>تلفن</TableHead>
+                             <TableHead>مبلغ</TableHead>
+                             <TableHead>وضعیت پرداخت</TableHead>
+                             <TableHead>CRM</TableHead>
+                             <TableHead>تاریخ ثبت‌نام</TableHead>
+                             <TableHead>فروشنده واگذاری</TableHead>
+                             <TableHead>وضعیت واگذاری</TableHead>
+                             <TableHead>عملیات</TableHead>
                           </TableRow>
                         </TableHeader>
                       <TableBody>
@@ -1604,25 +1645,34 @@ const LeadDistributionSystem: React.FC = () => {
                                 }}
                               />
                             </TableCell>
-                             <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                             <TableCell>{enrollment.email}</TableCell>
-                             <TableCell>{enrollment.phone}</TableCell>
-                             <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
-                             <TableCell>
-                               <Badge variant={
-                                 enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
-                                   ? "default" 
-                                   : enrollment.payment_status === 'pending' 
-                                     ? "secondary" 
-                                     : "destructive"
-                               }>
-                                 {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
-                                   ? "پرداخت شده" 
-                                   : enrollment.payment_status === 'pending' 
-                                     ? "در انتظار پرداخت" 
-                                     : "لغو شده"}
-                               </Badge>
-                             </TableCell>
+                              <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                              <TableCell>{enrollment.email}</TableCell>
+                              <TableCell>{enrollment.phone}</TableCell>
+                              <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                    ? "default" 
+                                    : enrollment.payment_status === 'pending' 
+                                      ? "secondary" 
+                                      : "destructive"
+                                }>
+                                  {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                    ? "پرداخت شده" 
+                                    : enrollment.payment_status === 'pending' 
+                                      ? "در انتظار پرداخت" 
+                                      : "لغو شده"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center text-lg">
+                                <span title={
+                                  enrollment.crm_status === 'has_calls' ? 'دارای تماس تلفنی' :
+                                  enrollment.crm_status === 'has_records' ? 'دارای یادداشت CRM' :
+                                  'بدون یادداشت CRM'
+                                }>
+                                  {getCRMStatusIcon(enrollment.crm_status)}
+                                </span>
+                              </TableCell>
                               <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
                               <TableCell>
                                 {enrollment.assigned_agent_name ? (
