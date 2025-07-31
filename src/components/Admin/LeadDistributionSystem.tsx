@@ -94,6 +94,7 @@ const LeadDistributionSystem: React.FC = () => {
   const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
   const [note, setNote] = useState<string>('');
   const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
+  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>('');
 
   // Deal creation state
   const [dealCourse, setDealCourse] = useState<string>('');
@@ -425,6 +426,12 @@ const LeadDistributionSystem: React.FC = () => {
         filteredEnrollments = formattedEnrollments.filter(e => e.is_assigned);
       } else if (assignmentStatus === 'unassigned') {
         filteredEnrollments = formattedEnrollments.filter(e => !e.is_assigned);
+      }
+
+      // Apply sales agent filter
+      if (selectedAgentFilter && selectedAgentFilter !== '') {
+        const agentId = parseInt(selectedAgentFilter);
+        filteredEnrollments = filteredEnrollments.filter(e => e.assigned_agent_id === agentId);
       }
 
       setEnrollments(filteredEnrollments);
@@ -1354,7 +1361,7 @@ const LeadDistributionSystem: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <Label htmlFor="course">دوره</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -1414,6 +1421,23 @@ const LeadDistributionSystem: React.FC = () => {
                       <SelectItem value="all">همه</SelectItem>
                       <SelectItem value="assigned">واگذار شده</SelectItem>
                       <SelectItem value="unassigned">واگذار نشده</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="salesAgentFilter">فیلتر بر اساس فروشنده</Label>
+                  <Select value={selectedAgentFilter} onValueChange={setSelectedAgentFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="همه فروشندگان" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">همه فروشندگان</SelectItem>
+                      {salesAgents.map(agent => (
+                        <SelectItem key={agent.id} value={agent.id.toString()}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
