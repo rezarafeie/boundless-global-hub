@@ -788,7 +788,14 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const moveLeadToNewAgent = async () => {
+    console.log('moveLeadToNewAgent called', {
+      selectedLeadForMove,
+      newAgentForMove,
+      userId: user?.id
+    });
+
     if (!selectedLeadForMove || !newAgentForMove || !user?.id) {
+      console.log('Missing required data for move lead');
       toast({
         title: "خطا",
         description: "لطفاً لید و فروشنده جدید را انتخاب کنید",
@@ -801,6 +808,12 @@ const LeadDistributionSystem: React.FC = () => {
     try {
       const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
       
+      console.log('Updating lead assignment', {
+        enrollmentId: selectedLeadForMove,
+        newAgentId: parseInt(newAgentForMove),
+        assignedById
+      });
+
       // Update the lead assignment to new agent
       const { error: updateError } = await supabase
         .from('lead_assignments')
@@ -812,6 +825,8 @@ const LeadDistributionSystem: React.FC = () => {
           assignment_type: 'moved'
         })
         .eq('enrollment_id', selectedLeadForMove);
+
+      console.log('Update result', { updateError });
 
       if (updateError) throw updateError;
 
