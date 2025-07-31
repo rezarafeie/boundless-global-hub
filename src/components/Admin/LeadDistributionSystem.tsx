@@ -789,15 +789,15 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const moveLeadToNewAgent = async () => {
-    console.log('moveLeadToNewAgent called', {
+    console.log('🔄 moveLeadToNewAgent called', {
       selectedLeadForMove,
       newAgentForMove,
-      userId: user?.id,
+      user,
       salesAgents: salesAgents.map(a => ({ id: a.id, name: a.name }))
     });
 
-    if (!selectedLeadForMove || !newAgentForMove || !user?.id) {
-      console.log('Missing required data for move lead');
+    if (!selectedLeadForMove || !newAgentForMove) {
+      console.log('❌ Missing required data for move lead');
       toast({
         title: "خطا",
         description: "لطفاً لید و فروشنده جدید را انتخاب کنید",
@@ -806,37 +806,79 @@ const LeadDistributionSystem: React.FC = () => {
       return;
     }
 
+    if (!user) {
+      console.log('❌ User not authenticated');
+      toast({
+        title: "خطا",
+        description: "لطفاً وارد شوید",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
+      // Get assigned by ID
+      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id || '1');
       
-      // First get the sales agent record based on user_id instead of ID
+      // Find the target agent
       const targetAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
       if (!targetAgent) {
         throw new Error('فروشنده انتخاب شده یافت نشد');
       }
 
-      console.log('Updating lead assignment', {
+      console.log('📝 Updating lead assignment', {
         enrollmentId: selectedLeadForMove,
         newAgentId: targetAgent.id,
         assignedById,
         targetAgent
       });
 
-      // Update the lead assignment to new agent
-      const { data, error: updateError } = await supabase
+      // Check if assignment exists first
+      const { data: existingAssignment, error: fetchError } = await supabase
         .from('lead_assignments')
-        .update({
-          sales_agent_id: targetAgent.id,
-          assigned_by: assignedById,
-          assigned_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          assignment_type: 'moved'
-        })
+        .select('*')
         .eq('enrollment_id', selectedLeadForMove)
-        .select();
+        .single();
 
-      console.log('Update result', { data, updateError });
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('❌ Error checking existing assignment:', fetchError);
+        throw fetchError;
+      }
+
+      console.log('📋 Existing assignment:', existingAssignment);
+
+      let result;
+      if (existingAssignment) {
+        // Update existing assignment
+        result = await supabase
+          .from('lead_assignments')
+          .update({
+            sales_agent_id: targetAgent.id,
+            assigned_by: assignedById,
+            assigned_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            assignment_type: 'moved'
+          })
+          .eq('enrollment_id', selectedLeadForMove)
+          .select();
+      } else {
+        // Create new assignment
+        result = await supabase
+          .from('lead_assignments')
+          .insert({
+            enrollment_id: selectedLeadForMove,
+            sales_agent_id: targetAgent.id,
+            assigned_by: assignedById,
+            assigned_at: new Date().toISOString(),
+            assignment_type: 'moved'
+          })
+          .select();
+      }
+
+      const { data, error: updateError } = result;
+
+      console.log('✅ Update result', { data, updateError });
 
       if (updateError) throw updateError;
 
@@ -852,10 +894,11 @@ const LeadDistributionSystem: React.FC = () => {
       setNewAgentForMove('');
       
       // Refresh the enrollments list
+      console.log('🔄 Refreshing enrollments...');
       await fetchEnrollments();
 
     } catch (error) {
-      console.error('Error moving lead:', error);
+      console.error('❌ Error moving lead:', error);
       toast({
         title: "خطا",
         description: `خطا در انتقال لید: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
