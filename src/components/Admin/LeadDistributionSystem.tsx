@@ -824,17 +824,19 @@ const LeadDistributionSystem: React.FC = () => {
       // Find the target agent
       const targetAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
       if (!targetAgent) {
+        console.error('❌ Target agent not found:', { newAgentForMove, salesAgents });
         throw new Error('فروشنده انتخاب شده یافت نشد');
       }
 
-      console.log('📝 Updating lead assignment', {
+      console.log('📝 Starting lead move operation', {
         enrollmentId: selectedLeadForMove,
         newAgentId: targetAgent.id,
         assignedById,
-        targetAgent
+        targetAgent: { id: targetAgent.id, name: targetAgent.name }
       });
 
       // Check if assignment exists first
+      console.log('🔍 Checking for existing assignment...');
       const { data: existingAssignment, error: fetchError } = await supabase
         .from('lead_assignments')
         .select('*')
@@ -846,11 +848,16 @@ const LeadDistributionSystem: React.FC = () => {
         throw fetchError;
       }
 
-      console.log('📋 Existing assignment:', existingAssignment);
+      console.log('📋 Existing assignment check result:', { 
+        existingAssignment, 
+        hasError: !!fetchError, 
+        errorCode: fetchError?.code 
+      });
 
       let result;
       if (existingAssignment) {
         // Update existing assignment
+        console.log('🔄 Updating existing assignment...');
         result = await supabase
           .from('lead_assignments')
           .update({
@@ -864,6 +871,7 @@ const LeadDistributionSystem: React.FC = () => {
           .select();
       } else {
         // Create new assignment
+        console.log('➕ Creating new assignment...');
         result = await supabase
           .from('lead_assignments')
           .insert({
@@ -878,9 +886,25 @@ const LeadDistributionSystem: React.FC = () => {
 
       const { data, error: updateError } = result;
 
-      console.log('✅ Update result', { data, updateError });
+      console.log('📊 Database operation result:', { 
+        operation: existingAssignment ? 'UPDATE' : 'INSERT',
+        data, 
+        updateError,
+        hasData: !!data,
+        dataLength: data?.length || 0
+      });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Database operation failed:', updateError);
+        throw updateError;
+      }
+
+      if (!data || data.length === 0) {
+        console.error('❌ No data returned from operation');
+        throw new Error('عملیات در دیتابیس انجام نشد');
+      }
+
+      console.log('✅ Lead move operation successful:', data[0]);
 
       toast({
         title: "موفق",
@@ -894,8 +918,9 @@ const LeadDistributionSystem: React.FC = () => {
       setNewAgentForMove('');
       
       // Refresh the enrollments list
-      console.log('🔄 Refreshing enrollments...');
+      console.log('🔄 Refreshing data after move...');
       await fetchEnrollments();
+      await fetchSalesAgents();
 
     } catch (error) {
       console.error('❌ Error moving lead:', error);
