@@ -877,59 +877,36 @@ const LeadDistributionSystem: React.FC = () => {
         targetAgent: { id: targetAgent.id, name: targetAgent.name }
       });
 
-      // Check if assignment exists first
-      console.log('🔍 Checking for existing assignment...');
-      const { data: existingAssignment, error: fetchError } = await supabase
+      // First, delete ALL existing assignments for this enrollment to prevent duplicates
+      console.log('🗑️ Deleting all existing assignments for enrollment...');
+      const { error: deleteError } = await supabase
         .from('lead_assignments')
-        .select('*')
-        .eq('enrollment_id', selectedLeadForMove)
-        .single();
+        .delete()
+        .eq('enrollment_id', selectedLeadForMove);
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
-        console.error('❌ Error checking existing assignment:', fetchError);
-        throw fetchError;
+      if (deleteError) {
+        console.error('❌ Error deleting existing assignments:', deleteError);
+        throw deleteError;
       }
 
-      console.log('📋 Existing assignment check result:', { 
-        existingAssignment, 
-        hasError: !!fetchError, 
-        errorCode: fetchError?.code 
-      });
+      console.log('✅ Deleted existing assignments, creating new assignment...');
 
-      let result;
-      if (existingAssignment) {
-        // Update existing assignment
-        console.log('🔄 Updating existing assignment...');
-        result = await supabase
-          .from('lead_assignments')
-          .update({
-            sales_agent_id: targetAgent.id,
-            assigned_by: assignedById,
-            assigned_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            assignment_type: 'distributed'
-          })
-          .eq('enrollment_id', selectedLeadForMove)
-          .select();
-      } else {
-        // Create new assignment
-        console.log('➕ Creating new assignment...');
-        result = await supabase
-          .from('lead_assignments')
-          .insert({
-            enrollment_id: selectedLeadForMove,
-            sales_agent_id: targetAgent.id,
-            assigned_by: assignedById,
-            assigned_at: new Date().toISOString(),
-            assignment_type: 'distributed'
-          })
-          .select();
-      }
+      // Create new assignment
+      const result = await supabase
+        .from('lead_assignments')
+        .insert({
+          enrollment_id: selectedLeadForMove,
+          sales_agent_id: targetAgent.id,
+          assigned_by: assignedById,
+          assigned_at: new Date().toISOString(),
+          assignment_type: 'moved'
+        })
+        .select();
 
       const { data, error: updateError } = result;
 
       console.log('📊 Database operation result:', { 
-        operation: existingAssignment ? 'UPDATE' : 'INSERT',
+        operation: 'INSERT_AFTER_DELETE',
         data, 
         updateError,
         hasData: !!data,
@@ -1013,20 +990,26 @@ const LeadDistributionSystem: React.FC = () => {
 
       for (const enrollmentId of selectedEnrollments) {
         try {
-          const { error: updateError } = await supabase
+          // First delete all existing assignments for this enrollment
+          await supabase
             .from('lead_assignments')
-            .update({
+            .delete()
+            .eq('enrollment_id', enrollmentId);
+
+          // Then create new assignment
+          const { error: insertError } = await supabase
+            .from('lead_assignments')
+            .insert({
+              enrollment_id: enrollmentId,
               sales_agent_id: targetAgent.id,
               assigned_by: assignedById,
               assigned_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
               assignment_type: 'moved'
-            })
-            .eq('enrollment_id', enrollmentId);
+            });
 
-          if (updateError) {
-            console.error('❌ Error moving lead:', updateError);
-            errors.push(`خطا در انتقال لید ${enrollmentId}: ${updateError.message}`);
+          if (insertError) {
+            console.error('❌ Error moving lead:', insertError);
+            errors.push(`خطا در انتقال لید ${enrollmentId}: ${insertError.message}`);
           } else {
             successCount++;
             console.log('✅ Successfully moved lead:', enrollmentId);
