@@ -1585,6 +1585,7 @@ const LeadDistributionSystem: React.FC = () => {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => {
+                                      console.log('🚨 MOVE BUTTON CLICKED (in table)!', { enrollmentId: enrollment.id, enrollmentName: enrollment.full_name });
                                       setSelectedLeadForMove(enrollment.id);
                                       setMoveLeadModal(true);
                                     }}
@@ -1654,7 +1655,10 @@ const LeadDistributionSystem: React.FC = () => {
                 انصراف
               </Button>
               <Button
-                onClick={moveLeadToNewAgent}
+                onClick={() => {
+                  console.log('🚨 MOVE BUTTON CLICKED!', { selectedLeadForMove, newAgentForMove, loading });
+                  moveLeadToNewAgent();
+                }}
                 disabled={!newAgentForMove || loading}
               >
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
