@@ -94,7 +94,7 @@ const LeadDistributionSystem: React.FC = () => {
   const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
   const [note, setNote] = useState<string>('');
   const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
-  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>('');
+  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>('all');
 
   // Deal creation state
   const [dealCourse, setDealCourse] = useState<string>('');
@@ -429,7 +429,7 @@ const LeadDistributionSystem: React.FC = () => {
       }
 
       // Apply sales agent filter
-      if (selectedAgentFilter && selectedAgentFilter !== '') {
+      if (selectedAgentFilter && selectedAgentFilter !== '' && selectedAgentFilter !== 'all') {
         const agentId = parseInt(selectedAgentFilter);
         filteredEnrollments = filteredEnrollments.filter(e => e.assigned_agent_id === agentId);
       }
@@ -1432,7 +1432,7 @@ const LeadDistributionSystem: React.FC = () => {
                       <SelectValue placeholder="همه فروشندگان" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">همه فروشندگان</SelectItem>
+                      <SelectItem value="all">همه فروشندگان</SelectItem>
                       {salesAgents.map(agent => (
                         <SelectItem key={agent.id} value={agent.id.toString()}>
                           {agent.name}
