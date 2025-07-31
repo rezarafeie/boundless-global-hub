@@ -1787,32 +1787,33 @@ const LeadDistributionSystem: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="border rounded-lg">
-                    <Table>
-                       <TableHeader>
-                         <TableRow>
-                           <TableHead className="w-12">
-                             <Checkbox
-                               checked={selectedEnrollments.length === enrollments.length}
-                               onCheckedChange={(checked) => {
-                                 if (checked) {
-                                   setSelectedEnrollments(enrollments.map(e => e.id));
-                                 } else {
-                                   setSelectedEnrollments([]);
-                                 }
-                               }}
-                             />
-                           </TableHead>
-                             <TableHead>نام</TableHead>
-                             <TableHead>ایمیل</TableHead>
-                             <TableHead>تلفن</TableHead>
-                             <TableHead>مبلغ</TableHead>
-                             <TableHead>وضعیت پرداخت</TableHead>
-                             <TableHead>CRM</TableHead>
-                             <TableHead>تاریخ ثبت‌نام</TableHead>
-                             <TableHead>فروشنده واگذاری</TableHead>
-                             <TableHead>وضعیت واگذاری</TableHead>
-                              <TableHead>عملیات</TableHead>
+                  <div className="border rounded-lg overflow-x-auto">
+                    <div className="min-w-[1200px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">
+                              <Checkbox
+                                checked={selectedEnrollments.length === enrollments.length}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedEnrollments(enrollments.map(e => e.id));
+                                  } else {
+                                    setSelectedEnrollments([]);
+                                  }
+                                }}
+                              />
+                            </TableHead>
+                              <TableHead className="min-w-[150px]">نام</TableHead>
+                              <TableHead className="min-w-[200px]">ایمیل</TableHead>
+                              <TableHead className="min-w-[120px]">تلفن</TableHead>
+                              <TableHead className="min-w-[100px]">مبلغ</TableHead>
+                              <TableHead className="min-w-[120px]">وضعیت پرداخت</TableHead>
+                              <TableHead className="min-w-[60px] text-center">CRM</TableHead>
+                              <TableHead className="min-w-[100px]">تاریخ ثبت‌نام</TableHead>
+                              <TableHead className="min-w-[150px]">فروشنده واگذاری</TableHead>
+                              <TableHead className="min-w-[120px]">وضعیت واگذاری</TableHead>
+                              <TableHead className="min-w-[120px]">عملیات</TableHead>
                            </TableRow>
                          </TableHeader>
                        <TableBody>
@@ -1831,9 +1832,9 @@ const LeadDistributionSystem: React.FC = () => {
                                />
                              </TableCell>
                                <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                               <TableCell>{enrollment.email}</TableCell>
-                               <TableCell>{enrollment.phone}</TableCell>
-                               <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
+                               <TableCell className="text-sm">{enrollment.email}</TableCell>
+                               <TableCell className="text-sm">{enrollment.phone}</TableCell>
+                               <TableCell className="text-sm">{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
                                <TableCell>
                                  <Badge variant={
                                    enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
@@ -1841,7 +1842,7 @@ const LeadDistributionSystem: React.FC = () => {
                                      : enrollment.payment_status === 'pending' 
                                        ? "secondary" 
                                        : "destructive"
-                                 }>
+                                 } className="text-xs">
                                    {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
                                      ? "پرداخت شده" 
                                      : enrollment.payment_status === 'pending' 
@@ -1858,20 +1859,20 @@ const LeadDistributionSystem: React.FC = () => {
                                    {getCRMStatusIcon(enrollment.crm_status)}
                                  </span>
                                </TableCell>
-                               <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
+                               <TableCell className="text-sm">{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
                                <TableCell>
                                  {enrollment.assigned_agent_name ? (
-                                   <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                   <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 text-xs">
                                      {enrollment.assigned_agent_name}
                                    </Badge>
                                  ) : (
-                                   <Badge variant="secondary">
+                                   <Badge variant="secondary" className="text-xs">
                                      واگذار نشده
                                    </Badge>
                                  )}
                                </TableCell>
                                 <TableCell>
-                                  <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
+                                  <Badge variant={enrollment.is_assigned ? "default" : "secondary"} className="text-xs">
                                     {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
                                   </Badge>
                                 </TableCell>
@@ -1888,10 +1889,10 @@ const LeadDistributionSystem: React.FC = () => {
                                          fetchUserDetails(enrollment.chat_user_id);
                                        }
                                      }}
-                                     className="text-xs"
+                                     className="text-xs px-2 py-1"
                                    >
                                      <Eye className="h-3 w-3 mr-1" />
-                                     جزئیات
+                                     <span className="hidden sm:inline">جزئیات</span>
                                    </Button>
                                    {enrollment.is_assigned && (
                                      <Button
@@ -1903,14 +1904,20 @@ const LeadDistributionSystem: React.FC = () => {
                                          setCurrentAgentForMove(enrollment.assigned_agent_name || '');
                                          setMoveLeadModal(true);
                                        }}
-                                       className="text-xs"
+                                       className="text-xs px-2 py-1"
                                      >
                                        <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                       انتقال
+                                       <span className="hidden sm:inline">انتقال</span>
                                      </Button>
                                    )}
                                  </div>
                                </TableCell>
+                            </TableRow>
+                         ))}
+                       </TableBody>
+                     </Table>
+                    </div>
+                  </div>
                            </TableRow>
                         ))}
                       </TableBody>
