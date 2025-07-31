@@ -529,7 +529,7 @@ const LeadDistributionSystem: React.FC = () => {
         if (crmStatus === 'none') {
           filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'none');
         } else if (crmStatus === 'has_records') {
-          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_records');
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_records' || e.crm_status === 'has_calls');
         } else if (crmStatus === 'has_calls') {
           filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_calls');
         }
