@@ -141,7 +141,7 @@ const LeadDistributionSystem: React.FC = () => {
       // Fetch agents with access to this course and reset percentages
       fetchCourseAgents(selectedCourse);
     }
-  }, [selectedCourse, dateFrom, dateTo]);
+  }, [selectedCourse, dateFrom, dateTo, paymentStatus, assignmentStatus, crmStatus]);
 
   // Fetch course price when deal course changes
   useEffect(() => {
@@ -228,11 +228,11 @@ const LeadDistributionSystem: React.FC = () => {
       })) || [];
       
       // For manual assignment, show all active sales agents
-      // For percentage distribution, show only agents assigned to this course
+      // For percentage distribution, show ALL sales agents (not just course-specific)
       setAvailableAgents(salesAgents); // Use all sales agents for manual assignment
       
-      // Initialize percentages for agents with course access only
-      setPercentages(courseAgents.map(agent => ({
+      // Initialize percentages for ALL sales agents (not just course-specific agents)
+      setPercentages(salesAgents.map(agent => ({
         agent_id: agent.id,
         agent_name: agent.name,
         percentage: 0
@@ -1130,7 +1130,7 @@ const LeadDistributionSystem: React.FC = () => {
             </TabsList>
 
             <TabsContent value="percentage" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <Label htmlFor="course">دوره</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -1180,6 +1180,37 @@ const LeadDistributionSystem: React.FC = () => {
                   </Select>
                 </div>
 
+                <div>
+                  <Label htmlFor="assignmentStatus">وضعیت واگذاری</Label>
+                  <Select value={assignmentStatus} onValueChange={setAssignmentStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه</SelectItem>
+                      <SelectItem value="assigned">واگذار شده</SelectItem>
+                      <SelectItem value="unassigned">واگذار نشده</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="crmStatus">وضعیت CRM</Label>
+                  <Select value={crmStatus} onValueChange={setCrmStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه</SelectItem>
+                      <SelectItem value="none">بدون یادداشت CRM ⚠️</SelectItem>
+                      <SelectItem value="has_records">دارای یادداشت CRM ✅</SelectItem>
+                      <SelectItem value="has_calls">دارای تماس تلفنی 📞</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 items-center">
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <Copy className="h-4 w-4" />
                   <Label htmlFor="removeDuplicates">حذف تکراری</Label>
