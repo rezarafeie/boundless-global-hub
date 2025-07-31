@@ -52,6 +52,8 @@ interface Enrollment {
   payment_status: string;
   created_at: string;
   is_assigned: boolean;
+  assigned_agent_id?: number | null;
+  assigned_agent_name?: string | null;
 }
 
 interface PercentageDistribution {
@@ -105,6 +107,11 @@ const LeadDistributionSystem: React.FC = () => {
   const [moveLeadModal, setMoveLeadModal] = useState(false);
   const [selectedLeadForMove, setSelectedLeadForMove] = useState<string>('');
   const [newAgentForMove, setNewAgentForMove] = useState<string>('');
+  const [currentAgentForMove, setCurrentAgentForMove] = useState<string>('');
+  
+  // Lead details modal state
+  const [leadDetailsModal, setLeadDetailsModal] = useState(false);
+  const [selectedLeadDetails, setSelectedLeadDetails] = useState<Enrollment | null>(null);
 
   useEffect(() => {
     fetchCourses();
@@ -343,6 +350,29 @@ const LeadDistributionSystem: React.FC = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
 
+      // Get lead assignments with sales agent info
+      const { data: assignmentsWithAgents, error: assignmentWithAgentsError } = await supabase
+        .from('lead_assignments')
+        .select(`
+          enrollment_id,
+          sales_agents!inner(
+            id,
+            chat_users!inner(name)
+          )
+        `)
+        .in('enrollment_id', data?.map(e => e.id) || []);
+
+      if (assignmentWithAgentsError) throw assignmentWithAgentsError;
+
+      // Create assignment map for easy lookup
+      const assignmentMap = new Map();
+      assignmentsWithAgents?.forEach(assignment => {
+        assignmentMap.set(assignment.enrollment_id, {
+          agentId: assignment.sales_agents.id,
+          agentName: assignment.sales_agents.chat_users.name
+        });
+      });
+
       // Conditionally remove duplicates by email and phone (keep the latest one)
       let processedData = data || [];
       
@@ -361,28 +391,33 @@ const LeadDistributionSystem: React.FC = () => {
         processedData = Array.from(uniqueEnrollments.values());
       }
 
-      // Check which ones are assigned
+      // Check which ones are assigned (simplified check)
       const enrollmentIds = processedData.map(e => e.id);
-      const { data: assignments, error: assignmentError } = await supabase
+      const { data: assignmentCheck, error: assignmentCheckError } = await supabase
         .from('lead_assignments')
         .select('enrollment_id')
         .in('enrollment_id', enrollmentIds);
 
-      if (assignmentError) throw assignmentError;
+      if (assignmentCheckError) throw assignmentCheckError;
 
-      const assignedSet = new Set(assignments?.map(a => a.enrollment_id) || []);
+      const assignedSet = new Set(assignmentCheck?.map(a => a.enrollment_id) || []);
 
-      const formattedEnrollments = processedData.map(enrollment => ({
-        id: enrollment.id,
-        full_name: enrollment.full_name,
-        email: enrollment.email,
-        phone: enrollment.phone,
-        course_title: (enrollment as any).courses.title,
-        payment_amount: enrollment.payment_amount,
-        payment_status: enrollment.payment_status,
-        created_at: enrollment.created_at,
-        is_assigned: assignedSet.has(enrollment.id)
-      }));
+      const formattedEnrollments = processedData.map(enrollment => {
+        const assignmentInfo = assignmentMap.get(enrollment.id);
+        return {
+          id: enrollment.id,
+          full_name: enrollment.full_name,
+          email: enrollment.email,
+          phone: enrollment.phone,
+          course_title: (enrollment as any).courses.title,
+          payment_amount: enrollment.payment_amount,
+          payment_status: enrollment.payment_status,
+          created_at: enrollment.created_at,
+          is_assigned: assignedSet.has(enrollment.id),
+          assigned_agent_id: assignmentInfo?.agentId || null,
+          assigned_agent_name: assignmentInfo?.agentName || null
+        };
+      });
 
       // Apply assignment status filter
       let filteredEnrollments = formattedEnrollments;
@@ -1536,12 +1571,13 @@ const LeadDistributionSystem: React.FC = () => {
                                }}
                              />
                            </TableHead>
-                           <TableHead>نام</TableHead>
-                           <TableHead>ایمیل</TableHead>
-                           <TableHead>تلفن</TableHead>
-                           <TableHead>مبلغ</TableHead>
-                           <TableHead>وضعیت پرداخت</TableHead>
-                           <TableHead>تاریخ ثبت‌نام</TableHead>
+                            <TableHead>نام</TableHead>
+                            <TableHead>ایمیل</TableHead>
+                            <TableHead>تلفن</TableHead>
+                            <TableHead>مبلغ</TableHead>
+                            <TableHead>وضعیت پرداخت</TableHead>
+                            <TableHead>تاریخ ثبت‌نام</TableHead>
+                            <TableHead>فروشنده واگذاری</TableHead>
                             <TableHead>وضعیت واگذاری</TableHead>
                             <TableHead>عملیات</TableHead>
                           </TableRow>
@@ -1580,27 +1616,53 @@ const LeadDistributionSystem: React.FC = () => {
                                      : "لغو شده"}
                                </Badge>
                              </TableCell>
-                             <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
+                              <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
                               <TableCell>
-                                <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
-                                  {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
-                                </Badge>
+                                {enrollment.assigned_agent_name ? (
+                                  <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                    {enrollment.assigned_agent_name}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    واگذار نشده
+                                  </Badge>
+                                )}
                               </TableCell>
+                               <TableCell>
+                                 <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
+                                   {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
+                                 </Badge>
+                               </TableCell>
                               <TableCell>
                                 {enrollment.is_assigned && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      console.log('🚨 MOVE BUTTON CLICKED (in table)!', { enrollmentId: enrollment.id, enrollmentName: enrollment.full_name });
-                                      setSelectedLeadForMove(enrollment.id);
-                                      setMoveLeadModal(true);
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                    انتقال
-                                  </Button>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedLeadDetails(enrollment);
+                                        setLeadDetailsModal(true);
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      جزئیات
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        console.log('🚨 MOVE BUTTON CLICKED (in table)!', { enrollmentId: enrollment.id, enrollmentName: enrollment.full_name });
+                                        setSelectedLeadForMove(enrollment.id);
+                                        setCurrentAgentForMove(enrollment.assigned_agent_name || '');
+                                        setMoveLeadModal(true);
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                      انتقال
+                                    </Button>
+                                  </div>
                                 )}
                               </TableCell>
                            </TableRow>
@@ -1635,6 +1697,14 @@ const LeadDistributionSystem: React.FC = () => {
             <DialogTitle>انتقال لید به فروشنده جدید</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Show current agent */}
+            {currentAgentForMove && (
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-sm font-medium">فروشنده فعلی:</Label>
+                <p className="text-sm text-muted-foreground mt-1">{currentAgentForMove}</p>
+              </div>
+            )}
+            
             <div>
               <Label htmlFor="newAgent">انتخاب فروشنده جدید</Label>
               <Select value={newAgentForMove} onValueChange={setNewAgentForMove}>
@@ -1642,7 +1712,9 @@ const LeadDistributionSystem: React.FC = () => {
                   <SelectValue placeholder="انتخاب فروشنده" />
                 </SelectTrigger>
                 <SelectContent>
-                  {salesAgents.map(agent => (
+                  {salesAgents
+                    .filter(agent => agent.name !== currentAgentForMove) // Filter out current agent
+                    .map(agent => (
                     <SelectItem key={agent.id} value={agent.id.toString()}>
                       {agent.name}
                     </SelectItem>
@@ -1657,6 +1729,7 @@ const LeadDistributionSystem: React.FC = () => {
                   setMoveLeadModal(false);
                   setSelectedLeadForMove('');
                   setNewAgentForMove('');
+                  setCurrentAgentForMove('');
                 }}
               >
                 انصراف
@@ -1673,6 +1746,76 @@ const LeadDistributionSystem: React.FC = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lead Details Modal */}
+      <Dialog open={leadDetailsModal} onOpenChange={setLeadDetailsModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>جزئیات لید</DialogTitle>
+          </DialogHeader>
+          {selectedLeadDetails && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">نام:</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.full_name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">ایمیل:</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.email}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">تلفن:</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.phone}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">مبلغ پرداخت:</Label>
+                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.payment_amount.toLocaleString()} تومان</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">وضعیت پرداخت:</Label>
+                  <Badge variant={
+                    selectedLeadDetails.payment_status === 'success' || selectedLeadDetails.payment_status === 'completed' 
+                      ? "default" 
+                      : selectedLeadDetails.payment_status === 'pending' 
+                        ? "secondary" 
+                        : "destructive"
+                  }>
+                    {selectedLeadDetails.payment_status === 'success' || selectedLeadDetails.payment_status === 'completed' 
+                      ? "پرداخت شده" 
+                      : selectedLeadDetails.payment_status === 'pending' 
+                        ? "در انتظار پرداخت" 
+                        : "لغو شده"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">تاریخ ثبت‌نام:</Label>
+                  <p className="text-sm text-muted-foreground">{format(new Date(selectedLeadDetails.created_at), 'yyyy/MM/dd HH:mm')}</p>
+                </div>
+              </div>
+              
+              {selectedLeadDetails.assigned_agent_name && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <Label className="text-sm font-medium">فروشنده واگذاری:</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{selectedLeadDetails.assigned_agent_name}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setLeadDetailsModal(false);
+                    setSelectedLeadDetails(null);
+                  }}
+                >
+                  بستن
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
