@@ -77,9 +77,15 @@ const LeadDistributionSystem: React.FC = () => {
   // State
   const [courses, setCourses] = useState<Course[]>([]);
   const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
+  const [selectedCourse, setSelectedCourse] = useState<string>(
+    localStorage.getItem('leadDistribution_selectedCourse') || ''
+  );
+  const [dateFrom, setDateFrom] = useState<string>(
+    localStorage.getItem('leadDistribution_dateFrom') || ''
+  );
+  const [dateTo, setDateTo] = useState<string>(
+    localStorage.getItem('leadDistribution_dateTo') || ''
+  );
   const [percentages, setPercentages] = useState<PercentageDistribution[]>([]);
   const [unassignedCount, setUnassignedCount] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -92,12 +98,55 @@ const LeadDistributionSystem: React.FC = () => {
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [selectedAgentForBulk, setSelectedAgentForBulk] = useState<string>('');
   const [manualLoading, setManualLoading] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<string>('all');
-  const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
-  const [crmStatus, setCrmStatus] = useState<string>('all');
+  const [paymentStatus, setPaymentStatus] = useState<string>(
+    localStorage.getItem('leadDistribution_paymentStatus') || 'all'
+  );
+  const [assignmentStatus, setAssignmentStatus] = useState<string>(
+    localStorage.getItem('leadDistribution_assignmentStatus') || 'all'
+  );
+  const [crmStatus, setCrmStatus] = useState<string>(
+    localStorage.getItem('leadDistribution_crmStatus') || 'all'
+  );
   const [note, setNote] = useState<string>('');
-  const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
-  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>('all');
+  const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(
+    localStorage.getItem('leadDistribution_removeDuplicates') === 'true' || true
+  );
+  const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>(
+    localStorage.getItem('leadDistribution_selectedAgentFilter') || 'all'
+  );
+
+  // Save filters to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_selectedCourse', selectedCourse);
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_dateFrom', dateFrom);
+  }, [dateFrom]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_dateTo', dateTo);
+  }, [dateTo]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_paymentStatus', paymentStatus);
+  }, [paymentStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_assignmentStatus', assignmentStatus);
+  }, [assignmentStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_crmStatus', crmStatus);
+  }, [crmStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_removeDuplicates', removeDuplicates.toString());
+  }, [removeDuplicates]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_selectedAgentFilter', selectedAgentFilter);
+  }, [selectedAgentFilter]);
 
   // Function to get CRM status indicator
   const getCRMStatusIcon = (crmStatus?: string) => {
@@ -1588,18 +1637,6 @@ const LeadDistributionSystem: React.FC = () => {
                   {manualLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   <Filter className="h-4 w-4 mr-2" />
                   نمایش لیست
-                </Button>
-                
-                <Button
-                  onClick={() => {
-                    setCrmStatus('none');
-                    setTimeout(() => fetchEnrollments(), 100);
-                  }}
-                  disabled={!selectedCourse || manualLoading}
-                  variant="destructive"
-                  size="sm"
-                >
-                  ⚠️ بدون CRM
                 </Button>
                 
                 <div className="flex items-center gap-2">
