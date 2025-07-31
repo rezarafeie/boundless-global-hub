@@ -24,12 +24,24 @@ import {
   Eye,
   UserCheck,
   Copy,
-  ArrowRightLeft
+  ArrowRightLeft,
+  User,
+  TrendingUp,
+  BookOpen,
+  Key,
+  GraduationCap,
+  MessageSquare,
+  Settings,
+  Phone
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
+import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
+import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
+import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 
 interface Course {
   id: string;
@@ -162,6 +174,29 @@ const LeadDistributionSystem: React.FC = () => {
     }
   };
 
+  const fetchUserDetails = async (userId: number) => {
+    setLoadingUserDetails(true);
+    try {
+      const { data: userData, error } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      setSelectedLeadUser(userData);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      toast({
+        title: "خطا",
+        description: "امکان بارگذاری اطلاعات کاربر وجود ندارد",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingUserDetails(false);
+    }
+  };
+
   // Deal creation state
   const [dealCourse, setDealCourse] = useState<string>('');
   const [dealPrice, setDealPrice] = useState<string>('');
@@ -179,6 +214,9 @@ const LeadDistributionSystem: React.FC = () => {
   // Lead details modal state
   const [leadDetailsModal, setLeadDetailsModal] = useState(false);
   const [selectedLeadDetails, setSelectedLeadDetails] = useState<Enrollment | null>(null);
+  const [selectedLeadUserId, setSelectedLeadUserId] = useState<number | null>(null);
+  const [selectedLeadUser, setSelectedLeadUser] = useState<any | null>(null);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -1774,101 +1812,105 @@ const LeadDistributionSystem: React.FC = () => {
                              <TableHead>تاریخ ثبت‌نام</TableHead>
                              <TableHead>فروشنده واگذاری</TableHead>
                              <TableHead>وضعیت واگذاری</TableHead>
-                             <TableHead>عملیات</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                      <TableBody>
-                        {enrollments.map((enrollment) => (
-                          <TableRow key={enrollment.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedEnrollments.includes(enrollment.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedEnrollments(prev => [...prev, enrollment.id]);
-                                  } else {
-                                    setSelectedEnrollments(prev => prev.filter(id => id !== enrollment.id));
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                              <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                              <TableCell>{enrollment.email}</TableCell>
-                              <TableCell>{enrollment.phone}</TableCell>
-                              <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
-                              <TableCell>
-                                <Badge variant={
-                                  enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
-                                    ? "default" 
-                                    : enrollment.payment_status === 'pending' 
-                                      ? "secondary" 
-                                      : "destructive"
-                                }>
-                                  {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
-                                    ? "پرداخت شده" 
-                                    : enrollment.payment_status === 'pending' 
-                                      ? "در انتظار پرداخت" 
-                                      : "لغو شده"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center text-lg">
-                                <span title={
-                                  enrollment.crm_status === 'has_calls' ? 'دارای تماس تلفنی' :
-                                  enrollment.crm_status === 'has_records' ? 'دارای یادداشت CRM' :
-                                  'بدون یادداشت CRM'
-                                }>
-                                  {getCRMStatusIcon(enrollment.crm_status)}
-                                </span>
-                              </TableCell>
-                              <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
-                              <TableCell>
-                                {enrollment.assigned_agent_name ? (
-                                  <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
-                                    {enrollment.assigned_agent_name}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="secondary">
-                                    واگذار نشده
-                                  </Badge>
-                                )}
-                              </TableCell>
+                              <TableHead>عملیات</TableHead>
+                           </TableRow>
+                         </TableHeader>
+                       <TableBody>
+                         {enrollments.map((enrollment) => (
+                           <TableRow key={enrollment.id}>
+                             <TableCell>
+                               <Checkbox
+                                 checked={selectedEnrollments.includes(enrollment.id)}
+                                 onCheckedChange={(checked) => {
+                                   if (checked) {
+                                     setSelectedEnrollments(prev => [...prev, enrollment.id]);
+                                   } else {
+                                     setSelectedEnrollments(prev => prev.filter(id => id !== enrollment.id));
+                                   }
+                                 }}
+                               />
+                             </TableCell>
+                               <TableCell className="font-medium">{enrollment.full_name}</TableCell>
+                               <TableCell>{enrollment.email}</TableCell>
+                               <TableCell>{enrollment.phone}</TableCell>
+                               <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
                                <TableCell>
-                                 <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
-                                   {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
+                                 <Badge variant={
+                                   enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                     ? "default" 
+                                     : enrollment.payment_status === 'pending' 
+                                       ? "secondary" 
+                                       : "destructive"
+                                 }>
+                                   {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
+                                     ? "پرداخت شده" 
+                                     : enrollment.payment_status === 'pending' 
+                                       ? "در انتظار پرداخت" 
+                                       : "لغو شده"}
                                  </Badge>
                                </TableCell>
-                              <TableCell>
-                                {enrollment.is_assigned && (
-                                  <div className="flex gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedLeadDetails(enrollment);
-                                        setLeadDetailsModal(true);
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      جزئیات
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => {
-                                        console.log('🚨 MOVE BUTTON CLICKED (in table)!', { enrollmentId: enrollment.id, enrollmentName: enrollment.full_name });
-                                        setSelectedLeadForMove(enrollment.id);
-                                        setCurrentAgentForMove(enrollment.assigned_agent_name || '');
-                                        setMoveLeadModal(true);
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                      انتقال
-                                    </Button>
-                                  </div>
-                                )}
-                              </TableCell>
+                               <TableCell className="text-center text-lg">
+                                 <span title={
+                                   enrollment.crm_status === 'has_calls' ? 'دارای تماس تلفنی' :
+                                   enrollment.crm_status === 'has_records' ? 'دارای یادداشت CRM' :
+                                   'بدون یادداشت CRM'
+                                 }>
+                                   {getCRMStatusIcon(enrollment.crm_status)}
+                                 </span>
+                               </TableCell>
+                               <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
+                               <TableCell>
+                                 {enrollment.assigned_agent_name ? (
+                                   <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                     {enrollment.assigned_agent_name}
+                                   </Badge>
+                                 ) : (
+                                   <Badge variant="secondary">
+                                     واگذار نشده
+                                   </Badge>
+                                 )}
+                               </TableCell>
+                                <TableCell>
+                                  <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
+                                    {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
+                                  </Badge>
+                                </TableCell>
+                               <TableCell>
+                                 <div className="flex gap-1">
+                                   <Button
+                                     size="sm"
+                                     variant="outline"
+                                     onClick={() => {
+                                       setSelectedLeadDetails(enrollment);
+                                       setSelectedLeadUserId(enrollment.chat_user_id);
+                                       setLeadDetailsModal(true);
+                                       if (enrollment.chat_user_id) {
+                                         fetchUserDetails(enrollment.chat_user_id);
+                                       }
+                                     }}
+                                     className="text-xs"
+                                   >
+                                     <Eye className="h-3 w-3 mr-1" />
+                                     جزئیات
+                                   </Button>
+                                   {enrollment.is_assigned && (
+                                     <Button
+                                       size="sm"
+                                       variant="outline"
+                                       onClick={() => {
+                                         console.log('🚨 MOVE BUTTON CLICKED (in table)!', { enrollmentId: enrollment.id, enrollmentName: enrollment.full_name });
+                                         setSelectedLeadForMove(enrollment.id);
+                                         setCurrentAgentForMove(enrollment.assigned_agent_name || '');
+                                         setMoveLeadModal(true);
+                                       }}
+                                       className="text-xs"
+                                     >
+                                       <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                       انتقال
+                                     </Button>
+                                   )}
+                                 </div>
+                               </TableCell>
                            </TableRow>
                         ))}
                       </TableBody>
@@ -1955,64 +1997,156 @@ const LeadDistributionSystem: React.FC = () => {
 
       {/* Lead Details Modal */}
       <Dialog open={leadDetailsModal} onOpenChange={setLeadDetailsModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>جزئیات لید</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              جزئیات لید - {selectedLeadDetails?.full_name}
+            </DialogTitle>
           </DialogHeader>
-          {selectedLeadDetails && (
+          {selectedLeadDetails && selectedLeadUserId && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">نام:</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.full_name}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">ایمیل:</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">تلفن:</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.phone}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">مبلغ پرداخت:</Label>
-                  <p className="text-sm text-muted-foreground">{selectedLeadDetails.payment_amount.toLocaleString()} تومان</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">وضعیت پرداخت:</Label>
-                  <Badge variant={
-                    selectedLeadDetails.payment_status === 'success' || selectedLeadDetails.payment_status === 'completed' 
-                      ? "default" 
-                      : selectedLeadDetails.payment_status === 'pending' 
-                        ? "secondary" 
-                        : "destructive"
-                  }>
-                    {selectedLeadDetails.payment_status === 'success' || selectedLeadDetails.payment_status === 'completed' 
-                      ? "پرداخت شده" 
-                      : selectedLeadDetails.payment_status === 'pending' 
-                        ? "در انتظار پرداخت" 
-                        : "لغو شده"}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">تاریخ ثبت‌نام:</Label>
-                  <p className="text-sm text-muted-foreground">{format(new Date(selectedLeadDetails.created_at), 'yyyy/MM/dd HH:mm')}</p>
-                </div>
-              </div>
+              {/* Basic Info Card */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">نام:</Label>
+                      <p className="text-sm text-muted-foreground">{selectedLeadDetails.full_name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">ایمیل:</Label>
+                      <p className="text-sm text-muted-foreground">{selectedLeadDetails.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">تلفن:</Label>
+                      <p className="text-sm text-muted-foreground">{selectedLeadDetails.phone}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">مبلغ پرداخت:</Label>
+                      <p className="text-sm text-muted-foreground">{selectedLeadDetails.payment_amount.toLocaleString()} تومان</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">وضعیت پرداخت:</Label>
+                      <Badge variant={
+                        selectedLeadDetails.payment_status === 'success' || selectedLeadDetails.payment_status === 'completed' 
+                          ? "default" 
+                          : selectedLeadDetails.payment_status === 'pending' 
+                            ? "secondary" 
+                            : "destructive"
+                      }>
+                        {selectedLeadDetails.payment_status === 'success' || selectedLeadDetails.payment_status === 'completed' 
+                          ? "پرداخت شده" 
+                          : selectedLeadDetails.payment_status === 'pending' 
+                            ? "در انتظار پرداخت" 
+                            : "لغو شده"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">تاریخ ثبت‌نام:</Label>
+                      <p className="text-sm text-muted-foreground">{format(new Date(selectedLeadDetails.created_at), 'yyyy/MM/dd HH:mm')}</p>
+                    </div>
+                    {selectedLeadDetails.assigned_agent_name && (
+                      <div className="col-span-2">
+                        <Label className="text-sm font-medium">فروشنده واگذاری:</Label>
+                        <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 mt-1">
+                          {selectedLeadDetails.assigned_agent_name}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Detailed Tabs */}
+              <Tabs defaultValue="overview" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 h-auto">
+                  <TabsTrigger value="overview" className="flex items-center gap-1 text-xs md:text-sm">
+                    <User className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">اطلاعات کلی</span>
+                    <span className="sm:hidden">کلی</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="activity" className="flex items-center gap-1 text-xs md:text-sm">
+                    <TrendingUp className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">فعالیت</span>
+                    <span className="sm:hidden">فعالیت</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="enrollments" className="flex items-center gap-1 text-xs md:text-sm">
+                    <BookOpen className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">ثبت‌نام‌ها</span>
+                    <span className="sm:hidden">ثبت‌نام</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="licenses" className="flex items-center gap-1 text-xs md:text-sm">
+                    <Key className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">لایسنس‌ها</span>
+                    <span className="sm:hidden">لایسنس</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="crm" className="flex items-center gap-1 text-xs md:text-sm">
+                    <Phone className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">CRM</span>
+                    <span className="sm:hidden">CRM</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="space-y-4">
+                  {loadingUserDetails ? (
+                    <div className="text-center py-8">در حال بارگذاری...</div>
+                  ) : selectedLeadUser ? (
+                    <UserOverview user={selectedLeadUser} />
+                  ) : (
+                    <div className="text-center py-8">خطا در بارگذاری اطلاعات کاربر</div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="activity" className="space-y-4">
+                  {selectedLeadUserId && (
+                    <UserActivity userId={selectedLeadUserId} />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="enrollments" className="space-y-4">
+                  {selectedLeadUserId && (
+                    <UserEnrollments userId={selectedLeadUserId} />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="licenses" className="space-y-4">
+                  {selectedLeadUserId && selectedLeadDetails && (
+                    <UserLicenses userId={selectedLeadUserId} userPhone={selectedLeadDetails.phone} />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="crm" className="space-y-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <Phone className="w-5 h-5" />
+                      یادداشت‌های CRM و تماس‌ها
+                    </h3>
+                    {/* This will be handled by CRM component, but for now show basic enrollment info */}
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <p><strong>ID ثبت‌نام:</strong> {selectedLeadDetails.id}</p>
+                          <p><strong>ID کاربر چت:</strong> {selectedLeadUserId}</p>
+                          <p><strong>وضعیت CRM:</strong> {
+                            selectedLeadDetails.crm_status === 'has_calls' ? '📞 دارای تماس تلفنی' :
+                            selectedLeadDetails.crm_status === 'has_records' ? '📝 دارای یادداشت CRM' :
+                            '❌ بدون یادداشت CRM'
+                          }</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+              </Tabs>
               
-              {selectedLeadDetails.assigned_agent_name && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <Label className="text-sm font-medium">فروشنده واگذاری:</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{selectedLeadDetails.assigned_agent_name}</p>
-                </div>
-              )}
-              
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setLeadDetailsModal(false);
                     setSelectedLeadDetails(null);
+                    setSelectedLeadUserId(null);
                   }}
                 >
                   بستن
