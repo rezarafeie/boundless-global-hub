@@ -1179,7 +1179,7 @@ const LeadDistributionSystem: React.FC = () => {
             </TabsList>
 
             <TabsContent value="percentage" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <div>
                   <Label htmlFor="course">دوره</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -1254,6 +1254,23 @@ const LeadDistributionSystem: React.FC = () => {
                       <SelectItem value="none">بدون یادداشت CRM ⚠️</SelectItem>
                       <SelectItem value="has_records">دارای یادداشت CRM ✅</SelectItem>
                       <SelectItem value="has_calls">دارای تماس تلفنی 📞</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="salesAgentFilter">فیلتر بر اساس فروشنده</Label>
+                  <Select value={selectedAgentFilter} onValueChange={setSelectedAgentFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="همه فروشندگان" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه فروشندگان</SelectItem>
+                      {salesAgents.map(agent => (
+                        <SelectItem key={agent.id} value={agent.id.toString()}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
