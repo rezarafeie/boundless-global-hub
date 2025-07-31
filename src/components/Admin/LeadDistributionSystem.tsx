@@ -791,7 +791,8 @@ const LeadDistributionSystem: React.FC = () => {
     console.log('moveLeadToNewAgent called', {
       selectedLeadForMove,
       newAgentForMove,
-      userId: user?.id
+      userId: user?.id,
+      salesAgents: salesAgents.map(a => ({ id: a.id, name: a.name }))
     });
 
     if (!selectedLeadForMove || !newAgentForMove || !user?.id) {
@@ -808,34 +809,39 @@ const LeadDistributionSystem: React.FC = () => {
     try {
       const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
       
+      // First get the sales agent record based on user_id instead of ID
+      const targetAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
+      if (!targetAgent) {
+        throw new Error('فروشنده انتخاب شده یافت نشد');
+      }
+
       console.log('Updating lead assignment', {
         enrollmentId: selectedLeadForMove,
-        newAgentId: parseInt(newAgentForMove),
-        assignedById
+        newAgentId: targetAgent.id,
+        assignedById,
+        targetAgent
       });
 
       // Update the lead assignment to new agent
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('lead_assignments')
         .update({
-          sales_agent_id: parseInt(newAgentForMove),
+          sales_agent_id: targetAgent.id,
           assigned_by: assignedById,
           assigned_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           assignment_type: 'moved'
         })
-        .eq('enrollment_id', selectedLeadForMove);
+        .eq('enrollment_id', selectedLeadForMove)
+        .select();
 
-      console.log('Update result', { updateError });
+      console.log('Update result', { data, updateError });
 
       if (updateError) throw updateError;
 
-      // Get agent names for logging
-      const currentAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
-      
       toast({
         title: "موفق",
-        description: `لید با موفقیت به ${currentAgent?.name} منتقل شد`,
+        description: `لید با موفقیت به ${targetAgent.name} منتقل شد`,
         variant: "default"
       });
 
@@ -845,7 +851,7 @@ const LeadDistributionSystem: React.FC = () => {
       setNewAgentForMove('');
       
       // Refresh the enrollments list
-      fetchEnrollments();
+      await fetchEnrollments();
 
     } catch (error) {
       console.error('Error moving lead:', error);
