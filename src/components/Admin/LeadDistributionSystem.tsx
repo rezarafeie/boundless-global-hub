@@ -858,7 +858,7 @@ const LeadDistributionSystem: React.FC = () => {
             assigned_by: assignedById,
             assigned_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            assignment_type: 'moved'
+            assignment_type: 'distributed'
           })
           .eq('enrollment_id', selectedLeadForMove)
           .select();
@@ -871,7 +871,7 @@ const LeadDistributionSystem: React.FC = () => {
             sales_agent_id: targetAgent.id,
             assigned_by: assignedById,
             assigned_at: new Date().toISOString(),
-            assignment_type: 'moved'
+            assignment_type: 'distributed'
           })
           .select();
       }
