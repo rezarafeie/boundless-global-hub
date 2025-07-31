@@ -59,11 +59,11 @@ interface Enrollment {
   full_name: string;
   email: string;
   phone: string;
+  course_title: string;
   payment_amount: number;
   payment_status: string;
   created_at: string;
-  course_id: string;
-  is_assigned?: boolean;
+  is_assigned: boolean;
   assigned_agent_id?: number | null;
   assigned_agent_name?: string | null;
   chat_user_id?: number | null;
@@ -77,78 +77,81 @@ interface PercentageDistribution {
   percentage: number;
 }
 
-interface PreviewData {
+interface DistributionPreview {
   agent_name: string;
-  percentage: number;
   count: number;
+  percentage: number;
 }
 
 const LeadDistributionSystem: React.FC = () => {
-  const { toast } = useToast();
   const { user } = useAuth();
-  
-  // Basic state
-  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  // State
   const [courses, setCourses] = useState<Course[]>([]);
   const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>(
+    localStorage.getItem('leadDistribution_selectedCourse') || ''
+  );
+  const [dateFrom, setDateFrom] = useState<string>(
+    localStorage.getItem('leadDistribution_dateFrom') || ''
+  );
+  const [dateTo, setDateTo] = useState<string>(
+    localStorage.getItem('leadDistribution_dateTo') || ''
+  );
+  const [percentages, setPercentages] = useState<PercentageDistribution[]>([]);
+  const [unassignedCount, setUnassignedCount] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<DistributionPreview[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Manual assignment state
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  
-  // Filters
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
-  const [paymentStatus, setPaymentStatus] = useState<string>('paid');
-  const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
+  const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<string>('');
+  const [selectedAgentForBulk, setSelectedAgentForBulk] = useState<string>('');
+  const [manualLoading, setManualLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string>(
+    localStorage.getItem('leadDistribution_paymentStatus') || 'all'
+  );
+  const [assignmentStatus, setAssignmentStatus] = useState<string>(
+    localStorage.getItem('leadDistribution_assignmentStatus') || 'all'
+  );
+  const [crmStatus, setCrmStatus] = useState<string>(
+    localStorage.getItem('leadDistribution_crmStatus') || 'all'
+  );
+  const [note, setNote] = useState<string>('');
+  const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(
+    localStorage.getItem('leadDistribution_removeDuplicates') === 'true' || true
+  );
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>(
     localStorage.getItem('leadDistribution_selectedAgentFilter') || 'all'
   );
-  const [crmFilter, setCrmFilter] = useState<string>('all');
-  const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(
-    localStorage.getItem('leadDistribution_removeDuplicates') === 'true'
-  );
-  
-  // Percentage distribution
-  const [percentages, setPercentages] = useState<PercentageDistribution[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<PreviewData[]>([]);
-  const [isDistributionEnabled, setIsDistributionEnabled] = useState(false);
-  
-  // Manual assignment
-  const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
-  const [selectedAgentForBulk, setSelectedAgentForBulk] = useState<string>('');
-  const [note, setNote] = useState<string>('');
-  
-  // Statistics
-  const [totalCount, setTotalCount] = useState(0);
-  const [assignedCount, setAssignedCount] = useState(0);
-  const [unassignedCount, setUnassignedCount] = useState(0);
-  
-  // Available agents (filtered based on course)
-  const [availableAgents, setAvailableAgents] = useState<SalesAgent[]>([]);
 
-  // Move lead state
-  const [moveLeadModal, setMoveLeadModal] = useState(false);
-  const [selectedLeadForMove, setSelectedLeadForMove] = useState<string>('');
-  const [newAgentForMove, setNewAgentForMove] = useState<string>('');
-  const [currentAgentForMove, setCurrentAgentForMove] = useState<string>('');
-  
-  // Lead details modal state
-  const [leadDetailsModal, setLeadDetailsModal] = useState(false);
-  const [selectedLeadDetails, setSelectedLeadDetails] = useState<Enrollment | null>(null);
-  const [selectedLeadUserId, setSelectedLeadUserId] = useState<number | null>(null);
-  const [selectedLeadUser, setSelectedLeadUser] = useState<any | null>(null);
-  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  // Save filters to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_selectedCourse', selectedCourse);
+  }, [selectedCourse]);
 
   useEffect(() => {
-    fetchCourses();
-    fetchSalesAgents();
-  }, []);
+    localStorage.setItem('leadDistribution_dateFrom', dateFrom);
+  }, [dateFrom]);
 
   useEffect(() => {
-    if (selectedCourse) {
-      fetchEnrollments();
-    }
-  }, [selectedCourse, dateFrom, dateTo, paymentStatus, assignmentStatus, selectedAgentFilter, crmFilter, removeDuplicates]);
+    localStorage.setItem('leadDistribution_dateTo', dateTo);
+  }, [dateTo]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_paymentStatus', paymentStatus);
+  }, [paymentStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_assignmentStatus', assignmentStatus);
+  }, [assignmentStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('leadDistribution_crmStatus', crmStatus);
+  }, [crmStatus]);
 
   useEffect(() => {
     localStorage.setItem('leadDistribution_removeDuplicates', removeDuplicates.toString());
@@ -194,6 +197,47 @@ const LeadDistributionSystem: React.FC = () => {
     }
   };
 
+  // Deal creation state
+  const [dealCourse, setDealCourse] = useState<string>('');
+  const [dealPrice, setDealPrice] = useState<string>('');
+  const [createDeals, setCreateDeals] = useState<boolean>(true);
+  
+  // Available agents for manual assignment (course-filtered)
+  const [availableAgents, setAvailableAgents] = useState<SalesAgent[]>([]);
+
+  // Move lead state
+  const [moveLeadModal, setMoveLeadModal] = useState(false);
+  const [selectedLeadForMove, setSelectedLeadForMove] = useState<string>('');
+  const [newAgentForMove, setNewAgentForMove] = useState<string>('');
+  const [currentAgentForMove, setCurrentAgentForMove] = useState<string>('');
+  
+  // Lead details modal state
+  const [leadDetailsModal, setLeadDetailsModal] = useState(false);
+  const [selectedLeadDetails, setSelectedLeadDetails] = useState<Enrollment | null>(null);
+  const [selectedLeadUserId, setSelectedLeadUserId] = useState<number | null>(null);
+  const [selectedLeadUser, setSelectedLeadUser] = useState<any | null>(null);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+
+  useEffect(() => {
+    fetchCourses();
+    fetchSalesAgents();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchUnassignedCount();
+      // Fetch agents with access to this course and reset percentages
+      fetchCourseAgents(selectedCourse);
+    }
+  }, [selectedCourse, dateFrom, dateTo, paymentStatus, assignmentStatus, crmStatus]);
+
+  // Fetch course price when deal course changes
+  useEffect(() => {
+    if (dealCourse && createDeals) {
+      fetchCoursePrice(dealCourse);
+    }
+  }, [dealCourse, createDeals]);
+
   const fetchCourses = async () => {
     try {
       const { data, error } = await supabase
@@ -201,14 +245,14 @@ const LeadDistributionSystem: React.FC = () => {
         .select('id, title')
         .eq('is_active', true)
         .order('title');
-      
+
       if (error) throw error;
       setCourses(data || []);
     } catch (error) {
       console.error('Error fetching courses:', error);
       toast({
         title: "خطا",
-        description: "امکان بارگذاری دوره‌ها وجود ندارد",
+        description: "خطا در دریافت دوره‌ها",
         variant: "destructive"
       });
     }
@@ -217,130 +261,252 @@ const LeadDistributionSystem: React.FC = () => {
   const fetchSalesAgents = async () => {
     try {
       const { data, error } = await supabase
-        .from('chat_users')
-        .select('id, name')
-        .eq('is_messenger_admin', true)
-        .order('name');
-      
+        .from('sales_agents')
+        .select(`
+          id,
+          user_id,
+          chat_users!inner(name)
+        `)
+        .eq('is_active', true);
+
       if (error) throw error;
       
-      const agents = data?.map(agent => ({
+      const agentsData = data?.map(agent => ({
         id: agent.id,
-        name: agent.name,
-        user_id: agent.id
+        name: (agent as any).chat_users.name,
+        user_id: agent.user_id
       })) || [];
       
-      setSalesAgents(agents);
-      setAvailableAgents(agents);
+      setSalesAgents(agentsData);
       
-      // Initialize percentages
-      setPercentages(agents.map(agent => ({
-        agent_id: agent.id,
-        agent_name: agent.name,
-        percentage: 0
-      })));
+      // Initialize percentages - will be filtered by course access later
+      setPercentages([]);
     } catch (error) {
       console.error('Error fetching sales agents:', error);
       toast({
         title: "خطا",
-        description: "امکان بارگذاری فروشندگان وجود ندارد",
+        description: "خطا در دریافت فروشندگان",
         variant: "destructive"
       });
     }
   };
 
-  const fetchEnrollments = async () => {
-    if (!selectedCourse) return;
-    
-    setLoading(true);
+  // New function to fetch agents with access to specific course
+  const fetchCourseAgents = async (courseId: string) => {
     try {
-      console.log('🔍 fetchEnrollments called with filters:', {
-        selectedCourse,
-        dateFrom,
-        dateTo,
-        paymentStatus,
-        assignmentStatus,
-        selectedAgentFilter,
-        crmFilter,
-        removeDuplicates
-      });
+      const { data, error } = await supabase
+        .from('sales_agent_courses')
+        .select(`
+          sales_agents!inner(
+            id,
+            user_id,
+            is_active,
+            chat_users!inner(name)
+          )
+        `)
+        .eq('course_id', courseId)
+        .eq('sales_agents.is_active', true);
 
-      // Build the base query
+      if (error) throw error;
+      
+      const courseAgents = data?.map(item => ({
+        id: (item as any).sales_agents.id,
+        name: (item as any).sales_agents.chat_users.name,
+        user_id: (item as any).sales_agents.user_id
+      })) || [];
+      
+      // For manual assignment, show all active sales agents
+      // For percentage distribution, show ALL sales agents (not just course-specific)
+      setAvailableAgents(salesAgents); // Use all sales agents for manual assignment
+      
+      // Initialize percentages for ALL sales agents (not just course-specific agents)
+      setPercentages(salesAgents.map(agent => ({
+        agent_id: agent.id,
+        agent_name: agent.name,
+        percentage: 0
+      })));
+      
+      return courseAgents;
+    } catch (error) {
+      console.error('Error fetching course agents:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت فروشندگان دوره",
+        variant: "destructive"
+      });
+      return [];
+    }
+  };
+
+  const fetchCoursePrice = async (courseId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('price')
+        .eq('id', courseId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data?.price) {
+        setDealPrice(data.price.toString());
+      }
+    } catch (error) {
+      console.error('Error fetching course price:', error);
+      // Don't show error toast for price fetching, it's not critical
+    }
+  };
+
+  const fetchUnassignedCount = async () => {
+    if (!selectedCourse) return;
+
+    try {
       let query = supabase
         .from('enrollments')
-        .select('*')
-        .eq('course_id', selectedCourse);
+        .select('id', { count: 'exact', head: true })
+        .eq('course_id', selectedCourse)
+        .in('payment_status', ['success', 'completed']);
 
-      // Apply filters
+      // Add date filters if specified
       if (dateFrom) {
         query = query.gte('created_at', dateFrom);
       }
       if (dateTo) {
         query = query.lte('created_at', dateTo + 'T23:59:59');
       }
-      
-      // Payment status filter
-      if (paymentStatus !== 'all') {
-        if (paymentStatus === 'paid') {
-          query = query.in('payment_status', ['success', 'completed']);
-        } else {
-          query = query.eq('payment_status', paymentStatus);
-        }
-      }
 
-      const { data: enrollmentData, error } = await query.order('created_at', { ascending: false });
+      const { count, error } = await query;
       if (error) throw error;
 
-      console.log(`📊 Found ${enrollmentData?.length || 0} enrollments before processing`);
+      // Now check which ones are not assigned
+      const { data: assignedIds, error: assignedError } = await supabase
+        .from('lead_assignments')
+        .select('enrollment_id')
+        .not('enrollment_id', 'is', null);
 
-      let processedData = enrollmentData || [];
+      if (assignedError) throw assignedError;
 
-      // Remove duplicates if enabled
-      if (removeDuplicates && processedData.length > 0) {
-        const phoneSet = new Set<string>();
-        const filteredData: typeof processedData = [];
-        
-        for (const enrollment of processedData) {
-          const normalizedPhone = enrollment.phone?.replace(/\D/g, '') || '';
-          if (!phoneSet.has(normalizedPhone) && normalizedPhone) {
-            phoneSet.add(normalizedPhone);
-            filteredData.push(enrollment);
-          }
-        }
-        
-        processedData = filteredData;
-        console.log(`📞 After removing duplicates by phone: ${processedData.length} enrollments`);
-      }
-
-      // Get assignment information
-      const enrollmentIds = processedData.map(e => e.id);
-      let assignmentData: any[] = [];
+      const assignedSet = new Set(assignedIds?.map(a => a.enrollment_id) || []);
       
-      if (enrollmentIds.length > 0) {
-        const { data: assignments, error: assignmentError } = await supabase
-          .from('lead_assignments')
-          .select(`
-            enrollment_id,
-            sales_agent_id,
-            chat_users!inner(id, name)
-          `)
-          .in('enrollment_id', enrollmentIds);
+      // Get all enrollments for this course to filter out assigned ones
+      let enrollmentQuery = supabase
+        .from('enrollments')
+        .select('id')
+        .eq('course_id', selectedCourse)
+        .in('payment_status', ['success', 'completed']);
 
-        if (assignmentError) {
-          console.error('Assignment fetch error:', assignmentError);
-        } else {
-          assignmentData = assignments || [];
-        }
+      if (dateFrom) {
+        enrollmentQuery = enrollmentQuery.gte('created_at', dateFrom);
+      }
+      if (dateTo) {
+        enrollmentQuery = enrollmentQuery.lte('created_at', dateTo + 'T23:59:59');
       }
 
-      // Create assignment lookup
-      const assignmentMap = assignmentData.reduce((acc, assignment) => {
-        acc[assignment.enrollment_id] = {
-          agentId: assignment.sales_agent_id,
-          agentName: assignment.chat_users?.name
-        };
-        return acc;
-      }, {} as Record<string, { agentId: number; agentName: string }>);
+      const { data: allEnrollments, error: enrollmentError } = await enrollmentQuery;
+      if (enrollmentError) throw enrollmentError;
+
+      const unassigned = allEnrollments?.filter(e => !assignedSet.has(e.id)) || [];
+      setUnassignedCount(unassigned.length);
+
+    } catch (error) {
+      console.error('Error fetching unassigned count:', error);
+      setUnassignedCount(0);
+    }
+  };
+
+  const fetchEnrollments = async () => {
+    if (!selectedCourse) return;
+
+    setManualLoading(true);
+    try {
+      let query = supabase
+        .from('enrollments')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          payment_amount,
+          payment_status,
+          created_at,
+          chat_user_id,
+          courses!inner(title)
+        `)
+        .eq('course_id', selectedCourse);
+
+      // Add payment status filter
+      if (paymentStatus === 'all') {
+        query = query.in('payment_status', ['success', 'completed', 'pending', 'cancelled_payment']);
+      } else if (paymentStatus === 'paid') {
+        query = query.in('payment_status', ['success', 'completed']);
+      } else if (paymentStatus === 'pending') {
+        query = query.in('payment_status', ['pending']);
+      } else if (paymentStatus === 'cancelled') {
+        query = query.in('payment_status', ['cancelled_payment']);
+      }
+
+      // Add date filters
+      if (dateFrom) {
+        query = query.gte('created_at', dateFrom);
+      }
+      if (dateTo) {
+        query = query.lte('created_at', dateTo + 'T23:59:59');
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) throw error;
+
+      // Get lead assignments with sales agent info
+      const { data: assignmentsWithAgents, error: assignmentWithAgentsError } = await supabase
+        .from('lead_assignments')
+        .select(`
+          enrollment_id,
+          sales_agents!inner(
+            id,
+            chat_users!inner(name)
+          )
+        `)
+        .in('enrollment_id', data?.map(e => e.id) || []);
+
+      if (assignmentWithAgentsError) throw assignmentWithAgentsError;
+
+      // Create assignment map for easy lookup
+      const assignmentMap = new Map();
+      assignmentsWithAgents?.forEach(assignment => {
+        assignmentMap.set(assignment.enrollment_id, {
+          agentId: assignment.sales_agents.id,
+          agentName: assignment.sales_agents.chat_users.name
+        });
+      });
+
+      // Conditionally remove duplicates by email and phone (keep the latest one)
+      let processedData = data || [];
+      
+      if (removeDuplicates) {
+        const uniqueEnrollments = data?.reduce((acc, enrollment) => {
+          const key = `${enrollment.email}-${enrollment.phone}`;
+          const existing = acc.get(key);
+          
+          if (!existing || new Date(enrollment.created_at) > new Date(existing.created_at)) {
+            acc.set(key, enrollment);
+          }
+          
+          return acc;
+        }, new Map()) || new Map();
+
+        processedData = Array.from(uniqueEnrollments.values());
+      }
+
+      // Check which ones are assigned (simplified check)
+      const enrollmentIds = processedData.map(e => e.id);
+      const { data: assignmentCheck, error: assignmentCheckError } = await supabase
+        .from('lead_assignments')
+        .select('enrollment_id')
+        .in('enrollment_id', enrollmentIds);
+
+      if (assignmentCheckError) throw assignmentCheckError;
+
+      const assignedSet = new Set(assignmentCheck?.map(a => a.enrollment_id) || []);
 
       // Fetch CRM status for each enrollment
       const enrollmentUserIds = processedData.map(e => e.chat_user_id).filter(id => id !== null);
@@ -375,12 +541,18 @@ const LeadDistributionSystem: React.FC = () => {
         }, {} as Record<number, string>);
       }
 
-      // Create final data structure with all information
-      const enrichedEnrollments: Enrollment[] = processedData.map(enrollment => {
-        const assignmentInfo = assignmentMap[enrollment.id];
+      const formattedEnrollments = processedData.map(enrollment => {
+        const assignmentInfo = assignmentMap.get(enrollment.id);
         return {
-          ...enrollment,
-          is_assigned: !!assignmentInfo,
+          id: enrollment.id,
+          full_name: enrollment.full_name,
+          email: enrollment.email,
+          phone: enrollment.phone,
+          course_title: (enrollment as any).courses.title,
+          payment_amount: enrollment.payment_amount,
+          payment_status: enrollment.payment_status,
+          created_at: enrollment.created_at,
+          is_assigned: assignedSet.has(enrollment.id),
           assigned_agent_id: assignmentInfo?.agentId || null,
           assigned_agent_name: assignmentInfo?.agentName || null,
           chat_user_id: enrollment.chat_user_id,
@@ -389,12 +561,13 @@ const LeadDistributionSystem: React.FC = () => {
         };
       });
 
-      console.log('📈 Assignment mapping complete:', {
-        totalEnrollments: enrichedEnrollments.length,
-        assignedEnrollments: enrichedEnrollments.filter(e => e.is_assigned).length
-      });
-
-      let filteredEnrollments = enrichedEnrollments;
+      // Apply assignment status filter
+      let filteredEnrollments = formattedEnrollments;
+      if (assignmentStatus === 'assigned') {
+        filteredEnrollments = formattedEnrollments.filter(e => e.is_assigned);
+      } else if (assignmentStatus === 'unassigned') {
+        filteredEnrollments = formattedEnrollments.filter(e => !e.is_assigned);
+      }
 
       // Apply sales agent filter
       if (selectedAgentFilter && selectedAgentFilter !== '' && selectedAgentFilter !== 'all') {
@@ -413,49 +586,54 @@ const LeadDistributionSystem: React.FC = () => {
       }
 
       // Apply CRM status filter
-      if (crmFilter !== 'all') {
-        filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === crmFilter);
-      }
-
-      // Apply assignment status filter
-      if (assignmentStatus !== 'all') {
-        if (assignmentStatus === 'assigned') {
-          filteredEnrollments = filteredEnrollments.filter(e => e.is_assigned);
-        } else if (assignmentStatus === 'unassigned') {
-          filteredEnrollments = filteredEnrollments.filter(e => !e.is_assigned);
+      if (crmStatus && crmStatus !== 'all') {
+        if (crmStatus === 'none') {
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'none');
+        } else if (crmStatus === 'has_records') {
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_records' || e.crm_status === 'has_calls');
+        } else if (crmStatus === 'has_calls') {
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_calls');
         }
       }
 
-      // Update statistics
-      const total = filteredEnrollments.length;
-      const assigned = filteredEnrollments.filter(e => e.is_assigned).length;
-      const unassigned = total - assigned;
-
-      setTotalCount(total);
-      setAssignedCount(assigned);
-      setUnassignedCount(unassigned);
       setEnrollments(filteredEnrollments);
-
-      console.log('📊 Final statistics:', { total, assigned, unassigned });
-
     } catch (error) {
       console.error('Error fetching enrollments:', error);
       toast({
         title: "خطا",
-        description: "امکان بارگذاری ثبت‌نام‌ها وجود ندارد",
+        description: "خطا در دریافت ثبت‌نام‌ها",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setManualLoading(false);
     }
   };
 
-  const generatePercentagePreview = () => {
-    console.log('🎯 generatePercentagePreview called!', { percentages, unassignedCount });
+  const handlePercentageChange = (agentId: number, value: string) => {
+    const percentage = parseFloat(value) || 0;
+    setPercentages(prev => 
+      prev.map(p => 
+        p.agent_id === agentId 
+          ? { ...p, percentage }
+          : p
+      )
+    );
+  };
+
+  const getTotalPercentage = () => {
+    return percentages.reduce((sum, p) => sum + p.percentage, 0);
+  };
+
+  const generatePreview = () => {
+    console.log('🔍 generatePreview called!', { 
+      totalPercentage: getTotalPercentage(), 
+      unassignedCount,
+      percentages: percentages.filter(p => p.percentage > 0)
+    });
     
-    const totalPercentage = percentages.reduce((sum, p) => sum + p.percentage, 0);
-    if (totalPercentage !== 100) {
-      console.log('❌ Invalid total percentage:', totalPercentage);
+    const total = getTotalPercentage();
+    if (total !== 100) {
+      console.log('❌ Invalid percentage total:', total);
       toast({
         title: "خطا",
         description: "مجموع درصدها باید ۱۰۰٪ باشد",
@@ -559,11 +737,7 @@ const LeadDistributionSystem: React.FC = () => {
       const assignedSet = new Set(assignments?.map(a => a.enrollment_id) || []);
       const unassignedEnrollments = allEnrollments?.filter(e => !assignedSet.has(e.id)) || [];
 
-      console.log('📈 Distribution targets:', {
-        totalFound: allEnrollments?.length,
-        alreadyAssigned: assignments?.length,
-        availableForDistribution: unassignedEnrollments.length
-      });
+      console.log('📊 Unassigned enrollments:', unassignedEnrollments.length);
 
       if (unassignedEnrollments.length === 0) {
         toast({
@@ -574,74 +748,120 @@ const LeadDistributionSystem: React.FC = () => {
         return;
       }
 
-      // Shuffle enrollments for fair distribution
-      const shuffledEnrollments = [...unassignedEnrollments].sort(() => Math.random() - 0.5);
-      
-      // Create assignments array
-      const newAssignments: any[] = [];
-      let currentIndex = 0;
+      // Shuffle the array for random distribution
+      const shuffled = [...unassignedEnrollments].sort(() => Math.random() - 0.5);
 
-      for (const agentPercent of percentages) {
-        if (agentPercent.percentage > 0) {
-          const agentLeadCount = Math.round((shuffledEnrollments.length * agentPercent.percentage) / 100);
-          
-          for (let i = 0; i < agentLeadCount && currentIndex < shuffledEnrollments.length; i++) {
-            newAssignments.push({
-              enrollment_id: shuffledEnrollments[currentIndex].id,
-              sales_agent_id: agentPercent.agent_id,
-              assigned_by: assignedById,
-              assigned_at: new Date().toISOString(),
-              assignment_type: 'percentage_distribution'
-            });
-            currentIndex++;
+      // Distribute based on percentages
+      let currentIndex = 0;
+      let totalAssigned = 0;
+      const errors: string[] = [];
+
+      for (const distribution of percentages) {
+        if (distribution.percentage === 0) continue;
+
+        const count = Math.round((shuffled.length * distribution.percentage) / 100);
+        const enrollmentsToAssign = shuffled.slice(currentIndex, currentIndex + count);
+
+        console.log(`📊 Assigning ${enrollmentsToAssign.length} leads to agent ${distribution.agent_name}`);
+
+        // Assign these enrollments to the agent
+        let successCount = 0;
+        for (const enrollment of enrollmentsToAssign) {
+          try {
+            const agentUserId = salesAgents.find(a => a.id === distribution.agent_id)?.user_id;
+            if (!agentUserId) {
+              console.error('❌ Agent user ID not found for agent:', distribution.agent_id);
+              errors.push(`فروشنده با شناسه ${distribution.agent_id} یافت نشد`);
+              continue;
+            }
+
+            console.log(`🔄 Assigning enrollment ${enrollment.id} to agent ${distribution.agent_name} (user_id: ${agentUserId})`);
+
+            const rpcFunction = createDeals ? 'distribute_lead_and_create_deal' : 'distribute_lead_to_agent';
+            const rpcParams: any = {
+              p_enrollment_id: enrollment.id,
+              p_agent_user_id: agentUserId,
+              p_assigned_by: assignedById
+            };
+
+            // Add deal-specific parameters if creating deals
+            if (createDeals) {
+              rpcParams.p_deal_course_id = dealCourse || selectedCourse;
+              rpcParams.p_deal_price = parseFloat(dealPrice) || 0;
+            }
+
+            const { error: assignError } = await supabase.rpc(rpcFunction, rpcParams);
+
+            if (assignError) {
+              console.error('❌ RPC Error assigning lead:', assignError);
+              errors.push(`خطا در واگذاری لید ${enrollment.id}: ${assignError.message}`);
+            } else {
+              successCount++;
+              console.log('✅ Successfully assigned lead:', enrollment.id);
+            }
+          } catch (err) {
+            console.error('❌ Exception assigning lead:', err);
+            errors.push(`خطا در واگذاری لید ${enrollment.id}: ${err}`);
           }
         }
+
+        // Log the distribution
+        if (successCount > 0) {
+          try {
+            console.log(`📝 Logging distribution: agent_id=${distribution.agent_id}, admin_id=${assignedById}, count=${successCount}`);
+            
+            const { error: logError } = await supabase
+              .from('lead_distribution_logs')
+              .insert({
+                admin_id: assignedById,
+                sales_agent_id: distribution.agent_id,
+                method: 'percentage',
+                course_id: selectedCourse,
+                count: successCount,
+                note: note || null
+              });
+
+            if (logError) {
+              console.error('❌ Error logging distribution:', logError);
+              errors.push(`خطا در ثبت لاگ: ${logError.message}`);
+            } else {
+              console.log('✅ Successfully logged distribution');
+            }
+          } catch (err) {
+            console.error('❌ Exception logging distribution:', err);
+            errors.push(`خطا در ثبت لاگ: ${err}`);
+          }
+        }
+
+        totalAssigned += successCount;
+        currentIndex += count;
       }
 
-      console.log('📤 Creating assignments:', newAssignments.length);
-
-      // Insert assignments in batches
-      const batchSize = 100;
-      for (let i = 0; i < newAssignments.length; i += batchSize) {
-        const batch = newAssignments.slice(i, i + batchSize);
-        const { error: insertError } = await supabase
-          .from('lead_assignments')
-          .insert(batch);
-        
-        if (insertError) throw insertError;
-        console.log(`✅ Inserted batch ${i / batchSize + 1}/${Math.ceil(newAssignments.length / batchSize)}`);
-      }
-
-      // Log the distribution
-      for (const agentPercent of percentages.filter(p => p.percentage > 0)) {
-        const agentAssignments = newAssignments.filter(a => a.sales_agent_id === agentPercent.agent_id);
-        
-        await supabase.from('lead_distribution_logs').insert({
-          course_id: selectedCourse,
-          sales_agent_id: agentPercent.agent_id,
-          admin_id: assignedById,
-          count: agentAssignments.length,
-          method: 'percentage_distribution',
-          note: `توزیع درصدی: ${agentPercent.percentage}٪`
+      if (errors.length > 0) {
+        console.error('❌ Distribution completed with errors:', errors);
+        toast({
+          title: "توزیع با خطا",
+          description: `${totalAssigned} لید توزیع شد، اما ${errors.length} خطا رخ داد. جزئیات در کنسول موجود است.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "موفق",
+          description: `${totalAssigned} لید با موفقیت توزیع شد`,
+          variant: "default"
         });
       }
 
-      console.log('🎉 Distribution completed successfully!');
-      
-      toast({
-        title: "موفقیت",
-        description: `${newAssignments.length} لید با موفقیت توزیع شد`,
-        variant: "default"
-      });
-
+      // Reset form
       setShowPreview(false);
-      fetchEnrollments(); // Refresh data
+      setNote('');
+      fetchUnassignedCount();
 
     } catch (error) {
-      console.error('❌ Distribution error:', error);
+      console.error('❌ Error executing distribution:', error);
       toast({
         title: "خطا",
-        description: "خطا در توزیع لیدها",
+        description: `خطا در توزیع لیدها: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
@@ -650,21 +870,13 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const executeManualAssignment = async () => {
-    console.log('🖱️ executeManualAssignment called!', { selectedEnrollments: selectedEnrollments.length, selectedAgentForBulk, note, loading });
+    console.log('🚀 executeManualAssignment called!', { selectedAgentForBulk, selectedEnrollments, userId: user?.id });
     
-    if (!selectedCourse || !user?.id) {
+    if (!selectedAgentForBulk || selectedEnrollments.length === 0 || !user?.id) {
+      console.log('❌ Missing requirements for manual assignment:', { selectedAgentForBulk, enrollmentCount: selectedEnrollments.length, userId: user?.id });
       toast({
-        title: "خطا",
-        description: "دوره انتخاب نشده یا کاربر وارد نشده",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedEnrollments.length === 0 || !selectedAgentForBulk) {
-      toast({
-        title: "خطا",
-        description: "لطفا ثبت‌نام‌هایی را انتخاب کرده و فروشنده را مشخص کنید",
+        title: "خطا", 
+        description: "فروشنده انتخاب نشده، لیدی انتخاب نشده یا کاربر وارد نشده",
         variant: "destructive"
       });
       return;
@@ -672,7 +884,7 @@ const LeadDistributionSystem: React.FC = () => {
 
     setLoading(true);
     try {
-      console.log('🔍 Starting manual assignment...', { enrollmentCount: selectedEnrollments.length, agentId: selectedAgentForBulk });
+      console.log('🔍 Starting manual assignment...', { selectedAgent, enrollmentCount: selectedEnrollments.length });
       
       // Get the current user's chat_users ID for assigned_by field
       const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
@@ -680,70 +892,99 @@ const LeadDistributionSystem: React.FC = () => {
         throw new Error('Cannot determine user ID for assignment');
       }
 
-      // Check if any of the selected enrollments are already assigned
-      const { data: existingAssignments } = await supabase
-        .from('lead_assignments')
-        .select('enrollment_id')
-        .in('enrollment_id', selectedEnrollments);
+      const agentUserId = salesAgents.find(a => a.id === Number(selectedAgentForBulk))?.user_id;
+      if (!agentUserId) throw new Error('Agent not found');
 
-      const alreadyAssigned = existingAssignments?.map(a => a.enrollment_id) || [];
-      const newEnrollments = selectedEnrollments.filter(id => !alreadyAssigned.includes(id));
+      console.log('📊 Assignment details:', { agentUserId, assignedById, enrollmentIds: selectedEnrollments });
 
-      if (newEnrollments.length === 0) {
-        toast({
-          title: "اطلاع",
-          description: "همه ثبت‌نام‌های انتخابی قبلاً واگذار شده‌اند",
-          variant: "default"
-        });
-        return;
+      // Assign selected enrollments
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (const enrollmentId of selectedEnrollments) {
+        try {
+          const rpcFunction = createDeals ? 'distribute_lead_and_create_deal' : 'distribute_lead_to_agent';
+          const rpcParams: any = {
+            p_enrollment_id: enrollmentId,
+            p_agent_user_id: agentUserId,
+            p_assigned_by: assignedById
+          };
+
+          // Add deal-specific parameters if creating deals
+          if (createDeals) {
+            rpcParams.p_deal_course_id = dealCourse || selectedCourse;
+            rpcParams.p_deal_price = parseFloat(dealPrice) || 0;
+          }
+
+          const { error: assignError } = await supabase.rpc(rpcFunction, rpcParams);
+
+          if (assignError) {
+            console.error('❌ Error assigning lead:', assignError);
+            errors.push(`خطا در واگذاری لید ${enrollmentId}: ${assignError.message}`);
+          } else {
+            successCount++;
+            console.log('✅ Successfully assigned lead:', enrollmentId);
+          }
+        } catch (err) {
+          console.error('❌ Exception assigning lead:', err);
+          errors.push(`خطا در واگذاری لید ${enrollmentId}: ${err}`);
+        }
       }
 
-      // Create assignments
-      const assignments = newEnrollments.map(enrollmentId => ({
-        enrollment_id: enrollmentId,
-        sales_agent_id: parseInt(selectedAgentForBulk),
-        assigned_by: assignedById,
-        assigned_at: new Date().toISOString(),
-        assignment_type: 'manual'
-      }));
+      // Log the assignment
+      if (successCount > 0) {
+        try {
+          console.log(`📝 Logging manual assignment: agent_id=${selectedAgentForBulk}, admin_id=${assignedById}, count=${successCount}`);
+          
+          const { error: logError } = await supabase
+            .from('lead_distribution_logs')
+            .insert({
+              admin_id: assignedById,
+              sales_agent_id: Number(selectedAgentForBulk),
+              method: 'manual',
+              course_id: selectedCourse,
+              count: successCount,
+              note: note || null
+            });
 
-      console.log('📤 Creating manual assignments:', assignments.length);
+          if (logError) {
+            console.error('❌ Error logging assignment:', logError);
+            errors.push(`خطا در ثبت لاگ: ${logError.message}`);
+          } else {
+            console.log('✅ Successfully logged assignment');
+          }
+        } catch (err) {
+          console.error('❌ Exception logging assignment:', err);
+          errors.push(`خطا در ثبت لاگ: ${err}`);
+        }
+      }
 
-      const { error: insertError } = await supabase
-        .from('lead_assignments')
-        .insert(assignments);
+      if (errors.length > 0) {
+        console.error('❌ Manual assignment completed with errors:', errors);
+        toast({
+          title: "واگذاری با خطا",
+          description: `${successCount} لید واگذار شد، اما ${errors.length} خطا رخ داد. جزئیات در کنسول موجود است.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "موفق",
+          description: `${successCount} لید با موفقیت واگذار شد`,
+          variant: "default"
+        });
+      }
 
-      if (insertError) throw insertError;
-
-      // Log the distribution
-      await supabase.from('lead_distribution_logs').insert({
-        course_id: selectedCourse,
-        sales_agent_id: parseInt(selectedAgentForBulk),
-        admin_id: assignedById,
-        count: newEnrollments.length,
-        method: 'manual',
-        note: note || 'واگذاری دستی'
-      });
-
-      console.log('🎉 Manual assignment completed successfully!');
-      
-      const assignedAgent = salesAgents.find(a => a.id === parseInt(selectedAgentForBulk));
-      toast({
-        title: "موفقیت",
-        description: `${newEnrollments.length} لید به ${assignedAgent?.name} واگذار شد`,
-        variant: "default"
-      });
-
+      // Reset form
       setSelectedEnrollments([]);
       setSelectedAgentForBulk('');
       setNote('');
-      fetchEnrollments(); // Refresh data
+      fetchEnrollments();
 
     } catch (error) {
-      console.error('❌ Manual assignment error:', error);
+      console.error('❌ Error executing manual assignment:', error);
       toast({
         title: "خطا",
-        description: "خطا در واگذاری دستی لیدها",
+        description: `خطا در واگذاری لیدها: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
@@ -752,12 +993,28 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const moveLeadToNewAgent = async () => {
-    console.log('🚚 moveLeadToNewAgent called!', { selectedLeadForMove, newAgentForMove, loading });
-    
-    if (!selectedLeadForMove || !newAgentForMove || !user?.id) {
+    console.log('🔄 moveLeadToNewAgent called', {
+      selectedLeadForMove,
+      newAgentForMove,
+      user,
+      salesAgents: salesAgents.map(a => ({ id: a.id, name: a.name }))
+    });
+
+    if (!selectedLeadForMove || !newAgentForMove) {
+      console.log('❌ Missing required data for move lead');
       toast({
         title: "خطا",
-        description: "لطفا لید و فروشنده جدید را انتخاب کنید",
+        description: "لطفاً لید و فروشنده جدید را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      console.log('❌ User not authenticated');
+      toast({
+        title: "خطا",
+        description: "لطفاً وارد شوید",
         variant: "destructive"
       });
       return;
@@ -765,57 +1022,99 @@ const LeadDistributionSystem: React.FC = () => {
 
     setLoading(true);
     try {
-      console.log('🔄 Starting lead transfer...', { leadId: selectedLeadForMove, newAgentId: newAgentForMove });
+      // Get assigned by ID
+      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id || '1');
       
-      // Get the current user's chat_users ID for assigned_by field
-      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
-      if (!assignedById) {
-        throw new Error('Cannot determine user ID for assignment');
+      // Find the target agent
+      const targetAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
+      if (!targetAgent) {
+        console.error('❌ Target agent not found:', { newAgentForMove, salesAgents });
+        throw new Error('فروشنده انتخاب شده یافت نشد');
       }
 
-      // Update the assignment
-      const { error: updateError } = await supabase
+      console.log('📝 Starting lead move operation', {
+        enrollmentId: selectedLeadForMove,
+        newAgentId: targetAgent.id,
+        assignedById,
+        targetAgent: { id: targetAgent.id, name: targetAgent.name }
+      });
+
+      // First, delete ALL existing assignments for this enrollment to prevent duplicates
+      console.log('🗑️ Deleting all existing assignments for enrollment...');
+      const { error: deleteError } = await supabase
         .from('lead_assignments')
-        .update({
-          sales_agent_id: parseInt(newAgentForMove),
+        .delete()
+        .eq('enrollment_id', selectedLeadForMove);
+
+      if (deleteError) {
+        console.error('❌ Error deleting existing assignments:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('✅ Deleted existing assignments, creating new assignment...');
+
+      // Create new assignment
+      const result = await supabase
+        .from('lead_assignments')
+        .insert({
+          enrollment_id: selectedLeadForMove,
+          sales_agent_id: targetAgent.id,
           assigned_by: assignedById,
           assigned_at: new Date().toISOString(),
           assignment_type: 'moved'
         })
-        .eq('enrollment_id', selectedLeadForMove);
+        .select();
 
-      if (updateError) throw updateError;
+      const { data, error: updateError } = result;
 
-      // Log the move
-      await supabase.from('lead_distribution_logs').insert({
-        course_id: selectedCourse,
-        sales_agent_id: parseInt(newAgentForMove),
-        admin_id: assignedById,
-        count: 1,
-        method: 'moved',
-        note: `انتقال از ${currentAgentForMove}`
+      console.log('📊 Database operation result:', { 
+        operation: 'INSERT_AFTER_DELETE',
+        data, 
+        updateError,
+        hasData: !!data,
+        dataLength: data?.length || 0
       });
 
-      console.log('🎉 Lead transfer completed successfully!');
-      
-      const newAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
+      if (updateError) {
+        console.error('❌ Database operation failed:', updateError);
+        throw updateError;
+      }
+
+      if (!data || data.length === 0) {
+        console.error('❌ No data returned from operation');
+        throw new Error('عملیات در دیتابیس انجام نشد');
+      }
+
+      console.log('✅ Lead move operation successful:', data[0]);
+
       toast({
-        title: "موفقیت",
-        description: `لید به ${newAgent?.name} منتقل شد`,
+        title: "موفق",
+        description: `لید با موفقیت به ${targetAgent.name} منتقل شد`,
         variant: "default"
       });
 
+      // Reset modal state
       setMoveLeadModal(false);
       setSelectedLeadForMove('');
       setNewAgentForMove('');
-      setCurrentAgentForMove('');
-      fetchEnrollments(); // Refresh data
+      
+      // Force refresh all data including lead assignments
+      console.log('🔄 Refreshing all data after move...');
+      await Promise.all([
+        fetchEnrollments(),
+        fetchSalesAgents(),
+        fetchUnassignedCount()
+      ]);
+      
+      // Force a component re-render by updating state
+      setEnrollments(prev => [...prev]);
+      console.log('✅ Data refresh completed after lead move');
 
     } catch (error) {
-      console.error('❌ Lead transfer error:', error);
+      console.error('❌ Error moving lead:', error);
       toast({
         title: "خطا",
-        description: "خطا در انتقال لید",
+        description: `خطا در انتقال لید: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
@@ -824,21 +1123,16 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const handleBulkMove = async () => {
-    console.log('🚚 handleBulkMove called!', { selectedEnrollments: selectedEnrollments.length, selectedAgentForBulk, loading });
-    
-    if (!selectedCourse || !user?.id) {
-      toast({
-        title: "خطا",
-        description: "دوره انتخاب نشده یا کاربر وارد نشده",
-        variant: "destructive"
-      });
-      return;
-    }
+    console.log('handleBulkMove called', {
+      selectedEnrollments,
+      selectedAgentForBulk,
+      userId: user?.id
+    });
 
-    if (selectedEnrollments.length === 0 || !selectedAgentForBulk) {
+    if (!selectedAgentForBulk || selectedEnrollments.length === 0 || !user?.id) {
       toast({
         title: "خطا",
-        description: "لطفا ثبت‌نام‌هایی را انتخاب کرده و فروشنده را مشخص کنید",
+        description: "فروشنده انتخاب نشده، لیدی انتخاب نشده یا کاربر وارد نشده",
         variant: "destructive"
       });
       return;
@@ -846,55 +1140,73 @@ const LeadDistributionSystem: React.FC = () => {
 
     setLoading(true);
     try {
-      console.log('🔄 Starting bulk move...', { enrollmentCount: selectedEnrollments.length, agentId: selectedAgentForBulk });
-      
-      // Get the current user's chat_users ID for assigned_by field
       const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
-      if (!assignedById) {
-        throw new Error('Cannot determine user ID for assignment');
+      
+      const targetAgent = salesAgents.find(a => a.id === parseInt(selectedAgentForBulk));
+      if (!targetAgent) {
+        throw new Error('فروشنده انتخاب شده یافت نشد');
       }
 
-      // Update existing assignments
-      const { error: updateError } = await supabase
-        .from('lead_assignments')
-        .update({
-          sales_agent_id: parseInt(selectedAgentForBulk),
-          assigned_by: assignedById,
-          assigned_at: new Date().toISOString(),
-          assignment_type: 'bulk_moved'
-        })
-        .in('enrollment_id', selectedEnrollments);
+      let successCount = 0;
+      const errors: string[] = [];
 
-      if (updateError) throw updateError;
+      for (const enrollmentId of selectedEnrollments) {
+        try {
+          // First delete all existing assignments for this enrollment
+          await supabase
+            .from('lead_assignments')
+            .delete()
+            .eq('enrollment_id', enrollmentId);
 
-      // Log the bulk move
-      await supabase.from('lead_distribution_logs').insert({
-        course_id: selectedCourse,
-        sales_agent_id: parseInt(selectedAgentForBulk),
-        admin_id: assignedById,
-        count: selectedEnrollments.length,
-        method: 'bulk_moved',
-        note: 'انتقال گروهی لیدها'
-      });
+          // Then create new assignment
+          const { error: insertError } = await supabase
+            .from('lead_assignments')
+            .insert({
+              enrollment_id: enrollmentId,
+              sales_agent_id: targetAgent.id,
+              assigned_by: assignedById,
+              assigned_at: new Date().toISOString(),
+              assignment_type: 'moved'
+            });
 
-      console.log('🎉 Bulk move completed successfully!');
-      
-      const assignedAgent = salesAgents.find(a => a.id === parseInt(selectedAgentForBulk));
-      toast({
-        title: "موفقیت",
-        description: `${selectedEnrollments.length} لید به ${assignedAgent?.name} منتقل شد`,
-        variant: "default"
-      });
+          if (insertError) {
+            console.error('❌ Error moving lead:', insertError);
+            errors.push(`خطا در انتقال لید ${enrollmentId}: ${insertError.message}`);
+          } else {
+            successCount++;
+            console.log('✅ Successfully moved lead:', enrollmentId);
+          }
+        } catch (err) {
+          console.error('❌ Exception moving lead:', err);
+          errors.push(`خطا در انتقال لید ${enrollmentId}: ${err}`);
+        }
+      }
 
+      if (errors.length > 0) {
+        console.error('❌ Bulk move completed with errors:', errors);
+        toast({
+          title: "انتقال با خطا",
+          description: `${successCount} لید منتقل شد، اما ${errors.length} خطا رخ داد.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "موفق",
+          description: `${successCount} لید با موفقیت به ${targetAgent.name} منتقل شد`,
+          variant: "default"
+        });
+      }
+
+      // Reset form
       setSelectedEnrollments([]);
       setSelectedAgentForBulk('');
-      fetchEnrollments(); // Refresh data
+      await fetchEnrollments();
 
     } catch (error) {
-      console.error('❌ Bulk move error:', error);
+      console.error('❌ Error executing bulk move:', error);
       toast({
         title: "خطا",
-        description: "خطا در انتقال گروهی لیدها",
+        description: `خطا در انتقال لیدها: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
@@ -902,30 +1214,33 @@ const LeadDistributionSystem: React.FC = () => {
     }
   };
 
+  const totalPercentage = getTotalPercentage();
+  const isPercentageValid = totalPercentage === 100;
+
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
-            سیستم توزیع لیدها
+            سیستم توزیع لید
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="percentage" className="space-y-4">
+          <Tabs defaultValue="percentage" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="percentage" className="flex items-center gap-2">
                 <Percent className="h-4 w-4" />
                 توزیع درصدی
               </TabsTrigger>
               <TabsTrigger value="manual" className="flex items-center gap-2">
-                <Target className="h-4 w-4" />
+                <UserCheck className="h-4 w-4" />
                 واگذاری دستی
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="percentage" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <div>
                   <Label htmlFor="course">دوره</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -990,189 +1305,250 @@ const LeadDistributionSystem: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="crmFilter">فیلتر CRM</Label>
-                  <Select value={crmFilter} onValueChange={setCrmFilter}>
+                  <Label htmlFor="crmStatus">وضعیت CRM</Label>
+                  <Select value={crmStatus} onValueChange={setCrmStatus}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">همه</SelectItem>
-                      <SelectItem value="has_calls">دارای تماس</SelectItem>
-                      <SelectItem value="has_records">دارای یادداشت</SelectItem>
-                      <SelectItem value="none">بدون یادداشت</SelectItem>
+                      <SelectItem value="none">بدون یادداشت CRM ⚠️</SelectItem>
+                      <SelectItem value="has_records">دارای یادداشت CRM ✅</SelectItem>
+                      <SelectItem value="has_calls">دارای تماس تلفنی 📞</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="salesAgentFilter">فیلتر بر اساس فروشنده</Label>
+                  <Select value={selectedAgentFilter} onValueChange={setSelectedAgentFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="همه فروشندگان" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه فروشندگان</SelectItem>
+                      {salesAgents.map(agent => (
+                        <SelectItem key={agent.id} value={agent.id.toString()}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="removeDuplicates"
-                  checked={removeDuplicates}
-                  onCheckedChange={setRemoveDuplicates}
-                />
-                <Label htmlFor="removeDuplicates">حذف موارد تکراری بر اساس شماره تلفن</Label>
+              <div className="flex gap-3 items-center">
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Copy className="h-4 w-4" />
+                  <Label htmlFor="removeDuplicates">حذف تکراری</Label>
+                  <Switch
+                    id="removeDuplicates"
+                    checked={removeDuplicates}
+                    onCheckedChange={setRemoveDuplicates}
+                  />
+                </div>
               </div>
 
-              {selectedCourse && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-blue-500" />
-                        <div>
-                          <p className="text-sm font-medium">کل ثبت‌نام‌ها</p>
-                          <p className="text-2xl font-bold">{totalCount}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <div>
-                          <p className="text-sm font-medium">واگذار شده</p>
-                          <p className="text-2xl font-bold">{assignedCount}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <AlertCircle className="h-4 w-4 text-orange-500" />
-                        <div>
-                          <p className="text-sm font-medium">واگذار نشده</p>
-                          <p className="text-2xl font-bold">{unassignedCount}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-2">
-                        <UserCheck className="h-4 w-4 text-purple-500" />
-                        <div>
-                          <p className="text-sm font-medium">فروشندگان</p>
-                          <p className="text-2xl font-bold">{availableAgents.length}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              {/* Deal Creation Section */}
+              <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">تنظیمات ایجاد معامله</span>
                 </div>
-              )}
-
-              {selectedCourse && unassignedCount > 0 && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">تنظیم درصد توزیع</h3>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="distributionEnabled"
-                        checked={isDistributionEnabled}
-                        onCheckedChange={setIsDistributionEnabled}
-                      />
-                      <Label htmlFor="distributionEnabled">فعال‌سازی توزیع</Label>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={createDeals}
+                      onCheckedChange={setCreateDeals}
+                    />
+                    <Label htmlFor="createDeals">ایجاد خودکار معامله‌ها هنگام توزیع لیدها</Label>
+                  </div>
+                  
+                  {createDeals && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="dealCourse">دوره معامله</Label>
+                        <Select value={dealCourse} onValueChange={setDealCourse}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب دوره (پیش‌فرض: دوره فیلتر)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map(course => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          در صورت عدم انتخاب، دوره فیلتر شده استفاده خواهد شد
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="dealPrice">قیمت معامله (تومان)</Label>
+                        <Input
+                          type="number"
+                          id="dealPrice"
+                          value={dealPrice}
+                          onChange={(e) => setDealPrice(e.target.value)}
+                          placeholder="0"
+                          min="0"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          قیمت قابل تنظیم برای معامله
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => {
+                    console.log('🖱️ Show List button clicked for percentage distribution!', { selectedCourse, paymentStatus, assignmentStatus, removeDuplicates });
+                    fetchEnrollments();
+                  }}
+                  disabled={!selectedCourse}
+                  className="w-full sm:w-auto"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  نمایش لیست
+                </Button>
+              </div>
+
+              {enrollments.length > 0 && (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-3 sm:p-4 rounded-lg border border-green-200 dark:border-green-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-right" dir="rtl">
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="font-semibold text-green-800 dark:text-green-200 text-sm sm:text-base">
+                          {enrollments.length} ثبت‌نام یافت شد
+                        </span>
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-end">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 text-xs sm:text-sm w-fit self-end sm:self-auto">
+                          فیلتر شده
+                        </Badge>
+                        {removeDuplicates && (
+                          <Badge variant="outline" className="text-xs sm:text-sm w-fit self-end sm:self-auto">
+                            تکراری‌ها حذف شد
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {isDistributionEnabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {percentages.map((agent, index) => (
-                        <Card key={agent.agent_id}>
-                          <CardContent className="p-4">
-                            <div className="space-y-2">
-                              <Label className="text-sm font-medium">{agent.agent_name}</Label>
-                              <div className="flex items-center space-x-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={agent.percentage}
-                                  onChange={(e) => {
-                                    const newPercentages = [...percentages];
-                                    newPercentages[index].percentage = parseInt(e.target.value) || 0;
-                                    setPercentages(newPercentages);
-                                  }}
-                                  className="w-20"
-                                />
-                                <span className="text-sm text-muted-foreground">%</span>
-                                <span className="text-xs text-muted-foreground">
-                                  (~{Math.round((unassignedCount * agent.percentage) / 100)} لید)
-                                </span>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                </div>
+              )}
+
+              {selectedCourse && (
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Target className="h-5 w-5" />
+                    <span className="font-medium">لیدهای قابل توزیع:</span>
+                    <Badge variant="secondary">{unassignedCount} لید</Badge>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium">تنظیم درصد توزیع برای فروشندگان</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {percentages.map((distribution) => (
+                        <div key={distribution.agent_id} className="flex items-center gap-3">
+                          <span className="font-medium min-w-[120px]">
+                            {distribution.agent_name}
+                          </span>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={distribution.percentage}
+                            onChange={(e) => handlePercentageChange(distribution.agent_id, e.target.value)}
+                            className="w-20"
+                          />
+                          <span>%</span>
+                          <span className="text-sm text-muted-foreground">
+                            ({Math.round((unassignedCount * distribution.percentage) / 100)} لید)
+                          </span>
+                        </div>
                       ))}
                     </div>
-                  )}
 
-                  {isDistributionEnabled && (
-                    <div className="flex items-center gap-4 pt-4">
-                      <div className="text-sm">
-                        مجموع: <span className="font-medium">{percentages.reduce((sum, p) => sum + p.percentage, 0)}%</span>
-                      </div>
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded border">
+                      <span className="font-medium">مجموع:</span>
+                      <Badge variant={isPercentageValid ? "default" : "destructive"}>
+                        {totalPercentage}%
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="note">یادداشت (اختیاری)</Label>
+                      <Textarea
+                        id="note"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="یادداشت برای این توزیع..."
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
                       <Button
                         onClick={() => {
-                          console.log('🎯 Preview button clicked!', { percentages, unassignedCount });
-                          generatePercentagePreview();
+                          console.log('🖱️ Preview button clicked!', { isPercentageValid, unassignedCount, totalPercentage: getTotalPercentage() });
+                          generatePreview();
                         }}
-                        disabled={loading || percentages.reduce((sum, p) => sum + p.percentage, 0) !== 100}
+                        disabled={!isPercentageValid || unassignedCount === 0}
+                        variant="outline"
                       >
                         <Eye className="h-4 w-4 mr-2" />
-                        پیش‌نمایش توزیع
+                        پیش‌نمایش
                       </Button>
-                    </div>
-                  )}
 
-                  {/* Preview Dialog */}
-                  {showPreview && (
-                    <Dialog open={showPreview} onOpenChange={setShowPreview}>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>پیش‌نمایش توزیع</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          {previewData.map((item, index) => (
-                            <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                              <div>
-                                <p className="font-medium">{item.agent_name}</p>
-                                <p className="text-sm text-muted-foreground">{item.percentage}%</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-lg font-bold">{item.count}</p>
-                                <p className="text-xs text-muted-foreground">لید</p>
+                      {showPreview && (
+                        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>پیش‌نمایش توزیع</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              {previewData.map((item, index) => (
+                                <div key={index} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded">
+                                  <span>{item.agent_name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <Badge>{item.count} لید</Badge>
+                                    <span className="text-sm text-muted-foreground">({item.percentage}%)</span>
+                                  </div>
+                                </div>
+                              ))}
+                              <div className="flex gap-3">
+                                <Button
+                                  onClick={() => {
+                                    console.log('🖱️ Execute Distribution button clicked!', { loading, showPreview });
+                                    executePercentageDistribution();
+                                  }}
+                                  disabled={loading}
+                                  className="flex-1"
+                                >
+                                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                  تأیید و اجرای توزیع
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setShowPreview(false)}
+                                >
+                                  انصراف
+                                </Button>
                               </div>
                             </div>
-                          ))}
-                          <div className="flex gap-2 pt-4">
-                            <Button
-                              onClick={() => {
-                                console.log('🚀 Execute Distribution button clicked!', { previewData, loading });
-                                executePercentageDistribution();
-                              }}
-                              disabled={loading}
-                              className="flex-1"
-                            >
-                              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                              اجرای توزیع
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => setShowPreview(false)}
-                            >
-                              انصراف
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </TabsContent>
@@ -1260,37 +1636,105 @@ const LeadDistributionSystem: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="crmFilter">فیلتر CRM</Label>
-                  <Select value={crmFilter} onValueChange={setCrmFilter}>
+                  <Label htmlFor="crmStatus">وضعیت CRM</Label>
+                  <Select value={crmStatus} onValueChange={setCrmStatus}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">همه</SelectItem>
-                      <SelectItem value="has_calls">دارای تماس</SelectItem>
-                      <SelectItem value="has_records">دارای یادداشت</SelectItem>
-                      <SelectItem value="none">بدون یادداشت</SelectItem>
+                      <SelectItem value="none">بدون یادداشت CRM ⚠️</SelectItem>
+                      <SelectItem value="has_records">دارای یادداشت CRM ✅</SelectItem>
+                      <SelectItem value="has_calls">دارای تماس تلفنی 📞</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="removeDuplicates"
-                  checked={removeDuplicates}
-                  onCheckedChange={setRemoveDuplicates}
-                />
-                <Label htmlFor="removeDuplicates">حذف موارد تکراری بر اساس شماره تلفن</Label>
+              {/* Deal Creation Section for Manual Tab */}
+              <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">تنظیمات ایجاد معامله</span>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={createDeals}
+                      onCheckedChange={setCreateDeals}
+                    />
+                    <Label htmlFor="createDeals">ایجاد خودکار معامله‌ها هنگام واگذاری لیدها</Label>
+                  </div>
+                  
+                  {createDeals && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="dealCourse">دوره معامله</Label>
+                        <Select value={dealCourse} onValueChange={setDealCourse}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب دوره (پیش‌فرض: دوره فیلتر)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {courses.map(course => (
+                              <SelectItem key={course.id} value={course.id}>
+                                {course.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          در صورت عدم انتخاب، دوره فیلتر شده استفاده خواهد شد
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="dealPrice">قیمت معامله (تومان)</Label>
+                        <Input
+                          type="number"
+                          id="dealPrice"
+                          value={dealPrice}
+                          onChange={(e) => setDealPrice(e.target.value)}
+                          placeholder="0"
+                          min="0"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          قیمت قابل تنظیم برای معامله
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {selectedCourse && enrollments.length > 0 && (
+              <div className="flex gap-3 items-center">
+                <Button
+                  onClick={fetchEnrollments}
+                  disabled={!selectedCourse || manualLoading}
+                  variant="outline"
+                >
+                  {manualLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  <Filter className="h-4 w-4 mr-2" />
+                  نمایش لیست
+                </Button>
+                
+                <div className="flex items-center gap-2">
+                  <Copy className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="removeDuplicates" className="text-sm">حذف تکراری‌ها</Label>
+                  <Switch
+                    id="removeDuplicates"
+                    checked={removeDuplicates}
+                    onCheckedChange={setRemoveDuplicates}
+                  />
+                </div>
+              </div>
+
+              {enrollments.length > 0 && (
                 <div className="space-y-4">
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          کل: {totalCount} | واگذار شده: {assignedCount} | واگذار نشده: {unassignedCount}
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-3 sm:p-4 rounded-lg border border-green-200 dark:border-green-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-right" dir="rtl">
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="font-semibold text-green-800 dark:text-green-200 text-sm sm:text-base">
+                          {enrollments.length} ثبت‌نام یافت شد
                         </span>
                         <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                       </div>
@@ -1343,33 +1787,32 @@ const LeadDistributionSystem: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="border rounded-lg overflow-x-auto">
-                    <div className="min-w-[1200px]">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">
-                              <Checkbox
-                                checked={selectedEnrollments.length === enrollments.length}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedEnrollments(enrollments.map(e => e.id));
-                                  } else {
-                                    setSelectedEnrollments([]);
-                                  }
-                                }}
-                              />
-                            </TableHead>
-                              <TableHead className="min-w-[150px]">نام</TableHead>
-                              <TableHead className="min-w-[200px]">ایمیل</TableHead>
-                              <TableHead className="min-w-[120px]">تلفن</TableHead>
-                              <TableHead className="min-w-[100px]">مبلغ</TableHead>
-                              <TableHead className="min-w-[120px]">وضعیت پرداخت</TableHead>
-                              <TableHead className="min-w-[60px] text-center">CRM</TableHead>
-                              <TableHead className="min-w-[100px]">تاریخ ثبت‌نام</TableHead>
-                              <TableHead className="min-w-[150px]">فروشنده واگذاری</TableHead>
-                              <TableHead className="min-w-[120px]">وضعیت واگذاری</TableHead>
-                              <TableHead className="min-w-[120px]">عملیات</TableHead>
+                  <div className="border rounded-lg">
+                    <Table>
+                       <TableHeader>
+                         <TableRow>
+                           <TableHead className="w-12">
+                             <Checkbox
+                               checked={selectedEnrollments.length === enrollments.length}
+                               onCheckedChange={(checked) => {
+                                 if (checked) {
+                                   setSelectedEnrollments(enrollments.map(e => e.id));
+                                 } else {
+                                   setSelectedEnrollments([]);
+                                 }
+                               }}
+                             />
+                           </TableHead>
+                             <TableHead>نام</TableHead>
+                             <TableHead>ایمیل</TableHead>
+                             <TableHead>تلفن</TableHead>
+                             <TableHead>مبلغ</TableHead>
+                             <TableHead>وضعیت پرداخت</TableHead>
+                             <TableHead>CRM</TableHead>
+                             <TableHead>تاریخ ثبت‌نام</TableHead>
+                             <TableHead>فروشنده واگذاری</TableHead>
+                             <TableHead>وضعیت واگذاری</TableHead>
+                              <TableHead>عملیات</TableHead>
                            </TableRow>
                          </TableHeader>
                        <TableBody>
@@ -1388,9 +1831,9 @@ const LeadDistributionSystem: React.FC = () => {
                                />
                              </TableCell>
                                <TableCell className="font-medium">{enrollment.full_name}</TableCell>
-                               <TableCell className="text-sm">{enrollment.email}</TableCell>
-                               <TableCell className="text-sm">{enrollment.phone}</TableCell>
-                               <TableCell className="text-sm">{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
+                               <TableCell>{enrollment.email}</TableCell>
+                               <TableCell>{enrollment.phone}</TableCell>
+                               <TableCell>{enrollment.payment_amount.toLocaleString()} تومان</TableCell>
                                <TableCell>
                                  <Badge variant={
                                    enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
@@ -1398,7 +1841,7 @@ const LeadDistributionSystem: React.FC = () => {
                                      : enrollment.payment_status === 'pending' 
                                        ? "secondary" 
                                        : "destructive"
-                                 } className="text-xs">
+                                 }>
                                    {enrollment.payment_status === 'success' || enrollment.payment_status === 'completed' 
                                      ? "پرداخت شده" 
                                      : enrollment.payment_status === 'pending' 
@@ -1415,20 +1858,20 @@ const LeadDistributionSystem: React.FC = () => {
                                    {getCRMStatusIcon(enrollment.crm_status)}
                                  </span>
                                </TableCell>
-                               <TableCell className="text-sm">{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
+                               <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
                                <TableCell>
                                  {enrollment.assigned_agent_name ? (
-                                   <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 text-xs">
+                                   <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
                                      {enrollment.assigned_agent_name}
                                    </Badge>
                                  ) : (
-                                   <Badge variant="secondary" className="text-xs">
+                                   <Badge variant="secondary">
                                      واگذار نشده
                                    </Badge>
                                  )}
                                </TableCell>
                                 <TableCell>
-                                  <Badge variant={enrollment.is_assigned ? "default" : "secondary"} className="text-xs">
+                                  <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
                                     {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
                                   </Badge>
                                 </TableCell>
@@ -1445,10 +1888,10 @@ const LeadDistributionSystem: React.FC = () => {
                                          fetchUserDetails(enrollment.chat_user_id);
                                        }
                                      }}
-                                     className="text-xs px-2 py-1"
+                                     className="text-xs"
                                    >
                                      <Eye className="h-3 w-3 mr-1" />
-                                     <span className="hidden sm:inline">جزئیات</span>
+                                     جزئیات
                                    </Button>
                                    {enrollment.is_assigned && (
                                      <Button
@@ -1460,19 +1903,18 @@ const LeadDistributionSystem: React.FC = () => {
                                          setCurrentAgentForMove(enrollment.assigned_agent_name || '');
                                          setMoveLeadModal(true);
                                        }}
-                                       className="text-xs px-2 py-1"
+                                       className="text-xs"
                                      >
                                        <ArrowRightLeft className="h-3 w-3 mr-1" />
-                                       <span className="hidden sm:inline">انتقال</span>
+                                       انتقال
                                      </Button>
                                    )}
                                  </div>
                                </TableCell>
-                            </TableRow>
-                         ))}
-                       </TableBody>
-                     </Table>
-                    </div>
+                           </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
 
                   {selectedEnrollments.length > 0 && (
@@ -1501,19 +1943,24 @@ const LeadDistributionSystem: React.FC = () => {
             <DialogTitle>انتقال لید به فروشنده جدید</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium">فروشنده فعلی:</Label>
-              <p className="text-sm text-muted-foreground">{currentAgentForMove}</p>
-            </div>
+            {/* Show current agent */}
+            {currentAgentForMove && (
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-sm font-medium">فروشنده فعلی:</Label>
+                <p className="text-sm text-muted-foreground mt-1">{currentAgentForMove}</p>
+              </div>
+            )}
             
             <div>
-              <Label htmlFor="newAgent">فروشنده جدید:</Label>
+              <Label htmlFor="newAgent">انتخاب فروشنده جدید</Label>
               <Select value={newAgentForMove} onValueChange={setNewAgentForMove}>
                 <SelectTrigger>
-                  <SelectValue placeholder="انتخاب فروشنده جدید" />
+                  <SelectValue placeholder="انتخاب فروشنده" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableAgents.map(agent => (
+                  {salesAgents
+                    .filter(agent => agent.name !== currentAgentForMove) // Filter out current agent
+                    .map(agent => (
                     <SelectItem key={agent.id} value={agent.id.toString()}>
                       {agent.name}
                     </SelectItem>
@@ -1521,12 +1968,15 @@ const LeadDistributionSystem: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="flex gap-2 pt-4">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setMoveLeadModal(false)}
-                className="flex-1"
+                onClick={() => {
+                  setMoveLeadModal(false);
+                  setSelectedLeadForMove('');
+                  setNewAgentForMove('');
+                  setCurrentAgentForMove('');
+                }}
               >
                 انصراف
               </Button>
