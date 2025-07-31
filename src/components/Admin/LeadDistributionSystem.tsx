@@ -23,7 +23,8 @@ import {
   Loader2,
   Eye,
   UserCheck,
-  Copy
+  Copy,
+  ArrowRightLeft
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -98,6 +99,11 @@ const LeadDistributionSystem: React.FC = () => {
   
   // Available agents for manual assignment (course-filtered)
   const [availableAgents, setAvailableAgents] = useState<SalesAgent[]>([]);
+
+  // Move lead state
+  const [moveLeadModal, setMoveLeadModal] = useState(false);
+  const [selectedLeadForMove, setSelectedLeadForMove] = useState<string>('');
+  const [newAgentForMove, setNewAgentForMove] = useState<string>('');
 
   useEffect(() => {
     fetchCourses();
@@ -781,6 +787,63 @@ const LeadDistributionSystem: React.FC = () => {
     }
   };
 
+  const moveLeadToNewAgent = async () => {
+    if (!selectedLeadForMove || !newAgentForMove || !user?.id) {
+      toast({
+        title: "خطا",
+        description: "لطفاً لید و فروشنده جدید را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
+      
+      // Update the lead assignment to new agent
+      const { error: updateError } = await supabase
+        .from('lead_assignments')
+        .update({
+          sales_agent_id: parseInt(newAgentForMove),
+          assigned_by: assignedById,
+          assigned_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          assignment_type: 'moved'
+        })
+        .eq('enrollment_id', selectedLeadForMove);
+
+      if (updateError) throw updateError;
+
+      // Get agent names for logging
+      const currentAgent = salesAgents.find(a => a.id === parseInt(newAgentForMove));
+      
+      toast({
+        title: "موفق",
+        description: `لید با موفقیت به ${currentAgent?.name} منتقل شد`,
+        variant: "default"
+      });
+
+      // Reset modal state
+      setMoveLeadModal(false);
+      setSelectedLeadForMove('');
+      setNewAgentForMove('');
+      
+      // Refresh the enrollments list
+      fetchEnrollments();
+
+    } catch (error) {
+      console.error('Error moving lead:', error);
+      toast({
+        title: "خطا",
+        description: `خطا در انتقال لید: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const totalPercentage = getTotalPercentage();
   const isPercentageValid = totalPercentage === 100;
 
@@ -1287,9 +1350,10 @@ const LeadDistributionSystem: React.FC = () => {
                            <TableHead>مبلغ</TableHead>
                            <TableHead>وضعیت پرداخت</TableHead>
                            <TableHead>تاریخ ثبت‌نام</TableHead>
-                           <TableHead>وضعیت واگذاری</TableHead>
-                         </TableRow>
-                       </TableHeader>
+                            <TableHead>وضعیت واگذاری</TableHead>
+                            <TableHead>عملیات</TableHead>
+                          </TableRow>
+                        </TableHeader>
                       <TableBody>
                         {enrollments.map((enrollment) => (
                           <TableRow key={enrollment.id}>
@@ -1325,12 +1389,28 @@ const LeadDistributionSystem: React.FC = () => {
                                </Badge>
                              </TableCell>
                              <TableCell>{format(new Date(enrollment.created_at), 'yyyy/MM/dd')}</TableCell>
-                             <TableCell>
-                               <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
-                                 {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
-                               </Badge>
-                             </TableCell>
-                          </TableRow>
+                              <TableCell>
+                                <Badge variant={enrollment.is_assigned ? "default" : "secondary"}>
+                                  {enrollment.is_assigned ? "واگذار شده" : "واگذار نشده"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {enrollment.is_assigned && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedLeadForMove(enrollment.id);
+                                      setMoveLeadModal(true);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    <ArrowRightLeft className="h-3 w-3 mr-1" />
+                                    انتقال
+                                  </Button>
+                                )}
+                              </TableCell>
+                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
@@ -1354,6 +1434,51 @@ const LeadDistributionSystem: React.FC = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Move Lead Modal */}
+      <Dialog open={moveLeadModal} onOpenChange={setMoveLeadModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>انتقال لید به فروشنده جدید</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newAgent">انتخاب فروشنده جدید</Label>
+              <Select value={newAgentForMove} onValueChange={setNewAgentForMove}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب فروشنده" />
+                </SelectTrigger>
+                <SelectContent>
+                  {salesAgents.map(agent => (
+                    <SelectItem key={agent.id} value={agent.id.toString()}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMoveLeadModal(false);
+                  setSelectedLeadForMove('');
+                  setNewAgentForMove('');
+                }}
+              >
+                انصراف
+              </Button>
+              <Button
+                onClick={moveLeadToNewAgent}
+                disabled={!newAgentForMove || loading}
+              >
+                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                انتقال لید
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
