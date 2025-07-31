@@ -56,6 +56,7 @@ interface Enrollment {
   assigned_agent_name?: string | null;
   chat_user_id?: number | null;
   crm_status?: 'none' | 'has_records' | 'has_calls';
+  crm_creators?: string[];
 }
 
 interface PercentageDistribution {
@@ -472,21 +473,32 @@ const LeadDistributionSystem: React.FC = () => {
       // Fetch CRM status for each enrollment
       const enrollmentUserIds = processedData.map(e => e.chat_user_id).filter(id => id !== null);
       let crmStatusMap: Record<number, string> = {};
+      let crmCreatorMap: Record<number, string[]> = {};
       
       if (enrollmentUserIds.length > 0) {
+        // Get all CRM notes for these users with more comprehensive data
         const { data: crmData } = await supabase
           .from('crm_notes')
-          .select('user_id, type')
+          .select('user_id, type, created_by')
           .in('user_id', enrollmentUserIds);
 
-        // Build CRM status map
+        // Build CRM status map and CRM creator map
         crmStatusMap = (crmData || []).reduce((acc, note) => {
-          if (!acc[note.user_id]) {
+          if (!acc[note.user_id] || acc[note.user_id] === 'none') {
             acc[note.user_id] = 'has_records';
           }
           if (note.type === 'call') {
             acc[note.user_id] = 'has_calls';
           }
+          
+          // Track CRM creators for this user
+          if (!crmCreatorMap[note.user_id]) {
+            crmCreatorMap[note.user_id] = [];
+          }
+          if (!crmCreatorMap[note.user_id].includes(note.created_by)) {
+            crmCreatorMap[note.user_id].push(note.created_by);
+          }
+          
           return acc;
         }, {} as Record<number, string>);
       }
@@ -506,7 +518,8 @@ const LeadDistributionSystem: React.FC = () => {
           assigned_agent_id: assignmentInfo?.agentId || null,
           assigned_agent_name: assignmentInfo?.agentName || null,
           chat_user_id: enrollment.chat_user_id,
-          crm_status: enrollment.chat_user_id ? (crmStatusMap[enrollment.chat_user_id] as 'none' | 'has_records' | 'has_calls' || 'none') : 'none'
+          crm_status: enrollment.chat_user_id ? (crmStatusMap[enrollment.chat_user_id] || 'none') as 'none' | 'has_records' | 'has_calls' : 'none',
+          crm_creators: enrollment.chat_user_id ? (crmCreatorMap[enrollment.chat_user_id] || []) : []
         };
       });
 
@@ -521,7 +534,17 @@ const LeadDistributionSystem: React.FC = () => {
       // Apply sales agent filter
       if (selectedAgentFilter && selectedAgentFilter !== '' && selectedAgentFilter !== 'all') {
         const agentId = parseInt(selectedAgentFilter);
-        filteredEnrollments = filteredEnrollments.filter(e => e.assigned_agent_id === agentId);
+        
+        // Find the agent's name from the sales agents list
+        const selectedAgent = salesAgents.find(agent => agent.id === agentId);
+        const agentName = selectedAgent?.name;
+        
+        filteredEnrollments = filteredEnrollments.filter(e => 
+          // Either assigned to this agent
+          e.assigned_agent_id === agentId ||
+          // Or has CRM records created by this agent
+          (agentName && e.crm_creators && e.crm_creators.includes(agentName))
+        );
       }
 
       // Apply CRM status filter
