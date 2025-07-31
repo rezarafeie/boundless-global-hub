@@ -86,6 +86,7 @@ const LeadDistributionSystem: React.FC = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string>('');
+  const [selectedAgentForBulk, setSelectedAgentForBulk] = useState<string>('');
   const [manualLoading, setManualLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('all');
   const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
@@ -665,10 +666,10 @@ const LeadDistributionSystem: React.FC = () => {
   };
 
   const executeManualAssignment = async () => {
-    console.log('🚀 executeManualAssignment called!', { selectedAgent, selectedEnrollments, userId: user?.id });
+    console.log('🚀 executeManualAssignment called!', { selectedAgentForBulk, selectedEnrollments, userId: user?.id });
     
-    if (!selectedAgent || selectedEnrollments.length === 0 || !user?.id) {
-      console.log('❌ Missing requirements for manual assignment:', { selectedAgent, enrollmentCount: selectedEnrollments.length, userId: user?.id });
+    if (!selectedAgentForBulk || selectedEnrollments.length === 0 || !user?.id) {
+      console.log('❌ Missing requirements for manual assignment:', { selectedAgentForBulk, enrollmentCount: selectedEnrollments.length, userId: user?.id });
       toast({
         title: "خطا", 
         description: "فروشنده انتخاب نشده، لیدی انتخاب نشده یا کاربر وارد نشده",
@@ -687,7 +688,7 @@ const LeadDistributionSystem: React.FC = () => {
         throw new Error('Cannot determine user ID for assignment');
       }
 
-      const agentUserId = salesAgents.find(a => a.id === Number(selectedAgent))?.user_id;
+      const agentUserId = salesAgents.find(a => a.id === Number(selectedAgentForBulk))?.user_id;
       if (!agentUserId) throw new Error('Agent not found');
 
       console.log('📊 Assignment details:', { agentUserId, assignedById, enrollmentIds: selectedEnrollments });
@@ -729,13 +730,13 @@ const LeadDistributionSystem: React.FC = () => {
       // Log the assignment
       if (successCount > 0) {
         try {
-          console.log(`📝 Logging manual assignment: agent_id=${selectedAgent}, admin_id=${assignedById}, count=${successCount}`);
+          console.log(`📝 Logging manual assignment: agent_id=${selectedAgentForBulk}, admin_id=${assignedById}, count=${successCount}`);
           
           const { error: logError } = await supabase
             .from('lead_distribution_logs')
             .insert({
               admin_id: assignedById,
-              sales_agent_id: Number(selectedAgent),
+              sales_agent_id: Number(selectedAgentForBulk),
               method: 'manual',
               course_id: selectedCourse,
               count: successCount,
@@ -771,7 +772,7 @@ const LeadDistributionSystem: React.FC = () => {
 
       // Reset form
       setSelectedEnrollments([]);
-      setSelectedAgent('');
+      setSelectedAgentForBulk('');
       setNote('');
       fetchEnrollments();
 
@@ -858,6 +859,92 @@ const LeadDistributionSystem: React.FC = () => {
       toast({
         title: "خطا",
         description: `خطا در انتقال لید: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkMove = async () => {
+    console.log('handleBulkMove called', {
+      selectedEnrollments,
+      selectedAgentForBulk,
+      userId: user?.id
+    });
+
+    if (!selectedAgentForBulk || selectedEnrollments.length === 0 || !user?.id) {
+      toast({
+        title: "خطا",
+        description: "فروشنده انتخاب نشده، لیدی انتخاب نشده یا کاربر وارد نشده",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const assignedById = user.isMessengerUser && user.messengerData ? user.messengerData.id : parseInt(user.id);
+      
+      const targetAgent = salesAgents.find(a => a.id === parseInt(selectedAgentForBulk));
+      if (!targetAgent) {
+        throw new Error('فروشنده انتخاب شده یافت نشد');
+      }
+
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (const enrollmentId of selectedEnrollments) {
+        try {
+          const { error: updateError } = await supabase
+            .from('lead_assignments')
+            .update({
+              sales_agent_id: targetAgent.id,
+              assigned_by: assignedById,
+              assigned_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              assignment_type: 'moved'
+            })
+            .eq('enrollment_id', enrollmentId);
+
+          if (updateError) {
+            console.error('❌ Error moving lead:', updateError);
+            errors.push(`خطا در انتقال لید ${enrollmentId}: ${updateError.message}`);
+          } else {
+            successCount++;
+            console.log('✅ Successfully moved lead:', enrollmentId);
+          }
+        } catch (err) {
+          console.error('❌ Exception moving lead:', err);
+          errors.push(`خطا در انتقال لید ${enrollmentId}: ${err}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        console.error('❌ Bulk move completed with errors:', errors);
+        toast({
+          title: "انتقال با خطا",
+          description: `${successCount} لید منتقل شد، اما ${errors.length} خطا رخ داد.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "موفق",
+          description: `${successCount} لید با موفقیت به ${targetAgent.name} منتقل شد`,
+          variant: "default"
+        });
+      }
+
+      // Reset form
+      setSelectedEnrollments([]);
+      setSelectedAgentForBulk('');
+      await fetchEnrollments();
+
+    } catch (error) {
+      console.error('❌ Error executing bulk move:', error);
+      toast({
+        title: "خطا",
+        description: `خطا در انتقال لیدها: ${error instanceof Error ? error.message : 'خطای نامشخص'}`,
         variant: "destructive"
       });
     } finally {
@@ -1321,7 +1408,7 @@ const LeadDistributionSystem: React.FC = () => {
                     
                     {selectedEnrollments.length > 0 && (
                       <div className="flex flex-col sm:flex-row gap-3 mt-3 justify-end" dir="rtl">
-                        <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                        <Select value={selectedAgentForBulk} onValueChange={setSelectedAgentForBulk}>
                           <SelectTrigger className="w-full sm:w-48">
                             <SelectValue placeholder="انتخاب فروشنده" />
                           </SelectTrigger>
@@ -1335,15 +1422,24 @@ const LeadDistributionSystem: React.FC = () => {
                         </Select>
                         <Button
                           onClick={() => {
-                            console.log('🖱️ Manual Assignment button clicked!', { selectedAgent, selectedEnrollments: selectedEnrollments.length, loading });
+                            console.log('🖱️ Manual Assignment button clicked!', { selectedAgentForBulk, selectedEnrollments: selectedEnrollments.length, loading });
                             executeManualAssignment();
                           }}
-                          disabled={!selectedAgent || loading}
+                          disabled={!selectedAgentForBulk || loading}
                           size="sm"
                           className="w-full sm:w-auto"
                         >
                           {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
-                          واگذاری
+                          واگذاری ({selectedEnrollments.length})
+                        </Button>
+                        <Button
+                          onClick={handleBulkMove}
+                          disabled={!selectedAgentForBulk || loading}
+                          size="sm"
+                          className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white"
+                        >
+                          {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+                          انتقال ({selectedEnrollments.length})
                         </Button>
                       </div>
                     )}
