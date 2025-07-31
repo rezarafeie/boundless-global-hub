@@ -94,6 +94,7 @@ const LeadDistributionSystem: React.FC = () => {
   const [manualLoading, setManualLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('all');
   const [assignmentStatus, setAssignmentStatus] = useState<string>('all');
+  const [crmStatus, setCrmStatus] = useState<string>('all');
   const [note, setNote] = useState<string>('');
   const [removeDuplicates, setRemoveDuplicates] = useState<boolean>(true);
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>('all');
@@ -472,6 +473,17 @@ const LeadDistributionSystem: React.FC = () => {
       if (selectedAgentFilter && selectedAgentFilter !== '' && selectedAgentFilter !== 'all') {
         const agentId = parseInt(selectedAgentFilter);
         filteredEnrollments = filteredEnrollments.filter(e => e.assigned_agent_id === agentId);
+      }
+
+      // Apply CRM status filter
+      if (crmStatus && crmStatus !== 'all') {
+        if (crmStatus === 'none') {
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'none');
+        } else if (crmStatus === 'has_records') {
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_records');
+        } else if (crmStatus === 'has_calls') {
+          filteredEnrollments = filteredEnrollments.filter(e => e.crm_status === 'has_calls');
+        }
       }
 
       setEnrollments(filteredEnrollments);
@@ -1384,7 +1396,7 @@ const LeadDistributionSystem: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <Label htmlFor="course">دوره</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>
@@ -1464,6 +1476,21 @@ const LeadDistributionSystem: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <Label htmlFor="crmStatus">وضعیت CRM</Label>
+                  <Select value={crmStatus} onValueChange={setCrmStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه</SelectItem>
+                      <SelectItem value="none">بدون یادداشت CRM ⚠️</SelectItem>
+                      <SelectItem value="has_records">دارای یادداشت CRM ✅</SelectItem>
+                      <SelectItem value="has_calls">دارای تماس تلفنی 📞</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Deal Creation Section for Manual Tab */}
@@ -1530,6 +1557,18 @@ const LeadDistributionSystem: React.FC = () => {
                   {manualLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   <Filter className="h-4 w-4 mr-2" />
                   نمایش لیست
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    setCrmStatus('none');
+                    setTimeout(() => fetchEnrollments(), 100);
+                  }}
+                  disabled={!selectedCourse || manualLoading}
+                  variant="destructive"
+                  size="sm"
+                >
+                  ⚠️ بدون CRM
                 </Button>
                 
                 <div className="flex items-center gap-2">
