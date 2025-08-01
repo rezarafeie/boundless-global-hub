@@ -152,14 +152,24 @@ serve(async (req) => {
     console.log('Zarinpal verify status:', zarinpalResponse.status);
 
     if (zarinpalData.data && zarinpalData.data.code === 100) {
-      // Payment successful - update enrollment
-      await supabase
+      // Payment successful - update enrollment with error handling
+      console.log('✅ Payment verified successfully, updating enrollment status...');
+      
+      const { data: updateResult, error: updateError } = await supabase
         .from('enrollments')
         .update({
           payment_status: 'completed',
           zarinpal_ref_id: zarinpalData.data.ref_id.toString()
         })
         .eq('id', enrollmentId);
+
+      if (updateError) {
+        console.error('❌ CRITICAL: Failed to update enrollment status:', updateError);
+        // Still try to continue with other operations but log the error
+        throw new Error(`Database update failed: ${updateError.message}`);
+      }
+      
+      console.log('✅ Enrollment status updated successfully to completed');
 
       // Create WooCommerce order if product ID is available
       let woocommerceOrderId = null;
