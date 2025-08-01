@@ -113,11 +113,11 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
       }
 
       // Update user profile
-      const updatedUser = await messengerService.updateUserProfile(user.id, {
+      const updatedUser = await messengerService.updateUserProfile(sessionToken, {
         name: formData.name.trim(),
         username: formData.username.trim() || null,
         bio: formData.bio.trim() || null
-      }, sessionToken);
+      }, user.id);
 
       toast({
         title: 'موفق',
