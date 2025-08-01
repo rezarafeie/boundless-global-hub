@@ -276,7 +276,24 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else {
-      // Payment failed
+      // Payment failed - log the issue and update status
+      console.error('❌ Payment verification failed:', {
+        enrollmentId,
+        zarinpalCode: zarinpalData.data?.code,
+        zarinpalResponse: zarinpalData
+      });
+      
+      // Log the payment verification issue
+      try {
+        await supabase.rpc('log_payment_verification_issue', {
+          p_enrollment_id: enrollmentId,
+          p_error_message: `Zarinpal verification failed with code: ${zarinpalData.data?.code || 'unknown'}`,
+          p_zarinpal_response: zarinpalData
+        });
+      } catch (logError) {
+        console.error('Failed to log payment verification issue:', logError);
+      }
+      
       await supabase
         .from('enrollments')
         .update({ payment_status: 'failed' })
