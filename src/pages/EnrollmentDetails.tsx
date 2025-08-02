@@ -378,28 +378,35 @@ const EnrollmentDetails: React.FC = () => {
                   
                   {/* Smart Activation Section - Above StartCourse */}
                   {isSuccessfulPayment && enrollment.courses.smart_activation_enabled && enrollment.courses.smart_activation_telegram_link && (
-                    <Card className="mb-6">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Key className="h-5 w-5 text-blue-600" />
-                          فعال‌سازی هوشمند
+                    <Card className="mb-4 sm:mb-6">
+                      <CardHeader className="pb-3 sm:pb-6">
+                        <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-base sm:text-lg">
+                          <div className="flex items-center gap-2">
+                            <Key className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                            <span className="break-words">
+                              {enrollment?.courses?.telegram_only_access 
+                                ? 'فعال سازی پشتیبانی و دسترسی به محتوای دوره'
+                                : 'فعال‌سازی هوشمند'
+                              }
+                            </span>
+                          </div>
                           {smartActivated && (
-                            <Badge className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 mr-2">
-                              <CheckCircle className="h-3 w-3 ml-1" />
-                              فعال شده
+                            <Badge className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 self-start sm:self-auto">
+                              <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-1" />
+                              <span className="text-xs sm:text-sm">فعال شده</span>
                             </Badge>
                           )}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-4 leading-relaxed">
+                      <CardContent className="pt-0">
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 leading-relaxed">
                           {enrollment?.courses?.telegram_only_access 
                             ? 'برای دسترسی به دوره و دریافت پشتیبانی، ابتدا فعال‌سازی را انجام دهید'
                             : 'برای دسترسی کامل به دوره، ابتدا فعال‌سازی هوشمند را انجام دهید'
                           }
                         </p>
                         <Button
-                          className={`w-full h-12 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 ${
+                          className={`w-full h-11 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 ${
                             smartActivated && !enrollment?.courses?.telegram_only_access
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
                               : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
@@ -408,17 +415,17 @@ const EnrollmentDetails: React.FC = () => {
                           disabled={smartActivated && !enrollment?.courses?.telegram_only_access}
                           variant={smartActivated && !enrollment?.courses?.telegram_only_access ? "outline" : "default"}
                         >
-                          <Send className="h-4 sm:h-5 w-4 sm:w-5 ml-2 flex-shrink-0" />
+                          <Send className="h-3 w-3 sm:h-5 sm:w-5 ml-1 sm:ml-2 flex-shrink-0" />
                           <span className="break-words leading-tight text-center">
                             {smartActivated && !enrollment?.courses?.telegram_only_access
                               ? "✅ فعال‌سازی انجام شده" 
                               : enrollment?.courses?.telegram_only_access 
-                                ? "⚡ فعال سازی پشتیبانی و دسترسی به محتوای دوره"
+                                ? "⚡ فعال سازی پشتیبانی"
                                 : "⚡ فعال‌سازی هوشمند"
                             }
                           </span>
                         </Button>
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                        <p className="text-xs text-muted-foreground mt-2 text-center leading-relaxed">
                           {smartActivated ? "شما با موفقیت فعال‌سازی را انجام داده‌اید" : "پس از کلیک روی این دکمه، صفحه StartCourse فعال خواهد شد"}
                         </p>
                       </CardContent>
@@ -427,14 +434,14 @@ const EnrollmentDetails: React.FC = () => {
                   
                   {/* Telegram Only Access Message */}
                   {isSuccessfulPayment && enrollment.courses.telegram_only_access && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800 text-center">
-                      <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-lg">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 sm:p-6 border border-blue-200 dark:border-blue-800 text-center mb-4 sm:mb-6">
+                      <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-base sm:text-lg">
                         🔐 دسترسی به محتوای دوره
                       </h3>
-                      <p className="text-blue-700 dark:text-blue-300 mb-4">
+                      <p className="text-blue-700 dark:text-blue-300 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
                         <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
                       </p>
-                      <p className="text-sm text-blue-600 dark:text-blue-400">
+                      <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 leading-relaxed">
                         لطفاً از طریق دکمه‌های فعال‌سازی هوشمند یا فعال‌سازی عادی تلگرام اقدام کنید.
                       </p>
                     </div>
