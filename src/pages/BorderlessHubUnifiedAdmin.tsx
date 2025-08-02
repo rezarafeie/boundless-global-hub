@@ -20,10 +20,14 @@ import {
   Phone,
   Clock,
   Star,
-  Bell
+  Bell,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/use-debounce';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import UserEditModal from '@/components/Admin/UserEditModal';
 import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
 import NotificationManagementSection from '@/components/Admin/NotificationManagementSection';
@@ -39,6 +43,12 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<MessengerUser | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const usersPerPage = 50;
 
   useEffect(() => {
     checkAdminAccess();
@@ -57,7 +67,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
       }
 
       setCurrentUser(user);
-      await fetchUsers();
+      await fetchUsers(1, '');
     } catch (error: any) {
       console.error('Admin access error:', error);
       toast({
@@ -71,11 +81,26 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  // Use debounced search term for real-time database search
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const fetchUsers = async (page: number = 1, search: string = '') => {
     try {
-      const users = await messengerService.getAllUsers();
-      setAllUsers(users);
-      setFilteredUsers(users);
+      setSearchLoading(true);
+      const offset = (page - 1) * usersPerPage;
+      
+      // Use chatUserAdminService for pagination and real-time search
+      const result = await chatUserAdminService.getAllUsers(search || undefined, usersPerPage, offset);
+      
+      setFilteredUsers(result.users as MessengerUser[]);
+      setTotalUsers(result.total);
+      setCurrentPage(page);
+      
+      // Also fetch all users for stats (without pagination)
+      if (!search) {
+        const allResult = await chatUserAdminService.getAllUsers(undefined, 10000, 0);
+        setAllUsers(allResult.users as MessengerUser[]);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -83,21 +108,22 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
         description: 'خطا در بارگذاری کاربران',
         variant: 'destructive',
       });
+    } finally {
+      setSearchLoading(false);
     }
   };
 
+  // Trigger search when debounced term changes
   useEffect(() => {
-    if (searchTerm) {
-      const filtered = allUsers.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone.includes(searchTerm) ||
-        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(allUsers);
+    if (currentUser) {
+      fetchUsers(1, debouncedSearchTerm);
     }
-  }, [allUsers, searchTerm]);
+  }, [debouncedSearchTerm, currentUser]);
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    fetchUsers(page, debouncedSearchTerm);
+  };
 
   const handleApproveUser = async (userId: number) => {
     try {
@@ -106,7 +132,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
         title: 'موفق',
         description: 'کاربر تایید شد',
       });
-      fetchUsers();
+      fetchUsers(currentPage, debouncedSearchTerm);
     } catch (error) {
       toast({
         title: 'خطا',
@@ -129,7 +155,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
         title: 'موفق',
         description: `نقش ${roleNames[role]} ${!currentValue ? 'اضافه' : 'حذف'} شد`,
       });
-      fetchUsers();
+      fetchUsers(currentPage, debouncedSearchTerm);
     } catch (error) {
       toast({
         title: 'خطا',
@@ -146,7 +172,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
         title: 'موفق',
         description: 'کاربر رد شد',
       });
-      fetchUsers();
+      fetchUsers(currentPage, debouncedSearchTerm);
     } catch (error) {
       toast({
         title: 'خطا',
@@ -167,7 +193,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
   };
 
   const handleUserUpdate = () => {
-    fetchUsers();
+    fetchUsers(currentPage, debouncedSearchTerm);
   };
 
   const getStatusBadges = (user: MessengerUser) => {
@@ -327,12 +353,22 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="جستجو بر اساس نام، شماره تلفن یا نام کاربری..."
+                      placeholder="جستجو در دیتابیس بر اساس نام، شماره تلفن یا نام کاربری..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
+                    {searchLoading && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                      </div>
+                    )}
                   </div>
+                  {debouncedSearchTerm && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      جستجو برای: "{debouncedSearchTerm}" - {totalUsers} نتیجه یافت شد
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -447,6 +483,74 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Pagination */}
+              {totalUsers > usersPerPage && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        صفحه {currentPage} از {Math.ceil(totalUsers / usersPerPage)} - 
+                        نمایش {((currentPage - 1) * usersPerPage) + 1} تا{' '}
+                        {Math.min(currentPage * usersPerPage, totalUsers)} از {totalUsers} کاربر
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="flex items-center gap-1"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                          قبلی
+                        </Button>
+                        
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, Math.ceil(totalUsers / usersPerPage)) }, (_, i) => {
+                            const page = i + 1;
+                            return (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(page)}
+                                className="w-8 h-8 p-0"
+                              >
+                                {page}
+                              </Button>
+                            );
+                          })}
+                          {Math.ceil(totalUsers / usersPerPage) > 5 && (
+                            <>
+                              {currentPage < Math.ceil(totalUsers / usersPerPage) - 2 && <span className="text-muted-foreground">...</span>}
+                              <Button
+                                variant={currentPage === Math.ceil(totalUsers / usersPerPage) ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(Math.ceil(totalUsers / usersPerPage))}
+                                className="w-8 h-8 p-0"
+                              >
+                                {Math.ceil(totalUsers / usersPerPage)}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === Math.ceil(totalUsers / usersPerPage)}
+                          className="flex items-center gap-1"
+                        >
+                          بعدی
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="messenger" className="space-y-6">
