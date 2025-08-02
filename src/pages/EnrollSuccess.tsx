@@ -411,10 +411,10 @@ const EnrollSuccess: React.FC = () => {
                        {/* Smart Activation */}
                       {result.course.smart_activation_enabled && result.course.smart_activation_telegram_link && (
                         <div 
-                          className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 border group relative ${
+                          className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 border-2 group relative ${
                             smartActivated 
-                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800 cursor-default'
-                              : 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 border-purple-200 dark:border-purple-800 hover:shadow-md cursor-pointer'
+                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
+                              : 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 border-purple-300 dark:border-purple-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
                           }`}
                           onClick={() => {
                             if (!smartActivated) {
@@ -465,24 +465,24 @@ const EnrollSuccess: React.FC = () => {
                               <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm flex items-center gap-2">
-                              فعال‌سازی هوشمند {smartActivated ? '(فعال شده)' : '(اجباری)'}
-                              <Badge variant="secondary" className={`text-xs px-2 py-0.5 ${
-                                smartActivated 
-                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                  : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                              }`}>
-                                {smartActivated ? 'فعال' : 'SMART'}
-                              </Badge>
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {smartActivated 
-                                ? 'فعال‌سازی هوشمند با موفقیت انجام شد'
-                                : 'کلیک کنید تا به صورت خودکار فعال شود'
-                              }
-                            </p>
-                          </div>
+                           <div className="flex-1 min-w-0">
+                             <p className="font-bold text-lg flex items-center gap-3">
+                               ⚡ فعال‌سازی هوشمند {smartActivated ? '(فعال شده)' : '(اجباری)'}
+                               <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold ${
+                                 smartActivated 
+                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300'
+                                   : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 animate-pulse'
+                               }`}>
+                                 {smartActivated ? '✅ فعال' : '🔥 SMART'}
+                               </Badge>
+                             </p>
+                             <p className="text-sm text-muted-foreground font-medium">
+                               {smartActivated 
+                                 ? '✅ فعال‌سازی هوشمند با موفقیت انجام شد'
+                                 : '👆 کلیک کنید تا به صورت خودکار فعال شود'
+                               }
+                             </p>
+                           </div>
                           {!smartActivated && (
                             <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                           )}
