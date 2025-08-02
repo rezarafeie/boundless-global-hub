@@ -151,7 +151,7 @@ serve(async (req) => {
     console.log('Zarinpal verify response:', zarinpalData);
     console.log('Zarinpal verify status:', zarinpalResponse.status);
 
-    if (zarinpalData.data && zarinpalData.data.code === 100) {
+    if (zarinpalData.data && (zarinpalData.data.code === 100 || zarinpalData.data.code === 101)) {
       // Payment successful - update enrollment with error handling
       console.log('✅ Payment verified successfully, updating enrollment status...');
       
