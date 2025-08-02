@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.delete-message-public]
 verify_jwt = false
+
+[functions.fix-payment-status]
+verify_jwt = false
