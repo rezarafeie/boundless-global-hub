@@ -399,7 +399,7 @@ const EnrollmentDetails: React.FC = () => {
                           className={`w-full h-14 text-lg font-bold ${
                             smartActivated 
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
-                              : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg transform hover:scale-105'
+                              : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
                           }`}
                           onClick={handleSmartActivation}
                           disabled={smartActivated}

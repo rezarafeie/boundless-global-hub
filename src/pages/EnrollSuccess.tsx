@@ -414,7 +414,7 @@ const EnrollSuccess: React.FC = () => {
                           className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 border-2 group relative ${
                             smartActivated 
                               ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
-                              : 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 border-purple-300 dark:border-purple-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
+                              : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-green-300 dark:border-green-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
                           }`}
                           onClick={() => {
                             if (!smartActivated) {
@@ -446,7 +446,7 @@ const EnrollSuccess: React.FC = () => {
                           <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${
                             smartActivated 
                               ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                              : 'bg-gradient-to-r from-purple-500 to-blue-500'
+                              : 'bg-gradient-to-r from-green-500 to-emerald-500'
                           }`}>
                             {smartActivated ? (
                               <CheckCircle className="h-3 w-3 text-white" />
@@ -457,12 +457,12 @@ const EnrollSuccess: React.FC = () => {
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform flex-shrink-0 ${
                             smartActivated 
                               ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10'
-                              : 'bg-gradient-to-r from-purple-500/10 to-blue-500/10 group-hover:scale-110'
+                              : 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 group-hover:scale-110'
                           }`}>
                             {smartActivated ? (
                               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              <Send className="h-4 w-4 text-green-600 dark:text-green-400" />
                             )}
                           </div>
                            <div className="flex-1 min-w-0">
@@ -471,7 +471,7 @@ const EnrollSuccess: React.FC = () => {
                                <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold ${
                                  smartActivated 
                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300'
-                                   : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 animate-pulse'
+                                   : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 animate-pulse'
                                }`}>
                                  {smartActivated ? '✅ فعال' : '🔥 SMART'}
                                </Badge>
