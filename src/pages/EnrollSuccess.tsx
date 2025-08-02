@@ -466,22 +466,29 @@ const EnrollSuccess: React.FC = () => {
                             )}
                           </div>
                            <div className="flex-1 min-w-0">
-                             <p className="font-bold text-lg flex items-center gap-3">
-                               ⚡ فعال‌سازی هوشمند {smartActivated ? '(فعال شده)' : '(اجباری)'}
-                               <Badge variant="secondary" className={`text-sm px-3 py-1 font-bold ${
-                                 smartActivated 
-                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300'
-                                   : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 animate-pulse'
-                               }`}>
-                                 {smartActivated ? '✅ فعال' : '🔥 SMART'}
-                               </Badge>
-                             </p>
-                             <p className="text-sm text-muted-foreground font-medium">
-                               {smartActivated 
-                                 ? '✅ فعال‌سازی هوشمند با موفقیت انجام شد'
-                                 : '👆 کلیک کنید تا به صورت خودکار فعال شود'
-                               }
-                             </p>
+                              <p className="font-bold text-base sm:text-lg flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 leading-tight">
+                                <span className="break-words">
+                                  {result.course?.telegram_only_access 
+                                    ? `⚡ فعال سازی پشتیبانی و دسترسی به محتوای دوره ${smartActivated ? '(فعال شده)' : '(اجباری)'}`
+                                    : `⚡ فعال‌سازی هوشمند ${smartActivated ? '(فعال شده)' : '(اجباری)'}`
+                                  }
+                                </span>
+                                <Badge variant="secondary" className={`text-xs sm:text-sm px-2 sm:px-3 py-1 font-bold flex-shrink-0 self-start sm:self-auto ${
+                                  smartActivated 
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300'
+                                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 animate-pulse'
+                                }`}>
+                                  {smartActivated ? '✅ فعال' : result.course?.telegram_only_access ? '⚡ ضروری' : '🔥 SMART'}
+                                </Badge>
+                              </p>
+                              <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-2 leading-relaxed">
+                                {smartActivated 
+                                  ? '✅ فعال‌سازی با موفقیت انجام شد'
+                                  : result.course?.telegram_only_access 
+                                    ? '👆 برای دسترسی به دوره و دریافت پشتیبانی کلیک کنید'
+                                    : '👆 کلیک کنید تا به صورت خودکار فعال شود'
+                                }
+                              </p>
                            </div>
                           {!smartActivated && (
                             <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />

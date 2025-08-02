@@ -392,11 +392,14 @@ const EnrollmentDetails: React.FC = () => {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          برای دسترسی کامل به دوره، ابتدا فعال‌سازی هوشمند را انجام دهید
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-4 leading-relaxed">
+                          {enrollment?.courses?.telegram_only_access 
+                            ? 'برای دسترسی به دوره و دریافت پشتیبانی، ابتدا فعال‌سازی را انجام دهید'
+                            : 'برای دسترسی کامل به دوره، ابتدا فعال‌سازی هوشمند را انجام دهید'
+                          }
                         </p>
                         <Button
-                          className={`w-full h-14 text-lg font-bold ${
+                          className={`w-full h-12 sm:h-14 text-sm sm:text-lg font-bold ${
                             smartActivated 
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
                               : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
@@ -405,8 +408,15 @@ const EnrollmentDetails: React.FC = () => {
                           disabled={smartActivated}
                           variant={smartActivated ? "outline" : "default"}
                         >
-                          <Send className="h-5 w-5 mr-2" />
-                          {smartActivated ? "✅ فعال‌سازی انجام شده" : "⚡ فعال‌سازی هوشمند"}
+                          <Send className="h-4 sm:h-5 w-4 sm:w-5 mr-2" />
+                          <span className="break-words leading-tight">
+                            {smartActivated 
+                              ? "✅ فعال‌سازی انجام شده" 
+                              : enrollment?.courses?.telegram_only_access 
+                                ? "⚡ فعال سازی پشتیبانی و دسترسی به محتوای دوره"
+                                : "⚡ فعال‌سازی هوشمند"
+                            }
+                          </span>
                         </Button>
                         <p className="text-xs text-muted-foreground mt-2 text-center">
                           {smartActivated ? "شما با موفقیت فعال‌سازی را انجام داده‌اید" : "پس از کلیک روی این دکمه، صفحه StartCourse فعال خواهد شد"}
