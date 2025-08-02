@@ -193,7 +193,8 @@ const EnrollSuccess: React.FC = () => {
             support_activation_required,
             telegram_activation_required,
             smart_activation_enabled,
-            smart_activation_telegram_link
+            smart_activation_telegram_link,
+            telegram_only_access
           )
         `)
         .eq('id', enrollmentId)
@@ -252,7 +253,8 @@ const EnrollSuccess: React.FC = () => {
             support_activation_required,
             telegram_activation_required,
             smart_activation_enabled,
-            smart_activation_telegram_link
+            smart_activation_telegram_link,
+            telegram_only_access
           )
         `)
         .eq('id', enrollmentId)
@@ -521,14 +523,31 @@ const EnrollSuccess: React.FC = () => {
                   </div>
                 )}
 
-                {/* Course Start Section */}
-                <StartCourseSection 
-                  enrollment={result.enrollment}
-                  course={result.course}
-                  onEnterCourse={handleEnterCourse}
-                  userEmail={email || ''}
-                  key={`course-section-${result.enrollment?.id}-${smartActivated}`}
-                />
+                {/* Telegram Only Access Message */}
+                {result.course?.telegram_only_access && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800 text-center">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-lg">
+                      🔐 دسترسی به محتوای دوره
+                    </h3>
+                    <p className="text-blue-700 dark:text-blue-300 mb-4">
+                      <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
+                    </p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      لطفاً از طریق دکمه‌های فعال‌سازی هوشمند یا فعال‌سازی عادی تلگرام اقدام کنید.
+                    </p>
+                  </div>
+                )}
+
+                {/* Course Start Section - Only show if not telegram-only */}
+                {!result.course?.telegram_only_access && (
+                  <StartCourseSection 
+                    enrollment={result.enrollment}
+                    course={result.course}
+                    onEnterCourse={handleEnterCourse}
+                    userEmail={email || ''}
+                    key={`course-section-${result.enrollment?.id}-${smartActivated}`}
+                  />
+                )}
 
                 {/* Course Action Links (if activation requires not activated) */}
                 {/* This will be rendered by StartCourseSection -> CourseActionLinks */}

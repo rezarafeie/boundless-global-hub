@@ -59,6 +59,7 @@ interface EnrollmentData {
     telegram_activation_required?: boolean;
     smart_activation_enabled?: boolean;
     smart_activation_telegram_link?: string;
+    telegram_only_access?: boolean;
   };
 }
 
@@ -133,7 +134,8 @@ const EnrollmentDetails: React.FC = () => {
             support_activation_required,
             telegram_activation_required,
             smart_activation_enabled,
-            smart_activation_telegram_link
+            smart_activation_telegram_link,
+            telegram_only_access
           )
         `)
         .eq('id', enrollmentId)
@@ -409,7 +411,22 @@ const EnrollmentDetails: React.FC = () => {
                     </Card>
                   )}
                   
-                  {isSuccessfulPayment && (
+                  {/* Telegram Only Access Message */}
+                  {isSuccessfulPayment && enrollment.courses.telegram_only_access && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800 text-center">
+                      <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-lg">
+                        🔐 دسترسی به محتوای دوره
+                      </h3>
+                      <p className="text-blue-700 dark:text-blue-300 mb-4">
+                        <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
+                      </p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">
+                        لطفاً از طریق دکمه‌های فعال‌سازی هوشمند یا فعال‌سازی عادی تلگرام اقدام کنید.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {isSuccessfulPayment && !enrollment.courses.telegram_only_access && (
                     <StartCourseSection 
                       enrollment={enrollment}
                       course={enrollment.courses}

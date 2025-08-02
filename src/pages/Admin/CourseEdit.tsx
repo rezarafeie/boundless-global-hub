@@ -81,6 +81,7 @@ const CourseEdit: React.FC = () => {
     telegram_activation_required: false,
     smart_activation_enabled: false,
     smart_activation_telegram_link: '',
+    telegram_only_access: false,
     use_enrollments_as_leads: false,
     lead_start_date: ''
   });
@@ -139,10 +140,11 @@ const CourseEdit: React.FC = () => {
         support_link: data.support_link || '',
         telegram_channel_link: data.telegram_channel_link || '',
         gifts_link: data.gifts_link || '',
-        support_activation_required: data.support_activation_required || false,
-        telegram_activation_required: data.telegram_activation_required || false,
-        smart_activation_enabled: data.smart_activation_enabled || false,
-        smart_activation_telegram_link: data.smart_activation_telegram_link || '',
+          support_activation_required: data.support_activation_required || false,
+          telegram_activation_required: data.telegram_activation_required || false,
+          smart_activation_enabled: data.smart_activation_enabled || false,
+          smart_activation_telegram_link: data.smart_activation_telegram_link || '',
+          telegram_only_access: data.telegram_only_access || false,
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
       });
@@ -233,6 +235,7 @@ const CourseEdit: React.FC = () => {
         telegram_activation_required: formData.telegram_activation_required,
         smart_activation_enabled: formData.smart_activation_enabled,
         smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
+        telegram_only_access: formData.telegram_only_access,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
@@ -599,14 +602,26 @@ const CourseEdit: React.FC = () => {
                     </div>
                     
                     {/* Smart Activation Section */}
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="smart_activation_enabled"
-                        checked={formData.smart_activation_enabled}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, smart_activation_enabled: checked }))}
-                      />
-                      <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
-                    </div>
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="smart_activation_enabled"
+                         checked={formData.smart_activation_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, smart_activation_enabled: checked }))}
+                       />
+                       <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
+                     </div>
+                     
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="telegram_only_access"
+                         checked={formData.telegram_only_access}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, telegram_only_access: checked }))}
+                       />
+                       <Label htmlFor="telegram_only_access">دسترسی فقط از طریق تلگرام</Label>
+                       <p className="text-sm text-muted-foreground">
+                         در صورت فعال بودن، کاربران فقط از طریق فعال‌سازی تلگرام می‌توانند به محتوای دوره دسترسی داشته باشند
+                       </p>
+                     </div>
                     
                     {formData.smart_activation_enabled && (
                       <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 mt-3">

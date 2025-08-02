@@ -61,6 +61,7 @@ const CourseManagement: React.FC = () => {
     gifts_link: '',
     enable_course_access: false,
     is_free_access: false,
+    telegram_only_access: false,
     is_active: true
   });
   
@@ -145,6 +146,7 @@ const CourseManagement: React.FC = () => {
           gifts_link: data.gifts_link || '',
           enable_course_access: data.enable_course_access || false,
           is_free_access: data.is_free_access || false,
+          telegram_only_access: data.telegram_only_access || false,
           is_active: data.is_active
         });
 
@@ -186,6 +188,7 @@ const CourseManagement: React.FC = () => {
         gifts_link: courseForm.gifts_link,
         enable_course_access: courseForm.enable_course_access,
         is_free_access: courseForm.is_free_access,
+        telegram_only_access: courseForm.telegram_only_access,
         is_active: courseForm.is_active
       };
 
@@ -568,6 +571,34 @@ const CourseManagement: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Mandatory Activations */}
+            <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-400">فعال‌سازی‌های اجباری</h3>
+              <p className="text-sm text-muted-foreground">
+                در صورت فعال بودن، کاربران تا زمان فعال‌سازی این بخش‌ها نمی‌توانند به محتوای دوره دسترسی داشته باشند.
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="telegram-only-access" className="text-base font-medium">
+                      دسترسی فقط از طریق تلگرام
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      در صورت فعال بودن، کاربران فقط از طریق فعال‌سازی تلگرام می‌توانند به محتوای دوره دسترسی داشته باشند
+                    </p>
+                  </div>
+                  <Switch
+                    id="telegram-only-access"
+                    checked={courseForm.telegram_only_access}
+                    onCheckedChange={(checked) => 
+                      setCourseForm(prev => ({ ...prev, telegram_only_access: checked }))
+                    }
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Course Links */}
