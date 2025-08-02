@@ -411,11 +411,11 @@ const EnrollSuccess: React.FC = () => {
                        {/* Smart Activation */}
                       {result.course.smart_activation_enabled && result.course.smart_activation_telegram_link && (
                         <div 
-                          className={`flex items-center gap-3 p-4 rounded-xl transition-all duration-300 border-2 group relative ${
-                            smartActivated 
-                              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
-                              : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-green-300 dark:border-green-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
-                          }`}
+          className={`flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl transition-all duration-300 border-2 group relative ${
+            smartActivated 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
+              : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-green-300 dark:border-green-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
+          }`}
                           onClick={() => {
                             if (!smartActivated) {
                               // Mark smart activation as clicked in localStorage
@@ -443,26 +443,26 @@ const EnrollSuccess: React.FC = () => {
                           }}
                         >
                           {/* Smart Badge */}
-                          <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                          <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center ${
                             smartActivated 
                               ? 'bg-gradient-to-r from-green-500 to-emerald-500'
                               : 'bg-gradient-to-r from-green-500 to-emerald-500'
                           }`}>
                             {smartActivated ? (
-                              <CheckCircle className="h-3 w-3 text-white" />
+                              <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                             ) : (
-                              <Zap className="h-3 w-3 text-white" />
+                              <Zap className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                             )}
                           </div>
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform flex-shrink-0 ${
+                          <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-transform flex-shrink-0 ${
                             smartActivated 
                               ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10'
                               : 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 group-hover:scale-110'
                           }`}>
                             {smartActivated ? (
-                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <Send className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <Send className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
                             )}
                           </div>
                            <div className="flex-1 min-w-0">

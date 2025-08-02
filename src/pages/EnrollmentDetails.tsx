@@ -399,7 +399,7 @@ const EnrollmentDetails: React.FC = () => {
                           }
                         </p>
                         <Button
-                          className={`w-full h-12 sm:h-14 text-sm sm:text-lg font-bold ${
+                          className={`w-full h-12 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 ${
                             smartActivated 
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
                               : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
@@ -408,8 +408,8 @@ const EnrollmentDetails: React.FC = () => {
                           disabled={smartActivated}
                           variant={smartActivated ? "outline" : "default"}
                         >
-                          <Send className="h-4 sm:h-5 w-4 sm:w-5 mr-2" />
-                          <span className="break-words leading-tight">
+                          <Send className="h-4 sm:h-5 w-4 sm:w-5 ml-2 flex-shrink-0" />
+                          <span className="break-words leading-tight text-center">
                             {smartActivated 
                               ? "✅ فعال‌سازی انجام شده" 
                               : enrollment?.courses?.telegram_only_access 
