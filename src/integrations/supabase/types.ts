@@ -1950,6 +1950,41 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_verification_logs: {
+        Row: {
+          created_at: string | null
+          enrollment_id: string | null
+          error_message: string
+          id: string
+          resolved_at: string | null
+          zarinpal_response: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          enrollment_id?: string | null
+          error_message: string
+          id?: string
+          resolved_at?: string | null
+          zarinpal_response?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          enrollment_id?: string | null
+          error_message?: string
+          id?: string
+          resolved_at?: string | null
+          zarinpal_response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_verification_logs_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pinned_messages: {
         Row: {
           created_at: string | null
@@ -3067,10 +3102,6 @@ export type Database = {
         Args: { data: string }
         Returns: string
       }
-      cancel_unpaid_zarinpal_enrollments: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       check_sales_agent_lead_access: {
         Args: { p_agent_user_id: number; p_enrollment_id: string }
         Returns: boolean
@@ -3104,6 +3135,16 @@ export type Database = {
           p_assigned_by: number
         }
         Returns: boolean
+      }
+      fix_payment_status_inconsistencies: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          enrollment_id: string
+          full_name: string
+          old_status: string
+          new_status: string
+          ref_id: string
+        }[]
       }
       generate_lesson_numbers: {
         Args: Record<PropertyKey, never>
@@ -3318,6 +3359,14 @@ export type Database = {
       is_session_valid: {
         Args: { session_token_param: string }
         Returns: boolean
+      }
+      log_payment_verification_issue: {
+        Args: {
+          p_enrollment_id: string
+          p_error_message: string
+          p_zarinpal_response?: Json
+        }
+        Returns: string
       }
       log_user_activity: {
         Args: {
