@@ -258,7 +258,7 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
       <div className="min-h-screen bg-background">
         {/* Enhanced Hero Section */}
         <motion.section 
-          className="relative bg-gradient-to-br from-background via-background/95 to-primary/5 pt-20 pb-16 overflow-hidden"
+          className="relative bg-background pt-20 pb-16 overflow-hidden"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
@@ -266,10 +266,13 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
           
-          {/* Glow Effects */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-3xl opacity-60"></div>
-          <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-2xl opacity-40"></div>
-          <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-secondary/10 rounded-full blur-2xl opacity-40"></div>
+          {/* Enhanced Glow Effects */}
+          <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px]">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute inset-4 bg-secondary/15 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+          </div>
+          <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-primary/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-secondary/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '3s'}}></div>
 
           <div className="container relative z-10 max-w-6xl mx-auto px-6">
             <motion.div 
@@ -302,11 +305,10 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
               </motion.p>
 
               <motion.p 
-                className="text-lg md:text-xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed" 
+                className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed" 
                 variants={itemVariants}
               >
-                دوره‌ای جامع و عملی که به شما امکان آشنایی با مفاهیم پایه‌ای هوش مصنوعی و کاربرد آن در زندگی روزمره را فراهم می‌کند. 
-                این برنامه آموزشی به‌عنوان پیش‌نمایشی از دوره کامل طراحی شده که تاکنون بیش از ۳۰۰۰ نفر در آن شرکت کرده‌اند.
+                دوره‌ای جامع و عملی که به شما امکان آشنایی با مفاهیم پایه‌ای هوش مصنوعی و کاربرد آن در زندگی روزمره را فراهم می‌کند.
               </motion.p>
 
               {/* Benefits */}
@@ -327,7 +329,7 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                 <Button 
                   size="lg" 
                   onClick={handleStartCourse}
-                  className="px-12 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="px-12 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300"
                 >
                   <PlayCircle className="w-5 h-5 mr-2" />
                   شروع دوره رایگان
@@ -375,8 +377,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                 <motion.div key={index} variants={itemVariants}>
                   <Card className="h-full border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg group">
                     <CardContent className="p-8 text-center space-y-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                        <item.icon className="w-8 h-8 text-primary-foreground" />
+                      <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-all duration-300">
+                        <item.icon className="w-8 h-8 text-primary" />
                       </div>
                       <h3 className="text-xl font-bold text-foreground">{item.title}</h3>
                       <p className="text-muted-foreground leading-relaxed">{item.description}</p>
@@ -415,8 +417,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                       <CardContent className="p-8">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                              <span className="text-primary-foreground font-bold text-xl">۱</span>
+                            <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center">
+                              <span className="text-primary font-bold text-xl">۱</span>
                             </div>
                             <div className="text-right space-y-2">
                               <h3 className="text-2xl font-bold text-foreground">
@@ -477,8 +479,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                       <CardContent className="p-8">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-primary rounded-xl flex items-center justify-center">
-                              <span className="text-primary-foreground font-bold text-xl">۲</span>
+                            <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center">
+                              <span className="text-primary font-bold text-xl">۲</span>
                             </div>
                             <div className="text-right space-y-2">
                               <h3 className="text-2xl font-bold text-foreground">
@@ -565,8 +567,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                 <motion.div key={index} variants={itemVariants}>
                   <Card className="h-full border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg group">
                     <CardContent className="p-8 flex items-start gap-6">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                        <item.icon className="w-8 h-8 text-primary-foreground" />
+                      <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-all duration-300">
+                        <item.icon className="w-8 h-8 text-primary" />
                       </div>
                       <div className="space-y-3">
                         <h3 className="text-xl font-bold text-foreground">{item.title}</h3>
@@ -605,8 +607,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                   variants={itemVariants}
                   className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-foreground font-bold text-sm">{index + 1}</span>
+                  <div className="w-8 h-8 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary font-bold text-sm">{index + 1}</span>
                   </div>
                   <span className="text-lg text-foreground">{outcome}</span>
                 </motion.div>
@@ -638,8 +640,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                 <motion.div key={index} variants={itemVariants}>
                   <Card className="h-full text-center border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg group">
                     <CardContent className="p-8 space-y-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-                        <feature.icon className="w-8 h-8 text-primary-foreground" />
+                      <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-all duration-300">
+                        <feature.icon className="w-8 h-8 text-primary" />
                       </div>
                       <h3 className="text-lg font-bold text-foreground">{feature.title}</h3>
                       <p className="text-muted-foreground">{feature.description}</p>
@@ -742,56 +744,47 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
 
         {/* Final CTA */}
         <motion.section 
-          className="py-20 bg-gradient-to-br from-primary/10 via-background to-secondary/10"
+          className="py-20 bg-background border-t border-muted"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
         >
-          <div className="container max-w-5xl mx-auto px-6 text-center">
+          <div className="container max-w-4xl mx-auto px-6 text-center">
             <motion.div variants={itemVariants} className="space-y-8">
               <div className="space-y-6">
-                <h2 className="text-4xl lg:text-6xl font-black text-foreground leading-tight">
-                  آماده‌ای زندگی هوشمندت رو 
-                  <span className="text-primary"> شروع کنی؟</span>
+                <h2 className="text-3xl lg:text-5xl font-bold text-foreground leading-tight">
+                  آماده‌ای زندگی هوشمندت رو شروع کنی؟
                 </h2>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                  فقط ۲ جلسه فاصله داری تا با دنیای AI آشنا بشی و اولین قدم‌هات رو برای آینده‌ای بهتر برداری. 
-                  کاملاً رایگان، بدون تعهد، بدون نیاز به کارت اعتباری.
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                  فقط ۲ جلسه فاصله داری تا با دنیای AI آشنا بشی. کاملاً رایگان، بدون تعهد.
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-4 justify-center">
-                <Badge variant="secondary" className="px-6 py-3 text-base">
-                  <ShieldCheck className="w-4 h-4 mr-2" />
-                  ۱۰۰% رایگان
-                </Badge>
-                <Badge variant="secondary" className="px-6 py-3 text-base">
-                  <Infinity className="w-4 h-4 mr-2" />
-                  دسترسی دائمی
-                </Badge>
-                <Badge variant="secondary" className="px-6 py-3 text-base">
-                  <UserCheck className="w-4 h-4 mr-2" />
-                  آکادمی رفیعی
-                </Badge>
-                <Badge variant="secondary" className="px-6 py-3 text-base">
-                  <Headphones className="w-4 h-4 mr-2" />
-                  با صدای مدرس
-                </Badge>
-              </div>
-
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <Button 
                   size="lg" 
                   onClick={handleStartCourse}
-                  className="px-12 py-6 text-xl font-bold bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 transform hover:scale-105 transition-all duration-300 shadow-xl"
+                  className="px-10 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300"
                 >
-                  <PlayCircle className="w-6 h-6 mr-3" />
-                  همین حالا شروع کن - کاملاً رایگان
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  همین حالا شروع کن
                 </Button>
-                <p className="text-sm text-muted-foreground">
-                  ✅ بدون نیاز به کارت اعتباری • ✅ دسترسی فوری • ✅ بدون تعهد
-                </p>
+                
+                <div className="flex flex-wrap gap-3 justify-center text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    بدون نیاز به کارت اعتباری
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    دسترسی فوری
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    آکادمی رفیعی
+                  </span>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -801,7 +794,7 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t lg:hidden z-50">
           <Button 
             onClick={handleStartCourse}
-            className="w-full py-4 text-lg font-semibold bg-gradient-to-r from-primary to-secondary"
+            className="w-full py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
             size="lg"
           >
             <PlayCircle className="w-5 h-5 mr-2" />
