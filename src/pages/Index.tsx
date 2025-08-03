@@ -396,19 +396,19 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
             {/* Students Count */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/30">
-                  <Users className="w-8 h-8 text-white" />
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-4 md:p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:scale-105">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/30">
+                  <Users className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
+                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
                   {formatNumber(displayStudentsCount)}
                 </div>
-                <div className="text-muted-foreground font-medium">دانشجو آکادمی</div>
-                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
+                <div className="text-sm md:text-base text-muted-foreground font-medium">دانشجو آکادمی</div>
+                <div className="text-xs md:text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
                   <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
                   سراسر جهان
                 </div>
@@ -418,15 +418,15 @@ const Index = () => {
             {/* Enrollments Count */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/30 rounded-2xl p-8 text-center hover:border-green-300/50 dark:hover:border-green-700/50 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30">
-                  <BookOpen className="w-8 h-8 text-white" />
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-green-300/50 dark:hover:border-green-700/50 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group-hover:scale-105">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-green-500/30">
+                  <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
+                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
                   {formatNumber(displayEnrollmentsCount)}
                 </div>
-                <div className="text-muted-foreground font-medium">ثبت‌نام موفق</div>
-                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
+                <div className="text-sm md:text-base text-muted-foreground font-medium">ثبت‌نام موفق</div>
+                <div className="text-xs md:text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
                   <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
                   در تمام دوره‌ها
                 </div>
@@ -434,17 +434,17 @@ const Index = () => {
             </div>
 
             {/* Courses Count */}
-            <div className="group relative md:col-span-2 lg:col-span-1">
+            <div className="group relative col-span-2 lg:col-span-1">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-8 text-center hover:border-purple-300/50 dark:hover:border-purple-700/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-500/30">
-                  <Award className="w-8 h-8 text-white" />
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-purple-300/50 dark:hover:border-purple-700/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 group-hover:scale-105">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-purple-500/30">
+                  <Award className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   {formatNumber(totalCoursesCount)}
                 </div>
-                <div className="text-muted-foreground font-medium">دوره تخصصی</div>
-                <div className="text-sm text-muted-foreground/80 mt-2">فعال و به‌روز</div>
+                <div className="text-sm md:text-base text-muted-foreground font-medium">دوره تخصصی</div>
+                <div className="text-xs md:text-sm text-muted-foreground/80 mt-2">فعال و به‌روز</div>
               </div>
             </div>
           </div>
@@ -629,8 +629,7 @@ const Index = () => {
               <Button 
                 asChild 
                 size="lg" 
-                variant="outline" 
-                className="w-full sm:w-auto h-14 px-10 border-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 dark:border-purple-800 dark:hover:border-purple-700 dark:hover:bg-purple-950/50 font-medium transition-all duration-300 group backdrop-blur-sm"
+                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium shadow-xl shadow-purple-500/25 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300 group"
               >
                 <Link to="/magazine" className="flex items-center gap-2">
                   <span>📖 مطالعه مجله</span>
