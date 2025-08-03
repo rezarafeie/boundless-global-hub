@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift } from 'lucide-react';
+import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift, Rocket } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
@@ -23,6 +23,10 @@ interface Course {
   is_sale_enabled?: boolean;
   sale_price?: number | null;
   sale_expires_at?: string | null;
+  is_pre_launch_enabled?: boolean;
+  pre_launch_price?: number | null;
+  pre_launch_ends_at?: string | null;
+  launch_date?: string | null;
   woocommerce_product_id: number | null;
   redirect_url: string | null;
   is_active: boolean;
@@ -64,6 +68,10 @@ const CourseEdit: React.FC = () => {
     is_sale_enabled: false,
     sale_price: '',
     sale_expires_at: '',
+    is_pre_launch_enabled: false,
+    pre_launch_price: '',
+    pre_launch_ends_at: '',
+    launch_date: '',
     woocommerce_product_id: '',
     redirect_url: '',
     is_active: true,
@@ -127,6 +135,10 @@ const CourseEdit: React.FC = () => {
         is_sale_enabled: data.is_sale_enabled || false,
         sale_price: data.sale_price?.toString() || '',
         sale_expires_at: data.sale_expires_at ? new Date(data.sale_expires_at).toISOString().slice(0, 16) : '',
+        is_pre_launch_enabled: (data as any).is_pre_launch_enabled || false,
+        pre_launch_price: (data as any).pre_launch_price?.toString() || '',
+        pre_launch_ends_at: (data as any).pre_launch_ends_at ? new Date((data as any).pre_launch_ends_at).toISOString().slice(0, 16) : '',
+        launch_date: (data as any).launch_date ? new Date((data as any).launch_date).toISOString().slice(0, 16) : '',
         woocommerce_product_id: data.woocommerce_product_id?.toString() || '',
         redirect_url: data.redirect_url || '',
         is_active: data.is_active,
@@ -218,6 +230,10 @@ const CourseEdit: React.FC = () => {
         is_sale_enabled: formData.is_sale_enabled,
         sale_price: formData.is_sale_enabled && formData.sale_price ? parseFloat(formData.sale_price) : null,
         sale_expires_at: formData.is_sale_enabled && formData.sale_expires_at ? new Date(formData.sale_expires_at).toISOString() : null,
+        is_pre_launch_enabled: formData.is_pre_launch_enabled,
+        pre_launch_price: formData.is_pre_launch_enabled && formData.pre_launch_price ? parseFloat(formData.pre_launch_price) : null,
+        pre_launch_ends_at: formData.is_pre_launch_enabled && formData.pre_launch_ends_at ? new Date(formData.pre_launch_ends_at).toISOString() : null,
+        launch_date: formData.is_pre_launch_enabled && formData.launch_date ? new Date(formData.launch_date).toISOString() : null,
         woocommerce_product_id: formData.woocommerce_product_id ? parseInt(formData.woocommerce_product_id) : null,
         redirect_url: formData.redirect_url.trim() || null,
         is_active: formData.is_active,
@@ -471,6 +487,74 @@ const CourseEdit: React.FC = () => {
                           onChange={(e) => setFormData(prev => ({ ...prev, sale_expires_at: e.target.value }))}
                           required={false}
                         />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pre-Launch Section */}
+                <div className="border-t pt-6 space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Rocket className="h-5 w-5" />
+                    تنظیمات پیش‌فروش
+                  </h3>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is_pre_launch_enabled"
+                      checked={formData.is_pre_launch_enabled}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_pre_launch_enabled: checked }))}
+                    />
+                    <Label htmlFor="is_pre_launch_enabled">فعال‌سازی پیش‌فروش</Label>
+                  </div>
+
+                  {formData.is_pre_launch_enabled && (
+                    <div className="space-y-4">
+                      <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                        <h4 className="font-medium text-orange-800 dark:text-orange-400 mb-2">نحوه عملکرد پیش‌فروش</h4>
+                        <p className="text-sm text-muted-foreground">
+                          در حالت پیش‌فروش، دوره با قیمت ویژه عرضه می‌شود و پس از تاریخ لانچ به قیمت اصلی بازمی‌گردد.
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="pre_launch_price">
+                          قیمت پیش‌فروش ({formData.use_dollar_price ? 'دلار آمریکا' : 'تومان'}) *
+                        </Label>
+                        <Input
+                          id="pre_launch_price"
+                          type="number"
+                          step={formData.use_dollar_price ? "0.01" : "1"}
+                          value={formData.pre_launch_price}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pre_launch_price: e.target.value }))}
+                          placeholder={formData.use_dollar_price ? "19.99" : "999000"}
+                          required={formData.is_pre_launch_enabled}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="pre_launch_ends_at">تاریخ پایان پیش‌فروش *</Label>
+                        <Input
+                          id="pre_launch_ends_at"
+                          type="datetime-local"
+                          value={formData.pre_launch_ends_at}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pre_launch_ends_at: e.target.value }))}
+                          required={formData.is_pre_launch_enabled}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="launch_date">تاریخ لانچ رسمی *</Label>
+                        <Input
+                          id="launch_date"
+                          type="datetime-local"
+                          value={formData.launch_date}
+                          onChange={(e) => setFormData(prev => ({ ...prev, launch_date: e.target.value }))}
+                          required={formData.is_pre_launch_enabled}
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          تاریخی که دوره رسماً لانچ می‌شود و کاربران می‌توانند از آن استفاده کنند
+                        </p>
                       </div>
                     </div>
                   )}
