@@ -507,14 +507,14 @@ const Enroll: React.FC = () => {
                 {/* Price Section */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl blur-xl"></div>
-                  <div className="relative p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
+                  <div className="relative p-4 md:p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
                      <div className="space-y-3">
-                       <div className="flex items-center justify-between">
-                         <span className="text-lg font-medium">قیمت دوره:</span>
-                         <div className="text-left">
+                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                         <span className="text-base md:text-lg font-medium">قیمت دوره:</span>
+                         <div className="text-right md:text-left">
                             {/* Pre-launch Badge */}
                             {isOnPrelaunch && prelaunchPrice !== null && !isFree && (course as any).launch_date && (
-                              <div className="mb-2">
+                              <div className="mb-3">
                                 <PrelaunchBadge
                                   originalPrice={course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price}
                                   prelaunchPrice={prelaunchPrice}
