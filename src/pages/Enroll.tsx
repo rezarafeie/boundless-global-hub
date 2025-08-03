@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap, DollarSign, AlertTriangle, Wifi } from 'lucide-react';
+import { Loader2, CreditCard, User, Mail, Phone, BookOpen, Star, Shield, Clock, Zap, DollarSign, AlertTriangle, Wifi, Rocket } from 'lucide-react';
 import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import DiscountSection from '@/components/DiscountSection';
 import { IPDetectionService } from '@/lib/ipDetectionService';
 import EnrollmentCountdown from '@/components/EnrollmentCountdown';
 import SaleBadge from '@/components/SaleBadge';
+import PrelaunchBadge from '@/components/PrelaunchBadge';
 import SaleCountdownTimer from '@/components/SaleCountdownTimer';
 
 interface Course {
@@ -32,6 +33,10 @@ interface Course {
   is_sale_enabled: boolean;
   sale_price: number | null;
   sale_expires_at: string | null;
+  is_pre_launch_enabled?: boolean;
+  pre_launch_price?: number | null;
+  pre_launch_ends_at?: string | null;
+  launch_date?: string | null;
   redirect_url: string;
   is_spotplayer_enabled: boolean;
   spotplayer_course_id: string | null;
@@ -56,6 +61,8 @@ const Enroll: React.FC = () => {
   const [showVPNWarning, setShowVPNWarning] = useState(false);
   const [salePrice, setSalePrice] = useState<number | null>(null);
   const [isOnSale, setIsOnSale] = useState(false);
+  const [prelaunchPrice, setPrelaunchPrice] = useState<number | null>(null);
+  const [isOnPrelaunch, setIsOnPrelaunch] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -66,7 +73,7 @@ const Enroll: React.FC = () => {
   });
 
   // Calculate if the course is free (either original price is 0 or 100% discount)
-  const isFree = course?.price === 0 || discountedPrice === 0 || salePrice === 0;
+  const isFree = course?.price === 0 || discountedPrice === 0 || salePrice === 0 || prelaunchPrice === 0;
 
   useEffect(() => {
     if (courseSlug) {
@@ -115,10 +122,36 @@ const Enroll: React.FC = () => {
     }
   }, [course]);
 
-  // Check if course is on sale and calculate sale price
+  // Check if course is on sale or pre-launch and calculate pricing
   useEffect(() => {
     if (course) {
       const now = new Date();
+      
+      // Check pre-launch first (higher priority)
+      const prelaunchExpiry = (course as any).pre_launch_ends_at ? new Date((course as any).pre_launch_ends_at) : null;
+      const isPrelaunchActive = (course as any).is_pre_launch_enabled && 
+                               (course as any).pre_launch_price !== null && 
+                               prelaunchExpiry && 
+                               now < prelaunchExpiry;
+      
+      setIsOnPrelaunch(isPrelaunchActive);
+      
+      if (isPrelaunchActive) {
+        if (course.use_dollar_price && (course as any).pre_launch_price) {
+          // For dollar courses, convert pre-launch price to rial
+          fetchPrelaunchExchangeRate((course as any).pre_launch_price);
+        } else {
+          setPrelaunchPrice((course as any).pre_launch_price);
+        }
+        // If pre-launch is active, don't check regular sale
+        setIsOnSale(false);
+        setSalePrice(null);
+        return;
+      } else {
+        setPrelaunchPrice(null);
+      }
+      
+      // Check regular sale if no pre-launch
       const saleExpiry = course.sale_expires_at ? new Date(course.sale_expires_at) : null;
       const isSaleActive = course.is_sale_enabled && 
                           course.sale_price !== null && 
@@ -147,6 +180,16 @@ const Enroll: React.FC = () => {
     } catch (error) {
       console.error('Error fetching sale exchange rate:', error);
       setSalePrice(course?.sale_price || null);
+    }
+  };
+
+  const fetchPrelaunchExchangeRate = async (prelaunchPriceUSD: number) => {
+    try {
+      const rialAmount = await TetherlandService.convertUSDToIRR(prelaunchPriceUSD);
+      setPrelaunchPrice(rialAmount);
+    } catch (error) {
+      console.error('Error fetching pre-launch exchange rate:', error);
+      setPrelaunchPrice((course as any)?.pre_launch_price || null);
     }
   };
 
@@ -346,8 +389,11 @@ const Enroll: React.FC = () => {
         
         let paymentAmount = basePrice;
         
-        // PRIORITY ORDER: Sale price FIRST, then discount, then base
-        if (isOnSale && salePrice !== null) {
+        // PRIORITY ORDER: Pre-launch FIRST, then Sale price, then discount, then base
+        if (isOnPrelaunch && prelaunchPrice !== null) {
+          paymentAmount = prelaunchPrice;
+          console.log('🚀 PRE-LAUNCH ACTIVE - Using pre-launch price for payment:', prelaunchPrice);
+        } else if (isOnSale && salePrice !== null) {
           paymentAmount = salePrice;
           console.log('🏷️ SALE ACTIVE - Using sale price for payment:', salePrice);
         } else if (discountedPrice !== null) {
@@ -466,49 +512,70 @@ const Enroll: React.FC = () => {
                        <div className="flex items-center justify-between">
                          <span className="text-lg font-medium">قیمت دوره:</span>
                          <div className="text-left">
-                           {/* Sale Badge */}
-                           {isOnSale && salePrice !== null && !isFree && (
-                             <div className="mb-2">
-                               <SaleBadge
-                                 originalPrice={course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price}
-                                 salePrice={salePrice}
-                                 className="mb-1"
-                               />
-                             </div>
-                           )}
-                           
-                           {isFree ? (
-                             <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                               رایگان
-                             </span>
-                           ) : (
-                             <>
-                               <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                                  {isOnSale && salePrice !== null
-                                    ? formatPrice(salePrice)
-                                    : discountedPrice !== null 
-                                      ? formatPrice(discountedPrice)
-                                      : course.use_dollar_price && finalRialPrice 
-                                        ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                        : formatPrice(course.price)
-                                  }
-                               </span>
-                               {/* Show original price if on sale or discounted */}
-                               {(isOnSale && salePrice !== null || discountAmount > 0) && (
-                                  <div className="text-sm text-muted-foreground line-through mt-1">
-                                    {course.use_dollar_price && finalRialPrice 
-                                      ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                      : formatPrice(course.price)
-                                    }
+                            {/* Pre-launch Badge */}
+                            {isOnPrelaunch && prelaunchPrice !== null && !isFree && (course as any).launch_date && (
+                              <div className="mb-2">
+                                <PrelaunchBadge
+                                  originalPrice={course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price}
+                                  prelaunchPrice={prelaunchPrice}
+                                  launchDate={(course as any).launch_date}
+                                  className="mb-1"
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Sale Badge */}
+                            {!isOnPrelaunch && isOnSale && salePrice !== null && !isFree && (
+                              <div className="mb-2">
+                                <SaleBadge
+                                  originalPrice={course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price}
+                                  salePrice={salePrice}
+                                  className="mb-1"
+                                />
+                              </div>
+                            )}
+                            
+                            {isFree ? (
+                              <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                                رایگان
+                              </span>
+                            ) : (
+                              <>
+                                <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                                   {isOnPrelaunch && prelaunchPrice !== null
+                                     ? formatPrice(prelaunchPrice)
+                                     : isOnSale && salePrice !== null
+                                       ? formatPrice(salePrice)
+                                       : discountedPrice !== null 
+                                         ? formatPrice(discountedPrice)
+                                         : course.use_dollar_price && finalRialPrice 
+                                           ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                           : formatPrice(course.price)
+                                   }
+                                </span>
+                                {/* Show original price if on pre-launch, sale or discounted */}
+                                {(isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || discountAmount > 0) && (
+                                   <div className="text-sm text-muted-foreground line-through mt-1">
+                                     {course.use_dollar_price && finalRialPrice 
+                                       ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                       : formatPrice(course.price)
+                                     }
+                                   </div>
+                                )}
+                                
+                                {/* Pre-launch Price in USD if applicable */}
+                                {isOnPrelaunch && course.use_dollar_price && (course as any).pre_launch_price && (
+                                  <div className="text-sm text-orange-600 dark:text-orange-400 mt-1">
+                                    قیمت پیش‌فروش: {TetherlandService.formatUSDAmount((course as any).pre_launch_price)}
                                   </div>
-                               )}
-                               
-                               {/* Sale Price in USD if applicable */}
-                               {isOnSale && course.use_dollar_price && course.sale_price && (
-                                 <div className="text-sm text-red-600 dark:text-red-400 mt-1">
-                                   قیمت حراج: {TetherlandService.formatUSDAmount(course.sale_price)}
-                                 </div>
-                               )}
+                                )}
+                                
+                                {/* Sale Price in USD if applicable */}
+                                {!isOnPrelaunch && isOnSale && course.use_dollar_price && course.sale_price && (
+                                  <div className="text-sm text-red-600 dark:text-red-400 mt-1">
+                                    قیمت حراج: {TetherlandService.formatUSDAmount(course.sale_price)}
+                                  </div>
+                                )}
                              </>
                            )}
                          </div>
@@ -546,8 +613,37 @@ const Enroll: React.FC = () => {
                   </div>
                  </div>
 
+                 {/* Pre-launch Countdown Timer */}
+                 {isOnPrelaunch && (course as any).pre_launch_ends_at && (
+                   <div className="relative">
+                     <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-xl blur-xl"></div>
+                     <div className="relative p-6 bg-gradient-to-r from-orange-50/80 to-amber-50/80 dark:from-orange-950/30 dark:to-amber-950/30 rounded-xl border-2 border-orange-200 dark:border-orange-800">
+                       <div className="text-center space-y-3">
+                         <div className="flex items-center justify-center gap-2">
+                           <Rocket className="h-5 w-5 text-orange-600" />
+                           <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-200">
+                             پیش‌فروش تا زمان لانچ
+                           </h3>
+                         </div>
+                         <SaleCountdownTimer 
+                           endDate={new Date((course as any).pre_launch_ends_at)}
+                         />
+                         {(course as any).launch_date && (
+                           <p className="text-sm text-orange-700 dark:text-orange-300">
+                             لانچ رسمی: {new Date((course as any).launch_date).toLocaleDateString('fa-IR', {
+                               year: 'numeric',
+                               month: 'long', 
+                               day: 'numeric'
+                             })}
+                           </p>
+                         )}
+                       </div>
+                     </div>
+                   </div>
+                 )}
+
                  {/* Sale Countdown Timer */}
-                 {isOnSale && course.sale_expires_at && (
+                 {!isOnPrelaunch && isOnSale && course.sale_expires_at && (
                    <SaleCountdownTimer 
                      endDate={new Date(course.sale_expires_at)}
                    />
@@ -839,16 +935,18 @@ const Enroll: React.FC = () => {
                               در حال پردازش...
                             </>
                           ) : (
-                            <>
-                              <CreditCard className="h-6 w-6 ml-2" />
-                              پرداخت آنلاین {isOnSale && salePrice !== null
-                                ? formatPrice(salePrice)
-                                : discountedPrice !== null 
-                                  ? formatPrice(discountedPrice)
-                                  : course.use_dollar_price && finalRialPrice 
-                                    ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                    : formatPrice(course.price)
-                              }
+                             <>
+                               <CreditCard className="h-6 w-6 ml-2" />
+                               پرداخت آنلاین {isOnPrelaunch && prelaunchPrice !== null
+                                 ? formatPrice(prelaunchPrice)
+                                 : isOnSale && salePrice !== null
+                                   ? formatPrice(salePrice)
+                                   : discountedPrice !== null 
+                                     ? formatPrice(discountedPrice)
+                                     : course.use_dollar_price && finalRialPrice 
+                                       ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                       : formatPrice(course.price)
+                               }
                             </>
                           )}
                         </Button>
