@@ -301,6 +301,43 @@ const Index = () => {
         </section>
       )}
 
+      {/* Courses CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-primary/10 to-blue-500/10">
+        <div className="container">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              مجموعه کامل دوره‌های آموزشی
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              بیش از ۵۰ دوره تخصصی در زمینه‌های مختلف کسب‌وکار، هوش مصنوعی و توسعه شخصی
+            </p>
+            <Button asChild size="lg" className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white">
+              <Link to="/courses">
+                مشاهده همه دوره‌ها
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Magazine CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+        <div className="container">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              مجله آکادمی رفیعی
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              مقالات، تحلیل‌ها و آخرین اخبار دنیای کسب‌وکار، فناوری و موفقیت
+            </p>
+            <Button asChild size="lg" variant="outline" className="border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white">
+              <Link to="/magazine">
+                مطالعه مجله
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       
       {/* Assessment Center Promo */}
