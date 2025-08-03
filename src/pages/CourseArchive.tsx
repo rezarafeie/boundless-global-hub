@@ -74,7 +74,7 @@ const CourseArchive = () => {
       status: "active" as const,
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80",
-      link: "/smart-pack"
+      link: "/courses/smart-pack"
     },
     {
       title: translations.boundlessTaste,
