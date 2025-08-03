@@ -433,8 +433,8 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Courses Count */}
-            <div className="group relative col-span-2 lg:col-span-1">
+            {/* Courses Count - Hidden on mobile */}
+            <div className="hidden md:block group relative col-span-2 lg:col-span-1">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
               <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-purple-300/50 dark:hover:border-purple-700/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 group-hover:scale-105">
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-purple-500/30">
