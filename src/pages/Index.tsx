@@ -11,12 +11,67 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Star, Zap } from "lucide-react";
+import { Star, Zap, Clock } from "lucide-react";
 
 const Index = () => {
   const { translations } = useLanguage();
   const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
   const [boundlessCourses, setBoundlessCourses] = useState<any[]>([]);
+
+  // Countdown component
+  const CountdownTimer = ({ endDate, label }: { endDate: string, label: string }) => {
+    const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number, seconds: number} | null>(null);
+
+    useEffect(() => {
+      const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const end = new Date(endDate).getTime();
+        const difference = end - now;
+
+        if (difference > 0) {
+          setTimeLeft({
+            days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+            hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+            minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+            seconds: Math.floor((difference % (1000 * 60)) / 1000)
+          });
+        } else {
+          setTimeLeft(null);
+        }
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }, [endDate]);
+
+    if (!timeLeft) return null;
+
+    return (
+      <div className="bg-muted/50 rounded-lg p-3 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="h-4 w-4 text-orange-600" />
+          <span className="text-sm font-medium text-orange-700">{label}</span>
+        </div>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="bg-background rounded p-2">
+            <div className="text-lg font-bold text-foreground">{timeLeft.days}</div>
+            <div className="text-xs text-muted-foreground">روز</div>
+          </div>
+          <div className="bg-background rounded p-2">
+            <div className="text-lg font-bold text-foreground">{timeLeft.hours}</div>
+            <div className="text-xs text-muted-foreground">ساعت</div>
+          </div>
+          <div className="bg-background rounded p-2">
+            <div className="text-lg font-bold text-foreground">{timeLeft.minutes}</div>
+            <div className="text-xs text-muted-foreground">دقیقه</div>
+          </div>
+          <div className="bg-background rounded p-2">
+            <div className="text-lg font-bold text-foreground">{timeLeft.seconds}</div>
+            <div className="text-xs text-muted-foreground">ثانیه</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -154,17 +209,31 @@ const Index = () => {
                             </div>
                           </div>
                           
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-foreground">
-                              {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
-                            </div>
-                            {(isOnSale || isOnPrelaunch) && (
-                              <div className="text-sm text-muted-foreground line-through">
-                                {course.use_dollar_price ? `$${course.usd_price}` : formatPrice(course.price)}
+                          {course.price > 0 ? (
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-foreground">
+                                {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
                               </div>
-                            )}
-                          </div>
+                              {(isOnSale || isOnPrelaunch) && (
+                                <div className="text-sm text-muted-foreground line-through">
+                                  {course.use_dollar_price ? `$${course.usd_price}` : formatPrice(course.price)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-right">
+                              <span className="text-lg font-semibold text-green-600">رایگان</span>
+                            </div>
+                          )}
                         </div>
+
+                        {/* Countdown Timers */}
+                        {isOnPrelaunch && course.pre_launch_ends_at && (
+                          <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
+                        )}
+                        {isOnSale && course.sale_expires_at && (
+                          <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
+                        )}
                         
                         <p className="text-muted-foreground leading-relaxed mb-8">
                           {course.description || 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی'}
@@ -177,7 +246,7 @@ const Index = () => {
                             className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white"
                           >
                             <Link to={`/enroll?course=${course.slug}`}>
-                              ثبت‌نام در دوره
+                              {course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}
                             </Link>
                           </Button>
                           
@@ -271,6 +340,14 @@ const Index = () => {
                             </div>
                           )}
                         </div>
+
+                        {/* Countdown Timers */}
+                        {isOnPrelaunch && course.pre_launch_ends_at && (
+                          <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
+                        )}
+                        {isOnSale && course.sale_expires_at && (
+                          <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
+                        )}
                         
                         <p className="text-muted-foreground leading-relaxed mb-8">
                           {course.description || 'دوره جامع و کاربردی برای پیشرفت در کسب‌وکار'}
