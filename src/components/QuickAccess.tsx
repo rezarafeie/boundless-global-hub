@@ -25,8 +25,9 @@ const QuickAccess = () => {
     {
       title: "مجله",
       icon: <BookCheck size={28} />,
-      link: "/mag",
-      color: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+      link: "https://mag.rafiei.co",
+      color: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400",
+      external: true
     },
     {
       title: "پشتیبانی",

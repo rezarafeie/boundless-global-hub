@@ -99,13 +99,15 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/mag" 
+                <a 
+                  href="https://mag.rafiei.co" 
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-300 hover:text-white hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 text-base flex items-center group"
                 >
                   <span className="w-2 h-2 bg-blue-400 rounded-full ml-3 group-hover:bg-white transition-colors"></span>
                   {translations.magazine}
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

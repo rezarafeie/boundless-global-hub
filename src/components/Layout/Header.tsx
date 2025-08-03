@@ -109,9 +109,9 @@ const Header = () => {
           <Link to="/assessment" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {translations.assessmentCenter}
           </Link>
-          <Link to="/mag" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
+          <a href="https://mag.rafiei.co" target="_blank" rel="noopener noreferrer" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Magazine" : "مجله"}
-          </Link>
+          </a>
           <Link to="/support" className="text-sm font-medium transition-colors hover:text-foreground text-muted-foreground hover:text-primary">
             {language === "en" ? "Support" : "پشتیبانی"}
           </Link>
@@ -236,13 +236,15 @@ const Header = () => {
                   >
                     {translations.assessmentCenter}
                   </Link>
-                  <Link 
-                    to="/mag" 
+                  <a 
+                    href="https://mag.rafiei.co" 
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {language === "en" ? "Magazine" : "مجله"}
-                  </Link>
+                  </a>
                   <Link 
                     to="/support" 
                     className="text-lg font-medium transition-colors hover:text-foreground text-muted-foreground py-2 hover:text-primary"
