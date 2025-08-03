@@ -707,56 +707,6 @@ const SmartPackLanding = () => {
         </div>
       </motion.section>
 
-      {/* Course Curriculum */}
-      <motion.section 
-        className="py-16 bg-muted/30" 
-        initial="hidden" 
-        whileInView="visible" 
-        viewport={{ once: true }} 
-        variants={containerVariants}
-      >
-        <div className="container max-w-6xl mx-auto px-6">
-          <SectionTitle 
-            title="سرفصل‌های دوره"
-            subtitle="برنامه جامع و عملی برای راه‌اندازی کسب‌وکار سودآور با هوش مصنوعی"
-            align="center"
-            isCentered
-          />
-
-          <div className="space-y-8">
-            {curriculum.map((section, index) => (
-              <motion.div key={index} variants={itemVariants}>
-                <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
-                  <CardContent className="p-8">
-                    <div className="flex items-start gap-6">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
-                        <section.icon className="w-8 h-8 text-primary-foreground" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-foreground mb-3">
-                          {section.title}
-                        </h3>
-                        <p className="text-muted-foreground mb-6 text-lg">
-                          {section.description}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {section.modules.map((module, moduleIndex) => (
-                            <div key={moduleIndex} className="flex items-center gap-3">
-                              <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                              <span className="text-foreground">{module}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
       {/* Course Topics Section */}
       <motion.section 
         className="py-16 bg-background" 
