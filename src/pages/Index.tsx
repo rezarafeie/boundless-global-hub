@@ -23,24 +23,7 @@ const Index = () => {
   const [displayStudentsCount, setDisplayStudentsCount] = useState<number>(0);
   const [displayEnrollmentsCount, setDisplayEnrollmentsCount] = useState<number>(0);
 
-  // Auto increment animation for counters
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDisplayStudentsCount(prev => {
-        const increment = Math.floor(Math.random() * 3) + 1; // Random increment 1-3
-        return prev + increment;
-      });
-      
-      setDisplayEnrollmentsCount(prev => {
-        const increment = Math.floor(Math.random() * 2) + 1; // Random increment 1-2
-        return prev + increment;
-      });
-    }, 3000 + Math.random() * 2000); // Random interval between 3-5 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animate counters to display values when data loads
+  // Set real counters without fake animation
   useEffect(() => {
     if (studentsCount > 0) {
       setDisplayStudentsCount(studentsCount);
@@ -173,7 +156,9 @@ const Index = () => {
   }, []);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+    // Convert dollar to IRR (1 USD = 60,000 IRR approximately)
+    const irrPrice = price * 60000;
+    return new Intl.NumberFormat('fa-IR').format(irrPrice) + ' تومان';
   };
 
   const formatNumber = (number: number) => {
@@ -381,11 +366,9 @@ const Index = () => {
                                 <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                                   {formatPrice(currentPrice)}
                                 </div>
-                                {course.use_dollar_price && (
-                                  <div className="text-sm text-muted-foreground">
-                                    ${currentPrice}
-                                  </div>
-                                )}
+                                <div className="text-sm text-muted-foreground">
+                                  ${currentPrice}
+                                </div>
                                 {(isOnSale || isOnPrelaunch) && (
                                   <div className="text-xs text-muted-foreground line-through">
                                     {formatPrice(course.price)}
@@ -395,16 +378,6 @@ const Index = () => {
                             )}
                           </div>
 
-                          {/* Countdown Timer - minimal */}
-                          {isOnPrelaunch && course.pre_launch_ends_at ? (
-                            <div className="mb-4">
-                              <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
-                            </div>
-                          ) : isOnSale && course.sale_expires_at ? (
-                            <div className="mb-4">
-                              <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
-                            </div>
-                          ) : null}
                           
                           {/* Description */}
                           <div className="flex-1 mb-6">
@@ -524,11 +497,9 @@ const Index = () => {
                                 <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                                   {formatPrice(currentPrice)}
                                 </div>
-                                {course.use_dollar_price && (
-                                  <div className="text-sm text-muted-foreground">
-                                    ${currentPrice}
-                                  </div>
-                                )}
+                                <div className="text-sm text-muted-foreground">
+                                  ${currentPrice}
+                                </div>
                                 {(isOnSale || isOnPrelaunch) && (
                                   <div className="text-xs text-muted-foreground line-through">
                                     {formatPrice(course.price)}
@@ -538,16 +509,6 @@ const Index = () => {
                             )}
                           </div>
 
-                          {/* Countdown Timer - minimal */}
-                          {isOnPrelaunch && course.pre_launch_ends_at ? (
-                            <div className="mb-4">
-                              <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
-                            </div>
-                          ) : isOnSale && course.sale_expires_at ? (
-                            <div className="mb-4">
-                              <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
-                            </div>
-                          ) : null}
                           
                           {/* Description */}
                           <div className="flex-1 mb-6">
