@@ -11,12 +11,13 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Star, Zap, Clock } from "lucide-react";
+import { Star, Zap, Clock, Play, BookOpen, Users, Award, ArrowRight } from "lucide-react";
 
 const Index = () => {
   const { translations } = useLanguage();
   const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
   const [boundlessCourses, setBoundlessCourses] = useState<any[]>([]);
+  const [totalCoursesCount, setTotalCoursesCount] = useState<number>(0);
 
   // Countdown component
   const CountdownTimer = ({ endDate, label }: { endDate: string, label: string }) => {
@@ -99,6 +100,16 @@ const Index = () => {
         if (boundlessData) {
           setBoundlessCourses(boundlessData);
         }
+
+        // Fetch total courses count
+        const { count } = await supabase
+          .from('courses')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
+        
+        if (count) {
+          setTotalCoursesCount(count);
+        }
       } catch (error) {
         console.error('Error fetching courses:', error);
       }
@@ -153,22 +164,22 @@ const Index = () => {
 
       {/* AI Courses Section */}
       {featuredCourses.length > 0 && (
-        <section className="py-16 md:py-24 bg-gradient-to-br from-blue-50/50 via-background to-purple-50/30 dark:from-blue-950/20 dark:via-background dark:to-purple-950/20 relative overflow-hidden">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-blue-50/50 via-background to-blue-100/30 dark:from-blue-950/20 dark:via-background dark:to-blue-900/20 relative overflow-hidden">
           {/* Glowing background effects */}
           <div className="absolute inset-0">
             <div className="absolute top-1/4 -left-32 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-400/5 to-purple-400/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-400/5 to-blue-600/5 rounded-full blur-3xl"></div>
           </div>
           
           <div className="container px-4 relative">
             <div className="text-center mb-12 md:mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-full mb-6 border border-blue-200/20 dark:border-blue-800/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">هوش مصنوعی</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 backdrop-blur-sm rounded-full mb-6 border border-blue-200/20 dark:border-blue-800/20">
+                <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">هوش مصنوعی</span>
               </div>
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-600 bg-clip-text text-transparent">
                   دوره‌های هوش مصنوعی
                 </span>
               </h2>
@@ -190,53 +201,57 @@ const Index = () => {
                 return (
                   <div key={course.id} className="group">
                     <div className="relative">
-                      {/* Glowing background effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-                      
-                      <div className="relative bg-gradient-to-br from-white/80 via-white/60 to-blue-50/80 dark:from-gray-900/80 dark:via-gray-800/60 dark:to-blue-950/80 backdrop-blur-xl border border-blue-200/30 dark:border-blue-800/30 rounded-2xl overflow-hidden hover:border-blue-300/50 dark:hover:border-blue-700/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 group-hover:scale-[1.02]">
-                        {/* Shimmer effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      {/* Main card */}
+                      <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-blue-200/50 dark:border-blue-800/50 rounded-3xl overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-blue-500/20 group-hover:-translate-y-2">
                         
-                        {/* Course Header */}
-                        <div className="p-6 md:p-8">
-                          {/* Course Info & Price */}
+                        {/* Glowing border on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl"></div>
+                        
+                        {/* Top accent bar */}
+                        <div className="h-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500"></div>
+                        
+                        {/* Card content */}
+                        <div className="p-8">
+                          {/* Header with icon and badges */}
                           <div className="flex items-start justify-between mb-6">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                                  <div className="w-6 h-6 text-white">🤖</div>
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+                                  <Zap className="w-8 h-8 text-white" />
                                 </div>
-                                <div className="flex-1">
-                                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-1 group-hover:text-blue-600 transition-colors">
-                                    {course.title}
-                                  </h3>
-                                  
-                                  {/* Badges */}
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    {course.price === 0 && (
-                                      <span className="text-xs px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full font-medium shadow-sm">
-                                        رایگان
-                                      </span>
-                                    )}
-                                    {isOnPrelaunch && (
-                                      <span className="text-xs px-3 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-medium shadow-sm animate-pulse">
-                                        پیش‌فروش
-                                      </span>
-                                    )}
-                                    {!isOnPrelaunch && isOnSale && (
-                                      <span className="text-xs px-3 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full font-medium shadow-sm animate-pulse">
-                                        تخفیف ویژه
-                                      </span>
-                                    )}
-                                  </div>
+                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                  AI
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2 group-hover:text-blue-600 transition-colors">
+                                  {course.title}
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                  {course.price === 0 && (
+                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-100">
+                                      رایگان
+                                    </Badge>
+                                  )}
+                                  {isOnPrelaunch && (
+                                    <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 animate-pulse">
+                                      پیش‌فروش
+                                    </Badge>
+                                  )}
+                                  {!isOnPrelaunch && isOnSale && (
+                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 animate-pulse">
+                                      تخفیف ویژه
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
                             </div>
                             
                             {/* Price */}
                             {course.price > 0 && (
-                              <div className="text-right ml-4">
-                                <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                              <div className="text-left">
+                                <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                                   {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
                                 </div>
                                 {(isOnSale || isOnPrelaunch) && (
@@ -260,24 +275,42 @@ const Index = () => {
                           ) : null}
                           
                           {/* Description */}
-                          <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 line-clamp-3">
+                          <p className="text-muted-foreground leading-relaxed mb-8 text-base">
                             {course.description || 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی'}
                           </p>
 
+                          {/* Course features */}
+                          <div className="grid grid-cols-3 gap-4 mb-8">
+                            <div className="text-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl">
+                              <BookOpen className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+                              <div className="text-xs text-muted-foreground">محتوای جامع</div>
+                            </div>
+                            <div className="text-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl">
+                              <Play className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+                              <div className="text-xs text-muted-foreground">ویدیو آموزشی</div>
+                            </div>
+                            <div className="text-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl">
+                              <Award className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+                              <div className="text-xs text-muted-foreground">گواهی معتبر</div>
+                            </div>
+                          </div>
+
                           {/* Actions */}
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                          <div className="space-y-3">
                             <Button 
                               asChild 
-                              className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300"
+                              className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 text-base group"
                             >
-                              <Link to={`/enroll?course=${course.slug}`}>
-                                {course.price === 0 ? '🚀 شروع دوره رایگان' : '🎯 ثبت‌نام در دوره'}
+                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-3">
+                                <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                               </Link>
                             </Button>
                             
-                            <Button asChild variant="outline" size="default" className="px-6 h-12 font-medium border-blue-200 hover:border-blue-300 hover:bg-blue-50 dark:border-blue-800 dark:hover:border-blue-700 dark:hover:bg-blue-950/50">
-                              <Link to={`/course/${course.slug}`}>
-                                📋 جزئیات
+                            <Button asChild variant="outline" className="w-full h-12 border-blue-200 hover:border-blue-300 hover:bg-blue-50 dark:border-blue-800 dark:hover:border-blue-700 dark:hover:bg-blue-950/50 font-medium">
+                              <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
+                                <BookOpen className="w-4 h-4" />
+                                مشاهده جزئیات
                               </Link>
                             </Button>
                           </div>
@@ -470,7 +503,7 @@ const Index = () => {
               </Button>
               <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>۳۰+ دوره تخصصی فعال</span>
+                <span>{totalCoursesCount > 0 ? `${totalCoursesCount} دوره تخصصی فعال` : '۳۰+ دوره تخصصی فعال'}</span>
               </div>
             </div>
           </div>
