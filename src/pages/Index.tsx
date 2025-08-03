@@ -182,36 +182,6 @@ const Index = () => {
       )}
 
 
-      {/* Featured Free Courses */}
-      <section className="py-16 bg-secondary/30">
-        <div className="container">
-          <SectionTitle
-            title={translations.freeCoursesTitle}
-            subtitle={translations.freeCoursesSubtitle}
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {freeCourses.map((course, index) => (
-              <CourseCard
-                key={index}
-                title={course.title}
-                description={course.description}
-                benefits={course.benefits}
-                outcome={course.outcome}
-                isPaid={course.isPaid}
-              />
-            ))}
-          </div>
-          
-          <div className="mt-12 text-center">
-            <Button asChild size="lg" variant="outline">
-              <Link to="/free-courses">
-                {translations.learnMore}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
       
       {/* Assessment Center Promo */}
       <section className="py-16 bg-primary/5">
