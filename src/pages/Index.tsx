@@ -181,36 +181,6 @@ const Index = () => {
         </section>
       )}
 
-      {/* Featured Paid Courses */}
-      <section className="py-16 bg-background">
-        <div className="container">
-          <SectionTitle
-            title={translations.paidCoursesTitle}
-            subtitle={translations.paidCoursesSubtitle}
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {paidCourses.map((course, index) => (
-              <CourseCard
-                key={index}
-                title={course.title}
-                description={course.description}
-                benefits={course.benefits}
-                outcome={course.outcome}
-                isPaid={course.isPaid}
-              />
-            ))}
-          </div>
-          
-          <div className="mt-12 text-center">
-            <Button asChild size="lg">
-              <Link to="/paid-courses">
-                {translations.learnMore}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
 
       {/* Featured Free Courses */}
       <section className="py-16 bg-secondary/30">
