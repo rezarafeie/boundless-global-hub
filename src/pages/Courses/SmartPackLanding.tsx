@@ -1067,58 +1067,64 @@ const SmartPackLanding = () => {
         </div>
       </motion.section>
 
-      {/* Checkout Section */}
-      <section id="checkout-section" className="py-16 bg-gradient-to-br from-primary to-secondary text-primary-foreground">
-        <div className="container max-w-4xl mx-auto px-6 text-center">
+      {/* Checkout Section - Minimal Clean Design */}
+      <section id="checkout-section" className="py-20 bg-background border-t border-border">
+        <div className="container max-w-3xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
+            className="text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               آماده تحول در زندگی‌تان هستید؟
             </h2>
+            <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
+              همین امروز اولین قدم را برای ساخت کسب‌وکار درآمدزای خود با هوش مصنوعی بردارید
+            </p>
             
-            <Card className="bg-background/10 backdrop-blur-lg border border-primary-foreground/20 p-8 mb-8">
-              <div className="text-center">
-                <div className="text-6xl font-bold mb-4">
-                  <span className="line-through text-3xl opacity-60">۲,۵۰۰,۰۰۰</span>
-                  <br />
-                  <span className="text-yellow-300">۱,۴۹۹,۰۰۰</span>
-                  <span className="text-lg font-normal"> تومان</span>
-                </div>
-                <Badge className="bg-destructive text-destructive-foreground mb-6 text-lg px-4 py-2">
-                  ۴۰٪ تخفیف ویژه
-                </Badge>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-sm">
-                  <div className="flex items-center justify-center gap-2">
-                    <Star className="w-4 h-4 text-yellow-300" />
-                    <span>رضایت ۹۷٪ دانشجویان</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <Shield className="w-4 h-4 text-green-300" />
-                    <span>ضمانت ۳۰ روزه</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <Users className="w-4 h-4 text-blue-300" />
-                    <span>پشتیبانی مادام‌العمر</span>
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={handlePurchaseClick}
-                  size="lg" 
-                  className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-full px-12 py-4 text-xl font-bold shadow-2xl transform hover:scale-105 transition-all duration-300 w-full md:w-auto"
-                >
-                  <Zap className="ml-3" size={24} />
-                  شروع کسب‌وکار هوشمند
-                </Button>
+            {/* Clean Price Card */}
+            <div className="bg-muted/30 rounded-2xl p-8 mb-8 border border-border">
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <span className="text-lg text-muted-foreground line-through">۲,۵۰۰,۰۰۰ تومان</span>
+                <Badge variant="destructive" className="text-sm">۴۰٪ تخفیف</Badge>
               </div>
-            </Card>
+              
+              <div className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+                ۱,۴۹۹,۰۰۰
+                <span className="text-xl font-normal text-muted-foreground mr-2">تومان</span>
+              </div>
+              
+              {/* Trust Indicators */}
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-success" />
+                  <span>دسترسی فوری</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-primary" />
+                  <span>ضمانت ۳۰ روزه</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-secondary" />
+                  <span>پشتیبانی مادام‌العمر</span>
+                </div>
+              </div>
+              
+              {/* CTA Button */}
+              <Button 
+                onClick={handlePurchaseClick}
+                size="lg" 
+                className="w-full md:w-auto bg-foreground text-background hover:bg-foreground/90 px-12 py-4 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+              >
+                <Zap className="w-5 h-5 ml-3" />
+                شروع کسب‌وکار هوشمند
+              </Button>
+            </div>
             
-            <p className="text-primary-foreground/80 text-sm">
-              دسترسی فوری بعد از خرید • ضمانت ۳۰ روزه بازگشت وجه • پشتیبانی مادام‌العمر
+            {/* Additional Info */}
+            <p className="text-sm text-muted-foreground">
+              بدون ریسک • بازگشت کامل وجه در صورت عدم رضایت • ۵ هزار دانشجوی موفق
             </p>
           </motion.div>
         </div>
