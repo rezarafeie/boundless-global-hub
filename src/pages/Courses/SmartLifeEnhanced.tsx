@@ -18,10 +18,30 @@ import {
   BookOpen,
   Lightbulb,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Smartphone,
+  Monitor,
+  Download,
+  Gift,
+  Sparkles,
+  TrendingUp,
+  Globe,
+  Rocket,
+  DollarSign,
+  FileText,
+  Video,
+  Headphones,
+  MessageSquare,
+  UserCheck,
+  ShieldCheck,
+  Calendar,
+  Infinity,
+  ArrowRight,
+  Quote
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import MainLayout from "@/components/Layout/MainLayout";
+import SectionTitle from "@/components/SectionTitle";
 
 interface SmartLifeEnhancedProps {
   title: string;
@@ -36,6 +56,7 @@ interface SmartLifeEnhancedProps {
 
 const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
   title,
+  englishTitle,
   description,
   iframeUrl,
   courseSlug
@@ -79,119 +100,254 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
     }
   };
 
-  // Course stats
+  // Course statistics
   const stats = [
-    { icon: Users, number: "3000+", label: "دانشجو" },
-    { icon: Star, number: "4.9", label: "رضایت" },
-    { icon: Clock, number: "2", label: "جلسه" },
-    { icon: Award, number: "100%", label: "رایگان" }
+    { icon: Users, number: "3,000+", label: "دانشجوی موفق", color: "text-blue-600" },
+    { icon: Star, number: "4.9", label: "رضایتمندی", color: "text-yellow-500" },
+    { icon: Clock, number: "2", label: "جلسه قدرتمند", color: "text-green-600" },
+    { icon: Award, number: "100%", label: "کاملاً رایگان", color: "text-purple-600" }
   ];
 
   // What you'll get items
   const courseIncludes = [
-    "دسترسی کامل به جلسه ۱ دوره پرمیوم (AI Mindset & Foundation)",
-    "جلسه بونوس انحصاری: «چطور در ۲۴ ساعت با AI تغییر واقعی ایجاد کنیم»",
-    "کاربردهای عملی با ابزارهای ChatGPT، Gemini، Canva، Suno و...",
-    "تمپلیت‌های Smart Prompt و چالش ۲۴ ساعته",
-    "پیش‌نمایش ساختار کامل دوره پرمیوم"
+    {
+      icon: Video,
+      title: "دسترسی کامل به جلسه ۱ دوره پرمیوم",
+      description: "AI Mindset & Foundation - پایه‌های ذهنیت هوش مصنوعی"
+    },
+    {
+      icon: Gift,
+      title: "جلسه بونوس انحصاری",
+      description: "چطور در ۲۴ ساعت با AI تغییر واقعی ایجاد کنیم"
+    },
+    {
+      icon: Brain,
+      title: "کاربردهای عملی ابزارهای AI",
+      description: "ChatGPT، Gemini، Canva، Suno، Lovable و بیش از ۱۰ ابزار دیگر"
+    },
+    {
+      icon: FileText,
+      title: "تمپلیت‌های Smart Prompt",
+      description: "پرامپت‌های آماده و تست‌شده برای استفاده فوری"
+    },
+    {
+      icon: Target,
+      title: "چالش ۲۴ ساعته عملی",
+      description: "تمرین واقعی برای پیاده‌سازی آموخته‌ها"
+    },
+    {
+      icon: Monitor,
+      title: "پیش‌نمایش دوره کامل پرمیوم",
+      description: "آشنایی با ساختار و محتوای دوره اصلی"
+    }
+  ];
+
+  // Course features
+  const courseFeatures = [
+    {
+      icon: Smartphone,
+      title: "دسترسی از تمام دستگاه‌ها",
+      description: "موبایل، تبلت، کامپیوتر - هر جا که باشید"
+    },
+    {
+      icon: Download,
+      title: "دانلود محتوا",
+      description: "امکان دانلود جلسات برای مشاهده آفلاین"
+    },
+    {
+      icon: UserCheck,
+      title: "پشتیبانی تخصصی",
+      description: "پاسخ به سؤالات توسط تیم متخصص"
+    },
+    {
+      icon: Calendar,
+      title: "دسترسی فوری",
+      description: "بلافاصله پس از ثبت‌نام شروع کنید"
+    }
   ];
 
   // Who this is for
   const targetAudience = [
-    "کنجکاو درباره AI هستی اما نمی‌دونی از کجا شروع کنی",
-    "می‌خوای بهره‌وری یا خلاقیت‌ت رو افزایش بدی",
-    "دانشجو، کارمند، فریلنسر یا صاحب کسب‌وکار هستی",
-    "درباره ابزارهای AI شنیدی اما هنوز استفاده نکردی"
+    {
+      icon: Lightbulb,
+      title: "کنجکاوان فناوری",
+      description: "کسانی که درباره AI می‌شنوند اما نمی‌دانند از کجا شروع کنند"
+    },
+    {
+      icon: TrendingUp,
+      title: "افزایش‌دهندگان بهره‌وری",
+      description: "افرادی که می‌خواهند کارایی و خلاقیت‌شان را افزایش دهند"
+    },
+    {
+      icon: Globe,
+      title: "حرفه‌ای‌ها و کارآفرینان",
+      description: "دانشجویان، کارمندان، فریلنسرها و صاحبان کسب‌وکار"
+    },
+    {
+      icon: Rocket,
+      title: "آماده‌باشان آینده",
+      description: "کسانی که می‌خواهند برای عصر هوش مصنوعی آماده شوند"
+    }
   ];
 
-  // Why join reasons
-  const whyJoinReasons = [
-    { icon: Brain, title: "درک واضح از کاربرد AI در زندگی واقعی" },
-    { icon: Zap, title: "تست عملی ابزارها بدون استرس فنی" },
-    { icon: Target, title: "پیش‌نمایش دوره پرمیوم با اعتماد ۳۰۰۰+ دانشجو" },
-    { icon: Award, title: "مدرس واقعی. صدای واقعی. تأثیر واقعی." }
+  // Learning outcomes
+  const learningOutcomes = [
+    "درک عمیق از نقش AI در زندگی روزمره و آینده",
+    "مهارت کار با ابزارهای محبوب هوش مصنوعی",
+    "قابلیت نوشتن پرامپت‌های مؤثر و حرفه‌ای",
+    "ایده‌هایی برای بهبود کار و زندگی شخصی",
+    "آمادگی برای ورود به دوره پیشرفته‌تر",
+    "شبکه‌سازی با سایر علاقه‌مندان به AI"
+  ];
+
+  // Testimonials
+  const testimonials = [
+    {
+      name: "سارا احمدی",
+      role: "طراح گرافیک",
+      image: "https://images.unsplash.com/photo-1494790108755-2616b612b882?auto=format&fit=crop&w=150&q=80",
+      text: "این دوره چشم‌هایم رو به دنیای جدیدی باز کرد. حالا با AI کارهایم رو خیلی سریع‌تر انجام می‌دم.",
+      result: "۵۰% افزایش سرعت کار"
+    },
+    {
+      name: "محمد رضایی",
+      role: "دانشجوی مدیریت",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+      text: "قبل از این دوره اصلاً نمی‌دونستم AI چیه. الان دارم برای پایان‌نامه‌م ازش استفاده می‌کنم.",
+      result: "ثبت‌نام در دوره کامل"
+    },
+    {
+      name: "فاطمه کریمی",
+      role: "مدیر فروش",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
+      text: "با تکنیک‌هایی که یاد گرفتم، ایمیل‌های فروشم رو بهبود دادم و فروشم ۳۰% افزایش پیدا کرد.",
+      result: "۳۰% افزایش فروش"
+    }
   ];
 
   // FAQ items
   const faqItems = [
     {
       question: "آیا نیاز به تجربه قبلی AI دارم؟",
-      answer: "❌ خیر، این دوره برای مبتدیان طراحی شده است"
+      answer: "❌ خیر، این دوره کاملاً برای مبتدیان طراحی شده است. تمام مفاهیم از صفر آموزش داده می‌شود."
     },
     {
-      question: "واقعاً رایگان است؟",
-      answer: "✅ بله، کاملاً رایگان و بدون نیاز به کارت اعتباری"
+      question: "واقعاً کاملاً رایگان است؟",
+      answer: "✅ بله، هیچ هزینه‌ای ندارد و نیازی به کارت اعتباری نیست. حتی هزینه‌های پنهان هم وجود ندارد."
+    },
+    {
+      question: "چقدر زمان نیاز دارم؟",
+      answer: "⏰ هر جلسه حدود ۶۰-۹۰ دقیقه است. می‌توانید در زمان دلخواه خود مشاهده کنید."
     },
     {
       question: "آیا فوراً دسترسی خواهم داشت؟",
-      answer: "✅ بله، بلافاصله پس از ثبت‌نام"
+      answer: "✅ بله، بلافاصله پس از ثبت‌نام می‌توانید شروع کنید."
     },
     {
-      question: "آیا بعداً می‌توانم در دوره کامل شرکت کنم؟",
-      answer: "✅ البته! نحوه شرکت را به شما نشان خواهیم داد"
+      question: "پس از دوره چه اتفاقی می‌افتد؟",
+      answer: "🎯 اطلاعات کاملی درباره دوره پرمیوم دریافت می‌کنید و می‌توانید تصمیم بگیرید."
+    },
+    {
+      question: "آیا پشتیبانی دارد؟",
+      answer: "✅ بله، تیم پشتیبانی ما آماده پاسخ‌گویی به سؤالات شماست."
     }
   ];
 
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        {/* Hero Section */}
+        {/* Enhanced Hero Section */}
         <motion.section 
-          className="relative py-20 bg-gradient-to-br from-primary/5 via-background to-secondary/5 overflow-hidden"
+          className="relative bg-gradient-to-br from-background via-primary/5 to-secondary/10 pt-20 pb-16 overflow-hidden"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent" />
-          <div className="container max-w-7xl mx-auto px-6 relative">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+          
+          {/* Gradient Overlays */}
+          <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-br from-primary/10 to-transparent"></div>
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-secondary/10 to-transparent"></div>
+
+          <div className="container relative z-10 max-w-7xl mx-auto px-6">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Content */}
               <motion.div variants={itemVariants} className="space-y-8">
-                <div className="space-y-4">
-                  <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
-                    دوره رایگان AI
+                {/* Trust Badge */}
+                <div className="flex flex-wrap gap-3">
+                  <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 text-sm font-medium">
+                    <Star className="w-4 h-4 ml-2 fill-current" />
+                    ۳۰۰۰+ دانشجوی موفق
                   </Badge>
-                  <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
+                  <Badge className="bg-green-50 text-green-700 border-green-200 px-4 py-2 text-sm font-medium">
+                    <CheckCircle className="w-4 h-4 ml-2" />
+                    ۱۰۰% رایگان
+                  </Badge>
+                </div>
+
+                {/* Main Title */}
+                <div className="space-y-4">
+                  <h1 className="text-4xl lg:text-6xl font-black text-foreground leading-tight">
                     <span className="text-primary">۲ جلسه رایگان</span>
                     <br />
                     برای شروع زندگی هوشمند با AI
                   </h1>
-                  <p className="text-xl text-muted-foreground leading-relaxed">
-                    با ۲ قدم ساده، یاد بگیر چطور هوش مصنوعی می‌تونه زندگی شخصی و کاری‌تو متحول کنه
+                  <p className="text-xl text-secondary font-semibold">
+                    Smart Life | Start with AI
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                  <Badge variant="outline" className="px-3 py-1">
-                    بدون نیاز به دانش قبلی
-                  </Badge>
-                  <Badge variant="outline" className="px-3 py-1">
-                    دسترسی آنی
-                  </Badge>
-                  <Badge variant="outline" className="px-3 py-1">
-                    ۲ مدرس متخصص
-                  </Badge>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  با ۲ قدم ساده، یاد بگیر چطور هوش مصنوعی می‌تونه زندگی شخصی و کاری‌تو متحول کنه. 
+                  این دوره رایگان، پیش‌نمایشی از دوره کامل هوش مصنوعی است که بیش از ۳۰۰۰ نفر زندگی‌شان را تغییر داده.
+                </p>
+
+                {/* Benefits */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-foreground">بدون نیاز به دانش قبلی - از صفر شروع کنید</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-foreground">دسترسی فوری و دائمی به محتوا</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-foreground">تدریس توسط ۲ مدرس متخصص</span>
+                  </div>
                 </div>
 
+                {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button 
                     size="lg" 
                     onClick={handleStartCourse}
-                    className="px-8 py-4 text-lg font-semibold"
+                    className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
                   >
                     <PlayCircle className="w-5 h-5 mr-2" />
-                    ثبت‌نام رایگان در دوره
+                    همین حالا شروع کن
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="px-8 py-4 text-lg border-2 hover:bg-primary/5"
+                  >
+                    <ArrowRight className="w-5 h-5 mr-2" />
+                    بیشتر بدانید
                   </Button>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8">
                   {stats.map((stat, index) => (
                     <motion.div 
                       key={index}
                       variants={itemVariants}
                       className="text-center"
                     >
-                      <stat.icon className="w-8 h-8 text-primary mx-auto mb-2" />
+                      <stat.icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
                       <div className="text-2xl font-bold text-foreground">{stat.number}</div>
                       <div className="text-sm text-muted-foreground">{stat.label}</div>
                     </motion.div>
@@ -199,12 +355,25 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
                 </div>
               </motion.div>
 
+              {/* Visual Element */}
               <motion.div variants={itemVariants} className="relative">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-3xl blur-3xl opacity-20" />
-                  <div className="relative bg-background/80 backdrop-blur-sm rounded-3xl p-8 border border-primary/20">
-                    <div className="w-full h-64 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center">
-                      <Brain className="w-24 h-24 text-primary" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-3xl blur-3xl opacity-60" />
+                  <div className="relative bg-background/80 backdrop-blur-sm rounded-3xl p-8 border border-primary/20 shadow-2xl">
+                    <div className="w-full h-80 bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
+                      <div className="relative z-10 text-center space-y-4">
+                        <Brain className="w-16 h-16 text-primary mx-auto" />
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-bold text-foreground">دوره رایگان AI</h3>
+                          <p className="text-muted-foreground">شروع هوشمندانه به آینده</p>
+                        </div>
+                        <div className="flex justify-center gap-2">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-secondary rounded-full animate-pulse delay-75"></div>
+                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-150"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -215,31 +384,34 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
 
         {/* What You'll Get Section */}
         <motion.section 
-          className="py-16"
+          className="py-20 bg-muted/30"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
         >
-          <div className="container max-w-6xl mx-auto px-6">
-            <motion.div variants={itemVariants} className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                چی دریافت می‌کنی؟
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                محتوای کاملاً رایگان و بدون تعهد
-              </p>
+          <div className="container max-w-7xl mx-auto px-6">
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="چی دریافت می‌کنی؟"
+                subtitle="محتوای کاملاً رایگان و ارزشمند"
+                align="center"
+                isCentered
+              />
             </motion.div>
 
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-3 gap-8">
               {courseIncludes.map((item, index) => (
-                <motion.div 
-                  key={index}
-                  variants={itemVariants}
-                  className="flex items-start gap-4"
-                >
-                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <span className="text-lg text-foreground">{item}</span>
+                <motion.div key={index} variants={itemVariants}>
+                  <Card className="h-full border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg group">
+                    <CardContent className="p-8 text-center space-y-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                        <item.icon className="w-8 h-8 text-primary-foreground" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">{item.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
             </div>
@@ -248,67 +420,77 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
 
         {/* Sessions Breakdown */}
         <motion.section 
-          className="py-16 bg-muted/30"
+          className="py-20"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
         >
           <div className="container max-w-6xl mx-auto px-6">
-            <motion.div variants={itemVariants} className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                برنامه جلسات
-              </h2>
-              <p className="text-xl text-muted-foreground">
-                ۲ جلسه عملی و کاربردی
-              </p>
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="برنامه جلسات"
+                subtitle="۲ جلسه عملی و کاربردی که زندگی‌تان را تغییر می‌دهد"
+                align="center"
+                isCentered
+              />
             </motion.div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Session 1 */}
               <motion.div variants={itemVariants}>
                 <Collapsible open={isSession1Open} onOpenChange={setIsSession1Open}>
-                  <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                  <Card className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 overflow-hidden">
                     <CollapsibleTrigger className="w-full">
-                      <CardContent className="p-6">
+                      <CardContent className="p-8">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                              <span className="text-primary-foreground font-bold">۱</span>
+                          <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                              <span className="text-primary-foreground font-bold text-xl">۱</span>
                             </div>
-                            <div className="text-right">
-                              <h3 className="text-xl font-bold text-foreground">
-                                چرا مهارت AI دیگر اختیاری نیست
+                            <div className="text-right space-y-2">
+                              <h3 className="text-2xl font-bold text-foreground">
+                                چرا مهارت AI دیگر اختیاری نیست؟
                               </h3>
-                              <p className="text-muted-foreground">از دوره کامل</p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-primary border-primary">از دوره کامل</Badge>
+                                <Badge variant="outline">۶۰ دقیقه</Badge>
+                              </div>
                             </div>
                           </div>
-                          {isSession1Open ? <ChevronUp /> : <ChevronDown />}
+                          {isSession1Open ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
                         </div>
                       </CardContent>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <CardContent className="pt-0 px-6 pb-6">
-                        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-primary" />
-                            <span>AI واقعاً چیست</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-primary" />
-                            <span>چطور روی شغل و زندگی روزمره تأثیر می‌گذارد</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-primary" />
-                            <span>نمونه‌هایی از کاربردهای واقعی</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-primary" />
-                            <span>مهارت‌های آینده در عصر AI</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-primary" />
-                            <span>بررسی کلی محتوای دوره کامل</span>
+                      <CardContent className="pt-0 px-8 pb-8">
+                        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl p-6 space-y-4">
+                          <h4 className="text-lg font-semibold text-foreground mb-4">در این جلسه یاد می‌گیرید:</h4>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>AI واقعاً چیست و چطور کار می‌کند</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>تأثیر AI روی شغل‌ها و زندگی روزمره</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>نمونه‌های واقعی کاربرد AI در زندگی</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>مهارت‌های ضروری برای عصر AI</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>بررسی کلی دوره کامل و مزایایش</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>پاسخ به سؤالات رایج درباره AI</span>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -320,47 +502,65 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
               {/* Session 2 */}
               <motion.div variants={itemVariants}>
                 <Collapsible open={isSession2Open} onOpenChange={setIsSession2Open}>
-                  <Card className="border-2 border-secondary/20 hover:border-secondary/40 transition-colors">
+                  <Card className="border-2 border-secondary/20 hover:border-secondary/40 transition-all duration-300 overflow-hidden">
                     <CollapsibleTrigger className="w-full">
-                      <CardContent className="p-6">
+                      <CardContent className="p-8">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-secondary to-primary rounded-xl flex items-center justify-center">
-                              <span className="text-primary-foreground font-bold">۲</span>
+                          <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-primary rounded-xl flex items-center justify-center">
+                              <span className="text-primary-foreground font-bold text-xl">۲</span>
                             </div>
-                            <div className="text-right">
-                              <h3 className="text-xl font-bold text-foreground">
-                                چطور در ۲۴ ساعت با AI تغییر واقعی ایجاد کنیم
+                            <div className="text-right space-y-2">
+                              <h3 className="text-2xl font-bold text-foreground">
+                                چطور در ۲۴ ساعت با AI تغییر واقعی ایجاد کنیم؟
                               </h3>
-                              <p className="text-muted-foreground">انحصاری دوره رایگان</p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-secondary border-secondary">انحصاری رایگان</Badge>
+                                <Badge variant="outline">۹۰ دقیقه</Badge>
+                                <Badge className="bg-orange-100 text-orange-700">عملی</Badge>
+                              </div>
                             </div>
                           </div>
-                          {isSession2Open ? <ChevronUp /> : <ChevronDown />}
+                          {isSession2Open ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
                         </div>
                       </CardContent>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <CardContent className="pt-0 px-6 pb-6">
-                        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-secondary" />
-                            <span>تمرین عملی با ChatGPT یا Gemini</span>
+                      <CardContent className="pt-0 px-8 pb-8">
+                        <div className="bg-gradient-to-r from-secondary/5 to-primary/5 rounded-xl p-6 space-y-4">
+                          <h4 className="text-lg font-semibold text-foreground mb-4">این جلسه شامل:</h4>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                              <span>تمرین زنده با ChatGPT و Gemini</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                              <span>نوشتن رزومه حرفه‌ای با AI</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                              <span>ایجاد برنامه غذایی شخصی‌سازی‌شده</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                              <span>صرفه‌جویی در زمان با اتوماسیون</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                              <span>کار با Canva AI، Suno، Lovable</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                              <span>چالش ۲۴ ساعته تغییر زندگی</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-secondary" />
-                            <span>مثال‌های واقعی: نوشتن رزومه، ایجاد رژیم، صرفه‌جویی در زمان</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-secondary" />
-                            <span>دموی زنده AI prompting</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-secondary" />
-                            <span>معرفی کوتاه ابزارهای Canva AI، Suno، Lovable</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-secondary" />
-                            <span>پایان با دعوت قوی برای پیوستن به دوره کامل</span>
+                          <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
+                            <h5 className="font-semibold text-orange-800 mb-2">🎯 هدف این جلسه:</h5>
+                            <p className="text-orange-700">
+                              در پایان این جلسه، شما ابزارهای لازم برای شروع تغییر زندگی‌تان با AI را خواهید داشت 
+                              و با اعتماد به نفس کامل، تصمیم می‌گیرید که آیا می‌خواهید در دوره کامل شرکت کنید یا نه.
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -372,66 +572,161 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
           </div>
         </motion.section>
 
-        {/* Who This Is For */}
+        {/* Target Audience */}
         <motion.section 
-          className="py-16"
+          className="py-20 bg-muted/30"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
         >
-          <div className="container max-w-6xl mx-auto px-6">
-            <motion.div variants={itemVariants} className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                این دوره برای کیه؟
-              </h2>
+          <div className="container max-w-7xl mx-auto px-6">
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="این دوره برای کیه؟"
+                subtitle="اگر در یکی از این گروه‌ها هستید، این دوره دقیقاً برای شماست"
+                align="center"
+                isCentered
+              />
             </motion.div>
 
             <div className="grid lg:grid-cols-2 gap-8">
               {targetAudience.map((item, index) => (
-                <motion.div 
-                  key={index}
-                  variants={itemVariants}
-                  className="flex items-start gap-4"
-                >
-                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <span className="text-lg text-foreground">{item}</span>
+                <motion.div key={index} variants={itemVariants}>
+                  <Card className="h-full border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg group">
+                    <CardContent className="p-8 flex items-start gap-6">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                        <item.icon className="w-8 h-8 text-primary-foreground" />
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="text-xl font-bold text-foreground">{item.title}</h3>
+                        <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
             </div>
           </div>
         </motion.section>
 
-        {/* Why Join */}
+        {/* Learning Outcomes */}
         <motion.section 
-          className="py-16 bg-muted/30"
+          className="py-20"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
         >
           <div className="container max-w-6xl mx-auto px-6">
-            <motion.div variants={itemVariants} className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                چرا در این دوره رایگان شرکت کنی؟
-              </h2>
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="بعد از این دوره چی بلد میشی؟"
+                subtitle="مهارت‌ها و دانشی که کسب خواهید کرد"
+                align="center"
+                isCentered
+              />
             </motion.div>
 
-            <div className="grid lg:grid-cols-2 gap-8">
-              {whyJoinReasons.map((reason, index) => (
+            <div className="grid lg:grid-cols-2 gap-6">
+              {learningOutcomes.map((outcome, index) => (
                 <motion.div 
                   key={index}
                   variants={itemVariants}
-                  className="flex items-start gap-4"
+                  className="flex items-start gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
-                    <reason.icon className="w-6 h-6 text-primary-foreground" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-sm">{index + 1}</span>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-1">
-                      {reason.title}
-                    </h3>
-                  </div>
+                  <span className="text-lg text-foreground">{outcome}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Course Features */}
+        <motion.section 
+          className="py-20 bg-muted/30"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={containerVariants}
+        >
+          <div className="container max-w-7xl mx-auto px-6">
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="ویژگی‌های دوره"
+                subtitle="همه چیز برای تجربه یادگیری بهتر"
+                align="center"
+                isCentered
+              />
+            </motion.div>
+
+            <div className="grid lg:grid-cols-4 gap-8">
+              {courseFeatures.map((feature, index) => (
+                <motion.div key={index} variants={itemVariants}>
+                  <Card className="h-full text-center border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg group">
+                    <CardContent className="p-8 space-y-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                        <feature.icon className="w-8 h-8 text-primary-foreground" />
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground">{feature.title}</h3>
+                      <p className="text-muted-foreground">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Testimonials */}
+        <motion.section 
+          className="py-20"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={containerVariants}
+        >
+          <div className="container max-w-7xl mx-auto px-6">
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="نظرات دانشجوها"
+                subtitle="تجربه واقعی کسانی که این مسیر را طی کرده‌اند"
+                align="center"
+                isCentered
+              />
+            </motion.div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <motion.div key={index} variants={itemVariants}>
+                  <Card className="h-full border-2 border-muted hover:border-primary/40 transition-all duration-300 hover:shadow-lg">
+                    <CardContent className="p-8 space-y-6">
+                      <Quote className="w-8 h-8 text-primary/30" />
+                      <p className="text-muted-foreground italic leading-relaxed">
+                        "{testimonial.text}"
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <img 
+                          src={testimonial.image} 
+                          alt={testimonial.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div>
+                          <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
+                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-muted">
+                        <Badge className="bg-green-100 text-green-700">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          {testimonial.result}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
             </div>
@@ -440,28 +735,31 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
 
         {/* FAQ Section */}
         <motion.section 
-          className="py-16"
+          className="py-20 bg-muted/30"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={containerVariants}
         >
           <div className="container max-w-4xl mx-auto px-6">
-            <motion.div variants={itemVariants} className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                سؤالات متداول
-              </h2>
+            <motion.div variants={itemVariants} className="text-center mb-16">
+              <SectionTitle 
+                title="سؤالات متداول"
+                subtitle="پاسخ سؤالاتی که ممکن است برایتان پیش آمده باشد"
+                align="center"
+                isCentered
+              />
             </motion.div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {faqItems.map((faq, index) => (
                 <motion.div key={index} variants={itemVariants}>
-                  <Card className="border border-muted">
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                  <Card className="border border-muted hover:border-primary/40 transition-colors">
+                    <CardContent className="p-8">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">
                         {faq.question}
                       </h3>
-                      <p className="text-muted-foreground">
+                      <p className="text-muted-foreground leading-relaxed">
                         {faq.answer}
                       </p>
                     </CardContent>
@@ -480,37 +778,51 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
           viewport={{ once: true }}
           variants={containerVariants}
         >
-          <div className="container max-w-4xl mx-auto px-6 text-center">
+          <div className="container max-w-5xl mx-auto px-6 text-center">
             <motion.div variants={itemVariants} className="space-y-8">
-              <div className="space-y-4">
-                <h2 className="text-3xl lg:text-5xl font-bold text-foreground">
-                  آماده‌ای زندگی هوشمندت رو شروع کنی؟
+              <div className="space-y-6">
+                <h2 className="text-4xl lg:text-6xl font-black text-foreground leading-tight">
+                  آماده‌ای زندگی هوشمندت رو 
+                  <span className="text-primary"> شروع کنی؟</span>
                 </h2>
-                <p className="text-xl text-muted-foreground">
-                  همین حالا ثبت‌نام کن و دوره رایگان رو شروع کن
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                  فقط ۲ جلسه فاصله داری تا با دنیای AI آشنا بشی و اولین قدم‌هات رو برای آینده‌ای بهتر برداری. 
+                  کاملاً رایگان، بدون تعهد، بدون نیاز به کارت اعتباری.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-4 justify-center">
-                <Badge variant="secondary" className="px-4 py-2">
-                  محتوای رایگان
+                <Badge variant="secondary" className="px-6 py-3 text-base">
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  ۱۰۰% رایگان
                 </Badge>
-                <Badge variant="secondary" className="px-4 py-2">
-                  توسط آکادمی رفیعی
+                <Badge variant="secondary" className="px-6 py-3 text-base">
+                  <Infinity className="w-4 h-4 mr-2" />
+                  دسترسی دائمی
                 </Badge>
-                <Badge variant="secondary" className="px-4 py-2">
+                <Badge variant="secondary" className="px-6 py-3 text-base">
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  آکادمی رفیعی
+                </Badge>
+                <Badge variant="secondary" className="px-6 py-3 text-base">
+                  <Headphones className="w-4 h-4 mr-2" />
                   با صدای مدرس
                 </Badge>
               </div>
 
-              <Button 
-                size="lg" 
-                onClick={handleStartCourse}
-                className="px-12 py-4 text-xl font-semibold"
-              >
-                <PlayCircle className="w-6 h-6 mr-2" />
-                همین حالا ثبت‌نام کن
-              </Button>
+              <div className="space-y-4">
+                <Button 
+                  size="lg" 
+                  onClick={handleStartCourse}
+                  className="px-12 py-6 text-xl font-bold bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 transform hover:scale-105 transition-all duration-300 shadow-xl"
+                >
+                  <PlayCircle className="w-6 h-6 mr-3" />
+                  همین حالا شروع کن - کاملاً رایگان
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  ✅ بدون نیاز به کارت اعتباری • ✅ دسترسی فوری • ✅ بدون تعهد
+                </p>
+              </div>
             </motion.div>
           </div>
         </motion.section>
@@ -519,11 +831,11 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t lg:hidden z-50">
           <Button 
             onClick={handleStartCourse}
-            className="w-full py-4 text-lg font-semibold"
+            className="w-full py-4 text-lg font-semibold bg-gradient-to-r from-primary to-secondary"
             size="lg"
           >
             <PlayCircle className="w-5 h-5 mr-2" />
-            ثبت‌نام رایگان
+            شروع رایگان
           </Button>
         </div>
 
