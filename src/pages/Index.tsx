@@ -20,8 +20,40 @@ const Index = () => {
   const [totalCoursesCount, setTotalCoursesCount] = useState<number>(0);
   const [studentsCount, setStudentsCount] = useState<number>(0);
   const [enrollmentsCount, setEnrollmentsCount] = useState<number>(0);
+  const [displayStudentsCount, setDisplayStudentsCount] = useState<number>(0);
+  const [displayEnrollmentsCount, setDisplayEnrollmentsCount] = useState<number>(0);
 
-  // Countdown component
+  // Auto increment animation for counters
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDisplayStudentsCount(prev => {
+        const increment = Math.floor(Math.random() * 3) + 1; // Random increment 1-3
+        return prev + increment;
+      });
+      
+      setDisplayEnrollmentsCount(prev => {
+        const increment = Math.floor(Math.random() * 2) + 1; // Random increment 1-2
+        return prev + increment;
+      });
+    }, 3000 + Math.random() * 2000); // Random interval between 3-5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Animate counters to display values when data loads
+  useEffect(() => {
+    if (studentsCount > 0) {
+      setDisplayStudentsCount(studentsCount);
+    }
+  }, [studentsCount]);
+
+  useEffect(() => {
+    if (enrollmentsCount > 0) {
+      setDisplayEnrollmentsCount(enrollmentsCount);
+    }
+  }, [enrollmentsCount]);
+
+  // Countdown component - more minimal design
   const CountdownTimer = ({ endDate, label }: { endDate: string, label: string }) => {
     const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number, seconds: number} | null>(null);
 
@@ -49,27 +81,27 @@ const Index = () => {
     if (!timeLeft) return null;
 
     return (
-      <div className="bg-muted/50 rounded-lg p-3 mb-4">
+      <div className="bg-muted/30 rounded-lg p-3 mb-4 border border-border/20">
         <div className="flex items-center gap-2 mb-2">
-          <Clock className="h-4 w-4 text-orange-600" />
-          <span className="text-sm font-medium text-orange-700">{label}</span>
+          <Clock className="h-3 w-3 text-orange-600" />
+          <span className="text-xs font-medium text-orange-700">{label}</span>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="bg-background rounded p-2">
-            <div className="text-lg font-bold text-foreground">{timeLeft.days}</div>
-            <div className="text-xs text-muted-foreground">روز</div>
+        <div className="grid grid-cols-4 gap-1 text-center">
+          <div className="bg-background/80 rounded p-1">
+            <div className="text-sm font-bold text-foreground">{timeLeft.days}</div>
+            <div className="text-[10px] text-muted-foreground">روز</div>
           </div>
-          <div className="bg-background rounded p-2">
-            <div className="text-lg font-bold text-foreground">{timeLeft.hours}</div>
-            <div className="text-xs text-muted-foreground">ساعت</div>
+          <div className="bg-background/80 rounded p-1">
+            <div className="text-sm font-bold text-foreground">{timeLeft.hours}</div>
+            <div className="text-[10px] text-muted-foreground">ساعت</div>
           </div>
-          <div className="bg-background rounded p-2">
-            <div className="text-lg font-bold text-foreground">{timeLeft.minutes}</div>
-            <div className="text-xs text-muted-foreground">دقیقه</div>
+          <div className="bg-background/80 rounded p-1">
+            <div className="text-sm font-bold text-foreground">{timeLeft.minutes}</div>
+            <div className="text-[10px] text-muted-foreground">دقیقه</div>
           </div>
-          <div className="bg-background rounded p-2">
-            <div className="text-lg font-bold text-foreground">{timeLeft.seconds}</div>
-            <div className="text-xs text-muted-foreground">ثانیه</div>
+          <div className="bg-background/80 rounded p-1">
+            <div className="text-sm font-bold text-foreground">{timeLeft.seconds}</div>
+            <div className="text-[10px] text-muted-foreground">ثانیه</div>
           </div>
         </div>
       </div>
@@ -221,11 +253,14 @@ const Index = () => {
                 <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/30">
                   <Users className="w-8 h-8 text-white" />
                 </div>
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2">
-                  {formatNumber(studentsCount)}
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
+                  {formatNumber(displayStudentsCount)}
                 </div>
                 <div className="text-muted-foreground font-medium">دانشجو آکادمی</div>
-                <div className="text-sm text-muted-foreground/80 mt-2">در سراسر جهان</div>
+                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center gap-1">
+                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                  در سراسر جهان
+                </div>
               </div>
             </div>
 
@@ -236,11 +271,14 @@ const Index = () => {
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30">
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
-                  {formatNumber(enrollmentsCount)}
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
+                  {formatNumber(displayEnrollmentsCount)}
                 </div>
                 <div className="text-muted-foreground font-medium">ثبت‌نام موفق</div>
-                <div className="text-sm text-muted-foreground/80 mt-2">در تمام دوره‌ها</div>
+                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center gap-1">
+                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                  در تمام دوره‌ها
+                </div>
               </div>
             </div>
 
@@ -352,11 +390,16 @@ const Index = () => {
                             {course.price > 0 && (
                               <div className="text-left ml-4">
                                 <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                                  {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
+                                  {formatPrice(currentPrice)}
                                 </div>
+                                {course.use_dollar_price && (
+                                  <div className="text-sm text-muted-foreground">
+                                    ${currentPrice}
+                                  </div>
+                                )}
                                 {(isOnSale || isOnPrelaunch) && (
                                   <div className="text-sm text-muted-foreground line-through">
-                                    {course.use_dollar_price ? `$${course.usd_price}` : formatPrice(course.price)}
+                                    {formatPrice(course.price)}
                                   </div>
                                 )}
                               </div>
@@ -365,11 +408,11 @@ const Index = () => {
 
                           {/* Countdown Timer */}
                           {isOnPrelaunch && course.pre_launch_ends_at ? (
-                            <div className="mb-6">
+                            <div className="mb-4">
                               <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
                             </div>
                           ) : isOnSale && course.sale_expires_at ? (
-                            <div className="mb-6">
+                            <div className="mb-4">
                               <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
                             </div>
                           ) : null}
@@ -517,11 +560,16 @@ const Index = () => {
                             {course.price > 0 && (
                               <div className="text-left ml-4">
                                 <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                                  {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
+                                  {formatPrice(currentPrice)}
                                 </div>
+                                {course.use_dollar_price && (
+                                  <div className="text-sm text-muted-foreground">
+                                    ${currentPrice}
+                                  </div>
+                                )}
                                 {(isOnSale || isOnPrelaunch) && (
                                   <div className="text-sm text-muted-foreground line-through">
-                                    {course.use_dollar_price ? `$${course.usd_price}` : formatPrice(course.price)}
+                                    {formatPrice(course.price)}
                                   </div>
                                 )}
                               </div>
@@ -530,11 +578,11 @@ const Index = () => {
 
                           {/* Countdown Timer */}
                           {isOnPrelaunch && course.pre_launch_ends_at ? (
-                            <div className="mb-6">
+                            <div className="mb-4">
                               <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
                             </div>
                           ) : isOnSale && course.sale_expires_at ? (
-                            <div className="mb-6">
+                            <div className="mb-4">
                               <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
                             </div>
                           ) : null}
