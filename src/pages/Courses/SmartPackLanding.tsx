@@ -302,32 +302,52 @@ const SmartPackLanding = () => {
     { icon: Globe, text: "دسترسی به بازارهای بین‌المللی" }
   ];
 
-  // FAQ
+  // FAQ - Updated with specific questions from the original page
   const faqs = [
     {
-      id: "suitable",
-      question: "آیا این دوره برای مبتدیان مناسب است؟",
-      answer: "بله، دوره از صفر طراحی شده و نیازی به پیش‌زمینه ندارید. همه مفاهیم به زبان ساده توضیح داده می‌شود."
+      id: "education",
+      question: "آیا شرکت در این دوره نیاز به تحصیلات یا پیشینه علمی دارد؟",
+      answer: "خیر، این پک با در نظر گرفتن ساختار اقتصادی و فرهنگی جامعه ایران طراحی شده و تمام موارد آموزشی ساده‌سازی شده است تا تمام اقشار جامعه در هر سطح از سواد بتوانند از آن استفاده کنند. از یک کاسب با تجربه بدون تحصیلات دانشگاهی تا فارغ‌التحصیل مدیریت، همه می‌توانند بهره‌مند شوند."
     },
     {
-      id: "time",
-      question: "چقدر زمان نیاز است تا نتیجه بگیرم؟",
-      answer: "اکثر دانشجویان از هفته اول شروع به کسب درآمد می‌کنند. در عرض ۳ ماه می‌توانید یک کسب‌وکار مستقل راه‌اندازی کنید."
+      id: "who-should-buy",
+      question: "چه کسانی باید این دوره را تهیه کنند؟",
+      answer: "اگر در گیجی و سردرگمی به سر می‌برید و نمی‌دانید مسیرتان کدام است، اگر نمی‌دانید چگونه با هوش مصنوعی درآمد ایجاد کنید، اگر ایده‌های زیادی دارید اما نمی‌دانید کدام درست است، اگر می‌خواهید با ماهیت واقعی پول و AI آشنا شوید، و اگر به دنبال ایجاد تغییرات شگفت‌انگیز در زندگی‌تان هستید."
     },
     {
-      id: "support",
-      question: "چه نوع پشتیبانی دریافت می‌کنم؟",
-      answer: "پشتیبانی کامل از طریق تلگرام، ایمیل و جلسات آنلاین گروهی. همچنین دسترسی به انجمن اختصاصی دانشجویان."
+      id: "money-secrets",
+      question: "رازهای پول درآوردن با هوش مصنوعی رو می‌گین؟",
+      answer: "بله؛ این پک به شما کمک می‌کند در هر جایگاه شغلی که هستید، نگرش جدیدی به پول و هوش مصنوعی پیدا کنید و یاد بگیرید چطور ثروت خودتان را با AI خلق و بیشتر کنید. معجزه‌ای در کار نیست، هرچی هست آموختنی و کاربردی است."
     },
     {
-      id: "tools",
-      question: "آیا باید ابزارهای گران‌قیمت بخرم؟",
-      answer: "خیر، اکثر ابزارهای معرفی‌شده رایگان هستند یا نسخه رایگان قدرتمندی دارند. برای ابزارهای پولی جایگزین‌های رایگان معرفی می‌شود."
+      id: "requirements",
+      question: "چه شرایطی برای تهیه دوره مورد نیاز است؟",
+      answer: "آموزش‌پذیری و علاقمندی به یادگیری AI، داشتن نیاز به افزایش درآمد، امکان عمل به آموخته‌ها، علاقمندی به یادگیری و پشتکار، اشتیاق به ایجاد تحول در کسب‌وکار، آگاهی از اینکه معجزه‌ای در کار نیست و مثبت‌اندیش بودن و اعتقاد به اینکه می‌توانید تغییرات خوبی ایجاد کنید."
     },
     {
-      id: "update",
-      question: "آیا محتوا به‌روزرسانی می‌شود؟",
-      answer: "بله، دوره به‌طور مستمر به‌روزرسانی می‌شود و دسترسی مادام‌العمر دارید. تمام آپدیت‌ها رایگان است."
+      id: "become-rich",
+      question: "آیا همه ما قراره یاد بگیریم با هوش مصنوعی ثروتمند بشیم؟",
+      answer: "خیر! قرار نیست همه مثل بیل گیتس شوند. قرار است در هر شغل و جایگاهی که هستیم، با کمک هوش مصنوعی چند پله رشد کنیم. روش‌هایی یاد می‌گیریم که در شغل و حرفه خودمان با AI پیشرفت کنیم و درآمدمان را افزایش دهیم."
+    },
+    {
+      id: "no-need",
+      question: "فکر می‌کنیم نیازی به چنین آموزشی نداریم!",
+      answer: "بسیاری از ما فقط فکر می‌کنیم که داریم از حداکثر ظرفیت خودمان استفاده می‌کنیم، چون نمی‌دانیم چه ظرفیت‌های پنهانی برای کسب درآمد با هوش مصنوعی داریم. این سرمایه‌گذاری ارزشمند را برای خودتان انجام دهید و نتایجش را در آینده ببینید."
+    },
+    {
+      id: "ask-questions",
+      question: "اگر سوالی داشتم چطور می‌توانم از مدرس بپرسم؟",
+      answer: "کافیست سوال خود را در قسمت پرسش و پاسخ پایین ویدیوهای دوره مطرح نمایید؛ تا ۴۸ ساعت بعد پاسخ شما در همین قسمت توسط پشتیبانی و مدرس ارسال خواهد شد."
+    },
+    {
+      id: "expensive",
+      question: "آیا دوره گران نیست؟",
+      answer: "با رقم ۱.۵ میلیون تومان شاید یک ساعت دیجیتال یا چند بازی پلی‌استیشن بخرید! اما وقتی بتوانید با همین مبلغ روی مهم‌ترین مهارت‌های هوش مصنوعی کار کنید، یک سرمایه‌گذاری ارزشمند کرده‌اید. اگر به آموزش‌ها عمل کنید، علاوه بر بازگشت سرمایه، نتایج فوق‌العاده‌ای کسب خواهید کرد."
+    },
+    {
+      id: "money-back",
+      question: "از کجا معلوم اگر راضی نبودم شما پول من را پس می‌دهید؟",
+      answer: "آکادمی رفیعی در این سال‌ها فعالیت به قدری خوب عمل کرده که تقریباً هیچ معترضی ندارد! اعتبار این مجموعه اینقدر بالاست که به خاطر چندمیلیون تومان، خود را در معرض اتهام قرار نمی‌دهد. برند ثبت‌شده با ده‌ها کارمند و برگزارکننده بزرگترین سمینارهای کشور است."
     }
   ];
 
@@ -436,9 +456,177 @@ const SmartPackLanding = () => {
         </div>
       </section>
 
-      {/* Course Curriculum */}
+      {/* We Don't Sell Dreams Section */}
+      <motion.section 
+        className="py-16 bg-muted/30" 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true }} 
+        variants={containerVariants}
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <motion.div variants={itemVariants}>
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-muted/50">
+              <CardContent className="p-8 md:p-12">
+                <div className="text-center mb-8">
+                  <Badge className="bg-destructive/10 text-destructive border-destructive/20 px-6 py-3 text-lg font-medium mb-6">
+                    <Shield className="w-5 h-5 ml-2" />
+                    شفافیت کامل
+                  </Badge>
+                  <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+                    ما توهم رویا نمی‌فروشیم...
+                  </h2>
+                </div>
+                
+                <div className="prose prose-lg max-w-4xl mx-auto text-center">
+                  <p className="text-muted-foreground leading-relaxed text-lg mb-6">
+                    ما در پک هوشمند کسب‌وکار نمی‌خواهیم به شما رویافروشی یا توهم فروشی کنیم. دوست نداریم 
+                    فقط با تکیه بر مطالب انگیزشی به شما القا کنیم که می‌توانید جز ثروتمندترین افراد جهان 
+                    شوید! ما نمی‌خواهیم شما در دام افراد سودجو و متوهم بیفتید.
+                  </p>
+                  
+                  <div className="bg-primary/5 rounded-lg p-6 mb-6">
+                    <p className="text-foreground font-semibold text-xl leading-relaxed">
+                      رسالت ما در این پک یک چیز است: <span className="text-primary">آموزش اصولی و صحیح هوش مصنوعی برای کسب‌وکار</span>. 
+                      و به شما وعده می‌دهیم که اگر این آموزش‌ها را به درستی پیاده‌سازی و واقعاً به آن‌ها عمل کنید، 
+                      اتفاقات خوبی در زندگی‌تان خواهد افتاد.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <Video className="w-4 h-4 text-primary" />
+                      <span>آموزش ویدیویی</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <Award className="w-4 h-4 text-success" />
+                      <span>گواهی معتبر</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <Shield className="w-4 h-4 text-blue-500" />
+                      <span>ضمانت بازگشت وجه</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <Globe className="w-4 h-4 text-orange-500" />
+                      <span>پرداخت ارزی</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Course Benefits Section */}
       <motion.section 
         className="py-16 bg-background" 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true }} 
+        variants={containerVariants}
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <SectionTitle 
+            title="مزایای شرکت در پک هوشمند"
+            subtitle="این پک مختص کسانی است که می‌خواهند تصمیمات مالی بهتری بگیرند و متفاوت زندگی کنند"
+            align="center"
+            isCentered
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+            {/* Why this course */}
+            <motion.div variants={itemVariants}>
+              <Card className="h-full border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5">
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-bold text-primary">۱</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">این پک:</h3>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span className="text-foreground">علمی و مبتنی بر آخرین تحقیقات AI و کسب‌وکار است؛ با دسترسی به منابع دست‌اول و معتبر.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span className="text-foreground">کاربردی و بومی است؛ نه تئوری صرف! همراه با تمرینات عملی و اثربخش برای ایجاد تغییرات ماندگار در زندگی.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                      <span className="text-foreground">تعاملی و بدون شعار طراحی شده؛ مخصوص کسانی که واقعاً آماده تغییر و اقدام هستند.</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Who should take this course */}
+            <motion.div variants={itemVariants}>
+              <Card className="h-full border-2 border-primary/20 bg-gradient-to-br from-secondary/5 to-primary/5">
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-bold text-secondary">۲</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">این پک مناسب شماست اگر:</h3>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <Target className="w-5 h-5 text-secondary mt-0.5 flex-shrink-0" />
+                      <span className="text-foreground">عمل‌گرا هستید و می‌خواهید درآمد بیشتری با هوش مصنوعی داشته باشید.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Target className="w-5 h-5 text-secondary mt-0.5 flex-shrink-0" />
+                      <span className="text-foreground">آماده یادگیری نکات کلیدی و کاربردی برای بهبود شغلی و مالی خود هستید.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Target className="w-5 h-5 text-secondary mt-0.5 flex-shrink-0" />
+                      <span className="text-foreground">از انگیزه‌های زودگذر خسته شده‌اید و به دنبال راهکارهای عملی و علمی هستید.</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Why choose this course */}
+          <motion.div variants={itemVariants}>
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-muted/50">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-bold text-primary-foreground">۳</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">چرا این پک؟</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-6 h-6 text-success mt-1 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">تضمین رضایت ۱۰۰٪</h4>
+                      <p className="text-muted-foreground text-sm">اگر تا پایان دوره ناراضی بودید، هزینه‌تان را بدون هیچ شرطی بازمی‌گردانیم.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Brain className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">آموزش عملی AI و کاهش استرس مالی</h4>
+                      <p className="text-muted-foreground text-sm">با روش‌های علمی، به جای ذخیره اطلاعات، تغییر واقعی در زندگی‌تان ایجاد می‌کنید.</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Course Curriculum */}
+      <motion.section 
+        className="py-16 bg-muted/30" 
         initial="hidden" 
         whileInView="visible" 
         viewport={{ once: true }} 
@@ -533,6 +721,127 @@ const SmartPackLanding = () => {
                 </Card>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Video Testimonials Section */}
+      <motion.section 
+        className="py-16 bg-background" 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true }} 
+        variants={containerVariants}
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <SectionTitle 
+            title="نظرات شرکت‌کنندگان دوره (ویدیو)"
+            subtitle="نظرات واقعی و بدون تدوین دانشجویان درباره تجربه‌شان"
+            align="center"
+            isCentered
+          />
+
+          <motion.div variants={itemVariants}>
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-muted/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Video className="w-10 h-10 text-destructive" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-4">
+                  ویدیوهای نظرات دانشجویان
+                </h3>
+                <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                  شنیدن تجربه واقعی دانشجویان درباره تأثیر این پک در زندگی‌شان بهتر از هر توضیحی است. 
+                  ویدیوهای بدون تدوین و صادقانه از تغییراتی که در زندگی‌شان رخ داده.
+                </p>
+                <Button variant="outline" className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                  <Play className="w-5 h-5 ml-2" />
+                  مشاهده ویدیوهای نظرات
+                </Button>
+                <p className="text-sm text-muted-foreground mt-4">
+                  * ویدیوها بعد از خرید در پنل شما قابل مشاهده خواهند بود
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Registration Methods */}
+      <motion.section 
+        className="py-16 bg-muted/30" 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true }} 
+        variants={containerVariants}
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <SectionTitle 
+            title="روش‌های ثبت نام"
+            subtitle="راه‌های مختلف برای تهیه پک هوشمند کسب‌وکار"
+            align="center"
+            isCentered
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div variants={itemVariants}>
+              <Card className="h-full text-center border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Smartphone className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">ثبت نام آنلاین</h3>
+                  <p className="text-muted-foreground mb-6">
+                    در همین صفحه روی دکمه خرید بزنید و رزرو خودتان در دوره را تکمیل کنید.
+                  </p>
+                  <Button onClick={scrollToCheckout} className="w-full">
+                    خرید آنلاین
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Card className="h-full text-center border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <DollarSign className="w-8 h-8 text-secondary" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">پرداخت کارت به کارت</h3>
+                  <div className="text-muted-foreground mb-4 space-y-2">
+                    <p className="font-mono text-sm bg-muted p-2 rounded">
+                      6104337877849719
+                    </p>
+                    <p className="text-sm">به نام آکادمی رفیعی</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    سپس رسید واریزی خود را به شماره تلگرام یا واتساپ ارسال نمایید.
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    <MessageCircle className="w-4 h-4 ml-2" />
+                    ارسال رسید
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Card className="h-full text-center border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <CardContent className="p-8">
+                  <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Globe className="w-8 h-8 text-blue-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">پرداخت ارزی</h3>
+                  <p className="text-muted-foreground mb-6">
+                    جهت پرداخت از خارج از کشور و با ارزهای مختلف
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                    پرداخت بین‌المللی
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </motion.section>
