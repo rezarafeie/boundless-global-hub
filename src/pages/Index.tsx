@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Star, Zap, Clock, Play, BookOpen, Users, Award, ArrowRight } from "lucide-react";
+import { TetherlandService } from "@/lib/tetherlandService";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -155,10 +156,175 @@ const Index = () => {
     fetchCourses();
   }, []);
 
-  const formatPrice = (price: number) => {
-    // Convert dollar to IRR (1 USD = 60,000 IRR approximately)
-    const irrPrice = price * 60000;
-    return new Intl.NumberFormat('fa-IR').format(irrPrice) + ' تومان';
+  const formatPrice = (price: number, isUSD: boolean = false) => {
+    if (isUSD) {
+      // Fallback to approximate conversion for synchronous display
+      const irrPrice = price * 60000;
+      return new Intl.NumberFormat('fa-IR').format(irrPrice) + ' تومان';
+    } else {
+      return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+    }
+  };
+
+  // Component for course cards with price conversion
+  const CourseCardWithPrice = ({ course, currentPrice, isOnSale, isOnPrelaunch, color }: any) => {
+    const [displayPrice, setDisplayPrice] = useState<string>('');
+    const [originalPrice, setOriginalPrice] = useState<string>('');
+    
+    useEffect(() => {
+      const convertPrice = async () => {
+        if (course.use_dollar_price && course.usd_price) {
+          try {
+            const irrPrice = await TetherlandService.convertUSDToIRR(currentPrice);
+            setDisplayPrice(TetherlandService.formatIRRAmount(irrPrice) + ' تومان');
+            
+            if (isOnSale || isOnPrelaunch) {
+              const originalIrrPrice = await TetherlandService.convertUSDToIRR(course.price);
+              setOriginalPrice(TetherlandService.formatIRRAmount(originalIrrPrice) + ' تومان');
+            }
+          } catch (error) {
+            console.error('Failed to convert USD to IRR:', error);
+            // Fallback to approximate conversion
+            const irrPrice = currentPrice * 60000;
+            setDisplayPrice(new Intl.NumberFormat('fa-IR').format(irrPrice) + ' تومان');
+            
+            if (isOnSale || isOnPrelaunch) {
+              const originalIrrPrice = course.price * 60000;
+              setOriginalPrice(new Intl.NumberFormat('fa-IR').format(originalIrrPrice) + ' تومان');
+            }
+          }
+        } else {
+          setDisplayPrice(formatPrice(currentPrice, false));
+          if (isOnSale || isOnPrelaunch) {
+            setOriginalPrice(formatPrice(course.price, false));
+          }
+        }
+      };
+      
+      convertPrice();
+    }, [course, currentPrice, isOnSale, isOnPrelaunch]);
+
+    const colorConfig = {
+      blue: {
+        border: 'border-blue-200/50 dark:border-blue-800/50',
+        accent: 'from-blue-500 to-blue-600',
+        iconBg: 'from-blue-500 to-blue-600',
+        iconShadow: 'shadow-blue-500/25',
+        textGradient: 'from-blue-600 to-blue-700',
+        hover: 'group-hover:text-blue-600',
+        buttonBg: 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
+        buttonShadow: 'shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25',
+        ghostHover: 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50',
+        shadow: 'group-hover:shadow-blue-500/15',
+        icon: Zap
+      },
+      green: {
+        border: 'border-green-200/50 dark:border-green-800/50',
+        accent: 'from-green-500 to-emerald-500',
+        iconBg: 'from-green-500 to-emerald-600',
+        iconShadow: 'shadow-green-500/25',
+        textGradient: 'from-green-600 to-emerald-600',
+        hover: 'group-hover:text-green-600',
+        buttonBg: 'from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700',
+        buttonShadow: 'shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/25',
+        ghostHover: 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/50',
+        shadow: 'group-hover:shadow-green-500/15',
+        icon: Star
+      }
+    };
+
+    const config = colorConfig[color as keyof typeof colorConfig];
+    const IconComponent = config.icon;
+
+    return (
+      <div className="group h-full">
+        <div className="relative h-full">
+          <div className={`relative h-full min-h-[350px] bg-white dark:bg-gray-900 border ${config.border} rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${config.shadow} group-hover:-translate-y-1 flex flex-col`}>
+            
+            {/* Top accent */}
+            <div className={`h-1 bg-gradient-to-r ${config.accent}`}></div>
+            
+            {/* Card content */}
+            <div className="p-6 md:p-8 flex flex-col flex-1">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${config.iconBg} rounded-xl flex items-center justify-center shadow-lg ${config.iconShadow}`}>
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className={`text-lg md:text-xl font-bold text-foreground mb-2 ${config.hover} transition-colors`}>
+                        {course.title}
+                      </h3>
+                      
+                      {/* Compact badges */}
+                      <div className="flex flex-wrap gap-2">
+                        {course.price === 0 && (
+                          <Badge className="bg-green-100 text-green-700 text-xs">رایگان</Badge>
+                        )}
+                        {isOnPrelaunch && (
+                          <Badge className="bg-orange-100 text-orange-700 text-xs animate-pulse">پیش‌فروش</Badge>
+                        )}
+                        {!isOnPrelaunch && isOnSale && (
+                          <Badge className="bg-red-100 text-red-700 text-xs animate-pulse">تخفیف ویژه</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Price */}
+                {course.price > 0 && (
+                  <div className="text-left ml-4">
+                    <div className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${config.textGradient} bg-clip-text text-transparent`}>
+                      {displayPrice || 'در حال محاسبه...'}
+                    </div>
+                    {course.use_dollar_price && course.usd_price && (
+                      <div className="text-sm text-muted-foreground">
+                        ${currentPrice}
+                      </div>
+                    )}
+                    {(isOnSale || isOnPrelaunch) && originalPrice && (
+                      <div className="text-xs text-muted-foreground line-through">
+                        {originalPrice}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="flex-1 mb-4">
+                <p className="text-muted-foreground leading-relaxed text-sm md:text-base line-clamp-3">
+                  {course.description || (color === 'blue' ? 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی' : 'سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی')}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3 mt-auto">
+                <Button 
+                  asChild 
+                  className={`w-full h-12 bg-gradient-to-r ${config.buttonBg} text-white font-medium shadow-lg ${config.buttonShadow} transition-all duration-300`}
+                >
+                  <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-2">
+                    <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+                
+                <Button asChild variant="ghost" size="sm" className={`w-full ${config.ghostHover}`}>
+                  <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    مشاهده جزئیات
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const formatNumber = (number: number) => {
@@ -242,9 +408,9 @@ const Index = () => {
                   {formatNumber(displayStudentsCount)}
                 </div>
                 <div className="text-muted-foreground font-medium">دانشجو آکادمی</div>
-                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center gap-1">
+                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
                   <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                  در سراسر جهان
+                  سراسر جهان
                 </div>
               </div>
             </div>
@@ -260,7 +426,7 @@ const Index = () => {
                   {formatNumber(displayEnrollmentsCount)}
                 </div>
                 <div className="text-muted-foreground font-medium">ثبت‌نام موفق</div>
-                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center gap-1">
+                <div className="text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
                   <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
                   در تمام دوره‌ها
                 </div>
@@ -322,93 +488,14 @@ const Index = () => {
                   isOnSale ? course.sale_price : course.price;
                 
                 return (
-                  <div key={course.id} className="group h-full">
-                    <div className="relative h-full">
-                      {/* Simplified card with fixed height */}
-                      <div className="relative h-full min-h-[400px] bg-white dark:bg-gray-900 border border-blue-200/50 dark:border-blue-800/50 rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:shadow-blue-500/15 group-hover:-translate-y-1 flex flex-col">
-                        
-                        {/* Top accent */}
-                        <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-600"></div>
-                        
-                        {/* Card content */}
-                        <div className="p-6 md:p-8 flex flex-col flex-1">
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                                  <Zap className="w-6 h-6 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 group-hover:text-blue-600 transition-colors">
-                                    {course.title}
-                                  </h3>
-                                  
-                                  {/* Compact badges */}
-                                  <div className="flex flex-wrap gap-2">
-                                    {course.price === 0 && (
-                                      <Badge className="bg-green-100 text-green-700 text-xs">رایگان</Badge>
-                                    )}
-                                    {isOnPrelaunch && (
-                                      <Badge className="bg-orange-100 text-orange-700 text-xs animate-pulse">پیش‌فروش</Badge>
-                                    )}
-                                    {!isOnPrelaunch && isOnSale && (
-                                      <Badge className="bg-red-100 text-red-700 text-xs animate-pulse">تخفیف ویژه</Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Price */}
-                            {course.price > 0 && (
-                              <div className="text-left ml-4">
-                                <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                                  {formatPrice(currentPrice)}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  ${currentPrice}
-                                </div>
-                                {(isOnSale || isOnPrelaunch) && (
-                                  <div className="text-xs text-muted-foreground line-through">
-                                    {formatPrice(course.price)}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          
-                          {/* Description */}
-                          <div className="flex-1 mb-6">
-                            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                              {course.description || 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی'}
-                            </p>
-                          </div>
-
-                          {/* Simple actions */}
-                          <div className="space-y-3 mt-auto">
-                            <Button 
-                              asChild 
-                              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300"
-                            >
-                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-2">
-                                <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                              </Link>
-                            </Button>
-                            
-                            <Button asChild variant="ghost" size="sm" className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50">
-                              <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
-                                <BookOpen className="w-4 h-4" />
-                                مشاهده جزئیات
-                              </Link>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <CourseCardWithPrice 
+                    key={course.id}
+                    course={course}
+                    currentPrice={currentPrice}
+                    isOnSale={isOnSale}
+                    isOnPrelaunch={isOnPrelaunch}
+                    color="blue"
+                  />
                 );
               })}
             </div>
@@ -453,93 +540,14 @@ const Index = () => {
                   isOnSale ? course.sale_price : course.price;
                 
                 return (
-                  <div key={course.id} className="group h-full">
-                    <div className="relative h-full">
-                      {/* Simplified card with fixed height */}
-                      <div className="relative h-full min-h-[400px] bg-white dark:bg-gray-900 border border-green-200/50 dark:border-green-800/50 rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:shadow-green-500/15 group-hover:-translate-y-1 flex flex-col">
-                        
-                        {/* Top accent */}
-                        <div className="h-1 bg-gradient-to-r from-green-500 to-emerald-500"></div>
-                        
-                        {/* Card content */}
-                        <div className="p-6 md:p-8 flex flex-col flex-1">
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
-                                  <Star className="w-6 h-6 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 group-hover:text-green-600 transition-colors">
-                                    {course.title}
-                                  </h3>
-                                  
-                                  {/* Compact badges */}
-                                  <div className="flex flex-wrap gap-2">
-                                    {course.price === 0 && (
-                                      <Badge className="bg-green-100 text-green-700 text-xs">رایگان</Badge>
-                                    )}
-                                    {isOnPrelaunch && (
-                                      <Badge className="bg-orange-100 text-orange-700 text-xs animate-pulse">پیش‌فروش</Badge>
-                                    )}
-                                    {!isOnPrelaunch && isOnSale && (
-                                      <Badge className="bg-red-100 text-red-700 text-xs animate-pulse">تخفیف ویژه</Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Price */}
-                            {course.price > 0 && (
-                              <div className="text-left ml-4">
-                                <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                                  {formatPrice(currentPrice)}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  ${currentPrice}
-                                </div>
-                                {(isOnSale || isOnPrelaunch) && (
-                                  <div className="text-xs text-muted-foreground line-through">
-                                    {formatPrice(course.price)}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          
-                          {/* Description */}
-                          <div className="flex-1 mb-6">
-                            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                              {course.description || 'سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی'}
-                            </p>
-                          </div>
-
-                          {/* Simple actions */}
-                          <div className="space-y-3 mt-auto">
-                            <Button 
-                              asChild 
-                              className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/25 transition-all duration-300"
-                            >
-                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-2">
-                                <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                              </Link>
-                            </Button>
-                            
-                            <Button asChild variant="ghost" size="sm" className="w-full text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/50">
-                              <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
-                                <BookOpen className="w-4 h-4" />
-                                مشاهده جزئیات
-                              </Link>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <CourseCardWithPrice 
+                    key={course.id}
+                    course={course}
+                    currentPrice={currentPrice}
+                    isOnSale={isOnSale}
+                    isOnPrelaunch={isOnPrelaunch}
+                    color="green"
+                  />
                 );
               })}
             </div>
