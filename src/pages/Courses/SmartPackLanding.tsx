@@ -88,49 +88,84 @@ const SmartPackLanding = () => {
     { number: "۶ ماه", label: "به‌روزرسانی رایگان", icon: Gift }
   ];
 
-  // AI Skill Course - Step by step audio episodes
-  const aiSkillCourse = [
+  // Course Topics - AI Skill Training  
+  const courseTopics = [
     {
-      episode: 1,
       title: "آشنایی با مهارت هوش مصنوعی",
       description: "معرفی AI، جایگاهش در زندگی روزمره، کاربردها، و ضرورت یادگیری",
-      icon: Brain
+      icon: Brain,
+      modules: [
+        "شناخت مفهوم هوش مصنوعی و انواع آن",
+        "کاربردهای AI در صنایع مختلف",
+        "تأثیر AI بر آینده مشاغل و کسب‌وکارها",
+        "نیاز و ضرورت یادگیری مهارت‌های AI"
+      ]
     },
     {
-      episode: 2,
-      title: "فرهنگ لغت هوش مصنوعی",
+      title: "فرهنگ لغت هوش مصنوعی", 
       description: "مفاهیم پایه مانند AI، ML، LLM، Agent، API و Prompt به زبان ساده",
-      icon: BookOpen
+      icon: BookOpen,
+      modules: [
+        "تعریف و تفاوت AI، ML، و Deep Learning",
+        "آشنایی با مفهوم LLM و نحوه عملکرد",
+        "درک مفاهیم Agent، API و Prompt",
+        "واژگان تخصصی و اصطلاحات رایج"
+      ]
     },
     {
-      episode: 3,
       title: "پرامپت‌نویسی پیشرفته (مدل SMART)",
       description: "تکنیک‌های SMART، Chain-of-Thought، A/B Testing، Role Play و Context Stacking + فایل PDF دفترچه فرمول پرامپت",
-      icon: Target
+      icon: Target,
+      modules: [
+        "روش SMART در نوشتن پرامپت‌های مؤثر",
+        "تکنیک Chain-of-Thought برای حل مسائل پیچیده",
+        "A/B Testing پرامپت‌ها برای بهینه‌سازی",
+        "Role Play و Context Stacking در پرامپت‌نویسی"
+      ]
     },
     {
-      episode: 4,
       title: "معرفی و تست ابزارهای هوش مصنوعی",
       description: "ChatGPT، Gemini، Sora، Leonardo، Google AI Studio، Suno، Lovable، Gamma AI، HeyGen، ElevenLabs و Google Drive با Gemini",
-      icon: Cog
+      icon: Cog,
+      modules: [
+        "ChatGPT و Gemini برای تولید محتوا و پاسخ‌گویی",
+        "Sora و Leonardo برای ساخت تصویر و ویدیو",
+        "Google AI Studio برای تولید صدا و پادکست",
+        "Suno، Lovable، Gamma AI، HeyGen و ElevenLabs"
+      ]
     },
     {
-      episode: 5,
       title: "فقط یک روز با AI زندگی کن (تمرین عملی)",
       description: "اجرای کارهای روزانه با ابزارها، اتوماسیون ساده، تجربه عملی",
-      icon: Play
+      icon: Play,
+      modules: [
+        "برنامه‌ریزی روز با کمک هوش مصنوعی",
+        "اتوماسیون کارهای ساده روزانه",
+        "استفاده از AI در ارتباطات و نوشتن",
+        "تجربه عملی و ارزیابی نتایج"
+      ]
     },
     {
-      episode: 6,
       title: "فرصت‌های نو – مهارت‌های نو",
-      description: "۹ مهارت کاربردی برای شغل، بیزینس و برند شخصی در عصر AI مثل بنچمارک، تولید محتوا، اتوماسیون، تحلیل، طراحی و...",
-      icon: TrendingUp
+      description: "۹ مهارت کاربردی برای شغل، بیزینس و برند شخصی در عصر AI",
+      icon: TrendingUp,
+      modules: [
+        "بنچمارک و تحلیل رقبا با AI",
+        "تولید محتوا حرفه‌ای برای برند شخصی",
+        "اتوماسیون فرآیندهای کاری",
+        "طراحی و تحلیل داده‌های کسب‌وکار"
+      ]
     },
     {
-      episode: 7,
       title: "ساخت AI Agent (دستیار هوشمند شخصی)",
-      description: "ساخت Agent با n8n و اتصال به تلگرام، Gmail، Google Sheet، Calendar، تست Agent با پرامپت‌های واقعی، اتصال APIهای OpenAI و مدیریت دیتا، معرفی تمپلیت‌های آماده برای تبدیل صدا به متن، مدیریت مشتری و...",
-      icon: Rocket
+      description: "ساخت Agent با n8n و اتصال به تلگرام، Gmail، Google Sheet، Calendar، APIهای OpenAI و مدیریت دیتا",
+      icon: Rocket,
+      modules: [
+        "آشنایی با n8n و ساخت Agent",
+        "اتصال به تلگرام، Gmail و Google Workspace",
+        "تست Agent با پرامپت‌های واقعی",
+        "تمپلیت‌های آماده برای تبدیل صدا به متن"
+      ]
     }
   ];
 
@@ -722,7 +757,7 @@ const SmartPackLanding = () => {
         </div>
       </motion.section>
 
-      {/* AI Skill Course Section */}
+      {/* Course Topics Section */}
       <motion.section 
         className="py-16 bg-background" 
         initial="hidden" 
@@ -732,75 +767,40 @@ const SmartPackLanding = () => {
       >
         <div className="container max-w-6xl mx-auto px-6">
           <SectionTitle 
-            title="آموزش قدم‌به‌قدم مهارت هوش مصنوعی – از صفر تا پیشرفته"
-            subtitle="۷ اپیزود آموزشی صوتی با تدریس آقای رضا رفیعی + تمرینات عملی"
+            title="سرفصل‌های آموزش مهارت هوش مصنوعی"
+            subtitle="۷ موضوع جامع برای تسلط کامل بر مهارت‌های هوش مصنوعی از مبتدی تا پیشرفته"
             align="center"
             isCentered
           />
 
-          <div className="space-y-4">
-            {aiSkillCourse.map((episode, index) => (
+          <div className="space-y-8">
+            {courseTopics.map((topic, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Card className="cursor-pointer border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                              <episode.icon className="w-6 h-6 text-primary-foreground" />
-                            </div>
-                            <div className="text-right">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="text-xs">
-                                  اپیزود {episode.episode}
-                                </Badge>
-                                <h3 className="text-lg font-bold text-foreground">
-                                  {episode.title}
-                                </h3>
-                              </div>
-                              <p className="text-muted-foreground text-sm line-clamp-2">
-                                {episode.description}
-                              </p>
-                            </div>
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-muted-foreground transform transition-transform duration-200" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-2">
-                    <Card className="border border-primary/10 bg-muted/30">
-                      <CardContent className="p-6">
-                        <p className="text-muted-foreground leading-relaxed">
-                          {episode.description}
+                <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                  <CardContent className="p-8">
+                    <div className="flex items-start gap-6">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
+                        <topic.icon className="w-8 h-8 text-primary-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-foreground mb-3">
+                          {topic.title}
+                        </h3>
+                        <p className="text-muted-foreground mb-6 text-lg">
+                          {topic.description}
                         </p>
-                        {episode.episode === 3 && (
-                          <div className="mt-4 flex items-center gap-2 text-sm text-primary">
-                            <FileText className="w-4 h-4" />
-                            <span>شامل فایل PDF دفترچه فرمول پرامپت</span>
-                          </div>
-                        )}
-                        {episode.episode === 7 && (
-                          <div className="mt-4 space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-primary">
-                              <Cog className="w-4 h-4" />
-                              <span>ساخت Agent با n8n</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {topic.modules.map((module, moduleIndex) => (
+                            <div key={moduleIndex} className="flex items-center gap-3">
+                              <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                              <span className="text-foreground">{module}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-primary">
-                              <MessageCircle className="w-4 h-4" />
-                              <span>اتصال به تلگرام، Gmail، Google Sheet، Calendar</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-primary">
-                              <Brain className="w-4 h-4" />
-                              <span>تمپلیت‌های آماده برای تبدیل صدا به متن و مدیریت مشتری</span>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </CollapsibleContent>
-                </Collapsible>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
