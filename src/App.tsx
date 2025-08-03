@@ -58,6 +58,7 @@ import ChangeCoursePage from "./pages/Course/ChangeCoursePage";
 import AmericanBusinessPage from "./pages/Course/AmericanBusinessPage";
 import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
 import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
+import SmartLifePage from "./pages/Course/SmartLifePage";
 
 // Course access pages
 import TaghirAccess from "./pages/Course/Access/TaghirAccess";
@@ -254,6 +255,7 @@ const App = () => {
                     <Route path="/course/american-business" element={<AmericanBusinessPage />} />
                     <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
                     <Route path="/course/passive-income" element={<PassiveIncomePage />} />
+                    <Route path="/course/smart-life" element={<SmartLifePage />} />
                     <Route path="/daramad" element={<PassiveIncomePage />} />
 
                     {/* Course access control */}
