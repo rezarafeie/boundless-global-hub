@@ -17,7 +17,16 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { direction } = useLanguage();
-  const location = useLocation();
+  
+  // Safe hook usage with error boundary
+  let location;
+  try {
+    location = useLocation();
+  } catch (error) {
+    // Fallback if Router context is not available
+    location = { pathname: '/' };
+  }
+  
   const { totalHeight, hasBannerNotifications, headerHeight } = useNotificationHeight();
   
   // Routes where footer should be hidden
