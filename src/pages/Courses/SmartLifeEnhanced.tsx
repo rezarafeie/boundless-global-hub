@@ -258,7 +258,7 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
       <div className="min-h-screen bg-background">
         {/* Enhanced Hero Section */}
         <motion.section 
-          className="relative bg-gradient-to-br from-background via-primary/5 to-secondary/10 pt-20 pb-16 overflow-hidden"
+          className="relative bg-gradient-to-br from-background via-background/95 to-primary/5 pt-20 pb-16 overflow-hidden"
           initial="hidden"
           animate="visible"
           variants={containerVariants}
@@ -266,119 +266,89 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
           
-          {/* Gradient Overlays */}
-          <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-br from-primary/10 to-transparent"></div>
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-bl from-secondary/10 to-transparent"></div>
+          {/* Glow Effects */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-3xl opacity-60"></div>
+          <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-2xl opacity-40"></div>
+          <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-secondary/10 rounded-full blur-2xl opacity-40"></div>
 
-          <div className="container relative z-10 max-w-7xl mx-auto px-6">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Content */}
-              <motion.div variants={itemVariants} className="space-y-8">
-                {/* Trust Badge */}
-                <div className="flex flex-wrap gap-3">
-                  <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 text-sm font-medium">
-                    <Star className="w-4 h-4 ml-2 fill-current" />
-                    ۳۰۰۰+ دانشجوی موفق
-                  </Badge>
-                  <Badge className="bg-green-50 text-green-700 border-green-200 px-4 py-2 text-sm font-medium">
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    ۱۰۰% رایگان
-                  </Badge>
-                </div>
-
-                {/* Main Title */}
-                <div className="space-y-4">
-                  <h1 className="text-4xl lg:text-6xl font-black text-foreground leading-tight">
-                    <span className="text-primary">۲ جلسه رایگان</span>
-                    <br />
-                    برای شروع زندگی هوشمند با AI
-                  </h1>
-                  <p className="text-xl text-secondary font-semibold">
-                    Smart Life | Start with AI
-                  </p>
-                </div>
-
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  با ۲ قدم ساده، یاد بگیر چطور هوش مصنوعی می‌تونه زندگی شخصی و کاری‌تو متحول کنه. 
-                  این دوره رایگان، پیش‌نمایشی از دوره کامل هوش مصنوعی است که بیش از ۳۰۰۰ نفر زندگی‌شان را تغییر داده.
-                </p>
-
-                {/* Benefits */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-foreground">بدون نیاز به دانش قبلی - از صفر شروع کنید</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-foreground">دسترسی فوری و دائمی به محتوا</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-foreground">تدریس توسط ۲ مدرس متخصص</span>
-                  </div>
-                </div>
-
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button 
-                    size="lg" 
-                    onClick={handleStartCourse}
-                    className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
-                  >
-                    <PlayCircle className="w-5 h-5 mr-2" />
-                    همین حالا شروع کن
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    className="px-8 py-4 text-lg border-2 hover:bg-primary/5"
-                  >
-                    <ArrowRight className="w-5 h-5 mr-2" />
-                    بیشتر بدانید
-                  </Button>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8">
-                  {stats.map((stat, index) => (
-                    <motion.div 
-                      key={index}
-                      variants={itemVariants}
-                      className="text-center"
-                    >
-                      <stat.icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
-                      <div className="text-2xl font-bold text-foreground">{stat.number}</div>
-                      <div className="text-sm text-muted-foreground">{stat.label}</div>
-                    </motion.div>
-                  ))}
-                </div>
+          <div className="container relative z-10 max-w-6xl mx-auto px-6">
+            <motion.div 
+              className="text-center" 
+              variants={containerVariants} 
+              initial="hidden" 
+              animate="visible"
+            >
+              {/* Trust Badge */}
+              <motion.div className="flex justify-center mb-6" variants={itemVariants}>
+                <Badge className="bg-primary/10 text-primary border-primary/20 px-6 py-3 text-base font-medium">
+                  <Star className="w-4 h-4 ml-2 fill-current" />
+                  بیش از ۳۰۰۰ دانشجوی موفق
+                </Badge>
               </motion.div>
 
-              {/* Visual Element */}
-              <motion.div variants={itemVariants} className="relative">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-3xl blur-3xl opacity-60" />
-                  <div className="relative bg-background/80 backdrop-blur-sm rounded-3xl p-8 border border-primary/20 shadow-2xl">
-                    <div className="w-full h-80 bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-                      <div className="relative z-10 text-center space-y-4">
-                        <Brain className="w-16 h-16 text-primary mx-auto" />
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-bold text-foreground">دوره رایگان AI</h3>
-                          <p className="text-muted-foreground">شروع هوشمندانه به آینده</p>
-                        </div>
-                        <div className="flex justify-center gap-2">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                          <div className="w-2 h-2 bg-secondary rounded-full animate-pulse delay-75"></div>
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-150"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {/* Main Title */}
+              <motion.h1 
+                className="text-4xl md:text-6xl lg:text-7xl font-black text-foreground mb-6 leading-tight" 
+                variants={itemVariants}
+              >
+                ۲ جلسه رایگان برای شروع زندگی هوشمند با AI
+              </motion.h1>
+
+              <motion.p 
+                className="text-xl md:text-2xl text-primary font-semibold mb-8" 
+                variants={itemVariants}
+              >
+                Smart Life | Start with AI
+              </motion.p>
+
+              <motion.p 
+                className="text-lg md:text-xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed" 
+                variants={itemVariants}
+              >
+                دوره‌ای جامع و عملی که به شما امکان آشنایی با مفاهیم پایه‌ای هوش مصنوعی و کاربرد آن در زندگی روزمره را فراهم می‌کند. 
+                این برنامه آموزشی به‌عنوان پیش‌نمایشی از دوره کامل طراحی شده که تاکنون بیش از ۳۰۰۰ نفر در آن شرکت کرده‌اند.
+              </motion.p>
+
+              {/* Benefits */}
+              <motion.div variants={itemVariants} className="flex flex-wrap gap-4 justify-center mb-8">
+                <Badge variant="outline" className="px-4 py-2 text-sm">
+                  بدون نیاز به دانش قبلی
+                </Badge>
+                <Badge variant="outline" className="px-4 py-2 text-sm">
+                  دسترسی فوری
+                </Badge>
+                <Badge variant="outline" className="px-4 py-2 text-sm">
+                  ۲ مدرس متخصص
+                </Badge>
               </motion.div>
-            </div>
+
+              {/* CTA Button */}
+              <motion.div variants={itemVariants} className="mb-12">
+                <Button 
+                  size="lg" 
+                  onClick={handleStartCourse}
+                  className="px-12 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <PlayCircle className="w-5 h-5 mr-2" />
+                  شروع دوره رایگان
+                </Button>
+              </motion.div>
+
+              {/* Stats */}
+              <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
+                {stats.map((stat, index) => (
+                  <motion.div 
+                    key={index}
+                    variants={itemVariants}
+                    className="text-center"
+                  >
+                    <stat.icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
+                    <div className="text-2xl font-bold text-foreground">{stat.number}</div>
+                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
           </div>
         </motion.section>
 
