@@ -339,49 +339,38 @@ const Index = () => {
                 return (
                   <div key={course.id} className="group h-full">
                     <div className="relative h-full">
-                      {/* Main card with fixed height */}
-                      <div className="relative h-full min-h-[500px] bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-blue-200/50 dark:border-blue-800/50 rounded-3xl overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-blue-500/20 group-hover:-translate-y-2 flex flex-col">
+                      {/* Simplified card with fixed height */}
+                      <div className="relative h-full min-h-[400px] bg-white dark:bg-gray-900 border border-blue-200/50 dark:border-blue-800/50 rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:shadow-blue-500/15 group-hover:-translate-y-1 flex flex-col">
                         
-                        {/* Glowing border on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl"></div>
-                        
-                        {/* Top accent bar */}
-                        <div className="h-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500"></div>
+                        {/* Top accent */}
+                        <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-600"></div>
                         
                         {/* Card content */}
-                        <div className="p-8 flex flex-col flex-1">
-                          {/* Header with icon and badges */}
+                        <div className="p-6 md:p-8 flex flex-col flex-1">
+                          {/* Header */}
                           <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className="relative">
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
-                                  <Zap className="w-8 h-8 text-white" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                                  <Zap className="w-6 h-6 text-white" />
                                 </div>
-                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                  AI
-                                </div>
-                              </div>
-                              
-                              <div className="flex-1">
-                                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3 group-hover:text-blue-600 transition-colors leading-tight">
-                                  {course.title}
-                                </h3>
-                                <div className="flex flex-wrap gap-2">
-                                  {course.price === 0 && (
-                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-100">
-                                      رایگان
-                                    </Badge>
-                                  )}
-                                  {isOnPrelaunch && (
-                                    <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 animate-pulse">
-                                      پیش‌فروش
-                                    </Badge>
-                                  )}
-                                  {!isOnPrelaunch && isOnSale && (
-                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 animate-pulse">
-                                      تخفیف ویژه
-                                    </Badge>
-                                  )}
+                                <div className="flex-1">
+                                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 group-hover:text-blue-600 transition-colors">
+                                    {course.title}
+                                  </h3>
+                                  
+                                  {/* Compact badges */}
+                                  <div className="flex flex-wrap gap-2">
+                                    {course.price === 0 && (
+                                      <Badge className="bg-green-100 text-green-700 text-xs">رایگان</Badge>
+                                    )}
+                                    {isOnPrelaunch && (
+                                      <Badge className="bg-orange-100 text-orange-700 text-xs animate-pulse">پیش‌فروش</Badge>
+                                    )}
+                                    {!isOnPrelaunch && isOnSale && (
+                                      <Badge className="bg-red-100 text-red-700 text-xs animate-pulse">تخفیف ویژه</Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -389,7 +378,7 @@ const Index = () => {
                             {/* Price */}
                             {course.price > 0 && (
                               <div className="text-left ml-4">
-                                <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                                <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                                   {formatPrice(currentPrice)}
                                 </div>
                                 {course.use_dollar_price && (
@@ -398,7 +387,7 @@ const Index = () => {
                                   </div>
                                 )}
                                 {(isOnSale || isOnPrelaunch) && (
-                                  <div className="text-sm text-muted-foreground line-through">
+                                  <div className="text-xs text-muted-foreground line-through">
                                     {formatPrice(course.price)}
                                   </div>
                                 )}
@@ -406,7 +395,7 @@ const Index = () => {
                             )}
                           </div>
 
-                          {/* Countdown Timer */}
+                          {/* Countdown Timer - minimal */}
                           {isOnPrelaunch && course.pre_launch_ends_at ? (
                             <div className="mb-4">
                               <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
@@ -418,41 +407,25 @@ const Index = () => {
                           ) : null}
                           
                           {/* Description */}
-                          <div className="flex-1 mb-8">
-                            <p className="text-muted-foreground leading-relaxed text-base">
+                          <div className="flex-1 mb-6">
+                            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                               {course.description || 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی'}
                             </p>
                           </div>
 
-                          {/* Course features */}
-                          <div className="grid grid-cols-3 gap-4 mb-8">
-                            <div className="text-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl">
-                              <BookOpen className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-                              <div className="text-xs text-muted-foreground">محتوای جامع</div>
-                            </div>
-                            <div className="text-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl">
-                              <Play className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-                              <div className="text-xs text-muted-foreground">ویدیو آموزشی</div>
-                            </div>
-                            <div className="text-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl">
-                              <Award className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-                              <div className="text-xs text-muted-foreground">گواهی معتبر</div>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
+                          {/* Simple actions */}
                           <div className="space-y-3 mt-auto">
                             <Button 
                               asChild 
-                              className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 text-base group"
+                              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300"
                             >
-                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-3">
+                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-2">
                                 <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                               </Link>
                             </Button>
                             
-                            <Button asChild variant="outline" className="w-full h-12 border-blue-200 hover:border-blue-300 hover:bg-blue-50 dark:border-blue-800 dark:hover:border-blue-700 dark:hover:bg-blue-950/50 font-medium">
+                            <Button asChild variant="ghost" size="sm" className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50">
                               <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
                                 <BookOpen className="w-4 h-4" />
                                 مشاهده جزئیات
@@ -509,49 +482,38 @@ const Index = () => {
                 return (
                   <div key={course.id} className="group h-full">
                     <div className="relative h-full">
-                      {/* Main card with fixed height */}
-                      <div className="relative h-full min-h-[500px] bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/50 rounded-3xl overflow-hidden transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-green-500/20 group-hover:-translate-y-2 flex flex-col">
+                      {/* Simplified card with fixed height */}
+                      <div className="relative h-full min-h-[400px] bg-white dark:bg-gray-900 border border-green-200/50 dark:border-green-800/50 rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:shadow-green-500/15 group-hover:-translate-y-1 flex flex-col">
                         
-                        {/* Glowing border on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl"></div>
-                        
-                        {/* Top accent bar */}
-                        <div className="h-1 bg-gradient-to-r from-green-500 via-emerald-500 to-green-500"></div>
+                        {/* Top accent */}
+                        <div className="h-1 bg-gradient-to-r from-green-500 to-emerald-500"></div>
                         
                         {/* Card content */}
-                        <div className="p-8 flex flex-col flex-1">
-                          {/* Header with icon and badges */}
+                        <div className="p-6 md:p-8 flex flex-col flex-1">
+                          {/* Header */}
                           <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className="relative">
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
-                                  <Star className="w-8 h-8 text-white" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/25">
+                                  <Star className="w-6 h-6 text-white" />
                                 </div>
-                                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                  ∞
-                                </div>
-                              </div>
-                              
-                              <div className="flex-1">
-                                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3 group-hover:text-green-600 transition-colors leading-tight">
-                                  {course.title}
-                                </h3>
-                                <div className="flex flex-wrap gap-2">
-                                  {course.price === 0 && (
-                                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-100">
-                                      رایگان
-                                    </Badge>
-                                  )}
-                                  {isOnPrelaunch && (
-                                    <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 animate-pulse">
-                                      پیش‌فروش
-                                    </Badge>
-                                  )}
-                                  {!isOnPrelaunch && isOnSale && (
-                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 animate-pulse">
-                                      تخفیف ویژه
-                                    </Badge>
-                                  )}
+                                <div className="flex-1">
+                                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 group-hover:text-green-600 transition-colors">
+                                    {course.title}
+                                  </h3>
+                                  
+                                  {/* Compact badges */}
+                                  <div className="flex flex-wrap gap-2">
+                                    {course.price === 0 && (
+                                      <Badge className="bg-green-100 text-green-700 text-xs">رایگان</Badge>
+                                    )}
+                                    {isOnPrelaunch && (
+                                      <Badge className="bg-orange-100 text-orange-700 text-xs animate-pulse">پیش‌فروش</Badge>
+                                    )}
+                                    {!isOnPrelaunch && isOnSale && (
+                                      <Badge className="bg-red-100 text-red-700 text-xs animate-pulse">تخفیف ویژه</Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -559,7 +521,7 @@ const Index = () => {
                             {/* Price */}
                             {course.price > 0 && (
                               <div className="text-left ml-4">
-                                <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                                <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                                   {formatPrice(currentPrice)}
                                 </div>
                                 {course.use_dollar_price && (
@@ -568,7 +530,7 @@ const Index = () => {
                                   </div>
                                 )}
                                 {(isOnSale || isOnPrelaunch) && (
-                                  <div className="text-sm text-muted-foreground line-through">
+                                  <div className="text-xs text-muted-foreground line-through">
                                     {formatPrice(course.price)}
                                   </div>
                                 )}
@@ -576,7 +538,7 @@ const Index = () => {
                             )}
                           </div>
 
-                          {/* Countdown Timer */}
+                          {/* Countdown Timer - minimal */}
                           {isOnPrelaunch && course.pre_launch_ends_at ? (
                             <div className="mb-4">
                               <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
@@ -588,41 +550,25 @@ const Index = () => {
                           ) : null}
                           
                           {/* Description */}
-                          <div className="flex-1 mb-8">
-                            <p className="text-muted-foreground leading-relaxed text-base">
+                          <div className="flex-1 mb-6">
+                            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                               {course.description || 'سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی'}
                             </p>
                           </div>
 
-                          {/* Course features */}
-                          <div className="grid grid-cols-3 gap-4 mb-8">
-                            <div className="text-center p-3 bg-green-50/50 dark:bg-green-950/20 rounded-xl">
-                              <Users className="w-5 h-5 text-green-600 mx-auto mb-2" />
-                              <div className="text-xs text-muted-foreground">شبکه‌سازی</div>
-                            </div>
-                            <div className="text-center p-3 bg-green-50/50 dark:bg-green-950/20 rounded-xl">
-                              <Star className="w-5 h-5 text-green-600 mx-auto mb-2" />
-                              <div className="text-xs text-muted-foreground">استراتژی</div>
-                            </div>
-                            <div className="text-center p-3 bg-green-50/50 dark:bg-green-950/20 rounded-xl">
-                              <Award className="w-5 h-5 text-green-600 mx-auto mb-2" />
-                              <div className="text-xs text-muted-foreground">موفقیت</div>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
+                          {/* Simple actions */}
                           <div className="space-y-3 mt-auto">
                             <Button 
                               asChild 
-                              className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30 transition-all duration-300 text-base group"
+                              className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/25 transition-all duration-300"
                             >
-                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-3">
+                              <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-2">
                                 <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                               </Link>
                             </Button>
                             
-                            <Button asChild variant="outline" className="w-full h-12 border-green-200 hover:border-green-300 hover:bg-green-50 dark:border-green-800 dark:hover:border-green-700 dark:hover:bg-green-950/50 font-medium">
+                            <Button asChild variant="ghost" size="sm" className="w-full text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/50">
                               <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
                                 <BookOpen className="w-4 h-4" />
                                 مشاهده جزئیات
