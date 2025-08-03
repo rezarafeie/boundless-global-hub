@@ -47,7 +47,6 @@ import CountdownTimer from "@/components/CountdownTimer";
 import SectionTitle from "@/components/SectionTitle";
 
 const SmartPackLanding = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
@@ -57,14 +56,11 @@ const SmartPackLanding = () => {
   const endDateString = targetDate.toISOString();
 
   const handlePurchaseClick = () => {
-    setIsModalOpen(true);
+    window.location.href = '/enroll/?course=smart-pack';
   };
 
   const scrollToCheckout = () => {
-    const checkoutSection = document.getElementById('checkout-section');
-    if (checkoutSection) {
-      checkoutSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    window.location.href = '/enroll/?course=smart-pack';
   };
 
   const containerVariants = {
@@ -794,7 +790,7 @@ const SmartPackLanding = () => {
                   <p className="text-muted-foreground mb-6">
                     در همین صفحه روی دکمه خرید بزنید و رزرو خودتان در دوره را تکمیل کنید.
                   </p>
-                  <Button onClick={scrollToCheckout} className="w-full">
+                  <Button onClick={() => window.location.href = '/enroll/?course=smart-pack'} className="w-full">
                     خرید آنلاین
                   </Button>
                 </CardContent>
@@ -1134,14 +1130,6 @@ const SmartPackLanding = () => {
       <MobileStickyButton onClick={handlePurchaseClick}>
         شروع کسب‌وکار با AI + بونوس‌های ویژه
       </MobileStickyButton>
-
-      {/* Purchase Modal */}
-      <IframeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="خرید پک هوشمند کسب‌وکار"
-        url="https://auth.rafiei.co/?add-to-cart=smart-pack"
-      />
     </MainLayout>
   );
 };
