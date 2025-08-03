@@ -230,17 +230,16 @@ const Index = () => {
                           )}
                         </div>
 
-                        {/* Countdown Timers */}
-                        {isOnPrelaunch && course.pre_launch_ends_at && (
+                        {/* Countdown Timer - Show only one at a time */}
+                        {isOnPrelaunch && course.pre_launch_ends_at ? (
                           <div className="mb-6">
                             <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
                           </div>
-                        )}
-                        {isOnSale && course.sale_expires_at && (
+                        ) : isOnSale && course.sale_expires_at ? (
                           <div className="mb-6">
                             <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
                           </div>
-                        )}
+                        ) : null}
                         
                         {/* Description */}
                         <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 line-clamp-3">
@@ -353,17 +352,16 @@ const Index = () => {
                           )}
                         </div>
 
-                        {/* Countdown Timers */}
-                        {isOnPrelaunch && course.pre_launch_ends_at && (
+                        {/* Countdown Timer - Show only one at a time */}
+                        {isOnPrelaunch && course.pre_launch_ends_at ? (
                           <div className="mb-6">
                             <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
                           </div>
-                        )}
-                        {isOnSale && course.sale_expires_at && (
+                        ) : isOnSale && course.sale_expires_at ? (
                           <div className="mb-6">
                             <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
                           </div>
-                        )}
+                        ) : null}
                         
                         {/* Description */}
                         <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 line-clamp-3">
