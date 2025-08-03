@@ -18,6 +18,8 @@ const Index = () => {
   const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
   const [boundlessCourses, setBoundlessCourses] = useState<any[]>([]);
   const [totalCoursesCount, setTotalCoursesCount] = useState<number>(0);
+  const [studentsCount, setStudentsCount] = useState<number>(0);
+  const [enrollmentsCount, setEnrollmentsCount] = useState<number>(0);
 
   // Countdown component
   const CountdownTimer = ({ endDate, label }: { endDate: string, label: string }) => {
@@ -110,6 +112,26 @@ const Index = () => {
         if (count) {
           setTotalCoursesCount(count);
         }
+
+        // Fetch users count (academy students)
+        const { count: usersCount } = await supabase
+          .from('chat_users')
+          .select('*', { count: 'exact', head: true });
+        
+        if (usersCount) {
+          // Multiply by 10 and add 2
+          setStudentsCount(usersCount * 10 + 2);
+        }
+
+        // Fetch enrollments count
+        const { count: enrollmentCount } = await supabase
+          .from('enrollments')
+          .select('*', { count: 'exact', head: true });
+        
+        if (enrollmentCount) {
+          // Multiply by 10 and add 2
+          setEnrollmentsCount(enrollmentCount * 10 + 2);
+        }
       } catch (error) {
         console.error('Error fetching courses:', error);
       }
@@ -120,6 +142,10 @@ const Index = () => {
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+  };
+
+  const formatNumber = (number: number) => {
+    return new Intl.NumberFormat('fa-IR').format(number);
   };
 
   const paidCourses = [
@@ -161,6 +187,80 @@ const Index = () => {
       <Hero />
       <QuickAccess />
       <HubBanner />
+
+      {/* Academy Students Statistics Section */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-background to-blue-50/30 dark:from-primary/10 dark:via-background dark:to-blue-950/20 relative overflow-hidden">
+        {/* Glowing background effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/5 to-blue-400/5 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="container px-4 relative">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20 dark:border-primary/30">
+              <div className="w-2 h-2 bg-gradient-to-r from-primary to-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">آمار آکادمی</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
+              <span className="bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent">
+                جامعه آکادمی رفیعی
+              </span>
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              آمار و اطلاعات جامعه بزرگ دانشجویان و فارغ‌التحصیلان آکادمی رفیعی
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+            {/* Students Count */}
+            <div className="group relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/30">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2">
+                  {formatNumber(studentsCount)}
+                </div>
+                <div className="text-muted-foreground font-medium">دانشجو آکادمی</div>
+                <div className="text-sm text-muted-foreground/80 mt-2">در سراسر جهان</div>
+              </div>
+            </div>
+
+            {/* Enrollments Count */}
+            <div className="group relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/30 rounded-2xl p-8 text-center hover:border-green-300/50 dark:hover:border-green-700/50 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30">
+                  <BookOpen className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                  {formatNumber(enrollmentsCount)}
+                </div>
+                <div className="text-muted-foreground font-medium">ثبت‌نام موفق</div>
+                <div className="text-sm text-muted-foreground/80 mt-2">در تمام دوره‌ها</div>
+              </div>
+            </div>
+
+            {/* Courses Count */}
+            <div className="group relative md:col-span-2 lg:col-span-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-8 text-center hover:border-purple-300/50 dark:hover:border-purple-700/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-500/30">
+                  <Award className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  {formatNumber(totalCoursesCount)}
+                </div>
+                <div className="text-muted-foreground font-medium">دوره تخصصی</div>
+                <div className="text-sm text-muted-foreground/80 mt-2">فعال و به‌روز</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* AI Courses Section */}
       {featuredCourses.length > 0 && (
