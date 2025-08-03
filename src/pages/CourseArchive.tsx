@@ -77,6 +77,17 @@ const CourseArchive = () => {
       link: "/courses/smart-pack"
     },
     {
+      title: "زندگی هوشمند | شروع با هوش مصنوعی",
+      description: "۲ جلسه رایگان برای شروع زندگی هوشمند با AI. با ۲ قدم ساده، یاد بگیر چطور هوش مصنوعی می‌تونه زندگی شخصی و کاری‌تو متحول کنه.",
+      benefits: "دسترسی کامل به جلسه ۱ دوره پرمیوم، جلسه بونوس انحصاری، کاربردهای عملی با ابزارهای ChatGPT، Gemini، Canva، Suno",
+      outcome: "شروع زندگی هوشمند با AI و آمادگی برای شرکت در دوره کامل هوش مصنوعی",
+      isPaid: false,
+      status: "active" as const,
+      category: "free" as const,
+      image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80",
+      link: "/course/smart-life"
+    },
+    {
       title: translations.boundlessTaste,
       description: translations.boundlessTasteDesc,
       benefits: translations.boundlessTasteBenefits,
