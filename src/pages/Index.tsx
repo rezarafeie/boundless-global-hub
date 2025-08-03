@@ -23,7 +23,7 @@ const Index = () => {
         const { data } = await supabase
           .from('courses')
           .select('*')
-          .in('slug', ['smart-pack', 'boundless'])
+          .in('slug', ['smart-pack', 'smart-life'])
           .eq('is_active', true)
           .order('title');
         
