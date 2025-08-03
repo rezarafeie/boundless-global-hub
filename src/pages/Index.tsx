@@ -153,22 +153,22 @@ const Index = () => {
 
       {/* AI Courses Section */}
       {featuredCourses.length > 0 && (
-        <section className="py-24 bg-background">
-          <div className="container">
-            <div className="text-center mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full mb-6">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-muted-foreground">دوره‌های هوش مصنوعی</span>
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container px-4">
+            <div className="text-center mb-12 md:mb-20">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/30 rounded-full mb-4">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                <span className="text-xs font-medium text-blue-700 dark:text-blue-400">هوش مصنوعی</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-                آموزش هوش مصنوعی
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-foreground">
+                دوره‌های هوش مصنوعی
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                دوره‌های تخصصی و کاربردی برای یادگیری هوش مصنوعی در زندگی و کسب‌وکار
+              <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                آموزش عملی و کاربردی هوش مصنوعی برای تغییر زندگی و کسب‌وکار
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
               {featuredCourses.map((course) => {
                 const isOnSale = course.is_sale_enabled && course.sale_price && 
                   (!course.sale_expires_at || new Date(course.sale_expires_at) > new Date());
@@ -180,38 +180,45 @@ const Index = () => {
                 
                 return (
                   <div key={course.id} className="group">
-                    <div className="bg-card border border-border/50 rounded-xl overflow-hidden hover:border-border transition-all duration-300 hover:shadow-lg">
-                      {/* Header */}
-                      <div className="p-8 pb-6">
+                    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden hover:border-border/80 hover:shadow-sm transition-all duration-300">
+                      {/* Course Header */}
+                      <div className="p-6 md:p-8">
+                        {/* Course Info & Price */}
                         <div className="flex items-start justify-between mb-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                              <div className="w-6 h-6 bg-blue-500 rounded-sm"></div>
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-semibold text-foreground mb-1">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-950/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-4 h-4 bg-blue-600 rounded-sm"></div>
+                              </div>
+                              <h3 className="text-lg md:text-xl font-bold text-foreground truncate">
                                 {course.title}
                               </h3>
-                              {(isOnPrelaunch || isOnSale) && (
-                                <div className="flex items-center gap-2">
-                                  {isOnPrelaunch && (
-                                    <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-md">
-                                      پیش‌فروش
-                                    </span>
-                                  )}
-                                  {!isOnPrelaunch && isOnSale && (
-                                    <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">
-                                      تخفیف ویژه
-                                    </span>
-                                  )}
-                                </div>
+                            </div>
+                            
+                            {/* Badges */}
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                              {course.price === 0 && (
+                                <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-md font-medium">
+                                  رایگان
+                                </span>
+                              )}
+                              {isOnPrelaunch && (
+                                <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 rounded-md font-medium">
+                                  پیش‌فروش
+                                </span>
+                              )}
+                              {!isOnPrelaunch && isOnSale && (
+                                <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-md font-medium">
+                                  تخفیف ویژه
+                                </span>
                               )}
                             </div>
                           </div>
                           
-                          {course.price > 0 ? (
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-foreground">
+                          {/* Price */}
+                          {course.price > 0 && (
+                            <div className="text-right ml-4">
+                              <div className="text-xl md:text-2xl font-bold text-foreground">
                                 {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
                               </div>
                               {(isOnSale || isOnPrelaunch) && (
@@ -220,37 +227,38 @@ const Index = () => {
                                 </div>
                               )}
                             </div>
-                          ) : (
-                            <div className="text-right">
-                              <span className="text-lg font-semibold text-green-600">رایگان</span>
-                            </div>
                           )}
                         </div>
 
                         {/* Countdown Timers */}
                         {isOnPrelaunch && course.pre_launch_ends_at && (
-                          <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
+                          <div className="mb-6">
+                            <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
+                          </div>
                         )}
                         {isOnSale && course.sale_expires_at && (
-                          <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
+                          <div className="mb-6">
+                            <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
+                          </div>
                         )}
                         
-                        <p className="text-muted-foreground leading-relaxed mb-8">
+                        {/* Description */}
+                        <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 line-clamp-3">
                           {course.description || 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی'}
                         </p>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                           <Button 
                             asChild 
-                            className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white"
+                            className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
                           >
                             <Link to={`/enroll?course=${course.slug}`}>
                               {course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}
                             </Link>
                           </Button>
                           
-                          <Button asChild variant="outline" size="default" className="px-6">
+                          <Button asChild variant="outline" size="default" className="px-6 h-11 font-medium">
                             <Link to={`/course/${course.slug}`}>
                               جزئیات
                             </Link>
@@ -268,22 +276,22 @@ const Index = () => {
 
       {/* Boundless Courses Section */}
       {boundlessCourses.length > 0 && (
-        <section className="py-24 bg-muted/30">
-          <div className="container">
-            <div className="text-center mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/80 rounded-full mb-6">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-muted-foreground">دوره‌های بدون مرز</span>
+        <section className="py-16 md:py-24 bg-muted/20">
+          <div className="container px-4">
+            <div className="text-center mb-12 md:mb-20">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-950/30 rounded-full mb-4">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                <span className="text-xs font-medium text-green-700 dark:text-green-400">بدون مرز</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-                آموزش کارآفرینی بین‌المللی
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 text-foreground">
+                دوره‌های بدون مرز
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                سیستم علمی و عملی برای تبدیل شدن به کارآفرین موفق در سطح بین‌المللی
+              <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
               {boundlessCourses.map((course) => {
                 const isOnSale = course.is_sale_enabled && course.sale_price && 
                   (!course.sale_expires_at || new Date(course.sale_expires_at) > new Date());
@@ -295,41 +303,45 @@ const Index = () => {
                 
                 return (
                   <div key={course.id} className="group">
-                    <div className="bg-card border border-border/50 rounded-xl overflow-hidden hover:border-border transition-all duration-300 hover:shadow-lg">
-                      {/* Header */}
-                      <div className="p-8 pb-6">
+                    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden hover:border-border/80 hover:shadow-sm transition-all duration-300">
+                      {/* Course Header */}
+                      <div className="p-6 md:p-8">
+                        {/* Course Info & Price */}
                         <div className="flex items-start justify-between mb-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center">
-                              <div className="w-6 h-6 bg-green-500 rounded-sm"></div>
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-semibold text-foreground mb-1">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 bg-green-100 dark:bg-green-950/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <div className="w-4 h-4 bg-green-600 rounded-sm"></div>
+                              </div>
+                              <h3 className="text-lg md:text-xl font-bold text-foreground truncate">
                                 {course.title}
                               </h3>
-                              <div className="flex items-center gap-2">
-                                {course.price === 0 && (
-                                  <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-md">
-                                    رایگان
-                                  </span>
-                                )}
-                                {isOnPrelaunch && (
-                                  <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-md">
-                                    پیش‌فروش
-                                  </span>
-                                )}
-                                {!isOnPrelaunch && isOnSale && (
-                                  <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-md">
-                                    تخفیف ویژه
-                                  </span>
-                                )}
-                              </div>
+                            </div>
+                            
+                            {/* Badges */}
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                              {course.price === 0 && (
+                                <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-md font-medium">
+                                  رایگان
+                                </span>
+                              )}
+                              {isOnPrelaunch && (
+                                <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 rounded-md font-medium">
+                                  پیش‌فروش
+                                </span>
+                              )}
+                              {!isOnPrelaunch && isOnSale && (
+                                <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-md font-medium">
+                                  تخفیف ویژه
+                                </span>
+                              )}
                             </div>
                           </div>
                           
+                          {/* Price */}
                           {course.price > 0 && (
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-foreground">
+                            <div className="text-right ml-4">
+                              <div className="text-xl md:text-2xl font-bold text-foreground">
                                 {course.use_dollar_price ? `$${currentPrice}` : formatPrice(currentPrice)}
                               </div>
                               {(isOnSale || isOnPrelaunch) && (
@@ -343,28 +355,33 @@ const Index = () => {
 
                         {/* Countdown Timers */}
                         {isOnPrelaunch && course.pre_launch_ends_at && (
-                          <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
+                          <div className="mb-6">
+                            <CountdownTimer endDate={course.pre_launch_ends_at} label="پایان پیش‌فروش" />
+                          </div>
                         )}
                         {isOnSale && course.sale_expires_at && (
-                          <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
+                          <div className="mb-6">
+                            <CountdownTimer endDate={course.sale_expires_at} label="پایان تخفیف ویژه" />
+                          </div>
                         )}
                         
-                        <p className="text-muted-foreground leading-relaxed mb-8">
+                        {/* Description */}
+                        <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 line-clamp-3">
                           {course.description || 'دوره جامع و کاربردی برای پیشرفت در کسب‌وکار'}
                         </p>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                           <Button 
                             asChild 
-                            className="flex-1 h-11 bg-green-600 hover:bg-green-700 text-white"
+                            className="flex-1 h-11 bg-green-600 hover:bg-green-700 text-white font-medium"
                           >
                             <Link to={`/enroll?course=${course.slug}`}>
                               {course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}
                             </Link>
                           </Button>
                           
-                          <Button asChild variant="outline" size="default" className="px-6">
+                          <Button asChild variant="outline" size="default" className="px-6 h-11 font-medium">
                             <Link to={`/course/${course.slug}`}>
                               جزئیات
                             </Link>
@@ -381,25 +398,25 @@ const Index = () => {
       )}
 
       {/* Courses CTA Section */}
-      <section className="py-20 bg-background border-y border-border/50">
-        <div className="container">
-          <div className="max-w-4xl mx-auto text-center">
+      <section className="py-16 md:py-20 bg-background border-y border-border/30">
+        <div className="container px-4">
+          <div className="max-w-3xl mx-auto text-center">
             <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-foreground">
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3 text-foreground">
                 مجموعه کامل دوره‌های آموزشی
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                دسترسی به کلیه دوره‌های آموزشی آکادمی رفیعی در یک مکان
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                دسترسی به کلیه دوره‌های تخصصی آکادمی رفیعی
               </p>
             </div>
             
-            <div className="flex items-center justify-center gap-4">
-              <Button asChild size="lg" className="h-12 px-8 bg-foreground text-background hover:bg-foreground/90">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button asChild size="lg" className="w-full sm:w-auto h-12 px-8 bg-foreground text-background hover:bg-foreground/90 font-medium">
                 <Link to="/courses">
                   مشاهده همه دوره‌ها
                 </Link>
               </Button>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs md:text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-full">
                 ۳۰+ دوره تخصصی
               </div>
             </div>
@@ -408,25 +425,25 @@ const Index = () => {
       </section>
 
       {/* Magazine CTA Section */}
-      <section className="py-20 bg-muted/20">
-        <div className="container">
-          <div className="max-w-4xl mx-auto text-center">
+      <section className="py-16 md:py-20 bg-muted/10">
+        <div className="container px-4">
+          <div className="max-w-3xl mx-auto text-center">
             <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-foreground">
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3 text-foreground">
                 مجله آکادمی رفیعی
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                مقالات و تحلیل‌های تخصصی در حوزه کسب‌وکار و فناوری
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                مقالات و تحلیل‌های تخصصی کسب‌وکار و فناوری
               </p>
             </div>
             
-            <div className="flex items-center justify-center gap-4">
-              <Button asChild size="lg" variant="outline" className="h-12 px-8 border-border hover:bg-muted">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 border-border hover:bg-muted/50 font-medium">
                 <Link to="/magazine">
                   مطالعه مجله
                 </Link>
               </Button>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs md:text-sm text-muted-foreground bg-background/80 px-3 py-2 rounded-full border border-border/20">
                 مقالات هفتگی
               </div>
             </div>
