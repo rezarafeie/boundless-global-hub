@@ -812,10 +812,10 @@ const SmartPackLanding = () => {
                            {episode.description}
                          </p>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           {episode.topics.map((topic, topicIndex) => (
+                           {episode.topics.map((topicItem, topicIndex) => (
                              <div key={topicIndex} className="flex items-center gap-3">
                                <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                               <span className="text-foreground">{topic}</span>
+                               <span className="text-foreground">{topicItem}</span>
                              </div>
                            ))}
                          </div>
