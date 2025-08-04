@@ -1299,37 +1299,53 @@ const SmartPackLanding = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div
               variants={itemVariants}
-              className="space-y-6"
+              className="space-y-6 order-2 lg:order-1"
             >
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/8c694d79-102b-4384-8079-27f21653bf22.png"
-                  alt="رضا رفیعی"
-                  className="w-full max-w-md mx-auto rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute -bottom-4 -right-4 bg-primary text-white p-3 rounded-xl shadow-lg">
-                  <Award size={24} />
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 shadow-2xl">
+                  <img 
+                    src="/lovable-uploads/1bf49757-2ddb-456e-b60e-3512fa9092d7.png"
+                    alt="رضا رفیعی"
+                    className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
+                    style={{
+                      objectPosition: 'center 20%'
+                    }}
+                  />
+                  <div className="absolute bottom-4 right-4 bg-primary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
+                    <Award size={24} />
+                  </div>
                 </div>
               </div>
             </motion.div>
 
             <motion.div
               variants={itemVariants}
-              className="space-y-6"
+              className="space-y-6 order-1 lg:order-2"
             >
-              <div className="space-y-4">
-                <h3 className="text-3xl font-bold text-foreground">رضا رفیعی</h3>
-                <p className="text-xl text-muted-foreground font-medium">
-                  بنیان‌گذار آکادمی رفیعی و مشاور توسعه کسب‌وکارهای بدون مرز
-                </p>
-              </div>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                      <Star className="text-white" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-foreground">رضا رفیعی</h3>
+                      <p className="text-lg text-muted-foreground font-medium">
+                        مدرس و مشاور هوش مصنوعی و کسب‌وکار دیجیتال
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="prose prose-lg max-w-none text-muted-foreground">
-                <p>
-                  رضا رفیعی با بیش از ۱۲ سال تجربه در حوزه کسب‌وکار دیجیتال و هوش مصنوعی، 
-                  بنیان‌گذار آکادمی رفیعی و مشاور توسعه کسب‌وکارهای بین‌المللی است. 
-                  او تا کنون به بیش از ۵۰ هزار نفر در راه‌اندازی کسب‌وکارهای آنلاین کمک کرده است.
-                </p>
+                <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-xl border border-primary/10">
+                  <p className="text-muted-foreground leading-relaxed">
+                    رضا رفیعی با بیش از ۱۲ سال تجربه در حوزه کسب‌وکار دیجیتال و هوش مصنوعی، 
+                    بنیان‌گذار آکادمی رفیعی و مشاور توسعه کسب‌وکارهای بین‌المللی است. 
+                    او تا کنون به بیش از ۵۰ هزار نفر در راه‌اندازی کسب‌وکارهای آنلاین و 
+                    استفاده از ابزارهای هوش مصنوعی برای افزایش بهره‌وری کمک کرده است.
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
