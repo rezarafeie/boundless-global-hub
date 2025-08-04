@@ -314,7 +314,7 @@ const Index = () => {
                 </Button>
                 
                 <Button asChild variant="ghost" size="sm" className={`w-full ${config.ghostHover}`}>
-                  <Link to={`/course/${course.slug}`} className="flex items-center justify-center gap-2">
+                  <Link to={`/courses/${course.slug}`} className="flex items-center justify-center gap-2">
                     <BookOpen className="w-4 h-4" />
                     مشاهده جزئیات
                   </Link>
