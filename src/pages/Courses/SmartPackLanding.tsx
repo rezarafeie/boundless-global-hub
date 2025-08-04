@@ -1201,9 +1201,9 @@ const SmartPackLanding = () => {
         </div>
       </motion.section>
 
-      {/* Instructor Bio Section */}
+      {/* Instructors Section */}
       <motion.section
-        className="py-16 bg-gradient-to-br from-secondary/5 to-secondary/10"
+        className="py-16 bg-gradient-to-br from-primary/5 to-primary/10"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
@@ -1212,12 +1212,13 @@ const SmartPackLanding = () => {
         <div className="container max-w-6xl mx-auto px-6">
           <SectionTitle 
             title="مدرس دوره"
-            subtitle="متین پورخالقی - متخصص هوش مصنوعی و کسب‌وکار دیجیتال"
+            subtitle="آشنایی با اساتید"
             align="center"
             isCentered
           />
           
-          <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
+            {/* متین پورخالقی */}
             <motion.div
               variants={itemVariants}
               className="space-y-8"
@@ -1230,7 +1231,7 @@ const SmartPackLanding = () => {
                   <div>
                     <h3 className="text-3xl font-bold text-foreground">متین پورخالقی</h3>
                     <p className="text-lg text-muted-foreground font-medium">
-                      بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان»
+                      مدرس دوره
                     </p>
                   </div>
                 </div>
@@ -1251,7 +1252,6 @@ const SmartPackLanding = () => {
               </div>
 
               <div className="space-y-6">
-
                 <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-xl border border-primary/10">
                   <p className="text-muted-foreground leading-relaxed">
                     متین پورخالقی بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان» و متخصص کسب‌وکار دیجیتال است. 
@@ -1317,27 +1317,8 @@ const SmartPackLanding = () => {
                 </div>
               </div>
             </motion.div>
-          </div>
-        </div>
-      </motion.section>
 
-      {/* Instructor Section */}
-      <motion.section
-        className="py-16 bg-gradient-to-br from-primary/5 to-primary/10"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={containerVariants}
-      >
-        <div className="container max-w-6xl mx-auto px-6">
-          <SectionTitle 
-            title="مدرس دوره"
-            subtitle="آشنایی با رضا رفیعی"
-            align="center"
-            isCentered
-          />
-          
-          <div className="max-w-4xl mx-auto">
+            {/* رضا رفیعی */}
             <motion.div
               variants={itemVariants}
               className="space-y-8"
@@ -1350,7 +1331,7 @@ const SmartPackLanding = () => {
                   <div>
                     <h3 className="text-3xl font-bold text-foreground">رضا رفیعی</h3>
                     <p className="text-lg text-muted-foreground font-medium">
-                      مدرس و مشاور هوش مصنوعی و کسب‌وکار دیجیتال
+                      مدرس دوره
                     </p>
                   </div>
                 </div>
@@ -1374,7 +1355,6 @@ const SmartPackLanding = () => {
               </div>
 
               <div className="space-y-6">
-
                 <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-xl border border-primary/10">
                   <p className="text-muted-foreground leading-relaxed">
                     رضا رفیعی با بیش از ۱۲ سال تجربه در حوزه کسب‌وکار دیجیتال و هوش مصنوعی، 
