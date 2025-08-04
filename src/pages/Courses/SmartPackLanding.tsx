@@ -767,8 +767,8 @@ const SmartPackLanding = () => {
                  <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
                    <CardContent className="p-4 md:p-8">
                       <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
-                        <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
-                          <episode.icon className="w-6 h-6 md:w-8 md:h-8 text-primary-foreground" />
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <episode.icon className="w-6 h-6 md:w-8 md:h-8 text-primary" />
                         </div>
                         <div className="flex-1 w-full">
                           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3">
@@ -1087,8 +1087,8 @@ const SmartPackLanding = () => {
                 variants={itemVariants}
                 className="flex items-center gap-4 p-6 bg-background rounded-lg border-2 border-primary/20"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center flex-shrink-0">
-                  <result.icon className="w-6 h-6 text-primary-foreground" />
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <result.icon className="w-6 h-6 text-primary" />
                 </div>
                 <span className="font-medium text-foreground">{result.text}</span>
               </motion.div>
@@ -1118,8 +1118,8 @@ const SmartPackLanding = () => {
               <motion.div key={index} variants={itemVariants}>
                 <Card className="h-full bg-background/80 backdrop-blur-sm border-2 border-primary/20 hover:border-primary/40 transition-colors">
                   <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-secondary to-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                      <bonus.icon className="w-6 h-6 text-primary-foreground" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <bonus.icon className="w-6 h-6 text-primary" />
                     </div>
                     <h3 className="font-bold text-foreground mb-2">{bonus.title}</h3>
                     <p className="text-sm text-muted-foreground">{bonus.description}</p>
