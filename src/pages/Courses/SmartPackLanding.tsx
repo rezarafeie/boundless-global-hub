@@ -88,86 +88,155 @@ const SmartPackLanding = () => {
     { number: "۶ ماه", label: "به‌روزرسانی رایگان", icon: Gift }
   ];
 
-  // Course Topics - AI Skill Training  
-  const courseTopics = [
+  // Course Episodes - Detailed breakdown
+  const courseEpisodes = [
     {
+      episode: 1,
       title: "آشنایی با مهارت هوش مصنوعی",
-      description: "معرفی AI، جایگاهش در زندگی روزمره، کاربردها، و ضرورت یادگیری",
+      description: "چرا مهارت هوش مصنوعی دیگه یه انتخاب نیست، یه ضرورت زندگیه؟",
       icon: Brain,
-      modules: [
-        "شناخت مفهوم هوش مصنوعی و انواع آن",
-        "کاربردهای AI در صنایع مختلف",
-        "تأثیر AI بر آینده مشاغل و کسب‌وکارها",
-        "نیاز و ضرورت یادگیری مهارت‌های AI"
+      topics: [
+        "اهمیت تغییر در عصر هوش مصنوعی",
+        "مهارت هوش مصنوعی چیه؟",
+        "هوش مصنوعی چیه و قراره جای شغل منو بگیره؟",
+        "کاربردهای هوش مصنوعی در زندگی روزمره",
+        "مهارت‌های مورد نیاز هر شخص در عصر هوش مصنوعی",
+        "چرا باید مهارت هوش مصنوعی رو یاد بگیریم؟",
+        "معرفی کامل سرفصل‌ های دوره و نقشه مسیر"
       ]
     },
     {
-      title: "فرهنگ لغت هوش مصنوعی", 
-      description: "مفاهیم پایه مانند AI، ML، LLM، Agent، API و Prompt به زبان ساده",
+      episode: 2,
+      title: "فرهنگ لغت هوش مصنوعی",
+      description: "آشنایی با مفاهیم پایه و واژه نامه ساده‌شده از دنیای پیچیده AI",
       icon: BookOpen,
-      modules: [
-        "تعریف و تفاوت AI، ML، و Deep Learning",
-        "آشنایی با مفهوم LLM و نحوه عملکرد",
-        "درک مفاهیم Agent، API و Prompt",
-        "واژگان تخصصی و اصطلاحات رایج"
+      topics: [
+        "هوش مصنوعی (AI)",
+        "یادگیری ماشین (ML)",
+        "دیپ لرنینگ(DL)",
+        "شبکه‌های عصبی ( Neural Network )",
+        "هوش مصنوعی مولد (Generative AI)",
+        "مدل‌های زبانی بزرگ (LLM)",
+        "دستیارهای هوش مصنوعی (AI Agents)",
+        "API و نحوه اتصال",
+        "مفهوم پرامپت در هوش مصنوعی"
       ]
     },
     {
-      title: "پرامپت‌نویسی پیشرفته (مدل SMART)",
-      description: "تکنیک‌های SMART، Chain-of-Thought، A/B Testing، Role Play و Context Stacking + فایل PDF دفترچه فرمول پرامپت",
+      episode: 3,
+      title: "هنر پرامپت‌نویسی از صفر تا پیشرفته با مدل SMART",
+      description: "یاد بگیر چطور با چند کلمه دقیق، بهترین خروجی رو از هوش مصنوعی بگیری",
       icon: Target,
-      modules: [
-        "روش SMART در نوشتن پرامپت‌های مؤثر",
-        "تکنیک Chain-of-Thought برای حل مسائل پیچیده",
-        "A/B Testing پرامپت‌ها برای بهینه‌سازی",
-        "Role Play و Context Stacking در پرامپت‌نویسی"
+      topics: [
+        "معرفی مفهوم پرامپت",
+        "دفترچه ۶ مرحله‌ای پرامپت‌نویسی (فایل همراه)",
+        "مدل SMART برای پرامپت‌نویسی",
+        "تکنیک‌های پیشرفته (Chain-of-Thought، Role Play، Context Stacking، A/B Testing)",
+        "نکات مهم برای گرفتن نتایج حرفه‌ای",
+        "معرفی پرامپت‌بوک تولید محتوا (هدیه دوره )"
       ]
     },
     {
-      title: "معرفی و تست ابزارهای هوش مصنوعی",
-      description: "ChatGPT، Gemini، Sora، Leonardo، Google AI Studio، Suno، Lovable، Gamma AI، HeyGen، ElevenLabs و Google Drive با Gemini",
+      episode: 4,
+      title: "معرفی و تست ابزارها و سایت‌های کاربردی",
+      description: "تولید ویدیو، پادکست، تصویر، پاورپوینت، موزیک و ... با هوش مصنوعی به صورت عملی",
       icon: Cog,
-      modules: [
-        "ChatGPT و Gemini برای تولید محتوا و پاسخ‌گویی",
-        "Sora و Leonardo برای ساخت تصویر و ویدیو",
-        "Google AI Studio برای تولید صدا و پادکست",
-        "Suno، Lovable، Gamma AI، HeyGen و ElevenLabs"
+      topics: [
+        "معرفی اولیه تمام سایت های مورد نیاز و کاربردی",
+        "ساخت اکانت در ChatGPT و Gemini",
+        "امکانات حرفه‌ای GPT Plus",
+        "نحوه خرید اکانت GPT Plus",
+        "ساخت تصویر و ویدیو با Sora و Leonardo AI",
+        "تکنیک حرفه ای پرامپت تولید تصویر",
+        "ساخت صدا و پادکست با Google Studio",
+        "تست سایت‌های حرفه‌ای مثل Heygen، ElevenLabs",
+        "ساخت موزیک حرفه با Suno",
+        "طراحی سایت بدون کدنویسی با Lovable",
+        "ساخت پرزنتیشن با Gamma AI",
+        "ذخیره و مدیریت داده‌ها در Google Drive + قابلیت هوش مصنوعی جدید gemini"
       ]
     },
     {
-      title: "فقط یک روز با AI زندگی کن (تمرین عملی)",
-      description: "اجرای کارهای روزانه با ابزارها، اتوماسیون ساده، تجربه عملی",
+      episode: 5,
+      title: "تمرین عملی میکرو اتومیشن یک روز شخصی!",
+      description: "اولین تجربه واقعی از انجام کارهای روزمره با کمک هوش مصنوعی",
       icon: Play,
-      modules: [
-        "برنامه‌ریزی روز با کمک هوش مصنوعی",
-        "اتوماسیون کارهای ساده روزانه",
-        "استفاده از AI در ارتباطات و نوشتن",
-        "تجربه عملی و ارزیابی نتایج"
+      topics: [
+        "طراحی روتین روزانه با اتومیشن دستی (‌ عملی )",
+        "انجام دادن کارها با ابزارها و میکرو اتومیشن‌ها",
+        "تکنیک ایده‌پردازی خلاقانه با هوش مصنوعی",
+        "آشنایی با مدل‌های مختلف ChatGPT"
       ]
     },
     {
-      title: "فرصت‌های نو – مهارت‌های نو",
-      description: "۹ مهارت کاربردی برای شغل، بیزینس و برند شخصی در عصر AI",
+      episode: 6,
+      title: "معرفی فرصت‌های نو، مهارت‌های نو",
+      description: "۹ مهارت طلایی برای ساختن آینده کاری و برند شخصی با کمک هوش مصنوعی",
       icon: TrendingUp,
-      modules: [
-        "بنچمارک و تحلیل رقبا با AI",
-        "تولید محتوا حرفه‌ای برای برند شخصی",
-        "اتوماسیون فرآیندهای کاری",
-        "طراحی و تحلیل داده‌های کسب‌وکار"
+      topics: [
+        "چرا باید بیزینس آنلاین و برند شخصی داشته باشیم؟",
+        "مهارت بنچ‌مارک و الگوگیری هوشمند",
+        "معرفی ۹ مهارت ضروری برای موفقیت در دنیای جدید",
+        "جمع‌بندی مسیر و شروع ماجراجویی واقعی"
       ]
     },
     {
-      title: "ساخت AI Agent (دستیار هوشمند شخصی)",
-      description: "ساخت Agent با n8n و اتصال به تلگرام، Gmail، Google Sheet، Calendar، APIهای OpenAI و مدیریت دیتا",
+      episode: 7,
+      title: "ساخت ارتش دستیارهای هوش مصنوعی Ai Agent",
+      description: "۰ تا ۱۰۰ ساخت یک دستیارهوش مصنوعی شخصی با هر عمکلردی",
       icon: Rocket,
-      modules: [
-        "آشنایی با n8n و ساخت Agent",
-        "اتصال به تلگرام، Gmail و Google Workspace",
-        "تست Agent با پرامپت‌های واقعی",
-        "تمپلیت‌های آماده برای تبدیل صدا به متن"
+      topics: [
+        "ساخت دستیار هوش مصنوعی Ai Agent ( هر دستیاری )",
+        "آموزش ساخت اتوماسیون n8n",
+        "ساخت ربات تلگرام هوش مصنوعی",
+        "اتصال llm ها به دستیار ها و هزینه های آن",
+        "استفاده از n8n به صورت رایگان",
+        "نوشتن پرامپت عملکرد Ai Agent",
+        "اتصال و خرید api از سایت openai",
+        "معرفی تمپلیت های آماده در Ai Agent",
+        "اتصال جیمیل به Ai Agent",
+        "Ai Agent تبدیل ویس به متن",
+        "اتصال google calendar به Ai Agent",
+        "ساخت ربات تلگرام سازنده پرامپت"
       ]
     }
   ];
+
+  // Complementary files
+  const complementaryFiles = [
+    {
+      icon: FileText,
+      title: "پرامپت بوک تولید محتوا",
+      description: "۵۰ پرامپت تخصصی تولیدمحتوای وایرال",
+      value: "۲۹۰ تومان"
+    },
+    {
+      icon: Brain,
+      title: "۱۰ تمرین ذهنی برای افزایش تمرکز",
+      description: "تکنیک‌های عملی برای بهبود تمرکز در عصر دیجیتال"
+    },
+    {
+      icon: BookOpen,
+      title: "فایل pdf اصطلاحات هوش مصنوعی",
+      description: "واژه‌نامه کامل مفاهیم AI"
+    },
+    {
+      icon: Target,
+      title: "دفترچه فرمول پرامپت نویسی در ۶ قدم",
+      description: "راهنمای گام‌به‌گام نوشتن پرامپت حرفه‌ای"
+    },
+    {
+      icon: HeadphonesIcon,
+      title: "پادکست تاریخچه هوش مصنوعی",
+      description: "مروری بر تاریخ و آینده AI"
+    }
+  ];
+
+  // Productivity stat
+  const productivityStat = {
+    percentage: "۷۰٪",
+    description: "این حداقل چیزیه که میتونی با مهارت هوش مصنوعی بهره وری بیشتری داشته باشی"
+  };
 
   // Course curriculum with business and AI income focus
   const curriculum = [
@@ -724,31 +793,34 @@ const SmartPackLanding = () => {
           />
 
           <div className="space-y-8">
-            {courseTopics.map((topic, index) => (
+            {courseEpisodes.map((episode, index) => (
               <motion.div key={index} variants={itemVariants}>
                 <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
                   <CardContent className="p-8">
-                    <div className="flex items-start gap-6">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
-                        <topic.icon className="w-8 h-8 text-primary-foreground" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-foreground mb-3">
-                          {topic.title}
-                        </h3>
-                        <p className="text-muted-foreground mb-6 text-lg">
-                          {topic.description}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {topic.modules.map((module, moduleIndex) => (
-                            <div key={moduleIndex} className="flex items-center gap-3">
-                              <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                              <span className="text-foreground">{module}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                     <div className="flex items-start gap-6">
+                       <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
+                         <episode.icon className="w-8 h-8 text-primary-foreground" />
+                       </div>
+                       <div className="flex-1">
+                         <div className="flex items-center gap-3 mb-3">
+                           <Badge variant="outline" className="text-primary">اپیزود {episode.episode}</Badge>
+                           <h3 className="text-2xl font-bold text-foreground">
+                             {episode.title}
+                           </h3>
+                         </div>
+                         <p className="text-muted-foreground mb-6 text-lg">
+                           {episode.description}
+                         </p>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           {episode.topics.map((topic, topicIndex) => (
+                             <div key={topicIndex} className="flex items-center gap-3">
+                               <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                               <span className="text-foreground">{topic}</span>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1109,6 +1181,195 @@ const SmartPackLanding = () => {
       </motion.section>
 
       {/* FAQ */}
+      {/* Special Gift Section */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+        className="py-20 bg-gradient-to-r from-red-500/10 to-pink-500/10"
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-red-500/10 text-red-600 px-4 py-2 rounded-full mb-4">
+              <Gift className="w-5 h-5" />
+              <span className="font-bold">هدیه ویژه</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              🎁🔥 پرامپت بوک تولید محتوا
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              ۵۰ پرامپت آماده تخصصی تولید محتوا به ارزش ۲۹۰ تومان
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {complementaryFiles.map((file, index) => (
+              <Card key={index} className="text-center p-6 border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <file.icon className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h3 className="font-bold text-foreground mb-2">{file.title}</h3>
+                <p className="text-muted-foreground text-sm mb-3">{file.description}</p>
+                {file.value && (
+                  <Badge variant="secondary" className="bg-red-500/10 text-red-600">
+                    ارزش {file.value}
+                  </Badge>
+                )}
+              </Card>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Free Episode Section */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.5 }}
+        className="py-20 bg-background"
+      >
+        <div className="container max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+            دریافت اپیزود ۱ (رایگان)
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8 max-w-3xl mx-auto">
+            به درخواست شما عزیزان برای آشنایی با فضای دوره و مدرس و همینطور سرفصل ها و محتوای دوره، اپیزود ۱ رو به صورت رایگان در یوتیوب منتظر کردیم
+          </p>
+          
+          <Card className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-2 border-red-200/50 p-8 mb-8">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <Play className="w-16 h-16 text-red-600" />
+              <div className="text-right">
+                <h3 className="text-2xl font-bold text-foreground">اپیزود ۱ - رایگان</h3>
+                <p className="text-red-600">آشنایی با مهارت هوش مصنوعی</p>
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="border-red-200 text-red-600 hover:bg-red-50"
+              onClick={() => window.open('https://youtube.com', '_blank')}
+            >
+              <ExternalLink className="w-5 h-5 ml-2" />
+              ورود به یوتیوب (با VPN بزنید)
+            </Button>
+          </Card>
+
+          <div className="bg-muted/30 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-foreground mb-4">
+              هوش مصنوعی نیومده جای تو رو بگیره، اومده کنارت باشه🌱
+            </h3>
+            <p className="text-muted-foreground">
+              مهارت هوش مصنوعی الان مثل گواهینامه ی دنیای دیجیتاله و الزامیه و توی این دوره مهارت مقدماتی رو کامل یادمیگیری
+            </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Productivity Stat Section */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.5 }}
+        className="py-20 bg-gradient-to-r from-primary/10 to-secondary/10"
+      >
+        <div className="container max-w-4xl mx-auto px-6 text-center">
+          <div className="bg-warning/10 border border-warning/20 rounded-xl p-8 mb-8">
+            <h3 className="text-xl font-bold text-foreground mb-4 flex items-center justify-center gap-2">
+              <span>⚠️</span>
+              سواد هوش مصنوعی، سواد قرن جدیده
+            </h3>
+          </div>
+
+          <div className="bg-white/50 dark:bg-gray-900/50 rounded-2xl p-12 border border-primary/20">
+            <div className="text-8xl md:text-9xl font-bold text-primary mb-6">
+              {productivityStat.percentage}
+            </div>
+            <p className="text-xl text-muted-foreground">
+              {productivityStat.description}
+            </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Instructor Bio Section */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
+        className="py-20 bg-background"
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <SectionTitle 
+            title="درباره مدرس دوره"
+            subtitle="متین پورخالقی - متخصص هوش مصنوعی و کسب‌وکار دیجیتال"
+            align="center"
+            isCentered
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-right">
+              <img 
+                src="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" 
+                alt="متین پورخالقی"
+                className="w-64 h-64 rounded-full mx-auto lg:mx-0 mb-6 object-cover border-4 border-primary/20"
+              />
+              <h3 className="text-2xl font-bold text-foreground mb-2">متین پورخالقی</h3>
+              <p className="text-primary font-semibold">بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان»</p>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h4 className="font-bold text-foreground mb-4">تجربه و پیشینه</h4>
+                <ul className="space-y-3 text-muted-foreground">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                    <span>بنیان‌گذار آکادمی آموزشی «خالقی» با بیش از ۴۵ هزار دانش‌پذیر</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                    <span>بنیان‌گذار «فایل‌رود»؛ مرجع تخصصی محصولات دیجیتال در ایران</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                    <span>مشاور رشد بیش از ۵۰ پیج اینستاگرامی و برند آموزشی</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                    <span>متخصص استراتژی محتوا و هوش مصنوعی کاربردی</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                    <span>پژوهشگر در حوزه هوش مصنوعی و کارآفرین دیجیتال</span>
+                  </li>
+                </ul>
+              </Card>
+
+              <Card className="p-6">
+                <h4 className="font-bold text-foreground mb-4">برندهای موفق</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-primary" />
+                    <span>پرسوما (روان‌شناسی)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-primary" />
+                    <span>چت‌جی‌پی‌تی فارسی</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-primary" />
+                    <span>رسانه هوش مصنوعی Humain</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-primary" />
+                    <span>آژانس دیان (انگلستان)</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
       <motion.section 
         className="py-16 bg-background" 
         initial="hidden" 
@@ -1119,7 +1380,7 @@ const SmartPackLanding = () => {
         <div className="container max-w-4xl mx-auto px-6">
           <SectionTitle 
             title="سوالات متداول"
-            subtitle="پاسخ سوالات رایج درباره پک هوشمند کسب‌وکار"
+            subtitle="پاسخ سوالات رایج درباره دوره هوش مصنوعی"
             align="center"
             isCentered
           />
