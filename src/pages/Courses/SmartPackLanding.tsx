@@ -811,14 +811,14 @@ const SmartPackLanding = () => {
                          <p className="text-muted-foreground mb-6 text-lg">
                            {episode.description}
                          </p>
-                         <div className="grid grid-cols-1 gap-4">
-                           {episode.topics.map((topicItem, topicIndex) => (
-                             <div key={topicIndex} className="flex items-center gap-3">
-                               <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                               <span className="text-foreground">{topicItem}</span>
-                             </div>
-                           ))}
-                         </div>
+                          <div className="space-y-3">
+                            {episode.topics.map((topicItem, topicIndex) => (
+                              <div key={topicIndex} className="flex items-start gap-3">
+                                <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                <span className="text-foreground text-sm md:text-base leading-relaxed">{topicItem}</span>
+                              </div>
+                            ))}
+                          </div>
                        </div>
                      </div>
                   </CardContent>
