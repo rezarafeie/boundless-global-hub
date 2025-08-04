@@ -1211,7 +1211,7 @@ const SmartPackLanding = () => {
       >
         <div className="container max-w-6xl mx-auto px-6">
           <SectionTitle 
-            title="همکار استاد"
+            title="مدرس دوره"
             subtitle="متین پورخالقی - متخصص هوش مصنوعی و کسب‌وکار دیجیتال"
             align="center"
             isCentered
@@ -1220,18 +1220,18 @@ const SmartPackLanding = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <motion.div
               variants={itemVariants}
-              className="space-y-6 order-1 lg:order-1"
+              className="space-y-6 order-2 lg:order-1"
             >
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-secondary/20 to-primary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative overflow-hidden rounded-2xl border-2 border-secondary/20 shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 shadow-2xl">
                   <img 
                     src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" 
                     alt="متین پورخالقی"
                     className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute bottom-4 right-4 bg-secondary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
-                    <Briefcase size={24} />
+                  <div className="absolute bottom-4 right-4 bg-primary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
+                    <Award size={24} />
                   </div>
                 </div>
               </div>
@@ -1239,12 +1239,12 @@ const SmartPackLanding = () => {
 
             <motion.div
               variants={itemVariants}
-              className="space-y-6 order-2 lg:order-2"
+              className="space-y-6 order-1 lg:order-2"
             >
               <div className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-secondary to-primary rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
                       <Star className="text-white" size={24} />
                     </div>
                     <div>
@@ -1256,7 +1256,7 @@ const SmartPackLanding = () => {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-secondary/5 to-primary/5 p-6 rounded-xl border border-secondary/10">
+                <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-xl border border-primary/10">
                   <p className="text-muted-foreground leading-relaxed">
                     متین پورخالقی بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان» و متخصص کسب‌وکار دیجیتال است. 
                     او با تجربه‌ای غنی در حوزه هوش مصنوعی، آموزش و بازاریابی دیجیتال، بنیان‌گذار آکادمی 
@@ -1266,34 +1266,34 @@ const SmartPackLanding = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
-                    <Users className="text-secondary" size={20} />
-                    <span className="font-bold text-2xl text-secondary">+45K</span>
+                    <Users className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">+45K</span>
                   </div>
                   <p className="text-sm text-muted-foreground">دانش‌پذیر</p>
                 </div>
                 
-                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
-                    <Target className="text-secondary" size={20} />
-                    <span className="font-bold text-2xl text-secondary">+50</span>
+                    <Target className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">+50</span>
                   </div>
                   <p className="text-sm text-muted-foreground">برند مشاوره</p>
                 </div>
                 
-                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
-                    <Briefcase className="text-secondary" size={20} />
-                    <span className="font-bold text-2xl text-secondary">آژانس</span>
+                    <Briefcase className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">آژانس</span>
                   </div>
                   <p className="text-sm text-muted-foreground">دیان انگلستان</p>
                 </div>
                 
-                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
-                    <Brain className="text-secondary" size={20} />
-                    <span className="font-bold text-2xl text-secondary">AI</span>
+                    <Brain className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">AI</span>
                   </div>
                   <p className="text-sm text-muted-foreground">متخصص</p>
                 </div>
@@ -1313,7 +1313,7 @@ const SmartPackLanding = () => {
                     <Badge 
                       key={index}
                       variant="secondary" 
-                      className="bg-secondary/10 text-secondary border-secondary/20"
+                      className="bg-primary/10 text-primary border-primary/20"
                     >
                       {brand}
                     </Badge>
