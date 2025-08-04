@@ -811,7 +811,7 @@ const SmartPackLanding = () => {
                          <p className="text-muted-foreground mb-6 text-lg">
                            {episode.description}
                          </p>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div className="grid grid-cols-1 gap-4">
                            {episode.topics.map((topicItem, topicIndex) => (
                              <div key={topicIndex} className="flex items-center gap-3">
                                <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
@@ -1018,8 +1018,9 @@ const SmartPackLanding = () => {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Pack Contents */}
             {packContents.map((content, index) => (
-              <motion.div key={index} variants={itemVariants}>
+              <motion.div key={`pack-${index}`} variants={itemVariants}>
                 <Card className="h-full border-2 border-primary/20 hover:border-primary/40 transition-colors">
                   <CardContent className="p-6 text-center">
                     <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1035,33 +1036,14 @@ const SmartPackLanding = () => {
                 </Card>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Course Features */}
-      <motion.section 
-        className="py-16 bg-muted/30" 
-        initial="hidden" 
-        whileInView="visible" 
-        viewport={{ once: true }} 
-        variants={containerVariants}
-      >
-        <div className="container max-w-6xl mx-auto px-6">
-          <SectionTitle 
-            title="امکانات و ویژگی‌های دوره"
-            subtitle="تمام ابزارها و امکانات لازم برای موفقیت در یک مکان"
-            align="center"
-            isCentered
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            {/* Course Features */}
             {courseFeatures.map((feature, index) => (
-              <motion.div key={index} variants={itemVariants}>
+              <motion.div key={`feature-${index}`} variants={itemVariants}>
                 <Card className="h-full border-2 border-primary/20 hover:border-primary/40 transition-colors">
                   <CardContent className="p-6">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                      <feature.icon className="w-6 h-6 text-primary" />
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                      <feature.icon className="w-8 h-8 text-primary" />
                     </div>
                     <h3 className="text-lg font-bold text-foreground mb-3">
                       {feature.title}
@@ -1215,52 +1197,6 @@ const SmartPackLanding = () => {
                 )}
               </Card>
             ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Free Episode Section */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
-        className="py-20 bg-background"
-      >
-        <div className="container max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            دریافت اپیزود ۱ (رایگان)
-          </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-3xl mx-auto">
-            به درخواست شما عزیزان برای آشنایی با فضای دوره و مدرس و همینطور سرفصل ها و محتوای دوره، اپیزود ۱ رو به صورت رایگان در یوتیوب منتظر کردیم
-          </p>
-          
-          <Card className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-2 border-red-200/50 p-8 mb-8">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <Play className="w-16 h-16 text-red-600" />
-              <div className="text-right">
-                <h3 className="text-2xl font-bold text-foreground">اپیزود ۱ - رایگان</h3>
-                <p className="text-red-600">آشنایی با مهارت هوش مصنوعی</p>
-              </div>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-red-200 text-red-600 hover:bg-red-50"
-              onClick={() => window.open('https://youtube.com', '_blank')}
-            >
-              <ExternalLink className="w-5 h-5 ml-2" />
-              ورود به یوتیوب (با VPN بزنید)
-            </Button>
-          </Card>
-
-          <div className="bg-muted/30 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-foreground mb-4">
-              هوش مصنوعی نیومده جای تو رو بگیره، اومده کنارت باشه🌱
-            </h3>
-            <p className="text-muted-foreground">
-              مهارت هوش مصنوعی الان مثل گواهینامه ی دنیای دیجیتاله و الزامیه و توی این دوره مهارت مقدماتی رو کامل یادمیگیری
-            </p>
           </div>
         </div>
       </motion.section>
