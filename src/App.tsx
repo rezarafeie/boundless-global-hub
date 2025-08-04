@@ -86,6 +86,7 @@ import AIAssistant from "./pages/AIAssistant";
 import SolidarityLanding from "./pages/Solidarity/SolidarityLanding";
 import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
 import Start from "./pages/Start";
+import RezaRafiei from "./pages/RezaRafiei";
 
 // English pages
 import EnIndex from "./pages/en/Index";
@@ -283,6 +284,7 @@ const App = () => {
 
                     {/* Other pages */}
                     <Route path="/instructor" element={<InstructorProfile />} />
+                    <Route path="/reza-rafiei" element={<RezaRafiei />} />
                     <Route path="/ai-assistant" element={<AIAssistant />} />
                     <Route path="/solidarity" element={<SolidarityLanding />} />
                     <Route path="/telegram" element={<TelegramRedirect />} />
