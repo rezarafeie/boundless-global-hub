@@ -1245,7 +1245,7 @@ const SmartPackLanding = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-right">
               <img 
-                src="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" 
+                src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" 
                 alt="متین پورخالقی"
                 className="w-64 h-64 rounded-full mx-auto lg:mx-0 mb-6 object-cover border-4 border-primary/20"
               />
