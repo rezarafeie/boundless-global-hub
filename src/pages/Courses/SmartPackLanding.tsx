@@ -932,19 +932,23 @@ const SmartPackLanding = () => {
                     <DollarSign className="w-8 h-8 text-secondary" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-4">پرداخت کارت به کارت</h3>
-                  <div className="text-muted-foreground mb-4 space-y-2">
-                    <p className="font-mono text-sm bg-muted p-2 rounded">
-                      6104337877849719
-                    </p>
-                    <p className="text-sm">به نام آکادمی رفیعی</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    سپس رسید واریزی خود را به شماره تلگرام یا واتساپ ارسال نمایید.
-                  </p>
-                  <Button variant="outline" className="w-full">
-                    <MessageCircle className="w-4 h-4 ml-2" />
-                    ارسال رسید
-                  </Button>
+                   <div className="text-muted-foreground mb-4 space-y-2">
+                     <p className="font-mono text-sm bg-muted p-2 rounded">
+                       6219861919595958
+                     </p>
+                     <p className="text-sm">به نام سید عباس رفیعی</p>
+                   </div>
+                   <p className="text-sm text-muted-foreground mb-6">
+                     رسید خود را در قسمت کارت به کارت ثبت سفارش بارگذاری نمایید
+                   </p>
+                   <Button 
+                     variant="outline" 
+                     className="w-full"
+                     onClick={() => window.location.href = '/enroll/?course=smart-pack'}
+                   >
+                     <MessageCircle className="w-4 h-4 ml-2" />
+                     ثبت سفارش
+                   </Button>
                 </CardContent>
               </Card>
             </motion.div>
