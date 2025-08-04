@@ -333,39 +333,8 @@ const SmartPackLanding = () => {
     }
   ];
 
-  // Course features
-  const courseFeatures = [
-    {
-      icon: Video,
-      title: "۱۲+ ساعت ویدیو آموزشی",
-      description: "محتوای عمیق و کاربردی با کیفیت ۴K"
-    },
-    {
-      icon: FileText,
-      title: "کتابچه‌های جامع و چک‌لیست‌ها",
-      description: "راهنماهای گام‌به‌گام قابل چاپ و دانلود"
-    },
-    {
-      icon: Brain,
-      title: "۱۰۰+ پرامپت حرفه‌ای",
-      description: "پرامپت‌های آماده برای کسب‌وکار و درآمدزایی"
-    },
-    {
-      icon: Cog,
-      title: "ابزارهای اتوماسیون",
-      description: "دسترسی به ابزارها و فایل‌های اتوماسیون"
-    },
-    {
-      icon: Users,
-      title: "انجمن اختصاصی دانشجویان",
-      description: "شبکه‌سازی و تبادل تجربه با سایر فراگیران"
-    },
-    {
-      icon: HeadphonesIcon,
-      title: "پشتیبانی مادام‌العمر",
-      description: "پاسخ‌گویی سریع توسط تیم متخصص"
-    }
-  ];
+  // Course features - removed old content
+  const courseFeatures = [];
 
   // Pack contents 
   const packContents = [
