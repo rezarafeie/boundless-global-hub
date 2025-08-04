@@ -764,30 +764,30 @@ const SmartPackLanding = () => {
           <div className="space-y-8">
             {courseEpisodes.map((episode, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
-                  <CardContent className="p-8">
-                     <div className="flex items-start gap-6">
-                       <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
-                         <episode.icon className="w-8 h-8 text-primary-foreground" />
-                       </div>
-                       <div className="flex-1">
-                         <div className="flex items-center gap-3 mb-3">
-                           <Badge variant="outline" className="text-primary">اپیزود {episode.episode}</Badge>
-                           <h3 className="text-2xl font-bold text-foreground">
-                             {episode.title}
-                           </h3>
-                         </div>
-                         <p className="text-muted-foreground mb-6 text-lg">
-                           {episode.description}
-                         </p>
-                          <div className="space-y-3">
-                            {episode.topics.map((topicItem, topicIndex) => (
-                              <div key={topicIndex} className="flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                                <span className="text-foreground text-sm md:text-base leading-relaxed">{topicItem}</span>
-                              </div>
-                            ))}
+                 <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                   <CardContent className="p-4 md:p-8">
+                      <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
+                          <episode.icon className="w-6 h-6 md:w-8 md:h-8 text-primary-foreground" />
+                        </div>
+                        <div className="flex-1 w-full">
+                          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3">
+                            <Badge variant="outline" className="text-primary text-xs md:text-sm w-fit">اپیزود {episode.episode}</Badge>
+                            <h3 className="text-lg md:text-2xl font-bold text-foreground">
+                              {episode.title}
+                            </h3>
                           </div>
+                          <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-lg leading-relaxed">
+                            {episode.description}
+                          </p>
+                           <div className="space-y-2 md:space-y-3">
+                             {episode.topics.map((topicItem, topicIndex) => (
+                               <div key={topicIndex} className="flex items-start gap-2 md:gap-3">
+                                 <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-success flex-shrink-0 mt-0.5" />
+                                 <span className="text-foreground text-xs md:text-base leading-relaxed">{topicItem}</span>
+                               </div>
+                             ))}
+                           </div>
                        </div>
                      </div>
                   </CardContent>
