@@ -1203,79 +1203,124 @@ const SmartPackLanding = () => {
 
       {/* Instructor Bio Section */}
       <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.6 }}
-        className="py-20 bg-background"
+        className="py-16 bg-gradient-to-br from-secondary/5 to-secondary/10"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
       >
         <div className="container max-w-6xl mx-auto px-6">
           <SectionTitle 
-            title="درباره مدرس دوره"
+            title="همکار استاد"
             subtitle="متین پورخالقی - متخصص هوش مصنوعی و کسب‌وکار دیجیتال"
             align="center"
             isCentered
           />
-
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-right">
-              <img 
-                src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" 
-                alt="متین پورخالقی"
-                className="w-64 h-64 rounded-full mx-auto lg:mx-0 mb-6 object-cover border-4 border-primary/20"
-              />
-              <h3 className="text-2xl font-bold text-foreground mb-2">متین پورخالقی</h3>
-              <p className="text-primary font-semibold">بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان»</p>
-            </div>
-
-            <div className="space-y-6">
-              <Card className="p-6">
-                <h4 className="font-bold text-foreground mb-4">تجربه و پیشینه</h4>
-                <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span>بنیان‌گذار آکادمی آموزشی «خالقی» با بیش از ۴۵ هزار دانش‌پذیر</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span>بنیان‌گذار «فایل‌رود»؛ مرجع تخصصی محصولات دیجیتال در ایران</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span>مشاور رشد بیش از ۵۰ پیج اینستاگرامی و برند آموزشی</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span>متخصص استراتژی محتوا و هوش مصنوعی کاربردی</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <span>پژوهشگر در حوزه هوش مصنوعی و کارآفرین دیجیتال</span>
-                  </li>
-                </ul>
-              </Card>
-
-              <Card className="p-6">
-                <h4 className="font-bold text-foreground mb-4">برندهای موفق</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4 text-primary" />
-                    <span>پرسوما (روان‌شناسی)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4 text-primary" />
-                    <span>چت‌جی‌پی‌تی فارسی</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4 text-primary" />
-                    <span>رسانه هوش مصنوعی Humain</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4 text-primary" />
-                    <span>آژانس دیان (انگلستان)</span>
+            <motion.div
+              variants={itemVariants}
+              className="space-y-6 order-1 lg:order-1"
+            >
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-secondary/20 to-primary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative overflow-hidden rounded-2xl border-2 border-secondary/20 shadow-2xl">
+                  <img 
+                    src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" 
+                    alt="متین پورخالقی"
+                    className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute bottom-4 right-4 bg-secondary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
+                    <Briefcase size={24} />
                   </div>
                 </div>
-              </Card>
-            </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              variants={itemVariants}
+              className="space-y-6 order-2 lg:order-2"
+            >
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-secondary to-primary rounded-full flex items-center justify-center">
+                      <Star className="text-white" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-foreground">متین پورخالقی</h3>
+                      <p className="text-lg text-muted-foreground font-medium">
+                        بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان»
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-secondary/5 to-primary/5 p-6 rounded-xl border border-secondary/10">
+                  <p className="text-muted-foreground leading-relaxed">
+                    متین پورخالقی بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان» و متخصص کسب‌وکار دیجیتال است. 
+                    او با تجربه‌ای غنی در حوزه هوش مصنوعی، آموزش و بازاریابی دیجیتال، بنیان‌گذار آکادمی 
+                    آموزشی «خالقی» با بیش از ۴۵ هزار دانش‌پذیر و مشاور رشد بیش از ۵۰ برند آموزشی است.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="text-secondary" size={20} />
+                    <span className="font-bold text-2xl text-secondary">+45K</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">دانش‌پذیر</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="text-secondary" size={20} />
+                    <span className="font-bold text-2xl text-secondary">+50</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">برند مشاوره</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Briefcase className="text-secondary" size={20} />
+                    <span className="font-bold text-2xl text-secondary">آژانس</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">دیان انگلستان</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-secondary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="text-secondary" size={20} />
+                    <span className="font-bold text-2xl text-secondary">AI</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">متخصص</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-bold text-lg text-foreground">برندهای موفق:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "پرسوما",
+                    "چت‌جی‌پی‌تی فارسی", 
+                    "Humain",
+                    "آژانس دیان",
+                    "فایل‌رود",
+                    "آکادمی خالقی"
+                  ].map((brand, index) => (
+                    <Badge 
+                      key={index}
+                      variant="secondary" 
+                      className="bg-secondary/10 text-secondary border-secondary/20"
+                    >
+                      {brand}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </motion.section>
