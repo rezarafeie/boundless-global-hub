@@ -1217,44 +1217,40 @@ const SmartPackLanding = () => {
             isCentered
           />
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="max-w-4xl mx-auto">
             <motion.div
               variants={itemVariants}
-              className="space-y-6 order-2 lg:order-1"
+              className="space-y-8"
             >
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 shadow-2xl">
-                  <img 
-                    src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" 
-                    alt="متین پورخالقی"
-                    className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute bottom-4 right-4 bg-primary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
-                    <Award size={24} />
+              <div className="text-center space-y-6">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                    <Star className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-bold text-foreground">متین پورخالقی</h3>
+                    <p className="text-lg text-muted-foreground font-medium">
+                      بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان»
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative group max-w-md mx-auto">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 shadow-2xl">
+                    <img 
+                      src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" 
+                      alt="متین پورخالقی"
+                      className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute bottom-4 right-4 bg-primary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
+                      <Award size={24} />
+                    </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
 
-            <motion.div
-              variants={itemVariants}
-              className="space-y-6 order-1 lg:order-2"
-            >
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
-                      <Star className="text-white" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-3xl font-bold text-foreground">متین پورخالقی</h3>
-                      <p className="text-lg text-muted-foreground font-medium">
-                        بنیان‌گذار آژانس دیجیتال هوش مصنوعی «دیان»
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
                 <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-xl border border-primary/10">
                   <p className="text-muted-foreground leading-relaxed">
@@ -1341,47 +1337,43 @@ const SmartPackLanding = () => {
             isCentered
           />
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="max-w-4xl mx-auto">
             <motion.div
               variants={itemVariants}
-              className="space-y-6 order-2 lg:order-1"
+              className="space-y-8"
             >
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 shadow-2xl">
-                  <img 
-                    src="/lovable-uploads/1bf49757-2ddb-456e-b60e-3512fa9092d7.png"
-                    alt="رضا رفیعی"
-                    className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
-                    style={{
-                      objectPosition: 'center 20%'
-                    }}
-                  />
-                  <div className="absolute bottom-4 right-4 bg-primary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
-                    <Award size={24} />
+              <div className="text-center space-y-6">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                    <Star className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-bold text-foreground">رضا رفیعی</h3>
+                    <p className="text-lg text-muted-foreground font-medium">
+                      مدرس و مشاور هوش مصنوعی و کسب‌وکار دیجیتال
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative group max-w-md mx-auto">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 shadow-2xl">
+                    <img 
+                      src="/lovable-uploads/6eccb7da-2d9d-4f23-bda8-fb9072b17465.png"
+                      alt="رضا رفیعی"
+                      className="w-full h-80 object-cover object-center hover:scale-110 transition-transform duration-500"
+                      style={{
+                        objectPosition: 'center 20%'
+                      }}
+                    />
+                    <div className="absolute bottom-4 right-4 bg-primary/90 text-white p-3 rounded-xl shadow-lg backdrop-blur-sm">
+                      <Award size={24} />
+                    </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
 
-            <motion.div
-              variants={itemVariants}
-              className="space-y-6 order-1 lg:order-2"
-            >
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
-                      <Star className="text-white" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-3xl font-bold text-foreground">رضا رفیعی</h3>
-                      <p className="text-lg text-muted-foreground font-medium">
-                        مدرس و مشاور هوش مصنوعی و کسب‌وکار دیجیتال
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
                 <div className="bg-gradient-to-r from-primary/5 to-secondary/5 p-6 rounded-xl border border-primary/10">
                   <p className="text-muted-foreground leading-relaxed">
