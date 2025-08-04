@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Star,
   Award,
+  Trophy,
   Clock,
   Shield,
   Download,
@@ -1275,6 +1276,126 @@ const SmartPackLanding = () => {
                 </div>
               </Card>
             </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Instructor Section */}
+      <motion.section
+        className="py-16 bg-gradient-to-br from-primary/5 to-primary/10"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-6xl mx-auto px-6">
+          <SectionTitle 
+            title="مدرس دوره"
+            subtitle="آشنایی با رضا رفیعی"
+            align="center"
+            isCentered
+          />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              variants={itemVariants}
+              className="space-y-6"
+            >
+              <div className="relative">
+                <img 
+                  src="/lovable-uploads/8c694d79-102b-4384-8079-27f21653bf22.png"
+                  alt="رضا رفیعی"
+                  className="w-full max-w-md mx-auto rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute -bottom-4 -right-4 bg-primary text-white p-3 rounded-xl shadow-lg">
+                  <Award size={24} />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              variants={itemVariants}
+              className="space-y-6"
+            >
+              <div className="space-y-4">
+                <h3 className="text-3xl font-bold text-foreground">رضا رفیعی</h3>
+                <p className="text-xl text-muted-foreground font-medium">
+                  بنیان‌گذار آکادمی رفیعی و مشاور توسعه کسب‌وکارهای بدون مرز
+                </p>
+              </div>
+
+              <div className="prose prose-lg max-w-none text-muted-foreground">
+                <p>
+                  رضا رفیعی با بیش از ۱۲ سال تجربه در حوزه کسب‌وکار دیجیتال و هوش مصنوعی، 
+                  بنیان‌گذار آکادمی رفیعی و مشاور توسعه کسب‌وکارهای بین‌المللی است. 
+                  او تا کنون به بیش از ۵۰ هزار نفر در راه‌اندازی کسب‌وکارهای آنلاین کمک کرده است.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">+50K</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">دانشجوی موفق</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">+20</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">دوره تخصصی</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">12+</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">سال تجربه</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Rocket className="text-primary" size={20} />
+                    <span className="font-bold text-2xl text-primary">10+</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">پروژه موفق</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-bold text-lg text-foreground">تخصص‌های کلیدی:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "هوش مصنوعی",
+                    "کسب‌وکار دیجیتال", 
+                    "اتوماسیون",
+                    "درآمد دلاری",
+                    "برندینگ شخصی",
+                    "بازاریابی دیجیتال"
+                  ].map((skill, index) => (
+                    <Badge 
+                      key={index}
+                      variant="secondary" 
+                      className="bg-primary/10 text-primary border-primary/20"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => window.open('/reza-rafiei', '_blank')}
+              >
+                <ExternalLink className="mr-2" size={18} />
+                مشاهده رزومه کامل استاد
+              </Button>
+            </motion.div>
           </div>
         </div>
       </motion.section>
