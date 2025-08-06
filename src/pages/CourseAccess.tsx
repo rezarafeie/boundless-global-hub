@@ -804,13 +804,6 @@ const CourseAccess: React.FC = () => {
                   <Button onClick={() => setShowAuth(true)} className="w-full">
                     ورود / ثبت‌نام
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => window.open(`/course/${course.slug}`, '_blank')}
-                    className="w-full"
-                  >
-                    مشاهده صفحه دوره
-                  </Button>
                 </div>
               </CardContent>
             </Card>
