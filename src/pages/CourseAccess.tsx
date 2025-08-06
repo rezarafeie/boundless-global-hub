@@ -17,7 +17,9 @@ import {
   ExternalLink,
   ChevronDown,
   Clock,
-  PlayCircle
+  PlayCircle,
+  List,
+  ExternalLinkIcon
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -93,8 +95,34 @@ const CourseAccess: React.FC = () => {
     return content.replace(/\[current_user_display_name\]/g, user.firstName || user.name || 'کاربر گرامی');
   };
   
+  // Check for direct access with multiple courses
+  const isDirectAccess = searchParams.has('direct');
   const courseSlug = searchParams.get('course');
   const lessonId = searchParams.get('lesson');
+  
+  // Parse multiple courses from URL params
+  const getMultipleCourses = (): string[] => {
+    if (!isDirectAccess) return courseSlug ? [courseSlug] : [];
+    
+    const courses: string[] = [];
+    const entries = Array.from(searchParams.entries());
+    
+    // Add the main course parameter
+    if (courseSlug) {
+      courses.push(courseSlug);
+    }
+    
+    // Look for additional course parameters (they appear as keys without values)
+    entries.forEach(([key, value]) => {
+      if (key !== 'direct' && key !== 'course' && key !== 'lesson' && !value) {
+        courses.push(key);
+      }
+    });
+    
+    return courses;
+  };
+  
+  const multipleCourses = getMultipleCourses();
   
   const [course, setCourse] = useState<Course | null>(null);
   const [titleGroups, setTitleGroups] = useState<TitleGroup[]>([]);
@@ -108,6 +136,11 @@ const CourseAccess: React.FC = () => {
   const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  
+  // Multi-course support
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
+  const [selectedCourseSlug, setSelectedCourseSlug] = useState<string | null>(null);
+  const [showCourseSelection, setShowCourseSelection] = useState(false);
 
   // Check if mobile on resize
   useEffect(() => {
@@ -145,9 +178,87 @@ const CourseAccess: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading) {
-      checkAuthAndLoadCourse();
+      if (isDirectAccess && multipleCourses.length > 1) {
+        loadMultipleCourses();
+      } else {
+        checkAuthAndLoadCourse();
+      }
     }
-  }, [courseSlug, authLoading, isAuthenticated]);
+  }, [courseSlug, authLoading, isAuthenticated, isDirectAccess, multipleCourses.length]);
+
+  // Load multiple courses for direct access
+  const loadMultipleCourses = async () => {
+    setLoading(true);
+    try {
+      if (multipleCourses.length === 0) {
+        toast({
+          title: "خطا",
+          description: "هیچ دوره‌ای مشخص نشده است",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Fetch all courses that match the slugs and have free access
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required')
+        .in('slug', multipleCourses)
+        .eq('is_active', true)
+        .eq('is_free_access', true)
+        .eq('enable_course_access', true);
+
+      if (coursesError) throw coursesError;
+
+      const validCourses = coursesData || [];
+      setAvailableCourses(validCourses);
+
+      if (validCourses.length === 0) {
+        toast({
+          title: "دسترسی محدود",
+          description: "هیچ دوره‌ای با دسترسی رایگان یافت نشد",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (validCourses.length === 1) {
+        // Only one valid course, load it directly
+        const singleCourse = validCourses[0];
+        setCourse(singleCourse);
+        await fetchCourseContent(singleCourse.id);
+      } else {
+        // Multiple courses available, show selection
+        setShowCourseSelection(true);
+      }
+
+    } catch (error) {
+      console.error('Error loading multiple courses:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری دوره‌ها",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectCourseFromMultiple = async (courseSlug: string) => {
+    const selectedCourse = availableCourses.find(c => c.slug === courseSlug);
+    if (!selectedCourse) return;
+
+    setSelectedCourseSlug(courseSlug);
+    setCourse(selectedCourse);
+    setShowCourseSelection(false);
+    
+    // Update URL to reflect the selected course
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('course', courseSlug);
+    setSearchParams(newSearchParams, { replace: true });
+    
+    await fetchCourseContent(selectedCourse.id);
+  };
 
   const checkAuthAndLoadCourse = async () => {
     setLoading(true);
@@ -772,6 +883,66 @@ const CourseAccess: React.FC = () => {
     );
   }
 
+  // Multi-course selection view
+  if (showCourseSelection && availableCourses.length > 1) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-background">
+          {/* Header */}
+          <div className="bg-card border-b">
+            <div className="container mx-auto px-4 py-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <List className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold">انتخاب دوره</h1>
+                  <p className="text-muted-foreground">دوره مورد نظر خود را انتخاب کنید</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Course Selection */}
+          <div className="container mx-auto px-4 py-12">
+            <div className="max-w-4xl mx-auto">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {availableCourses.map((courseItem) => (
+                  <Card 
+                    key={courseItem.id} 
+                    className="hover:shadow-lg transition-all duration-300 cursor-pointer group border-2 hover:border-primary/50"
+                    onClick={() => selectCourseFromMultiple(courseItem.slug)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="text-center space-y-4">
+                        <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-colors">
+                          <BookOpen className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg mb-2">{courseItem.title}</h3>
+                          <p className="text-muted-foreground text-sm line-clamp-3">{courseItem.description}</p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2">
+                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                            دسترسی رایگان
+                          </Badge>
+                        </div>
+                        <Button className="w-full group-hover:bg-primary/90">
+                          <ExternalLinkIcon className="h-4 w-4 ml-2" />
+                          ورود به دوره
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
@@ -782,9 +953,23 @@ const CourseAccess: React.FC = () => {
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">{course.title}</h1>
-                <p className="text-muted-foreground">{course.description}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold">{course.title}</h1>
+                    <p className="text-muted-foreground">{course.description}</p>
+                  </div>
+                  {isDirectAccess && availableCourses.length > 1 && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowCourseSelection(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <List className="h-4 w-4" />
+                      تغییر دوره
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
