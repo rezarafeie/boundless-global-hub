@@ -51,6 +51,7 @@ const ShortLinksManager: React.FC = () => {
   const [editingLink, setEditingLink] = useState<ShortLink | null>(null);
   const [formData, setFormData] = useState({
     original_url: '',
+    title: '',
     slug: '',
     use_custom_slug: false,
   });
@@ -104,6 +105,7 @@ const ShortLinksManager: React.FC = () => {
 
     const result = await createShortLink({
       original_url: formData.original_url,
+      title: formData.title,
       slug,
       created_by: 'admin',
     });
@@ -115,7 +117,7 @@ const ShortLinksManager: React.FC = () => {
         title: "موفقیت",
         description: "لینک کوتاه با موفقیت ایجاد شد",
       });
-      setFormData({ original_url: '', slug: '', use_custom_slug: false });
+      setFormData({ original_url: '', title: '', slug: '', use_custom_slug: false });
       setCreateDialogOpen(false);
       loadShortLinks();
     } else {
@@ -145,6 +147,7 @@ const ShortLinksManager: React.FC = () => {
 
     const result = await updateShortLink(editingLink.id, {
       original_url: formData.original_url,
+      title: formData.title,
       slug: formData.use_custom_slug && formData.slug.trim() 
         ? formData.slug.trim() 
         : editingLink.slug,
@@ -202,6 +205,7 @@ const ShortLinksManager: React.FC = () => {
     setEditingLink(link);
     setFormData({
       original_url: link.original_url,
+      title: link.title || '',
       slug: link.slug,
       use_custom_slug: true,
     });
@@ -266,6 +270,19 @@ const ShortLinksManager: React.FC = () => {
                   onChange={(e) => setFormData(prev => ({ 
                     ...prev, 
                     original_url: e.target.value 
+                  }))}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="title">عنوان انتقال (اختیاری)</Label>
+                <Input
+                  id="title"
+                  placeholder="نام سایت یا توضیح کوتاه"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    title: e.target.value 
                   }))}
                 />
               </div>
@@ -344,6 +361,19 @@ const ShortLinksManager: React.FC = () => {
               </div>
               
               <div>
+                <Label htmlFor="edit_title">عنوان انتقال</Label>
+                <Input
+                  id="edit_title"
+                  placeholder="نام سایت یا توضیح کوتاه"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    title: e.target.value 
+                  }))}
+                />
+              </div>
+              
+              <div>
                 <Label htmlFor="edit_slug">کد کوتاه</Label>
                 <Input
                   id="edit_slug"
@@ -383,6 +413,7 @@ const ShortLinksManager: React.FC = () => {
                 <TableRow>
                   <TableHead>کد کوتاه</TableHead>
                   <TableHead>URL اصلی</TableHead>
+                  <TableHead>عنوان انتقال</TableHead>
                   <TableHead>کلیک‌ها</TableHead>
                   <TableHead>تاریخ ایجاد</TableHead>
                   <TableHead>عملیات</TableHead>
@@ -406,6 +437,11 @@ const ShortLinksManager: React.FC = () => {
                     <TableCell>
                       <div className="max-w-xs truncate">
                         {link.original_url}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-xs truncate">
+                        {link.title || '-'}
                       </div>
                     </TableCell>
                     <TableCell>

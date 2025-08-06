@@ -4,6 +4,7 @@ export interface ShortLink {
   id: string;
   slug: string;
   original_url: string;
+  title?: string;
   clicks: number;
   created_by?: string;
   created_at: string;
@@ -13,6 +14,7 @@ export interface ShortLink {
 export interface ShortLinkInsert {
   slug?: string;
   original_url: string;
+  title?: string;
   created_by?: string;
 }
 
@@ -72,6 +74,7 @@ export async function createShortLink(data: ShortLinkInsert): Promise<ShortLink 
       .insert({
         slug,
         original_url: data.original_url,
+        title: data.title,
         created_by: data.created_by,
       })
       .select()

@@ -9,6 +9,7 @@ const ShortLinkRedirect: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+  const [redirectTitle, setRedirectTitle] = useState<string | null>(null);
 
   useEffect(() => {
     const handleRedirect = async () => {
@@ -30,8 +31,9 @@ const ShortLinkRedirect: React.FC = () => {
         // Increment click count
         await incrementClickCount(slug);
 
-        // Set the redirect URL for display
+        // Set the redirect URL and title for display
         setRedirectUrl(shortLink.original_url);
+        setRedirectTitle(shortLink.title);
 
         // Perform the redirect after a short delay
         setTimeout(() => {
@@ -55,7 +57,7 @@ const ShortLinkRedirect: React.FC = () => {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
             <h1 className="text-xl font-semibold text-slate-800 dark:text-white mb-2">
-              در حال انتقال...
+              {redirectTitle ? `در حال انتقال به ${redirectTitle}...` : 'در حال انتقال...'}
             </h1>
             <p className="text-slate-600 dark:text-slate-300 text-center">
               لطفاً صبر کنید، در حال هدایت شما به مقصد مورد نظر هستیم.
@@ -94,7 +96,7 @@ const ShortLinkRedirect: React.FC = () => {
         <CardContent className="flex flex-col items-center justify-center py-12">
           <ExternalLink className="h-16 w-16 text-green-500 mb-4" />
           <h1 className="text-xl font-semibold text-green-800 dark:text-green-300 mb-2">
-            در حال انتقال...
+            {redirectTitle ? `در حال انتقال به ${redirectTitle}...` : 'در حال انتقال...'}
           </h1>
           <p className="text-green-600 dark:text-green-400 text-center mb-4">
             شما به زودی به آدرس زیر منتقل خواهید شد:

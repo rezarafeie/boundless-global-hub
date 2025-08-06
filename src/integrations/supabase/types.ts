@@ -800,9 +800,13 @@ export type Database = {
           id: string
           is_active: boolean
           is_free_access: boolean | null
+          is_pre_launch_enabled: boolean
           is_sale_enabled: boolean | null
           is_spotplayer_enabled: boolean | null
+          launch_date: string | null
           lead_start_date: string | null
+          pre_launch_ends_at: string | null
+          pre_launch_price: number | null
           price: number
           redirect_url: string | null
           sale_expires_at: string | null
@@ -834,9 +838,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_free_access?: boolean | null
+          is_pre_launch_enabled?: boolean
           is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
+          launch_date?: string | null
           lead_start_date?: string | null
+          pre_launch_ends_at?: string | null
+          pre_launch_price?: number | null
           price?: number
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -868,9 +876,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_free_access?: boolean | null
+          is_pre_launch_enabled?: boolean
           is_sale_enabled?: boolean | null
           is_spotplayer_enabled?: boolean | null
+          launch_date?: string | null
           lead_start_date?: string | null
+          pre_launch_ends_at?: string | null
+          pre_launch_price?: number | null
           price?: number
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -2312,6 +2324,7 @@ export type Database = {
           id: string
           original_url: string
           slug: string
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -2321,6 +2334,7 @@ export type Database = {
           id?: string
           original_url: string
           slug: string
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -2330,6 +2344,7 @@ export type Database = {
           id?: string
           original_url?: string
           slug?: string
+          title?: string | null
           updated_at?: string
         }
         Relationships: []
