@@ -105,30 +105,27 @@ const CourseAccess: React.FC = () => {
     if (!isDirectAccess) return courseSlug ? [courseSlug] : [];
     
     const courses: string[] = [];
-    const url = new URL(window.location.href);
-    const searchParams = url.searchParams;
     
     // Add the main course parameter
     if (courseSlug) {
       courses.push(courseSlug);
     }
     
-    // Parse additional courses from the URL - they appear as parameters without values
-    const urlString = url.search;
-    
-    // Extract course names from URL like: ?direct&course=passive-income&american-business&change
-    // Split by & and filter out 'direct' and 'course=...'
-    const parts = urlString.substring(1).split('&'); // Remove ? and split by &
-    
-    parts.forEach(part => {
-      // Skip 'direct' parameter and 'course=...' parameter
-      if (part !== 'direct' && !part.startsWith('course=')) {
-        if (part && !part.includes('=')) {
-          courses.push(part);
-        }
+    // Parse additional courses from URL params - they appear as keys with empty values
+    // Format: ?direct=&course=passive-income&american-business=&change=
+    Array.from(searchParams.entries()).forEach(([key, value]) => {
+      // Skip known parameters
+      if (key === 'direct' || key === 'course' || key === 'lesson' || key === '__lovable_token') {
+        return;
+      }
+      
+      // If the parameter has an empty value, it's likely a course slug
+      if (value === '' || value === null) {
+        courses.push(key);
       }
     });
     
+    console.log('Parsed courses from URL:', courses);
     return courses;
   };
   
@@ -200,6 +197,7 @@ const CourseAccess: React.FC = () => {
   const loadMultipleCourses = async () => {
     setLoading(true);
     try {
+      console.log('Loading multiple courses:', multipleCourses);
       if (multipleCourses.length === 0) {
         toast({
           title: "خطا",
@@ -221,6 +219,7 @@ const CourseAccess: React.FC = () => {
       if (coursesError) throw coursesError;
 
       const validCourses = coursesData || [];
+      console.log('Valid courses found:', validCourses);
       setAvailableCourses(validCourses);
 
       if (validCourses.length === 0) {
