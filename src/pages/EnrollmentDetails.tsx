@@ -18,13 +18,19 @@ import {
   Crown,
   PlayCircle,
   Gift,
-  HeadphonesIcon
+  HeadphonesIcon,
+  GraduationCap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
+
+interface SSOToken {
+  type: string;
+  url: string;
+}
 
 interface EnrollmentData {
   id: string;
@@ -75,6 +81,8 @@ const EnrollmentDetails: React.FC = () => {
   const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
   const [smartActivated, setSmartActivated] = useState(false);
+  const [ssoTokens, setSsoTokens] = useState<SSOToken[]>([]);
+  const [loadingSSO, setLoadingSSO] = useState(false);
 
   // Load smart activation status from localStorage on component mount
   useEffect(() => {
@@ -221,6 +229,57 @@ const EnrollmentDetails: React.FC = () => {
     });
   };
 
+  // Generate SSO tokens for telegram access courses
+  const generateSSOTokens = async () => {
+    if (!enrollment || !user?.email) return;
+
+    try {
+      setLoadingSSO(true);
+      console.log('Generating SSO tokens for enrollment:', enrollment.id);
+
+      const response = await supabase.functions.invoke('generate-sso-tokens', {
+        body: {
+          enrollmentId: enrollment.id,
+          userEmail: user.email
+        }
+      });
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      const { data } = response;
+      if (data.success && data.tokens) {
+        setSsoTokens(data.tokens);
+      } else {
+        throw new Error(data.error || 'Failed to generate SSO tokens');
+      }
+    } catch (error) {
+      console.error('Error generating SSO tokens:', error);
+      toast({
+        title: "خطا در تولید لینک‌های ورود خودکار",
+        description: "از لینک‌های معمولی استفاده خواهد شد",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingSSO(false);
+    }
+  };
+
+  const getSSOUrl = (type: string) => {
+    const token = ssoTokens.find(t => t.type === type);
+    return token?.url;
+  };
+
+  const isSuccessfulPayment = enrollment?.payment_status === 'success' || enrollment?.payment_status === 'completed';
+
+  // Generate SSO tokens when enrollment data is loaded for telegram_only_access courses
+  useEffect(() => {
+    if (enrollment && user?.email && enrollment.courses.telegram_only_access && isSuccessfulPayment) {
+      generateSSOTokens();
+    }
+  }, [enrollment?.id, user?.email, enrollment?.courses?.telegram_only_access, isSuccessfulPayment]);
+
   if (authLoading || loading) {
     return (
       <MainLayout>
@@ -276,7 +335,7 @@ const EnrollmentDetails: React.FC = () => {
     );
   }
 
-  const isSuccessfulPayment = enrollment.payment_status === 'success' || enrollment.payment_status === 'completed';
+  
 
   return (
     <MainLayout>
@@ -432,13 +491,59 @@ const EnrollmentDetails: React.FC = () => {
                     </Card>
                   )}
                   
-                  {/* Telegram Only Access Message */}
-                  {isSuccessfulPayment && enrollment.courses.telegram_only_access && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 sm:p-6 border border-blue-200 dark:border-blue-800 text-center mb-4 sm:mb-6">
-                      <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-base sm:text-lg">
-                        🔐 دسترسی به محتوای دوره
-                      </h3>
-                      <p className="text-blue-700 dark:text-blue-300 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
+                   {/* SSO Course Access for Telegram Access */}
+                   {isSuccessfulPayment && enrollment.courses.telegram_only_access && (
+                     <Card className="mb-4 sm:mb-6">
+                       <CardHeader className="pb-3 sm:pb-6">
+                         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                           <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+                           دسترسی به دوره
+                         </CardTitle>
+                       </CardHeader>
+                       <CardContent className="pt-0">
+                         <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 leading-relaxed">
+                           برای ورود به دوره از دکمه زیر استفاده کنید
+                         </p>
+                         <Button
+                           onClick={() => {
+                             const ssoUrl = getSSOUrl('academy');
+                             if (ssoUrl) {
+                               window.open(ssoUrl, '_blank');
+                             } else {
+                               window.open(`/access?course=${enrollment.courses.slug}`, '_blank');
+                             }
+                           }}
+                           disabled={loadingSSO}
+                           className="w-full h-11 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105"
+                         >
+                           {loadingSSO ? (
+                             <Loader2 className="h-3 w-3 sm:h-5 sm:w-5 ml-1 sm:ml-2 animate-spin flex-shrink-0" />
+                           ) : getSSOUrl('academy') ? (
+                             <Key className="h-3 w-3 sm:h-5 sm:w-5 ml-1 sm:ml-2 flex-shrink-0" />
+                           ) : (
+                             <GraduationCap className="h-3 w-3 sm:h-5 sm:w-5 ml-1 sm:ml-2 flex-shrink-0" />
+                           )}
+                           <span className="break-words leading-tight text-center">
+                             {loadingSSO ? (
+                               "در حال تولید لینک ورود..."
+                             ) : getSSOUrl('academy') ? (
+                               "🔐 ورود به دوره"
+                             ) : (
+                               "🚀 ورود به دوره"
+                             )}
+                           </span>
+                         </Button>
+                       </CardContent>
+                     </Card>
+                   )}
+                   
+                   {/* Telegram Only Access Message */}
+                   {isSuccessfulPayment && enrollment.courses.telegram_only_access && (
+                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 sm:p-6 border border-blue-200 dark:border-blue-800 text-center mb-4 sm:mb-6">
+                       <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-base sm:text-lg">
+                         💬 ارتباط با پشتیبانی
+                       </h3>
+                       <p className="text-blue-700 dark:text-blue-300 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
                         <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
                       </p>
                       <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 leading-relaxed">
