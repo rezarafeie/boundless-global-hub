@@ -105,17 +105,27 @@ const CourseAccess: React.FC = () => {
     if (!isDirectAccess) return courseSlug ? [courseSlug] : [];
     
     const courses: string[] = [];
-    const entries = Array.from(searchParams.entries());
+    const url = new URL(window.location.href);
+    const searchParams = url.searchParams;
     
     // Add the main course parameter
     if (courseSlug) {
       courses.push(courseSlug);
     }
     
-    // Look for additional course parameters (they appear as keys without values)
-    entries.forEach(([key, value]) => {
-      if (key !== 'direct' && key !== 'course' && key !== 'lesson' && !value) {
-        courses.push(key);
+    // Parse additional courses from the URL - they appear as parameters without values
+    const urlString = url.search;
+    
+    // Extract course names from URL like: ?direct&course=passive-income&american-business&change
+    // Split by & and filter out 'direct' and 'course=...'
+    const parts = urlString.substring(1).split('&'); // Remove ? and split by &
+    
+    parts.forEach(part => {
+      // Skip 'direct' parameter and 'course=...' parameter
+      if (part !== 'direct' && !part.startsWith('course=')) {
+        if (part && !part.includes('=')) {
+          courses.push(part);
+        }
       }
     });
     
