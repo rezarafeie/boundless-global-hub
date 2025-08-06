@@ -255,8 +255,8 @@ const CourseAccess: React.FC = () => {
       // Create a virtual course object for the combined view
       const combinedCourse: Course = {
         id: 'combined',
-        title: 'دسترسی مستقیم به دوره‌ها',
-        description: `${courses.length} دوره در دسترس`,
+        title: '',
+        description: '',
         slug: 'combined',
         price: 0,
         enable_course_access: true,
