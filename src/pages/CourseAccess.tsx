@@ -188,7 +188,7 @@ const CourseAccess: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading) {
-      if (isDirectAccess && multipleCourses.length > 1) {
+      if (isDirectAccess && multipleCourses.length > 0) {
         loadMultipleCourses();
       } else {
         checkAuthAndLoadCourse();
@@ -232,15 +232,8 @@ const CourseAccess: React.FC = () => {
         return;
       }
 
-      if (validCourses.length === 1) {
-        // Only one valid course, load it directly
-        const singleCourse = validCourses[0];
-        setCourse(singleCourse);
-        await fetchCourseContent(singleCourse.id);
-      } else {
-        // Multiple courses available, show selection
-        setShowCourseSelection(true);
-      }
+      // Load content for all courses and combine them
+      await loadMultipleCoursesContent(validCourses);
 
     } catch (error) {
       console.error('Error loading multiple courses:', error);
@@ -251,6 +244,138 @@ const CourseAccess: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load content for multiple courses and combine them
+  const loadMultipleCoursesContent = async (courses: Course[]) => {
+    try {
+      let allTitleGroups: TitleGroup[] = [];
+      let allSections: Section[] = [];
+
+      // Create a virtual course object for the combined view
+      const combinedCourse: Course = {
+        id: 'combined',
+        title: 'دسترسی مستقیم به دوره‌ها',
+        description: `${courses.length} دوره در دسترس`,
+        slug: 'combined',
+        price: 0,
+        enable_course_access: true,
+        is_free_access: true
+      };
+      setCourse(combinedCourse);
+
+      for (const courseItem of courses) {
+        // Fetch title groups for this course
+        const { data: titleGroupsData } = await supabase
+          .from('course_title_groups')
+          .select(`
+            id,
+            title,
+            icon,
+            order_index,
+            is_open,
+            course_sections (
+              id,
+              title,
+              order_index,
+              title_group_id,
+              lesson_sections (
+                course_lessons (
+                  id,
+                  title,
+                  content,
+                  video_url,
+                  file_url,
+                  duration,
+                  order_index
+                )
+              )
+            )
+          `)
+          .eq('course_id', courseItem.id)
+          .eq('is_active', true)
+          .order('order_index');
+
+        // Fetch orphan sections for this course
+        const { data: orphanSectionsData } = await supabase
+          .from('course_sections')
+          .select(`
+            id,
+            title,
+            order_index,
+            title_group_id,
+            lesson_sections (
+              course_lessons (
+                id,
+                title,
+                content,
+                video_url,
+                file_url,
+                duration,
+                order_index
+              )
+            )
+          `)
+          .eq('course_id', courseItem.id)
+          .is('title_group_id', null)
+          .order('order_index');
+
+        // Process title groups for this course
+        const formattedTitleGroups = (titleGroupsData || []).map(group => ({
+          ...group,
+          title: `${courseItem.title} - ${group.title}`, // Add course name prefix
+          is_open: true, // Always open for direct access
+          sections: (group.course_sections || [])
+            .map(section => ({
+              ...section,
+              lessons: (section.lesson_sections || [])
+                .map(ls => ls.course_lessons)
+                .filter(lesson => lesson !== null)
+                .sort((a, b) => a.order_index - b.order_index)
+            }))
+            .sort((a, b) => a.order_index - b.order_index)
+        }));
+
+        // Process orphan sections for this course
+        const formattedOrphanSections = (orphanSectionsData || []).map(section => ({
+          ...section,
+          title: `${courseItem.title} - ${section.title}`, // Add course name prefix
+          lessons: (section.lesson_sections || [])
+            .map(ls => ls.course_lessons)
+            .filter(lesson => lesson !== null)
+            .sort((a, b) => a.order_index - b.order_index)
+        }));
+
+        // Add to combined arrays
+        allTitleGroups = [...allTitleGroups, ...formattedTitleGroups];
+        allSections = [...allSections, ...formattedOrphanSections];
+      }
+
+      setTitleGroups(allTitleGroups);
+      setSections(allSections);
+
+      // Set all title groups as open
+      const initiallyOpen = new Set<string>();
+      allTitleGroups.forEach(group => {
+        initiallyOpen.add(group.id);
+      });
+      setOpenTitleGroups(initiallyOpen);
+
+      // Auto-select first lesson if available
+      if (allTitleGroups.length > 0 && allTitleGroups[0].sections.length > 0 && allTitleGroups[0].sections[0].lessons.length > 0) {
+        setSelectedLesson(allTitleGroups[0].sections[0].lessons[0]);
+      } else if (allSections.length > 0 && allSections[0].lessons.length > 0) {
+        setSelectedLesson(allSections[0].lessons[0]);
+      }
+
+    } catch (error) {
+      console.error('Error loading multiple courses content:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در بارگذاری محتوای دوره‌ها",
+        variant: "destructive"
+      });
     }
   };
 
@@ -893,66 +1018,6 @@ const CourseAccess: React.FC = () => {
     );
   }
 
-  // Multi-course selection view
-  if (showCourseSelection && availableCourses.length > 1) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-background">
-          {/* Header */}
-          <div className="bg-card border-b">
-            <div className="container mx-auto px-4 py-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <List className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold">انتخاب دوره</h1>
-                  <p className="text-muted-foreground">دوره مورد نظر خود را انتخاب کنید</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Course Selection */}
-          <div className="container mx-auto px-4 py-12">
-            <div className="max-w-4xl mx-auto">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {availableCourses.map((courseItem) => (
-                  <Card 
-                    key={courseItem.id} 
-                    className="hover:shadow-lg transition-all duration-300 cursor-pointer group border-2 hover:border-primary/50"
-                    onClick={() => selectCourseFromMultiple(courseItem.slug)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-colors">
-                          <BookOpen className="h-8 w-8 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg mb-2">{courseItem.title}</h3>
-                          <p className="text-muted-foreground text-sm line-clamp-3">{courseItem.description}</p>
-                        </div>
-                        <div className="flex items-center justify-center gap-2">
-                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
-                            دسترسی رایگان
-                          </Badge>
-                        </div>
-                        <Button className="w-full group-hover:bg-primary/90">
-                          <ExternalLinkIcon className="h-4 w-4 ml-2" />
-                          ورود به دوره
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
@@ -969,16 +1034,6 @@ const CourseAccess: React.FC = () => {
                     <h1 className="text-2xl font-bold">{course.title}</h1>
                     <p className="text-muted-foreground">{course.description}</p>
                   </div>
-                  {isDirectAccess && availableCourses.length > 1 && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowCourseSelection(true)}
-                      className="flex items-center gap-2"
-                    >
-                      <List className="h-4 w-4" />
-                      تغییر دوره
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
