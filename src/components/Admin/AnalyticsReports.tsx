@@ -17,7 +17,7 @@ import {
   Tablet
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { parseRealAnalyticsData, getDeviceNameInPersian, getCountryNameInPersian, getSourceNameInPersian, calculatePercentages, getCurrentVisitors, readProjectAnalytics } from '@/lib/analyticsService';
+import { getDeviceNameInPersian, getCountryNameInPersian, getSourceNameInPersian, calculatePercentages } from '@/lib/analyticsService';
 import { supabase } from "@/integrations/supabase/client";
 
 interface AnalyticsData {
@@ -48,149 +48,112 @@ const AnalyticsReports: React.FC = () => {
         setLoading(true);
       }
 
-      console.log('🔄 Fetching real Lovable analytics data...');
+      const now = new Date();
+      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const startISO = start.toISOString();
+      const fiveMinAgoISO = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
 
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
+      // Fetch sessions and events in parallel (lightweight columns only)
+      const [sessionsRes, eventsRes] = await Promise.all([
+        supabase
+          .from('analytics_sessions')
+          .select('session_id, first_seen, last_seen, pageviews, device, country, source')
+          .gte('first_seen', startISO),
+        supabase
+          .from('analytics_events')
+          .select('path, created_at')
+          .eq('event_type', 'pageview')
+          .gte('created_at', startISO)
+      ]);
 
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
+      if (sessionsRes.error) throw sessionsRes.error;
+      if (eventsRes.error) throw eventsRes.error;
 
-      console.log('📊 Requesting analytics for:', { startDateStr, endDateStr });
+      const sessions: any[] = sessionsRes.data || [];
+      const events: any[] = eventsRes.data || [];
 
-      // Fetch real analytics data using Lovable analytics API
-      const analyticsData = await readProjectAnalytics(startDateStr, endDateStr, 'daily');
-      
-      // The analytics data comes as a structured string that needs to be parsed
-      const realAnalyticsString = analyticsData?.toString() || '';
-      
-      console.log('📈 Raw analytics response:', realAnalyticsString);
+      // Metrics
+      const visitors = sessions.length;
+      const pageviews = events.length;
+      const currentVisitors = sessions.filter(s => s.last_seen && new Date(s.last_seen) >= new Date(fiveMinAgoISO)).length;
 
-      // Parse the real analytics data
-      const realData = parseRealAnalyticsData(realAnalyticsString);
-      
-      if (realData) {
-        console.log('✅ Real analytics data parsed successfully:', realData);
-        
-        // Process visitor sources with Persian names and percentages
-        const sourcesWithPercentages = calculatePercentages(
-          realData.sources.slice(0, 5).map(source => ({
-            source: getSourceNameInPersian(source.source),
-            visitors: source.visitors,
-            views: source.visitors
-          }))
-        );
+      const avgDurationSecs = sessions.length
+        ? Math.round(
+            sessions.reduce((acc, s) => {
+              const fs = s.first_seen ? new Date(s.first_seen).getTime() : 0;
+              const ls = s.last_seen ? new Date(s.last_seen).getTime() : fs;
+              const diff = Math.max(0, (ls - fs) / 1000);
+              return acc + diff;
+            }, 0) / sessions.length
+          )
+        : 0;
 
-        // Process top pages with percentages
-        const pagesWithPercentages = calculatePercentages(
-          realData.pages.slice(0, 7).map(page => ({
-            page: page.page,
-            views: page.views,
-            visitors: page.views
-          }))
-        );
+      const bounceSessions = sessions.filter(s => (s.pageviews || 0) <= 1).length;
+      const bounceRate = visitors ? Math.round((bounceSessions / visitors) * 100) : 0;
+      const viewsPerVisit = visitors ? Math.round((pageviews / visitors) * 100) / 100 : 0;
 
-        // Process countries with Persian names and percentages
-        const countriesWithPercentages = calculatePercentages(
-          realData.countries.slice(0, 6).map(country => ({
-            country: getCountryNameInPersian(country.country),
-            visitors: country.visitors,
-            views: country.visitors
-          }))
-        );
+      // Group helpers
+      const countBy = <T, K extends string>(items: T[], keyFn: (item: T) => K) => {
+        const map = new Map<K, number>();
+        for (const it of items) {
+          const key = keyFn(it);
+          map.set(key, (map.get(key) || 0) + 1);
+        }
+        return Array.from(map.entries()).map(([key, count]) => ({ key, count }));
+      };
 
-        // Process devices with Persian names and percentages
-        const devicesWithPercentages = calculatePercentages(
-          realData.devices.slice(0, 3).map(device => ({
-            device: getDeviceNameInPersian(device.device),
-            visitors: device.visitors,
-            views: device.visitors
-          }))
-        );
+      // Top pages
+      const pagesRaw = countBy(events, (e: any) => (e.path as string) || '/');
+      pagesRaw.sort((a, b) => b.count - a.count);
+      const topPages = pagesRaw.slice(0, 7).map(p => ({ page: p.key as string, views: p.count }));
+      const visitorsPages = calculatePercentages(topPages).map((p: any) => ({ page: p.page, views: p.views, percentage: p.percentage }));
 
-        const processedData: AnalyticsData = {
-          currentVisitors: getCurrentVisitors(realData.totalVisitors),
-          visitors: realData.totalVisitors,
-          pageviews: realData.totalPageviews,
-          viewsPerVisit: Math.round(realData.avgPageviewsPerVisit * 100) / 100,
-          visitDuration: realData.avgSessionDuration,
-          bounceRate: realData.avgBounceRate,
-          visitorsSources: sourcesWithPercentages.map((item: any) => ({
-            source: item.source,
-            visitors: item.visitors || item.views || 0,
-            percentage: item.percentage
-          })),
-          visitorsPages: pagesWithPercentages.map((item: any) => ({
-            page: item.page,
-            views: item.views || item.visitors || 0,
-            percentage: item.percentage
-          })),
-          visitorsCountries: countriesWithPercentages.map((item: any) => ({
-            country: item.country,
-            visitors: item.visitors || item.views || 0,
-            percentage: item.percentage
-          })),
-          visitorsDevices: devicesWithPercentages.map((item: any) => ({
-            device: item.device,
-            visitors: item.visitors || item.views || 0,
-            percentage: item.percentage
-          }))
-        };
+      // Sources from sessions
+      const sourcesRaw = countBy(sessions, (s: any) => (s.source as string) || 'direct');
+      const visitorsSources = calculatePercentages(
+        sourcesRaw
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5)
+          .map(s => ({ source: getSourceNameInPersian(String(s.key)), visitors: s.count }))
+      ).map((s: any) => ({ source: s.source, visitors: s.visitors, percentage: s.percentage }));
 
-        console.log('📈 Processed real analytics data:', processedData);
-        setAnalytics(processedData);
-        // Save snapshot (upsert by date)
-        saveDailyReport(processedData);
-      } else {
-        console.warn('⚠️ Could not parse real analytics data, using fallback');
-        // Fallback to basic mock data if parsing fails
-        const fallbackData: AnalyticsData = {
-          currentVisitors: 12,
-          visitors: 3592,
-          pageviews: 52969,
-          viewsPerVisit: 14.75,
-          visitDuration: 310,
-          bounceRate: 58,
-          visitorsSources: [
-            { source: 'اینستاگرام', visitors: 2193, percentage: 45 },
-            { source: 'مستقیم', visitors: 1300, percentage: 25 },
-            { source: 'گوگل', visitors: 158, percentage: 15 },
-            { source: 'فیسبوک', visitors: 43, percentage: 10 },
-            { source: 'سایر', visitors: 25, percentage: 5 }
-          ],
-          visitorsPages: [
-            { page: '/courses/boundless', views: 1244, percentage: 25 },
-            { page: '/telegram', views: 515, percentage: 15 },
-            { page: '/course/boundless-taste', views: 467, percentage: 12 },
-            { page: '/start', views: 421, percentage: 10 },
-            { page: '/', views: 346, percentage: 8 },
-            { page: '/daramad', views: 256, percentage: 6 },
-            { page: 'سایر', views: 500, percentage: 24 }
-          ],
-          visitorsCountries: [
-            { country: 'ایران', visitors: 3132, percentage: 87 },
-            { country: 'آمریکا', visitors: 183, percentage: 5 },
-            { country: 'افغانستان', visitors: 64, percentage: 2 },
-            { country: 'کانادا', visitors: 36, percentage: 1 },
-            { country: 'ترکیه', visitors: 31, percentage: 1 },
-            { country: 'سایر', visitors: 146, percentage: 4 }
-          ],
-          visitorsDevices: [
-            { device: 'موبایل', visitors: 3219, percentage: 90 },
-            { device: 'دسکتاپ', visitors: 328, percentage: 9 },
-            { device: 'تبلت', visitors: 45, percentage: 1 }
-          ]
-        };
-        setAnalytics(fallbackData);
-      }
+      // Countries from sessions
+      const countriesRaw = countBy(sessions, (s: any) => (s.country as string) || 'Unknown');
+      const visitorsCountries = calculatePercentages(
+        countriesRaw
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6)
+          .map(c => ({ country: getCountryNameInPersian(String(c.key)), visitors: c.count }))
+      ).map((c: any) => ({ country: c.country, visitors: c.visitors, percentage: c.percentage }));
+
+      // Devices from sessions
+      const devicesRaw = countBy(sessions, (s: any) => (s.device as string) || 'desktop');
+      const visitorsDevices = calculatePercentages(
+        devicesRaw
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3)
+          .map(d => ({ device: getDeviceNameInPersian(String(d.key)), visitors: d.count }))
+      ).map((d: any) => ({ device: d.device, visitors: d.visitors, percentage: d.percentage }));
+
+      const processed: AnalyticsData = {
+        currentVisitors,
+        visitors,
+        pageviews,
+        viewsPerVisit,
+        visitDuration: avgDurationSecs,
+        bounceRate,
+        visitorsSources,
+        visitorsPages,
+        visitorsCountries,
+        visitorsDevices,
+      };
+
+      setAnalytics(processed);
+      // Save snapshot (upsert by date)
+      saveDailyReport(processed);
     } catch (error) {
-      console.error('❌ Error fetching analytics:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در دریافت آمار",
-        variant: "destructive"
-      });
+      console.error('❌ Error fetching analytics from Supabase:', error);
+      toast({ title: 'خطا', description: 'خطا در دریافت آمار', variant: 'destructive' });
     } finally {
       setLoading(false);
       setRefreshing(false);
