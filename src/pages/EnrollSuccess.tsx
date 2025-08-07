@@ -101,6 +101,13 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     console.log('Checking auto-start processing for enrollment:', enrollment.id);
     
     try {
+      // First check if enrollment already has birth_year and sex
+      if (enrollment.birth_year && enrollment.sex) {
+        console.log('Enrollment already has birth_year and sex, processing...');
+        await processEsanjTest(enrollment.birth_year.toString(), enrollment.sex);
+        return;
+      }
+
       // Check if user has birth_year and sex in chat_users table
       const { data: chatUser, error: userError } = await supabase
         .from('chat_users')
@@ -117,12 +124,40 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
         setSex(chatUser.sex);
         // Start processing with the user's existing data
         await processEsanjTest(chatUser.birth_year.toString(), chatUser.sex);
+        return;
+      }
+
+      // If no data found locally, check Esanj database
+      console.log('No local data found, checking Esanj database...');
+      setProcessingMessage('جستجو در پایگاه داده اسانج...');
+      
+      const { data: esanjResult, error: esanjError } = await supabase.functions.invoke('check-esanj-employee', {
+        body: { 
+          phone: enrollment.phone,
+          enrollmentId: enrollment.id
+        }
+      });
+
+      if (esanjError) {
+        console.error('Error checking Esanj employee:', esanjError);
+        setProcessingMessage('خطا در جستجوی اطلاعات');
+        return;
+      }
+
+      if (esanjResult?.found) {
+        console.log('Employee found in Esanj, data saved automatically');
+        setProcessingMessage('اطلاعات از پایگاه داده اسانج بازیابی شد');
+        // Refresh enrollment data to get the updated birth_year and sex
+        await fetchEnrollment();
+        // The updated data will trigger another call to this function
+        return;
       } else {
-        console.log('User missing birth_year or sex, waiting for manual input');
+        console.log('Employee not found in Esanj, manual input required');
+        setProcessingMessage('نیاز به تکمیل اطلاعات');
       }
     } catch (error) {
       console.error('Error checking user data:', error);
-      // Don't show error - user can still manually provide data
+      setProcessingMessage('خطا در بررسی اطلاعات');
     }
   };
 
