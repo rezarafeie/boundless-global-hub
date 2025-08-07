@@ -24,10 +24,7 @@ export const useTests = () => {
       setLoading(true)
       setError(null)
 
-      // First sync with Esanj API
-      await esanjService.syncTestBank()
-
-      // Then fetch from local database
+      // Only fetch from local database - no API sync
       const { data, error: dbError } = await supabase
         .from('tests')
         .select('*')
