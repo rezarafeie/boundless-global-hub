@@ -42,12 +42,13 @@ serve(async (req) => {
         .from('test_enrollments')
         .insert({
           test_id: test.id,
+          user_id: null, // Will be set later if user logs in
           full_name: `${firstName} ${lastName}`,
           email: email,
           phone: phone,
-          country_code: countryCode || '+98',
           payment_amount: paymentAmount,
-          payment_status: 'pending'
+          payment_status: 'pending',
+          enrollment_status: 'pending'
         })
         .select()
         .single();
