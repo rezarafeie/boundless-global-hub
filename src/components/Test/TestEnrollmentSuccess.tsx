@@ -154,13 +154,22 @@ const TestEnrollmentSuccess: React.FC = () => {
     if (!enrollment) return
 
     try {
+      // Convert Gregorian to Persian year if needed (1997 -> 1376)
+      const persianBirthYear = userBirthYear > 1500 ? userBirthYear - 621 : userBirthYear
+      
+      console.log('Converting birth year:', {
+        originalYear: userBirthYear,
+        persianYear: persianBirthYear,
+        isGregorian: userBirthYear > 1500
+      })
+
       // Find or create employee in Esanj
       const employee = await esanjService.findOrCreateEmployee(
         enrollment.phone,
         {
           name: enrollment.full_name,
           phone_number: enrollment.phone,
-          birth_year: userBirthYear,
+          birth_year: persianBirthYear, // Use Persian year for Esanj
           sex: userSex
         }
       )
@@ -183,7 +192,7 @@ const TestEnrollmentSuccess: React.FC = () => {
         .update({
           esanj_employee_id: employee.id,
           esanj_uuid: testUuid,
-          birth_year: userBirthYear,
+          birth_year: userBirthYear, // Keep original year in database
           sex: userSex,
           enrollment_status: 'ready'
         })
@@ -422,15 +431,15 @@ const TestEnrollmentSuccess: React.FC = () => {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="birthYear">سال تولد (شمسی)</Label>
+                <Label htmlFor="birthYear">سال تولد</Label>
                 <Input
                   id="birthYear"
                   type="number"
-                  placeholder="مثال: 1375"
+                  placeholder="مثال: 1375 (شمسی) یا 1997 (میلادی)"
                   value={birthYear}
                   onChange={(e) => setBirthYear(e.target.value)}
                   min="1300"
-                  max="1420"
+                  max="2024"
                 />
               </div>
               
