@@ -119,10 +119,15 @@ const TestAccess: React.FC = () => {
     setIsLoadingTest(true)
     
     try {
-      // Calculate age from birth year
+      // Calculate age from birth year (stored as Gregorian year)
       const currentYear = new Date().getFullYear()
-      const persianYear = currentYear - 621 // Approximate conversion
-      const age = persianYear - enrollment.birth_year
+      const age = currentYear - enrollment.birth_year // Simple age calculation using Gregorian years
+      
+      console.log('Age calculation for Esanj:', {
+        currentYear,
+        birthYear: enrollment.birth_year,
+        calculatedAge: age
+      })
 
       // Fetch questionnaire from Esanj
       const questionnaireData = await esanjService.getQuestionnaire(
@@ -181,10 +186,9 @@ const TestAccess: React.FC = () => {
         return
       }
 
-      // Calculate age from birth year
+      // Calculate age from birth year (stored as Gregorian year)
       const currentYear = new Date().getFullYear()
-      const persianYear = currentYear - 621
-      const age = persianYear - enrollment.birth_year
+      const age = currentYear - enrollment.birth_year // Simple age calculation using Gregorian years
 
       // Prepare answers for Esanj API
       const esanjAnswers = Object.entries(answers).map(([key, value]) => ({
