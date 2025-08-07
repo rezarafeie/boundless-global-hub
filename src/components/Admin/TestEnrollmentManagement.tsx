@@ -8,7 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { faIR } from 'date-fns/locale';
-import { Search, Loader2, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Loader2, Eye, CheckCircle, XCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface TestEnrollment {
   id: string;
@@ -18,6 +19,7 @@ interface TestEnrollment {
   full_name: string;
   email: string;
   payment_amount: number;
+  payment_method?: string;
   enrollment_status: string;
   payment_status: string;
   created_at: string;
@@ -32,6 +34,7 @@ const TestEnrollmentManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTestEnrollments();
@@ -92,6 +95,36 @@ const TestEnrollmentManagement: React.FC = () => {
       toast({
         title: "خطا",
         description: "خطا در به‌روزرسانی وضعیت",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleManualPaymentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
+    try {
+      const updateData = {
+        payment_status: action === 'approve' ? 'completed' : 'failed',
+        enrollment_status: action === 'approve' ? 'ready' : 'cancelled'
+      };
+
+      const { error } = await supabase
+        .from('test_enrollments')
+        .update(updateData)
+        .eq('id', enrollmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "موفق",
+        description: action === 'approve' ? "پرداخت تایید شد" : "پرداخت رد شد",
+      });
+
+      fetchTestEnrollments();
+    } catch (error) {
+      console.error('Error updating manual payment status:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در به‌روزرسانی وضعیت پرداخت",
         variant: "destructive"
       });
     }
@@ -194,6 +227,38 @@ const TestEnrollmentManagement: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/test-enrollment/admin/${enrollment.id}`)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          مشاهده
+                        </Button>
+                        
+                        {enrollment.payment_method === 'manual' && enrollment.payment_status === 'pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 border-green-200 hover:bg-green-50"
+                              onClick={() => handleManualPaymentAction(enrollment.id, 'approve')}
+                            >
+                              <ThumbsUp className="h-4 w-4 mr-1" />
+                              تایید
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => handleManualPaymentAction(enrollment.id, 'reject')}
+                            >
+                              <ThumbsDown className="h-4 w-4 mr-1" />
+                              رد
+                            </Button>
+                          </>
+                        )}
+                        
                         {enrollment.enrollment_status === 'pending' && enrollment.payment_status === 'completed' && (
                           <Button
                             size="sm"
@@ -201,7 +266,7 @@ const TestEnrollmentManagement: React.FC = () => {
                             onClick={() => updateEnrollmentStatus(enrollment.id, 'ready')}
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
-                            تایید
+                            فعال‌سازی
                           </Button>
                         )}
                         

@@ -116,6 +116,7 @@ import UserDetail from "./pages/UserDetail";
 
 // Test Admin components
 import EnrollAdminTests from "./pages/EnrollAdminTests";
+import TestEnrollmentAdminDetails from "./pages/TestEnrollmentAdminDetails";
 
 // Test components
 import Tests from "./pages/Tests";
@@ -216,6 +217,7 @@ const App = () => {
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
+                    <Route path="/test-enrollment/admin/:id" element={<TestEnrollmentAdminDetails />} />
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
                     <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
