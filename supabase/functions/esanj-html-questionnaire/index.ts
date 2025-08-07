@@ -13,8 +13,8 @@ serve(async (req) => {
   try {
     const { esanjToken, testId, age, sex, uuid, employeeId, moreInformation } = await req.json()
     
-    if (!esanjToken || !testId || !age || !sex || !uuid) {
-      throw new Error('Missing required parameters: esanjToken, testId, age, sex, uuid')
+    if (!esanjToken || !testId || !age || !sex || !uuid || !employeeId) {
+      throw new Error('Missing required parameters: esanjToken, testId, age, sex, uuid, employeeId')
     }
 
     console.log('Fetching HTML questionnaire for test:', testId)
@@ -27,7 +27,7 @@ serve(async (req) => {
       uuid: uuid
     })
 
-    // Add optional parameters
+    // Add optional parameters - employee_id is required according to API docs
     if (employeeId) {
       params.append('employee_id', employeeId.toString())
     }
@@ -59,7 +59,7 @@ serve(async (req) => {
     const questionnaireResponse = await fetch(apiUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Authorization': `Bearer ${esanjToken}`
       }
     })
