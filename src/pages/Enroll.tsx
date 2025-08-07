@@ -399,9 +399,30 @@ const Enroll: React.FC = () => {
           const successUrl = `/enroll/success?test=${test.slug}&phone=${formData.phone}&enrollment=${testResult.id}&status=OK&Authority=FREE_TEST`;
           window.location.href = successUrl;
         } else {
-          // For paid tests, redirect to payment - you can implement Zarinpal for tests later
-          const successUrl = `/enroll?test=${test.slug}`;
-          window.location.href = successUrl;
+          // For paid tests, proceed with Zarinpal payment
+          const response = await supabase.functions.invoke('zarinpal-request', {
+            body: {
+              testSlug: test.slug,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              countryCode: formData.countryCode,
+              customAmount: test.price,
+              enrollmentType: 'test'
+            }
+          });
+
+          if (response.error) throw response.error;
+
+          const { data } = response;
+          
+          if (data.success) {
+            // Redirect to Zarinpal payment
+            window.location.href = data.paymentUrl;
+          } else {
+            throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');
+          }
         }
         return;
       }
