@@ -42,13 +42,27 @@ interface Course {
   spotplayer_course_id: string | null;
 }
 
+interface Test {
+  id: string;
+  test_id: number;
+  title: string;
+  description?: string;
+  price: number;
+  slug: string;
+  count_ready: number;
+  count_used: number;
+  is_active: boolean;
+}
+
 const Enroll: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, isAuthenticated, login } = useAuth();
   const courseSlug = searchParams.get('course');
+  const testSlug = searchParams.get('test');
 
   const [course, setCourse] = useState<Course | null>(null);
+  const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'manual'>('zarinpal');
@@ -73,15 +87,17 @@ const Enroll: React.FC = () => {
   });
 
   // Calculate if the course is free (either original price is 0 or 100% discount)
-  const isFree = course?.price === 0 || discountedPrice === 0 || salePrice === 0 || prelaunchPrice === 0;
+  const isFree = course?.price === 0 || test?.price === 0 || discountedPrice === 0 || salePrice === 0 || prelaunchPrice === 0;
 
   useEffect(() => {
     if (courseSlug) {
       fetchCourse();
+    } else if (testSlug) {
+      fetchTest();
     } else {
       setLoading(false);
     }
-  }, [courseSlug]);
+  }, [courseSlug, testSlug]);
 
   // Auto-fill form data when user is authenticated and has required data
   useEffect(() => {
@@ -256,6 +272,29 @@ const Enroll: React.FC = () => {
     }
   };
 
+  const fetchTest = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tests')
+        .select('*')
+        .eq('slug', testSlug)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      setTest(data);
+    } catch (error) {
+      console.error('Error fetching test:', error);
+      toast({
+        title: "خطا",
+        description: "آزمون مورد نظر یافت نشد",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
   };
@@ -313,8 +352,8 @@ const Enroll: React.FC = () => {
     console.log('💰 Is free course?', isFree);
     console.log('🔑 Payment method:', paymentMethod);
     
-    if (!validateForm() || !course) {
-      console.log('❌ Form validation failed or no course');
+    if (!validateForm() || (!course && !test)) {
+      console.log('❌ Form validation failed or no course/test');
       return;
     }
     
@@ -328,8 +367,47 @@ const Enroll: React.FC = () => {
     setSubmitting(true);
     
     try {
+      // Handle test enrollment
+      if (test) {
+        const testEnrollmentData = {
+          test_id: test.id,
+          user_id: user?.id ? parseInt(user.id) : null,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          payment_amount: test.price,
+          enrollment_status: test.price === 0 ? 'ready' : 'pending',
+          payment_status: test.price === 0 ? 'completed' : 'pending'
+        };
+
+        console.log('Creating test enrollment:', testEnrollmentData);
+
+        const { data: testResult, error: testError } = await supabase
+          .from('test_enrollments')
+          .insert(testEnrollmentData)
+          .select()
+          .single();
+
+        if (testError) {
+          throw testError;
+        }
+
+        console.log('Test enrollment created:', testResult);
+        
+        // Redirect to success page for test
+        if (test.price === 0) {
+          const successUrl = `/enroll/success?test=${test.slug}&phone=${formData.phone}&enrollment=${testResult.id}&status=OK&Authority=FREE_TEST`;
+          window.location.href = successUrl;
+        } else {
+          // For paid tests, redirect to payment - you can implement Zarinpal for tests later
+          const successUrl = `/enroll?test=${test.slug}`;
+          window.location.href = successUrl;
+        }
+        return;
+      }
+
       // If course is free (price is 0 or 100% discount), create enrollment directly without payment
-      if (isFree) {
+      if (isFree && course) {
         const enrollmentData = {
           course_id: course.id,
           full_name: `${formData.firstName} ${formData.lastName}`,
@@ -380,7 +458,7 @@ const Enroll: React.FC = () => {
             return;
           }
         }
-      } else {
+      } else if (course) {
         // Paid course - proceed with Zarinpal payment
         // CRITICAL: Always prioritize sale price when active
         let basePrice = course.use_dollar_price && finalRialPrice 
@@ -449,16 +527,16 @@ const Enroll: React.FC = () => {
     );
   }
 
-  if (!course) {
+  if (!course && !test) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-semibold mb-2">دوره یافت نشد</h2>
+              <h2 className="text-xl font-semibold mb-2">{courseSlug ? 'دوره' : 'آزمون'} یافت نشد</h2>
               <p className="text-muted-foreground">
-                دوره مورد نظر شما یافت نشد یا غیرفعال است.
+                {courseSlug ? 'دوره' : 'آزمون'} مورد نظر شما یافت نشد یا غیرفعال است.
               </p>
             </div>
           </CardContent>
@@ -497,10 +575,10 @@ const Enroll: React.FC = () => {
                   </div>
                 </div>
                 <CardTitle className="text-3xl mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  {course.title}
+                  {test ? test.title : course?.title}
                 </CardTitle>
                 <p className="text-muted-foreground leading-relaxed text-lg">
-                  {course.description}
+                  {test ? test.description : course?.description}
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -509,8 +587,8 @@ const Enroll: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl blur-xl"></div>
                   <div className="relative p-4 md:p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
                      <div className="space-y-3">
-                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                         <span className="text-base md:text-lg font-medium">قیمت دوره:</span>
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                          <span className="text-base md:text-lg font-medium">{test ? 'قیمت آزمون:' : 'قیمت دوره:'}</span>
                          <div className="text-right md:text-left">
                             {/* Pre-launch Badge */}
                             {isOnPrelaunch && prelaunchPrice !== null && !isFree && (course as any).launch_date && (
@@ -535,33 +613,35 @@ const Enroll: React.FC = () => {
                               </div>
                             )}
                             
-                            {isFree ? (
-                              <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                                رایگان
-                              </span>
-                            ) : (
-                              <>
-                                <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                                   {isOnPrelaunch && prelaunchPrice !== null
-                                     ? formatPrice(prelaunchPrice)
-                                     : isOnSale && salePrice !== null
-                                       ? formatPrice(salePrice)
-                                       : discountedPrice !== null 
-                                         ? formatPrice(discountedPrice)
-                                         : course.use_dollar_price && finalRialPrice 
-                                           ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                           : formatPrice(course.price)
-                                   }
-                                </span>
-                                {/* Show original price if on pre-launch, sale or discounted */}
-                                {(isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || discountAmount > 0) && (
-                                   <div className="text-sm text-muted-foreground line-through mt-1">
-                                     {course.use_dollar_price && finalRialPrice 
-                                       ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                       : formatPrice(course.price)
-                                     }
-                                   </div>
-                                )}
+                             {isFree ? (
+                               <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                                 رایگان
+                               </span>
+                             ) : (
+                               <>
+                                 <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                                    {test 
+                                      ? formatPrice(test.price)
+                                      : isOnPrelaunch && prelaunchPrice !== null
+                                        ? formatPrice(prelaunchPrice)
+                                        : isOnSale && salePrice !== null
+                                          ? formatPrice(salePrice)
+                                          : discountedPrice !== null 
+                                            ? formatPrice(discountedPrice)
+                                            : course?.use_dollar_price && finalRialPrice 
+                                              ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                              : formatPrice(course?.price || 0)
+                                    }
+                                 </span>
+                                 {/* Show original price if on pre-launch, sale or discounted - only for courses, not tests */}
+                                 {!test && (isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || discountAmount > 0) && (
+                                    <div className="text-sm text-muted-foreground line-through mt-1">
+                                      {course?.use_dollar_price && finalRialPrice 
+                                        ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                        : formatPrice(course?.price || 0)
+                                      }
+                                    </div>
+                                 )}
                                 
                                 {/* Pre-launch Price in USD if applicable */}
                                 {isOnPrelaunch && course.use_dollar_price && (course as any).pre_launch_price && (
@@ -581,17 +661,17 @@ const Enroll: React.FC = () => {
                          </div>
                        </div>
                       
-                      {/* Dollar Price Information - Only show for paid courses */}
-                      {!isFree && course.use_dollar_price && course.usd_price && (
+                       {/* Dollar Price Information - Only show for paid courses */}
+                       {!isFree && course?.use_dollar_price && course?.usd_price && (
                         <div className="border-t border-border/30 pt-3">
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
                               <DollarSign className="h-4 w-4 text-blue-600" />
                               <span className="text-muted-foreground">قیمت اصلی (دلار):</span>
                             </div>
-                            <span className="font-medium text-blue-600">
-                              {TetherlandService.formatUSDAmount(course.usd_price)}
-                            </span>
+                             <span className="font-medium text-blue-600">
+                               {TetherlandService.formatUSDAmount(course?.usd_price || 0)}
+                             </span>
                           </div>
                           
                           {exchangeRate && (
@@ -649,8 +729,8 @@ const Enroll: React.FC = () => {
                    />
                  )}
                  
-                 {/* Rafiei Player Special Feature */}
-                {course.is_spotplayer_enabled && (
+                 {/* Rafiei Player Special Feature - only for courses */}
+                 {course?.is_spotplayer_enabled && (
                   <div className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border-2 border-emerald-200 dark:border-emerald-800">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2 bg-emerald-500 rounded-lg">
@@ -695,7 +775,7 @@ const Enroll: React.FC = () => {
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <User className="h-6 w-6 text-primary" />
                   </div>
-                  ثبت‌نام در دوره
+                  {test ? 'ثبت‌نام در آزمون' : 'ثبت‌نام در دوره'}
                   {isAuthenticated && user && (
                     <Badge variant="secondary" className="bg-green-500/10 text-green-700 border-green-500/20">
                       <User className="h-3 w-3 ml-1" />
@@ -851,12 +931,15 @@ const Enroll: React.FC = () => {
                           <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto">
                             <BookOpen className="w-8 h-8 text-green-600 dark:text-green-400" />
                           </div>
-                          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
-                            دوره رایگان
-                          </h3>
-                          <p className="text-sm text-green-700 dark:text-green-300">
-                            این دوره کاملاً رایگان است. بدون نیاز به پرداخت در دوره ثبت‌نام کنید.
-                          </p>
+                           <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                             {test ? 'آزمون رایگان' : 'دوره رایگان'}
+                           </h3>
+                           <p className="text-sm text-green-700 dark:text-green-300">
+                             {test 
+                               ? 'این آزمون کاملاً رایگان است. بدون نیاز به پرداخت در آزمون ثبت‌نام کنید.'
+                               : 'این دوره کاملاً رایگان است. بدون نیاز به پرداخت در دوره ثبت‌نام کنید.'
+                             }
+                           </p>
                         </div>
                       </div>
 
@@ -870,12 +953,12 @@ const Enroll: React.FC = () => {
                             <Loader2 className="h-6 w-6 animate-spin ml-2" />
                             در حال ثبت‌نام...
                           </>
-                        ) : (
-                          <>
-                            <BookOpen className="h-6 w-6 ml-2" />
-                            ثبت‌نام رایگان در دوره
-                          </>
-                        )}
+                         ) : (
+                           <>
+                             <BookOpen className="h-6 w-6 ml-2" />
+                             {test ? 'ثبت‌نام رایگان در آزمون' : 'ثبت‌نام رایگان در دوره'}
+                           </>
+                         )}
                       </Button>
                     </div>
                   ) : (
@@ -892,17 +975,17 @@ const Enroll: React.FC = () => {
                         isOnSale={isOnSale}
                       />
 
-                      {/* Discount Section - Only show for paid courses */}
-                      {!isFree && (
-                        <DiscountSection
-                          courseId={course.id}
-                          originalPrice={finalRialPrice || course.price}
-                          onDiscountApplied={(discountAmount, finalPrice) => {
-                            setDiscountAmount(discountAmount);
-                            setDiscountedPrice(finalPrice);
-                          }}
-                        />
-                      )}
+                       {/* Discount Section - Only show for paid courses */}
+                       {!isFree && course && (
+                         <DiscountSection
+                           courseId={course.id}
+                           originalPrice={finalRialPrice || course.price}
+                           onDiscountApplied={(discountAmount, finalPrice) => {
+                             setDiscountAmount(discountAmount);
+                             setDiscountedPrice(finalPrice);
+                           }}
+                         />
+                       )}
 
                        {/* VPN Warning for non-Iranian IPs */}
                        {showVPNWarning && paymentMethod === 'zarinpal' && isIranianIP === false && (
@@ -936,19 +1019,21 @@ const Enroll: React.FC = () => {
                             </>
                           ) : (
                              <>
-                               <CreditCard className="h-6 w-6 ml-2" />
-                               پرداخت آنلاین {isOnPrelaunch && prelaunchPrice !== null
-                                 ? formatPrice(prelaunchPrice)
-                                 : isOnSale && salePrice !== null
-                                   ? formatPrice(salePrice)
-                                   : discountedPrice !== null 
-                                     ? formatPrice(discountedPrice)
-                                     : course.use_dollar_price && finalRialPrice 
-                                       ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                       : formatPrice(course.price)
-                               }
-                            </>
-                          )}
+                                <CreditCard className="h-6 w-6 ml-2" />
+                                پرداخت آنلاین {test 
+                                  ? formatPrice(test.price)
+                                  : isOnPrelaunch && prelaunchPrice !== null
+                                    ? formatPrice(prelaunchPrice)
+                                    : isOnSale && salePrice !== null
+                                      ? formatPrice(salePrice)
+                                      : discountedPrice !== null 
+                                        ? formatPrice(discountedPrice)
+                                        : course?.use_dollar_price && finalRialPrice 
+                                          ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                          : formatPrice(course?.price || 0)
+                                }
+                             </>
+                           )}
                         </Button>
                       )}
                     </>

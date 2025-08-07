@@ -272,7 +272,11 @@ const EnrollAdmin: React.FC = () => {
                 <Users className="w-4 h-4" />
                 ثبت‌نام‌های دوره
               </TabsTrigger>
-              <TabsTrigger value="tests" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="tests" 
+                className="flex items-center gap-2"
+                onClick={() => window.location.href = '/enroll/admin/tests'}
+              >
                 <FileText className="w-4 h-4" />
                 آزمون‌ها
               </TabsTrigger>

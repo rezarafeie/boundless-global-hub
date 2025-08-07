@@ -114,6 +114,9 @@ import CourseEdit from "./pages/Admin/CourseEdit";
 import UsersOverview from "./pages/UsersOverview";
 import UserDetail from "./pages/UserDetail";
 
+// Test Admin components
+import EnrollAdminTests from "./pages/EnrollAdminTests";
+
 // Test components
 import Tests from "./pages/Tests";
 import TestAccess from "./pages/TestAccess";
@@ -210,6 +213,7 @@ const App = () => {
                     <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                    <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
                     <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
