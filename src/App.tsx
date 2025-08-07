@@ -281,6 +281,9 @@ const App = () => {
                     {/* Assessment */}
                     <Route path="/assessment" element={<AssessmentCenter />} />
                     <Route path="/assessment/:slug" element={<TestLanding />} />
+                    <Route path="/tests" element={<Tests />} />
+                    <Route path="/access" element={<TestAccess />} />
+                    <Route path="/test-result" element={<TestResult />} />
 
                     {/* Other pages */}
                     <Route path="/instructor" element={<InstructorProfile />} />

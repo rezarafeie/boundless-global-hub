@@ -2760,6 +2760,128 @@ export type Database = {
         }
         Relationships: []
       }
+      test_enrollments: {
+        Row: {
+          birth_year: number | null
+          created_at: string
+          email: string | null
+          enrollment_status: string
+          esanj_employee_id: number | null
+          esanj_uuid: string | null
+          full_name: string
+          id: string
+          payment_amount: number | null
+          payment_method: string | null
+          payment_status: string
+          phone: string
+          result_data: Json | null
+          sex: string | null
+          test_completed_at: string | null
+          test_id: string
+          test_started_at: string | null
+          updated_at: string
+          user_id: number
+          zarinpal_authority: string | null
+          zarinpal_ref_id: string | null
+        }
+        Insert: {
+          birth_year?: number | null
+          created_at?: string
+          email?: string | null
+          enrollment_status?: string
+          esanj_employee_id?: number | null
+          esanj_uuid?: string | null
+          full_name: string
+          id?: string
+          payment_amount?: number | null
+          payment_method?: string | null
+          payment_status?: string
+          phone: string
+          result_data?: Json | null
+          sex?: string | null
+          test_completed_at?: string | null
+          test_id: string
+          test_started_at?: string | null
+          updated_at?: string
+          user_id: number
+          zarinpal_authority?: string | null
+          zarinpal_ref_id?: string | null
+        }
+        Update: {
+          birth_year?: number | null
+          created_at?: string
+          email?: string | null
+          enrollment_status?: string
+          esanj_employee_id?: number | null
+          esanj_uuid?: string | null
+          full_name?: string
+          id?: string
+          payment_amount?: number | null
+          payment_method?: string | null
+          payment_status?: string
+          phone?: string
+          result_data?: Json | null
+          sex?: string | null
+          test_completed_at?: string | null
+          test_id?: string
+          test_started_at?: string | null
+          updated_at?: string
+          user_id?: number
+          zarinpal_authority?: string | null
+          zarinpal_ref_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_enrollments_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          count_ready: number | null
+          count_used: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          price: number | null
+          slug: string
+          test_id: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          count_ready?: number | null
+          count_used?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          price?: number | null
+          slug: string
+          test_id: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          count_ready?: number | null
+          count_used?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          price?: number | null
+          slug?: string
+          test_id?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           created_at: string

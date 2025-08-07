@@ -1,0 +1,71 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const { esanjToken, testId, uuid, age, sex, employeeId } = await req.json()
+    
+    if (!esanjToken || !testId || !uuid || !age || !sex) {
+      throw new Error('Missing required parameters')
+    }
+
+    console.log('Fetching questionnaire for test:', testId)
+    
+    const queryParams = new URLSearchParams({
+      test_id: testId.toString(),
+      uuid: uuid,
+      age: age.toString(),
+      sex: sex
+    })
+    
+    if (employeeId) {
+      queryParams.append('employee_id', employeeId.toString())
+    }
+
+    const questionnaireResponse = await fetch(`https://esanj.org/api/v1/questionnaire/${testId}?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${esanjToken}`
+      }
+    })
+
+    if (!questionnaireResponse.ok) {
+      throw new Error(`Failed to fetch questionnaire: ${questionnaireResponse.status}`)
+    }
+
+    const questionnaireData = await questionnaireResponse.json()
+    console.log('Questionnaire fetched successfully')
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        questionnaire: questionnaireData
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
+  } catch (error) {
+    console.error('Questionnaire fetch error:', error)
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        success: false
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
+  }
+})
