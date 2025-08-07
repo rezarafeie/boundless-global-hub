@@ -55,3 +55,6 @@ verify_jwt = false
 
 [functions.save-analytics-report]
 verify_jwt = false
+
+[functions.track-analytics]
+verify_jwt = false

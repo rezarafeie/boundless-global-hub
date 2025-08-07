@@ -123,6 +123,7 @@ import Tests from "./pages/Tests";
 import TestAccess from "./pages/TestAccess";
 import TestResult from "./pages/TestResult";
 import TestEnrollmentSuccessPage from "./pages/TestEnrollmentSuccessPage";
+import AnalyticsTracker from "./components/Analytics/AnalyticsTracker";
 
 const queryClient = new QueryClient();
 
@@ -140,6 +141,7 @@ const App = () => {
                 <AuthProvider>
                   <TooltipProvider>
                     <Toaster />
+                    <AnalyticsTracker />
                     <Routes>
                       <Route path="/:slug" element={<ShortLinkRedirect />} />
                       <Route path="/" element={<ShortLinkRedirect />} />
@@ -167,6 +169,7 @@ const App = () => {
                 <AuthProvider>
                   <TooltipProvider>
                     <Toaster />
+                    <AnalyticsTracker />
                     <Routes>
                       <Route path="/hub/messenger" element={<MessengerApp />} />
                       <Route path="*" element={<MessengerApp />} />
@@ -190,6 +193,7 @@ const App = () => {
               <AuthProvider>
                 <TooltipProvider>
                   <Toaster />
+                  <AnalyticsTracker />
                   <Routes>
                     {/* Main pages */}
                     <Route path="/" element={<Index />} />
