@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client'
 import { esanjService } from '@/lib/esanjService'
 import { toast } from 'sonner'
-import { CheckCircle, Brain, Calendar, User, Phone, CreditCard, Loader2 } from 'lucide-react'
-import { v4 as uuidv4 } from 'uuid'
+import { CheckCircle, Brain, User, Phone, CreditCard, Loader2 } from 'lucide-react'
 
 interface TestEnrollment {
   id: string
@@ -102,7 +101,7 @@ const TestEnrollmentSuccess: React.FC = () => {
       )
 
       // Generate UUID for this test session
-      const testUuid = uuidv4()
+      const testUuid = crypto.randomUUID();
 
       // Update enrollment with Esanj details
       const { error: updateError } = await supabase

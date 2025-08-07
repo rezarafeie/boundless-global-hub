@@ -150,26 +150,10 @@ const EnrollSuccess: React.FC = () => {
   useEffect(() => {
     console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, testSlug, email, phone });
     
-    // If this is a test enrollment, redirect to test success page
-    if (testSlug && enrollmentId) {
-      const params = new URLSearchParams();
-      params.set('test', testSlug);
-      params.set('enrollment', enrollmentId);
-      if (phone) params.set('phone', phone);
-      if (authority) params.set('authority', authority);
-      if (status) params.set('status', status);
-      
-      navigate(`/test-enrollment-success?${params.toString()}`, { replace: true });
-      return;
-    }
-    
     if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
         handleFreeCourseSuccess();
-      } else if (authority === 'FREE_TEST') {
-        // Handle free test enrollment
-        handleFreeTestSuccess();
       } else if (authority === 'MANUAL_PAYMENT') {
         // Check if this is a manual payment that's already approved
         handleManualPaymentSuccess();
@@ -249,57 +233,7 @@ const EnrollSuccess: React.FC = () => {
     }
   };
 
-  const handleFreeTestSuccess = async () => {
-    try {
-      setVerifying(true);
-      
-      // Fetch test enrollment data
-      const { data: enrollment, error: enrollmentError } = await supabase
-        .from('test_enrollments')
-        .select(`
-          *,
-          tests (
-            title,
-            slug,
-            description
-          )
-        `)
-        .eq('id', enrollmentId)
-        .single();
-
-      if (enrollmentError) throw enrollmentError;
-
-      // Set result for free test
-      setResult({
-        success: true,
-        refId: 'FREE_TEST',
-        course: {
-          title: enrollment.tests?.title || 'آزمون',
-          description: enrollment.tests?.description || 'آزمون رایگان',
-          slug: enrollment.tests?.slug
-        },
-        enrollment: enrollment
-      });
-      
-      toast({
-        title: "✅ ثبت‌نام در آزمون موفق",
-        description: "ثبت‌نام شما در آزمون رایگان با موفقیت انجام شد",
-      });
-    } catch (error) {
-      console.error('Free test verification error:', error);
-      setResult({
-        success: false,
-        error: 'خطا در تایید ثبت‌نام در آزمون رایگان'
-      });
-      toast({
-        title: "خطا",
-        description: "خطا در تایید ثبت‌نام در آزمون رایگان",
-        variant: "destructive"
-      });
-    } finally {
-      setVerifying(false);
-    }
-  };
+  // Remove handleFreeTestSuccess since we're redirecting test enrollments
 
   const handleManualPaymentSuccess = async () => {
     try {
@@ -436,6 +370,45 @@ const EnrollSuccess: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // If this is a test enrollment, render test success UI directly
+  if (testSlug && enrollmentId) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <div className="p-4 rounded-full bg-green-100 dark:bg-green-900/20">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
+                </div>
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                ثبت‌نام در آزمون موفقیت‌آمیز
+              </h1>
+              <p className="text-muted-foreground">
+                ثبت‌نام شما در آزمون با موفقیت انجام شد
+              </p>
+            </div>
+            
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-lg mb-4">
+                  آزمون شما در حال آماده‌سازی است...
+                </p>
+                <Button 
+                  onClick={() => navigate(`/test-enrollment-success?test=${testSlug}&enrollment=${enrollmentId}&phone=${phone}&authority=${authority}&status=${status}`)}
+                  size="lg"
+                >
+                  مشاهده جزئیات آزمون
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </MainLayout>
     );
@@ -651,28 +624,6 @@ const EnrollSuccess: React.FC = () => {
                             hour: '2-digit',
                             minute: '2-digit'
                           }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
-                        </div>
-                      </>
-                    ) : result.refId === 'FREE_TEST' ? (
-                      // Free test details
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">نوع آزمون:</span>
-                          <span className="font-medium text-green-600">رایگان</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">زمان ثبت‌نام:</span>
-                          <span className="font-medium">{result.enrollment?.created_at ? new Intl.DateTimeFormat('fa-IR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">شماره تماس:</span>
-                          <span className="font-medium">{phone || result.enrollment?.phone || 'نامشخص'}</span>
                         </div>
                       </>
                     ) : result.refId === 'MANUAL_PAYMENT_APPROVED' ? (
