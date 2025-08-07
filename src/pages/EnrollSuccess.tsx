@@ -64,7 +64,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
-  const [birthYear, setBirthYear] = useState('');
+  const [age, setAge] = useState('');
   const [sex, setSex] = useState('');
   const [processingMessage, setProcessingMessage] = useState('آزمون شما در حال آماده‌سازی است...');
   const [isReady, setIsReady] = useState(false);
@@ -120,7 +120,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
       // If user has complete data, start processing automatically
       if (chatUser && chatUser.birth_year && chatUser.sex) {
         console.log('Auto-starting processing with existing user data');
-        setBirthYear(chatUser.birth_year.toString());
+        setAge(chatUser.birth_year.toString());
         setSex(chatUser.sex);
         // Start processing with the user's existing data
         await processEsanjTest(chatUser.birth_year.toString(), chatUser.sex);
@@ -198,8 +198,8 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     }
   };
 
-  const processEsanjTest = async (userBirthYear: string, userSex: string) => {
-    console.log('Starting processEsanjTest with:', { userBirthYear, userSex, enrollmentId: enrollment?.id });
+  const processEsanjTest = async (userAge: string, userSex: string) => {
+    console.log('Starting processEsanjTest with:', { userAge, userSex, enrollmentId: enrollment?.id });
     
     if (!enrollment) {
       console.error('No enrollment found');
@@ -211,11 +211,15 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     setProcessingMessage('در حال ایجاد حساب کاربری...');
     
     try {
+      // Convert age to birth year for storage
+      const currentYear = new Date().getFullYear();
+      const birthYear = currentYear - parseInt(userAge);
+      
       // Update chat_users table with birth_year and sex
       const { error: updateUserError } = await supabase
         .from('chat_users')
         .update({
-          birth_year: parseInt(userBirthYear),
+          birth_year: birthYear,
           sex: userSex
         })
         .eq('phone', enrollment.phone);
@@ -231,7 +235,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
         {
           name: enrollment.full_name,
           phone_number: enrollment.phone,
-          birth_year: parseInt(userBirthYear),
+          birth_year: birthYear,
           sex: userSex
         }
       );
@@ -247,7 +251,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
         .update({
           esanj_employee_id: employee.id,
           esanj_uuid: testUuid,
-          birth_year: parseInt(userBirthYear),
+          birth_year: currentYear - parseInt(userAge),
           sex: userSex,
           enrollment_status: 'ready'
         })
@@ -278,13 +282,20 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
       return;
     }
 
-    // If we don't have birth year and sex from state, ask for them
-    if (!birthYear || !sex) {
+    // If we don't have age and sex from state, ask for them
+    if (!age || !sex) {
       toast.error('لطفاً تمام اطلاعات را وارد کنید');
       return;
     }
 
-    await processEsanjTest(birthYear, sex);
+    // Validate age range
+    const ageNum = parseInt(age);
+    if (isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
+      toast.error('سن باید بین 1 تا 150 سال باشد');
+      return;
+    }
+
+    await processEsanjTest(age, sex);
   };
 
   const handleStartTest = () => {
@@ -479,14 +490,16 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="birthYear">سال تولد</Label>
+                    <Label htmlFor="age">سن</Label>
                     <Input
-                      id="birthYear"
+                      id="age"
                       type="number"
-                      placeholder="مثال: 1370"
-                      value={birthYear}
-                      onChange={(e) => setBirthYear(e.target.value)}
+                      placeholder="مثال: 28"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
                       disabled={isProcessing}
+                      min="1"
+                      max="150"
                     />
                   </div>
                   
@@ -506,7 +519,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                 
                 <Button 
                   onClick={handleCreateEsanjTest} 
-                  disabled={!birthYear || !sex || isProcessing}
+                  disabled={!age || !sex || isProcessing}
                   className="w-full"
                 >
                   {isProcessing ? (
@@ -556,15 +569,15 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="birthYear">سال تولد (شمسی)</Label>
+                  <Label htmlFor="age">سن</Label>
                   <Input
-                    id="birthYear"
+                    id="age"
                     type="number"
-                    placeholder="مثال: 1375"
-                    value={birthYear}
-                    onChange={(e) => setBirthYear(e.target.value)}
-                    min="1300"
-                    max="1420"
+                    placeholder="مثال: 28"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    min="1"
+                    max="150"
                   />
                 </div>
                 
@@ -583,7 +596,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                 
                 <Button 
                   onClick={handleCreateEsanjTest}
-                  disabled={isProcessing || !birthYear || !sex}
+                  disabled={isProcessing || !age || !sex}
                   className="w-full"
                 >
                   {isProcessing ? (
