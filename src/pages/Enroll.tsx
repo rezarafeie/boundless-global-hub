@@ -566,7 +566,7 @@ const Enroll: React.FC = () => {
                     <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                       دوره آنلاین
                     </Badge>
-                    {course.is_spotplayer_enabled && (
+                    {course?.is_spotplayer_enabled && (
                       <Badge variant="default" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg">
                         <Zap className="h-3 w-3 ml-1" />
                         Rafiei Player Support
