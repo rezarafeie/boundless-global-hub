@@ -27,9 +27,9 @@ serve(async (req) => {
       uuid: uuid
     })
 
-    // Add optional parameters - employee_id is required according to API docs
+    // Add optional parameters - employee_id should be string
     if (employeeId) {
-      params.append('employee_id', employeeId.toString())
+      params.append('employee_id', String(employeeId))
     }
 
     if (moreInformation && Array.isArray(moreInformation)) {
