@@ -388,6 +388,13 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                     <span className="font-medium">{enrollment.sex === 'male' ? 'مرد' : 'زن'}</span>
                   </div>
                 )}
+                
+                {/* Debug info - show when data is missing */}
+                {(!enrollment.birth_year || !enrollment.sex) && (
+                  <div className="flex items-center gap-2 text-amber-600">
+                    <span className="text-sm">⚠️ اطلاعات تکمیلی ثبت نشده</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
