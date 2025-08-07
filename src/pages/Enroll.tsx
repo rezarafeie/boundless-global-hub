@@ -982,35 +982,99 @@ const Enroll: React.FC = () => {
                          )}
                       </Button>
                     </div>
-                  ) : (
-                     /* Paid Course Payment Methods - Only show for courses, not tests */
-                     course && (
-                       <>
-                         <ManualPaymentSection
-                           course={course}
-                           formData={formData}
-                           onPaymentMethodChange={setPaymentMethod}
-                           selectedMethod={paymentMethod}
-                           finalRialPrice={finalRialPrice}
-                           discountedPrice={discountedPrice}
-                           salePrice={salePrice}
-                           isOnSale={isOnSale}
-                         />
+                   ) : (
+                      /* Payment Methods - For both courses and tests */
+                      <>
+                        {course && (
+                          <>
+                            <ManualPaymentSection
+                              course={course}
+                              formData={formData}
+                              onPaymentMethodChange={setPaymentMethod}
+                              selectedMethod={paymentMethod}
+                              finalRialPrice={finalRialPrice}
+                              discountedPrice={discountedPrice}
+                              salePrice={salePrice}
+                              isOnSale={isOnSale}
+                            />
 
-                        {/* Discount Section - Only show for paid courses */}
-                        {!isFree && (
-                          <DiscountSection
-                            courseId={course.id}
-                            originalPrice={finalRialPrice || course.price}
-                            onDiscountApplied={(discountAmount, finalPrice) => {
-                              setDiscountAmount(discountAmount);
-                              setDiscountedPrice(finalPrice);
-                            }}
-                          />
+                            {/* Discount Section - Only show for paid courses */}
+                            {!isFree && (
+                              <DiscountSection
+                                courseId={course.id}
+                                originalPrice={finalRialPrice || course.price}
+                                onDiscountApplied={(discountAmount, finalPrice) => {
+                                  setDiscountAmount(discountAmount);
+                                  setDiscountedPrice(finalPrice);
+                                }}
+                              />
+                            )}
+                          </>
                         )}
-                       </>
-                      )
-                   )}
+
+                        {test && (
+                          <div className="space-y-4">
+                            {/* Payment Method Selection for Tests */}
+                            <Card className="border-2 border-dashed border-primary/20">
+                              <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold mb-4">روش پرداخت</h3>
+                                <div className="space-y-3">
+                                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                                    <input
+                                      type="radio"
+                                      name="paymentMethod"
+                                      value="zarinpal"
+                                      checked={paymentMethod === 'zarinpal'}
+                                      onChange={(e) => setPaymentMethod(e.target.value as 'zarinpal' | 'manual')}
+                                      className="form-radio"
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <CreditCard className="h-5 w-5" />
+                                      <span>پرداخت آنلاین (زرین‌پال)</span>
+                                    </div>
+                                  </label>
+                                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                                    <input
+                                      type="radio"
+                                      name="paymentMethod"
+                                      value="manual"
+                                      checked={paymentMethod === 'manual'}
+                                      onChange={(e) => setPaymentMethod(e.target.value as 'zarinpal' | 'manual')}
+                                      className="form-radio"
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <DollarSign className="h-5 w-5" />
+                                      <span>پرداخت دستی (کارت به کارت)</span>
+                                    </div>
+                                  </label>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Manual Payment Info for Tests */}
+                            {paymentMethod === 'manual' && (
+                              <Card className="border-2 border-dashed border-amber-200 bg-amber-50/50">
+                                <CardContent className="p-6">
+                                  <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-amber-800">پرداخت دستی آزمون</h3>
+                                    <p className="text-sm text-amber-700">
+                                      برای پرداخت دستی آزمون، لطفاً مبلغ {formatPrice(test.price)} را به شماره کارت زیر واریز کرده و فیش آن را ارسال کنید.
+                                    </p>
+                                    <div className="bg-white p-4 rounded-lg border border-amber-200">
+                                      <p className="font-mono text-center text-lg">6037-9972-7181-3518</p>
+                                      <p className="text-center text-sm text-gray-600 mt-2">به نام: رضا رفیعی</p>
+                                    </div>
+                                    <p className="text-xs text-amber-600">
+                                      پس از واریز، تصویر فیش را به شماره واتساپ 09123456789 ارسال کنید.
+                                    </p>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
 
                    {/* VPN Warning for non-Iranian IPs */}
                    {showVPNWarning && paymentMethod === 'zarinpal' && isIranianIP === false && (
