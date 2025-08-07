@@ -14,10 +14,10 @@ interface TestEnrollment {
   phone: string
   full_name: string
   enrollment_status: string
-  esanj_employee_id: number
-  esanj_uuid: string
-  birth_year: number
-  sex: string
+  esanj_employee_id: number | null
+  esanj_uuid: string | null
+  birth_year: number | null
+  sex: string | null
   tests: {
     title: string
     test_id: number
@@ -94,6 +94,15 @@ const TestAccess: React.FC = () => {
   const handleStartTest = async () => {
     if (!enrollment) return
 
+    // Check if Esanj data is missing - redirect to enrollment success to complete setup
+    if (!enrollment.esanj_employee_id || !enrollment.esanj_uuid || !enrollment.birth_year || !enrollment.sex) {
+      toast.error('اطلاعات آزمون کامل نیست. در حال انتقال به صفحه تکمیل اطلاعات...')
+      setTimeout(() => {
+        navigate(`/enroll/success?test=-ept&phone=${enrollment.phone}&enrollment=${enrollment.id}&status=OK&authority=FREE_TEST`)
+      }, 1500)
+      return
+    }
+
     setIsLoadingTest(true)
     
     try {
@@ -153,6 +162,12 @@ const TestAccess: React.FC = () => {
     setIsSubmitting(true)
 
     try {
+      // Ensure we have all required data
+      if (!enrollment.esanj_employee_id || !enrollment.esanj_uuid || !enrollment.birth_year || !enrollment.sex) {
+        toast.error('اطلاعات آزمون ناقص است')
+        return
+      }
+
       // Calculate age from birth year
       const currentYear = new Date().getFullYear()
       const persianYear = currentYear - 621
