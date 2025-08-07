@@ -43,6 +43,15 @@ serve(async (req) => {
     }
 
     const questionnaireData = await questionnaireResponse.json()
+    console.log('Raw API response:', JSON.stringify(questionnaireData, null, 2))
+    console.log('Questions count:', questionnaireData?.questions?.length || 0)
+    
+    // Check if the API response has the expected structure
+    if (!questionnaireData.questions || questionnaireData.questions.length === 0) {
+      console.log('Warning: No questions returned from Esanj API')
+      console.log('Full response structure:', Object.keys(questionnaireData))
+    }
+    
     console.log('Questionnaire fetched successfully')
 
     return new Response(
