@@ -20,6 +20,12 @@ interface Course {
   usd_price?: number | null;
 }
 
+interface Test {
+  id: string;
+  title: string;
+  price: number;
+}
+
 interface FormData {
   firstName: string;
   lastName: string;
@@ -29,7 +35,8 @@ interface FormData {
 }
 
 interface ManualPaymentSectionProps {
-  course: Course;
+  course?: Course;
+  test?: Test;
   formData: FormData;
   onPaymentMethodChange: (method: 'zarinpal' | 'manual') => void;
   selectedMethod: 'zarinpal' | 'manual';
@@ -41,6 +48,7 @@ interface ManualPaymentSectionProps {
 
 const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   course,
+  test,
   formData,
   onPaymentMethodChange,
   selectedMethod,
@@ -171,7 +179,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       const timestamp = Date.now();
       const emailSafe = formData.email.replace(/[@.]/g, '_');
       const fileExtension = uploadedFile.name.split('.').pop();
-      const fileName = `${timestamp}_${course.id}_${emailSafe}_receipt.${fileExtension}`;
+      const entityId = course?.id || test?.id || 'unknown';
+      const fileName = `${timestamp}_${entityId}_${emailSafe}_receipt.${fileExtension}`;
 
       console.log('📤 Uploading file with name:', fileName);
 
@@ -195,73 +204,118 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       console.log('🔗 Public URL generated:', publicUrl);
 
       // Create enrollment with uploaded receipt
-      // PRIORITY: Sale price > Discount price > Final Rial price (for USD) > Course price
-      let paymentAmount = course.price;
-      
-      if (isOnSale && salePrice !== null) {
-        paymentAmount = salePrice;
-        console.log('🏷️ MANUAL PAYMENT - Using SALE PRICE:', salePrice);
-      } else if (discountedPrice !== null) {
-        paymentAmount = discountedPrice;
-        console.log('🎯 MANUAL PAYMENT - Using DISCOUNT PRICE:', discountedPrice);
-      } else if (finalRialPrice) {
-        paymentAmount = finalRialPrice;
-        console.log('💱 MANUAL PAYMENT - Using FINAL RIAL PRICE:', finalRialPrice);
+      let paymentAmount: number;
+      let enrollmentData: any;
+
+      if (test) {
+        // Test enrollment
+        paymentAmount = test.price;
+        console.log('🧪 MANUAL PAYMENT - Test price:', test.price);
+        
+        enrollmentData = {
+          test_id: test.id,
+          user_id: user?.id ? parseInt(user.id) : null,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          payment_amount: paymentAmount,
+          enrollment_status: 'pending',
+          payment_status: 'pending',
+          payment_method: 'manual',
+          receipt_url: publicUrl
+        };
+      } else if (course) {
+        // Course enrollment - PRIORITY: Sale price > Discount price > Final Rial price (for USD) > Course price
+        paymentAmount = course.price;
+        
+        if (isOnSale && salePrice !== null) {
+          paymentAmount = salePrice;
+          console.log('🏷️ MANUAL PAYMENT - Using SALE PRICE:', salePrice);
+        } else if (discountedPrice !== null) {
+          paymentAmount = discountedPrice;
+          console.log('🎯 MANUAL PAYMENT - Using DISCOUNT PRICE:', discountedPrice);
+        } else if (finalRialPrice) {
+          paymentAmount = finalRialPrice;
+          console.log('💱 MANUAL PAYMENT - Using FINAL RIAL PRICE:', finalRialPrice);
+        } else {
+          console.log('💰 MANUAL PAYMENT - Using BASE PRICE:', course.price);
+        }
+        
+        enrollmentData = {
+          course_id: course.id,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          country_code: formData.countryCode,
+          payment_amount: paymentAmount,
+          payment_method: 'manual',
+          manual_payment_status: 'pending' as const,
+          receipt_url: publicUrl,
+          chat_user_id: user?.id ? parseInt(user.id) : null
+        };
       } else {
-        console.log('💰 MANUAL PAYMENT - Using BASE PRICE:', course.price);
+        throw new Error('No course or test provided');
       }
-      
-      const enrollmentData = {
-        course_id: course.id,
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        country_code: formData.countryCode,
-        payment_amount: paymentAmount,
-        payment_method: 'manual',
-        manual_payment_status: 'pending' as const,
-        receipt_url: publicUrl,
-        chat_user_id: user?.id ? parseInt(user.id) : null
-      };
 
       console.log('💾 Creating enrollment with data:', enrollmentData);
 
-      console.log('🔧 Attempting edge function call...');
-      
-      // Try edge function first
-      const { data: edgeResult, error: edgeError } = await supabase.functions
-        .invoke('create-enrollment', {
-          body: enrollmentData
-        });
-
-      if (edgeError) {
-        console.warn('⚠️ Edge function failed, trying direct insert:', edgeError);
-        
-        // Fallback to direct insert
+      if (test) {
+        // Handle test enrollment directly
         const { data: directResult, error: directError } = await supabase
-          .from('enrollments')
+          .from('test_enrollments')
           .insert(enrollmentData)
           .select()
           .single();
 
         if (directError) {
-          console.error('❌ Direct insert also failed:', directError);
+          console.error('❌ Test enrollment insert failed:', directError);
           throw directError;
         }
 
-        console.log('✅ Enrollment created via direct insert:', directResult);
+        console.log('✅ Test enrollment created:', directResult);
         
         // Redirect to pending page with enrollment ID
-        window.location.href = `/enroll/pending?orderId=${directResult.id}`;
+        window.location.href = `/enroll/pending?orderId=${directResult.id}&type=test`;
         return;
       } else {
-        console.log('✅ Enrollment created via edge function:', edgeResult.enrollment);
+        // Handle course enrollment
+        console.log('🔧 Attempting edge function call...');
         
-        // Redirect to pending page with enrollment ID
-        const enrollmentId = edgeResult.enrollment?.id;
-        if (enrollmentId) {
-          window.location.href = `/enroll/pending?orderId=${enrollmentId}`;
+        // Try edge function first
+        const { data: edgeResult, error: edgeError } = await supabase.functions
+          .invoke('create-enrollment', {
+            body: enrollmentData
+          });
+
+        if (edgeError) {
+          console.warn('⚠️ Edge function failed, trying direct insert:', edgeError);
+          
+          // Fallback to direct insert
+          const { data: directResult, error: directError } = await supabase
+            .from('enrollments')
+            .insert(enrollmentData)
+            .select()
+            .single();
+
+          if (directError) {
+            console.error('❌ Direct insert also failed:', directError);
+            throw directError;
+          }
+
+          console.log('✅ Enrollment created via direct insert:', directResult);
+          
+          // Redirect to pending page with enrollment ID
+          window.location.href = `/enroll/pending?orderId=${directResult.id}`;
           return;
+        } else {
+          console.log('✅ Enrollment created via edge function:', edgeResult.enrollment);
+          
+          // Redirect to pending page with enrollment ID
+          const enrollmentId = edgeResult.enrollment?.id;
+          if (enrollmentId) {
+            window.location.href = `/enroll/pending?orderId=${enrollmentId}`;
+            return;
+          }
         }
       }
       
@@ -331,19 +385,21 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                  <div className="flex items-center justify-between">
                    <span>مبلغ قابل پرداخت:</span>
                    <span className="text-xl">
-                     {isOnSale && salePrice !== null
-                       ? formatPrice(salePrice)
-                       : discountedPrice !== null 
-                         ? formatPrice(discountedPrice)
-                          : finalRialPrice 
-                            ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                           : formatPrice(course.price)
+                     {test 
+                       ? formatPrice(test.price)
+                       : isOnSale && salePrice !== null
+                         ? formatPrice(salePrice)
+                         : discountedPrice !== null 
+                           ? formatPrice(discountedPrice)
+                            : finalRialPrice 
+                              ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                             : course ? formatPrice(course.price) : '0 تومان'
                      }
                    </span>
                  </div>
                 
                 {/* Show USD price if available */}
-                {course.use_dollar_price && course.usd_price && (
+                {course?.use_dollar_price && course?.usd_price && (
                   <div className="flex items-center justify-between text-sm border-t border-amber-200 pt-2">
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
