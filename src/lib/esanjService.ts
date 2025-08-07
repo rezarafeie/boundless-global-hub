@@ -128,6 +128,35 @@ class EsanjService {
     return data.questionnaire
   }
 
+  async getHtmlQuestionnaire(
+    testId: number,
+    age: number,
+    sex: string,
+    uuid: string,
+    employeeId?: number,
+    moreInformation?: string[]
+  ): Promise<string> {
+    const token = await this.authenticate()
+
+    const { data, error } = await supabase.functions.invoke('esanj-html-questionnaire', {
+      body: { 
+        esanjToken: token, 
+        testId,
+        age,
+        sex,
+        uuid,
+        employeeId,
+        moreInformation
+      }
+    })
+
+    if (error || !data.success) {
+      throw new Error(data?.error || 'Failed to fetch HTML questionnaire')
+    }
+
+    return data.htmlContent
+  }
+
   async checkTestStatus(testId: number, employeeId: number): Promise<any> {
     const token = await this.authenticate()
 

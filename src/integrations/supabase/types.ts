@@ -2862,6 +2862,7 @@ export type Database = {
           test_id: number
           title: string
           updated_at: string
+          use_html_questionnaire: boolean
         }
         Insert: {
           count_ready?: number | null
@@ -2875,6 +2876,7 @@ export type Database = {
           test_id: number
           title: string
           updated_at?: string
+          use_html_questionnaire?: boolean
         }
         Update: {
           count_ready?: number | null
@@ -2888,6 +2890,7 @@ export type Database = {
           test_id?: number
           title?: string
           updated_at?: string
+          use_html_questionnaire?: boolean
         }
         Relationships: []
       }

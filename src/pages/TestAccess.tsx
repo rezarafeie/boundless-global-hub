@@ -21,6 +21,7 @@ interface TestEnrollment {
   tests: {
     title: string
     test_id: number
+    use_html_questionnaire: boolean
   }
 }
 
@@ -35,10 +36,13 @@ interface Question {
 
 interface Questionnaire {
   test: {
-    id: number
+    id?: number
     title: string
+    test_id?: number
   }
-  questions: Question[]
+  questions?: Question[]
+  isHtml?: boolean
+  htmlContent?: string
 }
 
 const TestAccess: React.FC = () => {
@@ -83,7 +87,8 @@ const TestAccess: React.FC = () => {
           *,
           tests!inner(
             title,
-            test_id
+            test_id,
+            use_html_questionnaire
           )
         `)
         .eq('id', testEnrollmentId)
@@ -137,8 +142,30 @@ const TestAccess: React.FC = () => {
         console.log('Test status check failed, continuing anyway:', statusError)
       }
 
-      // Fetch questionnaire from Esanj
-      const questionnaireData = await esanjService.getQuestionnaire(enrollment.tests.test_id)
+      // Fetch questionnaire from Esanj - use HTML version if enabled
+      let questionnaireData;
+      if (enrollment.tests.use_html_questionnaire) {
+        console.log('Using HTML questionnaire API...')
+        const htmlContent = await esanjService.getHtmlQuestionnaire(
+          enrollment.tests.test_id,
+          age,
+          enrollment.sex,
+          enrollment.esanj_uuid,
+          enrollment.esanj_employee_id
+        )
+        // For HTML questionnaire, we'll store the HTML content differently
+        questionnaireData = {
+          isHtml: true,
+          htmlContent: htmlContent,
+          test: {
+            title: enrollment.tests.title,
+            test_id: enrollment.tests.test_id
+          }
+        }
+      } else {
+        console.log('Using JSON questionnaire API...')
+        questionnaireData = await esanjService.getQuestionnaire(enrollment.tests.test_id)
+      }
 
       setQuestionnaire(questionnaireData)
       setTestStarted(true)
@@ -170,8 +197,14 @@ const TestAccess: React.FC = () => {
   const handleSubmitTest = async () => {
     if (!enrollment || !questionnaire) return
 
-    // Check if all questions are answered
-    const totalQuestions = questionnaire.questions.length
+    // For HTML questionnaire, we handle submission differently
+    if (questionnaire.isHtml) {
+      toast.info('برای آزمون HTML، از فرم درون صفحه استفاده کنید')
+      return
+    }
+
+    // Check if all questions are answered (only for JSON questionnaire)
+    const totalQuestions = questionnaire.questions?.length || 0
     const answeredQuestions = Object.keys(answers).length
 
     if (answeredQuestions < totalQuestions) {
@@ -339,69 +372,92 @@ const TestAccess: React.FC = () => {
             {questionnaire?.test.title}
           </h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>سوال {Object.keys(answers).length} از {questionnaire?.questions?.length || 0}</span>
-            <div className="flex-1 bg-secondary rounded-full h-2">
-              <div 
-                className="bg-primary h-2 rounded-full transition-all"
-                style={{ 
-                  width: `${(Object.keys(answers).length / (questionnaire?.questions?.length || 1)) * 100}%` 
-                }}
-              />
-            </div>
+            {questionnaire?.isHtml ? (
+              <span>آزمون HTML</span>
+            ) : (
+              <>
+                <span>سوال {Object.keys(answers).length} از {questionnaire?.questions?.length || 0}</span>
+                <div className="flex-1 bg-secondary rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{ 
+                      width: `${(Object.keys(answers).length / (questionnaire?.questions?.length || 1)) * 100}%` 
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Questions */}
-        <div className="space-y-6">
-          {questionnaire?.questions.map((question, index) => (
-            <Card key={question.row} className="border-border">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium">
-                  {index + 1}. {question.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {question.answers.map((answer) => (
-                    <label
-                      key={answer.id}
-                      className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent transition-colors"
-                    >
-                      <input
-                        type="radio"
-                        name={`question_${question.row}`}
-                        value={answer.id}
-                        checked={answers[`q${question.row}`] === answer.id}
-                        onChange={() => handleAnswerChange(question.row, answer.id)}
-                        className="text-primary"
-                      />
-                      <span className="flex-1">{answer.text}</span>
-                    </label>
-                  ))}
-                </div>
+        {/* Content */}
+        {questionnaire?.isHtml ? (
+          // Render HTML questionnaire
+          <div className="space-y-6">
+            <Card className="border-border">
+              <CardContent className="p-6">
+                <div 
+                  dangerouslySetInnerHTML={{ __html: questionnaire.htmlContent || '' }}
+                  className="prose prose-sm max-w-none"
+                />
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </div>
+        ) : (
+          // Render JSON questionnaire
+          <div className="space-y-6">
+            {questionnaire?.questions?.map((question, index) => (
+              <Card key={question.row} className="border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium">
+                    {index + 1}. {question.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {question.answers.map((answer) => (
+                      <label
+                        key={answer.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent transition-colors"
+                      >
+                        <input
+                          type="radio"
+                          name={`question_${question.row}`}
+                          value={answer.id}
+                          checked={answers[`q${question.row}`] === answer.id}
+                          onChange={() => handleAnswerChange(question.row, answer.id)}
+                          className="text-primary"
+                        />
+                        <span className="flex-1">{answer.text}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )) || <div>بدون سوال</div>}
+          </div>
+        )}
 
-        {/* Submit Button */}
-        <div className="mt-8 text-center">
-          <Button 
-            onClick={handleSubmitTest}
-            disabled={isSubmitting || Object.keys(answers).length < (questionnaire?.questions?.length || 0)}
-            size="lg"
-            className="w-full max-w-md"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                در حال ارسال...
-              </>
-            ) : (
-              'ارسال آزمون'
-            )}
-          </Button>
-        </div>
+        {/* Submit Button - Only show for JSON questionnaire */}
+        {!questionnaire?.isHtml && (
+          <div className="mt-8 text-center">
+            <Button 
+              onClick={handleSubmitTest}
+              disabled={isSubmitting || Object.keys(answers).length < (questionnaire?.questions?.length || 0)}
+              size="lg"
+              className="w-full max-w-md"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  در حال ارسال...
+                </>
+              ) : (
+                'ارسال آزمون'
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

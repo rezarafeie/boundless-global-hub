@@ -21,6 +21,7 @@ interface Test {
   count_ready: number
   count_used: number
   is_active: boolean
+  use_html_questionnaire: boolean
   created_at: string
   updated_at: string
 }
@@ -130,7 +131,8 @@ const TestManagement: React.FC = () => {
           price: test.price,
           slug: test.slug,
           description: test.description,
-          is_active: test.is_active
+          is_active: test.is_active,
+          use_html_questionnaire: test.use_html_questionnaire
         })
         .eq('id', test.id)
 
@@ -394,7 +396,8 @@ const TestEditForm: React.FC<TestEditFormProps> = ({ test, onSave, onCancel }) =
     price: test.price,
     slug: test.slug,
     description: test.description || '',
-    is_active: test.is_active
+    is_active: test.is_active,
+    use_html_questionnaire: test.use_html_questionnaire
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -443,6 +446,16 @@ const TestEditForm: React.FC<TestEditFormProps> = ({ test, onSave, onCancel }) =
           onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
         />
         <Label htmlFor="is_active">فعال</Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="use_html_questionnaire"
+          checked={formData.use_html_questionnaire}
+          onChange={(e) => setFormData({ ...formData, use_html_questionnaire: e.target.checked })}
+        />
+        <Label htmlFor="use_html_questionnaire">HTML Questionnaire and answers</Label>
       </div>
 
       <div className="flex justify-end gap-2">
