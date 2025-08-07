@@ -53,14 +53,19 @@ const TestAccess: React.FC = () => {
   const [testStarted, setTestStarted] = useState(false)
 
   const testEnrollmentId = searchParams.get('test')
+  const courseSlug = searchParams.get('course')
 
   useEffect(() => {
     if (testEnrollmentId) {
       fetchEnrollment()
+    } else if (courseSlug) {
+      // Redirect to course access page
+      navigate(`/course-access?course=${courseSlug}`)
+      return
     } else {
       setLoading(false)
     }
-  }, [testEnrollmentId])
+  }, [testEnrollmentId, courseSlug, navigate])
 
   const fetchEnrollment = async () => {
     try {
