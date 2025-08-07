@@ -27,7 +27,9 @@ const EnrollSuccess: React.FC = () => {
   const { user, login } = useAuth();
   
   const courseSlug = searchParams.get('course');
+  const testSlug = searchParams.get('test');
   const email = searchParams.get('email');
+  const phone = searchParams.get('phone');
   // Handle both 'Authority' (capital A from Zarinpal) and 'authority' (lowercase)
   const authority = searchParams.get('Authority') || searchParams.get('authority');
   const status = searchParams.get('Status') || searchParams.get('status');
@@ -145,12 +147,15 @@ const EnrollSuccess: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, email });
+    console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, testSlug, email, phone });
     
     if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
         handleFreeCourseSuccess();
+      } else if (authority === 'FREE_TEST') {
+        // Handle free test enrollment
+        handleFreeTestSuccess();
       } else if (authority === 'MANUAL_PAYMENT') {
         // Check if this is a manual payment that's already approved
         handleManualPaymentSuccess();
@@ -223,6 +228,58 @@ const EnrollSuccess: React.FC = () => {
       toast({
         title: "خطا",
         description: "خطا در تایید ثبت‌نام رایگان",
+        variant: "destructive"
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleFreeTestSuccess = async () => {
+    try {
+      setVerifying(true);
+      
+      // Fetch test enrollment data
+      const { data: enrollment, error: enrollmentError } = await supabase
+        .from('test_enrollments')
+        .select(`
+          *,
+          tests (
+            title,
+            slug,
+            description
+          )
+        `)
+        .eq('id', enrollmentId)
+        .single();
+
+      if (enrollmentError) throw enrollmentError;
+
+      // Set result for free test
+      setResult({
+        success: true,
+        refId: 'FREE_TEST',
+        course: {
+          title: enrollment.tests?.title || 'آزمون',
+          description: enrollment.tests?.description || 'آزمون رایگان',
+          slug: enrollment.tests?.slug
+        },
+        enrollment: enrollment
+      });
+      
+      toast({
+        title: "✅ ثبت‌نام در آزمون موفق",
+        description: "ثبت‌نام شما در آزمون رایگان با موفقیت انجام شد",
+      });
+    } catch (error) {
+      console.error('Free test verification error:', error);
+      setResult({
+        success: false,
+        error: 'خطا در تایید ثبت‌نام در آزمون رایگان'
+      });
+      toast({
+        title: "خطا",
+        description: "خطا در تایید ثبت‌نام در آزمون رایگان",
         variant: "destructive"
       });
     } finally {
@@ -580,6 +637,28 @@ const EnrollSuccess: React.FC = () => {
                             hour: '2-digit',
                             minute: '2-digit'
                           }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
+                        </div>
+                      </>
+                    ) : result.refId === 'FREE_TEST' ? (
+                      // Free test details
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">نوع آزمون:</span>
+                          <span className="font-medium text-green-600">رایگان</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">زمان ثبت‌نام:</span>
+                          <span className="font-medium">{result.enrollment?.created_at ? new Intl.DateTimeFormat('fa-IR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }).format(new Date(result.enrollment.created_at)) : 'نامشخص'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">شماره تماس:</span>
+                          <span className="font-medium">{phone || result.enrollment?.phone || 'نامشخص'}</span>
                         </div>
                       </>
                     ) : result.refId === 'MANUAL_PAYMENT_APPROVED' ? (
