@@ -2786,7 +2786,7 @@ export type Database = {
           test_id: string
           test_started_at: string | null
           updated_at: string
-          user_id: number
+          user_id: number | null
           zarinpal_authority: string | null
           zarinpal_ref_id: string | null
         }
@@ -2809,7 +2809,7 @@ export type Database = {
           test_id: string
           test_started_at?: string | null
           updated_at?: string
-          user_id: number
+          user_id?: number | null
           zarinpal_authority?: string | null
           zarinpal_ref_id?: string | null
         }
@@ -2832,7 +2832,7 @@ export type Database = {
           test_id?: string
           test_started_at?: string | null
           updated_at?: string
-          user_id?: number
+          user_id?: number | null
           zarinpal_authority?: string | null
           zarinpal_ref_id?: string | null
         }
