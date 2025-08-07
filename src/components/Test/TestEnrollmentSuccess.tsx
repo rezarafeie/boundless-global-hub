@@ -21,6 +21,10 @@ interface TestEnrollment {
   payment_status: string
   payment_amount: number
   enrollment_status: string
+  esanj_employee_id?: number
+  esanj_uuid?: string
+  birth_year?: number
+  sex?: string
   tests: {
     title: string
     test_id: number
@@ -164,6 +168,15 @@ const TestEnrollmentSuccess: React.FC = () => {
       // Generate UUID for this test session
       const testUuid = crypto.randomUUID()
 
+      console.log('Updating enrollment with data:', {
+        enrollment_id: enrollment.id,
+        esanj_employee_id: employee.id,
+        esanj_uuid: testUuid,
+        birth_year: userBirthYear,
+        sex: userSex,
+        enrollment_status: 'ready'
+      })
+
       // Update enrollment with Esanj details
       const { error: updateError } = await supabase
         .from('test_enrollments')
@@ -177,6 +190,7 @@ const TestEnrollmentSuccess: React.FC = () => {
         .eq('id', enrollment.id)
 
       if (updateError) {
+        console.error('Error updating test enrollment:', updateError)
         throw updateError
       }
 
@@ -190,6 +204,19 @@ const TestEnrollmentSuccess: React.FC = () => {
         .eq('phone', enrollment.phone)
 
       setProcessingMessage('آزمون آماده شد!')
+      
+      // Verify the data was actually saved by fetching the updated record
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('test_enrollments')
+        .select('esanj_employee_id, esanj_uuid, birth_year, sex, enrollment_status')
+        .eq('id', enrollment.id)
+        .single()
+
+      if (verifyError) {
+        console.error('Error verifying enrollment update:', verifyError)
+      } else {
+        console.log('Verified enrollment data after update:', verifyData)
+      }
       
       // Refresh enrollment data
       await fetchEnrollment()
@@ -224,6 +251,13 @@ const TestEnrollmentSuccess: React.FC = () => {
 
   const handleStartTest = () => {
     if (enrollment?.enrollment_status === 'ready') {
+      console.log('Starting test with enrollment data:', {
+        enrollment_status: enrollment.enrollment_status,
+        esanj_employee_id: enrollment.esanj_employee_id,
+        esanj_uuid: enrollment.esanj_uuid,
+        birth_year: enrollment.birth_year,
+        sex: enrollment.sex
+      })
       navigate(`/access?test=${enrollment.id}`)
     } else {
       setShowEmployeeForm(true)
