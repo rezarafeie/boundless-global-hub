@@ -129,9 +129,13 @@ const TestAccess: React.FC = () => {
         calculatedAge: age
       })
 
-      // Fetch questionnaire from Esanj (now only needs testId)
+      // Fetch questionnaire from Esanj (now requires all parameters)
       const questionnaireData = await esanjService.getQuestionnaire(
-        enrollment.tests.test_id
+        enrollment.tests.test_id,
+        enrollment.esanj_uuid,
+        enrollment.esanj_employee_id,
+        age,
+        enrollment.sex
       )
 
       setQuestionnaire(questionnaireData)

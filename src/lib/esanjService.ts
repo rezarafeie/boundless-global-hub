@@ -112,14 +112,22 @@ class EsanjService {
   }
 
   async getQuestionnaire(
-    testId: number
+    testId: number, 
+    uuid: string, 
+    employeeId: number, 
+    age: number, 
+    sex: string
   ): Promise<any> {
     const token = await this.authenticate()
 
     const { data, error } = await supabase.functions.invoke('esanj-questionnaire', {
       body: { 
         esanjToken: token, 
-        testId
+        testId, 
+        uuid, 
+        employeeId, 
+        age, 
+        sex 
       }
     })
 
