@@ -20,7 +20,15 @@ serve(async (req) => {
     console.log('Fetching questionnaire for test:', testId) // Updated version
     
     const apiUrl = `https://esanj.org/api/v1/questionnaire/${testId}`
+    console.log('=== DETAILED API CALL INFO FOR ESANJ DEVELOPERS ===')
     console.log('API URL:', apiUrl)
+    console.log('Method: GET')
+    console.log('Headers:', {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${esanjToken.substring(0, 10)}...` // Masked for security
+    })
+    console.log('Test ID:', testId)
+    console.log('Current timestamp:', new Date().toISOString())
 
     const questionnaireResponse = await fetch(apiUrl, {
       method: 'GET',
@@ -30,24 +38,38 @@ serve(async (req) => {
       }
     })
 
+    console.log('=== ESANJ API RESPONSE DETAILS ===')
     console.log('Response status:', questionnaireResponse.status)
+    console.log('Response status text:', questionnaireResponse.statusText)
     console.log('Response headers:', Object.fromEntries(questionnaireResponse.headers.entries()))
+    console.log('Response URL:', questionnaireResponse.url)
 
     if (!questionnaireResponse.ok) {
-      throw new Error(`Failed to fetch questionnaire: ${questionnaireResponse.status}`)
+      const errorText = await questionnaireResponse.text()
+      console.log('Error response body:', errorText)
+      throw new Error(`Failed to fetch questionnaire: ${questionnaireResponse.status} - ${errorText}`)
     }
 
     const questionnaireData = await questionnaireResponse.json()
-    console.log('Raw API response:', JSON.stringify(questionnaireData, null, 2))
-    console.log('Questions count:', questionnaireData?.questions?.length || 0)
+    console.log('=== RAW API RESPONSE FROM ESANJ ===')
+    console.log('Full raw response:', JSON.stringify(questionnaireData, null, 2))
+    console.log('Response type:', typeof questionnaireData)
+    console.log('Has test property:', !!questionnaireData.test)
+    console.log('Has questions property:', !!questionnaireData.questions)
+    console.log('Questions array length:', questionnaireData?.questions?.length || 0)
+    console.log('Questions array type:', Array.isArray(questionnaireData?.questions))
     
-    // Check if the API response has the expected structure
-    if (!questionnaireData.questions || questionnaireData.questions.length === 0) {
-      console.log('Warning: No questions returned from Esanj API')
-      console.log('Full response structure:', Object.keys(questionnaireData))
+    if (questionnaireData.questions && questionnaireData.questions.length > 0) {
+      console.log('First question structure:', JSON.stringify(questionnaireData.questions[0], null, 2))
+    } else {
+      console.log('=== ISSUE: Questions array is empty or missing ===')
+      console.log('Available response keys:', Object.keys(questionnaireData))
+      if (questionnaireData.test) {
+        console.log('Test object:', JSON.stringify(questionnaireData.test, null, 2))
+      }
     }
     
-    console.log('Questionnaire fetched successfully')
+    console.log('=== END OF DETAILED LOGS ===')
 
     return new Response(
       JSON.stringify({ 
