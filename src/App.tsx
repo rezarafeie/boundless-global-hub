@@ -234,7 +234,7 @@ const App = () => {
                     <Route path="/sso-login" element={<SSOLogin />} />
                     
                     {/* Course Access */}
-                    <Route path="/access" element={<CourseAccess />} />
+                    <Route path="/course-access" element={<CourseAccess />} />
 
                     {/* Course landing pages */}
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
