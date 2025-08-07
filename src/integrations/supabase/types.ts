@@ -266,6 +266,95 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          browser: string | null
+          country: string | null
+          created_at: string
+          device: string | null
+          event_type: string
+          id: string
+          path: string
+          referrer: string | null
+          screen_h: number | null
+          screen_w: number | null
+          session_id: string
+          source: string | null
+        }
+        Insert: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          event_type?: string
+          id?: string
+          path: string
+          referrer?: string | null
+          screen_h?: number | null
+          screen_w?: number | null
+          session_id: string
+          source?: string | null
+        }
+        Update: {
+          browser?: string | null
+          country?: string | null
+          created_at?: string
+          device?: string | null
+          event_type?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+          screen_h?: number | null
+          screen_w?: number | null
+          session_id?: string
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "analytics_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      analytics_sessions: {
+        Row: {
+          country: string | null
+          device: string | null
+          first_seen: string
+          ip_hash: string | null
+          last_seen: string
+          pageviews: number
+          session_id: string
+          source: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          device?: string | null
+          first_seen?: string
+          ip_hash?: string | null
+          last_seen?: string
+          pageviews?: number
+          session_id: string
+          source?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          device?: string | null
+          first_seen?: string
+          ip_hash?: string | null
+          last_seen?: string
+          pageviews?: number
+          session_id?: string
+          source?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string | null
