@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('Missing required parameters: esanjToken and testId')
     }
 
-    console.log('Fetching questionnaire for test:', testId)
+    console.log('Fetching questionnaire for test:', testId) // Updated version
     
     const apiUrl = `https://esanj.org/api/v1/questionnaire/${testId}`
     console.log('API URL:', apiUrl)
