@@ -14,8 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    const { authority, enrollmentId, manualApproval } = await req.json();
-    console.log('🔍 Zarinpal verify function called with:', { authority, enrollmentId, manualApproval });
+    const { authority, enrollmentId, manualApproval, enrollmentType } = await req.json();
+    console.log('🔍 Zarinpal verify function called with:', { authority, enrollmentId, manualApproval, enrollmentType });
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -28,18 +28,43 @@ serve(async (req) => {
       }
     });
 
-    // Get enrollment details
-    const { data: enrollment, error: enrollmentError } = await supabase
-      .from('enrollments')
-      .select(`
-        *,
-        courses (*),
-        chat_users:chat_user_id (*)
-      `)
-      .eq('id', enrollmentId)
-      .single();
+    // Get enrollment details based on type
+    let enrollment, enrollmentError;
+    
+    if (enrollmentType === 'test') {
+      // Fetch test enrollment
+      const response = await supabase
+        .from('test_enrollments')
+        .select(`
+          *,
+          tests (
+            title,
+            slug
+          )
+        `)
+        .eq('id', enrollmentId)
+        .single();
+      
+      enrollment = response.data;
+      enrollmentError = response.error;
+    } else {
+      // Fetch regular enrollment
+      const response = await supabase
+        .from('enrollments')
+        .select(`
+          *,
+          courses (*),
+          chat_users:chat_user_id (*)
+        `)
+        .eq('id', enrollmentId)
+        .single();
+      
+      enrollment = response.data;
+      enrollmentError = response.error;
+    }
 
     if (enrollmentError || !enrollment) {
+      console.error('❌ Enrollment not found:', { enrollmentId, enrollmentType, enrollmentError });
       return new Response(
         JSON.stringify({ error: 'Enrollment not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -82,7 +107,7 @@ serve(async (req) => {
               email: enrollment.email,
               phone: enrollment.phone 
             },
-            course: enrollment.courses
+            course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses
           }
         };
 
@@ -114,7 +139,7 @@ serve(async (req) => {
           success: true,
           refId: 'MANUAL_PAYMENT_APPROVED',
           woocommerceOrderId,
-          course: enrollment.courses,
+          course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
           enrollment: enrollment
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -155,12 +180,20 @@ serve(async (req) => {
       // Payment successful - update enrollment with error handling
       console.log('✅ Payment verified successfully, updating enrollment status...');
       
+      // Update enrollment status based on type
+      const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
+      const updateData: any = { payment_status: 'completed' };
+      
+      // Add zarinpal_ref_id for both enrollment types
+      if (enrollmentType === 'test') {
+        updateData.zarinpal_ref_id = zarinpalData.data.ref_id.toString();
+      } else {
+        updateData.zarinpal_ref_id = zarinpalData.data.ref_id.toString();
+      }
+      
       const { data: updateResult, error: updateError } = await supabase
-        .from('enrollments')
-        .update({
-          payment_status: 'completed',
-          zarinpal_ref_id: zarinpalData.data.ref_id.toString()
-        })
+        .from(tableName)
+        .update(updateData)
         .eq('id', enrollmentId);
 
       if (updateError) {
@@ -171,9 +204,9 @@ serve(async (req) => {
       
       console.log('✅ Enrollment status updated successfully to completed');
 
-      // Create WooCommerce order if product ID is available
+      // Create WooCommerce order if product ID is available (only for regular enrollments)
       let woocommerceOrderId = null;
-      if (enrollment.courses.woocommerce_product_id) {
+      if (enrollmentType !== 'test' && enrollment.courses?.woocommerce_product_id) {
         try {
           const wooOrderId = await createWooCommerceOrder(enrollment);
           if (wooOrderId) {
@@ -203,7 +236,7 @@ serve(async (req) => {
               email: enrollment.email,
               phone: enrollment.phone 
             },
-            course: enrollment.courses,
+            course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
             payment: {
               amount: enrollment.payment_amount,
               ref_id: zarinpalData.data.ref_id,
@@ -236,7 +269,7 @@ serve(async (req) => {
       }
 
       // Create SpotPlayer license if needed
-      if (enrollment.courses.is_spotplayer_enabled) {
+      if (enrollmentType !== 'test' && enrollment.courses?.is_spotplayer_enabled) {
         try {
           console.log('🎮 Creating SpotPlayer license after successful payment...');
           
@@ -270,7 +303,7 @@ serve(async (req) => {
           success: true,
           refId: zarinpalData.data.ref_id,
           woocommerceOrderId,
-          course: enrollment.courses,
+          course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
           enrollment: enrollment
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -294,8 +327,9 @@ serve(async (req) => {
         console.error('Failed to log payment verification issue:', logError);
       }
       
+      const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
       await supabase
-        .from('enrollments')
+        .from(tableName)
         .update({ payment_status: 'failed' })
         .eq('id', enrollmentId);
 

@@ -936,10 +936,14 @@ const EnrollSuccess: React.FC = () => {
     try {
       setVerifying(true);
       
+      // Detect if this is a test enrollment based on URL parameters
+      const isTestEnrollment = searchParams.get('test') !== null;
+      
       const response = await supabase.functions.invoke('zarinpal-verify', {
         body: {
           authority,
-          enrollmentId
+          enrollmentId,
+          enrollmentType: isTestEnrollment ? 'test' : 'course'
         }
       });
 
