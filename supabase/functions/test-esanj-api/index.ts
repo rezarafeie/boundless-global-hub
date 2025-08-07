@@ -70,62 +70,61 @@ Deno.serve(async (req) => {
     const authData: EsanjAuthResponse = await authResponse.json();
     console.log('Esanj authentication successful, token received:', authData.token?.substring(0, 10) + '...');
 
-    // Step 2: Search for employee using phone as username
-    console.log('Searching for employee with username:', phone);
-    const employeeUrl = `https://esanj.org/api/v1/employees?username=${phone}`;
-    console.log('Employee API URL:', employeeUrl);
+    // Step 2: Try different phone number formats
+    const phoneFormats = [
+      phone,                    // 9120784457
+      `0${phone}`,             // 09120784457  
+      `+98${phone}`,           // +989120784457
+      `0098${phone}`,          // 00989120784457
+      phone.startsWith('0') ? phone.substring(1) : `0${phone}` // Toggle 0 prefix
+    ];
     
-    const employeeResponse = await fetch(employeeUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authData.token}`
+    console.log('Testing phone formats:', phoneFormats);
+    
+    let foundEmployee = null;
+    let lastResponse = null;
+    
+    for (const phoneFormat of phoneFormats) {
+      console.log('Trying phone format:', phoneFormat);
+      
+      const employeeUrl = `https://esanj.org/api/v1/employees?username=${phoneFormat}`;
+      console.log('Employee API URL:', employeeUrl);
+      
+      const employeeResponse = await fetch(employeeUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${authData.token}`
+        }
+      });
+
+      console.log('Employee response status:', employeeResponse.status);
+      const employeeResponseText = await employeeResponse.text();
+      console.log('Employee response body:', employeeResponseText);
+      lastResponse = employeeResponseText;
+
+      if (employeeResponse.ok) {
+        try {
+          const employeeData: EsanjEmployeesResponse = JSON.parse(employeeResponseText);
+          if (employeeData.employees && employeeData.employees.length > 0) {
+            foundEmployee = employeeData.employees[0];
+            console.log('Employee found with format:', phoneFormat, foundEmployee);
+            break;
+          }
+        } catch (parseError) {
+          console.error('Failed to parse employee response:', parseError);
+        }
       }
-    });
-
-    console.log('Employee response status:', employeeResponse.status);
-    const employeeResponseText = await employeeResponse.text();
-    console.log('Employee response body:', employeeResponseText);
-
-    if (!employeeResponse.ok) {
-      return new Response(
-        JSON.stringify({ 
-          found: false, 
-          message: 'Employee API request failed',
-          status: employeeResponse.status,
-          response: employeeResponseText
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    let employeeData: EsanjEmployeesResponse;
-    try {
-      employeeData = JSON.parse(employeeResponseText);
-    } catch (parseError) {
-      console.error('Failed to parse employee response:', parseError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to parse employee response',
-          response: employeeResponseText
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
     }
     
-    if (!employeeData.employees || employeeData.employees.length === 0) {
-      console.log('No employees found for username:', phone);
+    if (!foundEmployee) {
+      console.log('No employees found with any phone format');
       return new Response(
         JSON.stringify({ 
           found: false, 
-          message: 'No employees found',
-          responseData: employeeData
+          message: 'No employees found with any phone format',
+          phoneFormats: phoneFormats,
+          lastResponse: lastResponse
         }),
         { 
           status: 200, 
@@ -134,13 +133,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const employee = employeeData.employees[0];
-    console.log('Employee found:', employee);
+    console.log('Employee found:', foundEmployee);
 
     return new Response(
       JSON.stringify({
         found: true,
-        employee: employee,
+        employee: foundEmployee,
         message: 'Employee data retrieved successfully'
       }),
       { 

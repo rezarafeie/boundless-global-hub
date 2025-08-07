@@ -75,42 +75,53 @@ Deno.serve(async (req) => {
     const authData: EsanjAuthResponse = await authResponse.json();
     console.log('Esanj authentication successful, token received');
 
-    // Step 2: Search for employee using phone as username
-    console.log('Searching for employee with username:', phone);
-    const employeeResponse = await fetch(`https://esanj.org/api/v1/employees?username=${phone}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authData.token}`
-      }
-    });
-
-    if (!employeeResponse.ok) {
-      console.log('Employee not found in Esanj database');
-      return new Response(
-        JSON.stringify({ found: false, message: 'Employee not found in Esanj database' }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const employeeData: EsanjEmployeesResponse = await employeeResponse.json();
+    // Step 2: Try different phone number formats to find employee
+    const phoneFormats = [
+      phone,                    // 9120784457
+      `0${phone}`,             // 09120784457  
+      `+98${phone}`,           // +989120784457
+      `0098${phone}`,          // 00989120784457
+      phone.startsWith('0') ? phone.substring(1) : `0${phone}` // Toggle 0 prefix
+    ];
     
-    if (!employeeData.employees || employeeData.employees.length === 0) {
-      console.log('No employees found for username:', phone);
+    console.log('Testing phone formats:', phoneFormats);
+    
+    let foundEmployee = null;
+    let workingPhoneFormat = null;
+    
+    for (const phoneFormat of phoneFormats) {
+      console.log('Trying phone format:', phoneFormat);
+      
+      const employeeResponse = await fetch(`https://esanj.org/api/v1/employees?username=${phoneFormat}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${authData.token}`
+        }
+      });
+
+      if (employeeResponse.ok) {
+        const employeeData: EsanjEmployeesResponse = await employeeResponse.json();
+        if (employeeData.employees && employeeData.employees.length > 0) {
+          foundEmployee = employeeData.employees[0];
+          workingPhoneFormat = phoneFormat;
+          console.log('Employee found with format:', phoneFormat, foundEmployee);
+          break;
+        }
+      }
+    }
+    
+    if (!foundEmployee) {
+      console.log('No employees found with any phone format');
       return new Response(
-        JSON.stringify({ found: false, message: 'No employees found' }),
+        JSON.stringify({ found: false, message: 'Employee not found in Test Center database' }),
         { 
           status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
-
-    const employee = employeeData.employees[0];
-    console.log('Employee found:', { id: employee.id, name: employee.name, birth_year: employee.birth_year, sex: employee.sex });
+    const employee = foundEmployee;
 
     // Step 3: Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
