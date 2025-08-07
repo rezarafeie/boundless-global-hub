@@ -67,7 +67,7 @@ const EnrollPending: React.FC = () => {
       if (enrollmentType === 'test') {
         // For test enrollments, check payment_status instead of manual_payment_status
         if (data.payment_status === 'completed' || data.payment_status === 'success') {
-          const successUrl = `/test-enrollment/success?test=${data.tests?.slug}&phone=${data.phone}&enrollment=${data.id}&status=OK`;
+          const successUrl = `/enroll/success?test=${data.tests?.slug}&phone=${data.phone}&enrollment=${data.id}&status=OK&type=test`;
           navigate(successUrl);
         } else if (data.payment_status === 'failed' || data.payment_status === 'rejected') {
           navigate(`/enroll/reject?orderId=${data.id}&type=test`);
