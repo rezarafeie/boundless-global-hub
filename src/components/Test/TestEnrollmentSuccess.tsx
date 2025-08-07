@@ -37,6 +37,7 @@ const TestEnrollmentSuccess: React.FC = () => {
   const [showEmployeeForm, setShowEmployeeForm] = useState(false)
   const [birthYear, setBirthYear] = useState('')
   const [sex, setSex] = useState('')
+  const [processingMessage, setProcessingMessage] = useState('آزمون شما در حال آماده‌سازی است...')
 
   const testSlug = searchParams.get('test')
   const phone = searchParams.get('phone')
@@ -49,6 +50,12 @@ const TestEnrollmentSuccess: React.FC = () => {
       setLoading(false)
     }
   }, [enrollmentId])
+
+  useEffect(() => {
+    if (enrollment && enrollment.enrollment_status !== 'ready') {
+      checkAndProcessAutomatically()
+    }
+  }, [enrollment])
 
   const fetchEnrollment = async () => {
     try {
@@ -80,6 +87,123 @@ const TestEnrollmentSuccess: React.FC = () => {
     }
   }
 
+  const checkAndProcessAutomatically = async () => {
+    if (!enrollment || !phone) return
+    
+    setIsProcessing(true)
+    
+    try {
+      // First check if user has birth_year and sex in chat_users
+      setProcessingMessage('بررسی اطلاعات کاربر...')
+      const { data: userData } = await supabase
+        .from('chat_users')
+        .select('birth_year, sex')
+        .eq('phone', phone)
+        .single()
+
+      if (userData?.birth_year && userData?.sex) {
+        // User has complete data, process automatically
+        setProcessingMessage('آماده‌سازی آزمون...')
+        await processEsanjTest(userData.birth_year, userData.sex)
+        return
+      }
+
+      // Check if user exists in Esanj database
+      setProcessingMessage('جستجو در پایگاه داده...')
+      try {
+        const employee = await esanjService.findOrCreateEmployee(phone)
+        
+        if (employee.birth_year && employee.sex) {
+          // Found in Esanj, update local database and process
+          setProcessingMessage('بروزرسانی اطلاعات...')
+          
+          // Update chat_users
+          await supabase
+            .from('chat_users')
+            .update({
+              birth_year: employee.birth_year,
+              sex: employee.sex
+            })
+            .eq('phone', phone)
+
+          // Process the test
+          setProcessingMessage('آماده‌سازی آزمون...')
+          await processEsanjTest(employee.birth_year, employee.sex)
+          return
+        }
+      } catch (error) {
+        console.log('User not found in Esanj database, will show form')
+      }
+
+      // Show form to collect information
+      setIsProcessing(false)
+      setShowEmployeeForm(true)
+      
+    } catch (error) {
+      console.error('Error in automatic processing:', error)
+      setIsProcessing(false)
+      setShowEmployeeForm(true)
+    }
+  }
+
+  const processEsanjTest = async (userBirthYear: number, userSex: string) => {
+    if (!enrollment) return
+
+    try {
+      // Find or create employee in Esanj
+      const employee = await esanjService.findOrCreateEmployee(
+        enrollment.phone,
+        {
+          name: enrollment.full_name,
+          phone_number: enrollment.phone,
+          birth_year: userBirthYear,
+          sex: userSex
+        }
+      )
+
+      // Generate UUID for this test session
+      const testUuid = crypto.randomUUID()
+
+      // Update enrollment with Esanj details
+      const { error: updateError } = await supabase
+        .from('test_enrollments')
+        .update({
+          esanj_employee_id: employee.id,
+          esanj_uuid: testUuid,
+          birth_year: userBirthYear,
+          sex: userSex,
+          enrollment_status: 'ready'
+        })
+        .eq('id', enrollment.id)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      // Update chat_users with birth_year and sex if not already set
+      await supabase
+        .from('chat_users')
+        .update({
+          birth_year: userBirthYear,
+          sex: userSex
+        })
+        .eq('phone', enrollment.phone)
+
+      setProcessingMessage('آزمون آماده شد!')
+      
+      // Refresh enrollment data
+      await fetchEnrollment()
+      setIsProcessing(false)
+      toast.success('آزمون با موفقیت آماده شد')
+      
+    } catch (error) {
+      console.error('Error processing Esanj test:', error)
+      setIsProcessing(false)
+      toast.error('خطا در آماده‌سازی آزمون')
+      setShowEmployeeForm(true)
+    }
+  }
+
   const handleCreateEsanjTest = async () => {
     if (!enrollment || !birthYear || !sex) {
       toast.error('لطفاً تمام اطلاعات را وارد کنید')
@@ -89,45 +213,11 @@ const TestEnrollmentSuccess: React.FC = () => {
     setIsProcessing(true)
     
     try {
-      // Find or create employee in Esanj
-      const employee = await esanjService.findOrCreateEmployee(
-        enrollment.phone, // Using phone as username
-        {
-          name: enrollment.full_name,
-          phone_number: enrollment.phone,
-          birth_year: parseInt(birthYear),
-          sex: sex
-        }
-      )
-
-      // Generate UUID for this test session
-      const testUuid = crypto.randomUUID();
-
-      // Update enrollment with Esanj details
-      const { error: updateError } = await supabase
-        .from('test_enrollments')
-        .update({
-          esanj_employee_id: employee.id,
-          esanj_uuid: testUuid,
-          birth_year: parseInt(birthYear),
-          sex: sex,
-          enrollment_status: 'ready'
-        })
-        .eq('id', enrollment.id)
-
-      if (updateError) {
-        throw updateError
-      }
-
-      toast.success('آزمون با موفقیت آماده شد')
+      await processEsanjTest(parseInt(birthYear), sex)
       setShowEmployeeForm(false)
-      
-      // Refresh enrollment data
-      await fetchEnrollment()
     } catch (error) {
       console.error('Error creating Esanj test:', error)
       toast.error('خطا در آماده‌سازی آزمون')
-    } finally {
       setIsProcessing(false)
     }
   }
@@ -253,6 +343,13 @@ const TestEnrollmentSuccess: React.FC = () => {
                 <Button onClick={handleStartTest} size="lg" className="w-full">
                   شروع آزمون
                 </Button>
+              </div>
+            ) : isProcessing ? (
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-muted-foreground">{processingMessage}</span>
+                </div>
               </div>
             ) : (
               <div className="text-center space-y-4">
