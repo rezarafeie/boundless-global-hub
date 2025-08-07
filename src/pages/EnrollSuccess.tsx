@@ -372,6 +372,22 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                     {enrollment.tests.price === 0 ? 'رایگان' : `${enrollment.tests.price.toLocaleString('fa-IR')} تومان`}
                   </span>
                 </div>
+
+                {enrollment.birth_year && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">سال تولد:</span>
+                    <span className="font-medium">{enrollment.birth_year}</span>
+                  </div>
+                )}
+
+                {enrollment.sex && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">جنسیت:</span>
+                    <span className="font-medium">{enrollment.sex === 'male' ? 'مرد' : 'زن'}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
