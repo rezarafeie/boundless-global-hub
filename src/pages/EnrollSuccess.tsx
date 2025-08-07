@@ -161,14 +161,14 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     }
   };
 
-  // Update UI when enrollment becomes ready
+  // Update UI when enrollment becomes ready AND has required data
   useEffect(() => {
-    if (enrollment?.enrollment_status === 'ready' && !isReady) {
+    if (enrollment?.enrollment_status === 'ready' && enrollment.birth_year && enrollment.sex && !isReady) {
       setIsReady(true);
       setProcessingMessage('✅ آزمون شما آماده است!');
       toast.success('آزمون با موفقیت آماده شد');
     }
-  }, [enrollment?.enrollment_status, isReady]);
+  }, [enrollment?.enrollment_status, enrollment?.birth_year, enrollment?.sex, isReady]);
 
   const fetchEnrollment = async () => {
     try {
@@ -447,8 +447,8 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
             </CardContent>
           </Card>
 
-          {/* Start Test Section - Only show when ready */}
-          {isReady && (
+          {/* Start Test Section - Only show when ready AND has birth_year and sex */}
+          {isReady && enrollment.birth_year && enrollment.sex && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>شروع آزمون</CardTitle>
@@ -466,8 +466,8 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
             </Card>
           )}
 
-          {/* Birth Year and Sex Form - Show instead of start test when data is missing */}
-          {!isReady && (!enrollment.birth_year || !enrollment.sex) && (
+          {/* Birth Year and Sex Form - Show when data is missing, regardless of ready status */}
+          {(!enrollment.birth_year || !enrollment.sex) && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>تکمیل اطلاعات</CardTitle>
