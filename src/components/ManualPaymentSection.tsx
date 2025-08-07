@@ -155,7 +155,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     console.log('📊 Initial state:', {
       uploadedFile: !!uploadedFile,
       formData,
-      course: { id: course.id, title: course.title }
+      course: course ? { id: course.id, title: course.title } : null,
+      test: test ? { id: test.id, title: test.title } : null
     });
 
     try {

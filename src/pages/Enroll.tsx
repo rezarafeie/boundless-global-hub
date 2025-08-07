@@ -349,6 +349,7 @@ const Enroll: React.FC = () => {
     console.log('🔥 Enroll button clicked!');
     console.log('📋 Form data:', formData);
     console.log('📚 Course:', course);
+    console.log('🧪 Test:', test);
     console.log('💰 Is free course?', isFree);
     console.log('🔑 Payment method:', paymentMethod);
     
@@ -1031,7 +1032,7 @@ const Enroll: React.FC = () => {
                    )}
 
                    {/* Submit Button - Only for Zarinpal and paid tests/courses */}
-                   {paymentMethod === 'zarinpal' && (test || course) && (
+                   {paymentMethod === 'zarinpal' && (test || course) && !isFree && (
                      <Button
                        type="submit"
                        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
