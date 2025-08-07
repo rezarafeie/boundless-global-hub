@@ -2780,6 +2780,7 @@ export type Database = {
           payment_method: string | null
           payment_status: string
           phone: string
+          receipt_url: string | null
           result_data: Json | null
           sex: string | null
           test_completed_at: string | null
@@ -2803,6 +2804,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string
           phone: string
+          receipt_url?: string | null
           result_data?: Json | null
           sex?: string | null
           test_completed_at?: string | null
@@ -2826,6 +2828,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string
           phone?: string
+          receipt_url?: string | null
           result_data?: Json | null
           sex?: string | null
           test_completed_at?: string | null
