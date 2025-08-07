@@ -239,11 +239,18 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
       const currentYear = new Date().getFullYear();
       const birthYear = currentYear - parseInt(userAge);
       
+      console.log('Birth year conversion:', {
+        userAge: userAge,
+        currentYear: currentYear,
+        gregorianBirthYear: birthYear,
+        persianBirthYear: birthYear - 621
+      });
+      
       // Update chat_users table with birth_year and sex
       const { error: updateUserError } = await supabase
         .from('chat_users')
         .update({
-          birth_year: birthYear,
+          birth_year: birthYear, // Keep Gregorian year in database
           sex: userSex
         })
         .eq('phone', enrollment.phone);
@@ -254,12 +261,17 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
       }
 
       // Find or create employee in Esanj
+      // Convert Gregorian to Persian year for Esanj API (1997 -> 1376)
+      const persianBirthYear = birthYear - 621;
+      
+      console.log('Esanj API call with Persian year:', persianBirthYear);
+      
       const employee = await esanjService.findOrCreateEmployee(
         enrollment.phone,
         {
           name: enrollment.full_name,
           phone_number: enrollment.phone,
-          birth_year: birthYear,
+          birth_year: persianBirthYear, // Use Persian year for Esanj
           sex: userSex
         }
       );
