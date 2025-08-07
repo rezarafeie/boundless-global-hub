@@ -80,9 +80,6 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
   // Auto-retry logic to check enrollment status and start processing if ready
   useEffect(() => {
     if (enrollment && enrollment.enrollment_status !== 'ready' && !isProcessing) {
-      // Check if we can auto-start processing (user has birth_year and sex in chat_users)
-      checkAndAutoStartProcessing();
-      
       const interval = setInterval(() => {
         fetchEnrollment();
       }, 3000); // Check every 3 seconds
@@ -91,9 +88,18 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     }
   }, [enrollment, isProcessing]);
 
+  // Check for auto-processing when enrollment loads
+  useEffect(() => {
+    if (enrollment && enrollment.enrollment_status !== 'ready' && !isProcessing) {
+      checkAndAutoStartProcessing();
+    }
+  }, [enrollment?.id]); // Only run when enrollment ID changes
+
   const checkAndAutoStartProcessing = async () => {
     if (!enrollment || isProcessing || enrollment.enrollment_status === 'ready') return;
 
+    console.log('Checking auto-start processing for enrollment:', enrollment.id);
+    
     try {
       // Check if user has birth_year and sex in chat_users table
       const { data: chatUser, error: userError } = await supabase
@@ -102,11 +108,17 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
         .eq('phone', enrollment.phone)
         .single();
 
+      console.log('Chat user data:', chatUser);
+
       // If user has complete data, start processing automatically
       if (chatUser && chatUser.birth_year && chatUser.sex) {
+        console.log('Auto-starting processing with existing user data');
         setBirthYear(chatUser.birth_year.toString());
         setSex(chatUser.sex);
-        handleCreateEsanjTest();
+        // Start processing with the user's existing data
+        await processEsanjTest(chatUser.birth_year.toString(), chatUser.sex);
+      } else {
+        console.log('User missing birth_year or sex, waiting for manual input');
       }
     } catch (error) {
       console.error('Error checking user data:', error);
@@ -151,54 +163,32 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     }
   };
 
-  const handleCreateEsanjTest = async () => {
+  const processEsanjTest = async (userBirthYear: string, userSex: string) => {
+    console.log('Starting processEsanjTest with:', { userBirthYear, userSex, enrollmentId: enrollment?.id });
+    
     if (!enrollment) {
+      console.error('No enrollment found');
       toast.error('اطلاعات ثبت‌نام یافت نشد');
       return;
     }
 
     setIsProcessing(true);
-    setProcessingMessage('در حال بررسی اطلاعات کاربر...');
+    setProcessingMessage('در حال ایجاد حساب کاربری...');
     
     try {
-      // First, check if user has birth_year and sex in chat_users table
-      const { data: chatUser, error: userError } = await supabase
+      // Update chat_users table with birth_year and sex
+      const { error: updateUserError } = await supabase
         .from('chat_users')
-        .select('birth_year, sex')
-        .eq('phone', enrollment.phone)
-        .single();
+        .update({
+          birth_year: parseInt(userBirthYear),
+          sex: userSex
+        })
+        .eq('phone', enrollment.phone);
 
-      let userBirthYear = birthYear;
-      let userSex = sex;
-
-      // If user exists and has birth_year and sex, use those values
-      if (chatUser && chatUser.birth_year && chatUser.sex) {
-        userBirthYear = chatUser.birth_year.toString();
-        userSex = chatUser.sex;
-      } else {
-        // If user doesn't have birth_year or sex, ask for them
-        if (!birthYear || !sex) {
-          toast.error('لطفاً تمام اطلاعات را وارد کنید');
-          setIsProcessing(false);
-          return;
-        }
-
-        // Update chat_users table with birth_year and sex
-        const { error: updateUserError } = await supabase
-          .from('chat_users')
-          .update({
-            birth_year: parseInt(birthYear),
-            sex: sex
-          })
-          .eq('phone', enrollment.phone);
-
-        if (updateUserError) {
-          console.error('Error updating user data:', updateUserError);
-          // Continue anyway - not critical
-        }
+      if (updateUserError) {
+        console.error('Error updating user data:', updateUserError);
+        // Continue anyway - not critical
       }
-
-      setProcessingMessage('در حال ایجاد حساب کاربری...');
 
       // Find or create employee in Esanj
       const employee = await esanjService.findOrCreateEmployee(
@@ -245,6 +235,21 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCreateEsanjTest = async () => {
+    if (!enrollment) {
+      toast.error('اطلاعات ثبت‌نام یافت نشد');
+      return;
+    }
+
+    // If we don't have birth year and sex from state, ask for them
+    if (!birthYear || !sex) {
+      toast.error('لطفاً تمام اطلاعات را وارد کنید');
+      return;
+    }
+
+    await processEsanjTest(birthYear, sex);
   };
 
   const handleStartTest = () => {
