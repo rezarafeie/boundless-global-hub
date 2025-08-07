@@ -114,6 +114,11 @@ import CourseEdit from "./pages/Admin/CourseEdit";
 import UsersOverview from "./pages/UsersOverview";
 import UserDetail from "./pages/UserDetail";
 
+// Test components
+import Tests from "./pages/Tests";
+import TestAccess from "./pages/TestAccess";
+import TestResult from "./pages/TestResult";
+
 const queryClient = new QueryClient();
 
 const App = () => {
