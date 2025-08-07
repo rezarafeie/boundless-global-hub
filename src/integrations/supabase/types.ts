@@ -450,6 +450,7 @@ export type Database = {
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
           bio: string | null
+          birth_year: number | null
           country: string | null
           country_code: string | null
           created_at: string | null
@@ -472,6 +473,7 @@ export type Database = {
           phone: string
           province: Database["public"]["Enums"]["iran_province_type"] | null
           role: string | null
+          sex: string | null
           signup_source: string | null
           specialized_program:
             | Database["public"]["Enums"]["specialized_program_type"]
@@ -487,6 +489,7 @@ export type Database = {
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           bio?: string | null
+          birth_year?: number | null
           country?: string | null
           country_code?: string | null
           created_at?: string | null
@@ -509,6 +512,7 @@ export type Database = {
           phone: string
           province?: Database["public"]["Enums"]["iran_province_type"] | null
           role?: string | null
+          sex?: string | null
           signup_source?: string | null
           specialized_program?:
             | Database["public"]["Enums"]["specialized_program_type"]
@@ -524,6 +528,7 @@ export type Database = {
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
           bio?: string | null
+          birth_year?: number | null
           country?: string | null
           country_code?: string | null
           created_at?: string | null
@@ -546,6 +551,7 @@ export type Database = {
           phone?: string
           province?: Database["public"]["Enums"]["iran_province_type"] | null
           role?: string | null
+          sex?: string | null
           signup_source?: string | null
           specialized_program?:
             | Database["public"]["Enums"]["specialized_program_type"]
