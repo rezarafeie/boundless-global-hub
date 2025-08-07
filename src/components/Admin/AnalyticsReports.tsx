@@ -383,7 +383,7 @@ const AnalyticsReports: React.FC = () => {
               {analytics.visitorsSources.map((source, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium">{source.source}</div>
+                  <div className="text-sm font-medium break-all max-w-[60%]">{source.source}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-sm text-muted-foreground">{formatNumber(source.visitors)}</div>
@@ -408,7 +408,7 @@ const AnalyticsReports: React.FC = () => {
               {analytics.visitorsPages.map((page, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium font-mono">{page.page}</div>
+                    <div className="text-sm font-medium font-mono break-all max-w-[60%]">{page.page}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-sm text-muted-foreground">{formatNumber(page.views)}</div>
