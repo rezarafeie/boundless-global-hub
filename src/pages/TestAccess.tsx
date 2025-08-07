@@ -37,8 +37,8 @@ interface Questionnaire {
   test: {
     id: number
     title: string
-    questions: Question[]
   }
+  questions: Question[]
 }
 
 const TestAccess: React.FC = () => {
@@ -169,7 +169,7 @@ const TestAccess: React.FC = () => {
     if (!enrollment || !questionnaire) return
 
     // Check if all questions are answered
-    const totalQuestions = questionnaire.test.questions.length
+    const totalQuestions = questionnaire.questions.length
     const answeredQuestions = Object.keys(answers).length
 
     if (answeredQuestions < totalQuestions) {
@@ -337,12 +337,12 @@ const TestAccess: React.FC = () => {
             {questionnaire?.test.title}
           </h1>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>سوال {Object.keys(answers).length} از {questionnaire?.test.questions.length}</span>
+            <span>سوال {Object.keys(answers).length} از {questionnaire?.questions?.length || 0}</span>
             <div className="flex-1 bg-secondary rounded-full h-2">
               <div 
                 className="bg-primary h-2 rounded-full transition-all"
                 style={{ 
-                  width: `${(Object.keys(answers).length / (questionnaire?.test.questions.length || 1)) * 100}%` 
+                  width: `${(Object.keys(answers).length / (questionnaire?.questions?.length || 1)) * 100}%` 
                 }}
               />
             </div>
@@ -351,7 +351,7 @@ const TestAccess: React.FC = () => {
 
         {/* Questions */}
         <div className="space-y-6">
-          {questionnaire?.test.questions.map((question, index) => (
+          {questionnaire?.questions.map((question, index) => (
             <Card key={question.row} className="border-border">
               <CardHeader>
                 <CardTitle className="text-lg font-medium">
@@ -386,7 +386,7 @@ const TestAccess: React.FC = () => {
         <div className="mt-8 text-center">
           <Button 
             onClick={handleSubmitTest}
-            disabled={isSubmitting || Object.keys(answers).length < (questionnaire?.test.questions.length || 0)}
+            disabled={isSubmitting || Object.keys(answers).length < (questionnaire?.questions?.length || 0)}
             size="lg"
             className="w-full max-w-md"
           >
