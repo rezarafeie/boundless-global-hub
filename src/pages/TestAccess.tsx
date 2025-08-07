@@ -54,18 +54,26 @@ const TestAccess: React.FC = () => {
 
   const testEnrollmentId = searchParams.get('test')
   const courseSlug = searchParams.get('course')
+  const isDirectAccess = searchParams.has('direct')
 
   useEffect(() => {
     if (testEnrollmentId) {
       fetchEnrollment()
-    } else if (courseSlug) {
-      // Redirect to course access page
-      navigate(`/course-access?course=${courseSlug}`)
+    } else if (courseSlug || isDirectAccess) {
+      // Redirect to course access page with all URL parameters preserved
+      const params = new URLSearchParams()
+      
+      // Copy all search params to preserve the complete URL structure
+      searchParams.forEach((value, key) => {
+        params.set(key, value)
+      })
+      
+      navigate(`/course-access?${params.toString()}`)
       return
     } else {
       setLoading(false)
     }
-  }, [testEnrollmentId, courseSlug, navigate])
+  }, [testEnrollmentId, courseSlug, isDirectAccess, navigate, searchParams])
 
   const fetchEnrollment = async () => {
     try {
