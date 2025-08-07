@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ interface VerificationResult {
 
 const EnrollSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user, login } = useAuth();
   
@@ -148,6 +149,19 @@ const EnrollSuccess: React.FC = () => {
 
   useEffect(() => {
     console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, testSlug, email, phone });
+    
+    // If this is a test enrollment, redirect to test success page
+    if (testSlug && enrollmentId) {
+      const params = new URLSearchParams();
+      params.set('test', testSlug);
+      params.set('enrollment', enrollmentId);
+      if (phone) params.set('phone', phone);
+      if (authority) params.set('authority', authority);
+      if (status) params.set('status', status);
+      
+      navigate(`/test-enrollment-success?${params.toString()}`, { replace: true });
+      return;
+    }
     
     if (authority && enrollmentId) {
       // Check if this is a free course

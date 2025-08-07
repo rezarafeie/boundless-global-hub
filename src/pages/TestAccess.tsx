@@ -158,15 +158,36 @@ const TestAccess: React.FC = () => {
       const persianYear = currentYear - 621
       const age = persianYear - enrollment.birth_year
 
-      // Submit answers to Esanj (this would be via a POST to interpretation endpoint)
-      // For now, we'll just check test status and get results
-      
-      // Mark test as completed
+      // Prepare answers for Esanj API
+      const esanjAnswers = Object.entries(answers).map(([key, value]) => ({
+        question_row: parseInt(key.replace('q', '')),
+        answer_id: value
+      }))
+
+      // Submit test to Esanj
+      const { data: submitResult, error: submitError } = await supabase.functions.invoke('esanj-submit-test', {
+        body: {
+          esanjToken: await esanjService.authenticate(),
+          testId: enrollment.tests.test_id,
+          uuid: enrollment.esanj_uuid,
+          employeeId: enrollment.esanj_employee_id,
+          age: age,
+          sex: enrollment.sex,
+          answers: esanjAnswers
+        }
+      })
+
+      if (submitError) {
+        throw submitError
+      }
+
+      // Mark test as completed and store result UUID
       await supabase
         .from('test_enrollments')
         .update({
           test_completed_at: new Date().toISOString(),
-          enrollment_status: 'completed'
+          enrollment_status: 'completed',
+          result_data: submitResult.result
         })
         .eq('id', enrollment.id)
 

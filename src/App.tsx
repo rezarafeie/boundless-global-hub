@@ -121,6 +121,7 @@ import EnrollAdminTests from "./pages/EnrollAdminTests";
 import Tests from "./pages/Tests";
 import TestAccess from "./pages/TestAccess";
 import TestResult from "./pages/TestResult";
+import TestEnrollmentSuccessPage from "./pages/TestEnrollmentSuccessPage";
 
 const queryClient = new QueryClient();
 
@@ -208,6 +209,7 @@ const App = () => {
                     {/* Enrollment pages */}
                     <Route path="/enroll" element={<Enroll />} />
                     <Route path="/enroll/success" element={<EnrollSuccess />} />
+                    <Route path="/test-enrollment-success" element={<TestEnrollmentSuccessPage />} />
                     <Route path="/enroll/details" element={<EnrollmentDetails />} />
                     <Route path="/admin-enrollment-details" element={<AdminEnrollmentDetails />} />
                     <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
