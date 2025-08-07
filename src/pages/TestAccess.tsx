@@ -146,21 +146,40 @@ const TestAccess: React.FC = () => {
       let questionnaireData;
       if (enrollment.tests.use_html_questionnaire) {
         console.log('Using HTML questionnaire API...')
-        const htmlContent = await esanjService.getHtmlQuestionnaire(
-          enrollment.tests.test_id,
-          age,
-          enrollment.sex,
-          enrollment.esanj_uuid,
-          enrollment.esanj_employee_id
-        )
-        // For HTML questionnaire, we'll store the HTML content differently
-        questionnaireData = {
-          isHtml: true,
-          htmlContent: htmlContent,
-          test: {
-            title: enrollment.tests.title,
-            test_id: enrollment.tests.test_id
+        try {
+          const htmlContent = await esanjService.getHtmlQuestionnaire(
+            enrollment.tests.test_id,
+            age,
+            enrollment.sex,
+            enrollment.esanj_uuid,
+            enrollment.esanj_employee_id
+          )
+          
+          // Check if HTML content is valid and not empty
+          const isValidHtml = htmlContent && 
+                             htmlContent.trim().length > 50 && 
+                             !htmlContent.includes('{"response":"') &&
+                             htmlContent.includes('<') && 
+                             htmlContent.includes('>')
+          
+          if (isValidHtml) {
+            questionnaireData = {
+              isHtml: true,
+              htmlContent: htmlContent,
+              test: {
+                title: enrollment.tests.title,
+                test_id: enrollment.tests.test_id
+              }
+            }
+          } else {
+            console.log('HTML content appears invalid, falling back to JSON questionnaire')
+            console.log('HTML content preview:', htmlContent?.substring(0, 200))
+            throw new Error('Invalid HTML content received')
           }
+        } catch (htmlError) {
+          console.log('HTML questionnaire failed, falling back to JSON:', htmlError)
+          // Fallback to JSON questionnaire
+          questionnaireData = await esanjService.getQuestionnaire(enrollment.tests.test_id)
         }
       } else {
         console.log('Using JSON questionnaire API...')
