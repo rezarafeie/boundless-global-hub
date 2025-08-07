@@ -129,14 +129,16 @@ const TestAccess: React.FC = () => {
         calculatedAge: age
       })
 
-      // Fetch questionnaire from Esanj (now requires all parameters)
-      const questionnaireData = await esanjService.getQuestionnaire(
-        enrollment.tests.test_id,
-        enrollment.esanj_uuid,
-        enrollment.esanj_employee_id,
-        age,
-        enrollment.sex
-      )
+      // First check/start the test status
+      try {
+        console.log('Checking test status before fetching questionnaire...')
+        await esanjService.checkTestStatus(enrollment.tests.test_id, enrollment.esanj_employee_id)
+      } catch (statusError) {
+        console.log('Test status check failed, continuing anyway:', statusError)
+      }
+
+      // Fetch questionnaire from Esanj
+      const questionnaireData = await esanjService.getQuestionnaire(enrollment.tests.test_id)
 
       setQuestionnaire(questionnaireData)
       setTestStarted(true)

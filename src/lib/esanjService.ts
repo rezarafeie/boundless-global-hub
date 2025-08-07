@@ -111,23 +111,13 @@ class EsanjService {
     throw new Error('Employee not found and no data provided for creation')
   }
 
-  async getQuestionnaire(
-    testId: number, 
-    uuid: string, 
-    employeeId: number, 
-    age: number, 
-    sex: string
-  ): Promise<any> {
+  async getQuestionnaire(testId: number): Promise<any> {
     const token = await this.authenticate()
 
     const { data, error } = await supabase.functions.invoke('esanj-questionnaire', {
       body: { 
         esanjToken: token, 
-        testId, 
-        uuid, 
-        employeeId, 
-        age, 
-        sex 
+        testId
       }
     })
 

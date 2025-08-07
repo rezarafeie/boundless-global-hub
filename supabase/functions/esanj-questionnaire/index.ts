@@ -11,30 +11,23 @@ serve(async (req) => {
   }
 
   try {
-    const { esanjToken, testId, uuid, employeeId, age, sex } = await req.json()
+    const { esanjToken, testId } = await req.json()
     
-    if (!esanjToken || !testId || !uuid || !employeeId || age === undefined || !sex) {
-      throw new Error('Missing required parameters: esanjToken, testId, uuid, employeeId, age, sex')
+    if (!esanjToken || !testId) {
+      throw new Error('Missing required parameters: esanjToken and testId')
     }
 
-    console.log('Fetching questionnaire for test:', testId, 'employee:', employeeId)
+    console.log('Fetching questionnaire for test:', testId)
     
     const apiUrl = `https://esanj.org/api/v1/questionnaire/${testId}`
     console.log('API URL:', apiUrl)
 
     const questionnaireResponse = await fetch(apiUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${esanjToken}`
-      },
-      body: JSON.stringify({
-        uuid: uuid,
-        employee_id: employeeId,
-        age: age,
-        sex: sex
-      })
+      }
     })
 
     console.log('Response status:', questionnaireResponse.status)
