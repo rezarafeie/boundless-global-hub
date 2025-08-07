@@ -90,13 +90,34 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
 
   // Check for auto-processing when enrollment loads
   useEffect(() => {
+    console.log('Auto-processing useEffect triggered', { 
+      enrollmentId: enrollment?.id, 
+      enrollmentStatus: enrollment?.enrollment_status,
+      birthYear: enrollment?.birth_year,
+      sex: enrollment?.sex,
+      isProcessing 
+    });
     if (enrollment && enrollment.enrollment_status !== 'ready' && !isProcessing) {
+      console.log('Calling checkAndAutoStartProcessing...');
       checkAndAutoStartProcessing();
     }
   }, [enrollment?.id]); // Only run when enrollment ID changes
 
   const checkAndAutoStartProcessing = async () => {
-    if (!enrollment || isProcessing || enrollment.enrollment_status === 'ready') return;
+    console.log('checkAndAutoStartProcessing called');
+    if (!enrollment || isProcessing) {
+      console.log('Skipping auto-processing:', { 
+        hasEnrollment: !!enrollment, 
+        isProcessing
+      });
+      return;
+    }
+
+    // Skip if enrollment is ready AND has required data
+    if (enrollment.enrollment_status === 'ready' && enrollment.birth_year && enrollment.sex) {
+      console.log('Enrollment is ready with complete data, skipping auto-processing');
+      return;
+    }
 
     console.log('Checking auto-start processing for enrollment:', enrollment.id);
     
@@ -129,6 +150,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
 
       // If no data found locally, check Test Center database
       console.log('No local data found, checking Test Center database...');
+      console.log('About to call check-esanj-employee with:', { phone: enrollment.phone, enrollmentId: enrollment.id });
       setProcessingMessage('جستجو در پایگاه داده مرکز سنجش...');
       
       const { data: esanjResult, error: esanjError } = await supabase.functions.invoke('check-esanj-employee', {
@@ -137,6 +159,8 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
           enrollmentId: enrollment.id
         }
       });
+
+      console.log('check-esanj-employee response:', { esanjResult, esanjError });
 
       if (esanjError) {
         console.error('Error checking Esanj employee:', esanjError);
