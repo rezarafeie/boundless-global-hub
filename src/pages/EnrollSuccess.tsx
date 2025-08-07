@@ -383,81 +383,6 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
             </CardContent>
           </Card>
 
-          {/* Enrollment Details */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                جزئیات ثبت‌نام آزمون
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">نام:</span>
-                  <span className="font-medium">{enrollment.full_name}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">تلفن:</span>
-                  <span className="font-medium">{enrollment.phone}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">آزمون:</span>
-                  <span className="font-medium">{enrollment.tests.title}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">مبلغ:</span>
-                  <span className="font-medium">
-                    {enrollment.tests.price === 0 ? 'رایگان' : `${enrollment.tests.price.toLocaleString('fa-IR')} تومان`}
-                  </span>
-                </div>
-                
-                {enrollment.birth_year && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">سال تولد:</span>
-                    <span className="font-medium">{enrollment.birth_year}</span>
-                  </div>
-                )}
-                
-                {enrollment.sex && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">جنسیت:</span>
-                    <span className="font-medium">{enrollment.sex === 'male' ? 'مرد' : 'زن'}</span>
-                  </div>
-                )}
-                
-                {/* Debug info - show when data is missing */}
-                {(!enrollment.birth_year || !enrollment.sex) && (
-                  <div className="flex items-center gap-2 text-amber-600">
-                    <span className="text-sm">⚠️ اطلاعات تکمیلی ثبت نشده</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Badge 
-                  variant={enrollment.payment_status === 'completed' ? 'default' : 'secondary'}
-                >
-                  {enrollment.payment_status === 'completed' ? 'پرداخت موفق' : 'در انتظار پرداخت'}
-                </Badge>
-                <Badge 
-                  variant={enrollment.enrollment_status === 'ready' ? 'default' : 'secondary'}
-                >
-                  {enrollment.enrollment_status === 'ready' ? 'آماده شروع' : 'در حال آماده‌سازی'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Start Test Section - Only show when ready AND has birth_year and sex */}
           {isReady && enrollment.birth_year && enrollment.sex && (
             <Card className="mb-6">
@@ -534,6 +459,81 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
               </CardContent>
             </Card>
           )}
+
+          {/* Enrollment Details - Moved to last section */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                جزئیات ثبت‌نام آزمون
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">نام:</span>
+                  <span className="font-medium">{enrollment.full_name}</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">تلفن:</span>
+                  <span className="font-medium">{enrollment.phone}</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">آزمون:</span>
+                  <span className="font-medium">{enrollment.tests.title}</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">مبلغ:</span>
+                  <span className="font-medium">
+                    {enrollment.tests.price === 0 ? 'رایگان' : `${enrollment.tests.price.toLocaleString('fa-IR')} تومان`}
+                  </span>
+                </div>
+                
+                {enrollment.birth_year && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">سال تولد:</span>
+                    <span className="font-medium">{enrollment.birth_year}</span>
+                  </div>
+                )}
+                
+                {enrollment.sex && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">جنسیت:</span>
+                    <span className="font-medium">{enrollment.sex === 'male' ? 'مرد' : 'زن'}</span>
+                  </div>
+                )}
+                
+                {/* Debug info - show when data is missing */}
+                {(!enrollment.birth_year || !enrollment.sex) && (
+                  <div className="flex items-center gap-2 text-amber-600">
+                    <span className="text-sm">⚠️ اطلاعات تکمیلی ثبت نشده</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Badge 
+                  variant={enrollment.payment_status === 'completed' ? 'default' : 'secondary'}
+                >
+                  {enrollment.payment_status === 'completed' ? 'پرداخت موفق' : 'در انتظار پرداخت'}
+                </Badge>
+                <Badge 
+                  variant={enrollment.enrollment_status === 'ready' ? 'default' : 'secondary'}
+                >
+                  {enrollment.enrollment_status === 'ready' ? 'آماده شروع' : 'در حال آماده‌سازی'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Action Section for non-ready enrollments */}
           {!isReady && enrollment.enrollment_status !== 'ready' && (
