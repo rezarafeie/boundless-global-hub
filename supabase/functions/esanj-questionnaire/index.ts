@@ -18,9 +18,9 @@ serve(async (req) => {
     }
 
     console.log('Fetching questionnaire for test:', testId)
+    console.log('Request parameters:', { testId, uuid, age, sex, employeeId })
     
     const queryParams = new URLSearchParams({
-      test_id: testId.toString(),
       uuid: uuid,
       age: age.toString(),
       sex: sex
@@ -30,13 +30,20 @@ serve(async (req) => {
       queryParams.append('employee_id', employeeId.toString())
     }
 
-    const questionnaireResponse = await fetch(`https://esanj.org/api/v1/questionnaire/${testId}?${queryParams}`, {
+    const apiUrl = `https://esanj.org/api/v1/questionnaire/${testId}?${queryParams}`
+    console.log('API URL:', apiUrl)
+
+    const questionnaireResponse = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${esanjToken}`
+        'Authorization': `Bearer ${esanjToken}`,
+        'Content-Type': 'application/json'
       }
     })
+
+    console.log('Response status:', questionnaireResponse.status)
+    console.log('Response headers:', Object.fromEntries(questionnaireResponse.headers.entries()))
 
     if (!questionnaireResponse.ok) {
       throw new Error(`Failed to fetch questionnaire: ${questionnaireResponse.status}`)
