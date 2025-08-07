@@ -983,83 +983,85 @@ const Enroll: React.FC = () => {
                       </Button>
                     </div>
                   ) : (
-                    /* Paid Course Payment Methods */
-                    <>
-                      <ManualPaymentSection
-                        course={course}
-                        formData={formData}
-                        onPaymentMethodChange={setPaymentMethod}
-                        selectedMethod={paymentMethod}
-                        finalRialPrice={finalRialPrice}
-                        discountedPrice={discountedPrice}
-                        salePrice={salePrice}
-                        isOnSale={isOnSale}
-                      />
-
-                       {/* Discount Section - Only show for paid courses */}
-                       {!isFree && course && (
-                         <DiscountSection
-                           courseId={course.id}
-                           originalPrice={finalRialPrice || course.price}
-                           onDiscountApplied={(discountAmount, finalPrice) => {
-                             setDiscountAmount(discountAmount);
-                             setDiscountedPrice(finalPrice);
-                           }}
+                     /* Paid Course Payment Methods - Only show for courses, not tests */
+                     course && (
+                       <>
+                         <ManualPaymentSection
+                           course={course}
+                           formData={formData}
+                           onPaymentMethodChange={setPaymentMethod}
+                           selectedMethod={paymentMethod}
+                           finalRialPrice={finalRialPrice}
+                           discountedPrice={discountedPrice}
+                           salePrice={salePrice}
+                           isOnSale={isOnSale}
                          />
-                       )}
 
-                       {/* VPN Warning for non-Iranian IPs */}
-                       {showVPNWarning && paymentMethod === 'zarinpal' && isIranianIP === false && (
-                        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                          <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Wifi className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                <h4 className="font-medium text-orange-800 dark:text-orange-200">توجه به کاربران VPN</h4>
-                              </div>
-                              <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
-                                درگاه شاپرک (زرین‌پال) با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                        {/* Discount Section - Only show for paid courses */}
+                        {!isFree && (
+                          <DiscountSection
+                            courseId={course.id}
+                            originalPrice={finalRialPrice || course.price}
+                            onDiscountApplied={(discountAmount, finalPrice) => {
+                              setDiscountAmount(discountAmount);
+                              setDiscountedPrice(finalPrice);
+                            }}
+                          />
+                        )}
+                       </>
+                      )
+                   )}
 
-                      {/* Submit Button - Only for Zarinpal */}
-                      {paymentMethod === 'zarinpal' && (
-                        <Button
-                          type="submit"
-                          className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <Loader2 className="h-6 w-6 animate-spin ml-2" />
-                              در حال پردازش...
-                            </>
-                          ) : (
-                             <>
-                                <CreditCard className="h-6 w-6 ml-2" />
-                                پرداخت آنلاین {test 
-                                  ? formatPrice(test.price)
-                                  : isOnPrelaunch && prelaunchPrice !== null
-                                    ? formatPrice(prelaunchPrice)
-                                    : isOnSale && salePrice !== null
-                                      ? formatPrice(salePrice)
-                                      : discountedPrice !== null 
-                                        ? formatPrice(discountedPrice)
-                                        : course?.use_dollar_price && finalRialPrice 
-                                          ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                          : formatPrice(course?.price || 0)
-                                }
-                             </>
-                           )}
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </form>
+                   {/* VPN Warning for non-Iranian IPs */}
+                   {showVPNWarning && paymentMethod === 'zarinpal' && isIranianIP === false && (
+                     <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                       <div className="flex items-start gap-3">
+                         <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                         <div className="space-y-2">
+                           <div className="flex items-center gap-2">
+                             <Wifi className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                             <h4 className="font-medium text-orange-800 dark:text-orange-200">توجه به کاربران VPN</h4>
+                           </div>
+                           <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
+                             درگاه شاپرک (زرین‌پال) با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.
+                           </p>
+                         </div>
+                       </div>
+                     </div>
+                   )}
+
+                   {/* Submit Button - Only for Zarinpal and paid tests/courses */}
+                   {paymentMethod === 'zarinpal' && (test || course) && (
+                     <Button
+                       type="submit"
+                       className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                       disabled={submitting}
+                     >
+                       {submitting ? (
+                         <>
+                           <Loader2 className="h-6 w-6 animate-spin ml-2" />
+                           در حال پردازش...
+                         </>
+                       ) : (
+                          <>
+                             <CreditCard className="h-6 w-6 ml-2" />
+                             پرداخت آنلاین {test 
+                               ? formatPrice(test.price)
+                               : isOnPrelaunch && prelaunchPrice !== null
+                                 ? formatPrice(prelaunchPrice)
+                                 : isOnSale && salePrice !== null
+                                   ? formatPrice(salePrice)
+                                   : discountedPrice !== null 
+                                     ? formatPrice(discountedPrice)
+                                     : course?.use_dollar_price && finalRialPrice 
+                                       ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                       : formatPrice(course?.price || 0)
+                             }
+                          </>
+                        )}
+                     </Button>
+                   )}
+                 </form>
 
                  {/* Security Note */}
                  <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
