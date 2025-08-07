@@ -37,6 +37,7 @@ import { format } from 'date-fns';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import SalesDashboard from '@/components/Admin/SalesDashboard';
 import TestManagement from '@/components/Admin/TestManagement';
+import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface Enrollment {
@@ -267,7 +268,7 @@ const EnrollAdmin: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="list" className="space-y-4">
-            <TabsList className={`grid w-full ${canViewSales ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <TabsList className={`grid w-full ${canViewSales ? 'grid-cols-4' : 'grid-cols-3'}`}>
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 ثبت‌نام‌های دوره
@@ -279,6 +280,10 @@ const EnrollAdmin: React.FC = () => {
               >
                 <FileText className="w-4 h-4" />
                 آزمون‌ها
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                گزارش تحلیل
               </TabsTrigger>
               {canViewSales && (
                 <TabsTrigger value="sales" className="flex items-center gap-2">
@@ -442,6 +447,10 @@ const EnrollAdmin: React.FC = () => {
             
             <TabsContent value="tests" className="space-y-4">
               <TestManagement />
+            </TabsContent>
+            
+            <TabsContent value="analytics" className="space-y-4">
+              <AnalyticsReports />
             </TabsContent>
             
             <TabsContent value="sales" className="space-y-4">
