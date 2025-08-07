@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   Crown,
   TrendingUp,
-  MessageSquare
+  MessageSquare,
+  Brain
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -33,6 +34,7 @@ interface AdminSidebarProps {
 const menuItems = [
   { id: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
   { id: 'courses', label: 'دوره‌ها', icon: BookOpen },
+  { id: 'tests', label: 'آزمون‌ها', icon: Brain },
   { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },

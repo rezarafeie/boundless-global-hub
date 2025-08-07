@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@supabase/supabase-js';
 import MainLayout from '@/components/Layout/MainLayout';
+import TestsTab from '@/components/Dashboard/TestsTab';
 import { 
   BookOpen, 
   Key, 
@@ -37,7 +38,8 @@ import {
   ChevronDown,
   MapPin,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  Brain
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IPDetectionService } from '@/lib/ipDetectionService';
@@ -705,10 +707,14 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               دوره‌های من
+            </TabsTrigger>
+            <TabsTrigger value="tests" className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              آزمون‌های من
             </TabsTrigger>
             <TabsTrigger value="licenses" className="flex items-center gap-2">
               <Key className="w-4 h-4" />
@@ -842,6 +848,11 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Tests Tab */}
+          <TabsContent value="tests" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
+            <TestsTab />
           </TabsContent>
 
           {/* Payment History Tab */}
