@@ -13,47 +13,98 @@ serve(async (req) => {
   }
 
   try {
-    const { courseSlug, firstName, lastName, email, phone, countryCode, customAmount } = await req.json();
+    const { courseSlug, testSlug, firstName, lastName, email, phone, countryCode, customAmount, enrollmentType } = await req.json();
 
-    // Get course details
-    const { data: course, error: courseError } = await supabase
-      .from('courses')
-      .select('*')
-      .eq('slug', courseSlug)
-      .eq('is_active', true)
-      .single();
+    let paymentAmount, enrollment, itemTitle, itemSlug;
 
-    if (courseError || !course) {
-      return new Response(
-        JSON.stringify({ error: 'Course not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    if (enrollmentType === 'test' && testSlug) {
+      // Handle test enrollment
+      const { data: test, error: testError } = await supabase
+        .from('tests')
+        .select('*')
+        .eq('slug', testSlug)
+        .eq('is_active', true)
+        .single();
 
-    // Use custom amount if provided (for discounts), otherwise use course price
-    const paymentAmount = customAmount || course.price;
+      if (testError || !test) {
+        return new Response(
+          JSON.stringify({ error: 'Test not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    // Create enrollment record
-    const { data: enrollment, error: enrollmentError } = await supabase
-      .from('enrollments')
-      .insert({
-        course_id: course.id,
-        full_name: `${firstName} ${lastName}`,
-        email: email,
-        phone: phone,
-        country_code: countryCode || '+98',
-        payment_amount: paymentAmount,
-        payment_status: 'pending'
-      })
-      .select()
-      .single();
+      paymentAmount = customAmount || test.price;
+      itemTitle = test.title;
+      itemSlug = testSlug;
 
-    if (enrollmentError) {
-      console.error('Enrollment creation error:', enrollmentError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create enrollment' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Create test enrollment record
+      const { data: testEnrollment, error: testEnrollmentError } = await supabase
+        .from('test_enrollments')
+        .insert({
+          test_id: test.id,
+          full_name: `${firstName} ${lastName}`,
+          email: email,
+          phone: phone,
+          country_code: countryCode || '+98',
+          payment_amount: paymentAmount,
+          payment_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (testEnrollmentError) {
+        console.error('Test enrollment creation error:', testEnrollmentError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create test enrollment' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      enrollment = testEnrollment;
+    } else {
+      // Handle course enrollment
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('slug', courseSlug)
+        .eq('is_active', true)
+        .single();
+
+      if (courseError || !course) {
+        return new Response(
+          JSON.stringify({ error: 'Course not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      paymentAmount = customAmount || course.price;
+      itemTitle = course.title;
+      itemSlug = courseSlug;
+
+      // Create course enrollment record
+      const { data: courseEnrollment, error: courseEnrollmentError } = await supabase
+        .from('enrollments')
+        .insert({
+          course_id: course.id,
+          full_name: `${firstName} ${lastName}`,
+          email: email,
+          phone: phone,
+          country_code: countryCode || '+98',
+          payment_amount: paymentAmount,
+          payment_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (courseEnrollmentError) {
+        console.error('Course enrollment creation error:', courseEnrollmentError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create course enrollment' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      enrollment = courseEnrollment;
     }
 
     // Prepare Zarinpal payment request
@@ -65,13 +116,19 @@ serve(async (req) => {
       );
     }
 
-    const callbackUrl = `https://academy.rafiei.co/enroll/success?course=${courseSlug}&email=${encodeURIComponent(email)}&enrollment=${enrollment.id}`;
+    // Generate appropriate callback URL based on enrollment type
+    let callbackUrl;
+    if (enrollmentType === 'test') {
+      callbackUrl = `https://academy.rafiei.co/enroll/success/?test=${itemSlug}&phone=${encodeURIComponent(phone)}&enrollment=${enrollment.id}&status=OK&Authority={zarinpal_authority}`;
+    } else {
+      callbackUrl = `https://academy.rafiei.co/enroll/success?course=${itemSlug}&email=${encodeURIComponent(email)}&enrollment=${enrollment.id}`;
+    }
 
     const zarinpalPayload = {
       merchant_id: merchantId,
       amount: Math.round(paymentAmount * 10), // Convert to Rials (multiply by 10) - use final amount after discount
       callback_url: callbackUrl,
-      description: `خرید دوره: ${course.title}`,
+      description: enrollmentType === 'test' ? `خرید آزمون: ${itemTitle}` : `خرید دوره: ${itemTitle}`,
       metadata: {
         mobile: phone,
         email: email
@@ -93,11 +150,18 @@ serve(async (req) => {
     console.log('Zarinpal response:', zarinpalData);
 
     if (zarinpalData.data && zarinpalData.data.code === 100) {
-      // Update enrollment with authority
-      await supabase
-        .from('enrollments')
-        .update({ zarinpal_authority: zarinpalData.data.authority })
-        .eq('id', enrollment.id);
+      // Update enrollment with authority based on type
+      if (enrollmentType === 'test') {
+        await supabase
+          .from('test_enrollments')
+          .update({ zarinpal_authority: zarinpalData.data.authority })
+          .eq('id', enrollment.id);
+      } else {
+        await supabase
+          .from('enrollments')
+          .update({ zarinpal_authority: zarinpalData.data.authority })
+          .eq('id', enrollment.id);
+      }
 
       return new Response(
         JSON.stringify({
