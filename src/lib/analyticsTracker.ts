@@ -76,18 +76,13 @@ export function trackPageview(pathname?: string) {
     };
 
     try {
-      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(EDGE_URL, blob);
-      } else {
-        // Fallback, keepalive avoids blocking unload
-        fetch(EDGE_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          keepalive: true,
-        }).catch(() => {});
-      }
+      // Use fetch with keepalive for reliability across browsers
+      fetch(EDGE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {});
     } catch {
       // swallow
     }

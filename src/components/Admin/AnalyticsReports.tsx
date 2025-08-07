@@ -61,7 +61,7 @@ const AnalyticsReports: React.FC = () => {
           .gte('first_seen', startISO),
         supabase
           .from('analytics_events')
-          .select('path, created_at')
+          .select('session_id, path, created_at')
           .eq('event_type', 'pageview')
           .gte('created_at', startISO)
       ]);
@@ -88,8 +88,7 @@ const AnalyticsReports: React.FC = () => {
           )
         : 0;
 
-      const bounceSessions = sessions.filter(s => (s.pageviews || 0) <= 1).length;
-      const bounceRate = visitors ? Math.round((bounceSessions / visitors) * 100) : 0;
+      let bounceRate = 0;
       const viewsPerVisit = visitors ? Math.round((pageviews / visitors) * 100) / 100 : 0;
 
       // Group helpers
@@ -101,6 +100,10 @@ const AnalyticsReports: React.FC = () => {
         }
         return Array.from(map.entries()).map(([key, count]) => ({ key, count }));
       };
+
+      // Compute bounce after helper is declared using events per session
+      const sessionEventCounts = countBy(events, (e: any) => (e.session_id as string) || 'unknown');
+      bounceRate = visitors ? Math.round((sessionEventCounts.filter(se => se.count <= 1).length / visitors) * 100) : 0;
 
       // Top pages
       const pagesRaw = countBy(events, (e: any) => (e.path as string) || '/');
