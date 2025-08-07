@@ -17,33 +17,69 @@ const EnrollPending: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const orderId = searchParams.get('orderId');
+  const enrollmentType = searchParams.get('type'); // 'test' for test enrollments
 
   const fetchEnrollmentStatus = async () => {
     if (!orderId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          courses (
-            title,
-            slug
-          )
-        `)
-        .eq('id', orderId)
-        .single();
+      let data, error;
+
+      if (enrollmentType === 'test') {
+        // Fetch test enrollment
+        const response = await supabase
+          .from('test_enrollments')
+          .select(`
+            *,
+            tests (
+              title,
+              slug
+            )
+          `)
+          .eq('id', orderId)
+          .single();
+        
+        data = response.data;
+        error = response.error;
+      } else {
+        // Fetch regular enrollment
+        const response = await supabase
+          .from('enrollments')
+          .select(`
+            *,
+            courses (
+              title,
+              slug
+            )
+          `)
+          .eq('id', orderId)
+          .single();
+        
+        data = response.data;
+        error = response.error;
+      }
 
       if (error) throw error;
 
       setEnrollmentData(data);
 
       // Check if status changed and redirect accordingly
-      if (data.manual_payment_status === 'approved') {
-        const successUrl = `/enroll/success?course=${data.courses.slug}&email=${data.email}&enrollment=${data.id}&status=OK&Authority=MANUAL_PAYMENT`;
-        navigate(successUrl);
-      } else if (data.manual_payment_status === 'rejected') {
-        navigate(`/enroll/reject?orderId=${data.id}`);
+      if (enrollmentType === 'test') {
+        // For test enrollments, check payment_status instead of manual_payment_status
+        if (data.payment_status === 'completed' || data.payment_status === 'success') {
+          const successUrl = `/test-enrollment/success?test=${data.tests?.slug}&phone=${data.phone}&enrollment=${data.id}&status=OK`;
+          navigate(successUrl);
+        } else if (data.payment_status === 'failed' || data.payment_status === 'rejected') {
+          navigate(`/enroll/reject?orderId=${data.id}&type=test`);
+        }
+      } else {
+        // For regular enrollments
+        if (data.manual_payment_status === 'approved') {
+          const successUrl = `/enroll/success?course=${data.courses.slug}&email=${data.email}&enrollment=${data.id}&status=OK&Authority=MANUAL_PAYMENT`;
+          navigate(successUrl);
+        } else if (data.manual_payment_status === 'rejected') {
+          navigate(`/enroll/reject?orderId=${data.id}`);
+        }
       }
 
     } catch (error) {
@@ -68,6 +104,7 @@ const EnrollPending: React.FC = () => {
     fetchEnrollmentStatus();
 
     // Set up real-time subscription for status changes
+    const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
     const channel = supabase
       .channel('enrollment-status')
       .on(
@@ -75,7 +112,7 @@ const EnrollPending: React.FC = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'enrollments',
+          table: tableName,
           filter: `id=eq.${orderId}`
         },
         (payload) => {
@@ -182,8 +219,8 @@ const EnrollPending: React.FC = () => {
                   <p className="font-mono text-sm">{enrollmentData.id}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">نام دوره</label>
-                  <p>{enrollmentData.courses?.title}</p>
+                  <label className="text-sm font-medium text-muted-foreground">{enrollmentType === 'test' ? 'نام آزمون' : 'نام دوره'}</label>
+                  <p>{enrollmentType === 'test' ? enrollmentData.tests?.title : enrollmentData.courses?.title}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">نام و نام خانوادگی</label>
