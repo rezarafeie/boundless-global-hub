@@ -59,9 +59,26 @@ function getDevice() {
   return isMobile ? "mobile" : "desktop";
 }
 
+const COUNTRY_CACHE_KEY = "an_country";
+async function getCountryCode(): Promise<string | null> {
+  try {
+    const cached = localStorage.getItem(COUNTRY_CACHE_KEY);
+    if (cached) return cached;
+    const res = await fetch("https://get.geojs.io/v1/ip/country.json", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const code = (data && (data.country as string)) || null;
+    if (code) localStorage.setItem(COUNTRY_CACHE_KEY, code);
+    return code;
+  } catch {
+    return null;
+  }
+}
+
 export function trackPageview(pathname?: string) {
-  ric(() => {
+  ric(async () => {
     const url = new URL(window.location.href);
+    const country = await getCountryCode();
     const payload = {
       sessionId: getSessionId(),
       path: pathname || url.pathname + url.search,
@@ -71,12 +88,12 @@ export function trackPageview(pathname?: string) {
       screenW: window.screen?.width || window.innerWidth,
       screenH: window.screen?.height || window.innerHeight,
       source: getSource(url, document.referrer || ""),
+      country: country || undefined,
       eventType: "pageview",
       occurredAt: new Date().toISOString(),
-    };
+    } as const;
 
     try {
-      // Use fetch with keepalive for reliability across browsers
       fetch(EDGE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -338,7 +338,7 @@ const EnrollmentAdmin: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col" dir="rtl">
+    <div className="h-screen w-full bg-background text-foreground flex flex-col" dir="rtl">
       {/* Academy Main Header */}
       <Header />
       
@@ -368,7 +368,7 @@ const EnrollmentAdmin: React.FC = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-white h-full" style={{ direction: 'rtl' }}>
+        <main className="flex-1 p-4 lg:p-8 overflow-auto bg-background h-full" style={{ direction: 'rtl' }}>
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               {renderContent()}
