@@ -127,9 +127,9 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
         return;
       }
 
-      // If no data found locally, check Esanj database
-      console.log('No local data found, checking Esanj database...');
-      setProcessingMessage('جستجو در پایگاه داده اسانج...');
+      // If no data found locally, check Test Center database
+      console.log('No local data found, checking Test Center database...');
+      setProcessingMessage('جستجو در پایگاه داده مرکز سنجش...');
       
       const { data: esanjResult, error: esanjError } = await supabase.functions.invoke('check-esanj-employee', {
         body: { 
@@ -145,14 +145,14 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
       }
 
       if (esanjResult?.found) {
-        console.log('Employee found in Esanj, data saved automatically');
-        setProcessingMessage('اطلاعات از پایگاه داده اسانج بازیابی شد');
+        console.log('Employee found in Test Center, data saved automatically');
+        setProcessingMessage('اطلاعات از پایگاه داده مرکز سنجش بازیابی شد');
         // Refresh enrollment data to get the updated birth_year and sex
         await fetchEnrollment();
         // The updated data will trigger another call to this function
         return;
       } else {
-        console.log('Employee not found in Esanj, manual input required');
+        console.log('Employee not found in Test Center, manual input required');
         setProcessingMessage('نیاز به تکمیل اطلاعات');
       }
     } catch (error) {
@@ -447,7 +447,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
             </CardContent>
           </Card>
 
-          {/* Start Test Section */}
+          {/* Start Test Section - Only show when ready */}
           {isReady && (
             <Card className="mb-6">
               <CardHeader>
@@ -462,6 +462,62 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                     شروع آزمون
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Birth Year and Sex Form - Show instead of start test when data is missing */}
+          {!isReady && (!enrollment.birth_year || !enrollment.sex) && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>تکمیل اطلاعات</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground mb-4">
+                  برای آماده‌سازی آزمون، لطفاً اطلاعات زیر را تکمیل کنید:
+                </p>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="birthYear">سال تولد</Label>
+                    <Input
+                      id="birthYear"
+                      type="number"
+                      placeholder="مثال: 1370"
+                      value={birthYear}
+                      onChange={(e) => setBirthYear(e.target.value)}
+                      disabled={isProcessing}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="sex">جنسیت</Label>
+                    <Select value={sex} onValueChange={setSex} disabled={isProcessing}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">مرد</SelectItem>
+                        <SelectItem value="female">زن</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleCreateEsanjTest} 
+                  disabled={!birthYear || !sex || isProcessing}
+                  className="w-full"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      در حال آماده‌سازی...
+                    </>
+                  ) : (
+                    'آماده‌سازی آزمون'
+                  )}
+                </Button>
               </CardContent>
             </Card>
           )}
