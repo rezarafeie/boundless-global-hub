@@ -437,6 +437,34 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                   برای آماده‌سازی آزمون، لطفاً اطلاعات زیر را تکمیل کنید:
                 </p>
                 
+                {/* Debug Test Button */}
+                <div className="mb-4 p-4 bg-gray-100 rounded-lg">
+                  <h4 className="font-semibold mb-2">تست دیباگ</h4>
+                  <Button 
+                    onClick={async () => {
+                      console.log('Testing Esanj API...');
+                      const { data, error } = await supabase.functions.invoke('test-esanj-api', {
+                        body: { phone: enrollment.phone }
+                      });
+                      console.log('Test result:', { data, error });
+                    }}
+                    variant="outline"
+                    className="mb-2"
+                  >
+                    تست API اسانج
+                  </Button>
+                  <br />
+                  <Button 
+                    onClick={() => {
+                      console.log('Manually calling checkAndAutoStartProcessing...');
+                      checkAndAutoStartProcessing();
+                    }}
+                    variant="outline"
+                  >
+                    تست خودکار
+                  </Button>
+                </div>
+                
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="age">سن</Label>
