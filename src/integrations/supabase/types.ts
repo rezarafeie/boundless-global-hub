@@ -218,6 +218,54 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_daily_reports: {
+        Row: {
+          avg_session_duration: number
+          bounce_rate: number
+          countries: Json | null
+          created_at: string
+          devices: Json | null
+          id: string
+          pages: Json | null
+          pageviews: number
+          report_date: string
+          sources: Json | null
+          updated_at: string
+          views_per_visit: number
+          visitors: number
+        }
+        Insert: {
+          avg_session_duration?: number
+          bounce_rate?: number
+          countries?: Json | null
+          created_at?: string
+          devices?: Json | null
+          id?: string
+          pages?: Json | null
+          pageviews?: number
+          report_date: string
+          sources?: Json | null
+          updated_at?: string
+          views_per_visit?: number
+          visitors?: number
+        }
+        Update: {
+          avg_session_duration?: number
+          bounce_rate?: number
+          countries?: Json | null
+          created_at?: string
+          devices?: Json | null
+          id?: string
+          pages?: Json | null
+          pageviews?: number
+          report_date?: string
+          sources?: Json | null
+          updated_at?: string
+          views_per_visit?: number
+          visitors?: number
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string | null

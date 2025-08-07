@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseRealAnalyticsData, getDeviceNameInPersian, getCountryNameInPersian, getSourceNameInPersian, calculatePercentages, getCurrentVisitors, readProjectAnalytics } from '@/lib/analyticsService';
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnalyticsData {
   currentVisitors: number;
@@ -139,6 +140,8 @@ const AnalyticsReports: React.FC = () => {
 
         console.log('📈 Processed real analytics data:', processedData);
         setAnalytics(processedData);
+        // Save snapshot (upsert by date)
+        saveDailyReport(processedData);
       } else {
         console.warn('⚠️ Could not parse real analytics data, using fallback');
         // Fallback to basic mock data if parsing fails
@@ -192,6 +195,35 @@ const AnalyticsReports: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
       setLastUpdated(new Date());
+    }
+  };
+
+  // Save today's analytics snapshot to Supabase
+  const saveDailyReport = async (data: AnalyticsData) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const payload = {
+        reportDate: today,
+        visitors: data.visitors,
+        pageviews: data.pageviews,
+        viewsPerVisit: data.viewsPerVisit,
+        avgSessionDuration: data.visitDuration,
+        bounceRate: data.bounceRate,
+        pages: data.visitorsPages,
+        sources: data.visitorsSources,
+        devices: data.visitorsDevices,
+        countries: data.visitorsCountries,
+      };
+      const { data: resp, error } = await supabase.functions.invoke('save-analytics-report', {
+        body: payload,
+      });
+      if (error) {
+        console.warn('⚠️ Failed to save analytics daily report:', error);
+      } else {
+        console.log('✅ Saved analytics daily report:', resp);
+      }
+    } catch (e) {
+      console.warn('⚠️ Error calling save-analytics-report:', e);
     }
   };
 

@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.fix-payment-status]
 verify_jwt = false
+
+[functions.save-analytics-report]
+verify_jwt = false
