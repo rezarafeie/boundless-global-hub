@@ -29,8 +29,9 @@ interface Question {
   row: number
   title: string
   answers: Array<{
-    id: number
-    text: string
+    row: number
+    title: string
+    value: string
   }>
 }
 
@@ -436,18 +437,18 @@ const TestAccess: React.FC = () => {
                   <div className="space-y-2">
                     {question.answers.map((answer) => (
                       <label
-                        key={answer.id}
+                        key={answer.row}
                         className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent transition-colors"
                       >
                         <input
                           type="radio"
                           name={`question_${question.row}`}
-                          value={answer.id}
-                          checked={answers[`q${question.row}`] === answer.id}
-                          onChange={() => handleAnswerChange(question.row, answer.id)}
+                          value={answer.row}
+                          checked={answers[`q${question.row}`] === answer.row}
+                          onChange={() => handleAnswerChange(question.row, answer.row)}
                           className="text-primary"
                         />
-                        <span className="flex-1">{answer.text}</span>
+                        <span className="flex-1">{answer.title}</span>
                       </label>
                     ))}
                   </div>
