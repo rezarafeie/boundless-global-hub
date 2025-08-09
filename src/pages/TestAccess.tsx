@@ -447,7 +447,7 @@ const TestAccess: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="pt-20 pb-8">
+        <div className="py-8">
           <div className="container mx-auto px-4 max-w-2xl">
           <div className="flex items-center gap-4 mb-8">
             <Button
@@ -512,7 +512,7 @@ const TestAccess: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="pt-20 pb-8">
+      <div className="py-8">
         <div className="container mx-auto px-4 max-w-4xl">
         {/* Test Header */}
         <div className="mb-8">

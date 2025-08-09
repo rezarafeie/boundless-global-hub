@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { esanjService } from '@/lib/esanjService'
 import { toast } from 'sonner'
-import { Brain, Loader2, ArrowLeft, CheckCircle, Share2 } from 'lucide-react'
+import { Brain, Loader2, ArrowLeft, CheckCircle } from 'lucide-react'
 import Header from '@/components/Layout/Header'
 
 interface TestEnrollment {
@@ -100,27 +100,6 @@ const TestResult: React.FC = () => {
     }
   }
 
-  const handleShare = async () => {
-    // Create a public URL that anyone can access (without enrollment parameter)
-    const publicUrl = `${window.location.origin}/test-result-public?uuid=${enrollment?.esanj_uuid}`
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `نتایج آزمون ${enrollment?.tests.title}`,
-          text: 'نتایج آزمون شخصیت‌شناسی',
-          url: publicUrl
-        })
-      } catch (error) {
-        console.log('Error sharing:', error)
-      }
-    } else {
-      // Fallback: copy URL to clipboard
-      navigator.clipboard.writeText(publicUrl)
-      toast.success('لینک عمومی کپی شد')
-    }
-  }
-
 
   if (loading) {
     return (
@@ -154,7 +133,7 @@ const TestResult: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="pt-20 pb-8">
+      <div className="py-8">
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
@@ -169,12 +148,6 @@ const TestResult: React.FC = () => {
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-foreground">نتایج آزمون</h1>
               <p className="text-muted-foreground">{enrollment.tests.title}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                اشتراک‌گذاری
-              </Button>
             </div>
           </div>
 
