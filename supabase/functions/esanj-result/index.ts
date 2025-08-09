@@ -20,11 +20,10 @@ serve(async (req) => {
 
     console.log('Fetching test result for UUID:', uuid, 'testId:', testId, 'type:', type)
     
-    const resultResponse = await fetch(`https://handler.esanj.ir/api/v1/interpretation/${testId}/${type}/${uuid}`, {
-      method: 'POST',
+    const resultResponse = await fetch(`https://esanj.org/api/v1/interpretation/${testId}/${type}/${uuid}`, {
+      method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${esanjToken}`
       }
     })
