@@ -207,10 +207,10 @@ const TestAccess: React.FC = () => {
     }
   }
 
-  const handleAnswerChange = (questionRow: number, answerId: number) => {
+  const handleAnswerChange = (questionRow: number, answerValue: number) => {
     setAnswers(prev => ({
       ...prev,
-      [`q${questionRow}`]: answerId
+      [`q${questionRow}`]: answerValue
     }))
   }
 
@@ -247,8 +247,8 @@ const TestAccess: React.FC = () => {
 
       // Prepare answers for Esanj API
       const esanjAnswers = Object.entries(answers).map(([key, value]) => ({
-        question_row: parseInt(key.replace('q', '')),
-        answer_id: value
+        row: parseInt(key.replace('q', '')),
+        value: Number(value)
       }))
 
       // Submit test to Esanj
@@ -443,9 +443,9 @@ const TestAccess: React.FC = () => {
                         <input
                           type="radio"
                           name={`question_${question.row}`}
-                          value={answer.row}
-                          checked={answers[`q${question.row}`] === answer.row}
-                          onChange={() => handleAnswerChange(question.row, answer.row)}
+                          value={parseInt(answer.value)}
+                          checked={answers[`q${question.row}`] === parseInt(answer.value)}
+                          onChange={() => handleAnswerChange(question.row, parseInt(answer.value))}
                           className="text-primary"
                         />
                         <span className="flex-1">{answer.title}</span>
