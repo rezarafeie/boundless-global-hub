@@ -78,7 +78,7 @@ const TestResult: React.FC = () => {
     
     try {
       // Get result from Esanj directly using UUID
-      const response = await esanjService.getTestResult(uuid, 'grading')
+      const response = await esanjService.getTestResult(uuid, 'html')
       
       // Extract the actual result data from the response
       const resultData = response?.result || response
