@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -56,6 +56,7 @@ const TestAccess: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [testStarted, setTestStarted] = useState(false)
+  const htmlContainerRef = useRef<HTMLDivElement>(null)
 
   const testEnrollmentId = searchParams.get('test')
   const courseSlug = searchParams.get('course')
@@ -213,6 +214,88 @@ const TestAccess: React.FC = () => {
       [`q${questionRow}`]: answerValue
     }))
   }
+
+  useEffect(() => {
+    if (!questionnaire?.isHtml || !testStarted) return
+    const container = htmlContainerRef.current
+    if (!container) return
+
+    const form = container.querySelector('form') as HTMLFormElement | null
+    if (!form) return
+
+    const onSubmit = async (e: Event) => {
+      e.preventDefault()
+      if (!enrollment) return
+      try {
+        setIsSubmitting(true)
+
+        // Collect all question groups like q1..qN and ensure each has a checked value
+        const radioInputs = Array.from(container.querySelectorAll('input[type="radio"][name^="q"]')) as HTMLInputElement[]
+        const groupNames = Array.from(new Set(radioInputs.map(i => i.name)))
+
+        const esanjAnswers = [] as Array<{ row: number; value: number }>
+        for (const name of groupNames) {
+          const checked = container.querySelector(`input[type="radio"][name="${name}"]:checked`) as HTMLInputElement | null
+          if (!checked) {
+            toast.error('لطفاً به تمام سوالات پاسخ دهید')
+            setIsSubmitting(false)
+            return
+          }
+          const row = parseInt(name.replace('q', ''))
+          const value = Number(checked.value)
+          if (Number.isFinite(row) && Number.isFinite(value)) {
+            esanjAnswers.push({ row, value })
+          }
+        }
+
+        // Calculate age
+        const currentYear = new Date().getFullYear()
+        const age = currentYear - (enrollment.birth_year || currentYear)
+
+        // Submit via our edge function
+        const { data: submitResult, error: submitError } = await supabase.functions.invoke('esanj-submit-test', {
+          body: {
+            esanjToken: await esanjService.authenticate(),
+            testId: enrollment.tests.test_id,
+            uuid: enrollment.esanj_uuid,
+            employeeId: enrollment.esanj_employee_id,
+            age: age,
+            sex: enrollment.sex,
+            answers: esanjAnswers
+          }
+        })
+
+        if (submitError || !submitResult?.success) {
+          console.error('HTML submit error:', submitError || submitResult)
+          toast.error('خطا در ارسال آزمون')
+          setIsSubmitting(false)
+          return
+        }
+
+        await supabase
+          .from('test_enrollments')
+          .update({
+            test_completed_at: new Date().toISOString(),
+            enrollment_status: 'completed',
+            result_data: submitResult.result
+          })
+          .eq('id', enrollment.id)
+
+        toast.success('آزمون با موفقیت ارسال شد')
+        navigate(`/test-result?enrollment=${enrollment.id}`)
+      } catch (err) {
+        console.error('HTML submit exception:', err)
+        toast.error('خطا در ارسال آزمون')
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
+
+    form.addEventListener('submit', onSubmit)
+    return () => {
+      form.removeEventListener('submit', onSubmit)
+    }
+  }, [questionnaire?.isHtml, testStarted, enrollment, navigate])
 
   const handleSubmitTest = async () => {
     if (!enrollment || !questionnaire) return
@@ -417,6 +500,7 @@ const TestAccess: React.FC = () => {
             <Card className="border-border">
               <CardContent className="p-6">
                 <div 
+                  ref={htmlContainerRef}
                   dangerouslySetInnerHTML={{ __html: questionnaire.htmlContent || '' }}
                   className="prose prose-sm max-w-none"
                 />

@@ -59,7 +59,7 @@ serve(async (req) => {
       }
     }
 
-    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}`
+    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}${employeeId ? `?employee_id=${encodeURIComponent(employeeId)}` : ''}`
 
     // Verbose logging (no secrets)
     let debug: any = {}
