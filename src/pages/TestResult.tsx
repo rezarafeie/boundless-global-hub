@@ -220,7 +220,13 @@ const TestResult: React.FC = () => {
             <CardContent>
               {/* Display result content */}
               <div className="space-y-6">
-                {result?.result ? (
+                {result?.result && typeof result.result === 'string' ? (
+                  // HTML content from esanj API
+                  <div 
+                    className="prose prose-lg max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: result.result }} 
+                  />
+                ) : result?.result && typeof result.result === 'object' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Personal Information */}
                     <div className="bg-card p-6 rounded-lg border">
@@ -248,7 +254,11 @@ const TestResult: React.FC = () => {
                     </div>
                   </div>
                 ) : typeof result === 'string' ? (
-                  <div dangerouslySetInnerHTML={{ __html: result }} />
+                  // Direct HTML response
+                  <div 
+                    className="prose prose-lg max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: result }} 
+                  />
                 ) : (
                   <div className="bg-card p-6 rounded-lg border">
                     <h3 className="text-lg font-semibold mb-4">نتایج آزمون</h3>
