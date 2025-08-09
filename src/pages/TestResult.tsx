@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { esanjService } from '@/lib/esanjService'
 import { toast } from 'sonner'
-import { Brain, Loader2, ArrowLeft, CheckCircle, Share2 } from 'lucide-react'
-import Header from '@/components/Layout/Header'
+import { Brain, Loader2, Download, Share2, ArrowLeft, CheckCircle } from 'lucide-react'
 
 interface TestEnrollment {
   id: string
@@ -100,27 +99,27 @@ const TestResult: React.FC = () => {
     }
   }
 
+  const handlePrint = () => {
+    window.print()
+  }
+
   const handleShare = async () => {
-    // Create a public URL that anyone can access (without enrollment parameter)
-    const publicUrl = `${window.location.origin}/test-result-public?uuid=${enrollment?.esanj_uuid}`
-    
     if (navigator.share) {
       try {
         await navigator.share({
           title: `نتایج آزمون ${enrollment?.tests.title}`,
-          text: 'نتایج آزمون شخصیت‌شناسی',
-          url: publicUrl
+          text: 'نتایج آزمون شخصیت‌شناسی من',
+          url: window.location.href
         })
       } catch (error) {
         console.log('Error sharing:', error)
       }
     } else {
       // Fallback: copy URL to clipboard
-      navigator.clipboard.writeText(publicUrl)
-      toast.success('لینک عمومی کپی شد')
+      navigator.clipboard.writeText(window.location.href)
+      toast.success('لینک کپی شد')
     }
   }
-
 
   if (loading) {
     return (
@@ -152,31 +151,33 @@ const TestResult: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-20 pb-8">
-        <div className="container mx-auto px-4 max-w-7xl">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/tests')}
-              className="rounded-full"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground">نتایج آزمون</h1>
-              <p className="text-muted-foreground">{enrollment.tests.title}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                اشتراک‌گذاری
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8 no-print">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/tests')}
+            className="rounded-full"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-foreground">نتایج آزمون</h1>
+            <p className="text-muted-foreground">{enrollment.tests.title}</p>
           </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              اشتراک‌گذاری
+            </Button>
+            <Button variant="outline" onClick={handlePrint}>
+              <Download className="h-4 w-4 mr-2" />
+              چاپ
+            </Button>
+          </div>
+        </div>
 
         {/* Success Message */}
         <Card className="mb-6 border-green-200 dark:border-green-800">
@@ -223,14 +224,12 @@ const TestResult: React.FC = () => {
                   // HTML content from esanj API (new format)
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
-                    style={{ contain: 'style layout' }}
                     dangerouslySetInnerHTML={{ __html: result.response }} 
                   />
                 ) : result?.result && typeof result.result === 'string' ? (
                   // HTML content from esanj API (old format)
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
-                    style={{ contain: 'style layout' }}
                     dangerouslySetInnerHTML={{ __html: result.result }} 
                   />
                 ) : result?.result && typeof result.result === 'object' ? (
@@ -264,7 +263,6 @@ const TestResult: React.FC = () => {
                   // Direct HTML response
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
-                    style={{ contain: 'style layout' }}
                     dangerouslySetInnerHTML={{ __html: result }} 
                   />
                 ) : (
@@ -296,14 +294,26 @@ const TestResult: React.FC = () => {
           </Card>
         )}
 
-          {/* Footer */}
-          <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>
-              این نتایج توسط سیستم تحلیل مرکز سنجش آکادمی رفیعی تولید شده است.
-            </p>
-          </div>
+        {/* Footer */}
+        <div className="mt-8 text-center text-sm text-muted-foreground no-print">
+          <p>
+            این نتایج توسط سیستم تحلیل مرکز سنجش آکادمی رفیعی تولید شده است.
+          </p>
         </div>
       </div>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          .container {
+            max-width: none !important;
+            padding: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
