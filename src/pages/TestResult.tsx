@@ -220,8 +220,14 @@ const TestResult: React.FC = () => {
             <CardContent>
               {/* Display result content */}
               <div className="space-y-6">
-                {result?.result && typeof result.result === 'string' ? (
-                  // HTML content from esanj API
+                {result?.response && typeof result.response === 'string' ? (
+                  // HTML content from esanj API (new format)
+                  <div 
+                    className="prose prose-lg max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: result.response }} 
+                  />
+                ) : result?.result && typeof result.result === 'string' ? (
+                  // HTML content from esanj API (old format)
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
                     dangerouslySetInnerHTML={{ __html: result.result }} 
