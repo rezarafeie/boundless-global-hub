@@ -59,7 +59,7 @@ serve(async (req) => {
     }
 
     const query = employeeId ? `?employee_id=${encodeURIComponent(String(employeeId))}` : ''
-    const url = `https://esanj.org/api/v1/interpretation/${testId}/grading/${uuid}${query}`
+    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}${query}`
 
     const submitResponse = await fetch(url, {
       method: 'POST',
