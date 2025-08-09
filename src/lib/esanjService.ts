@@ -175,6 +175,35 @@ class EsanjService {
     return data.status
   }
 
+  async submitTest(
+    testId: number,
+    uuid: string,
+    employeeId: number,
+    age: number,
+    sex: string,
+    answers: Array<{ row: number; value: number }>
+  ): Promise<any> {
+    const token = await this.authenticate()
+
+    const { data, error } = await supabase.functions.invoke('esanj-submit-test', {
+      body: {
+        esanjToken: token,
+        testId,
+        uuid,
+        employeeId,
+        age,
+        sex,
+        answers
+      }
+    })
+
+    if (error || !data.success) {
+      throw new Error(data?.error || 'Failed to submit test')
+    }
+
+    return data.result
+  }
+
   async getTestResult(uuid: string, type: string = 'grading'): Promise<any> {
     const token = await this.authenticate()
 

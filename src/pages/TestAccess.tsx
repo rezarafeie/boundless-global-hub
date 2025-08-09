@@ -252,24 +252,42 @@ const TestAccess: React.FC = () => {
         const currentYear = new Date().getFullYear()
         const age = currentYear - (enrollment.birth_year || currentYear)
 
-        // Submit via our edge function
-        const { data: submitResult, error: submitError } = await supabase.functions.invoke('esanj-submit-test', {
-          body: {
-            esanjToken: await esanjService.authenticate(),
-            testId: enrollment.tests.test_id,
-            uuid: enrollment.esanj_uuid,
-            employeeId: enrollment.esanj_employee_id,
-            age: age,
-            sex: enrollment.sex,
-            answers: esanjAnswers
+        // Handle UUID reuse error by generating new UUID
+        let uuid = enrollment.esanj_uuid
+        let submitResult: any
+        
+        try {
+          submitResult = await esanjService.submitTest(
+            enrollment.tests.test_id,
+            uuid,
+            enrollment.esanj_employee_id || 0,
+            age,
+            enrollment.sex || 'male',
+            esanjAnswers
+          )
+        } catch (error: any) {
+          if (error.message?.includes('UUID IS Exists') || error.message?.includes('Tested before')) {
+            // Generate new UUID and try again
+            uuid = crypto.randomUUID()
+            
+            // Update enrollment with new UUID
+            await supabase
+              .from('test_enrollments')
+              .update({ esanj_uuid: uuid })
+              .eq('id', enrollment.id)
+            
+            // Retry with new UUID
+            submitResult = await esanjService.submitTest(
+              enrollment.tests.test_id,
+              uuid,
+              enrollment.esanj_employee_id || 0,
+              age,
+              enrollment.sex || 'male',
+              esanjAnswers
+            )
+          } else {
+            throw error
           }
-        })
-
-        if (submitError || !submitResult?.success) {
-          console.error('HTML submit error:', submitError || submitResult)
-          toast.error('خطا در ارسال آزمون')
-          setIsSubmitting(false)
-          return
         }
 
         await supabase
@@ -334,21 +352,42 @@ const TestAccess: React.FC = () => {
         value: Number(value)
       }))
 
-      // Submit test to Esanj
-      const { data: submitResult, error: submitError } = await supabase.functions.invoke('esanj-submit-test', {
-        body: {
-          esanjToken: await esanjService.authenticate(),
-          testId: enrollment.tests.test_id,
-          uuid: enrollment.esanj_uuid,
-          employeeId: enrollment.esanj_employee_id,
-          age: age,
-          sex: enrollment.sex,
-          answers: esanjAnswers
+      // Submit test using the service method
+      let uuid = enrollment.esanj_uuid
+      let submitResult: any
+      
+      try {
+        submitResult = await esanjService.submitTest(
+          enrollment.tests.test_id,
+          uuid,
+          enrollment.esanj_employee_id,
+          age,
+          enrollment.sex,
+          esanjAnswers
+        )
+      } catch (error: any) {
+        if (error.message?.includes('UUID IS Exists') || error.message?.includes('Tested before')) {
+          // Generate new UUID and try again
+          uuid = crypto.randomUUID()
+          
+          // Update enrollment with new UUID
+          await supabase
+            .from('test_enrollments')
+            .update({ esanj_uuid: uuid })
+            .eq('id', enrollment.id)
+          
+          // Retry with new UUID
+          submitResult = await esanjService.submitTest(
+            enrollment.tests.test_id,
+            uuid,
+            enrollment.esanj_employee_id,
+            age,
+            enrollment.sex,
+            esanjAnswers
+          )
+        } else {
+          throw error
         }
-      })
-
-      if (submitError) {
-        throw submitError
       }
 
       // Mark test as completed and store result UUID
