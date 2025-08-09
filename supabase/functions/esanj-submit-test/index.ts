@@ -62,6 +62,7 @@ serve(async (req) => {
     const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}`
 
     // Verbose logging (no secrets)
+    let debug: any = {}
     try {
       const answerKeys = Object.keys(requestBody).filter(k => /^q\d+$/.test(k))
       const firstQs = Object.fromEntries(
@@ -70,14 +71,18 @@ serve(async (req) => {
           .sort(([a],[b]) => Number(a.slice(1)) - Number(b.slice(1)))
           .slice(0, 5)
       )
+      debug = {
+        url,
+        payload: {
+          sex: requestBody.sex,
+          age: requestBody.age,
+          employee_id: requestBody.employee_id,
+          answerCount: answerKeys.length,
+          firstQs
+        }
+      }
       console.log('Esanj submit URL:', url)
-      console.log('Esanj submit payload (summary):', {
-        sex: requestBody.sex,
-        age: requestBody.age,
-        employee_id: requestBody.employee_id,
-        answerCount: answerKeys.length,
-        firstQs
-      })
+      console.log('Esanj submit payload (summary):', debug.payload)
     } catch (_) {}
 
     const submitResponse = await fetch(url, {
@@ -93,7 +98,24 @@ serve(async (req) => {
     if (!submitResponse.ok) {
       const text = await submitResponse.text().catch(() => '')
       console.error('Submission failed:', submitResponse.status, submitResponse.statusText, text.slice(0, 300))
-      throw new Error(`Failed to submit test: ${submitResponse.status}`)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Failed to submit test: ${submitResponse.status}`,
+          debug: {
+            ...debug,
+            response: {
+              status: submitResponse.status,
+              statusText: submitResponse.statusText,
+              bodyPreview: text.slice(0, 300)
+            }
+          }
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      )
     }
 
     const submitData = await submitResponse.json()
@@ -102,7 +124,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        result: submitData
+        result: submitData,
+        debug
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
