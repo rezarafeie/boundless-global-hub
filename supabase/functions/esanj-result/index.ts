@@ -11,33 +11,21 @@ serve(async (req) => {
   }
 
   try {
-    const { esanjToken, uuid, type = 'grading' } = await req.json()
+    const { esanjToken, uuid, testId, type = 'html' } = await req.json()
     
-    if (!esanjToken || !uuid) {
-      throw new Error('Missing required parameters')
+    if (!esanjToken || !uuid || !testId) {
+      throw new Error('Missing required parameters: esanjToken, uuid, and testId are required')
     }
 
-    console.log('Fetching test result for UUID:', uuid, 'type:', type)
+    console.log('Fetching test result for UUID:', uuid, 'testId:', testId, 'type:', type)
     
-    let resultResponse
-    
-    if (type === 'grading') {
-      resultResponse = await fetch(`https://handler.esanj.ir/api/v1/interpretation/grading/${uuid}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${esanjToken}`
-        }
-      })
-    } else {
-      resultResponse = await fetch(`https://handler.esanj.ir/api/v1/interpretation/${uuid}/html`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${esanjToken}`
-        }
-      })
-    }
+    const resultResponse = await fetch(`https://handler.esanj.ir/api/v1/interpretation/${testId}/${type}/${uuid}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${esanjToken}`
+      }
+    })
 
     if (!resultResponse.ok) {
       throw new Error(`Failed to fetch test result: ${resultResponse.status}`)

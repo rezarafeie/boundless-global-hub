@@ -204,13 +204,14 @@ class EsanjService {
     return data.result
   }
 
-  async getTestResult(uuid: string, type: string = 'grading'): Promise<any> {
+  async getTestResult(uuid: string, testId: number, type: string = 'html'): Promise<any> {
     const token = await this.authenticate()
 
     const { data, error } = await supabase.functions.invoke('esanj-result', {
       body: { 
         esanjToken: token, 
         uuid, 
+        testId,
         type 
       }
     })

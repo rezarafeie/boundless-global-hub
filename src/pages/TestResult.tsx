@@ -59,7 +59,7 @@ const TestResult: React.FC = () => {
       setEnrollment(data)
       
       // Always fetch fresh HTML interpretation results from Esanj
-      await fetchTestResult(data.esanj_uuid)
+      await fetchTestResult(data.esanj_uuid, data.tests.test_id)
     } catch (error) {
       console.error('Error:', error)
       toast.error('خطا در بارگذاری اطلاعات')
@@ -68,12 +68,12 @@ const TestResult: React.FC = () => {
     }
   }
 
-  const fetchTestResult = async (uuid: string) => {
+  const fetchTestResult = async (uuid: string, testId: number) => {
     setIsLoadingResult(true)
     
     try {
-      // Get result from Esanj directly using UUID
-      const response = await esanjService.getTestResult(uuid, 'html')
+      // Always get fresh HTML result from Esanj using correct endpoint format
+      const response = await esanjService.getTestResult(uuid, testId, 'html')
       
       // Extract the actual result data from the response
       const resultData = response?.result || response
@@ -269,7 +269,7 @@ const TestResult: React.FC = () => {
                 نتایج آزمون هنوز آماده نشده است. لطفاً بعداً مراجعه کنید.
               </p>
               <Button 
-                onClick={() => fetchTestResult(enrollment.esanj_uuid)}
+                onClick={() => fetchTestResult(enrollment.esanj_uuid, enrollment.tests.test_id)}
                 disabled={isLoadingResult}
               >
                 تلاش مجدد
