@@ -51,6 +51,7 @@ serve(async (req) => {
     const requestBody: Record<string, number | string> = {
       sex: normalizeSex(sex),
       age: Math.max(1, Math.floor(Number(age))),
+      employee_id: String(employeeId),
     }
     for (const a of normalized) {
       if (Number.isFinite(a.row) && Number.isFinite(a.value)) {
@@ -58,8 +59,7 @@ serve(async (req) => {
       }
     }
 
-    const query = employeeId ? `?employee_id=${encodeURIComponent(String(employeeId))}` : ''
-    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}${query}`
+    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}`
 
     const submitResponse = await fetch(url, {
       method: 'POST',
