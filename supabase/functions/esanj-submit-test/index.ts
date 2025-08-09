@@ -13,7 +13,7 @@ serve(async (req) => {
   try {
     const { esanjToken, testId, uuid, employeeId, age, sex, answers } = await req.json()
     
-    if (!esanjToken || !testId || !uuid || !employeeId || !answers) {
+    if (!esanjToken || !testId || !uuid || !answers) {
       throw new Error('Missing required parameters')
     }
 
@@ -51,7 +51,11 @@ serve(async (req) => {
     const requestBody: Record<string, number | string> = {
       sex: normalizeSex(sex),
       age: Math.max(1, Math.floor(Number(age))),
-      employee_id: String(employeeId),
+    }
+    
+    // Only include employee_id if provided
+    if (employeeId) {
+      requestBody.employee_id = String(employeeId)
     }
     for (const a of normalized) {
       if (Number.isFinite(a.row) && Number.isFinite(a.value)) {
@@ -59,7 +63,7 @@ serve(async (req) => {
       }
     }
 
-    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}${employeeId ? `?employee_id=${encodeURIComponent(employeeId)}` : ''}`
+    const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}`
 
     // Verbose logging (no secrets)
     let debug: any = {}
@@ -101,7 +105,9 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Failed to submit test: ${submitResponse.status}`,
+          error: text.includes('UUID IS Exists') || text.includes('Tested before') 
+            ? 'UUID IS Exists - Tested before' 
+            : `Failed to submit test: ${submitResponse.status}`,
           debug: {
             ...debug,
             response: {
