@@ -77,13 +77,7 @@ const TestResult: React.FC = () => {
     setIsLoadingResult(true)
     
     try {
-      // First check if test is completed
-      const status = await esanjService.checkTestStatus(
-        enrollment?.tests.test_id || 0,
-        enrollment?.esanj_employee_id || 0
-      )
-
-      // Get result from Esanj
+      // Get result from Esanj directly using UUID
       const resultData = await esanjService.getTestResult(uuid, 'grading')
       
       setResult(resultData)
