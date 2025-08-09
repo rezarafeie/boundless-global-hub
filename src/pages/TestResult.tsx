@@ -152,7 +152,7 @@ const TestResult: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8 no-print">
           <Button
@@ -210,14 +210,14 @@ const TestResult: React.FC = () => {
             </CardContent>
           </Card>
         ) : result ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
                 <Brain className="h-5 w-5" />
                 تحلیل نتایج آزمون
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h2>
+            </div>
+            <div>
               {/* Display result content */}
               <div className="space-y-6">
                 {result?.response && typeof result.response === 'string' ? (
@@ -274,8 +274,8 @@ const TestResult: React.FC = () => {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
           <Card>
             <CardContent className="p-8 text-center">
@@ -297,7 +297,7 @@ const TestResult: React.FC = () => {
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-muted-foreground no-print">
           <p>
-            این نتایج توسط سیستم تحلیل Esanj تولید شده است.
+            این نتایج توسط سیستم تحلیل مرکز سنجش آکادمی رفیعی تولید شده است.
           </p>
         </div>
       </div>
