@@ -223,12 +223,14 @@ const TestResult: React.FC = () => {
                   // HTML content from esanj API (new format)
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
+                    style={{ contain: 'style layout' }}
                     dangerouslySetInnerHTML={{ __html: result.response }} 
                   />
                 ) : result?.result && typeof result.result === 'string' ? (
                   // HTML content from esanj API (old format)
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
+                    style={{ contain: 'style layout' }}
                     dangerouslySetInnerHTML={{ __html: result.result }} 
                   />
                 ) : result?.result && typeof result.result === 'object' ? (
@@ -262,6 +264,7 @@ const TestResult: React.FC = () => {
                   // Direct HTML response
                   <div 
                     className="prose prose-lg max-w-none dark:prose-invert"
+                    style={{ contain: 'style layout' }}
                     dangerouslySetInnerHTML={{ __html: result }} 
                   />
                 ) : (
