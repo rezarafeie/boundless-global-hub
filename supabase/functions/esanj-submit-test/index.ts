@@ -41,9 +41,16 @@ serve(async (req) => {
     const normalized = normalizeAnswers(answers)
 
     // Build request body as q1..qN per Esanj docs
+    const normalizeSex = (s: string) => {
+      const v = (s || '').toString().toLowerCase()
+      if (['m','male','man','boy','1'].includes(v)) return 'male'
+      if (['f','female','woman','girl','0'].includes(v)) return 'female'
+      return v || 'male'
+    }
+
     const requestBody: Record<string, number | string> = {
-      sex,
-      age: Number(age),
+      sex: normalizeSex(sex),
+      age: Math.max(1, Math.floor(Number(age))),
     }
     for (const a of normalized) {
       if (Number.isFinite(a.row) && Number.isFinite(a.value)) {
