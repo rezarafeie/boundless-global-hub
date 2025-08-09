@@ -140,3 +140,20 @@ img {
 .highlight-message {
   @apply bg-yellow-100 dark:bg-yellow-900/30 transition-colors duration-500;
 }
+
+/* Esanj Content Isolation */
+.esanj-content-container {
+  position: relative;
+  isolation: isolate;
+  z-index: 1;
+}
+
+.esanj-content-container * {
+  position: initial !important;
+  z-index: initial !important;
+  top: initial !important;
+  left: initial !important;
+  right: initial !important;
+  bottom: initial !important;
+  transform: initial !important;
+}

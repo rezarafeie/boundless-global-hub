@@ -221,18 +221,20 @@ const TestResult: React.FC = () => {
               <div className="space-y-6">
                 {result?.response && typeof result.response === 'string' ? (
                   // HTML content from esanj API (new format)
-                  <div 
-                    className="prose prose-lg max-w-none dark:prose-invert"
-                    style={{ contain: 'style layout' }}
-                    dangerouslySetInnerHTML={{ __html: result.response }} 
-                  />
+                  <div className="esanj-content-container">
+                    <div 
+                      className="prose prose-lg max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: result.response }} 
+                    />
+                  </div>
                 ) : result?.result && typeof result.result === 'string' ? (
                   // HTML content from esanj API (old format)
-                  <div 
-                    className="prose prose-lg max-w-none dark:prose-invert"
-                    style={{ contain: 'style layout' }}
-                    dangerouslySetInnerHTML={{ __html: result.result }} 
-                  />
+                  <div className="esanj-content-container">
+                    <div 
+                      className="prose prose-lg max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: result.result }} 
+                    />
+                  </div>
                 ) : result?.result && typeof result.result === 'object' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Personal Information */}
@@ -262,11 +264,12 @@ const TestResult: React.FC = () => {
                   </div>
                 ) : typeof result === 'string' ? (
                   // Direct HTML response
-                  <div 
-                    className="prose prose-lg max-w-none dark:prose-invert"
-                    style={{ contain: 'style layout' }}
-                    dangerouslySetInnerHTML={{ __html: result }} 
-                  />
+                  <div className="esanj-content-container">
+                    <div 
+                      className="prose prose-lg max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: result }} 
+                    />
+                  </div>
                 ) : (
                   <div className="bg-card p-6 rounded-lg border">
                     <h3 className="text-lg font-semibold mb-4">نتایج آزمون</h3>
