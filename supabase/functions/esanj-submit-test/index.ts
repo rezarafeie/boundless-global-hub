@@ -29,10 +29,8 @@ serve(async (req) => {
           if (typeof a?.answer_id !== 'undefined' && typeof a?.question_row !== 'undefined') {
             return { row: Number(a.question_row), value: Number(a.answer_id) }
           }
-          // Fallback: try to coerce common shapes
-          const keys = Object.keys(a || {})
-          const row = Number(a?.row ?? a?.question ?? a?.q ?? a?.question_row)
-          const value = Number(a?.value ?? a?.answer ?? a?.answer_id)
+          const row = Number(a?.row ?? a?.question_row)
+          const value = Number(a?.value ?? a?.answer_id)
           return { row, value }
         })
       } catch {
@@ -40,51 +38,40 @@ serve(async (req) => {
       }
     }
 
-    const payload = {
-      test_id: testId,
-      uuid: uuid,
-      employee_id: employeeId,
-      age: age,
-      sex: sex,
-      answers: normalizeAnswers(answers)
+    const normalized = normalizeAnswers(answers)
+
+    // Build request body as q1..qN per Esanj docs
+    const requestBody: Record<string, number | string> = {
+      sex,
+      age: Number(age),
     }
-    
-    // Try primary endpoint then fallback
-    const endpoints = [
-      'https://esanj.org/api/v1/interpretation',
-      'https://esanj.org/api/v1/interpretation/grading'
-    ]
-
-    let submitResponse: Response | null = null
-    let lastError: any = null
-
-    for (const url of endpoints) {
-      submitResponse = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${esanjToken}`
-        },
-        body: JSON.stringify(payload)
-      })
-
-      if (submitResponse.ok) {
-        console.log('Test submitted successfully to', url)
-        break
-      } else {
-        const text = await submitResponse.text().catch(() => '')
-        console.error(`Submission failed at ${url}:`, submitResponse.status, submitResponse.statusText, text.slice(0, 200))
-        lastError = new Error(`Failed to submit test: ${submitResponse.status}`)
+    for (const a of normalized) {
+      if (Number.isFinite(a.row) && Number.isFinite(a.value)) {
+        requestBody[`q${a.row}`] = Number(a.value)
       }
     }
 
-    if (!submitResponse || !submitResponse.ok) {
-      throw lastError || new Error('Failed to submit test')
+    const query = employeeId ? `?employee_id=${encodeURIComponent(String(employeeId))}` : ''
+    const url = `https://esanj.org/api/v1/interpretation/${testId}/grading/${uuid}${query}`
+
+    const submitResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${esanjToken}`
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!submitResponse.ok) {
+      const text = await submitResponse.text().catch(() => '')
+      console.error('Submission failed:', submitResponse.status, submitResponse.statusText, text.slice(0, 300))
+      throw new Error(`Failed to submit test: ${submitResponse.status}`)
     }
 
     const submitData = await submitResponse.json()
-    console.log('Test submitted successfully:', submitData)
+    console.log('Test submitted successfully')
 
     return new Response(
       JSON.stringify({ 
