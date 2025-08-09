@@ -20,20 +20,48 @@ serve(async (req) => {
 
     console.log('Fetching test result for UUID:', uuid, 'testId:', testId, 'type:', type)
     
-    const resultResponse = await fetch(`https://esanj.org/api/v1/interpretation/${type}/${uuid}`, {
+    const apiUrl = `https://esanj.org/api/v1/interpretation/${type}/${uuid}`;
+    const requestHeaders = {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${esanjToken}`
+    };
+    
+    console.log('🔍 API Request Details:');
+    console.log('URL:', apiUrl);
+    console.log('Method: GET');
+    console.log('Headers:', JSON.stringify(requestHeaders, null, 2));
+    console.log('Bearer Token (first 20 chars):', esanjToken.substring(0, 20) + '...');
+    
+    const resultResponse = await fetch(apiUrl, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${esanjToken}`
-      }
+      headers: requestHeaders
     })
 
+    console.log('📥 API Response Details:');
+    console.log('Status:', resultResponse.status);
+    console.log('Status Text:', resultResponse.statusText);
+    console.log('Headers:', JSON.stringify(Object.fromEntries(resultResponse.headers.entries()), null, 2));
+
     if (!resultResponse.ok) {
-      throw new Error(`Failed to fetch test result: ${resultResponse.status}`)
+      const responseText = await resultResponse.text();
+      console.log('❌ Error Response Body:', responseText);
+      
+      const errorDetails = {
+        status: resultResponse.status,
+        statusText: resultResponse.statusText,
+        url: apiUrl,
+        headers: Object.fromEntries(resultResponse.headers.entries()),
+        body: responseText
+      };
+      
+      console.log('🚨 Complete Error Details for Esanj:', JSON.stringify(errorDetails, null, 2));
+      
+      throw new Error(`Failed to fetch test result: ${resultResponse.status} - ${responseText}`)
     }
 
     const resultData = await resultResponse.json()
-    console.log('Test result fetched successfully')
+    console.log('✅ Test result fetched successfully')
+    console.log('📊 Response Data Preview:', JSON.stringify(resultData).substring(0, 200) + '...')
 
     return new Response(
       JSON.stringify({ 
