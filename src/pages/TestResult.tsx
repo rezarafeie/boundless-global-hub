@@ -78,7 +78,10 @@ const TestResult: React.FC = () => {
     
     try {
       // Get result from Esanj directly using UUID
-      const resultData = await esanjService.getTestResult(uuid, 'grading')
+      const response = await esanjService.getTestResult(uuid, 'grading')
+      
+      // Extract the actual result data from the response
+      const resultData = response?.result || response
       
       setResult(resultData)
 
@@ -221,12 +224,40 @@ const TestResult: React.FC = () => {
             </CardHeader>
             <CardContent>
               {/* Display result content */}
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                {typeof result === 'string' ? (
+              <div className="space-y-6">
+                {result?.result ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Personal Information */}
+                    <div className="bg-card p-6 rounded-lg border">
+                      <h3 className="text-lg font-semibold mb-4 text-primary">اطلاعات فردی</h3>
+                      <div className="space-y-2">
+                        <p><span className="font-medium">جنسیت:</span> {result.result.sex === 'male' ? 'مرد' : 'زن'}</p>
+                        <p><span className="font-medium">سن:</span> {result.result.age} سال</p>
+                        {result.result.petitioner && (
+                          <p><span className="font-medium">شناسه متقاضی:</span> {result.result.petitioner}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Test Scores Summary */}
+                    <div className="bg-card p-6 rounded-lg border">
+                      <h3 className="text-lg font-semibold mb-4 text-primary">خلاصه نتایج</h3>
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          تعداد کل سوالات: {Object.keys(result.result).filter(key => key.startsWith('q')).length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          آزمون با موفقیت تکمیل شده است
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : typeof result === 'string' ? (
                   <div dangerouslySetInnerHTML={{ __html: result }} />
                 ) : (
-                  <div>
-                    <pre className="whitespace-pre-wrap bg-secondary p-4 rounded-lg text-sm">
+                  <div className="bg-card p-6 rounded-lg border">
+                    <h3 className="text-lg font-semibold mb-4">نتایج آزمون</h3>
+                    <pre className="whitespace-pre-wrap bg-secondary p-4 rounded-lg text-sm overflow-auto max-h-96">
                       {JSON.stringify(result, null, 2)}
                     </pre>
                   </div>
