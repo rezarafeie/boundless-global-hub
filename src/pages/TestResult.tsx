@@ -58,13 +58,8 @@ const TestResult: React.FC = () => {
 
       setEnrollment(data)
       
-      // If result is already cached, show it
-      if (data.result_data) {
-        setResult(data.result_data)
-      } else {
-        // Fetch result from Esanj
-        await fetchTestResult(data.esanj_uuid)
-      }
+      // Always fetch fresh HTML interpretation results from Esanj
+      await fetchTestResult(data.esanj_uuid)
     } catch (error) {
       console.error('Error:', error)
       toast.error('خطا در بارگذاری اطلاعات')
