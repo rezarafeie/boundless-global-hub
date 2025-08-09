@@ -61,6 +61,25 @@ serve(async (req) => {
 
     const url = `https://esanj.org/api/v1/interpretation/${testId}/json/${uuid}`
 
+    // Verbose logging (no secrets)
+    try {
+      const answerKeys = Object.keys(requestBody).filter(k => /^q\d+$/.test(k))
+      const firstQs = Object.fromEntries(
+        Object.entries(requestBody)
+          .filter(([k]) => /^q\d+$/.test(k))
+          .sort(([a],[b]) => Number(a.slice(1)) - Number(b.slice(1)))
+          .slice(0, 5)
+      )
+      console.log('Esanj submit URL:', url)
+      console.log('Esanj submit payload (summary):', {
+        sex: requestBody.sex,
+        age: requestBody.age,
+        employee_id: requestBody.employee_id,
+        answerCount: answerKeys.length,
+        firstQs
+      })
+    } catch (_) {}
+
     const submitResponse = await fetch(url, {
       method: 'POST',
       headers: {
