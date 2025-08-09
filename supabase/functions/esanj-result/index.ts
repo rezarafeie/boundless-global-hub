@@ -22,7 +22,7 @@ serve(async (req) => {
     let resultResponse
     
     if (type === 'grading') {
-      resultResponse = await fetch(`https://esanj.org/api/v1/interpretation/grading/${uuid}`, {
+      resultResponse = await fetch(`https://handler.esanj.ir/api/v1/interpretation/grading/${uuid}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -30,7 +30,7 @@ serve(async (req) => {
         }
       })
     } else {
-      resultResponse = await fetch(`https://esanj.org/api/v1/interpretation/${type}/${uuid}`, {
+      resultResponse = await fetch(`https://handler.esanj.ir/api/v1/interpretation/${type}/${uuid}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
