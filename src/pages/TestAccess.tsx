@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { esanjService } from '@/lib/esanjService'
 import { toast } from 'sonner'
 import { Brain, Loader2, CheckCircle, ArrowLeft } from 'lucide-react'
+import Header from '@/components/Layout/Header'
 
 interface TestEnrollment {
   id: string
@@ -444,8 +445,10 @@ const TestAccess: React.FC = () => {
 
   if (!testStarted) {
     return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="container mx-auto px-4 max-w-2xl">
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="py-8">
+          <div className="container mx-auto px-4 max-w-2xl">
           <div className="flex items-center gap-4 mb-8">
             <Button
               variant="ghost"
@@ -501,13 +504,16 @@ const TestAccess: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="py-8">
+        <div className="container mx-auto px-4 max-w-4xl">
         {/* Test Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
@@ -601,6 +607,7 @@ const TestAccess: React.FC = () => {
             </Button>
           </div>
         )}
+        </div>
       </div>
     </div>
   )
