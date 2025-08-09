@@ -20,7 +20,7 @@ serve(async (req) => {
 
     console.log('Fetching test result for UUID:', uuid, 'testId:', testId, 'type:', type)
     
-    const resultResponse = await fetch(`https://esanj.org/api/v1/interpretation/${testId}/${type}/${uuid}`, {
+    const resultResponse = await fetch(`https://esanj.org/api/v1/interpretation/${type}/${uuid}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
