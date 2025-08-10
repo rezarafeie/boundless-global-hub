@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { esanjService } from '@/lib/esanjService'
 import { toast } from 'sonner'
 import { Brain, Loader2, ArrowLeft, CheckCircle, Share2 } from 'lucide-react'
-import Header from '@/components/Layout/Header'
+
 
 interface TestEnrollment {
   id: string
@@ -153,15 +153,14 @@ const TestResult: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-20 pb-8">
-        <div className="container mx-auto px-4 max-w-7xl">
-          {/* Header */}
+      <div className="p-4">
+        <div className="container mx-auto max-w-7xl">
+          {/* Simple Header with Back Button */}
           <div className="flex items-center gap-4 mb-8">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/tests')}
+              onClick={() => navigate(-1)}
               className="rounded-full"
             >
               <ArrowLeft className="h-5 w-5" />
