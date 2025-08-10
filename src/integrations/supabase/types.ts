@@ -1288,10 +1288,12 @@ export type Database = {
           created_at: string
           created_by: string | null
           current_uses: number
+          discount_type: string | null
           id: string
           is_active: boolean
           max_uses: number | null
           percentage: number
+          test_id: string | null
           updated_at: string
           valid_from: string | null
           valid_until: string | null
@@ -1302,10 +1304,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_uses?: number
+          discount_type?: string | null
           id?: string
           is_active?: boolean
           max_uses?: number | null
           percentage: number
+          test_id?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
@@ -1316,10 +1320,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_uses?: number
+          discount_type?: string | null
           id?: string
           is_active?: boolean
           max_uses?: number | null
           percentage?: number
+          test_id?: string | null
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
@@ -1330,6 +1336,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_codes_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
             referencedColumns: ["id"]
           },
         ]

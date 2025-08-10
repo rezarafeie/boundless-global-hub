@@ -18,6 +18,8 @@ interface DiscountCode {
   percentage: number;
   is_active: boolean;
   course_id?: string;
+  test_id?: string;
+  discount_type: 'course' | 'test' | 'both';
   max_uses?: number;
   current_uses: number;
   valid_from?: string;
@@ -32,18 +34,28 @@ interface Course {
   slug: string;
 }
 
+interface Test {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+}
+
 const DiscountManagement: React.FC = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null);
   
   const [formData, setFormData] = useState({
     code: '',
     percentage: '',
+    discount_type: 'both' as 'course' | 'test' | 'both',
     course_id: '',
+    test_id: '',
     max_uses: '',
     valid_from: '',
     valid_until: '',
@@ -57,7 +69,7 @@ const DiscountManagement: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [discountsResult, coursesResult] = await Promise.all([
+      const [discountsResult, coursesResult, testsResult] = await Promise.all([
         supabase
           .from('discount_codes')
           .select('*')
@@ -66,11 +78,17 @@ const DiscountManagement: React.FC = () => {
           .from('courses')
           .select('id, title, slug')
           .eq('is_active', true)
+          .order('title'),
+        supabase
+          .from('tests')
+          .select('id, title, slug, price')
+          .eq('is_active', true)
           .order('title')
       ]);
 
-      if (discountsResult.data) setDiscountCodes(discountsResult.data);
+      if (discountsResult.data) setDiscountCodes(discountsResult.data as DiscountCode[]);
       if (coursesResult.data) setCourses(coursesResult.data);
+      if (testsResult.data) setTests(testsResult.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -87,7 +105,9 @@ const DiscountManagement: React.FC = () => {
     setFormData({
       code: '',
       percentage: '',
+      discount_type: 'both',
       course_id: '',
+      test_id: '',
       max_uses: '',
       valid_from: '',
       valid_until: '',
@@ -101,7 +121,9 @@ const DiscountManagement: React.FC = () => {
     setFormData({
       code: discount.code,
       percentage: discount.percentage.toString(),
-      course_id: discount.course_id || 'all',
+      discount_type: discount.discount_type || 'both',
+      course_id: discount.course_id || '',
+      test_id: discount.test_id || '',
       max_uses: discount.max_uses?.toString() || '',
       valid_from: discount.valid_from ? discount.valid_from.split('T')[0] : '',
       valid_until: discount.valid_until ? discount.valid_until.split('T')[0] : '',
@@ -136,7 +158,9 @@ const DiscountManagement: React.FC = () => {
       code: formData.code.trim().toUpperCase(),
       percentage,
       is_active: formData.is_active,
-      course_id: formData.course_id === 'all' || !formData.course_id ? null : formData.course_id,
+      discount_type: formData.discount_type,
+      course_id: (formData.discount_type === 'course' || formData.discount_type === 'both') && formData.course_id ? formData.course_id : null,
+      test_id: (formData.discount_type === 'test' || formData.discount_type === 'both') && formData.test_id ? formData.test_id : null,
       max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
       valid_from: formData.valid_from ? new Date(formData.valid_from).toISOString() : null,
       valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
@@ -246,9 +270,31 @@ const DiscountManagement: React.FC = () => {
   };
 
   const getCourseTitle = (courseId?: string) => {
-    if (!courseId) return 'همه دوره‌ها';
+    if (!courseId) return null;
     const course = courses.find(c => c.id === courseId);
     return course?.title || 'نامشخص';
+  };
+
+  const getTestTitle = (testId?: string) => {
+    if (!testId) return null;
+    const test = tests.find(t => t.id === testId);
+    return test?.title || 'نامشخص';
+  };
+
+  const getApplicableText = (discount: DiscountCode) => {
+    switch (discount.discount_type) {
+      case 'course':
+        return discount.course_id ? getCourseTitle(discount.course_id) : 'همه دوره‌ها';
+      case 'test':
+        return discount.test_id ? getTestTitle(discount.test_id) : 'همه تست‌ها';
+      case 'both':
+        const parts = [];
+        if (discount.course_id) parts.push(`دوره: ${getCourseTitle(discount.course_id)}`);
+        else if (discount.test_id) parts.push(`تست: ${getTestTitle(discount.test_id)}`);
+        return parts.length > 0 ? parts.join(' و ') : 'همه دوره‌ها و تست‌ها';
+      default:
+        return 'همه';
+    }
   };
 
   if (loading) {
@@ -304,21 +350,56 @@ const DiscountManagement: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="course">دوره (اختیاری)</Label>
-                <Select value={formData.course_id} onValueChange={(value) => setFormData(prev => ({ ...prev, course_id: value }))}>
+                <Label htmlFor="discount_type">نوع تخفیف *</Label>
+                <Select value={formData.discount_type} onValueChange={(value: 'course' | 'test' | 'both') => setFormData(prev => ({ ...prev, discount_type: value, course_id: '', test_id: '' }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="همه دوره‌ها" />
+                    <SelectValue placeholder="انتخاب نوع تخفیف" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">همه دوره‌ها</SelectItem>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.title}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="both">دوره‌ها و تست‌ها</SelectItem>
+                    <SelectItem value="course">فقط دوره‌ها</SelectItem>
+                    <SelectItem value="test">فقط تست‌ها</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {(formData.discount_type === 'course' || formData.discount_type === 'both') && (
+                <div className="space-y-2">
+                  <Label htmlFor="course">دوره (اختیاری)</Label>
+                  <Select value={formData.course_id} onValueChange={(value) => setFormData(prev => ({ ...prev, course_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="همه دوره‌ها" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">همه دوره‌ها</SelectItem>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id}>
+                          {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {(formData.discount_type === 'test' || formData.discount_type === 'both') && (
+                <div className="space-y-2">
+                  <Label htmlFor="test">تست (اختیاری)</Label>
+                  <Select value={formData.test_id} onValueChange={(value) => setFormData(prev => ({ ...prev, test_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="همه تست‌ها" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">همه تست‌ها</SelectItem>
+                      {tests.map((test) => (
+                        <SelectItem key={test.id} value={test.id}>
+                          {test.title} {test.price > 0 && `(${test.price.toLocaleString('fa-IR')} تومان)`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="max_uses">حداکثر تعداد استفاده (اختیاری)</Label>
@@ -410,7 +491,7 @@ const DiscountManagement: React.FC = () => {
                     </div>
                     
                     <div className="text-sm text-muted-foreground space-y-1">
-                      <p><strong>دوره:</strong> {getCourseTitle(discount.course_id)}</p>
+                      <p><strong>قابل اعمال روی:</strong> {getApplicableText(discount)}</p>
                       {discount.max_uses && (
                         <p className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
