@@ -394,50 +394,6 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
             </p>
           </div>
 
-          {/* Test Processing Section */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                وضعیت آزمون
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center space-y-4">
-                {isReady ? (
-                  <div className="flex items-center justify-center gap-2 text-green-600">
-                    <CheckCircle className="h-6 w-6" />
-                    <span className="font-medium text-lg">{processingMessage}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <span className="font-medium">{processingMessage}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Start Test Section - Only show when ready AND has birth_year and sex */}
-          {isReady && enrollment.birth_year && enrollment.sex && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>شروع آزمون</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center space-y-4">
-                  <p className="text-green-600 font-medium">
-                    آزمون شما آماده است! می‌توانید الان شروع کنید.
-                  </p>
-                  <Button onClick={handleStartTest} size="lg" className="w-full">
-                    شروع آزمون
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Birth Year and Sex Form - Show when data is missing, regardless of ready status */}
           {(!enrollment.birth_year || !enrollment.sex) && (
             <Card className="mb-6">
@@ -492,6 +448,50 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
                     'آماده‌سازی آزمون'
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Test Processing Section */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                وضعیت آزمون
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center space-y-4">
+                {isReady ? (
+                  <div className="flex items-center justify-center gap-2 text-green-600">
+                    <CheckCircle className="h-6 w-6" />
+                    <span className="font-medium text-lg">{processingMessage}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="font-medium">{processingMessage}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Start Test Section - Only show when ready AND has birth_year and sex */}
+          {isReady && enrollment.birth_year && enrollment.sex && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>شروع آزمون</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center space-y-4">
+                  <p className="text-green-600 font-medium">
+                    آزمون شما آماده است! می‌توانید الان شروع کنید.
+                  </p>
+                  <Button onClick={handleStartTest} size="lg" className="w-full">
+                    شروع آزمون
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
