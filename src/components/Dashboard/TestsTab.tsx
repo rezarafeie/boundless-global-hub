@@ -70,91 +70,57 @@ const TestsTab: React.FC = () => {
     if (!currentUser) return
 
     try {
-      // Fetch test enrollments by both user_id and phone number
-      const queries = []
+      console.log('Fetching tests for user:', currentUser)
       
-      // Query by user_id if available
-      if (currentUser.id) {
-        queries.push(
-          supabase
-            .from('test_enrollments')
-            .select(`
-              *,
-              tests!inner(
-                title,
-                test_id,
-                description,
-                slug
-              )
-            `)
-            .eq('user_id', currentUser.id)
-        )
-      }
+      // First, let's try a simple query without joins to see if we can get test enrollments
+      const { data: simpleTestData, error: simpleError } = await supabase
+        .from('test_enrollments')
+        .select('*')
+        .eq('phone', currentUser.phone)
+        
+      console.log('Simple query result:', { simpleTestData, simpleError })
       
-      // Query by phone number if available
-      if (currentUser.phone) {
-        queries.push(
-          supabase
-            .from('test_enrollments')
-            .select(`
-              *,
-              tests!inner(
-                title,
-                test_id,
-                description,
-                slug
-              )
-            `)
-            .eq('phone', currentUser.phone)
-        )
-      }
+      // Now try the full query with joins
+      const { data: testData, error: testError } = await supabase
+        .from('test_enrollments')
+        .select(`
+          *,
+          tests(
+            title,
+            test_id,
+            description,
+            slug
+          )
+        `)
+        .eq('phone', currentUser.phone)
+        
+      console.log('Full query result:', { testData, testError })
       
-      // Query by email if available
-      if (currentUser.email) {
-        queries.push(
-          supabase
-            .from('test_enrollments')
-            .select(`
-              *,
-              tests!inner(
-                title,
-                test_id,
-                description,
-                slug
-              )
-            `)
-            .eq('email', currentUser.email)
-        )
-      }
-
-      if (queries.length === 0) {
-        setEnrollments([])
+      if (testError) {
+        console.error('Test query error:', testError)
+        // Fall back to simple query if join fails
+        if (simpleTestData) {
+          const simpleEnrollments = simpleTestData.map(enrollment => ({
+            ...enrollment,
+            tests: {
+              title: 'Unknown Test',
+              test_id: 0,
+              description: '',
+              slug: ''
+            }
+          }))
+          setEnrollments(simpleEnrollments)
+        }
         setLoading(false)
         return
       }
-
-      // Execute all queries
-      const results = await Promise.all(queries)
       
-      // Combine and deduplicate results
-      const allEnrollments: UserTestEnrollment[] = []
-      const seenIds = new Set<string>()
-      
-      for (const result of results) {
-        if (result.data) {
-          for (const enrollment of result.data) {
-            if (!seenIds.has(enrollment.id)) {
-              seenIds.add(enrollment.id)
-              allEnrollments.push(enrollment)
-            }
-          }
-        }
+      if (testData) {
+        console.log('Setting enrollments:', testData)
+        setEnrollments(testData)
+      } else {
+        setEnrollments([])
       }
-      
-      // Sort by creation date (newest first)
-      allEnrollments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      
-      setEnrollments(allEnrollments)
     } catch (error) {
       console.error('Error:', error)
       toast.error('خطا در بارگذاری آزمون‌ها')
