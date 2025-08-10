@@ -46,41 +46,47 @@ const TestsTab: React.FC = () => {
   const fetchCurrentUser = async () => {
     try {
       console.log('Fetching current user...')
-      const { data: { user } } = await supabase.auth.getUser()
-      console.log('Supabase auth user:', user)
       
-      if (user && user.email) {
-        // Get user from chat_users table using phone or email
-        const { data: chatUser, error } = await supabase
-          .from('chat_users')
-          .select('*')
-          .eq('email', user.email)
+      // Get session token from localStorage or cookies
+      const sessionToken = localStorage.getItem('session_token') || 
+                          document.cookie.split(';')
+                            .find(row => row.startsWith('session_token='))
+                            ?.split('=')[1]
+
+      console.log('Session token found:', !!sessionToken)
+
+      if (sessionToken) {
+        // Use the session-based authentication system
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('user_sessions')
+          .select(`
+            *,
+            chat_users!user_sessions_user_id_fkey(*)
+          `)
+          .eq('session_token', sessionToken)
+          .eq('is_active', true)
           .single()
 
-        console.log('Chat user lookup result:', { chatUser, error })
+        console.log('Session lookup result:', { sessionData, sessionError })
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching chat user:', error)
+        if (sessionData?.chat_users) {
+          console.log('Setting current user from session:', sessionData.chat_users)
+          setCurrentUser(sessionData.chat_users)
           return
         }
+      }
 
-        if (chatUser) {
-          console.log('Setting current user:', chatUser)
-          setCurrentUser(chatUser)
-        } else {
-          console.log('No chat user found, trying phone lookup...')
-          // Try to find by phone number if email lookup fails
-          const { data: phoneUser, error: phoneError } = await supabase
-            .from('chat_users')
-            .select('*')
-            .eq('phone', '9120784457') // User's phone number
-            .single()
-          
-          console.log('Phone user lookup result:', { phoneUser, phoneError })
-          if (phoneUser) {
-            setCurrentUser(phoneUser)
-          }
-        }
+      // Fallback: Try to get user by phone number directly
+      console.log('No session found, trying direct phone lookup...')
+      const { data: phoneUser, error: phoneError } = await supabase
+        .from('chat_users')
+        .select('*')
+        .eq('phone', '9120784457')
+        .single()
+      
+      console.log('Direct phone lookup result:', { phoneUser, phoneError })
+      if (phoneUser) {
+        setCurrentUser(phoneUser)
       }
     } catch (error) {
       console.error('Error fetching user:', error)
