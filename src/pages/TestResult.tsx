@@ -153,6 +153,23 @@ const TestResult: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Custom CSS overrides for ESANJ content */}
+      <style>{`
+        .visible-xs.visible-sm.MenubarFixed, 
+        .interpretation-box-download-pdf.button-toggle-pdf.show {
+          display: none !important;
+        }
+        
+        .p-2.rounded-full.bg-green-100.dark\\:bg-green-900\\/20 {
+          width: 40px !important;
+        }
+        
+        .col-lg-4.col-md-4.col-sm-12.col-xs-12.sidebar {
+          padding: 0px !important;
+          margin: 0px !important;
+        }
+      `}</style>
+      
       <div className="p-4">
         <div className="container mx-auto max-w-7xl">
           {/* Simple Header with Back Button */}
