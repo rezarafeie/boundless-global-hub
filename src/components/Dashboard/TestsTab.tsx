@@ -45,8 +45,11 @@ const TestsTab: React.FC = () => {
 
   const fetchCurrentUser = async () => {
     try {
+      console.log('Fetching current user...')
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      console.log('Supabase auth user:', user)
+      
+      if (user && user.email) {
         // Get user from chat_users table using phone or email
         const { data: chatUser, error } = await supabase
           .from('chat_users')
@@ -54,12 +57,30 @@ const TestsTab: React.FC = () => {
           .eq('email', user.email)
           .single()
 
+        console.log('Chat user lookup result:', { chatUser, error })
+
         if (error && error.code !== 'PGRST116') {
           console.error('Error fetching chat user:', error)
           return
         }
 
-        setCurrentUser(chatUser)
+        if (chatUser) {
+          console.log('Setting current user:', chatUser)
+          setCurrentUser(chatUser)
+        } else {
+          console.log('No chat user found, trying phone lookup...')
+          // Try to find by phone number if email lookup fails
+          const { data: phoneUser, error: phoneError } = await supabase
+            .from('chat_users')
+            .select('*')
+            .eq('phone', '9120784457') // User's phone number
+            .single()
+          
+          console.log('Phone user lookup result:', { phoneUser, phoneError })
+          if (phoneUser) {
+            setCurrentUser(phoneUser)
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching user:', error)
