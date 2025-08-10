@@ -9,13 +9,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface DiscountSectionProps {
-  courseId: string;
+  courseId?: string;
+  testId?: string;
   originalPrice: number;
   onDiscountApplied: (discountAmount: number, finalPrice: number) => void;
 }
 
 const DiscountSection: React.FC<DiscountSectionProps> = ({
   courseId,
+  testId,
   originalPrice,
   onDiscountApplied
 }) => {
@@ -53,12 +55,24 @@ const DiscountSection: React.FC<DiscountSectionProps> = ({
         return;
       }
 
-      // Check if discount is for specific course or all courses
-      if (data.course_id && data.course_id !== courseId) {
+      // Check if discount is for specific course/test or all courses/tests
+      if (data.course_id && courseId && data.course_id !== courseId) {
         setError('این کد تخفیف برای این دوره معتبر نیست');
         toast({
           title: "کد تخفیف نامعتبر",
           description: "این کد تخفیف برای این دوره قابل استفاده نیست",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // For tests, we accept discount codes that are either general (no course_id) or specifically for the test
+      // Note: We're using course_id field for both courses and tests for simplicity
+      if (testId && data.course_id && data.course_id !== testId) {
+        setError('این کد تخفیف برای این آزمون معتبر نیست');
+        toast({
+          title: "کد تخفیف نامعتبر",
+          description: "این کد تخفیف برای این آزمون قابل استفاده نیست",
           variant: "destructive"
         });
         return;

@@ -370,15 +370,18 @@ const Enroll: React.FC = () => {
     try {
       // Handle test enrollment
       if (test) {
+        // Calculate final payment amount for test (considering discounts)
+        const finalTestPrice = discountedPrice !== null ? discountedPrice : test.price;
+        
         const testEnrollmentData = {
           test_id: test.id,
           user_id: user?.id ? parseInt(user.id) : null,
           full_name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           phone: formData.phone,
-          payment_amount: test.price,
-          enrollment_status: test.price === 0 ? 'ready' : 'pending',
-          payment_status: test.price === 0 ? 'completed' : 'pending'
+          payment_amount: finalTestPrice,
+          enrollment_status: finalTestPrice === 0 ? 'ready' : 'pending',
+          payment_status: finalTestPrice === 0 ? 'completed' : 'pending'
         };
 
         console.log('Creating test enrollment:', testEnrollmentData);
@@ -395,8 +398,8 @@ const Enroll: React.FC = () => {
 
         console.log('Test enrollment created:', testResult);
         
-        // Redirect to success page for test
-        if (test.price === 0) {
+        // Redirect to success page for free test (including 100% discounted tests)
+        if (finalTestPrice === 0) {
           const successUrl = `/enroll/success?test=${test.slug}&phone=${formData.phone}&enrollment=${testResult.id}&status=OK&Authority=FREE_TEST`;
           window.location.href = successUrl;
         } else {
@@ -409,7 +412,7 @@ const Enroll: React.FC = () => {
               email: formData.email,
               phone: formData.phone,
               countryCode: formData.countryCode,
-              customAmount: test.price,
+              customAmount: finalTestPrice, // Use discounted price if available
               enrollmentType: 'test'
             }
           });
@@ -641,9 +644,9 @@ const Enroll: React.FC = () => {
                                </span>
                              ) : (
                                <>
-                                 <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                                    {test 
-                                      ? formatPrice(test.price)
+                                  <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                                     {test 
+                                       ? (discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price))
                                       : isOnPrelaunch && prelaunchPrice !== null
                                         ? formatPrice(prelaunchPrice)
                                         : isOnSale && salePrice !== null
@@ -655,15 +658,17 @@ const Enroll: React.FC = () => {
                                               : formatPrice(course?.price || 0)
                                     }
                                  </span>
-                                 {/* Show original price if on pre-launch, sale or discounted - only for courses, not tests */}
-                                 {!test && (isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || discountAmount > 0) && (
-                                    <div className="text-sm text-muted-foreground line-through mt-1">
-                                      {course?.use_dollar_price && finalRialPrice 
-                                        ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                        : formatPrice(course?.price || 0)
-                                      }
-                                    </div>
-                                 )}
+                                  {/* Show original price if discounted */}
+                                  {((test && discountAmount > 0) || (!test && (isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || discountAmount > 0))) && (
+                                     <div className="text-sm text-muted-foreground line-through mt-1">
+                                       {test 
+                                         ? formatPrice(test.price)
+                                         : course?.use_dollar_price && finalRialPrice 
+                                           ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
+                                           : formatPrice(course?.price || 0)
+                                       }
+                                     </div>
+                                  )}
                                 
                                 {/* Pre-launch Price in USD if applicable */}
                                 {isOnPrelaunch && course.use_dollar_price && (course as any).pre_launch_price && (
@@ -999,17 +1004,18 @@ const Enroll: React.FC = () => {
                            isOnSale={isOnSale}
                          />
 
-                         {/* Discount Section - Only show for paid courses */}
-                         {course && !isFree && (
-                           <DiscountSection
-                             courseId={course.id}
-                             originalPrice={finalRialPrice || course.price}
-                             onDiscountApplied={(discountAmount, finalPrice) => {
-                               setDiscountAmount(discountAmount);
-                               setDiscountedPrice(finalPrice);
-                             }}
-                           />
-                         )}
+                          {/* Discount Section - Show for both paid courses and tests */}
+                          {(course || test) && !isFree && (
+                            <DiscountSection
+                              courseId={course?.id}
+                              testId={test?.id}
+                              originalPrice={test ? test.price : (finalRialPrice || course?.price || 0)}
+                              onDiscountApplied={(discountAmount, finalPrice) => {
+                                setDiscountAmount(discountAmount);
+                                setDiscountedPrice(finalPrice);
+                              }}
+                            />
+                          )}
                        </>
                      )}
 
@@ -1045,9 +1051,9 @@ const Enroll: React.FC = () => {
                          </>
                        ) : (
                           <>
-                             <CreditCard className="h-6 w-6 ml-2" />
-                             پرداخت آنلاین {test 
-                               ? formatPrice(test.price)
+                              <CreditCard className="h-6 w-6 ml-2" />
+                              پرداخت آنلاین {test 
+                                ? (discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price))
                                : isOnPrelaunch && prelaunchPrice !== null
                                  ? formatPrice(prelaunchPrice)
                                  : isOnSale && salePrice !== null
