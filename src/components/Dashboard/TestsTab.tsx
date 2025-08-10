@@ -70,27 +70,91 @@ const TestsTab: React.FC = () => {
     if (!currentUser) return
 
     try {
-      const { data, error } = await supabase
-        .from('test_enrollments')
-        .select(`
-          *,
-          tests!inner(
-            title,
-            test_id,
-            description,
-            slug
-          )
-        `)
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false })
+      // Fetch test enrollments by both user_id and phone number
+      const queries = []
+      
+      // Query by user_id if available
+      if (currentUser.id) {
+        queries.push(
+          supabase
+            .from('test_enrollments')
+            .select(`
+              *,
+              tests!inner(
+                title,
+                test_id,
+                description,
+                slug
+              )
+            `)
+            .eq('user_id', currentUser.id)
+        )
+      }
+      
+      // Query by phone number if available
+      if (currentUser.phone) {
+        queries.push(
+          supabase
+            .from('test_enrollments')
+            .select(`
+              *,
+              tests!inner(
+                title,
+                test_id,
+                description,
+                slug
+              )
+            `)
+            .eq('phone', currentUser.phone)
+        )
+      }
+      
+      // Query by email if available
+      if (currentUser.email) {
+        queries.push(
+          supabase
+            .from('test_enrollments')
+            .select(`
+              *,
+              tests!inner(
+                title,
+                test_id,
+                description,
+                slug
+              )
+            `)
+            .eq('email', currentUser.email)
+        )
+      }
 
-      if (error) {
-        console.error('Error fetching user tests:', error)
-        toast.error('خطا در بارگذاری آزمون‌های شما')
+      if (queries.length === 0) {
+        setEnrollments([])
+        setLoading(false)
         return
       }
 
-      setEnrollments(data || [])
+      // Execute all queries
+      const results = await Promise.all(queries)
+      
+      // Combine and deduplicate results
+      const allEnrollments: UserTestEnrollment[] = []
+      const seenIds = new Set<string>()
+      
+      for (const result of results) {
+        if (result.data) {
+          for (const enrollment of result.data) {
+            if (!seenIds.has(enrollment.id)) {
+              seenIds.add(enrollment.id)
+              allEnrollments.push(enrollment)
+            }
+          }
+        }
+      }
+      
+      // Sort by creation date (newest first)
+      allEnrollments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      
+      setEnrollments(allEnrollments)
     } catch (error) {
       console.error('Error:', error)
       toast.error('خطا در بارگذاری آزمون‌ها')
