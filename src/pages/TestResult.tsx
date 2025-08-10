@@ -152,26 +152,48 @@ const TestResult: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Custom CSS overrides for ESANJ content */}
-      <style>{`
-        .visible-xs.visible-sm.MenubarFixed, 
-        .interpretation-box-download-pdf.button-toggle-pdf.show {
-          display: none !important;
-        }
-        
-        .p-2.rounded-full.bg-green-100.dark\\:bg-green-900\\/20 {
-          width: 40px !important;
-        }
-        
-        .col-lg-4.col-md-4.col-sm-12.col-xs-12.sidebar {
-          padding: 0px !important;
-          margin: 0px !important;
-        }
-      `}</style>
+    <>
+      {/* Global CSS overrides for ESANJ content */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .visible-xs.visible-sm.MenubarFixed,
+          .interpretation-box-download-pdf.button-toggle-pdf.show {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          
+          .p-2.rounded-full.bg-green-100.dark\\:bg-green-900\\/20 {
+            width: 40px !important;
+          }
+          
+          .col-lg-4.col-md-4.col-sm-12.col-xs-12.sidebar {
+            padding: 0px !important;
+            margin: 0px !important;
+          }
+          
+          /* Additional ESANJ overrides */
+          .MenubarFixed {
+            display: none !important;
+          }
+          
+          .button-toggle-pdf {
+            display: none !important;
+          }
+          
+          .interpretation-box-download-pdf {
+            display: none !important;
+          }
+          
+          .sidebar {
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+        `
+      }} />
       
-      <div className="p-4">
-        <div className="container mx-auto max-w-7xl">
+      <div className="min-h-screen bg-background">
+        <div className="p-4">
+          <div className="container mx-auto max-w-7xl">
           {/* Simple Header with Back Button */}
           <div className="flex items-center gap-4 mb-8">
             <Button
@@ -320,7 +342,8 @@ const TestResult: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
