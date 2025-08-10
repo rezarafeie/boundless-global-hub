@@ -106,8 +106,8 @@ const DiscountManagement: React.FC = () => {
       code: '',
       percentage: '',
       discount_type: 'both',
-      course_id: '',
-      test_id: '',
+      course_id: 'all',
+      test_id: 'all',
       max_uses: '',
       valid_from: '',
       valid_until: '',
@@ -122,8 +122,8 @@ const DiscountManagement: React.FC = () => {
       code: discount.code,
       percentage: discount.percentage.toString(),
       discount_type: discount.discount_type || 'both',
-      course_id: discount.course_id || '',
-      test_id: discount.test_id || '',
+      course_id: discount.course_id || 'all',
+      test_id: discount.test_id || 'all',
       max_uses: discount.max_uses?.toString() || '',
       valid_from: discount.valid_from ? discount.valid_from.split('T')[0] : '',
       valid_until: discount.valid_until ? discount.valid_until.split('T')[0] : '',
@@ -159,8 +159,8 @@ const DiscountManagement: React.FC = () => {
       percentage,
       is_active: formData.is_active,
       discount_type: formData.discount_type,
-      course_id: (formData.discount_type === 'course' || formData.discount_type === 'both') && formData.course_id ? formData.course_id : null,
-      test_id: (formData.discount_type === 'test' || formData.discount_type === 'both') && formData.test_id ? formData.test_id : null,
+      course_id: (formData.discount_type === 'course' || formData.discount_type === 'both') && formData.course_id && formData.course_id !== 'all' ? formData.course_id : null,
+      test_id: (formData.discount_type === 'test' || formData.discount_type === 'both') && formData.test_id && formData.test_id !== 'all' ? formData.test_id : null,
       max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
       valid_from: formData.valid_from ? new Date(formData.valid_from).toISOString() : null,
       valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
@@ -366,12 +366,12 @@ const DiscountManagement: React.FC = () => {
               {(formData.discount_type === 'course' || formData.discount_type === 'both') && (
                 <div className="space-y-2">
                   <Label htmlFor="course">دوره (اختیاری)</Label>
-                  <Select value={formData.course_id} onValueChange={(value) => setFormData(prev => ({ ...prev, course_id: value }))}>
+                  <Select value={formData.course_id} onValueChange={(value) => setFormData(prev => ({ ...prev, course_id: value === 'all' ? '' : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="همه دوره‌ها" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">همه دوره‌ها</SelectItem>
+                      <SelectItem value="all">همه دوره‌ها</SelectItem>
                       {courses.map((course) => (
                         <SelectItem key={course.id} value={course.id}>
                           {course.title}
@@ -385,12 +385,12 @@ const DiscountManagement: React.FC = () => {
               {(formData.discount_type === 'test' || formData.discount_type === 'both') && (
                 <div className="space-y-2">
                   <Label htmlFor="test">تست (اختیاری)</Label>
-                  <Select value={formData.test_id} onValueChange={(value) => setFormData(prev => ({ ...prev, test_id: value }))}>
+                  <Select value={formData.test_id} onValueChange={(value) => setFormData(prev => ({ ...prev, test_id: value === 'all' ? '' : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="همه تست‌ها" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">همه تست‌ها</SelectItem>
+                      <SelectItem value="all">همه تست‌ها</SelectItem>
                       {tests.map((test) => (
                         <SelectItem key={test.id} value={test.id}>
                           {test.title} {test.price > 0 && `(${test.price.toLocaleString('fa-IR')} تومان)`}
