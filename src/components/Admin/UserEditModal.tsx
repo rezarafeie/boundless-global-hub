@@ -210,7 +210,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                   <SelectTrigger>
                     <SelectValue placeholder="انتخاب جنسیت" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[9999999]">
                     <SelectItem value="male">مرد</SelectItem>
                     <SelectItem value="female">زن</SelectItem>
                   </SelectContent>
@@ -257,7 +257,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="انتخاب برنامه تخصصی" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[9999999]">
                   <SelectItem value="drop_shipping">دراپ شیپینگ</SelectItem>
                   <SelectItem value="drop_servicing">دراپ سرویسینگ</SelectItem>
                   <SelectItem value="digital_goods">کالاهای دیجیتال</SelectItem>
@@ -282,7 +282,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="انتخاب استان" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[9999999]">
                   <SelectItem value="آذربایجان شرقی">آذربایجان شرقی</SelectItem>
                   <SelectItem value="آذربایجان غربی">آذربایجان غربی</SelectItem>
                   <SelectItem value="اردبیل">اردبیل</SelectItem>
