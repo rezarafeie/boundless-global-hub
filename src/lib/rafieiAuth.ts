@@ -278,18 +278,24 @@ class RafieiAuthService {
       .single();
 
     if (error || !user) {
+      console.error('Error updating password:', error);
       throw new Error('خطا در تنظیم رمز عبور');
     }
 
-    // Create session
+    // Create session with error handling
     const session_token = this.generateSessionToken();
-    await supabase
+    const { error: sessionError } = await supabase
       .from('user_sessions')
       .insert({
         user_id: user.id,
         session_token: session_token,
         is_active: true
       });
+
+    if (sessionError) {
+      console.error('Error creating session:', sessionError);
+      throw new Error('خطا در ایجاد جلسه کاربری');
+    }
 
     return { user, session_token };
   }
