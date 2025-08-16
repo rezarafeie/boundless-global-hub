@@ -310,24 +310,19 @@ const AppLessonView = () => {
           </div>
         )}
 
-        {/* Lesson Content */}
-        <div className="px-4">
-          <Card>
-            <CardContent className="p-4">
-              {lesson.content && !lesson.content.includes('<iframe') ? (
+        {/* Lesson Content - only show if there's actual content */}
+        {(lesson.content && !lesson.content.includes('<iframe') && lesson.content.trim() !== '') && (
+          <div className="px-4">
+            <Card>
+              <CardContent className="p-4">
                 <div 
                   className="prose prose-sm max-w-none text-foreground"
-                  dangerouslySetInnerHTML={{ __html: lesson.content || '' }}
+                  dangerouslySetInnerHTML={{ __html: lesson.content }}
                 />
-              ) : !lesson.video_url && (!lesson.content || !lesson.content.includes('<iframe')) ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4" />
-                  <p>محتوای این درس در حال آماده‌سازی است</p>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="px-4 pb-6">
