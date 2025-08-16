@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppLayout from "@/components/Layout/AppLayout";
 import { useTests } from "@/hooks/useTests";
-import TestsTab from "@/components/Dashboard/TestsTab";
+import AppTestsTab from "@/components/Dashboard/AppTestsTab";
 import { 
   ClipboardList,
   Trophy,
@@ -26,8 +26,8 @@ const AppTests = () => {
   const { tests, loading, error } = useTests();
 
   const handleStartTest = (testSlug: string) => {
-    // For app view, navigate to the test access page instead of enrollment
-    navigate(`/test-access?test=${testSlug}`);
+    // For app view, navigate to the access page with proper parameter
+    navigate(`/access?test=${testSlug}`);
   };
 
   const formatPrice = (price: number) => {
@@ -96,7 +96,7 @@ const AppTests = () => {
           </TabsList>
           
           <TabsContent value="my-tests">
-            <TestsTab />
+            <AppTestsTab />
           </TabsContent>
           
           <TabsContent value="available-tests" className="space-y-6">
