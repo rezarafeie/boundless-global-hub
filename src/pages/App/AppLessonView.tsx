@@ -1,10 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/Layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useLessonNumber } from "@/hooks/useLessonNumber";
 import { 
   Play,
   Pause,
@@ -13,51 +17,135 @@ import {
   CheckCircle,
   FileText,
   Download,
-  Volume2
+  Volume2,
+  BookOpen
 } from "lucide-react";
 
+interface LessonData {
+  id: string;
+  title: string;
+  content: string;
+  video_url: string | null;
+  file_url: string | null;
+  duration: number;
+  course_id: string;
+  lesson_number: number;
+  courseTitle?: string;
+  courseSlug?: string;
+  nextLessonNumber?: number;
+  prevLessonNumber?: number;
+}
+
 const AppLessonView = () => {
-  const { lessonId } = useParams();
+  const { lessonNumber } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const { getLessonByNumber } = useLessonNumber();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [lesson, setLesson] = useState<LessonData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [courseSlug, setCourseSlug] = useState<string>("");
 
-  // Mock data - replace with real data from Supabase
-  const lesson = {
-    id: 1,
-    title: "آشنایی با مفهوم درآمد پسیو",
-    courseTitle: "دوره کسب درآمد پسیو",
-    content: `
-      <h2>مفهوم درآمد پسیو</h2>
-      <p>درآمد پسیو به درآمدی اطلاق می‌شود که بدون حضور مستمر و فعال شما ایجاد می‌شود. این نوع درآمد یکی از مهم‌ترین راه‌های دستیابی به آزادی مالی محسوب می‌شود.</p>
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    if (lessonNumber) {
+      fetchLessonData();
+    }
+  }, [lessonNumber, isAuthenticated, navigate]);
+
+  const fetchLessonData = async () => {
+    if (!lessonNumber || !user?.id) return;
+    
+    try {
+      setLoading(true);
       
-      <h3>ویژگی‌های درآمد پسیو:</h3>
-      <ul>
-        <li>عدم نیاز به حضور فیزیکی مستمر</li>
-        <li>قابلیت مقیاس‌پذیری</li>
-        <li>ایجاد درآمد در طول زمان</li>
-        <li>آزادی زمان بیشتر</li>
-      </ul>
+      // First, we need to find which course this lesson belongs to
+      // We'll check the user's enrolled courses and find the lesson
+      const { data: enrollments, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select(`
+          course_id,
+          courses (
+            id,
+            title,
+            slug
+          )
+        `)
+        .eq('chat_user_id', parseInt(user.id))
+        .eq('payment_status', 'completed');
 
-      <h3>انواع درآمد پسیو:</h3>
-      <p>درآمد پسیو انواع مختلفی دارد که در ادامه دوره با هر کدام آشنا خواهید شد:</p>
-      <ul>
-        <li>سرمایه‌گذاری در بازارهای مالی</li>
-        <li>ایجاد محصولات دیجیتال</li>
-        <li>سرمایه‌گذاری در املاک</li>
-        <li>ایجاد کسب و کارهای آنلاین</li>
-      </ul>
-    `,
-    duration: 900, // 15 minutes in seconds
-    videoUrl: "https://example.com/video.mp4", // Mock video URL
-    hasDownloadableFiles: true,
-    nextLessonId: 2,
-    prevLessonId: null
+      if (enrollmentError || !enrollments) {
+        console.error('Error fetching enrollments:', enrollmentError);
+        navigate('/app/my-courses');
+        return;
+      }
+
+      // Try to find the lesson in each enrolled course
+      let foundLesson = null;
+      let foundCourse = null;
+
+      for (const enrollment of enrollments) {
+        const course = enrollment.courses;
+        if (!course) continue;
+
+        const lessonData = await getLessonByNumber(course.slug, parseInt(lessonNumber));
+        if (lessonData) {
+          foundLesson = lessonData;
+          foundCourse = course;
+          break;
+        }
+      }
+
+      if (!foundLesson || !foundCourse) {
+        console.error('Lesson not found or user not enrolled');
+        navigate('/app/my-courses');
+        return;
+      }
+
+      // Get adjacent lesson numbers for navigation
+      const { data: adjacentLessons } = await supabase
+        .from('course_lessons')
+        .select('lesson_number')
+        .eq('course_id', foundLesson.course_id)
+        .order('lesson_number');
+
+      const currentIndex = adjacentLessons?.findIndex(l => l.lesson_number === foundLesson.lesson_number) ?? -1;
+      const nextLessonNumber = currentIndex >= 0 && currentIndex < (adjacentLessons?.length ?? 0) - 1 
+        ? adjacentLessons?.[currentIndex + 1]?.lesson_number 
+        : undefined;
+      const prevLessonNumber = currentIndex > 0 
+        ? adjacentLessons?.[currentIndex - 1]?.lesson_number 
+        : undefined;
+
+      setLesson({
+        ...foundLesson,
+        courseTitle: foundCourse.title,
+        courseSlug: foundCourse.slug,
+        nextLessonNumber,
+        prevLessonNumber
+      });
+
+      setCourseSlug(foundCourse.slug);
+
+      // Check if lesson is completed (you can implement this based on your progress tracking)
+      // For now, we'll use a simple check
+      setIsCompleted(false);
+
+    } catch (error) {
+      console.error('Error fetching lesson data:', error);
+      navigate('/app/my-courses');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalDuration = lesson.duration;
-  const progressPercentage = (currentTime / totalDuration) * 100;
+  const totalDuration = lesson?.duration || 0;
+  const progressPercentage = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -75,29 +163,78 @@ const AppLessonView = () => {
   };
 
   const handleNextLesson = () => {
-    if (lesson.nextLessonId) {
-      navigate(`/app/lesson/${lesson.nextLessonId}`);
+    if (lesson?.nextLessonNumber) {
+      navigate(`/app/lesson/${lesson.nextLessonNumber}`);
     }
   };
 
   const handlePrevLesson = () => {
-    if (lesson.prevLessonId) {
-      navigate(`/app/lesson/${lesson.prevLessonId}`);
+    if (lesson?.prevLessonNumber) {
+      navigate(`/app/lesson/${lesson.prevLessonNumber}`);
+    }
+  };
+
+  const handleBackToCourse = () => {
+    if (courseSlug) {
+      navigate(`/app/course/${courseSlug}`);
     }
   };
 
   const rightAction = (
     <div className="flex items-center gap-2">
-      {lesson.hasDownloadableFiles && (
+      {lesson?.file_url && (
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Download size={16} />
         </Button>
       )}
-      <Button variant="ghost" size="icon" className="h-8 w-8">
-        <FileText size={16} />
+      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBackToCourse}>
+        <BookOpen size={16} />
       </Button>
     </div>
   );
+
+  if (loading) {
+    return (
+      <AppLayout title="بارگذاری..." rightAction={null}>
+        <div className="space-y-4">
+          <div className="px-4 pt-2">
+            <Skeleton className="h-6 w-32" />
+          </div>
+          <div className="px-4">
+            <Card className="overflow-hidden">
+              <Skeleton className="aspect-video w-full" />
+            </Card>
+          </div>
+          <div className="px-4">
+            <Card>
+              <CardContent className="p-4">
+                <Skeleton className="h-32 w-full" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!lesson) {
+    return (
+      <AppLayout title="خطا" rightAction={null}>
+        <div className="p-4">
+          <div className="text-center py-12">
+            <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">درس یافت نشد</h3>
+            <p className="text-muted-foreground mb-4">
+              درس مورد نظر یافت نشد یا شما در دوره آن ثبت‌نام نکرده‌اید
+            </p>
+            <Button onClick={() => navigate('/app/my-courses')}>
+              بازگشت به دوره‌های من
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout title={lesson.title} rightAction={rightAction}>
@@ -137,7 +274,7 @@ const AppLessonView = () => {
                         size="icon"
                         className="h-8 w-8 text-white hover:bg-white/20"
                         onClick={handlePrevLesson}
-                        disabled={!lesson.prevLessonId}
+                        disabled={!lesson.prevLessonNumber}
                       >
                         <SkipBack size={16} />
                       </Button>
@@ -154,7 +291,7 @@ const AppLessonView = () => {
                         size="icon"
                         className="h-8 w-8 text-white hover:bg-white/20"
                         onClick={handleNextLesson}
-                        disabled={!lesson.nextLessonId}
+                        disabled={!lesson.nextLessonNumber}
                       >
                         <SkipForward size={16} />
                       </Button>
@@ -180,7 +317,7 @@ const AppLessonView = () => {
             <CardContent className="p-4">
               <div 
                 className="prose prose-sm max-w-none text-foreground"
-                dangerouslySetInnerHTML={{ __html: lesson.content }}
+                dangerouslySetInnerHTML={{ __html: lesson.content || '' }}
               />
             </CardContent>
           </Card>
@@ -206,10 +343,10 @@ const AppLessonView = () => {
             )}
 
             <div className="grid grid-cols-2 gap-3">
-              <Button 
+                <Button 
                 variant="outline"
                 onClick={handlePrevLesson}
-                disabled={!lesson.prevLessonId}
+                disabled={!lesson.prevLessonNumber}
                 className="w-full"
               >
                 <SkipBack size={16} className="ml-2" />
@@ -217,7 +354,7 @@ const AppLessonView = () => {
               </Button>
               <Button 
                 onClick={handleNextLesson}
-                disabled={!lesson.nextLessonId}
+                disabled={!lesson.nextLessonNumber}
                 className="w-full"
               >
                 درس بعدی
@@ -225,8 +362,8 @@ const AppLessonView = () => {
               </Button>
             </div>
 
-            {lesson.hasDownloadableFiles && (
-              <Button variant="outline" className="w-full">
+            {lesson.file_url && (
+              <Button variant="outline" className="w-full" onClick={() => window.open(lesson.file_url!, '_blank')}>
                 <Download size={16} className="ml-2" />
                 دانلود فایل‌های درس
               </Button>

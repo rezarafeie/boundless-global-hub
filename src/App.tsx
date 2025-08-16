@@ -332,7 +332,7 @@ const App = () => {
                     <Route path="/app/dashboard" element={<AppDashboard />} />
                     <Route path="/app/my-courses" element={<AppMyCourses />} />
                     <Route path="/app/course/:slug" element={<AppCourseDetail />} />
-                    <Route path="/app/lesson/:lessonId" element={<AppLessonView />} />
+                    <Route path="/app/lesson/:lessonNumber" element={<AppLessonView />} />
                     <Route path="/app/tests" element={<AppTests />} />
                     <Route path="/app/learning" element={<AppLearning />} />
                     <Route path="/app/profile" element={<AppProfile />} />
