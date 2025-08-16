@@ -37,7 +37,7 @@ interface LessonData {
 }
 
 const AppLessonView = () => {
-  const { lessonNumber } = useParams();
+  const { courseSlug: paramCourseSlug, lessonNumber } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { getLessonByNumber } = useLessonNumber();
@@ -64,42 +64,79 @@ const AppLessonView = () => {
     try {
       setLoading(true);
       
-      // First, we need to find which course this lesson belongs to
-      // We'll check the user's enrolled courses and find the lesson
-      const { data: enrollments, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .select(`
-          course_id,
-          courses!inner (
-            id,
-            title,
-            slug,
-            is_active
-          )
-        `)
-        .eq('chat_user_id', parseInt(user.id))
-        .eq('payment_status', 'completed')
-        .eq('courses.is_active', true);
-
-      if (enrollmentError || !enrollments) {
-        console.error('Error fetching enrollments:', enrollmentError);
-        navigate('/app/my-courses');
-        return;
-      }
-
-      // Try to find the lesson in each enrolled course
       let foundLesson = null;
       let foundCourse = null;
+      
+      // If we have course slug from params, use it directly
+      if (paramCourseSlug) {
+        // Verify user is enrolled in this specific course
+        const { data: enrollment, error: enrollmentError } = await supabase
+          .from('enrollments')
+          .select(`
+            course_id,
+            courses!inner (
+              id,
+              title,
+              slug,
+              is_active
+            )
+          `)
+          .eq('chat_user_id', parseInt(user.id))
+          .eq('payment_status', 'completed')
+          .eq('courses.slug', paramCourseSlug)
+          .eq('courses.is_active', true)
+          .single();
 
-      for (const enrollment of enrollments) {
-        const course = enrollment.courses;
-        if (!course) continue;
+        if (enrollmentError || !enrollment) {
+          console.error('User not enrolled in course:', enrollmentError);
+          navigate('/app/my-courses');
+          return;
+        }
 
-        const lessonData = await getLessonByNumber(course.slug, parseInt(lessonNumber));
-        if (lessonData) {
-          foundLesson = lessonData;
-          foundCourse = course;
-          break;
+        // Get the lesson data
+        const lessonData = await getLessonByNumber(paramCourseSlug, parseInt(lessonNumber));
+        if (!lessonData) {
+          console.error('Lesson not found');
+          navigate(`/app/course/${paramCourseSlug}`);
+          return;
+        }
+
+        foundLesson = lessonData;
+        foundCourse = enrollment.courses;
+      } else {
+        // Fallback: search through all enrolled courses
+        const { data: enrollments, error: enrollmentError } = await supabase
+          .from('enrollments')
+          .select(`
+            course_id,
+            courses!inner (
+              id,
+              title,
+              slug,
+              is_active
+            )
+          `)
+          .eq('chat_user_id', parseInt(user.id))
+          .eq('payment_status', 'completed')
+          .eq('courses.is_active', true);
+
+        if (enrollmentError || !enrollments) {
+          console.error('Error fetching enrollments:', enrollmentError);
+          navigate('/app/my-courses');
+          return;
+        }
+
+        // Try to find the lesson in each enrolled course
+        for (const enrollment of enrollments) {
+          const course = enrollment.courses;
+          if (!course) continue;
+
+          const lessonData = await getLessonByNumber(course.slug, parseInt(lessonNumber));
+          if (lessonData) {
+            foundLesson = lessonData;
+            foundCourse = course;
+            break;
+          }
         }
       }
 
@@ -165,14 +202,14 @@ const AppLessonView = () => {
   };
 
   const handleNextLesson = () => {
-    if (lesson?.nextLessonNumber) {
-      navigate(`/app/lesson/${lesson.nextLessonNumber}`);
+    if (lesson?.nextLessonNumber && courseSlug) {
+      navigate(`/app/course/${courseSlug}/lesson/${lesson.nextLessonNumber}`);
     }
   };
 
   const handlePrevLesson = () => {
-    if (lesson?.prevLessonNumber) {
-      navigate(`/app/lesson/${lesson.prevLessonNumber}`);
+    if (lesson?.prevLessonNumber && courseSlug) {
+      navigate(`/app/course/${courseSlug}/lesson/${lesson.prevLessonNumber}`);
     }
   };
 
@@ -257,6 +294,11 @@ const AppLessonView = () => {
                 <div 
                   className="aspect-video w-full"
                   dangerouslySetInnerHTML={{ __html: lesson.video_url }}
+                />
+              ) : lesson.content && lesson.content.includes('<iframe') ? (
+                <div 
+                  className="aspect-video w-full"
+                  dangerouslySetInnerHTML={{ __html: lesson.content }}
                 />
               ) : (
                 /* Fallback player for lessons without video */

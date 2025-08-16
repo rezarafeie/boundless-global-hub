@@ -208,8 +208,8 @@ const AppCourseDetail = () => {
     if (lesson.locked) return;
     
     try {
-      // Use the lesson number to navigate
-      navigate(`/app/lesson/${lesson.lesson_number}`);
+      // Use the course slug and lesson number to navigate
+      navigate(`/app/course/${slug}/lesson/${lesson.lesson_number}`);
     } catch (error) {
       console.error('Error navigating to lesson:', error);
     }
