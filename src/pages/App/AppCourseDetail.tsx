@@ -75,41 +75,37 @@ const AppCourseDetail = () => {
     try {
       setLoading(true);
       
-      // First check if user is enrolled in this course
-      const { data: enrollment, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .select(`
-          id,
-          course_id,
-          created_at,
-          payment_status,
-          courses (
-            id,
-            title,
-            description,
-            slug
-          )
-        `)
-        .eq('chat_user_id', parseInt(user.id))
-        .eq('payment_status', 'completed')
-        .eq('courses.slug', slug)
-        .single();
-
-      if (enrollmentError || !enrollment) {
-        console.error('User not enrolled in this course:', enrollmentError);
-        navigate('/app/my-courses');
-        return;
-      }
-
-      // Fetch course details
+      // First get the course by slug
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select('*')
         .eq('slug', slug)
+        .eq('is_active', true)
         .single();
 
       if (courseError || !courseData) {
-        console.error('Error fetching course:', courseError);
+        console.error('Course not found:', courseError);
+        navigate('/app/my-courses');
+        return;
+      }
+
+      // Then check if user is enrolled in this course using the course ID
+      const { data: enrollment, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select('id, course_id, created_at, payment_status')
+        .eq('chat_user_id', parseInt(user.id))
+        .eq('course_id', courseData.id)
+        .eq('payment_status', 'completed')
+        .maybeSingle();
+
+      if (enrollmentError) {
+        console.error('Error checking enrollment:', enrollmentError);
+        navigate('/app/my-courses');
+        return;
+      }
+
+      if (!enrollment) {
+        console.error('User not enrolled in this course');
         navigate('/app/my-courses');
         return;
       }

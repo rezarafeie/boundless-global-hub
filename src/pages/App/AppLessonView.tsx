@@ -70,14 +70,16 @@ const AppLessonView = () => {
         .from('enrollments')
         .select(`
           course_id,
-          courses (
+          courses!inner (
             id,
             title,
-            slug
+            slug,
+            is_active
           )
         `)
         .eq('chat_user_id', parseInt(user.id))
-        .eq('payment_status', 'completed');
+        .eq('payment_status', 'completed')
+        .eq('courses.is_active', true);
 
       if (enrollmentError || !enrollments) {
         console.error('Error fetching enrollments:', enrollmentError);
