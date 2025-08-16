@@ -26,7 +26,8 @@ const AppTests = () => {
   const { tests, loading, error } = useTests();
 
   const handleStartTest = (testSlug: string) => {
-    navigate(`/enroll?test=${testSlug}`);
+    // For app view, navigate to the test access page instead of enrollment
+    navigate(`/test-access?test=${testSlug}`);
   };
 
   const formatPrice = (price: number) => {
