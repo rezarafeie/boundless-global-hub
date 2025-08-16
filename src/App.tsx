@@ -125,6 +125,15 @@ import TestResult from "./pages/TestResult";
 import TestEnrollmentSuccessPage from "./pages/TestEnrollmentSuccessPage";
 import AnalyticsTracker from "./components/Analytics/AnalyticsTracker";
 
+// App View Components
+import AppDashboard from "./pages/App/AppDashboard";
+import AppMyCourses from "./pages/App/AppMyCourses";
+import AppCourseDetail from "./pages/App/AppCourseDetail";
+import AppLessonView from "./pages/App/AppLessonView";
+import AppTests from "./pages/App/AppTests";
+import AppLearning from "./pages/App/AppLearning";
+import AppProfile from "./pages/App/AppProfile";
+
 const queryClient = new QueryClient();
 
 const App = () => {
