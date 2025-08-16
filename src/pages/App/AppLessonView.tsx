@@ -70,7 +70,7 @@ const AppLessonView = () => {
       // If we have course slug from params, use it directly
       if (paramCourseSlug) {
         // Verify user is enrolled in this specific course
-        const { data: enrollment, error: enrollmentError } = await supabase
+        const { data: enrollments, error: enrollmentError } = await supabase
           .from('enrollments')
           .select(`
             course_id,
@@ -84,14 +84,16 @@ const AppLessonView = () => {
           .eq('chat_user_id', parseInt(user.id))
           .eq('payment_status', 'completed')
           .eq('courses.slug', paramCourseSlug)
-          .eq('courses.is_active', true)
-          .single();
+          .eq('courses.is_active', true);
 
-        if (enrollmentError || !enrollment) {
+        if (enrollmentError || !enrollments || enrollments.length === 0) {
           console.error('User not enrolled in course:', enrollmentError);
           navigate('/app/my-courses');
           return;
         }
+
+        // Use the first valid enrollment
+        const enrollment = enrollments[0];
 
         // Get the lesson data
         const lessonData = await getLessonByNumber(paramCourseSlug, parseInt(lessonNumber));
@@ -177,7 +179,8 @@ const AppLessonView = () => {
 
     } catch (error) {
       console.error('Error fetching lesson data:', error);
-      navigate('/app/my-courses');
+      // Instead of redirecting, show error state
+      setLesson(null);
     } finally {
       setLoading(false);
     }

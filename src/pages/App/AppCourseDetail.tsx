@@ -145,7 +145,12 @@ const AppCourseDetail = () => {
           .eq('course_id', courseData.id)
           .order('lesson_number');
 
-        if (!lessonsError && lessonsData && lessonsData.length > 0) {
+        if (lessonsError) {
+          console.error('Error fetching lessons:', lessonsError);
+          // Don't redirect immediately, try to continue with empty sections
+        }
+
+        if (lessonsData && lessonsData.length > 0) {
           transformedSections = [{
             id: 'virtual-section',
             title: 'دروس دوره',
@@ -160,6 +165,10 @@ const AppCourseDetail = () => {
               locked: false // Don't lock lessons for courses without sections
             }))
           }];
+        } else {
+          // Course has no lessons, create empty course structure
+          console.warn('Course has no lessons:', courseData.slug);
+          transformedSections = [];
         }
       } else {
         // Transform sections data with lesson completion status
@@ -200,7 +209,9 @@ const AppCourseDetail = () => {
 
     } catch (error) {
       console.error('Error fetching course data:', error);
-      navigate('/app/my-courses');
+      // Instead of redirecting immediately, show error state
+      setCourse(null);
+      setSections([]);
     } finally {
       setLoading(false);
     }
