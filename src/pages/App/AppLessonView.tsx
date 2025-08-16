@@ -349,7 +349,7 @@ const AppLessonView = () => {
             )}
 
             <div className="grid grid-cols-2 gap-3">
-                <Button 
+              <Button 
                 variant="outline"
                 onClick={handlePrevLesson}
                 disabled={!lesson.prevLessonNumber}
@@ -358,14 +358,25 @@ const AppLessonView = () => {
                 <SkipBack size={16} className="ml-2" />
                 درس قبلی
               </Button>
-              <Button 
-                onClick={handleNextLesson}
-                disabled={!lesson.nextLessonNumber}
-                className="w-full"
-              >
-                درس بعدی
-                <SkipForward size={16} className="mr-2" />
-              </Button>
+              
+              {lesson.nextLessonNumber ? (
+                <Button 
+                  onClick={handleNextLesson}
+                  className="w-full"
+                >
+                  درس بعدی
+                  <SkipForward size={16} className="mr-2" />
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleBackToCourse}
+                  className="w-full"
+                  variant="default"
+                >
+                  بازگشت به دوره
+                  <BookOpen size={16} className="mr-2" />
+                </Button>
+              )}
             </div>
 
             {lesson.file_url && (
