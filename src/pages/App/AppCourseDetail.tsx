@@ -132,22 +132,50 @@ const AppCourseDetail = () => {
         console.error('Error fetching sections:', sectionsError);
       }
 
-      // Transform sections data with lesson completion status
-      const transformedSections: CourseSection[] = sectionsData?.map(section => ({
-        id: section.id,
-        title: section.title,
-        order_index: section.order_index,
-        lessons: section.course_lessons?.map((lesson, index) => ({
-          id: lesson.id,
-          title: lesson.title,
-          duration: lesson.duration || 15,
-          order_index: lesson.order_index,
-          lesson_number: lesson.lesson_number || index + 1,
-          completed: Math.random() > 0.5, // TODO: Get real completion status
-          locked: index > 3 // Lock lessons after the first 4
-        })) || []
-      })) || [];
+      // If no sections exist, create a virtual section with all lessons
+      let transformedSections: CourseSection[] = [];
+      
+      if (!sectionsData || sectionsData.length === 0) {
+        // Fetch lessons directly for courses without sections
+        const { data: lessonsData, error: lessonsError } = await supabase
+          .from('course_lessons')
+          .select('id, title, duration, order_index, lesson_number')
+          .eq('course_id', courseData.id)
+          .order('lesson_number');
 
+        if (!lessonsError && lessonsData && lessonsData.length > 0) {
+          transformedSections = [{
+            id: 'virtual-section',
+            title: 'دروس دوره',
+            order_index: 0,
+            lessons: lessonsData.map((lesson, index) => ({
+              id: lesson.id,
+              title: lesson.title,
+              duration: lesson.duration || 15,
+              order_index: lesson.order_index || index + 1,
+              lesson_number: lesson.lesson_number || index + 1,
+              completed: Math.random() > 0.5, // TODO: Get real completion status
+              locked: false // Don't lock lessons for courses without sections
+            }))
+          }];
+        }
+      } else {
+        // Transform sections data with lesson completion status
+        transformedSections = sectionsData.map(section => ({
+          id: section.id,
+          title: section.title,
+          order_index: section.order_index,
+          lessons: section.course_lessons?.map((lesson, index) => ({
+            id: lesson.id,
+            title: lesson.title,
+            duration: lesson.duration || 15,
+            order_index: lesson.order_index,
+            lesson_number: lesson.lesson_number || index + 1,
+            completed: Math.random() > 0.5, // TODO: Get real completion status
+            locked: index > 3 // Lock lessons after the first 4
+          })) || []
+        }));
+      }
       // Calculate course progress
       const totalLessons = transformedSections.reduce((sum, section) => sum + section.lessons.length, 0);
       const completedLessons = transformedSections.reduce((sum, section) => 

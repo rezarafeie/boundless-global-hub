@@ -252,63 +252,73 @@ const AppLessonView = () => {
         <div className="px-4">
           <Card className="overflow-hidden">
             <div className="relative">
-              {/* Video placeholder */}
-              <div className="aspect-video bg-black flex items-center justify-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-16 w-16 rounded-full bg-white/20 hover:bg-white/30 text-white"
-                  onClick={handlePlayPause}
-                >
-                  {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-                </Button>
-              </div>
+              {/* Video Content */}
+              {lesson.video_url ? (
+                <div 
+                  className="aspect-video w-full"
+                  dangerouslySetInnerHTML={{ __html: lesson.video_url }}
+                />
+              ) : (
+                /* Fallback player for lessons without video */
+                <div className="aspect-video bg-black flex items-center justify-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-16 w-16 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                    onClick={handlePlayPause}
+                  >
+                    {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                  </Button>
+                </div>
+              )}
               
-              {/* Video Controls */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                <div className="space-y-2">
-                  <Progress value={progressPercentage} className="h-1" />
-                  <div className="flex items-center justify-between text-white text-sm">
-                    <span>{formatTime(currentTime)}</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-white hover:bg-white/20"
-                        onClick={handlePrevLesson}
-                        disabled={!lesson.prevLessonNumber}
-                      >
-                        <SkipBack size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-white hover:bg-white/20"
-                        onClick={handlePlayPause}
-                      >
-                        {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-white hover:bg-white/20"
-                        onClick={handleNextLesson}
-                        disabled={!lesson.nextLessonNumber}
-                      >
-                        <SkipForward size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-white hover:bg-white/20"
-                      >
-                        <Volume2 size={16} />
-                      </Button>
+              {/* Video Controls - only show for fallback player */}
+              {!lesson.video_url && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                  <div className="space-y-2">
+                    <Progress value={progressPercentage} className="h-1" />
+                    <div className="flex items-center justify-between text-white text-sm">
+                      <span>{formatTime(currentTime)}</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-white hover:bg-white/20"
+                          onClick={handlePrevLesson}
+                          disabled={!lesson.prevLessonNumber}
+                        >
+                          <SkipBack size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-white hover:bg-white/20"
+                          onClick={handlePlayPause}
+                        >
+                          {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-white hover:bg-white/20"
+                          onClick={handleNextLesson}
+                          disabled={!lesson.nextLessonNumber}
+                        >
+                          <SkipForward size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-white hover:bg-white/20"
+                        >
+                          <Volume2 size={16} />
+                        </Button>
+                      </div>
+                      <span>{formatTime(totalDuration)}</span>
                     </div>
-                    <span>{formatTime(totalDuration)}</span>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </Card>
         </div>
