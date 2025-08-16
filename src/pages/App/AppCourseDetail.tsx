@@ -90,13 +90,12 @@ const AppCourseDetail = () => {
       }
 
       // Then check if user is enrolled in this course using the course ID
-      const { data: enrollment, error: enrollmentError } = await supabase
+      const { data: enrollments, error: enrollmentError } = await supabase
         .from('enrollments')
         .select('id, course_id, created_at, payment_status')
         .eq('chat_user_id', parseInt(user.id))
         .eq('course_id', courseData.id)
-        .eq('payment_status', 'completed')
-        .maybeSingle();
+        .eq('payment_status', 'completed');
 
       if (enrollmentError) {
         console.error('Error checking enrollment:', enrollmentError);
@@ -104,11 +103,14 @@ const AppCourseDetail = () => {
         return;
       }
 
-      if (!enrollment) {
+      if (!enrollments || enrollments.length === 0) {
         console.error('User not enrolled in this course');
         navigate('/app/my-courses');
         return;
       }
+
+      // Use the first valid enrollment
+      const enrollment = enrollments[0];
 
       // Fetch course sections and lessons
       const { data: sectionsData, error: sectionsError } = await supabase
