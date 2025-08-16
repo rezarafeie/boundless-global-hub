@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Globe, Sun, Moon } from "lucide-react";
+import AppViewToggleButton from "@/components/AppViewToggleButton";
+import { Smartphone, Monitor } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -141,6 +143,9 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center gap-3">
+          {/* App View Toggle */}
+          <AppViewToggleButton />
+          
           {/* Dark Mode Toggle */}
           <Button
             variant="ghost"
@@ -308,6 +313,60 @@ const Header = () => {
                          (language === "en" ? "Login / Register" : "ورود / ثبت‌نام")
                        }
                      </Link>
+                  </Button>
+                  
+                  {/* App View Toggle */}
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => {
+                      const currentPath = location.pathname;
+                      const isAppView = currentPath.startsWith("/app/");
+                      
+                      if (isAppView) {
+                        // Convert app route back to regular route
+                        if (currentPath === "/app/dashboard") {
+                          navigate("/dashboard");
+                        } else if (currentPath.startsWith("/app/course/")) {
+                          const slug = currentPath.split("/app/course/")[1];
+                          navigate(`/courses/${slug}`);
+                        } else if (currentPath === "/app/tests") {
+                          navigate("/tests");
+                        } else if (currentPath === "/app/profile") {
+                          navigate("/profile");
+                        } else {
+                          navigate("/");
+                        }
+                      } else {
+                        // Convert current route to app view
+                        if (currentPath === "/" || currentPath === "/dashboard") {
+                          navigate("/app/dashboard");
+                        } else if (currentPath.startsWith("/courses/")) {
+                          const slug = currentPath.split("/courses/")[1];
+                          navigate(`/app/course/${slug}`);
+                        } else if (currentPath === "/tests") {
+                          navigate("/app/tests");
+                        } else if (currentPath === "/profile") {
+                          navigate("/app/profile");
+                        } else {
+                          navigate("/app/dashboard");
+                        }
+                      }
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full rounded-full border-border dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent"
+                  >
+                    {location.pathname.startsWith("/app/") ? (
+                      <>
+                        <Monitor size={20} className="mr-2" />
+                        {language === "en" ? "Desktop View" : "نمای دسکتاپ"}
+                      </>
+                    ) : (
+                      <>
+                        <Smartphone size={20} className="mr-2" />
+                        {language === "en" ? "Mobile View" : "نمای موبایل"}
+                      </>
+                    )}
                   </Button>
                   
                   {/* Theme Toggle */}

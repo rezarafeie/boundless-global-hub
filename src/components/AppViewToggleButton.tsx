@@ -1,10 +1,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Smartphone, Monitor, ArrowRight } from "lucide-react";
+import { Smartphone, Monitor } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const AppViewToggle = () => {
+const AppViewToggleButton = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,34 +47,20 @@ const AppViewToggle = () => {
   const isAppView = location.pathname.startsWith("/app/");
 
   return (
-    <Card className="fixed bottom-4 right-4 z-50 shadow-lg">
-      <CardContent className="p-2">
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-muted-foreground hidden sm:block">
-            {isAppView ? "نمای موبایل" : "نمای دسکتاپ"}
-          </div>
-          <Button
-            variant={isAppView ? "default" : "outline"}
-            size="sm"
-            onClick={isAppView ? handleDesktopView : handleAppView}
-            className="h-8 px-3"
-          >
-            {isAppView ? (
-              <>
-                <Monitor size={14} className="ml-1" />
-                <span className="hidden sm:inline">دسکتاپ</span>
-              </>
-            ) : (
-              <>
-                <Smartphone size={14} className="ml-1" />
-                <span className="hidden sm:inline">موبایل</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={isAppView ? handleDesktopView : handleAppView}
+      className="rounded-full hover:bg-accent dark:hover:bg-accent/50"
+      aria-label={isAppView ? "Switch to desktop view" : "Switch to mobile app view"}
+    >
+      {isAppView ? (
+        <Monitor size={20} className="text-foreground" />
+      ) : (
+        <Smartphone size={20} className="text-foreground" />
+      )}
+    </Button>
   );
 };
 
-export default AppViewToggle;
+export default AppViewToggleButton;

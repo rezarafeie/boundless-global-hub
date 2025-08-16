@@ -10,7 +10,7 @@ import OfflineDetector from "@/components/OfflineDetector";
 import NotificationErrorBoundary from "@/components/NotificationErrorBoundary";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotificationHeight } from "@/hooks/useNotificationHeight";
-import AppViewToggle from "@/components/AppViewToggle";
+
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -80,7 +80,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         </main>
       </OfflineDetector>
       {!shouldHideFooter && <Footer />}
-      <AppViewToggle />
     </div>
   );
 };
