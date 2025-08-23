@@ -179,7 +179,7 @@ const Index = () => {
             setDisplayPrice(TetherlandService.formatIRRAmount(irrPrice) + ' تومان');
             
             if (isOnSale || isOnPrelaunch) {
-              const originalIrrPrice = await TetherlandService.convertUSDToIRR(course.price);
+              const originalIrrPrice = await TetherlandService.convertUSDToIRR(course.usd_price);
               setOriginalPrice(TetherlandService.formatIRRAmount(originalIrrPrice) + ' تومان');
             }
           } catch (error) {
@@ -189,7 +189,7 @@ const Index = () => {
             setDisplayPrice(new Intl.NumberFormat('fa-IR').format(irrPrice) + ' تومان');
             
             if (isOnSale || isOnPrelaunch) {
-              const originalIrrPrice = course.price * 60000;
+              const originalIrrPrice = course.use_dollar_price ? course.usd_price * 60000 : course.price;
               setOriginalPrice(new Intl.NumberFormat('fa-IR').format(originalIrrPrice) + ' تومان');
             }
           }
@@ -484,8 +484,10 @@ const Index = () => {
                 const isOnPrelaunch = course.is_pre_launch_enabled && course.pre_launch_price &&
                   (!course.pre_launch_ends_at || new Date(course.pre_launch_ends_at) > new Date());
                 
+                // Fix price calculation for USD courses
+                const basePrice = course.use_dollar_price ? course.usd_price : course.price;
                 const currentPrice = isOnPrelaunch ? course.pre_launch_price : 
-                  isOnSale ? course.sale_price : course.price;
+                  isOnSale ? course.sale_price : basePrice;
                 
                 return (
                   <CourseCardWithPrice 
@@ -536,8 +538,10 @@ const Index = () => {
                 const isOnPrelaunch = course.is_pre_launch_enabled && course.pre_launch_price &&
                   (!course.pre_launch_ends_at || new Date(course.pre_launch_ends_at) > new Date());
                 
+                // Fix price calculation for USD courses
+                const basePrice = course.use_dollar_price ? course.usd_price : course.price;
                 const currentPrice = isOnPrelaunch ? course.pre_launch_price : 
-                  isOnSale ? course.sale_price : course.price;
+                  isOnSale ? course.sale_price : basePrice;
                 
                 return (
                   <CourseCardWithPrice 
