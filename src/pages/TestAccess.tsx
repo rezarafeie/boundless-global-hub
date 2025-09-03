@@ -189,6 +189,14 @@ const TestAccess: React.FC = () => {
         questionnaireData = await esanjService.getQuestionnaire(enrollment.tests.test_id)
       }
 
+      // Check if we have valid questionnaire data
+      if (!questionnaireData?.isHtml && (!questionnaireData?.questions || questionnaireData.questions.length === 0)) {
+        console.error('No questions returned from Esanj API:', questionnaireData)
+        toast.error('آزمون فاقد سوال است. لطفاً با پشتیبانی تماس بگیرید.')
+        setIsLoadingTest(false)
+        return
+      }
+
       setQuestionnaire(questionnaireData)
       setTestStarted(true)
 
@@ -583,7 +591,24 @@ const TestAccess: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            )) || <div>بدون سوال</div>}
+            )) || (
+              <Card className="border-border">
+                <CardContent className="p-8 text-center">
+                  <div className="text-muted-foreground mb-4">
+                    <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">آزمون فاقد سوال است</h3>
+                    <p>متأسفانه سوالات آزمون بارگذاری نشده‌اند.</p>
+                    <p className="text-sm mt-2">لطفاً با پشتیبانی تماس بگیرید.</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/tests')}
+                  >
+                    بازگشت به آزمون‌ها
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
