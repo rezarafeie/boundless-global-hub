@@ -200,7 +200,7 @@ const AppTestsTab: React.FC = () => {
       // Go to results
       navigate(`/test-result?enrollment=${enrollment.id}`)
     } else if (enrollment.enrollment_status === 'ready') {
-      // Start test
+      // Start test - use test enrollment ID
       navigate(`/access?test=${enrollment.id}`)
     } else if (enrollment.payment_status === 'pending') {
       // Continue payment

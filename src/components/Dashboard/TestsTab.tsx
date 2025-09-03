@@ -198,8 +198,8 @@ const TestsTab: React.FC = () => {
       // Go to results
       navigate(`/test-result?enrollment=${enrollment.id}`)
     } else if (enrollment.enrollment_status === 'ready') {
-      // Start test
-      navigate(`/test-access?test=${enrollment.id}`)
+      // Start test - fixed route to /access
+      navigate(`/access?test=${enrollment.id}`)
     } else if (enrollment.payment_status === 'pending') {
       // Continue payment
       navigate(`/enroll?test=${enrollment.tests.slug}`)
