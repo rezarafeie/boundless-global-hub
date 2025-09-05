@@ -383,7 +383,13 @@ const TestAccess: React.FC = () => {
 
       // Calculate age from birth year (stored as Gregorian year)
       const currentYear = new Date().getFullYear()
-      const age = currentYear - enrollment.birth_year // Simple age calculation using Gregorian years
+      
+      // Ensure birth_year is treated as a number and validate it
+      const birthYear = parseInt(enrollment.birth_year?.toString() || '0')
+      const calculatedAge = currentYear - birthYear
+      
+      // Validate age is reasonable (between 1 and 120)
+      const age = Math.max(1, Math.min(120, calculatedAge))
 
       // Prepare answers for Esanj API
       const esanjAnswers = Object.entries(answers).map(([key, value]) => ({
@@ -396,10 +402,15 @@ const TestAccess: React.FC = () => {
       console.log('Age calculation DEBUG:', {
         currentYear,
         birthYear: enrollment.birth_year,
-        birthYearType: typeof enrollment.birth_year,
-        calculatedAge: age,
-        ageType: typeof age,
-        fullEnrollment: enrollment
+        birthYearParsed: birthYear,
+        calculatedAge,
+        finalAge: age,
+        validAge: age >= 1 && age <= 120,
+        enrollmentData: {
+          id: enrollment.id,
+          birth_year: enrollment.birth_year,
+          birth_year_type: typeof enrollment.birth_year
+        }
       })
 
       // Submit test using the service method
