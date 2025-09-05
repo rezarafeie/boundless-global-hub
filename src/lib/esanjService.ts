@@ -184,6 +184,16 @@ class EsanjService {
     answers: Array<{ row: number; value: number }>
   ): Promise<any> {
     const token = await this.authenticate()
+    
+    console.log('EsanjService.submitTest called with:', {
+      testId,
+      uuid,
+      employeeId,
+      age,
+      sex,
+      answersCount: answers.length,
+      sampleAnswers: answers.slice(0, 3)
+    })
 
     const { data, error } = await supabase.functions.invoke('esanj-submit-test', {
       body: {
@@ -197,7 +207,10 @@ class EsanjService {
       }
     })
 
+    console.log('Esanj submit response:', { data, error })
+
     if (error || !data.success) {
+      console.error('Esanj submit failed:', data?.error || error)
       throw new Error(data?.error || 'Failed to submit test')
     }
 

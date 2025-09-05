@@ -333,6 +333,10 @@ const TestAccess: React.FC = () => {
   const handleSubmitTest = async () => {
     if (!enrollment || !questionnaire) return
 
+    console.log('Starting test submission...')
+    console.log('Enrollment data:', enrollment)
+    console.log('Questionnaire type:', questionnaire.isHtml ? 'HTML' : 'JSON')
+
     // For HTML questionnaire, we handle submission differently
     if (questionnaire.isHtml) {
       toast.info('برای آزمون HTML، از فرم درون صفحه استفاده کنید')
@@ -343,6 +347,12 @@ const TestAccess: React.FC = () => {
     const totalQuestions = questionnaire.questions?.length || 0
     const answeredQuestions = Object.keys(answers).length
 
+    console.log('Questions status:', {
+      total: totalQuestions,
+      answered: answeredQuestions,
+      answers
+    })
+
     if (answeredQuestions < totalQuestions) {
       toast.error('لطفاً به تمام سوالات پاسخ دهید')
       return
@@ -351,8 +361,22 @@ const TestAccess: React.FC = () => {
     setIsSubmitting(true)
 
     try {
+      // Check enrollment required fields
+      console.log('Checking enrollment data:', {
+        esanj_employee_id: enrollment.esanj_employee_id,
+        esanj_uuid: enrollment.esanj_uuid,
+        birth_year: enrollment.birth_year,
+        sex: enrollment.sex
+      })
+
       // Ensure we have all required data
       if (!enrollment.esanj_employee_id || !enrollment.esanj_uuid || !enrollment.birth_year || !enrollment.sex) {
+        console.error('Missing required enrollment data:', {
+          esanj_employee_id: !!enrollment.esanj_employee_id,
+          esanj_uuid: !!enrollment.esanj_uuid,
+          birth_year: !!enrollment.birth_year,
+          sex: !!enrollment.sex
+        })
         toast.error('اطلاعات آزمون ناقص است')
         return
       }
@@ -367,9 +391,20 @@ const TestAccess: React.FC = () => {
         value: Number(value)
       }))
 
+      console.log('Prepared Esanj answers:', esanjAnswers)
+
       // Submit test using the service method
       let uuid = enrollment.esanj_uuid
       let submitResult: any
+      
+      console.log('Calling esanjService.submitTest with:', {
+        testId: enrollment.tests.test_id,
+        uuid,
+        employeeId: enrollment.esanj_employee_id,
+        age,
+        sex: enrollment.sex,
+        answersCount: esanjAnswers.length
+      })
       
       try {
         submitResult = await esanjService.submitTest(
