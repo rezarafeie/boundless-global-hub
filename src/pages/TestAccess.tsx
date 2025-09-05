@@ -235,6 +235,9 @@ const TestAccess: React.FC = () => {
     const onSubmit = async (e: Event) => {
       e.preventDefault()
       if (!enrollment) return
+      
+      let esanjAnswers: Array<{ row: number; value: number }> = []
+      
       try {
         setIsSubmitting(true)
 
@@ -242,7 +245,7 @@ const TestAccess: React.FC = () => {
         const radioInputs = Array.from(container.querySelectorAll('input[type="radio"][name^="q"]')) as HTMLInputElement[]
         const groupNames = Array.from(new Set(radioInputs.map(i => i.name)))
 
-        const esanjAnswers = [] as Array<{ row: number; value: number }>
+        esanjAnswers = []
         for (const name of groupNames) {
           const checked = container.querySelector(`input[type="radio"][name="${name}"]:checked`) as HTMLInputElement | null
           if (!checked) {
@@ -312,7 +315,10 @@ const TestAccess: React.FC = () => {
         navigate(`/test-result?enrollment=${enrollment.id}`)
       } catch (err) {
         console.error('HTML submit exception:', err)
-        toast.error('خطا در ارسال آزمون')
+        console.error('HTML enrollment data:', enrollment)
+        console.error('HTML answers:', esanjAnswers)
+        console.error('Error message:', err instanceof Error ? err.message : 'Unknown error')
+        toast.error(`خطا در ارسال آزمون: ${err instanceof Error ? err.message : 'خطای ناشناخته'}`)
       } finally {
         setIsSubmitting(false)
       }
@@ -416,7 +422,10 @@ const TestAccess: React.FC = () => {
 
     } catch (error) {
       console.error('Error submitting test:', error)
-      toast.error('خطا در ارسال آزمون')
+      console.error('Enrollment data:', enrollment)
+      console.error('Answers:', answers)
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
+      toast.error(`خطا در ارسال آزمون: ${error instanceof Error ? error.message : 'خطای ناشناخته'}`)
     } finally {
       setIsSubmitting(false)
     }
