@@ -393,10 +393,13 @@ const TestAccess: React.FC = () => {
 
       console.log('Prepared Esanj answers:', esanjAnswers)
 
-      console.log('Age calculation:', {
+      console.log('Age calculation DEBUG:', {
         currentYear,
         birthYear: enrollment.birth_year,
-        calculatedAge: age
+        birthYearType: typeof enrollment.birth_year,
+        calculatedAge: age,
+        ageType: typeof age,
+        fullEnrollment: enrollment
       })
 
       // Submit test using the service method
