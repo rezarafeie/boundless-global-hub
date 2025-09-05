@@ -393,6 +393,12 @@ const TestAccess: React.FC = () => {
 
       console.log('Prepared Esanj answers:', esanjAnswers)
 
+      console.log('Age calculation:', {
+        currentYear,
+        birthYear: enrollment.birth_year,
+        calculatedAge: age
+      })
+
       // Submit test using the service method
       let uuid = enrollment.esanj_uuid
       let submitResult: any
@@ -401,7 +407,7 @@ const TestAccess: React.FC = () => {
         testId: enrollment.tests.test_id,
         uuid,
         employeeId: enrollment.esanj_employee_id,
-        age,
+        age: age,
         sex: enrollment.sex,
         answersCount: esanjAnswers.length
       })
