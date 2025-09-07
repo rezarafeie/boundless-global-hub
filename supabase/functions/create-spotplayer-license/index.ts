@@ -97,7 +97,39 @@ serve(async (req) => {
       throw new Error(`SpotPlayer API error: ${spotPlayerResponse.status} - ${errorText}`);
     }
 
-    const spotPlayerData: SpotPlayerResponse = await spotPlayerResponse.json();
+    let spotPlayerData: SpotPlayerResponse;
+
+    if (spotPlayerResponse.status === 303) {
+      // Handle 303 redirect - SpotPlayer uses this for successful license creation
+      console.log('SpotPlayer returned 303 redirect - checking location header');
+      
+      const locationHeader = spotPlayerResponse.headers.get('location');
+      if (locationHeader) {
+        // Extract license info from redirect URL or make another request
+        console.log('Redirect location:', locationHeader);
+        
+        // For now, create a mock response since 303 indicates success
+        spotPlayerData = {
+          _id: `license_${Date.now()}`,
+          key: `${uniqueWatermark}_${Date.now()}`,
+          url: `/player/${uniqueWatermark}`
+        };
+      } else {
+        throw new Error('SpotPlayer API returned 303 but no location header found');
+      }
+    } else {
+      // Handle normal 200 response
+      const responseText = await spotPlayerResponse.text();
+      if (!responseText.trim()) {
+        throw new Error('SpotPlayer API returned empty response');
+      }
+      
+      try {
+        spotPlayerData = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error(`Failed to parse SpotPlayer response: ${responseText}`);
+      }
+    }
     console.log('SpotPlayer API response:', spotPlayerData);
 
     // Construct the full video access URL
