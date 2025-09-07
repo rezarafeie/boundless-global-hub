@@ -78,6 +78,15 @@ serve(async (req) => {
             text: uniqueWatermark
           }
         ]
+      },
+      device: {
+        p0: 12, // Total devices (sum of all platforms)
+        p1: 2,  // Windows
+        p2: 2,  // MacOS
+        p3: 2,  // Ubuntu  
+        p4: 2,  // Android
+        p5: 2,  // iOS
+        p6: 2   // WebApp
       }
     };
 
