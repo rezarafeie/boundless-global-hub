@@ -94,94 +94,33 @@ serve(async (req) => {
       body: JSON.stringify(spotPlayerRequestBody)
     });
 
-    // Handle both success (200) and redirect (303) status codes from SpotPlayer API
-    if (!spotPlayerResponse.ok && spotPlayerResponse.status !== 303) {
+    // Handle SpotPlayer API response
+    if (!spotPlayerResponse.ok) {
       const errorText = await spotPlayerResponse.text();
+      console.error('SpotPlayer API error response:', errorText);
       throw new Error(`SpotPlayer API error: ${spotPlayerResponse.status} - ${errorText}`);
     }
 
-    let spotPlayerData: SpotPlayerResponse;
+    // Parse JSON response directly
+    const responseText = await spotPlayerResponse.text();
+    console.log('SpotPlayer API response text:', responseText);
+    
+    if (!responseText.trim()) {
+      throw new Error('SpotPlayer API returned empty response');
+    }
 
-    if (spotPlayerResponse.status === 303) {
-      // Handle 303 redirect - SpotPlayer uses this for successful license creation
-      console.log('SpotPlayer returned 303 redirect - checking location header');
+    let spotPlayerData: SpotPlayerResponse;
+    try {
+      spotPlayerData = JSON.parse(responseText);
+      console.log('SpotPlayer API parsed response:', spotPlayerData);
       
-      const locationHeader = spotPlayerResponse.headers.get('location');
-      if (locationHeader) {
-        // Follow the redirect to get the actual license data
-        console.log('Following redirect to get real license data');
-        
-        try {
-          const redirectResponse = await fetch(locationHeader, {
-            method: 'GET',
-            headers: {
-              '$API': 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==',
-              '$LEVEL': '-1'
-            }
-          });
-          
-          if (redirectResponse.ok) {
-            const redirectText = await redirectResponse.text();
-            console.log('Redirect response text:', redirectText);
-            
-            if (redirectText.trim()) {
-              try {
-                spotPlayerData = JSON.parse(redirectText);
-                console.log('Successfully parsed license data from redirect:', spotPlayerData);
-              } catch (parseError) {
-                console.log('Could not parse redirect response as JSON, using watermark as license key');
-                spotPlayerData = {
-                  _id: `license_${Date.now()}`,
-                  key: uniqueWatermark,
-                  url: `/player/${uniqueWatermark}`
-                };
-              }
-            } else {
-              console.log('Empty redirect response, using watermark as license key');
-              spotPlayerData = {
-                _id: `license_${Date.now()}`,
-                key: uniqueWatermark,
-                url: `/player/${uniqueWatermark}`
-              };
-            }
-          } else {
-            console.log(`Redirect failed with status ${redirectResponse.status}, using watermark as license key`);
-            spotPlayerData = {
-              _id: `license_${Date.now()}`,
-              key: uniqueWatermark,
-              url: `/player/${uniqueWatermark}`
-            };
-          }
-        } catch (redirectError) {
-          console.log('Error following redirect, using watermark as license key:', redirectError);
-          spotPlayerData = {
-            _id: `license_${Date.now()}`,
-            key: uniqueWatermark,
-            url: `/player/${uniqueWatermark}`
-          };
-        }
-      } else {
-        // SpotPlayer returns 303 to indicate successful license creation even without location header
-        console.log('SpotPlayer returned 303 without location header - using watermark as license key');
-        
-        spotPlayerData = {
-          _id: `license_${Date.now()}`,
-          key: uniqueWatermark,
-          url: `/player/${uniqueWatermark}`
-        };
+      // Validate response has required fields
+      if (!spotPlayerData._id || !spotPlayerData.key) {
+        throw new Error('Invalid SpotPlayer response: missing _id or key');
       }
-    } else {
-      // Handle normal 200 response
-      const responseText = await spotPlayerResponse.text();
-      if (!responseText.trim()) {
-        throw new Error('SpotPlayer API returned empty response');
-      }
-      
-      try {
-        spotPlayerData = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error(`Failed to parse SpotPlayer response: ${responseText}`);
-      }
+    } catch (parseError) {
+      console.error('Failed to parse SpotPlayer response:', parseError);
+      throw new Error(`Failed to parse SpotPlayer response: ${responseText}`);
     }
     console.log('SpotPlayer API response:', spotPlayerData);
 
