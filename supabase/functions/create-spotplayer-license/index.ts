@@ -26,8 +26,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let requestBody: any;
+
   try {
-    const { enrollmentId, userFullName, userPhone, courseId }: SpotPlayerRequest = await req.json();
+    requestBody = await req.json();
+    const { enrollmentId, userFullName, userPhone, courseId }: SpotPlayerRequest = requestBody;
 
     console.log('Creating SpotPlayer license for enrollment:', enrollmentId);
 
@@ -243,10 +246,7 @@ serve(async (req) => {
 
     // Try to log error to database if we have enrollment info
     try {
-      const body = await req.json();
-      const { enrollmentId, courseId } = body;
-      
-      if (enrollmentId && courseId) {
+      if (requestBody && requestBody.enrollmentId && requestBody.courseId) {
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL')!,
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -255,8 +255,8 @@ serve(async (req) => {
         await supabase
           .from('license_errors')
           .insert({
-            enrollment_id: enrollmentId,
-            course_id: courseId,
+            enrollment_id: requestBody.enrollmentId,
+            course_id: requestBody.courseId,
             error_message: error.message,
             api_response: null
           });
