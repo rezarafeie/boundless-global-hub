@@ -91,7 +91,8 @@ serve(async (req) => {
       body: JSON.stringify(spotPlayerRequestBody)
     });
 
-    if (!spotPlayerResponse.ok) {
+    // Handle both success (200) and redirect (303) status codes from SpotPlayer API
+    if (!spotPlayerResponse.ok && spotPlayerResponse.status !== 303) {
       const errorText = await spotPlayerResponse.text();
       throw new Error(`SpotPlayer API error: ${spotPlayerResponse.status} - ${errorText}`);
     }
